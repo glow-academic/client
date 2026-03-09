@@ -87,9 +87,7 @@ async def test_end(sid: str, data: dict[str, Any]) -> None:
                     session_id=session_id,
                     profiles_id=profiles_id,
                 )
-                call = await create_call(
-                    conn, run_id=run.id, session_id=session_id
-                )
+                call = await create_call(conn, run_id=run.id, session_id=session_id)
                 grade = await create_test_grade(
                     conn,
                     invocation_id=uuid.UUID(test_invocation_id),

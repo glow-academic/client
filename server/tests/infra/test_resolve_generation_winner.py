@@ -86,9 +86,7 @@ class TestResolveGenerationWinner:
 
         assert result is None
 
-    async def test_single_agent_wins_by_default(
-        self, conn, profile_id, redis_client
-    ):
+    async def test_single_agent_wins_by_default(self, conn, profile_id, redis_client):
         test_id, run_id, session_id = await _create_generation_test(conn, profile_id)
         agent_id = await _create_agent_id(conn, redis_client, "single-winner")
         invocation_id, _ = await _create_invocation_with_grade(

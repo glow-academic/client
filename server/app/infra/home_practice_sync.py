@@ -555,7 +555,9 @@ async def sync_home_practice_entries(
                         use_custom=chat_data["use_custom"],
                         use_previous=chat_data["use_previous"],
                         # 5 content-enabled
-                        problem_statement_enabled=chat_data["problem_statement_enabled"],
+                        problem_statement_enabled=chat_data[
+                            "problem_statement_enabled"
+                        ],
                         objectives_enabled=chat_data["objectives_enabled"],
                         video_enabled=chat_data["video_enabled"],
                         images_enabled=chat_data["images_enabled"],
@@ -595,9 +597,7 @@ async def sync_home_practice_entries(
                     )
 
                     if sim_data["is_practice"]:
-                        await create_practice_chat(
-                            conn, parent.id, chat.id, session.id
-                        )
+                        await create_practice_chat(conn, parent.id, chat.id, session.id)
                     else:
                         await create_home_chat(conn, parent.id, chat.id, session.id)
 

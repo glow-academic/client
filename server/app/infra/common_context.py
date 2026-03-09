@@ -62,7 +62,10 @@ async def resolve_common_context(
     # Step 1: profile (skip if pre-resolved)
     if profile is None:
         profile = await resolve_profile_identity_context(
-            pool, profile_id, redis, bypass_cache,
+            pool,
+            profile_id,
+            redis,
+            bypass_cache,
             draft_id=draft_id,
             artifact_type=artifact_type,
         )

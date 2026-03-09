@@ -180,12 +180,11 @@ async def test_next_impl(
         return
 
     try:
-        async with pool.acquire() as conn:
-            result = await get_test_internal(
-                conn=conn,
-                test_id=test_id,
-                bypass_cache=True,
-            )
+        result = await get_test_internal(
+            pool=pool,
+            test_id=test_id,
+            bypass_cache=True,
+        )
     except Exception as e:
         logger.exception(f"Error in test_next: {e}")
         await emit(
@@ -915,7 +914,9 @@ async def test_run_impl(
 
             # Step 2: Get session_id from payload
             session_id_str = data.get("session_id")
-            session_id = uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
+            session_id = (
+                uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
+            )
 
             # Step 3: Create new run + profile link
             profiles_id_str = data.get("profiles_id")

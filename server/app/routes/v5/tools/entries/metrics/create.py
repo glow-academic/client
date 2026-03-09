@@ -4,8 +4,8 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.metrics.types import CreateMetricsEntryResponse
+from app.routes.v5.tools.entries.sessions.create import create_session
 
 
 async def create_metrics_entry_internal(

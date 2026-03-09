@@ -63,7 +63,9 @@ async def test_filters_by_attempt_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items, _total_count = await search_attempt_chats(conn, attempt_ids=[nonexistent_id()])
+    items, _total_count = await search_attempt_chats(
+        conn, attempt_ids=[nonexistent_id()]
+    )
 
     assert items == []
 

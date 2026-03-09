@@ -40,6 +40,19 @@ from app.infra.websocket.attempt_events_impl import (
     user_complete_impl as _user_complete_impl,
 )
 from app.infra.websocket.socket_event import recording_emit
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.test.create import create_test
+from app.routes.v5.tools.entries.test_grade.create import create_test_grade
+from app.routes.v5.tools.entries.test.refresh import refresh_test
+from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
+from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
+from app.routes.v5.tools.entries.test_invocation_completion.create import (
+    create_test_invocation_completion,
+)
+from app.routes.v5.tools.resources.profiles.create import create_profile
 from app.infra.websocket.test_events_impl import (
     _extract_grade_feedback,
     _extract_grade_passed,
@@ -650,11 +663,17 @@ class TestRunDoneImpl:
 # test_next_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_TEST_GET = "app.routes.v5.api.main.test.get"
-
-
 @pytest.mark.asyncio
 class TestNextImpl:
+    async def _setup_test(self, conn, redis_client):
+        profile = await create_profile(conn, redis_client, name="test-next-profile")
+        session = await create_session(conn, profile_id=profile.id)
+        group = await create_group(conn, session_id=session.id)
+        run = await create_run(conn, group_id=group.id, session_id=session.id)
+        test_call = await create_call(conn, run_id=run.id, session_id=session.id)
+        test = await create_test(conn, call_id=test_call.id, profiles_id=profile.id)
+        return test, run, session, group
+
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
         await _test_next_impl({"test_id": "123"}, emit=emit, pool=_mock_pool())
@@ -668,16 +687,16 @@ class TestNextImpl:
         assert events[0].event == "test_error"
         assert events[0].room == "s1"
 
-    @patch(f"{_TEST_GET}.get_test_internal")
-    async def test_no_invocations_emits_all_complete(self, mock_get):
-        result = SimpleNamespace(invocations=[])
-        mock_get.return_value = result
-
+    async def test_no_invocations_emits_all_complete(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            test, _run, _session, _group = await self._setup_test(conn, redis_client)
+            await refresh_test(conn)
+            await refresh_test_invocation(conn)
         emit, events = recording_emit()
         await _test_next_impl(
-            {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
+            {"sid": "s1", "test_id": str(test.id)},
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert len(events) == 1
         assert events[0].bus == "client"
@@ -685,44 +704,87 @@ class TestNextImpl:
         assert events[0].data["success"] is True
         assert events[0].room == "s1"
 
-    @patch(f"{_TEST_GET}.get_test_internal")
-    async def test_pending_invocation_emits_test_run(self, mock_get):
-        inv = SimpleNamespace(
-            invocation_id="inv-1",
-            invocation_completed=False,
-        )
-        result = SimpleNamespace(invocations=[inv])
-        mock_get.return_value = result
-
+    async def test_pending_invocation_emits_test_run(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            test, run, session, group = await self._setup_test(conn, redis_client)
+            invocation_call = await create_call(
+                conn, run_id=run.id, session_id=session.id
+            )
+            invocation = await create_test_invocation(
+                conn,
+                test_id=test.id,
+                call_id=invocation_call.id,
+                group_id=group.id,
+            )
+            await refresh_test(conn)
+            await refresh_test_invocation(conn)
         emit, events = recording_emit()
         await _test_next_impl(
-            {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
+            {"sid": "s1", "test_id": str(test.id)},
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert len(events) == 1
         assert events[0].bus == "internal"
         assert events[0].event == "test_run"
         assert events[0].data["sid"] == "s1"
-        assert events[0].data["invocation_id"] == "inv-1"
+        assert events[0].data["invocation_id"] == str(invocation.id)
 
-    @patch(f"{_TEST_GET}.get_test_internal")
-    async def test_all_completed_emits_all_complete(self, mock_get):
-        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=True)
-        inv2 = SimpleNamespace(invocation_id="inv-2", invocation_completed=True)
-        result = SimpleNamespace(invocations=[inv1, inv2])
-        mock_get.return_value = result
-
+    async def test_all_completed_emits_all_complete(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            test, run, session, group = await self._setup_test(conn, redis_client)
+            first_call = await create_call(conn, run_id=run.id, session_id=session.id)
+            first_invocation = await create_test_invocation(
+                conn,
+                test_id=test.id,
+                call_id=first_call.id,
+                group_id=group.id,
+            )
+            second_call = await create_call(conn, run_id=run.id, session_id=session.id)
+            second_invocation = await create_test_invocation(
+                conn,
+                test_id=test.id,
+                call_id=second_call.id,
+            )
+            complete_first_call = await create_call(
+                conn, run_id=run.id, session_id=session.id
+            )
+            await create_test_grade(
+                conn,
+                invocation_id=first_invocation.id,
+                call_id=complete_first_call.id,
+                run_id=run.id,
+                time_taken=10,
+                passed=True,
+                score=90,
+            )
+            complete_second_call = await create_call(
+                conn, run_id=run.id, session_id=session.id
+            )
+            await create_test_grade(
+                conn,
+                invocation_id=second_invocation.id,
+                call_id=complete_second_call.id,
+                run_id=run.id,
+                time_taken=10,
+                passed=True,
+                score=85,
+            )
+            await refresh_test(conn)
+            await refresh_test_invocation(conn)
         emit, events = recording_emit()
         await _test_next_impl(
-            {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
+            {"sid": "s1", "test_id": str(test.id)},
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert len(events) == 1
         assert events[0].bus == "client"
         assert events[0].event == "test_all_complete"
-        assert events[0].data["invocation_id"] == "inv-2"
+        assert events[0].data["invocation_id"] in {
+            str(first_invocation.id),
+            str(second_invocation.id),
+        }
         assert events[0].data["total_runs"] == 2
         assert events[0].data["success"] is True
 
@@ -2027,13 +2089,19 @@ class TestAttemptProceedImpl:
     @patch(_REFRESH_CHAT, new_callable=AsyncMock)
     @patch(_REFRESH_ATTEMPT, new_callable=AsyncMock)
     @patch(
-        _CREATE_CALL, new_callable=AsyncMock,
+        _CREATE_CALL,
+        new_callable=AsyncMock,
         return_value=SimpleNamespace(id=UUID(int=77)),
     )
     @patch(_RUNS, new_callable=AsyncMock)
     async def test_complete_all_emits_ended(
-        self, mock_run, mock_call, mock_refresh_a,
-        mock_refresh_c, mock_bridges, mock_completion
+        self,
+        mock_run,
+        mock_call,
+        mock_refresh_a,
+        mock_refresh_c,
+        mock_bridges,
+        mock_completion,
     ):
         mock_run.return_value = SimpleNamespace(id=UUID(int=1))
         mock_bridges.return_value = [
@@ -2300,7 +2368,8 @@ class TestAttemptProceedImpl:
     @patch(_BRIDGES, new_callable=AsyncMock)
     @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
     @patch(
-        _CREATE_CALL, new_callable=AsyncMock,
+        _CREATE_CALL,
+        new_callable=AsyncMock,
         return_value=SimpleNamespace(id=UUID(int=77)),
     )
     @patch(_RUNS, new_callable=AsyncMock)

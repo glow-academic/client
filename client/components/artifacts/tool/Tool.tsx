@@ -21,9 +21,8 @@ import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Args } from "@/components/resources/Args";
 import { ArgPositions } from "@/components/resources/ArgPositions";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Names } from "@/components/resources/Names";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
@@ -307,7 +306,9 @@ function ToolComponent({
     if (!data) {
       return {
         name: "",
+        name_id: null as string | null,
         description: "",
+        description_id: null as string | null,
         args_ids: [] as string[],
         arg_position_ids: [] as string[],
         args_outputs_ids: [] as string[],
@@ -317,7 +318,9 @@ function ToolComponent({
     const currentDesc = data.descriptions?.resource;
     return {
       name: currentName?.name || "",
+      name_id: (currentName?.id as string) ?? null,
       description: currentDesc?.description || "",
+      description_id: (currentDesc?.id as string) ?? null,
       args_ids: (data.args?.current ?? [])
         .map((a) => a.id)
         .filter((id): id is string => !!id),
@@ -423,7 +426,9 @@ function ToolComponent({
     setFormState((prev) => {
       if (
         prev.name !== newState.name ||
+        prev.name_id !== newState.name_id ||
         prev.description !== newState.description ||
+        prev.description_id !== newState.description_id ||
         JSON.stringify(prev.args_ids) !== JSON.stringify(newState.args_ids) ||
         JSON.stringify(prev.arg_position_ids) !==
           JSON.stringify(newState.arg_position_ids) ||
@@ -500,8 +505,8 @@ function ToolComponent({
         draftId: draftId || null,
         name: formState.name || null,
         description: formState.description || null,
-        name_id: stableToolDataFields?.names?.resource?.id ?? null,
-        description_id: stableToolDataFields?.descriptions?.resource?.id ?? null,
+        name_id: formState.name_id ?? stableToolDataFields?.names?.resource?.id ?? null,
+        description_id: formState.description_id ?? stableToolDataFields?.descriptions?.resource?.id ?? null,
         active_flag_id: stableToolDataFields?.flags?.current?.flag_option_id ?? null,
         args_ids: formState.args_ids,
         arg_position_ids: formState.arg_position_ids,
@@ -511,7 +516,9 @@ function ToolComponent({
     [
       draftId,
       formState.name,
+      formState.name_id,
       formState.description,
+      formState.description_id,
       stableToolDataFields?.names?.resource?.id,
       stableToolDataFields?.descriptions?.resource?.id,
       stableToolDataFields?.flags,
@@ -530,6 +537,7 @@ function ToolComponent({
 
     const hasContent =
       formState.name.trim() !== "" ||
+      !!formState.name_id ||
       formState.args_ids.length > 0 ||
       formState.arg_position_ids.length > 0 ||
       formState.args_outputs_ids.length > 0;
@@ -551,8 +559,8 @@ function ToolComponent({
         // Build payload — value fields override ID fields
         const payload: Record<string, unknown> = {
           input_draft_id: draftId || null,
-          name_id: currentFields?.names?.resource?.id ?? null,
-          description_id: currentFields?.descriptions?.resource?.id ?? null,
+          name_id: fs.name_id ?? currentFields?.names?.resource?.id ?? null,
+          description_id: fs.description_id ?? currentFields?.descriptions?.resource?.id ?? null,
           flag_ids: currentFields?.flags?.current?.flag_option_id
             ? [currentFields.flags.current.flag_option_id]
             : null,
@@ -563,11 +571,11 @@ function ToolComponent({
         };
 
         // Value field overlay — send raw value instead of ID for creatables
-        if (fs.name) {
+        if (fs.name && !fs.name_id) {
           payload.name = fs.name;
           delete payload.name_id;
         }
-        if (fs.description) {
+        if (fs.description && !fs.description_id) {
           payload.description = fs.description;
           delete payload.description_id;
         }
@@ -607,7 +615,9 @@ function ToolComponent({
     draftPatchKey,
     draftId,
     formState.name,
+    formState.name_id,
     formState.description,
+    formState.description_id,
     formState.args_ids,
     formState.arg_position_ids,
     formState.args_outputs_ids,
@@ -673,7 +683,7 @@ function ToolComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!formState.name || !formState.name.trim()) {
+      if (!formState.name_id && (!formState.name || !formState.name.trim())) {
         toast.error("Tool name is required");
         throw new Error("Tool name is required");
       }
@@ -755,9 +765,9 @@ function ToolComponent({
   // Step status logic
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!formState.name && formState.name.trim() !== "";
+      const hasName = !!formState.name_id || (!!formState.name && formState.name.trim() !== "");
       const hasDescription =
-        !!formState.description && formState.description.trim() !== "";
+        !!formState.description_id || (!!formState.description && formState.description.trim() !== "");
 
       switch (stepId) {
         case "basic":
@@ -923,6 +933,9 @@ function ToolComponent({
     []
   );
 
+  const NamesAny = Names as any;
+  const DescriptionsAny = Descriptions as any;
+
   // Memoize renderStep
   const renderStep = useCallback(
     ({
@@ -968,41 +981,40 @@ function ToolComponent({
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">
-                    Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    value={formState.name}
-                    onChange={(e) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter tool name"
-                    disabled={disabled}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formState.description}
-                    onChange={(e) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter tool description"
-                    rows={4}
-                    disabled={disabled}
-                  />
-                </div>
+                <NamesAny
+                  name_id={formState.name_id}
+                  name_resource={currentToolData?.names?.resource}
+                  show_name={currentToolData?.names?.show}
+                  name_suggestions={currentToolData?.names?.suggestions ?? undefined}
+                  names={currentToolData?.names?.resources ?? undefined}
+                  required={currentToolData?.names?.required}
+                  disabled={disabled}
+                  showAiGenerate={currentToolData?.names?.show_ai_generate}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  onNameIdChange={(id: string | null) =>
+                    setFormState((prev) => ({ ...prev, name_id: id, name: id ? "" : prev.name }))
+                  }
+                  onNameChange={(name: string) =>
+                    setFormState((prev) => ({ ...prev, name, name_id: null }))
+                  }
+                />
+                <DescriptionsAny
+                  description_id={formState.description_id}
+                  description_resource={currentToolData?.descriptions?.resource}
+                  show_description={currentToolData?.descriptions?.show}
+                  description_suggestions={currentToolData?.descriptions?.suggestions ?? undefined}
+                  descriptions={currentToolData?.descriptions?.resources ?? undefined}
+                  required={currentToolData?.descriptions?.required}
+                  disabled={disabled}
+                  showAiGenerate={currentToolData?.descriptions?.show_ai_generate}
+                  isAutosaveEnabled={isAutosaveEnabled}
+                  onDescriptionIdChange={(id: string | null) =>
+                    setFormState((prev) => ({ ...prev, description_id: id, description: id ? "" : prev.description }))
+                  }
+                  onDescriptionChange={(description: string) =>
+                    setFormState((prev) => ({ ...prev, description, description_id: null }))
+                  }
+                />
               </div>
             </StepCard>
           );

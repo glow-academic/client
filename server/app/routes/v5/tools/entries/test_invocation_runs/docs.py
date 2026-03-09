@@ -29,18 +29,14 @@ async def get_test_invocation_runs_docs(
     agents_connection = await get_table_info(
         conn, "test_invocation_runs_agents_connection"
     )
-    runs_connection = await get_table_info(conn, "test_invocation_runs_runs_connection")
 
-    tables = [
-        t for t in [entry_table, agents_connection, runs_connection] if t is not None
-    ]
+    tables = [t for t in [entry_table, agents_connection] if t is not None]
 
     return DocsResponse(
         name="test_invocation_runs",
         type="entry",
         description=(
-            "Test invocation run assignments. Maps test invocations to agents and agent runs. "
-            "Allows specifying which agents and specific runs participate in a test invocation. "
+            "Test invocation run assignments. Maps test invocations to agents and execution config. "
             "Reads are served from the test_invocation_runs_mv materialized view."
         ),
         materialized_view=mv_info,
@@ -49,8 +45,8 @@ async def get_test_invocation_runs_docs(
             get_operation_info(
                 create_test_invocation_runs,
                 description=(
-                    "Creates a test_invocation_runs entry with optional agent_ids and run_ids "
-                    "connections to agents and runs."
+                    "Creates a test_invocation_runs entry with optional agent_ids "
+                    "and execution-config connections."
                 ),
             ),
             get_operation_info(

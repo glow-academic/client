@@ -19,7 +19,7 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
-import { Parameters } from "@/components/resources/Parameters";
+import { ConditionalParameters } from "@/components/resources/ConditionalParameters";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
@@ -763,27 +763,24 @@ function FieldComponent({
           }
           {...(onReset ? { onReset } : {})}
         >
-          <Parameters
-            parameter_ids={formState.conditional_parameter_ids}
-            parameter_resources={
+          <ConditionalParameters
+            conditional_parameter_ids={formState.conditional_parameter_ids}
+            conditional_parameter_resources={
               stableFieldData?.conditional_parameters?.current ?? []
             }
-            show_parameters={stableFieldData?.conditional_parameters?.show ?? false}
-            parameter_suggestions={
+            show_conditional_parameters={stableFieldData?.conditional_parameters?.show ?? false}
+            conditional_parameter_suggestions={
               stableFieldData?.conditional_parameters?.suggestions ?? []
             }
-            parameters={stableFieldData?.conditional_parameters?.resources ?? []}
+            conditional_parameters={stableFieldData?.conditional_parameters?.resources ?? []}
             disabled={disabled}
             onChange={(conditional_parameter_ids) =>
               setFormState((prev) => ({ ...prev, conditional_parameter_ids }))
             }
-            required={stableFieldData?.conditional_parameters?.required ?? false}
             showAiGenerate={
               stableFieldData?.conditional_parameters?.show_ai_generate ?? false
             }
             onGenerate={() => handleGenerateResources(["conditional_parameters"])}
-            searchTerm={conditionalParameterSearch}
-            showSelectedFilter={conditionalParameterShowSelected}
           />
         </StepCard>
       );

@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # ---------------------------------------------------------------------------
 # Profile context types
@@ -267,24 +267,6 @@ class GetProfileContextApiRequest(BaseModel):
     department_id: str | None = None
 
 
-class GetProfileByEmailApiRequest(BaseModel):
-    email: str
-
-
-class GetProfileByEmailApiResponse(BaseModel):
-    profile_id: UUID | None = None
-    name: str | None = None
-    emails: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    req_per_day: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    primary_department_id: UUID | None = None
-    actor_name: str | None = None
-
-
 class GetKeyForDecryptApiRequest(BaseModel):
     key_id: UUID
 
@@ -293,23 +275,6 @@ class GetKeyForDecryptApiResponse(BaseModel):
     key: str | None = None
     name: str | None = None
     actor_name: str | None = None
-
-
-class CreateOrUpdateProfileApiRequest(BaseModel):
-    name: str
-    emails: list[str]
-    role: str
-    current_profile_id: UUID | None = None
-    primary_email_index: int | None = 0
-    active: bool | None = True
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile_id_new: UUID | None = None
-
-
-class CreateOrUpdateProfileApiResponse(BaseModel):
-    profile_id: UUID | None = None
-    created: bool | None = None
-    session_id: UUID | None = None
 
 
 class CreateEmulationGrantApiRequest(BaseModel):

@@ -901,9 +901,7 @@ async def get_attempt_internal(
         if should_show_controls and chats and current_chat_index is not None:
             current_chat = chats[current_chat_index]
             current_chat_id = str(current_chat.id)
-            has_messages = any(
-                m.chat_id == current_chat.id for m in messages_result
-            )
+            has_messages = any(m.chat_id == current_chat.id for m in messages_result)
 
         # === COMPUTE LOBBY STATE & CONTINUATION OPTIONS ===
         has_remaining = (

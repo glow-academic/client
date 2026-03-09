@@ -5,7 +5,6 @@
  * 02/06/2026
  */
 
-import { getSession } from "@/auth";
 import Session from "@/components/artifacts/session/Session";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
@@ -61,10 +60,7 @@ export default async function SessionDetailPage({
 }) {
   const { sessionId } = await params;
 
-  const session = await getSession();
-  const profileId = session?.user?.profileId;
-
-  if (!profileId || !sessionId) {
+  if (!sessionId) {
     return null;
   }
 

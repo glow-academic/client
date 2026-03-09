@@ -82,15 +82,15 @@ export async function getGenerateMessages(
  * @param session - Optional session to reuse. If not provided, will fetch session.
  * @returns Object with profileId (can be null)
  */
-export async function getValidatedProfileId(session?: Session | null): Promise<{
+export async function getValidatedProfileId(): Promise<{
   profileId: string | null;
 }> {
-  const resolvedSession = session ?? (await getSession());
-
-  // Extract profile ID from session (works for both real and pseudo-sessions)
-  const profileId = resolvedSession?.user?.profileId || null;
-
-  return { profileId };
+  try {
+    const profile = await getAuthProfile();
+    return { profileId: profile?.id ?? null };
+  } catch {
+    return { profileId: null };
+  }
 }
 
 // Export ProfileItem type derived from server response
@@ -123,15 +123,9 @@ export type SafeSessionSnapshot = {
 export async function getLayoutContextData(session?: Session | null) {
   const resolvedSession = session ?? (await getSession());
 
-  // Create session snapshot with authentication status
   // isAuthenticated distinguishes real sessions (has id_token) from pseudo-sessions (no id_token)
-  const snapshot: SafeSessionSnapshot = {
-    profileId: resolvedSession?.user?.profileId ?? null,
-    // Only authenticated users have id_token (from Keycloak)
-    // Sessions without id_token still render a layout context
-    isAuthenticated: !!resolvedSession?.id_token,
-    idToken: resolvedSession?.id_token ?? null,
-  };
+  const isAuthenticated = !!resolvedSession?.id_token;
+  const idToken = resolvedSession?.id_token ?? null;
 
   let profileData: AuthProfileOut | null = null;
   let settingsData: AuthSettingsOut | null = null;
@@ -145,6 +139,7 @@ export async function getLayoutContextData(session?: Session | null) {
     settingsData = settingsRes;
   } catch {
     // If fetch fails (e.g., 403/404), return null
+    const snapshot: SafeSessionSnapshot = { profileId: null, isAuthenticated, idToken };
     return {
       profileData: null,
       settingsData: null,
@@ -154,12 +149,20 @@ export async function getLayoutContextData(session?: Session | null) {
 
   // Early return if no valid profile context
   if (!profileData?.id) {
+    const snapshot: SafeSessionSnapshot = { profileId: null, isAuthenticated, idToken };
     return {
       profileData: null,
       settingsData: null,
       snapshot,
     };
   }
+
+  // profileId comes from server response (resolved from JWT by middleware)
+  const snapshot: SafeSessionSnapshot = {
+    profileId: profileData.id,
+    isAuthenticated,
+    idToken,
+  };
 
   return {
     profileData,
@@ -197,19 +200,20 @@ export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
   try {
-    const session = await getSession();
-    if (!session?.user?.profileId) {
+    // Get profileId from server (resolved from JWT by middleware)
+    const profile = await getAuthProfile();
+    if (!profile?.id) {
       return { ok: false, reason: "Unauthorized" };
     }
 
-    const isSelf = input.targetProfileId === session.user.profileId;
+    const isSelf = input.targetProfileId === profile.id;
     if (isSelf) {
       return { ok: false, reason: "Already using this profile" };
     }
 
     const res = await createEmulationGrant({
       body: {
-        requester_profile_id: session.user.profileId,
+        requester_profile_id: profile.id,
         target_profile_id: input.targetProfileId,
         ttl_minutes: null, // Use server default (120 minutes)
         return_url: input.returnUrl ?? null,

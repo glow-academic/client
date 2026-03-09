@@ -100,9 +100,7 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 session_id=session_id,
                 profiles_id=profiles_id,
             )
-            call = await create_call(
-                conn, run_id=run.id, session_id=session_id
-            )
+            call = await create_call(conn, run_id=run.id, session_id=session_id)
             conversation = await create_attempt_conversations(
                 conn,
                 chat_id=chat_id,

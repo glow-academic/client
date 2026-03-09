@@ -48,7 +48,9 @@ async def test_filters_by_role(conn, profile_id):
     result, run = await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items, _total_count = await search_messages(conn, run_ids=[run.id], role="assistant")
+    items, _total_count = await search_messages(
+        conn, run_ids=[run.id], role="assistant"
+    )
 
     assert items == []
 
@@ -74,9 +76,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, run = await _setup(conn, profile_id)
 
-    items, _total_count = await search_messages(
-        conn, run_ids=[run.id], bypass_mv=True
-    )
+    items, _total_count = await search_messages(conn, run_ids=[run.id], bypass_mv=True)
 
     ids = [item.message_id for item in items]
     assert result.id in ids

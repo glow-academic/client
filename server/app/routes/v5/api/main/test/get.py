@@ -193,7 +193,9 @@ async def get_test_internal(
         )
 
         # Inline controls data (replaces auth/group resolution)
-        current_invocation_id = str(invocations[0].invocation_id) if invocations else None
+        current_invocation_id = (
+            str(invocations[0].invocation_id) if invocations else None
+        )
         has_runs_or_groups = len(runs) > 0 or len(groups) > 0
         show_controls = bool(invocations)
 

@@ -118,9 +118,7 @@ async def resolve_system_context(
         if not instruction_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_instructions(
-                conn, instruction_ids, redis, bypass_cache
-            )
+            return await get_instructions(conn, instruction_ids, redis, bypass_cache)
 
     async def _get_rubrics() -> list:
         if not rubric_ids:
@@ -165,9 +163,7 @@ async def resolve_system_context(
         if not args_output_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_args_outputs(
-                conn, args_output_ids, redis, bypass_cache
-            )
+            return await get_args_outputs(conn, args_output_ids, redis, bypass_cache)
 
     providers, args_list, args_outputs_list = await asyncio.gather(
         _get_providers(),

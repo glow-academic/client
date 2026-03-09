@@ -1596,9 +1596,7 @@ async def attempt_message_impl(
             created_at = assistant_result.created_at
 
             # Step 5a: Insert tree edges for message branching
-            messages, _ = await search_messages(
-                conn, run_ids=[run_id], bypass_mv=True
-            )
+            messages, _ = await search_messages(conn, run_ids=[run_id], bypass_mv=True)
             user_message_id = None
             for msg in messages:
                 if msg.role == "user":

@@ -15,6 +15,7 @@ from app.infra.document_create import CreateDocumentItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.document_drafts.types import GetDocumentDraftResponse
 
+
 class GetDocumentDraftsApiResponse(BaseModel):
     """Response model for document drafts list endpoint."""
 

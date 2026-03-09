@@ -1678,6 +1678,90 @@
         }
       }
     },
+    "/api/v5/artifacts/scenarios/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ],
+        "summary": "Get Scenario Drafts",
+        "description": "List scenario drafts owned by the current profile.",
+        "operationId": "get_scenario_drafts_api_v5_artifacts_scenarios_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetScenarioDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/scenarios/export": {
       "post": {
         "tags": [
@@ -2591,6 +2675,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchSimulationDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/simulations/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ],
+        "summary": "Get Simulation Drafts",
+        "description": "List simulation drafts owned by the current profile.",
+        "operationId": "get_simulation_drafts_api_v5_artifacts_simulations_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSimulationDraftsApiResponse"
                 }
               }
             }
@@ -3538,6 +3706,90 @@
         }
       }
     },
+    "/api/v5/artifacts/documents/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ],
+        "summary": "Get Document Drafts",
+        "description": "List document drafts owned by the current profile.",
+        "operationId": "get_document_drafts_api_v5_artifacts_documents_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDocumentDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/documents/docs": {
       "post": {
         "tags": [
@@ -4451,6 +4703,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchDepartmentDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/departments/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ],
+        "summary": "Get Department Drafts",
+        "description": "List department drafts owned by the current profile.",
+        "operationId": "get_department_drafts_api_v5_artifacts_departments_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetDepartmentDraftsApiResponse"
                 }
               }
             }
@@ -5398,6 +5734,90 @@
         }
       }
     },
+    "/api/v5/artifacts/cohorts/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ],
+        "summary": "Get Cohort Drafts",
+        "description": "List cohort drafts owned by the current profile.",
+        "operationId": "get_cohort_drafts_api_v5_artifacts_cohorts_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCohortDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/cohorts/export": {
       "post": {
         "tags": [
@@ -6311,6 +6731,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchEvalDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/evals/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ],
+        "summary": "Get Eval Drafts",
+        "description": "List eval drafts owned by the current profile.",
+        "operationId": "get_eval_drafts_api_v5_artifacts_evals_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEvalDraftsApiResponse"
                 }
               }
             }
@@ -7258,6 +7762,90 @@
         }
       }
     },
+    "/api/v5/artifacts/rubrics/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ],
+        "summary": "Get Rubric Drafts",
+        "description": "List rubric drafts owned by the current profile.",
+        "operationId": "get_rubric_drafts_api_v5_artifacts_rubrics_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetRubricDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/rubrics/docs": {
       "post": {
         "tags": [
@@ -8171,6 +8759,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchSettingDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/settings/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ],
+        "summary": "Get Setting Drafts",
+        "description": "List setting drafts owned by the current profile.",
+        "operationId": "get_setting_drafts_api_v5_artifacts_settings_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetSettingDraftsApiResponse"
                 }
               }
             }
@@ -9118,6 +9790,90 @@
         }
       }
     },
+    "/api/v5/artifacts/agents/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ],
+        "summary": "Get Agent Drafts",
+        "description": "List agent drafts owned by the current profile.",
+        "operationId": "get_agent_drafts_api_v5_artifacts_agents_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAgentDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/agents/docs": {
       "post": {
         "tags": [
@@ -10031,6 +10787,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchModelDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/models/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ],
+        "summary": "Get Model Drafts",
+        "description": "List model drafts owned by the current profile.",
+        "operationId": "get_model_drafts_api_v5_artifacts_models_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetModelDraftsApiResponse"
                 }
               }
             }
@@ -10978,6 +11818,90 @@
         }
       }
     },
+    "/api/v5/artifacts/providers/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ],
+        "summary": "Get Provider Drafts",
+        "description": "List provider drafts owned by the current profile.",
+        "operationId": "get_provider_drafts_api_v5_artifacts_providers_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProviderDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/providers/docs": {
       "post": {
         "tags": [
@@ -11891,6 +12815,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchParameterDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/parameters/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ],
+        "summary": "Get Parameter Drafts",
+        "description": "List parameter drafts owned by the current profile.",
+        "operationId": "get_parameter_drafts_api_v5_artifacts_parameters_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetParameterDraftsApiResponse"
                 }
               }
             }
@@ -12838,6 +13846,90 @@
         }
       }
     },
+    "/api/v5/artifacts/fields/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ],
+        "summary": "Get Field Drafts",
+        "description": "List field drafts owned by the current profile.",
+        "operationId": "get_field_drafts_api_v5_artifacts_fields_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetFieldDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/fields/docs": {
       "post": {
         "tags": [
@@ -13657,6 +14749,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchProfileDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/profiles/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ],
+        "summary": "Get Profile Drafts",
+        "description": "List profile drafts owned by the current profile.",
+        "operationId": "get_profile_drafts_api_v5_artifacts_profiles_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetProfileDraftsApiResponse"
                 }
               }
             }
@@ -14698,6 +15874,90 @@
         }
       }
     },
+    "/api/v5/artifacts/auths/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ],
+        "summary": "Get Auth Drafts",
+        "description": "List auth drafts owned by the current profile.",
+        "operationId": "get_auth_drafts_api_v5_artifacts_auths_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAuthDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/auths/docs": {
       "post": {
         "tags": [
@@ -15611,6 +16871,90 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchToolDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/tools/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ],
+        "summary": "Get Tool Drafts",
+        "description": "List tool drafts owned by the current profile.",
+        "operationId": "get_tool_drafts_api_v5_artifacts_tools_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetToolDraftsApiResponse"
                 }
               }
             }
@@ -17003,6 +18347,91 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PatchChatDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v5/artifacts/chat/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "chat"
+        ],
+        "summary": "Get Chat Drafts",
+        "description": "List chat drafts owned by the current profile.",
+        "operationId": "get_chat_drafts_api_v5_artifacts_chat_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetChatDraftsApiResponse"
                 }
               }
             }
@@ -42832,180 +44261,6 @@
         }
       }
     },
-    "/auth/drafts": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Get Drafts",
-        "description": "Return drafts for the current page's artifact type.",
-        "operationId": "get_drafts_auth_drafts_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetDraftsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/email": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Get Profile By Email",
-        "description": "Get profile by email (for auth operations).",
-        "operationId": "get_profile_by_email_auth_email_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetProfileByEmailApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetProfileByEmailApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/auth/generate": {
       "post": {
         "tags": [
@@ -43081,98 +44336,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetGroupMessagesApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/upsert": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Create Or Update Profile",
-        "description": "Create or update a profile based on email.",
-        "operationId": "create_or_update_profile_auth_upsert_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateOrUpdateProfileApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateOrUpdateProfileApiResponse"
                 }
               }
             }
@@ -56983,136 +58146,6 @@
         "type": "object",
         "title": "CreateModelItem",
         "description": "Single model item for create \u2014 no model_id.\n\nRequired fields (name): provide ID or value."
-      },
-      "CreateOrUpdateProfileApiRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "emails": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Emails"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "current_profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Profile Id"
-          },
-          "primary_email_index": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email Index",
-            "default": 0
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active",
-            "default": true
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "profile_id_new": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id New"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "emails",
-          "role"
-        ],
-        "title": "CreateOrUpdateProfileApiRequest"
-      },
-      "CreateOrUpdateProfileApiResponse": {
-        "properties": {
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "created": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created"
-          },
-          "session_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Session Id"
-          }
-        },
-        "type": "object",
-        "title": "CreateOrUpdateProfileApiResponse"
       },
       "CreateParameterApiRequest": {
         "properties": {
@@ -71267,6 +72300,187 @@
         "title": "GetAgentApiResponse",
         "description": "Section-first response model for get agent endpoint."
       },
+      "GetAgentDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "tool_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Tool Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "reasoning_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Reasoning Level Ids"
+          },
+          "temperature_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Temperature Level Ids"
+          },
+          "voice_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Voice Ids"
+          },
+          "quality_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Quality Ids"
+          },
+          "rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Rubric Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "name_ids",
+          "description_ids",
+          "flag_ids",
+          "department_ids",
+          "model_ids",
+          "tool_ids",
+          "profile_ids",
+          "reasoning_level_ids",
+          "temperature_level_ids",
+          "voice_ids",
+          "quality_ids"
+        ],
+        "title": "GetAgentDraftResponse"
+      },
+      "GetAgentDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetAgentDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetAgentDraftsApiResponse",
+        "description": "Response model for agent drafts list endpoint."
+      },
       "GetAttemptDetailRequest": {
         "properties": {
           "attempt_id": {
@@ -71922,6 +73136,151 @@
         ],
         "title": "GetAuthConfigApiResponse"
       },
+      "GetAuthDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "item_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Item Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "protocol_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Protocol Ids"
+          },
+          "slug_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Slug Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "item_ids",
+          "name_ids",
+          "profile_ids",
+          "protocol_ids",
+          "slug_ids"
+        ],
+        "title": "GetAuthDraftResponse"
+      },
+      "GetAuthDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetAuthDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetAuthDraftsApiResponse",
+        "description": "Response model for auth drafts list endpoint."
+      },
       "GetAuthProfileApiResponse": {
         "properties": {
           "is_authorized": {
@@ -72166,6 +73525,232 @@
         "type": "object",
         "title": "GetAuthSettingsApiResponse",
         "description": "Response for POST /auth/settings \u2014 department-level settings + theme."
+      },
+      "GetChatDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "image_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Image Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "option_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Option Ids"
+          },
+          "parameter_field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "problem_statement_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Problem Statement Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Question Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "video_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Video Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "document_ids",
+          "field_ids",
+          "flag_ids",
+          "image_ids",
+          "name_ids",
+          "objective_ids",
+          "option_ids",
+          "parameter_field_ids",
+          "parameter_ids",
+          "persona_ids",
+          "problem_statement_ids",
+          "profile_ids",
+          "question_ids",
+          "scenario_ids",
+          "video_ids"
+        ],
+        "title": "GetChatDraftResponse"
+      },
+      "GetChatDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetChatDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetChatDraftsApiResponse",
+        "description": "Response model for chat drafts list endpoint."
       },
       "GetChatRequest": {
         "properties": {
@@ -72831,6 +74416,160 @@
         "title": "GetCohortApiResponse",
         "description": "Response for getting a single cohort."
       },
+      "GetCohortDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_persona_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Persona Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "simulation_availability_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Simulation Availability Ids"
+          },
+          "simulation_position_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Simulation Position Ids"
+          },
+          "simulation_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Simulation Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "name_ids",
+          "profile_persona_ids",
+          "profile_ids",
+          "simulation_availability_ids",
+          "simulation_position_ids",
+          "simulation_ids"
+        ],
+        "title": "GetCohortDraftResponse"
+      },
+      "GetCohortDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetCohortDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetCohortDraftsApiResponse",
+        "description": "Response model for cohort drafts list endpoint."
+      },
       "GetDepartmentApiRequest": {
         "properties": {
           "department_id": {
@@ -72996,6 +74735,124 @@
         },
         "type": "object",
         "title": "GetDepartmentApiResponse"
+      },
+      "GetDepartmentDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "setting_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Setting Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "description_ids",
+          "flag_ids",
+          "name_ids",
+          "profile_ids",
+          "setting_ids"
+        ],
+        "title": "GetDepartmentDraftResponse"
+      },
+      "GetDepartmentDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetDepartmentDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetDepartmentDraftsApiResponse",
+        "description": "Response model for department drafts list endpoint."
       },
       "GetDocumentApiRequest": {
         "properties": {
@@ -73216,13 +75073,155 @@
         "title": "GetDocumentApiResponse",
         "description": "Section-first response for document editor."
       },
-      "GetDraftsApiResponse": {
+      "GetDocumentDraftResponse": {
         "properties": {
-          "drafts": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "file_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "File Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "image_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Image Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "parameter_field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Field Ids"
+          },
+          "parameter_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "text_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Text Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "file_ids",
+          "flag_ids",
+          "image_ids",
+          "name_ids",
+          "parameter_field_ids",
+          "parameter_ids",
+          "profile_ids",
+          "text_ids"
+        ],
+        "title": "GetDocumentDraftResponse"
+      },
+      "GetDocumentDraftsApiResponse": {
+        "properties": {
+          "entries": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetProfileContextV4Draft"
+                  "$ref": "#/components/schemas/GetDocumentDraftResponse"
                 },
                 "type": "array"
               },
@@ -73230,12 +75229,12 @@
                 "type": "null"
               }
             ],
-            "title": "Drafts"
+            "title": "Entries"
           }
         },
         "type": "object",
-        "title": "GetDraftsApiResponse",
-        "description": "Response model for /auth/drafts endpoint."
+        "title": "GetDocumentDraftsApiResponse",
+        "description": "Response model for document drafts list endpoint."
       },
       "GetEvalApiRequest": {
         "properties": {
@@ -73476,6 +75475,142 @@
         "title": "GetEvalApiResponse",
         "description": "Response model for get eval endpoint."
       },
+      "GetEvalDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "model_ids",
+          "name_ids",
+          "profile_ids",
+          "rubric_ids"
+        ],
+        "title": "GetEvalDraftResponse"
+      },
+      "GetEvalDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetEvalDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetEvalDraftsApiResponse",
+        "description": "Response model for eval drafts list endpoint."
+      },
       "GetFieldApiRequest": {
         "properties": {
           "field_id": {
@@ -73686,6 +75821,133 @@
         "type": "object",
         "title": "GetFieldApiResponse",
         "description": "Section-first client response for get field endpoint."
+      },
+      "GetFieldDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "conditional_parameter_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Conditional Parameter Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "conditional_parameter_ids",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "name_ids",
+          "profile_ids"
+        ],
+        "title": "GetFieldDraftResponse"
+      },
+      "GetFieldDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetFieldDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetFieldDraftsApiResponse",
+        "description": "Response model for field drafts list endpoint."
       },
       "GetFieldResponse": {
         "properties": {
@@ -74467,6 +76729,196 @@
         "title": "GetModelApiResponse",
         "description": "Section-first response for model editor."
       },
+      "GetModelDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "modality_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Modality Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "pricing_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Pricing Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "provider_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Provider Ids"
+          },
+          "quality_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Quality Ids"
+          },
+          "reasoning_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Reasoning Level Ids"
+          },
+          "temperature_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Temperature Level Ids"
+          },
+          "value_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Value Ids"
+          },
+          "voice_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Voice Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "modality_ids",
+          "name_ids",
+          "pricing_ids",
+          "profile_ids",
+          "provider_ids",
+          "quality_ids",
+          "reasoning_level_ids",
+          "temperature_level_ids",
+          "value_ids",
+          "voice_ids"
+        ],
+        "title": "GetModelDraftResponse"
+      },
+      "GetModelDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetModelDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetModelDraftsApiResponse",
+        "description": "Response model for model drafts list endpoint."
+      },
       "GetParameterApiRequest": {
         "properties": {
           "parameter_id": {
@@ -74655,6 +77107,133 @@
         "type": "object",
         "title": "GetParameterApiResponse",
         "description": "Section-first client response for get parameter endpoint."
+      },
+      "GetParameterDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "field_ids",
+          "flag_ids",
+          "name_ids",
+          "profile_ids"
+        ],
+        "title": "GetParameterDraftResponse"
+      },
+      "GetParameterDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetParameterDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetParameterDraftsApiResponse",
+        "description": "Response model for parameter drafts list endpoint."
       },
       "GetParameterResponse": {
         "properties": {
@@ -75303,7 +77882,8 @@
           }
         },
         "type": "object",
-        "title": "GetPersonaDraftsApiResponse"
+        "title": "GetPersonaDraftsApiResponse",
+        "description": "Response model for persona drafts list endpoint."
       },
       "GetPersonaResponse": {
         "properties": {
@@ -75715,153 +78295,6 @@
         "type": "object",
         "title": "GetProfileApiResponse"
       },
-      "GetProfileByEmailApiRequest": {
-        "properties": {
-          "email": {
-            "type": "string",
-            "title": "Email"
-          }
-        },
-        "type": "object",
-        "required": [
-          "email"
-        ],
-        "title": "GetProfileByEmailApiRequest"
-      },
-      "GetProfileByEmailApiResponse": {
-        "properties": {
-          "profile_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "emails": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Emails"
-          },
-          "primary_email": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Email"
-          },
-          "role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Role"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "req_per_day": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Req Per Day"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "GetProfileByEmailApiResponse"
-      },
       "GetProfileContextApiRequest": {
         "properties": {
           "department_id": {
@@ -75878,6 +78311,142 @@
         },
         "type": "object",
         "title": "GetProfileContextApiRequest"
+      },
+      "GetProfileDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "email_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Email Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "request_limit_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Request Limit Ids"
+          },
+          "role_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Role Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "profile_ids",
+          "department_ids",
+          "email_ids",
+          "flag_ids",
+          "name_ids",
+          "request_limit_ids",
+          "role_ids"
+        ],
+        "title": "GetProfileDraftResponse"
+      },
+      "GetProfileDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetProfileDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetProfileDraftsApiResponse",
+        "description": "Response model for profile drafts list endpoint."
       },
       "GetProviderApiRequest": {
         "properties": {
@@ -76088,6 +78657,151 @@
         "title": "GetProviderApiResponse",
         "description": "Section-first response for provider editor."
       },
+      "GetProviderDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "endpoint_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Endpoint Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Key Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "value_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Value Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "endpoint_ids",
+          "flag_ids",
+          "key_ids",
+          "name_ids",
+          "profile_ids",
+          "value_ids"
+        ],
+        "title": "GetProviderDraftResponse"
+      },
+      "GetProviderDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetProviderDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetProviderDraftsApiResponse",
+        "description": "Response model for provider drafts list endpoint."
+      },
       "GetRubricApiRequest": {
         "properties": {
           "rubric_id": {
@@ -76294,6 +79008,151 @@
         },
         "type": "object",
         "title": "GetRubricApiResponse"
+      },
+      "GetRubricDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "point_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Point Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "standard_group_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Standard Group Ids"
+          },
+          "standard_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "name_ids",
+          "point_ids",
+          "profile_ids",
+          "standard_group_ids",
+          "standard_ids"
+        ],
+        "title": "GetRubricDraftResponse"
+      },
+      "GetRubricDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetRubricDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetRubricDraftsApiResponse",
+        "description": "Response model for rubric drafts list endpoint."
       },
       "GetRunListViewResponse": {
         "properties": {
@@ -76887,6 +79746,205 @@
         "title": "GetScenarioApiResponse",
         "description": "Response for getting a single scenario."
       },
+      "GetScenarioDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "document_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Document Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "image_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Image Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Objective Ids"
+          },
+          "option_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Option Ids"
+          },
+          "parameter_field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Field Ids"
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Persona Ids"
+          },
+          "problem_statement_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Problem Statement Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "question_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Question Ids"
+          },
+          "video_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Video Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "document_ids",
+          "flag_ids",
+          "image_ids",
+          "name_ids",
+          "objective_ids",
+          "option_ids",
+          "parameter_field_ids",
+          "persona_ids",
+          "problem_statement_ids",
+          "profile_ids",
+          "question_ids",
+          "video_ids"
+        ],
+        "title": "GetScenarioDraftResponse"
+      },
+      "GetScenarioDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetScenarioDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetScenarioDraftsApiResponse",
+        "description": "Response model for scenario drafts list endpoint."
+      },
       "GetSessionDetailRequest": {
         "properties": {
           "session_id": {
@@ -77231,6 +80289,187 @@
         "title": "GetSettingApiResponse",
         "description": "Section-first response model for get setting endpoint."
       },
+      "GetSettingDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "agent_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Agent Ids"
+          },
+          "auth_item_key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Auth Item Key Ids"
+          },
+          "auth_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Auth Ids"
+          },
+          "color_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Color Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "item_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Item Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "provider_key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Provider Key Ids"
+          },
+          "threshold_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Threshold Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "agent_ids",
+          "auth_item_key_ids",
+          "auth_ids",
+          "color_ids",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "item_ids",
+          "name_ids",
+          "profile_ids",
+          "provider_key_ids",
+          "threshold_ids"
+        ],
+        "title": "GetSettingDraftResponse"
+      },
+      "GetSettingDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetSettingDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetSettingDraftsApiResponse",
+        "description": "Response model for setting drafts list endpoint."
+      },
       "GetSimulationApiRequest": {
         "properties": {
           "simulation_id": {
@@ -77488,6 +80727,169 @@
         "type": "object",
         "title": "GetSimulationApiResponse",
         "description": "Section-first response for simulation editor."
+      },
+      "GetSimulationDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "scenario_flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Flag Ids"
+          },
+          "scenario_position_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Position Ids"
+          },
+          "scenario_rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Rubric Ids"
+          },
+          "scenario_time_limit_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Time Limit Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "department_ids",
+          "description_ids",
+          "flag_ids",
+          "name_ids",
+          "profile_ids",
+          "scenario_flag_ids",
+          "scenario_position_ids",
+          "scenario_rubric_ids",
+          "scenario_time_limit_ids",
+          "scenario_ids"
+        ],
+        "title": "GetSimulationDraftResponse"
+      },
+      "GetSimulationDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetSimulationDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetSimulationDraftsApiResponse",
+        "description": "Response model for simulation drafts list endpoint."
       },
       "GetTestArtifactRequest": {
         "properties": {
@@ -78550,6 +81952,169 @@
         },
         "type": "object",
         "title": "GetToolApiResponse"
+      },
+      "GetToolDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "arg_position_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Arg Position Ids"
+          },
+          "arg_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Arg Ids"
+          },
+          "args_output_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Args Output Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "entry_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Entry Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "resource_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Resource Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "arg_position_ids",
+          "arg_ids",
+          "args_output_ids",
+          "department_ids",
+          "description_ids",
+          "entry_ids",
+          "flag_ids",
+          "name_ids",
+          "profile_ids",
+          "resource_ids"
+        ],
+        "title": "GetToolDraftResponse"
+      },
+      "GetToolDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetToolDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetToolDraftsApiResponse",
+        "description": "Response model for tool drafts list endpoint."
       },
       "GradeAttemptApiRequest": {
         "properties": {
@@ -103414,81 +106979,6 @@
         },
         "type": "object",
         "title": "QGetAgentsV4Item"
-      },
-      "QGetProfileContextV4Draft": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "artifact_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Artifact Type"
-          },
-          "payload": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Payload"
-          },
-          "version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Version"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          }
-        },
-        "type": "object",
-        "title": "QGetProfileContextV4Draft",
-        "description": "Draft item returned by /auth/drafts endpoint."
       },
       "QGetProfileContextV4RoleResource": {
         "properties": {

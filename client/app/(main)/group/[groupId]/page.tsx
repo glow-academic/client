@@ -5,7 +5,7 @@
  * 01/XX/2025
  */
 
-import { getSession } from "@/auth";
+
 import Group from "@/components/artifacts/group/Group";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
@@ -58,10 +58,7 @@ export default async function PricingGroupPage({
 }) {
   const { groupId } = await params;
 
-  const session = await getSession();
-  const profileId = session?.user?.profileId;
-
-  if (!profileId || !groupId) {
+  if (!groupId) {
     return null;
   }
 

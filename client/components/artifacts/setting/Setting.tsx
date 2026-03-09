@@ -26,7 +26,6 @@ import { Names } from "@/components/resources/Names";
 import { Profiles } from "@/components/resources/Profiles";
 import { ProviderKeys } from "@/components/resources/ProviderKeys";
 import { Roles } from "@/components/resources/Roles";
-import { RoleRoutes } from "@/components/resources/RoleRoutes";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -253,15 +252,6 @@ function SettingComponent({
       show_roles: settingData.roles?.show ?? false,
       roles_required: settingData.roles?.required ?? false,
       roles: settingData.roles?.resources ?? [],
-      // Role routes (multi-select section)
-      route_resources: settingData.role_routes?.current ?? [],
-      show_routes: settingData.role_routes?.show ?? false,
-      routes_required: settingData.role_routes?.required ?? false,
-      routes: settingData.role_routes?.resources ?? [],
-      role_route_ids: (settingData.role_routes?.current ?? []).map((rr: { id?: string | null }) => rr.id).filter(Boolean),
-      role_route_resources: settingData.role_routes?.current ?? [],
-      show_role_routes: settingData.role_routes?.show ?? false,
-      role_routes: settingData.role_routes?.resources ?? [],
     };
     // Intentionally depend on individual fields, not whole settingData object
     // to prevent recreation when only object reference changes
@@ -323,11 +313,6 @@ function SettingComponent({
     settingData?.roles?.show,
     settingData?.roles?.required,
     settingData?.roles?.resources,
-    // Role routes section
-    settingData?.role_routes?.current,
-    settingData?.role_routes?.show,
-    settingData?.role_routes?.required,
-    settingData?.role_routes?.resources,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -378,7 +363,6 @@ function SettingComponent({
         provider_key_ids: [] as string[],
         key_ids: [] as string[],
         role_ids: [] as string[],
-        role_route_ids: [] as string[],
       };
     }
     // Extract resource IDs from server data
@@ -396,7 +380,6 @@ function SettingComponent({
       provider_key_ids: data.provider_key_ids ?? [],
       key_ids: data.key_ids ?? [],
       role_ids: data.role_ids ?? [],
-      role_route_ids: data.role_route_ids ?? [],
     };
     // Remove settingData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -439,10 +422,6 @@ function SettingComponent({
     () => JSON.stringify(settingData?.role_ids ?? []),
     [settingData?.role_ids]
   );
-  const roleRouteIdsStr = React.useMemo(
-    () => JSON.stringify(settingData?.role_route_ids ?? []),
-    [settingData?.role_route_ids]
-  );
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateDepartmentIdsStr = React.useMemo(
@@ -473,10 +452,6 @@ function SettingComponent({
     () => JSON.stringify(formState.role_ids),
     [formState.role_ids]
   );
-  const formStateRoleRouteIdsStr = React.useMemo(
-    () => JSON.stringify(formState.role_route_ids),
-    [formState.role_route_ids]
-  );
 
   // Update form state when server data changes
   // Use settingData directly in dependency array, not getInitialFormState
@@ -497,9 +472,7 @@ function SettingComponent({
         JSON.stringify(prev.provider_key_ids) !==
           JSON.stringify(newState.provider_key_ids) ||
         JSON.stringify(prev.key_ids) !== JSON.stringify(newState.key_ids) ||
-        JSON.stringify(prev.role_ids) !== JSON.stringify(newState.role_ids) ||
-        JSON.stringify(prev.role_route_ids) !==
-          JSON.stringify(newState.role_route_ids)
+        JSON.stringify(prev.role_ids) !== JSON.stringify(newState.role_ids)
       ) {
         return newState;
       }
@@ -519,7 +492,6 @@ function SettingComponent({
     providerIdsStr,
     keyIdsStr,
     roleIdsStr,
-    roleRouteIdsStr,
   ]);
 
   // Draft version tracking for optimistic concurrency control
@@ -592,7 +564,6 @@ function SettingComponent({
       provider_key_ids: formState.provider_key_ids,
       key_ids: formState.key_ids,
       role_ids: formState.role_ids,
-      role_route_ids: formState.role_route_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -610,7 +581,6 @@ function SettingComponent({
     formStateProviderIdsStr,
     formStateKeyIdsStr,
     formStateRoleIdsStr,
-    formStateRoleRouteIdsStr,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -629,8 +599,7 @@ function SettingComponent({
       formState.auth_ids.length > 0 ||
       formState.provider_key_ids.length > 0 ||
       formState.key_ids.length > 0 ||
-      formState.role_ids.length > 0 ||
-      formState.role_route_ids.length > 0;
+      formState.role_ids.length > 0;
 
     if (!hasResourceIds || !patchSettingDraftActionRef.current) {
       return;
@@ -656,7 +625,6 @@ function SettingComponent({
           provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
           auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
           role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
-          role_route_ids: formState.role_route_ids.length > 0 ? formState.role_route_ids : null,
           expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
         };
 
@@ -908,7 +876,7 @@ function SettingComponent({
         id: "roles_routes",
         title: "Roles & Routes",
         description: "Configure available roles and role-route permissions for this setting.",
-        resetFields: ["role_ids", "role_route_ids"],
+        resetFields: ["role_ids"],
       },
     ],
     []
@@ -927,7 +895,6 @@ function SettingComponent({
       "provider_key_ids",
       "key_ids",
       "role_ids",
-      "role_route_ids",
     ],
     []
   );
@@ -978,7 +945,6 @@ function SettingComponent({
           return {
             ...prev,
             role_ids: [],
-            role_route_ids: [],
           };
         default:
           return prev;
@@ -1321,7 +1287,7 @@ function SettingComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["role_ids", "role_route_ids"]}
+              resetFields={["role_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -1340,22 +1306,6 @@ function SettingComponent({
                   label="Roles"
                 />
 
-                <RoleRoutes
-                  role_route_ids={formState.role_route_ids ?? []}
-                  role_route_resources={currentSettingData?.role_route_resources ?? []}
-                  show_role_routes={currentSettingData?.show_role_routes ?? true}
-                  role_routes={currentSettingData?.role_routes ?? []}
-                  role_ids={formState.role_ids ?? []}
-                  role_resources={currentSettingData?.role_resources ?? []}
-                  routes={currentSettingData?.routes ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, role_route_ids: ids }))
-                  }
-
-                  label="Role Routes"
-                  description="Configure which routes each role can access"
-                />
               </div>
             </StepCard>
           );
@@ -1465,7 +1415,6 @@ function SettingComponent({
       formState.provider_key_ids,
       formState.key_ids,
       formState.role_ids,
-      formState.role_route_ids,
       createNamesAction,
       createDescriptionsAction,
       createColorsAction,
@@ -1531,7 +1480,6 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     key_ids:
       prevProps.settingData?.key_ids,
     role_ids: prevProps.settingData?.role_ids,
-    role_route_ids: prevProps.settingData?.role_route_ids,
   };
   const nextIds = {
     name_id: nextProps.settingData?.name_id,
@@ -1545,7 +1493,6 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
     key_ids:
       nextProps.settingData?.key_ids,
     role_ids: nextProps.settingData?.role_ids,
-    role_route_ids: nextProps.settingData?.role_route_ids,
   };
 
   // Compare primitive props

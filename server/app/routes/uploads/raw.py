@@ -67,7 +67,9 @@ async def raw_upload(
         with open(final_full_path, "wb") as f:
             f.write(file_bytes)
 
-        content_type = http_request.headers.get("content-type", "") or get_content_type(filename)
+        content_type = http_request.headers.get("content-type", "") or get_content_type(
+            filename
+        )
         if content_type == "application/octet-stream":
             content_type = get_content_type(filename)
         file_size = len(file_bytes)

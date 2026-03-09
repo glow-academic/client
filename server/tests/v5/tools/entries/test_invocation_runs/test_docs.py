@@ -52,5 +52,4 @@ async def test_create_operation_has_params(conn):
     param_names = [p.name for p in create_op.params]
     assert "test_invocation_id" in param_names
     assert "agent_ids" in param_names
-    assert "run_ids" in param_names
     assert "mcp" in param_names

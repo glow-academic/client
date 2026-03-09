@@ -139,16 +139,6 @@ class TestSetupGenerationTest:
         assert invocation_runs[0].test_invocation_id == invocation_id
         assert invocation_runs[0].agent_ids == [agent.agent_id]
 
-        run_ids = await conn.fetch(
-            """
-            SELECT runs_id
-            FROM test_invocation_runs_runs_connection
-            WHERE test_invocation_runs_id = $1
-            """,
-            invocation_runs[0].id,
-        )
-        assert [row["runs_id"] for row in run_ids] == [run_id]
-
     async def test_multiple_agents_creates_invocation_per_agent(
         self, conn, profile_id, redis_client
     ):
@@ -239,13 +229,8 @@ class TestSetupGenerationTest:
         assert invocation_runs[0].tool_ids == agent.tool_ids
         assert invocation_runs[0].voice_ids == agent.voice_ids
         assert invocation_runs[0].quality_ids == agent.quality_ids
-        assert (
-            invocation_runs[0].reasoning_level_ids == agent.reasoning_level_ids
-        )
-        assert (
-            invocation_runs[0].temperature_level_ids
-            == agent.temperature_level_ids
-        )
+        assert invocation_runs[0].reasoning_level_ids == agent.reasoning_level_ids
+        assert invocation_runs[0].temperature_level_ids == agent.temperature_level_ids
         assert invocation_runs[0].modality_ids == agent.modality_ids
 
     async def test_none_config_fields_round_trip_as_empty_lists(

@@ -136,11 +136,15 @@ async def resolve_home_context(
     # Step 6: Parallel hydrate resources
     async def _get_simulations() -> list:
         async with pool.acquire() as conn:
-            return await get_simulations(conn, simulation_ids_deduped, redis, bypass_cache)
+            return await get_simulations(
+                conn, simulation_ids_deduped, redis, bypass_cache
+            )
 
     async def _get_cohorts() -> list:
         async with pool.acquire() as conn:
-            return await get_cohort_resources(conn, cohort_ids_list, redis, bypass_cache)
+            return await get_cohort_resources(
+                conn, cohort_ids_list, redis, bypass_cache
+            )
 
     async def _get_personas() -> list:
         async with pool.acquire() as conn:
@@ -152,7 +156,9 @@ async def resolve_home_context(
 
     async def _get_standard_groups() -> list:
         async with pool.acquire() as conn:
-            return await get_standard_groups(conn, list(all_standard_group_ids), redis, bypass_cache)
+            return await get_standard_groups(
+                conn, list(all_standard_group_ids), redis, bypass_cache
+            )
 
     async def _search_standards() -> list:
         async with pool.acquire() as conn:
@@ -304,7 +310,9 @@ async def resolve_home_search_context(
 
     async def _get_scenarios() -> list:
         async with pool.acquire() as conn:
-            return await get_scenarios(conn, list(scenario_ids_set), redis, bypass_cache)
+            return await get_scenarios(
+                conn, list(scenario_ids_set), redis, bypass_cache
+            )
 
     (
         simulations_selected,

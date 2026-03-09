@@ -58,7 +58,9 @@ async def test_finds_created_entry(conn, profile_id):
     result, attempt_chat, _ = await _setup(conn, profile_id)
     await refresh_attempt_message(conn)
 
-    items, _total_count = await search_attempt_messages(conn, chat_ids=[attempt_chat.id])
+    items, _total_count = await search_attempt_messages(
+        conn, chat_ids=[attempt_chat.id]
+    )
 
     ids = [item.message_id for item in items]
     assert result.id in ids
@@ -68,7 +70,9 @@ async def test_filters_by_chat_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_message(conn)
 
-    items, _total_count = await search_attempt_messages(conn, chat_ids=[nonexistent_id()])
+    items, _total_count = await search_attempt_messages(
+        conn, chat_ids=[nonexistent_id()]
+    )
 
     assert items == []
 

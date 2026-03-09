@@ -39,11 +39,11 @@ from app.routes.v5.api.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.scenario.get import get_scenarios
 from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.departments.search import (
     search_departments,
 )
 from app.routes.v5.tools.resources.fields.get import get_fields
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.personas.get import (
@@ -512,9 +512,7 @@ async def search_scenario_client(
 
     flag_filter = ListFilterSection(
         options=[
-            ListFilterOption(
-                id=str(f.id), name=f.name, type=f.type, count=0
-            )
+            ListFilterOption(id=str(f.id), name=f.name, type=f.type, count=0)
             for f in flag_facet
         ],
         search=flag_search,

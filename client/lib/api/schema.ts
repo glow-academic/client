@@ -364,6 +364,26 @@ export interface paths {
         patch: operations["patch_scenario_draft_api_v5_artifacts_scenarios_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/scenarios/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Scenario Drafts
+         * @description List scenario drafts owned by the current profile.
+         */
+        post: operations["get_scenario_drafts_api_v5_artifacts_scenarios_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/scenarios/export": {
         parameters: {
             query?: never;
@@ -562,6 +582,26 @@ export interface paths {
          * @description Patch simulation draft — composable infra architecture.
          */
         patch: operations["patch_simulation_draft_api_v5_artifacts_simulations_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/simulations/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Simulation Drafts
+         * @description List simulation drafts owned by the current profile.
+         */
+        post: operations["get_simulation_drafts_api_v5_artifacts_simulations_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/simulations/export": {
@@ -764,6 +804,26 @@ export interface paths {
         patch: operations["patch_document_draft_api_v5_artifacts_documents_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/documents/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Document Drafts
+         * @description List document drafts owned by the current profile.
+         */
+        post: operations["get_document_drafts_api_v5_artifacts_documents_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/documents/docs": {
         parameters: {
             query?: never;
@@ -962,6 +1022,26 @@ export interface paths {
          * @description Patch department draft — composable infra architecture.
          */
         patch: operations["patch_department_draft_api_v5_artifacts_departments_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/departments/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Department Drafts
+         * @description List department drafts owned by the current profile.
+         */
+        post: operations["get_department_drafts_api_v5_artifacts_departments_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/departments/docs": {
@@ -1164,6 +1244,26 @@ export interface paths {
         patch: operations["patch_cohort_draft_api_v5_artifacts_cohorts_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/cohorts/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Cohort Drafts
+         * @description List cohort drafts owned by the current profile.
+         */
+        post: operations["get_cohort_drafts_api_v5_artifacts_cohorts_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/cohorts/export": {
         parameters: {
             query?: never;
@@ -1362,6 +1462,26 @@ export interface paths {
          * @description Patch eval draft — composable infra architecture.
          */
         patch: operations["patch_eval_draft_api_v5_artifacts_evals_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/evals/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Eval Drafts
+         * @description List eval drafts owned by the current profile.
+         */
+        post: operations["get_eval_drafts_api_v5_artifacts_evals_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/evals/docs": {
@@ -1564,6 +1684,26 @@ export interface paths {
         patch: operations["patch_rubric_draft_api_v5_artifacts_rubrics_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/rubrics/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Rubric Drafts
+         * @description List rubric drafts owned by the current profile.
+         */
+        post: operations["get_rubric_drafts_api_v5_artifacts_rubrics_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/rubrics/docs": {
         parameters: {
             query?: never;
@@ -1762,6 +1902,26 @@ export interface paths {
          * @description Patch setting draft — composable infra architecture.
          */
         patch: operations["patch_setting_draft_api_v5_artifacts_settings_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/settings/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Setting Drafts
+         * @description List setting drafts owned by the current profile.
+         */
+        post: operations["get_setting_drafts_api_v5_artifacts_settings_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/settings/export": {
@@ -1964,6 +2124,26 @@ export interface paths {
         patch: operations["patch_agent_draft_api_v5_artifacts_agents_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/agents/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Agent Drafts
+         * @description List agent drafts owned by the current profile.
+         */
+        post: operations["get_agent_drafts_api_v5_artifacts_agents_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/agents/docs": {
         parameters: {
             query?: never;
@@ -2162,6 +2342,26 @@ export interface paths {
          * @description Patch model draft — composable infra architecture.
          */
         patch: operations["patch_model_draft_api_v5_artifacts_models_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/models/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Model Drafts
+         * @description List model drafts owned by the current profile.
+         */
+        post: operations["get_model_drafts_api_v5_artifacts_models_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/models/docs": {
@@ -2364,6 +2564,26 @@ export interface paths {
         patch: operations["patch_provider_draft_api_v5_artifacts_providers_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/providers/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Provider Drafts
+         * @description List provider drafts owned by the current profile.
+         */
+        post: operations["get_provider_drafts_api_v5_artifacts_providers_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/providers/docs": {
         parameters: {
             query?: never;
@@ -2562,6 +2782,26 @@ export interface paths {
          * @description Patch parameter draft — composable infra architecture.
          */
         patch: operations["patch_parameter_draft_api_v5_artifacts_parameters_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/parameters/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Parameter Drafts
+         * @description List parameter drafts owned by the current profile.
+         */
+        post: operations["get_parameter_drafts_api_v5_artifacts_parameters_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/parameters/docs": {
@@ -2764,6 +3004,26 @@ export interface paths {
         patch: operations["patch_field_draft_api_v5_artifacts_fields_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/fields/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Field Drafts
+         * @description List field drafts owned by the current profile.
+         */
+        post: operations["get_field_drafts_api_v5_artifacts_fields_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/fields/docs": {
         parameters: {
             query?: never;
@@ -2942,6 +3202,26 @@ export interface paths {
          * @description Patch profile draft — composable infra architecture.
          */
         patch: operations["patch_profile_draft_api_v5_artifacts_profiles_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/profiles/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile Drafts
+         * @description List profile drafts owned by the current profile.
+         */
+        post: operations["get_profile_drafts_api_v5_artifacts_profiles_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/profiles/delete": {
@@ -3164,6 +3444,26 @@ export interface paths {
         patch: operations["patch_auth_draft_api_v5_artifacts_auths_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/auths/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Auth Drafts
+         * @description List auth drafts owned by the current profile.
+         */
+        post: operations["get_auth_drafts_api_v5_artifacts_auths_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/auths/docs": {
         parameters: {
             query?: never;
@@ -3362,6 +3662,26 @@ export interface paths {
          * @description Patch tool draft — composable infra architecture.
          */
         patch: operations["patch_tool_draft_api_v5_artifacts_tools_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/tools/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Tool Drafts
+         * @description List tool drafts owned by the current profile.
+         */
+        post: operations["get_tool_drafts_api_v5_artifacts_tools_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/tools/export": {
@@ -3662,6 +3982,26 @@ export interface paths {
          * @description Patch chat draft — composable infra architecture.
          */
         patch: operations["patch_chat_draft_api_v5_artifacts_chat_draft_patch"];
+        trace?: never;
+    };
+    "/api/v5/artifacts/chat/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Chat Drafts
+         * @description List chat drafts owned by the current profile.
+         */
+        post: operations["get_chat_drafts_api_v5_artifacts_chat_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v5/artifacts/chat/export": {
@@ -12214,46 +12554,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/drafts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Drafts
-         * @description Return drafts for the current page's artifact type.
-         */
-        post: operations["get_drafts_auth_drafts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile By Email
-         * @description Get profile by email (for auth operations).
-         */
-        post: operations["get_profile_by_email_auth_email_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/generate": {
         parameters: {
             query?: never;
@@ -12268,26 +12568,6 @@ export interface paths {
          * @description Return paginated messages for a specific group.
          */
         post: operations["get_group_messages_auth_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/upsert": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Or Update Profile
-         * @description Create or update a profile based on email.
-         */
-        post: operations["create_or_update_profile_auth_upsert_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -16831,40 +17111,6 @@ export interface components {
             voice_ids?: string[] | null;
             /** Model Ids */
             model_ids?: string[] | null;
-        };
-        /** CreateOrUpdateProfileApiRequest */
-        CreateOrUpdateProfileApiRequest: {
-            /** Name */
-            name: string;
-            /** Emails */
-            emails: string[];
-            /** Role */
-            role: string;
-            /** Current Profile Id */
-            current_profile_id?: string | null;
-            /**
-             * Primary Email Index
-             * @default 0
-             */
-            primary_email_index: number | null;
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Profile Id New */
-            profile_id_new?: string | null;
-        };
-        /** CreateOrUpdateProfileApiResponse */
-        CreateOrUpdateProfileApiResponse: {
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Created */
-            created?: boolean | null;
-            /** Session Id */
-            session_id?: string | null;
         };
         /**
          * CreateParameterApiRequest
@@ -21616,6 +21862,72 @@ export interface components {
             qualities?: components["schemas"]["AgentQualitySection"] | null;
             rubrics?: components["schemas"]["AgentRubricSection"] | null;
         };
+        /** GetAgentDraftResponse */
+        GetAgentDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Name Ids */
+            name_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Model Ids */
+            model_ids: string[];
+            /** Tool Ids */
+            tool_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[];
+            /** Temperature Level Ids */
+            temperature_level_ids: string[];
+            /** Voice Ids */
+            voice_ids: string[];
+            /** Quality Ids */
+            quality_ids: string[];
+            /**
+             * Rubric Ids
+             * @default []
+             */
+            rubric_ids: string[];
+        };
+        /**
+         * GetAgentDraftsApiResponse
+         * @description Response model for agent drafts list endpoint.
+         */
+        GetAgentDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetAgentDraftResponse"][] | null;
+        };
         /**
          * GetAttemptDetailRequest
          * @description Client API request for attempt detail.
@@ -21775,6 +22087,61 @@ export interface components {
             /** Code Challenge Methods Supported */
             code_challenge_methods_supported: string[];
         };
+        /** GetAuthDraftResponse */
+        GetAuthDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Item Ids */
+            item_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Protocol Ids */
+            protocol_ids: string[];
+            /** Slug Ids */
+            slug_ids: string[];
+        };
+        /**
+         * GetAuthDraftsApiResponse
+         * @description Response model for auth drafts list endpoint.
+         */
+        GetAuthDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetAuthDraftResponse"][] | null;
+        };
         /**
          * GetAuthProfileApiResponse
          * @description Response for POST /auth/profile — identity + permissions.
@@ -21825,6 +22192,79 @@ export interface components {
             artifact_has_generate?: {
                 [key: string]: boolean;
             } | null;
+        };
+        /** GetChatDraftResponse */
+        GetChatDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Image Ids */
+            image_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Option Ids */
+            option_ids: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids: string[];
+            /** Parameter Ids */
+            parameter_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Problem Statement Ids */
+            problem_statement_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Question Ids */
+            question_ids: string[];
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Video Ids */
+            video_ids: string[];
+        };
+        /**
+         * GetChatDraftsApiResponse
+         * @description Response model for chat drafts list endpoint.
+         */
+        GetChatDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetChatDraftResponse"][] | null;
         };
         /**
          * GetChatRequest
@@ -21955,6 +22395,63 @@ export interface components {
             /** Personas */
             personas?: components["schemas"]["GetPersonaResponse"][] | null;
         };
+        /** GetCohortDraftResponse */
+        GetCohortDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Persona Ids */
+            profile_persona_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Simulation Availability Ids */
+            simulation_availability_ids: string[];
+            /** Simulation Position Ids */
+            simulation_position_ids: string[];
+            /** Simulation Ids */
+            simulation_ids: string[];
+        };
+        /**
+         * GetCohortDraftsApiResponse
+         * @description Response model for cohort drafts list endpoint.
+         */
+        GetCohortDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetCohortDraftResponse"][] | null;
+        };
         /** GetDepartmentApiRequest */
         GetDepartmentApiRequest: {
             /** Department Id */
@@ -21984,6 +22481,55 @@ export interface components {
             descriptions?: components["schemas"]["DepartmentDescriptionSection"] | null;
             flags?: components["schemas"]["DepartmentFlagSection"] | null;
             settings?: components["schemas"]["DepartmentSettingSection"] | null;
+        };
+        /** GetDepartmentDraftResponse */
+        GetDepartmentDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Setting Ids */
+            setting_ids: string[];
+        };
+        /**
+         * GetDepartmentDraftsApiResponse
+         * @description Response model for department drafts list endpoint.
+         */
+        GetDepartmentDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetDepartmentDraftResponse"][] | null;
         };
         /**
          * GetDocumentApiRequest
@@ -22027,13 +22573,64 @@ export interface components {
             images?: components["schemas"]["DocumentImageSection"] | null;
             texts?: components["schemas"]["DocumentTextSection"] | null;
         };
+        /** GetDocumentDraftResponse */
+        GetDocumentDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** File Ids */
+            file_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Image Ids */
+            image_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids: string[];
+            /** Parameter Ids */
+            parameter_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Text Ids */
+            text_ids: string[];
+        };
         /**
-         * GetDraftsApiResponse
-         * @description Response model for /auth/drafts endpoint.
+         * GetDocumentDraftsApiResponse
+         * @description Response model for document drafts list endpoint.
          */
-        GetDraftsApiResponse: {
-            /** Drafts */
-            drafts?: components["schemas"]["QGetProfileContextV4Draft"][] | null;
+        GetDocumentDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetDocumentDraftResponse"][] | null;
         };
         /**
          * GetEvalApiRequest
@@ -22079,6 +22676,59 @@ export interface components {
             model_rubrics?: components["schemas"]["EvalModelRubricSection"] | null;
             model_positions?: components["schemas"]["EvalModelPositionSection"] | null;
         };
+        /** GetEvalDraftResponse */
+        GetEvalDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Model Ids */
+            model_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Rubric Ids */
+            rubric_ids: string[];
+        };
+        /**
+         * GetEvalDraftsApiResponse
+         * @description Response model for eval drafts list endpoint.
+         */
+        GetEvalDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetEvalDraftResponse"][] | null;
+        };
         /**
          * GetFieldApiRequest
          * @description Request model for get field endpoint.
@@ -22121,6 +22771,57 @@ export interface components {
             flags?: components["schemas"]["FieldFlagSection"] | null;
             departments?: components["schemas"]["FieldDepartmentSection"] | null;
             conditional_parameters?: components["schemas"]["FieldConditionalParameterSection"] | null;
+        };
+        /** GetFieldDraftResponse */
+        GetFieldDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+        };
+        /**
+         * GetFieldDraftsApiResponse
+         * @description Response model for field drafts list endpoint.
+         */
+        GetFieldDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetFieldDraftResponse"][] | null;
         };
         /** GetFieldResponse */
         GetFieldResponse: {
@@ -22375,6 +23076,71 @@ export interface components {
             qualities?: components["schemas"]["ModelQualitySection"] | null;
             voices?: components["schemas"]["ModelVoiceSection"] | null;
         };
+        /** GetModelDraftResponse */
+        GetModelDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Modality Ids */
+            modality_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Pricing Ids */
+            pricing_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Provider Ids */
+            provider_ids: string[];
+            /** Quality Ids */
+            quality_ids: string[];
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[];
+            /** Temperature Level Ids */
+            temperature_level_ids: string[];
+            /** Value Ids */
+            value_ids: string[];
+            /** Voice Ids */
+            voice_ids: string[];
+        };
+        /**
+         * GetModelDraftsApiResponse
+         * @description Response model for model drafts list endpoint.
+         */
+        GetModelDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetModelDraftResponse"][] | null;
+        };
         /**
          * GetParameterApiRequest
          * @description Request model for get parameter endpoint.
@@ -22413,6 +23179,57 @@ export interface components {
             flags?: components["schemas"]["ParameterFlagSection"] | null;
             departments?: components["schemas"]["ParameterDepartmentSection"] | null;
             fields?: components["schemas"]["ParameterFieldSection"] | null;
+        };
+        /** GetParameterDraftResponse */
+        GetParameterDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+        };
+        /**
+         * GetParameterDraftsApiResponse
+         * @description Response model for parameter drafts list endpoint.
+         */
+        GetParameterDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetParameterDraftResponse"][] | null;
         };
         /** GetParameterResponse */
         GetParameterResponse: {
@@ -22573,7 +23390,10 @@ export interface components {
             /** Voice Ids */
             voice_ids: string[];
         };
-        /** GetPersonaDraftsApiResponse */
+        /**
+         * GetPersonaDraftsApiResponse
+         * @description Response model for persona drafts list endpoint.
+         */
         GetPersonaDraftsApiResponse: {
             /** Entries */
             entries?: components["schemas"]["GetPersonaDraftResponse"][] | null;
@@ -22678,40 +23498,63 @@ export interface components {
             departments?: components["schemas"]["ProfileDepartmentSection"] | null;
             roles?: components["schemas"]["ProfileRoleSection"] | null;
         };
-        /** GetProfileByEmailApiRequest */
-        GetProfileByEmailApiRequest: {
-            /** Email */
-            email: string;
-        };
-        /** GetProfileByEmailApiResponse */
-        GetProfileByEmailApiResponse: {
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Emails */
-            emails?: string[] | null;
-            /** Primary Email */
-            primary_email?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Req Per Day */
-            req_per_day?: number | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** GetProfileContextApiRequest */
         GetProfileContextApiRequest: {
             /** Department Id */
             department_id?: string | null;
+        };
+        /** GetProfileDraftResponse */
+        GetProfileDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Email Ids */
+            email_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Request Limit Ids */
+            request_limit_ids: string[];
+            /** Role Ids */
+            role_ids: string[];
+        };
+        /**
+         * GetProfileDraftsApiResponse
+         * @description Response model for profile drafts list endpoint.
+         */
+        GetProfileDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetProfileDraftResponse"][] | null;
         };
         /**
          * GetProviderApiRequest
@@ -22754,6 +23597,61 @@ export interface components {
             endpoints?: components["schemas"]["ProviderEndpointSection"] | null;
             keys?: components["schemas"]["ProviderKeySection"] | null;
         };
+        /** GetProviderDraftResponse */
+        GetProviderDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Endpoint Ids */
+            endpoint_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Key Ids */
+            key_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Value Ids */
+            value_ids: string[];
+        };
+        /**
+         * GetProviderDraftsApiResponse
+         * @description Response model for provider drafts list endpoint.
+         */
+        GetProviderDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetProviderDraftResponse"][] | null;
+        };
         /** GetRubricApiRequest */
         GetRubricApiRequest: {
             /** Rubric Id */
@@ -22788,6 +23686,61 @@ export interface components {
             points?: components["schemas"]["RubricPointsSection"] | null;
             standard_groups?: components["schemas"]["RubricStandardGroupsSection"] | null;
             standards?: components["schemas"]["RubricStandardsSection"] | null;
+        };
+        /** GetRubricDraftResponse */
+        GetRubricDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Point Ids */
+            point_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Standard Group Ids */
+            standard_group_ids: string[];
+            /** Standard Ids */
+            standard_ids: string[];
+        };
+        /**
+         * GetRubricDraftsApiResponse
+         * @description Response model for rubric drafts list endpoint.
+         */
+        GetRubricDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetRubricDraftResponse"][] | null;
         };
         /**
          * GetRunListViewResponse
@@ -22903,6 +23856,73 @@ export interface components {
             questions?: components["schemas"]["ScenarioQuestionSection"] | null;
             options?: components["schemas"]["ScenarioOptionSection"] | null;
         };
+        /** GetScenarioDraftResponse */
+        GetScenarioDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Document Ids */
+            document_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Image Ids */
+            image_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Option Ids */
+            option_ids: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids: string[];
+            /** Persona Ids */
+            persona_ids: string[];
+            /** Problem Statement Ids */
+            problem_statement_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Question Ids */
+            question_ids: string[];
+            /** Video Ids */
+            video_ids: string[];
+        };
+        /**
+         * GetScenarioDraftsApiResponse
+         * @description Response model for scenario drafts list endpoint.
+         */
+        GetScenarioDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetScenarioDraftResponse"][] | null;
+        };
         /**
          * GetSessionDetailRequest
          * @description Request for session detail endpoint.
@@ -22991,6 +24011,69 @@ export interface components {
             auth_item_keys?: components["schemas"]["SettingAuthItemKeySection"] | null;
             systems?: components["schemas"]["SettingSystemSection"] | null;
         };
+        /** GetSettingDraftResponse */
+        GetSettingDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Agent Ids */
+            agent_ids: string[];
+            /** Auth Item Key Ids */
+            auth_item_key_ids: string[];
+            /** Auth Ids */
+            auth_ids: string[];
+            /** Color Ids */
+            color_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Item Ids */
+            item_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Provider Key Ids */
+            provider_key_ids: string[];
+            /** Threshold Ids */
+            threshold_ids: string[];
+        };
+        /**
+         * GetSettingDraftsApiResponse
+         * @description Response model for setting drafts list endpoint.
+         */
+        GetSettingDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetSettingDraftResponse"][] | null;
+        };
         /**
          * GetSimulationApiRequest
          * @description Request for getting a single simulation.
@@ -23037,6 +24120,65 @@ export interface components {
             scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimitSection"] | null;
             /** Rubrics */
             rubrics?: components["schemas"]["SimulationRubric"][] | null;
+        };
+        /** GetSimulationDraftResponse */
+        GetSimulationDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Scenario Flag Ids */
+            scenario_flag_ids: string[];
+            /** Scenario Position Ids */
+            scenario_position_ids: string[];
+            /** Scenario Rubric Ids */
+            scenario_rubric_ids: string[];
+            /** Scenario Time Limit Ids */
+            scenario_time_limit_ids: string[];
+            /** Scenario Ids */
+            scenario_ids: string[];
+        };
+        /**
+         * GetSimulationDraftsApiResponse
+         * @description Response model for simulation drafts list endpoint.
+         */
+        GetSimulationDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetSimulationDraftResponse"][] | null;
         };
         /**
          * GetTestArtifactRequest
@@ -23440,6 +24582,65 @@ export interface components {
             args?: components["schemas"]["ToolArgSection"] | null;
             arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
             args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
+        };
+        /** GetToolDraftResponse */
+        GetToolDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Arg Position Ids */
+            arg_position_ids: string[];
+            /** Arg Ids */
+            arg_ids: string[];
+            /** Args Output Ids */
+            args_output_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Entry Ids */
+            entry_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Resource Ids */
+            resource_ids: string[];
+        };
+        /**
+         * GetToolDraftsApiResponse
+         * @description Response model for tool drafts list endpoint.
+         */
+        GetToolDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetToolDraftResponse"][] | null;
         };
         /** GradeAttemptApiRequest */
         GradeAttemptApiRequest: {
@@ -30246,26 +31447,6 @@ export interface components {
             active?: boolean | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /**
-         * QGetProfileContextV4Draft
-         * @description Draft item returned by /auth/drafts endpoint.
-         */
-        QGetProfileContextV4Draft: {
-            /** Id */
-            id?: string | null;
-            /** Artifact Type */
-            artifact_type?: string | null;
-            /** Payload */
-            payload?: {
-                [key: string]: unknown;
-            } | null;
-            /** Version */
-            version?: number | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /** QGetProfileContextV4RoleResource */
         QGetProfileContextV4RoleResource: {
@@ -37943,6 +39124,39 @@ export interface operations {
             };
         };
     };
+    get_scenario_drafts_api_v5_artifacts_scenarios_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetScenarioDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_scenarios_api_v5_artifacts_scenarios_export_post: {
         parameters: {
             query?: never;
@@ -38296,6 +39510,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchSimulationDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_simulation_drafts_api_v5_artifacts_simulations_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSimulationDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -38675,6 +39922,39 @@ export interface operations {
             };
         };
     };
+    get_document_drafts_api_v5_artifacts_documents_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDocumentDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_document_docs_endpoint_api_v5_artifacts_documents_docs_post: {
         parameters: {
             query?: never;
@@ -39028,6 +40308,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchDepartmentDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_department_drafts_api_v5_artifacts_departments_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDepartmentDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -39407,6 +40720,39 @@ export interface operations {
             };
         };
     };
+    get_cohort_drafts_api_v5_artifacts_cohorts_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetCohortDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_cohorts_api_v5_artifacts_cohorts_export_post: {
         parameters: {
             query?: never;
@@ -39760,6 +41106,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchEvalDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_eval_drafts_api_v5_artifacts_evals_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetEvalDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40139,6 +41518,39 @@ export interface operations {
             };
         };
     };
+    get_rubric_drafts_api_v5_artifacts_rubrics_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRubricDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_rubric_docs_endpoint_api_v5_artifacts_rubrics_docs_post: {
         parameters: {
             query?: never;
@@ -40492,6 +41904,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchSettingDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_setting_drafts_api_v5_artifacts_settings_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSettingDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40871,6 +42316,39 @@ export interface operations {
             };
         };
     };
+    get_agent_drafts_api_v5_artifacts_agents_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAgentDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_agent_docs_endpoint_api_v5_artifacts_agents_docs_post: {
         parameters: {
             query?: never;
@@ -41224,6 +42702,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchModelDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_drafts_api_v5_artifacts_models_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetModelDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41603,6 +43114,39 @@ export interface operations {
             };
         };
     };
+    get_provider_drafts_api_v5_artifacts_providers_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProviderDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_provider_docs_endpoint_api_v5_artifacts_providers_docs_post: {
         parameters: {
             query?: never;
@@ -41956,6 +43500,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchParameterDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_parameter_drafts_api_v5_artifacts_parameters_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetParameterDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42335,6 +43912,39 @@ export interface operations {
             };
         };
     };
+    get_field_drafts_api_v5_artifacts_fields_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetFieldDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_field_docs_endpoint_api_v5_artifacts_fields_docs_post: {
         parameters: {
             query?: never;
@@ -42651,6 +44261,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchProfileDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_drafts_api_v5_artifacts_profiles_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetProfileDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43067,6 +44710,39 @@ export interface operations {
             };
         };
     };
+    get_auth_drafts_api_v5_artifacts_auths_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAuthDraftsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auth_docs_endpoint_api_v5_artifacts_auths_docs_post: {
         parameters: {
             query?: never;
@@ -43420,6 +45096,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchToolDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tool_drafts_api_v5_artifacts_tools_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetToolDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43963,6 +45672,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchChatDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chat_drafts_api_v5_artifacts_chat_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetChatDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60725,76 +62467,6 @@ export interface operations {
             };
         };
     };
-    get_drafts_auth_drafts_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetDraftsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_by_email_auth_email_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileByEmailApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetProfileByEmailApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_group_messages_auth_generate_post: {
         parameters: {
             query?: never;
@@ -60819,43 +62491,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetGroupMessagesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_or_update_profile_auth_upsert_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateOrUpdateProfileApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateOrUpdateProfileApiResponse"];
                 };
             };
             /** @description Validation Error */

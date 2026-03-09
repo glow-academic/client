@@ -9,7 +9,9 @@ from pydantic import BaseModel
 
 from app.infra.department_create import CreateDepartmentItem
 from app.routes.v5.api.types import BaseResourceSection
-from app.routes.v5.tools.entries.department_drafts.types import GetDepartmentDraftResponse
+from app.routes.v5.tools.entries.department_drafts.types import (
+    GetDepartmentDraftResponse,
+)
 
 
 class GetDepartmentDraftsApiResponse(BaseModel):

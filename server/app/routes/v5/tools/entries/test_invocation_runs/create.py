@@ -15,7 +15,6 @@ async def create_test_invocation_runs(
     *,
     id: UUID | None = None,
     agent_ids: list[UUID] | None = None,
-    run_ids: list[UUID] | None = None,
     reasoning_level_ids: list[UUID] | None = None,
     temperature_level_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
@@ -39,18 +38,6 @@ async def create_test_invocation_runs(
         mcp,
         id,
     )
-
-    if run_ids:
-        for run_id in run_ids:
-            await conn.execute(
-                """
-                INSERT INTO test_invocation_runs_runs_connection
-                    (test_invocation_runs_id, runs_id)
-                VALUES ($1, $2)
-                """,
-                entry_id,
-                run_id,
-            )
 
     connections = [
         ("test_invocation_runs_agents_connection", "agents_id", agent_ids or []),

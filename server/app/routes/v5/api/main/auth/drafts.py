@@ -9,8 +9,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import get_pool, get_redis_client
 from app.infra.auth_drafts import list_auth_drafts_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import GetAuthDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 

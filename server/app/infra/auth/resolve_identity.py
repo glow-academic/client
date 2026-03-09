@@ -242,12 +242,26 @@ async def resolve_identity(token: str, pool: asyncpg.Pool) -> Identity:
     # Resolve profile_id
     async with pool.acquire() as conn:
         profile_id = await _resolve_profile_id(claims, conn)
+
+    # Auto-create guest profile if email exists but no profile found
+    if profile_id is None:
+        profile_id = await _auto_create_guest_profile(claims, pool)
+
     if profile_id is None:
         raise ValueError(
             f"No profile found for token claims (email={claims.get('email')})"
         )
 
-    # Get or create session for this profile
+    # Check for active emulation override (admin viewing as another profile)
+    actor_profile_id: UUID | None = None
+    is_emulation = False
+    emulation = await _resolve_emulation_override(pool, profile_id)
+    if emulation is not None:
+        actor_profile_id = profile_id
+        profile_id = emulation
+        is_emulation = True
+
+    # Get or create session for the effective profile
     async with pool.acquire() as conn:
         session_id = await _get_or_create_session(conn, profile_id)
 
@@ -256,10 +270,8 @@ async def resolve_identity(token: str, pool: asyncpg.Pool) -> Identity:
         session_id=session_id,
         email=claims.get("email"),
         role=claims.get("role"),
-        is_emulation=claims.get("is_emulation", False),
-        actor_profile_id=(
-            UUID(claims["actor_profile_id"]) if claims.get("actor_profile_id") else None
-        ),
+        is_emulation=is_emulation,
+        actor_profile_id=actor_profile_id,
     )
 
 
@@ -298,6 +310,152 @@ async def _resolve_profile_id(
     )
 
     return row["profile_id"] if row else None
+
+
+async def _auto_create_guest_profile(
+    claims: dict[str, Any], pool: asyncpg.Pool
+) -> UUID | None:
+    """Auto-create a guest profile from JWT claims when no profile exists.
+
+    Extracts department_id from the Keycloak client ID (azp claim):
+      - "glow-client-{department_id}" → assign to that department
+      - "glow-client" or other → no department (admin assigns later)
+
+    Uses resolve_profile_upsert (existing black box) — no inline SQL.
+    """
+    email = claims.get("email")
+    if not email:
+        return None
+
+    name = (claims.get("name") or "").strip() or "Unknown User"
+
+    try:
+        from app.infra.auth.upsert import resolve_profile_upsert
+        from app.infra.globals import get_redis_client
+
+        redis = get_redis_client()
+
+        # Extract department_id from azp claim (glow-client-{department_id})
+        department_ids: list[UUID] = []
+        azp = claims.get("azp", "")
+        if azp.startswith("glow-client-") and azp != "glow-client":
+            try:
+                dept_id_str = azp[len("glow-client-") :]
+                department_ids = [UUID(dept_id_str)]
+            except ValueError:
+                pass
+
+        result = await resolve_profile_upsert(
+            pool,
+            redis,
+            name=name,
+            emails=[email],
+            role="guest",
+            department_ids=department_ids or None,
+        )
+        logger.info(
+            f"Auto-created guest profile {result.profile_id} for {email}"
+            + (f" in department {department_ids[0]}" if department_ids else "")
+        )
+        return result.profile_id
+    except Exception as e:
+        logger.warning(f"Failed to auto-create guest profile for {email}: {e}")
+        return None
+
+
+async def _resolve_emulation_override(
+    pool: asyncpg.Pool, profile_id: UUID
+) -> UUID | None:
+    """Check if this profile has an active emulation grant.
+
+    If an unexpired, unconsumed grant exists, returns the target profile's
+    artifact ID. The caller should use this as the effective profile_id.
+
+    Uses existing black boxes:
+      - resolve_profile_identity_context → profiles_resource.id
+      - search_grants(profiles_ids=...) → active grants for requester
+      - search_grant_consumptions → filter out consumed grants
+      - search_emulations(grant_ids=...) → target profiles_resource.id
+      - reverse junction lookup → target profile_artifact.id
+
+    Returns None if no active emulation.
+    """
+    from datetime import UTC, datetime
+
+    from app.infra.globals import get_redis_client
+    from app.infra.profile_identity_context import resolve_profile_identity_context
+    from app.routes.v5.tools.entries.emulations.search import search_emulations
+    from app.routes.v5.tools.entries.grant_consumptions.search import (
+        search_grant_consumptions,
+    )
+    from app.routes.v5.tools.entries.grants.search import search_grants
+
+    try:
+        redis = get_redis_client()
+
+        # Step 1: Resolve requester's profiles_resource.id
+        requester = await resolve_profile_identity_context(
+            pool, profile_id, redis
+        )
+        if not requester or not requester.profiles_id:
+            return None
+
+        # Step 2: Search for active grants for this profile
+        async with pool.acquire() as conn:
+            grants = await search_grants(
+                conn,
+                profiles_ids=[requester.profiles_id],
+                active=True,
+                limit=10,
+            )
+
+        if not grants:
+            return None
+
+        now = datetime.now(UTC)
+
+        for grant in grants:
+            # Skip expired grants
+            if grant.expires_at <= now:
+                continue
+
+            # Step 3: Check if grant has been consumed (skip if so)
+            async with pool.acquire() as conn:
+                consumptions = await search_grant_consumptions(
+                    conn, grant_ids=[grant.id], limit=1
+                )
+            if consumptions:
+                continue
+
+            # Step 4: Find target profile from emulation entry
+            async with pool.acquire() as conn:
+                emulations = await search_emulations(
+                    conn, grant_ids=[grant.id], limit=1
+                )
+            if not emulations or not emulations[0].profile_id:
+                continue
+
+            target_profiles_resource_id = emulations[0].profile_id
+
+            # Step 5: Map target profiles_resource.id → profile_artifact.id
+            async with pool.acquire() as conn:
+                target_row = await conn.fetchrow(
+                    """
+                    SELECT profile_id FROM profile_profiles_junction
+                    WHERE profiles_id = $1 LIMIT 1
+                    """,
+                    target_profiles_resource_id,
+                )
+            if target_row:
+                logger.info(
+                    f"Emulation active: {profile_id} → {target_row['profile_id']}"
+                )
+                return target_row["profile_id"]
+
+        return None
+    except Exception as e:
+        logger.warning(f"Failed to check emulation override: {e}")
+        return None
 
 
 async def _get_or_create_session(conn: asyncpg.Connection, profile_id: UUID) -> UUID:

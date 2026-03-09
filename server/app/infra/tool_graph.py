@@ -84,9 +84,7 @@ async def resolve_tool_graph(
     Acquires a single connection for the entire sequential chain.
     """
     async with pool.acquire() as conn:
-        return await _resolve_tool_graph_impl(
-            conn, settings_id, redis, bypass_cache
-        )
+        return await _resolve_tool_graph_impl(conn, settings_id, redis, bypass_cache)
 
 
 async def _resolve_tool_graph_impl(

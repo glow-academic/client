@@ -12,7 +12,9 @@ from pydantic import BaseModel, Field
 
 from app.infra.simulation_create import CreateSimulationItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.simulation_drafts.types import GetSimulationDraftResponse
+from app.routes.v5.tools.entries.simulation_drafts.types import (
+    GetSimulationDraftResponse,
+)
 
 # =============================================================================
 # Resource Types (handcrafted — no dependency on app.sql.types)

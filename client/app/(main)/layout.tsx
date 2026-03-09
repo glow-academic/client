@@ -44,7 +44,7 @@ export default async function MainLayout({
     : undefined;
 
   // No session → full-width access denied (no sidebar)
-  if (!session?.user?.profileId) {
+  if (!session?.id_token) {
     return (
       <LogoutGuard>
         <UnifiedAccessDenied

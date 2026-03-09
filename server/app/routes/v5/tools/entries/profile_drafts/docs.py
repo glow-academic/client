@@ -19,7 +19,9 @@ async def get_profile_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     departments_connection = await get_table_info(
         conn, "profile_drafts_departments_connection"
     )
-    profiles_connection = await get_table_info(conn, "profile_drafts_profiles_connection")
+    profiles_connection = await get_table_info(
+        conn, "profile_drafts_profiles_connection"
+    )
     emails_connection = await get_table_info(conn, "profile_drafts_emails_connection")
     flags_connection = await get_table_info(conn, "profile_drafts_flags_connection")
     names_connection = await get_table_info(conn, "profile_drafts_names_connection")

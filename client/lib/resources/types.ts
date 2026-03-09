@@ -35,6 +35,7 @@ export type ResourceType =
   | "modalities"
   | "pricing"
   | "qualities"
+  | "rubrics"
   | "reasoning_levels"
   | "temperature_levels"
   | "voices"

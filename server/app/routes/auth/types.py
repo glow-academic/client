@@ -21,7 +21,6 @@ from app.routes.shared_types import (
 )
 
 
-
 @dataclass
 class AuthProfileInternalData:
     """Hydrated profile identity — identity context + departments + cohorts."""
@@ -130,7 +129,6 @@ class GetAuthSettingsApiResponse(BaseModel):
     agents: list[QGetAgentsV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
     artifact_has_generate: dict[str, bool] | None = None
-
 
 
 # ---------------------------------------------------------------------------

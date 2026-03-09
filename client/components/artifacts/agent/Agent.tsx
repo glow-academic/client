@@ -34,6 +34,8 @@ import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { Tools } from "@/components/resources/Tools";
 import { Voices } from "@/components/resources/Voices";
+import { Qualities } from "@/components/resources/Qualities";
+import { Rubrics } from "@/components/resources/Rubrics";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
@@ -125,6 +127,8 @@ const AGENT_RESOURCES: ResourceConfig[] = [
     type: "single",
   },
   { key: "voices", formKey: "voice_ids", flushKey: "voice_ids", type: "multi" },
+  { key: "qualities", formKey: "quality_ids", flushKey: null, type: "multi" },
+  { key: "rubrics", formKey: "rubric_ids", flushKey: null, type: "multi" },
 ];
 
 export interface AgentProps {
@@ -271,6 +275,8 @@ export default function Agent({
   const temperatureLevelsSection = sectionData?.temperature_levels;
   const reasoningLevelsSection = sectionData?.reasoning_levels;
   const voicesSection = sectionData?.voices;
+  const qualitiesSection = sectionData?.qualities;
+  const rubricsSection = sectionData?.rubrics;
 
   // Inline parsers for URL-backed state (search/filter params only - form fields in draftState)
   const agentSearchParamsClient = {
@@ -319,6 +325,8 @@ export default function Agent({
     temperature_level_id: string | null;
     reasoning_level_id: string | null;
     voice_ids: string[];
+    quality_ids: string[];
+    rubric_ids: string[];
     instructions_id: string | null;
   };
 
@@ -349,6 +357,8 @@ export default function Agent({
         temperature_level_id: null,
         reasoning_level_id: null,
         voice_ids: [],
+        quality_ids: [],
+        rubric_ids: [],
         instructions_id: null,
       };
     }
@@ -366,6 +376,14 @@ export default function Agent({
       data.voices?.current
         ?.map((v) => v.id)
         .filter((id): id is string => !!id) ?? [];
+    const currentQualities =
+      data.qualities?.current
+        ?.map((q: any) => q.id)
+        .filter((id: any): id is string => !!id) ?? [];
+    const currentRubrics =
+      data.rubrics?.current
+        ?.map((r: any) => r.id)
+        .filter((id: any): id is string => !!id) ?? [];
 
     return {
       name_id: data.names?.resource?.id ?? null,
@@ -380,6 +398,8 @@ export default function Agent({
       temperature_level_id: data.temperature_levels?.resource?.id ?? null,
       reasoning_level_id: data.reasoning_levels?.resource?.id ?? null,
       voice_ids: currentVoices,
+      quality_ids: currentQualities,
+      rubric_ids: currentRubrics,
       instructions_id: data.instructions?.resource?.id ?? null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -458,6 +478,8 @@ export default function Agent({
           reasoning_level_id: fs.reasoning_level_ids?.[0] ?? prev.reasoning_level_id,
           temperature_level_id: fs.temperature_level_ids?.[0] ?? prev.temperature_level_id,
           voice_ids: fs.voice_ids ?? prev.voice_ids,
+          quality_ids: (fs as any).quality_ids ?? prev.quality_ids,
+          rubric_ids: (fs as any).rubric_ids ?? prev.rubric_ids,
         }));
         requestAnimationFrame(() => {
           serverSyncPendingRef.current = false;
@@ -638,6 +660,26 @@ export default function Agent({
       }
     }
 
+    const qualitiesStep = qualitiesSection?.show
+      ? {
+          id: "qualities",
+          title: "Qualities",
+          description: "Select the qualities for this agent.",
+          optional: true,
+          resetFields: ["quality_ids"] as string[],
+        }
+      : null;
+
+    const rubricsStep = rubricsSection?.show
+      ? {
+          id: "rubrics",
+          title: "Rubrics",
+          description: "Select the rubrics for this agent.",
+          optional: true,
+          resetFields: ["rubric_ids"] as string[],
+        }
+      : null;
+
     const instructionsStep = {
       id: "instructions",
       title: "Instructions",
@@ -653,8 +695,15 @@ export default function Agent({
       resetFields: ["prompt_id"] as string[],
     };
 
-    return [...baseSteps, ...configSteps, instructionsStep, promptStep];
-  }, [selectedModelCapabilities]);
+    return [
+      ...baseSteps,
+      ...configSteps,
+      ...(qualitiesStep ? [qualitiesStep] : []),
+      ...(rubricsStep ? [rubricsStep] : []),
+      instructionsStep,
+      promptStep,
+    ];
+  }, [selectedModelCapabilities, qualitiesSection?.show, rubricsSection?.show]);
 
   // Reset handler for GenericForm - resets draftState fields
   // Simplified with constant map (canonical pattern)
@@ -676,6 +725,8 @@ export default function Agent({
         reasoning_level_id: init.reasoning_level_id,
       }),
       voice_ids: (_s, init) => ({ voice_ids: init.voice_ids }),
+      quality_ids: (_s, init) => ({ quality_ids: init.quality_ids }),
+      rubric_ids: (_s, init) => ({ rubric_ids: init.rubric_ids }),
       prompt_id: (_s, init) => ({ prompt_id: init.prompt_id }),
       instructions_id: (_s, init) => ({
         instructions_id: init.instructions_id,
@@ -884,6 +935,10 @@ export default function Agent({
           if (!hasModel) return "pending";
           // Optional step: completed only if value is chosen
           return draftState.voice_ids.length > 0 ? "completed" : "active";
+        case "qualities":
+          return draftState.quality_ids.length > 0 ? "completed" : "active";
+        case "rubrics":
+          return draftState.rubric_ids.length > 0 ? "completed" : "active";
         case "prompt":
           if (!hasModel) return "pending";
           return draftState.prompt_id ? "completed" : "active";
@@ -928,6 +983,10 @@ export default function Agent({
           return voicesSection?.current?.some((v: any) => v.generated) ?? false;
         case "tools":
           return toolsSection?.current?.some((t: any) => t.generated) ?? false;
+        case "qualities":
+          return qualitiesSection?.current?.some((q: any) => q.generated) ?? false;
+        case "rubrics":
+          return rubricsSection?.current?.some((r: any) => r.generated) ?? false;
         default:
           return false;
       }
@@ -944,6 +1003,8 @@ export default function Agent({
       temperatureLevelsSection?.resource,
       voicesSection?.current,
       toolsSection?.current,
+      qualitiesSection?.current,
+      rubricsSection?.current,
     ],
   );
   const canRegenerateForStepCard = useCallback(
@@ -965,6 +1026,8 @@ export default function Agent({
       "temperature_levels",
       "voices",
       "tools",
+      "qualities",
+      "rubrics",
     ],
     [],
   );
@@ -1049,6 +1112,8 @@ export default function Agent({
       prompt: ["prompts"],
       instructions: ["instructions"],
       tools: ["tools"],
+      qualities: ["qualities"],
+      rubrics: ["rubrics"],
       all: [
         "names",
         "descriptions",
@@ -1061,6 +1126,8 @@ export default function Agent({
         "temperature_levels",
         "voices",
         "tools",
+        "qualities",
+        "rubrics",
       ],
     }),
     [],
@@ -1086,6 +1153,8 @@ export default function Agent({
   const mergedTools = toolsSection?.resources ?? [];
   const mergedVoices = voicesSection?.resources ?? [];
   const mergedDepartments = departmentsSection?.resources ?? [];
+  const mergedQualities = qualitiesSection?.resources ?? [];
+  const mergedRubrics = rubricsSection?.resources ?? [];
 
   return (
     <div className="space-y-6 py-4 px-4">
@@ -1124,6 +1193,10 @@ export default function Agent({
                   return "Prompt reset";
                 case "instructions":
                   return "Instructions reset";
+                case "qualities":
+                  return "Qualities reset";
+                case "rubrics":
+                  return "Rubrics reset";
                 default:
                   return "Reset";
               }
@@ -1641,6 +1714,108 @@ export default function Agent({
                         createVoicesAction={createVoicesAction}
                         registerFlush={registerFlushCallbacks["voices"]}
                         isAutosaveEnabled={isAutosaveEnabled}
+                      />
+                    </StepCard>
+                  );
+                }
+
+                case "qualities": {
+                  return (
+                    <StepCard
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
+                      isEditMode={isEditMode}
+                      resetFields={["quality_ids"]}
+                      {...(onReset ? { onReset } : {})}
+                      resetLabel="Reset"
+                      actions={
+                        stepResources["qualities"] &&
+                        stepResources["qualities"].length > 0 &&
+                        sectionData?.qualities?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="qualities"
+                            resourceTypes={stepResources["qualities"] ?? []}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
+                            onOpenModal={handleDirectStepGenerate}
+                            disabled={isReadonly}
+                          />
+                        ) : undefined
+                      }
+                    >
+                      <Qualities
+                        quality_ids={draftState.quality_ids}
+                        quality_resources={
+                          (qualitiesSection?.current ?? []) as any[]
+                        }
+                        show_qualities={qualitiesSection?.show ?? false}
+                        quality_suggestions={qualitiesSection?.suggestions ?? []}
+                        qualities={mergedQualities as any[]}
+                        disabled={isReadonly}
+                        onChange={(ids) =>
+                          setDraftState((prev) => ({
+                            ...prev,
+                            quality_ids: ids,
+                          }))
+                        }
+                        label="Qualities"
+                        showAiGenerate={
+                          !!sectionData?.qualities?.show_ai_generate
+                        }
+                      />
+                    </StepCard>
+                  );
+                }
+
+                case "rubrics": {
+                  return (
+                    <StepCard
+                      stepStatus={stepStatus}
+                      stepNumber={stepNumber}
+                      stepTitle={stepTitle}
+                      stepDescription={stepDescription}
+                      isReadonly={isReadonly}
+                      isEditMode={isEditMode}
+                      resetFields={["rubric_ids"]}
+                      {...(onReset ? { onReset } : {})}
+                      resetLabel="Reset"
+                      actions={
+                        stepResources["rubrics"] &&
+                        stepResources["rubrics"].length > 0 &&
+                        sectionData?.rubrics?.show_ai_generate ? (
+                          <StepCardAiButton
+                            stepId="rubrics"
+                            resourceTypes={stepResources["rubrics"] ?? []}
+                            canRegenerate={canRegenerateForStepCard}
+                            isGenerating={isGeneratingForStepCard}
+                            onOpenModal={handleDirectStepGenerate}
+                            disabled={isReadonly}
+                          />
+                        ) : undefined
+                      }
+                    >
+                      <Rubrics
+                        rubric_ids={draftState.rubric_ids}
+                        rubric_resources={
+                          (rubricsSection?.current ?? []) as any[]
+                        }
+                        show_rubrics={rubricsSection?.show ?? false}
+                        rubric_suggestions={rubricsSection?.suggestions ?? []}
+                        rubrics={mergedRubrics as any[]}
+                        disabled={isReadonly}
+                        onChange={(ids) =>
+                          setDraftState((prev) => ({
+                            ...prev,
+                            rubric_ids: ids,
+                          }))
+                        }
+                        label="Rubrics"
+                        showAiGenerate={
+                          !!sectionData?.rubrics?.show_ai_generate
+                        }
                       />
                     </StepCard>
                   );

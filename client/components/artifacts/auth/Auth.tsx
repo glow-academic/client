@@ -17,6 +17,7 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
+import { Items } from "@/components/resources/Items";
 import { Names } from "@/components/resources/Names";
 import { Protocols } from "@/components/resources/Protocols";
 import { Slugs } from "@/components/resources/Slugs";
@@ -68,6 +69,7 @@ type AuthFormState = {
   active_flag_id: string | null;
   protocol_ids: string[];
   slug_ids: string[];
+  item_ids: string[];
   items: Array<{
     name: string;
     description: string;
@@ -120,6 +122,7 @@ const AUTH_RESOURCES: ResourceConfig[] = [
     type: "multi",
   },
   { key: "slugs", formKey: "slug_ids", flushKey: "slug_ids", type: "multi" },
+  { key: "items", formKey: "item_ids", flushKey: null, type: "multi" },
 ];
 
 export interface AuthProps {
@@ -165,6 +168,7 @@ function AuthComponent({
     active_flag_id: null,
     protocol_ids: [],
     slug_ids: [],
+    item_ids: [],
     items: [],
   });
 
@@ -188,6 +192,7 @@ function AuthComponent({
         active_flag_id: null,
         protocol_ids: [],
         slug_ids: [],
+        item_ids: [],
         items: [],
       };
     }
@@ -202,6 +207,8 @@ function AuthComponent({
         s.protocols?.current?.map((x) => x.id).filter((x): x is string => !!x) ??
         [],
       slug_ids: s.slugs?.current?.map((x) => x.id).filter((x): x is string => !!x) ?? [],
+      item_ids:
+        s.items?.current?.map((x) => x.auth_item_id).filter((x): x is string => !!x) ?? [],
       items:
         s.items?.current?.map((item, index) => ({
           name: item.name ?? "",
@@ -267,7 +274,7 @@ function AuthComponent({
   const hasResourceIds = checkHasResourceIds(
     AUTH_RESOURCES,
     formState as unknown as Record<string, unknown>,
-  ) || formState.items.length > 0;
+  ) || formState.items.length > 0 || formState.item_ids.length > 0;
 
   const buildPatchPayload = useCallback(
     (
@@ -285,6 +292,10 @@ function AuthComponent({
         items:
           ((formStateRef.current["items"] as AuthFormState["items"]) ?? []).length > 0
             ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
+            : null,
+        item_ids:
+          ((formStateRef.current["item_ids"] as AuthFormState["item_ids"]) ?? []).length > 0
+            ? ((formStateRef.current["item_ids"] as AuthFormState["item_ids"]) ?? [])
             : null,
         expected_version: expectedVersion,
       };
@@ -442,9 +453,11 @@ function AuthComponent({
                   ? effectiveFormState.slug_ids
                   : null,
                 item_ids:
-                  effectiveFormState.items.length > 0
-                    ? effectiveFormState.items.map((item) => item.key_id).filter((id): id is string => !!id)
-                    : null,
+                  effectiveFormState.item_ids?.length
+                    ? effectiveFormState.item_ids
+                    : effectiveFormState.items.length > 0
+                      ? effectiveFormState.items.map((item) => item.key_id).filter((id): id is string => !!id)
+                      : null,
               },
             ],
             group_id: s?.group_id ?? null,
@@ -499,7 +512,7 @@ function AuthComponent({
       const hasDescription = !!formState.description_id;
       const hasProtocols = formState.protocol_ids.length > 0;
       const hasSlugs = formState.slug_ids.length > 0;
-      const hasItems = formState.items.length > 0;
+      const hasItems = formState.items.length > 0 || formState.item_ids.length > 0;
 
       switch (stepId) {
         case "basic":
@@ -544,7 +557,7 @@ function AuthComponent({
         id: "items",
         title: "Auth Items",
         description: "Define auth item fields.",
-        resetFields: ["items"],
+        resetFields: ["item_ids", "items"],
       },
     ],
     [],
@@ -557,6 +570,7 @@ function AuthComponent({
       "active_flag_id",
       "protocol_ids",
       "slug_ids",
+      "item_ids",
       "items",
     ],
     [],
@@ -808,7 +822,7 @@ function AuthComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["items"]}
+              resetFields={["item_ids", "items"]}
               actions={
                 s?.items?.show_ai_generate ? (
                   <StepCardAiButton
@@ -823,6 +837,33 @@ function AuthComponent({
               }
               {...(onReset ? { onReset } : {})}
             >
+              <Items
+                item_ids={formState.item_ids}
+                item_resources={(s?.items?.current ?? []).map((x) => ({
+                  id: x.auth_item_id,
+                  name: x.name,
+                  description: x.description,
+                  encrypted: x.encrypted,
+                  position: x.position,
+                  generated: x.generated,
+                }))}
+                show_items={s?.items?.show ?? false}
+                item_suggestions={s?.items?.suggestions ?? []}
+                items={(s?.items?.resources ?? []).map((x) => ({
+                  id: x.auth_item_id,
+                  name: x.name,
+                  description: x.description,
+                  encrypted: x.encrypted,
+                  position: x.position,
+                  generated: x.generated,
+                }))}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, item_ids: ids }))
+                }
+                onGenerate={() => handleGenerateResources(["items"])}
+                showAiGenerate={s?.items?.show_ai_generate ?? false}
+              />
               <AuthItemCardGrid
                 items={authItemCards}
                 onItemsChange={handleItemsChange}
@@ -910,7 +951,7 @@ function AuthComponent({
                 setFormState((prev) => ({ ...prev, slug_ids: [] }));
                 break;
               case "items":
-                setFormState((prev) => ({ ...prev, items: [] }));
+                setFormState((prev) => ({ ...prev, item_ids: [], items: [] }));
                 break;
               default:
                 break;

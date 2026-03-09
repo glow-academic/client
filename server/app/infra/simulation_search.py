@@ -364,9 +364,7 @@ async def search_simulation_client(
 
     flag_filter = ListFilterSection(
         options=[
-            ListFilterOption(
-                id=str(f.id), name=f.name, type=f.type, count=0
-            )
+            ListFilterOption(id=str(f.id), name=f.name, type=f.type, count=0)
             for f in flag_facet
         ],
         search=flag_search,
