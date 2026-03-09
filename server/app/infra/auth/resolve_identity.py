@@ -395,9 +395,7 @@ async def _resolve_emulation_override(
         redis = get_redis_client()
 
         # Step 1: Resolve requester's profiles_resource.id
-        requester = await resolve_profile_identity_context(
-            pool, profile_id, redis
-        )
+        requester = await resolve_profile_identity_context(pool, profile_id, redis)
         if not requester or not requester.profiles_id:
             return None
 
@@ -446,9 +444,7 @@ async def _resolve_emulation_override(
                     limit_count=1,
                 )
             if artifact_ids:
-                logger.info(
-                    f"Emulation active: {profile_id} → {artifact_ids[0]}"
-                )
+                logger.info(f"Emulation active: {profile_id} → {artifact_ids[0]}")
                 return artifact_ids[0]
 
         return None

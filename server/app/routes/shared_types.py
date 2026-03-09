@@ -277,7 +277,6 @@ class GetKeyForDecryptApiResponse(BaseModel):
     actor_name: str | None = None
 
 
-
 class SearchSimulatableProfilesApiRequest(BaseModel):
     limit_count: int
     query: str

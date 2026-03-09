@@ -57,8 +57,10 @@ async def resolve_emulation(
     )
     if not requester:
         return EmulationResult(
-            allowed=False, reason="Requester profile not found",
-            grant_id=None, expires_at=None,
+            allowed=False,
+            reason="Requester profile not found",
+            grant_id=None,
+            expires_at=None,
         )
 
     # Step 2: Resolve target identity
@@ -67,8 +69,10 @@ async def resolve_emulation(
     )
     if not target:
         return EmulationResult(
-            allowed=False, reason="Target profile not found",
-            grant_id=None, expires_at=None,
+            allowed=False,
+            reason="Target profile not found",
+            grant_id=None,
+            expires_at=None,
         )
 
     # Step 3: Authorization check
@@ -78,8 +82,10 @@ async def resolve_emulation(
 
     if not is_allowed:
         return EmulationResult(
-            allowed=False, reason="You do not have permission to emulate this profile",
-            grant_id=None, expires_at=None,
+            allowed=False,
+            reason="You do not have permission to emulate this profile",
+            grant_id=None,
+            expires_at=None,
         )
 
     # Step 4: Find active sessions for requester and target
@@ -89,8 +95,10 @@ async def resolve_emulation(
         )
     if not requester_sessions:
         return EmulationResult(
-            allowed=False, reason="No active session found for requester",
-            grant_id=None, expires_at=None,
+            allowed=False,
+            reason="No active session found for requester",
+            grant_id=None,
+            expires_at=None,
         )
 
     async with pool.acquire() as conn:
@@ -99,8 +107,10 @@ async def resolve_emulation(
         )
     if not target_sessions:
         return EmulationResult(
-            allowed=False, reason="No active session found for target",
-            grant_id=None, expires_at=None,
+            allowed=False,
+            reason="No active session found for target",
+            grant_id=None,
+            expires_at=None,
         )
 
     requester_session_id = requester_sessions[0].id

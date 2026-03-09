@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -346,7 +345,7 @@ class EmulateProfileApiRequest(BaseModel):
     """Request model for profile emulation."""
 
     target_profile_id: UUID
-    ttl_minutes: Optional[int] = 120
+    ttl_minutes: int | None = 120
 
 
 class EmulateProfileApiResponse(BaseModel):
