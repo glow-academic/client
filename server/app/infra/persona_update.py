@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -56,7 +56,7 @@ async def update_persona_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -67,7 +67,7 @@ async def update_persona_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_persona_permissions_context(conn, item.persona_id)
+        perms = await resolve_persona_permissions_context(pool, item.persona_id)
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
@@ -90,7 +90,7 @@ async def update_persona_client(
     error_results: list[PersonaResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_persona_values(conn, redis, item, is_create=False)
+        item_errors = await resolve_persona_values(pool, redis, item, is_create=False)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -110,45 +110,46 @@ async def update_persona_client(
 
     results: list[PersonaResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            personas_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                color_id=item.color_id,
-                icon_id=item.icon_id,
-                instructions_id=item.instructions_id,
-                department_ids=item.department_ids,
-                example_ids=item.example_ids,
-                parameter_field_ids=item.parameter_field_ids,
-            )
-
-            await update_persona_artifact(
-                conn,
-                item.persona_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                color_id=item.color_id if item.color_id else _UNSET,
-                icon_id=item.icon_id if item.icon_id else _UNSET,
-                instruction_id=item.instructions_id if item.instructions_id else _UNSET,
-                department_ids=item.department_ids,
-                example_ids=item.example_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                parameter_field_ids=item.parameter_field_ids,
-                persona_ids=[personas_resource_id],
-                voice_ids=item.voice_ids,
-            )
-
-            results.append(
-                PersonaResultItem(
-                    success=True,
-                    persona_id=item.persona_id,
-                    message="Persona updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                personas_resource_id = await create_denormalized_snapshot(
+                    pool,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    color_id=item.color_id,
+                    icon_id=item.icon_id,
+                    instructions_id=item.instructions_id,
+                    department_ids=item.department_ids,
+                    example_ids=item.example_ids,
+                    parameter_field_ids=item.parameter_field_ids,
                 )
-            )
+
+                await update_persona_artifact(
+                    conn,
+                    item.persona_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id if item.description_id else _UNSET,
+                    color_id=item.color_id if item.color_id else _UNSET,
+                    icon_id=item.icon_id if item.icon_id else _UNSET,
+                    instruction_id=item.instructions_id if item.instructions_id else _UNSET,
+                    department_ids=item.department_ids,
+                    example_ids=item.example_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    parameter_field_ids=item.parameter_field_ids,
+                    persona_ids=[personas_resource_id],
+                    voice_ids=item.voice_ids,
+                )
+
+                results.append(
+                    PersonaResultItem(
+                        success=True,
+                        persona_id=item.persona_id,
+                        message="Persona updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

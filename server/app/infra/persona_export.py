@@ -54,7 +54,7 @@ CSV_COLUMNS = [
 
 
 async def export_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -76,7 +76,7 @@ async def export_persona_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -86,39 +86,40 @@ async def export_persona_client(
 
     # ── Step 2: Search all personas (full dump) ────────────────────────
 
-    if persona_id:
-        persona_ids = [persona_id]
-    else:
-        persona_ids, _total_count = await search_personas(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
-
-        if not persona_ids:
-            return ExportPersonaApiResponse(
-                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-                file_name="",
-                row_count=0,
+    async with pool.acquire() as conn:
+        if persona_id:
+            persona_ids = [persona_id]
+        else:
+            persona_ids, _total_count = await search_personas(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
             )
 
-    # ── Step 3: Get persona artifacts with all junction IDs ────────────
+            if not persona_ids:
+                return ExportPersonaApiResponse(
+                    upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                    file_name="",
+                    row_count=0,
+                )
 
-    artifacts = await get_personas(
-        conn,
-        persona_ids,
-        names=True,
-        descriptions=True,
-        colors=True,
-        icons=True,
-        departments=True,
-        flags=True,
-        instructions=True,
-        examples=True,
-        parameter_fields=True,
-        voices=True,
-    )
+        # ── Step 3: Get persona artifacts with all junction IDs ────────────
+
+        artifacts = await get_personas(
+            conn,
+            persona_ids,
+            names=True,
+            descriptions=True,
+            colors=True,
+            icons=True,
+            departments=True,
+            flags=True,
+            instructions=True,
+            examples=True,
+            parameter_fields=True,
+            voices=True,
+        )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
 
@@ -144,8 +145,61 @@ async def export_persona_client(
         all_parameter_field_ids.extend(a.parameter_field_ids or [])
         all_voice_ids.extend(a.voice_ids or [])
 
-    async def _empty() -> list:
-        return []
+    # Each branch acquires its own connection from the pool.
+
+    async def _get_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_colors() -> list:
+        if not all_color_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_colors(conn, all_color_ids, redis)
+
+    async def _get_icons() -> list:
+        if not all_icon_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_icons(conn, all_icon_ids, redis)
+
+    async def _get_instructions() -> list:
+        if not all_instruction_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_instructions(conn, all_instruction_ids, redis)
+
+    async def _get_examples() -> list:
+        if not all_example_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_examples(conn, all_example_ids, redis)
+
+    async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _get_parameter_fields() -> list:
+        if not all_parameter_field_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_parameter_fields(conn, all_parameter_field_ids, redis)
+
+    async def _get_voices() -> list:
+        if not all_voice_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_voices(conn, all_voice_ids, redis)
 
     (
         names_data,
@@ -158,23 +212,15 @@ async def export_persona_client(
         parameter_fields_data,
         voices_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_colors(conn, all_color_ids, redis) if all_color_ids else _empty(),
-        get_icons(conn, all_icon_ids, redis) if all_icon_ids else _empty(),
-        get_instructions(conn, all_instruction_ids, redis)
-        if all_instruction_ids
-        else _empty(),
-        get_examples(conn, all_example_ids, redis) if all_example_ids else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_parameter_fields(conn, all_parameter_field_ids, redis)
-        if all_parameter_field_ids
-        else _empty(),
-        get_voices(conn, all_voice_ids, redis) if all_voice_ids else _empty(),
+        _get_names(),
+        _get_descriptions(),
+        _get_colors(),
+        _get_icons(),
+        _get_instructions(),
+        _get_examples(),
+        _get_departments(),
+        _get_parameter_fields(),
+        _get_voices(),
     )
 
     # Build lookup maps
@@ -190,7 +236,11 @@ async def export_persona_client(
     # Parameter fields: two-hop (parameter_field → field → name)
     pf_field_id_map = {pf.id: pf.field_id for pf in parameter_fields_data}
     all_field_ids = list({fid for fid in pf_field_id_map.values() if fid})
-    fields_data = await get_fields(conn, all_field_ids, redis) if all_field_ids else []
+    if all_field_ids:
+        async with pool.acquire() as conn:
+            fields_data = await get_fields(conn, all_field_ids, redis)
+    else:
+        fields_data = []
     field_name_map = {f.id: f.name for f in fields_data}
     # pf_id → human-readable field name
     pf_name_map = {
@@ -262,13 +312,14 @@ async def export_persona_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportPersonaApiResponse(
         upload_id=upload_result.id,

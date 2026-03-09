@@ -39,7 +39,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def _resolve_creatable_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     request: PatchPersonaDraftApiRequest,
 ) -> list[SavePersonaFieldError]:
@@ -50,24 +50,25 @@ async def _resolve_creatable_values(
     """
     errors: list[SavePersonaFieldError] = []
 
-    if request.name is not None and request.name_id is None:
-        result = await create_name(conn, request.name, redis)
-        request.name_id = result.id
+    async with pool.acquire() as conn:
+        if request.name is not None and request.name_id is None:
+            result = await create_name(conn, request.name, redis)
+            request.name_id = result.id
 
-    if request.description is not None and request.description_id is None:
-        result = await create_description(conn, request.description, redis)
-        request.description_id = result.id
+        if request.description is not None and request.description_id is None:
+            result = await create_description(conn, request.description, redis)
+            request.description_id = result.id
 
-    if request.instructions is not None and request.instructions_id is None:
-        result = await create_instruction(conn, request.instructions, redis)
-        request.instructions_id = result.id
+        if request.instructions is not None and request.instructions_id is None:
+            result = await create_instruction(conn, request.instructions, redis)
+            request.instructions_id = result.id
 
-    if request.examples is not None and request.example_ids is None:
-        resolved_ids = []
-        for ex in request.examples:
-            result = await create_example(conn, ex, redis)
-            resolved_ids.append(result.id)
-        request.example_ids = resolved_ids
+        if request.examples is not None and request.example_ids is None:
+            resolved_ids = []
+            for ex in request.examples:
+                result = await create_example(conn, ex, redis)
+                resolved_ids.append(result.id)
+            request.example_ids = resolved_ids
 
     return errors
 
@@ -78,7 +79,7 @@ async def _resolve_creatable_values(
 
 
 async def patch_persona_draft_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -98,7 +99,7 @@ async def patch_persona_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -116,7 +117,7 @@ async def patch_persona_draft_client(
 
     # ── Step 3: Value resolution (creatable only) ──────────────────────
 
-    errors = await _resolve_creatable_values(conn, redis, request)
+    errors = await _resolve_creatable_values(pool, redis, request)
     if errors:
         raise HTTPException(
             status_code=400,
@@ -128,27 +129,28 @@ async def patch_persona_draft_client(
     # Compute new version
     new_version = request.expected_version + 1
 
-    async with conn.transaction():
-        result = await create_persona_draft(
-            conn,
-            group_id=request.group_id,
-            session_id=session_id,
-            version=new_version,
-            name_ids=[request.name_id] if request.name_id else None,
-            description_ids=[request.description_id]
-            if request.description_id
-            else None,
-            color_ids=[request.color_id] if request.color_id else None,
-            icon_ids=[request.icon_id] if request.icon_id else None,
-            instruction_ids=[request.instructions_id]
-            if request.instructions_id
-            else None,
-            flag_ids=[request.flag_id] if request.flag_id else None,
-            department_ids=request.department_ids,
-            parameter_field_ids=request.parameter_field_ids,
-            example_ids=request.example_ids,
-            voice_ids=request.voice_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_persona_draft(
+                conn,
+                group_id=request.group_id,
+                session_id=session_id,
+                version=new_version,
+                name_ids=[request.name_id] if request.name_id else None,
+                description_ids=[request.description_id]
+                if request.description_id
+                else None,
+                color_ids=[request.color_id] if request.color_id else None,
+                icon_ids=[request.icon_id] if request.icon_id else None,
+                instruction_ids=[request.instructions_id]
+                if request.instructions_id
+                else None,
+                flag_ids=[request.flag_id] if request.flag_id else None,
+                department_ids=request.department_ids,
+                parameter_field_ids=request.parameter_field_ids,
+                example_ids=request.example_ids,
+                voice_ids=request.voice_ids,
+            )
 
     # ── Step 5: Build form state (server is source of truth) ──────────
 
@@ -167,7 +169,8 @@ async def patch_persona_draft_client(
 
     # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
-    await refresh_persona_drafts(conn)
+    async with pool.acquire() as conn:
+        await refresh_persona_drafts(conn)
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────
 

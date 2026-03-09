@@ -56,29 +56,48 @@ class ProfileIdentityContext:
 
 
 async def resolve_profile_identity_context(
-    conn: asyncpg.Connection,
+    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
     profile_id: UUID,
     redis: Redis,
     bypass_cache: bool = False,
 ) -> ProfileIdentityContext | None:
     """Resolve a profile artifact ID into a hydrated ProfileIdentityContext.
 
-    Two sequential steps:
+    Accepts either a Connection (legacy) or Pool (preferred).
+    When given a Pool, each parallel branch acquires its own connection.
+
+    Steps:
       1. get_profile_artifacts — fetches junction IDs
       2. asyncio.gather — hydrates all resources in parallel
-    Then pure Python assembly.
+      3. Pure Python assembly
     """
+    use_pool = isinstance(conn_or_pool, asyncpg.Pool)
+
     # Step 1: fetch profile artifact with all needed junctions
-    artifacts = await get_profile_artifacts(
-        conn,
-        [profile_id],
-        names=True,
-        roles=True,
-        departments=True,
-        emails=True,
-        profiles=True,
-        flags=True,
-    )
+    if use_pool:
+        async with conn_or_pool.acquire() as conn:
+            artifacts = await get_profile_artifacts(
+                conn,
+                [profile_id],
+                names=True,
+                roles=True,
+                departments=True,
+                emails=True,
+                profiles=True,
+                flags=True,
+            )
+    else:
+        artifacts = await get_profile_artifacts(
+            conn_or_pool,
+            [profile_id],
+            names=True,
+            roles=True,
+            departments=True,
+            emails=True,
+            profiles=True,
+            flags=True,
+        )
+
     if not artifacts:
         return None
 
@@ -97,15 +116,65 @@ async def resolve_profile_identity_context(
     profiles_id = profile_ids[0]
 
     # Step 2: hydrate all resources in parallel
-    names_res, roles_res, depts_res, emails_res, profiles_res = await asyncio.gather(
-        get_names(conn, name_ids, redis, bypass_cache) if name_ids else _empty(),
-        get_roles(conn, role_ids, redis, bypass_cache) if role_ids else _empty(),
-        get_departments(conn, department_ids, redis, bypass_cache)
-        if department_ids
-        else _empty(),
-        get_emails(conn, email_ids, redis, bypass_cache) if email_ids else _empty(),
-        get_profiles(conn, profile_ids, redis, bypass_cache),
-    )
+    if use_pool:
+        pool = conn_or_pool
+
+        async def _get_names() -> list:
+            if not name_ids:
+                return []
+            async with pool.acquire() as conn:
+                return await get_names(conn, name_ids, redis, bypass_cache)
+
+        async def _get_roles() -> list:
+            if not role_ids:
+                return []
+            async with pool.acquire() as conn:
+                return await get_roles(conn, role_ids, redis, bypass_cache)
+
+        async def _get_departments() -> list:
+            if not department_ids:
+                return []
+            async with pool.acquire() as conn:
+                return await get_departments(conn, department_ids, redis, bypass_cache)
+
+        async def _get_emails() -> list:
+            if not email_ids:
+                return []
+            async with pool.acquire() as conn:
+                return await get_emails(conn, email_ids, redis, bypass_cache)
+
+        async def _get_profiles() -> list:
+            async with pool.acquire() as conn:
+                return await get_profiles(conn, profile_ids, redis, bypass_cache)
+
+        names_res, roles_res, depts_res, emails_res, profiles_res = (
+            await asyncio.gather(
+                _get_names(),
+                _get_roles(),
+                _get_departments(),
+                _get_emails(),
+                _get_profiles(),
+            )
+        )
+    else:
+        conn = conn_or_pool
+        names_res, roles_res, depts_res, emails_res, profiles_res = (
+            await asyncio.gather(
+                get_names(conn, name_ids, redis, bypass_cache)
+                if name_ids
+                else _empty(),
+                get_roles(conn, role_ids, redis, bypass_cache)
+                if role_ids
+                else _empty(),
+                get_departments(conn, department_ids, redis, bypass_cache)
+                if department_ids
+                else _empty(),
+                get_emails(conn, email_ids, redis, bypass_cache)
+                if email_ids
+                else _empty(),
+                get_profiles(conn, profile_ids, redis, bypass_cache),
+            )
+        )
 
     # Step 3: extract values
     name = names_res[0].name if names_res else ""

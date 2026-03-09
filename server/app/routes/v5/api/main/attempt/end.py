@@ -1,31 +1,66 @@
 """Attempt end endpoint — end a single chat within an attempt.
 
 Synchronous equivalent of socket event: attempt_end.
-Reuses: socket/client/attempt/end.py infra.
 
-TODO: Wire to actual infra (end chat, optionally trigger grading).
+When grade=True (default), triggers the grading pipeline. An agent can
+optionally provide pre-computed grade data to skip the internal AI.
+
+TODO: Wire to actual infra (end chat, optionally trigger or skip grading).
 """
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.routes.v5.socket.client.types import AttemptEndPayload
+from app.routes.v5.api.main.attempt.grade import (
+    AnalysisEntry,
+    FeedbackEntry,
+    HighlightEntry,
+    ImprovementEntry,
+    ReplacementEntry,
+    StrengthEntry,
+)
 
 router = APIRouter()
+
+
+class EndAttemptApiRequest(BaseModel):
+    attempt_id: UUID
+    group_id: UUID
+    chat_id: UUID
+    grade: bool = True
+    # Optional — agent can provide these, otherwise internal AI generates them
+    # Only used when grade=True
+    score: int | None = None
+    passed: bool | None = None
+    time_taken: int | None = None
+    feedbacks: list[FeedbackEntry] | None = None
+    strengths: list[StrengthEntry] | None = None
+    improvements: list[ImprovementEntry] | None = None
+    analyses: list[AnalysisEntry] | None = None
+    highlights: list[HighlightEntry] | None = None
+    replacements: list[ReplacementEntry] | None = None
 
 
 class EndAttemptApiResponse(BaseModel):
     chat_id: str
     is_attempt_finished: bool | None = None
     grade_id: str | None = None
+    score: int | None = None
+    passed: bool | None = None
 
 
 @router.post("/end", response_model=EndAttemptApiResponse)
 async def end_attempt(
-    request: AttemptEndPayload,
+    request: EndAttemptApiRequest,
     http_request: Request,
 ) -> EndAttemptApiResponse:
-    """End a single chat within an attempt. Optionally triggers grading."""
+    """End a single chat within an attempt.
+
+    Browser client: sends grade=True, internal AI generates full grade.
+    Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
+    """
     raise HTTPException(status_code=501, detail="Not implemented")

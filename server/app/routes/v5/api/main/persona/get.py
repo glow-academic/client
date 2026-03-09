@@ -106,14 +106,13 @@ async def get_persona_client(
 
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
-    async with pool.acquire() as conn:
-        common = await resolve_common_context(
-            conn,
-            redis,
-            profile_id=profile_id,
-            group_id=group_id,
-            bypass_cache=bypass_cache,
-        )
+    common = await resolve_common_context(
+        pool,
+        redis,
+        profile_id=profile_id,
+        group_id=group_id,
+        bypass_cache=bypass_cache,
+    )
 
     if common is None:
         raise HTTPException(

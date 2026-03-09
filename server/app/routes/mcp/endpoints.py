@@ -861,6 +861,8 @@ async def call_endpoint_handler(
     profile_id: str,
 ) -> dict[str, Any]:
     """Call an endpoint handler with proper Request/Response/DB context."""
+    import inspect
+
     from starlette.requests import Request as StarletteRequest
 
     from app.infra.globals import get_db
@@ -893,27 +895,42 @@ async def call_endpoint_handler(
         ):
             payload = {**payload, "mcp": True}
 
-        async for conn in get_db():
+        # Detect if handler expects conn (legacy) or manages its own pool
+        handler_params = inspect.signature(handler).parameters
+        uses_conn = "conn" in handler_params
+
+        if uses_conn:
+            result = None
+            async for conn in get_db():
+                api_request = request_model(**payload)
+                result = await handler(
+                    request=api_request,
+                    http_request=http_request,
+                    response=http_response,
+                    conn=conn,
+                )
+
+            if result is None:
+                return {
+                    "error": "Database connection not available",
+                    "status": "error",
+                }
+        else:
             api_request = request_model(**payload)
             result = await handler(
                 request=api_request,
                 http_request=http_request,
                 response=http_response,
-                conn=conn,
             )
-            if hasattr(result, "model_dump"):
-                result_dict = result.model_dump(mode="json")
-                return cast(dict[str, Any], result_dict)
-            elif hasattr(result, "dict"):
-                result_dict = result.dict()
-                return cast(dict[str, Any], result_dict)
-            else:
-                return cast(dict[str, Any], {"data": result})
 
-        return {
-            "error": "Database connection not available",
-            "status": "error",
-        }
+        if hasattr(result, "model_dump"):
+            result_dict = result.model_dump(mode="json")
+            return cast(dict[str, Any], result_dict)
+        elif hasattr(result, "dict"):
+            result_dict = result.dict()
+            return cast(dict[str, Any], result_dict)
+        else:
+            return cast(dict[str, Any], {"data": result})
 
     except Exception as e:
         return {

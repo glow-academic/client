@@ -19,6 +19,7 @@ from redis.asyncio import Redis
 
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
@@ -48,7 +49,6 @@ from app.routes.v5.tools.resources.parameter_fields.docs import (
 )
 from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 from app.routes.v5.tools.resources.voices.docs import get_voices_docs
-from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Personas",
@@ -61,20 +61,21 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def _resolve_entity_name(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
     """Get display name for a persona by ID using black-box tools."""
-    artifacts = await get_persona_artifacts(conn, [entity_id], names=True)
-    if not artifacts or not artifacts[0].name_ids:
-        return None
-    names_data = await get_names(conn, artifacts[0].name_ids, redis)
-    return names_data[0].name if names_data else None
+    async with pool.acquire() as conn:
+        artifacts = await get_persona_artifacts(conn, [entity_id], names=True)
+        if not artifacts or not artifacts[0].name_ids:
+            return None
+        names_data = await get_names(conn, artifacts[0].name_ids, redis)
+        return names_data[0].name if names_data else None
 
 
 async def docs_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -91,7 +92,7 @@ async def docs_persona_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -100,6 +101,63 @@ async def docs_persona_client(
         )
 
     # ── Step 2: Parallel docs fetches ──────────────────────────────────
+    # Each branch acquires its own connection from the pool.
+
+    async def _get_persona_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_persona_docs(conn)
+
+    async def _get_persona_drafts_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_persona_drafts_docs(conn)
+
+    async def _get_names_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_names_docs(conn)
+
+    async def _get_descriptions_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions_docs(conn)
+
+    async def _get_colors_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_colors_docs(conn)
+
+    async def _get_icons_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_icons_docs(conn)
+
+    async def _get_instructions_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_instructions_docs(conn)
+
+    async def _get_flags_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags_docs(conn)
+
+    async def _get_departments_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments_docs(conn)
+
+    async def _get_examples_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_examples_docs(conn)
+
+    async def _get_parameter_fields_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_parameter_fields_docs(conn)
+
+    async def _get_parameters_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_parameters_docs(conn)
+
+    async def _get_fields_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_fields_docs(conn)
+
+    async def _get_voices_docs() -> list:
+        async with pool.acquire() as conn:
+            return await get_voices_docs(conn)
 
     (
         artifact,
@@ -117,27 +175,27 @@ async def docs_persona_client(
         fields,
         voices,
     ) = await asyncio.gather(
-        get_persona_docs(conn),
-        get_persona_drafts_docs(conn),
-        get_names_docs(conn),
-        get_descriptions_docs(conn),
-        get_colors_docs(conn),
-        get_icons_docs(conn),
-        get_instructions_docs(conn),
-        get_flags_docs(conn),
-        get_departments_docs(conn),
-        get_examples_docs(conn),
-        get_parameter_fields_docs(conn),
-        get_parameters_docs(conn),
-        get_fields_docs(conn),
-        get_voices_docs(conn),
+        _get_persona_docs(),
+        _get_persona_drafts_docs(),
+        _get_names_docs(),
+        _get_descriptions_docs(),
+        _get_colors_docs(),
+        _get_icons_docs(),
+        _get_instructions_docs(),
+        _get_flags_docs(),
+        _get_departments_docs(),
+        _get_examples_docs(),
+        _get_parameter_fields_docs(),
+        _get_parameters_docs(),
+        _get_fields_docs(),
+        _get_voices_docs(),
     )
 
     # ── Step 3: Page metadata ───────────────────────────────────────────
 
     entity_name = None
     if entity_id is not None:
-        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+        entity_name = await _resolve_entity_name(pool, redis, entity_id)
 
     page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
 

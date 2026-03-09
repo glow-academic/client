@@ -104,10 +104,8 @@ async def create_persona_client(
     from app.infra.persona_permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
-    # resolve_profile_identity_context still takes conn (not yet refactored)
 
-    async with pool.acquire() as conn:
-        profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(

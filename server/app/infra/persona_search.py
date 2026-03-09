@@ -126,7 +126,7 @@ PERSONA_IMPORT_FIELDS: list[ImportField] = [
 
 
 async def search_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -160,7 +160,7 @@ async def search_persona_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -176,50 +176,51 @@ async def search_persona_client(
 
     personas_resource_ids: list[UUID] | None = None
 
-    if scenario_ids:
-        # scenarios_resource has persona_ids (personas_resource IDs) denormalized
-        scenarios = await get_scenarios(conn, scenario_ids, redis)
-        pids: set[UUID] = set()
-        for s in scenarios:
-            pids.update(s.persona_ids)
-        if pids:
-            personas_resource_ids = list(pids)
-        else:
-            # No personas linked to these scenarios — empty result
-            return _empty_response(actor_name)
+    async with pool.acquire() as conn:
+        if scenario_ids:
+            # scenarios_resource has persona_ids (personas_resource IDs) denormalized
+            scenarios = await get_scenarios(conn, scenario_ids, redis)
+            pids: set[UUID] = set()
+            for s in scenarios:
+                pids.update(s.persona_ids)
+            if pids:
+                personas_resource_ids = list(pids)
+            else:
+                # No personas linked to these scenarios — empty result
+                return _empty_response(actor_name)
 
-    # field_ids are parameter_fields_resource IDs — direct junction filter
-    parameter_field_ids = field_ids
+        # field_ids are parameter_fields_resource IDs — direct junction filter
+        parameter_field_ids = field_ids
 
-    # ── Step 3: Search personas ────────────────────────────────────────
+        # ── Step 3: Search personas ────────────────────────────────────────
 
-    persona_ids, total_count = await search_personas(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        parameter_field_ids=parameter_field_ids,
-        persona_ids=personas_resource_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+        persona_ids, total_count = await search_personas(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            parameter_field_ids=parameter_field_ids,
+            persona_ids=personas_resource_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
-    if not persona_ids:
-        return _empty_response(actor_name, total_count=0)
+        if not persona_ids:
+            return _empty_response(actor_name, total_count=0)
 
-    # ── Step 4: Get persona artifacts with junction IDs ────────────────
+        # ── Step 4: Get persona artifacts with junction IDs ────────────────
 
-    artifacts = await get_personas(
-        conn,
-        persona_ids,
-        names=True,
-        descriptions=True,
-        colors=True,
-        icons=True,
-        departments=True,
-        flags=True,
-        parameter_fields=True,
-        personas=True,
-    )
+        artifacts = await get_personas(
+            conn,
+            persona_ids,
+            names=True,
+            descriptions=True,
+            colors=True,
+            icons=True,
+            departments=True,
+            flags=True,
+            parameter_fields=True,
+            personas=True,
+        )
 
     # ── Step 5: Parallel hydration + facets ────────────────────────────
 
@@ -236,6 +237,81 @@ async def search_persona_client(
         all_icon_ids.extend(a.icon_ids or [])
 
     # Parallel: hydrate resources + facets + num_profiles
+    # Each branch acquires its own connection from the pool.
+
+    async def _get_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_colors() -> list:
+        if not all_color_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_colors(conn, all_color_ids, redis)
+
+    async def _get_icons() -> list:
+        if not all_icon_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_icons(conn, all_icon_ids, redis)
+
+    async def _get_profile_persona_counts() -> dict[UUID, int]:
+        return await _fetch_profile_persona_counts(pool, redis, artifacts)
+
+    async def _get_scenario_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_scenarios_resource(
+                conn, redis, search=scenario_search, scenario=True, limit_count=100
+            )
+
+    async def _get_field_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_fields(
+                conn, redis, search=field_search, parameter=True, limit_count=100
+            )
+
+    async def _get_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, persona=True, limit_count=100
+            )
+
+    async def _get_color_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_colors(
+                conn, redis, search=color_search, persona=True, limit_count=100
+            )
+
+    async def _get_icon_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_icons(
+                conn, redis, search=icon_search, persona=True, limit_count=100
+            )
+
+    async def _get_voice_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_voices(
+                conn, redis, search=voice_search, persona=True, limit_count=100
+            )
+
+    async def _get_instruction_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_instructions(
+                conn,
+                redis,
+                search=instruction_search,
+                persona=True,
+                limit_count=100,
+            )
+
     (
         names_data,
         descriptions_data,
@@ -250,35 +326,18 @@ async def search_persona_client(
         voice_facet,
         instruction_facet,
     ) = await asyncio.gather(
-        # Resource hydration
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        get_colors(conn, all_color_ids, redis) if all_color_ids else _empty_list(),
-        get_icons(conn, all_icon_ids, redis) if all_icon_ids else _empty_list(),
-        # num_profiles: search profile_personas for all persona resource IDs
-        _fetch_profile_persona_counts(conn, redis, artifacts),
-        # Facets (all available options)
-        search_scenarios_resource(
-            conn, redis, search=scenario_search, scenario=True, limit_count=100
-        ),
-        search_fields(
-            conn, redis, search=field_search, parameter=True, limit_count=100
-        ),
-        search_departments(
-            conn, redis, search=department_search, persona=True, limit_count=100
-        ),
-        search_colors(conn, redis, search=color_search, persona=True, limit_count=100),
-        search_icons(conn, redis, search=icon_search, persona=True, limit_count=100),
-        search_voices(conn, redis, search=voice_search, persona=True, limit_count=100),
-        search_instructions(
-            conn,
-            redis,
-            search=instruction_search,
-            persona=True,
-            limit_count=100,
-        ),
+        _get_names(),
+        _get_descriptions(),
+        _get_colors(),
+        _get_icons(),
+        _get_profile_persona_counts(),
+        _get_scenario_facet(),
+        _get_field_facet(),
+        _get_department_facet(),
+        _get_color_facet(),
+        _get_icon_facet(),
+        _get_voice_facet(),
+        _get_instruction_facet(),
     )
 
     # Build lookup maps
@@ -439,7 +498,7 @@ async def _empty_list() -> list:
 
 
 async def _fetch_profile_persona_counts(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     artifacts: list,
 ) -> dict[UUID, int]:
@@ -455,12 +514,13 @@ async def _fetch_profile_persona_counts(
     if not all_persona_resource_ids:
         return {}
 
-    profile_personas = await search_profile_personas(
-        conn,
-        redis,
-        persona_ids=all_persona_resource_ids,
-        limit_count=1000,
-    )
+    async with pool.acquire() as conn:
+        profile_personas = await search_profile_personas(
+            conn,
+            redis,
+            persona_ids=all_persona_resource_ids,
+            limit_count=1000,
+        )
 
     # Count per artifact
     counts: Counter[UUID] = Counter()

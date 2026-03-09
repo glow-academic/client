@@ -34,7 +34,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def duplicate_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -54,7 +54,7 @@ async def duplicate_persona_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -72,77 +72,79 @@ async def duplicate_persona_client(
 
     # ── Step 3: Fetch original persona with all junctions ──────────────
 
-    originals = await get_personas(
-        conn,
-        [persona_id],
-        names=True,
-        descriptions=True,
-        colors=True,
-        icons=True,
-        instructions=True,
-        departments=True,
-        examples=True,
-        parameter_fields=True,
-        voices=True,
-    )
-
-    if not originals:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Persona {persona_id} not found.",
+    async with pool.acquire() as conn:
+        originals = await get_personas(
+            conn,
+            [persona_id],
+            names=True,
+            descriptions=True,
+            colors=True,
+            icons=True,
+            instructions=True,
+            departments=True,
+            examples=True,
+            parameter_fields=True,
+            voices=True,
         )
 
-    original = originals[0]
+        if not originals:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Persona {persona_id} not found.",
+            )
 
-    # ── Step 4: Create new name resource ───────────────────────────────
+        original = originals[0]
 
-    original_name = "Unknown"
-    if original.name_ids:
-        name_resources = await get_names(conn, original.name_ids, redis)
-        if name_resources:
-            original_name = name_resources[0].name or "Unknown"
+        # ── Step 4: Create new name resource ───────────────────────────────
 
-    new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
+        original_name = "Unknown"
+        if original.name_ids:
+            name_resources = await get_names(conn, original.name_ids, redis)
+            if name_resources:
+                original_name = name_resources[0].name or "Unknown"
 
-    # ── Step 5: Find inactive flag (persona_active, value=false) ───────
+        new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
 
-    # Explicitly link the inactive flag rather than relying on absence.
-    # TODO: Requires a value=false row for persona_active in flags_resource.
-    # Once the seed/migration adds it, this will resolve correctly.
-    inactive_flag_id: UUID | None = None
-    flag_results = await search_flags(
-        conn,
-        redis,
-        flag_type="persona_active",
-        persona=True,
-        limit_count=10,
-    )
-    inactive_match = next((f for f in flag_results if not f.value), None)
-    if inactive_match:
-        inactive_flag_id = inactive_match.id
+        # ── Step 5: Find inactive flag (persona_active, value=false) ───────
+
+        # Explicitly link the inactive flag rather than relying on absence.
+        # TODO: Requires a value=false row for persona_active in flags_resource.
+        # Once the seed/migration adds it, this will resolve correctly.
+        inactive_flag_id: UUID | None = None
+        flag_results = await search_flags(
+            conn,
+            redis,
+            flag_type="persona_active",
+            persona=True,
+            limit_count=10,
+        )
+        inactive_match = next((f for f in flag_results if not f.value), None)
+        if inactive_match:
+            inactive_flag_id = inactive_match.id
 
     # ── Step 6: Create new persona artifact with inactive flag ─────────
 
     flag_ids = [inactive_flag_id] if inactive_flag_id else None
 
-    async with conn.transaction():
-        result = await create_persona_artifact(
-            conn,
-            name_id=new_name_resource.id,
-            description_id=original.description_ids[0]
-            if original.description_ids
-            else None,
-            color_id=original.color_ids[0] if original.color_ids else None,
-            icon_id=original.icon_ids[0] if original.icon_ids else None,
-            instruction_id=original.instruction_ids[0]
-            if original.instruction_ids
-            else None,
-            department_ids=original.department_ids,
-            example_ids=original.example_ids,
-            parameter_field_ids=original.parameter_field_ids,
-            voice_ids=original.voice_ids,
-            flag_ids=flag_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_persona_artifact(
+                conn,
+                name_id=new_name_resource.id,
+                description_id=original.description_ids[0]
+                if original.description_ids
+                else None,
+                color_id=original.color_ids[0] if original.color_ids else None,
+                icon_id=original.icon_ids[0] if original.icon_ids else None,
+                instruction_id=original.instruction_ids[0]
+                if original.instruction_ids
+                else None,
+                department_ids=original.department_ids,
+                example_ids=original.example_ids,
+                parameter_field_ids=original.parameter_field_ids,
+                voice_ids=original.voice_ids,
+                flag_ids=flag_ids,
+            )
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────
 

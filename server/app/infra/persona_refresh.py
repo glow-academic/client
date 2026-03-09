@@ -27,7 +27,7 @@ _VIEWS = ["personas_mv", "persona_drafts_mv"]
 
 
 async def refresh_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
@@ -43,7 +43,7 @@ async def refresh_persona_client(
 
     # ── Step 1: Permission check ─────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -53,9 +53,17 @@ async def refresh_persona_client(
 
     # ── Step 2: Parallel refresh of dependent entry MVs ──────────────────
 
+    async def _refresh_persona() -> None:
+        async with pool.acquire() as conn:
+            await refresh_persona_internal(conn)
+
+    async def _refresh_drafts() -> None:
+        async with pool.acquire() as conn:
+            await refresh_persona_drafts(conn)
+
     await asyncio.gather(
-        refresh_persona_internal(conn),
-        refresh_persona_drafts(conn),
+        _refresh_persona(),
+        _refresh_drafts(),
     )
 
     # ── Step 3: Invalidate cache tags ────────────────────────────────────
