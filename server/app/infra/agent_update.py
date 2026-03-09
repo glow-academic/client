@@ -133,6 +133,8 @@ async def update_agent_client(
                     redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    tool_ids=item.tool_ids,
                 )
 
                 await update_agent_artifact(

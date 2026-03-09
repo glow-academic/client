@@ -35,8 +35,10 @@ import {
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsString, type Parser } from "nuqs";
 
-type SaveDepartmentIn = InputOf<"/api/v5/artifacts/departments/save", "post">;
-type SaveDepartmentOut = OutputOf<"/api/v5/artifacts/departments/save", "post">;
+type CreateDepartmentIn = InputOf<"/api/v5/artifacts/departments/create", "post">;
+type CreateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/create", "post">;
+type UpdateDepartmentIn = InputOf<"/api/v5/artifacts/departments/update", "post">;
+type UpdateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -58,7 +60,9 @@ type PatchDepartmentDraftOut = OutputOf<
 type DepartmentData = OutputOf<"/api/v5/artifacts/departments/get", "post">;
 
 type DepartmentFormState = {
+  name: string | null;
   name_id: string | null;
+  description: string | null;
   description_id: string | null;
   active_flag_id: string | null;
   settings_ids: string[];
@@ -98,9 +102,12 @@ const DEPARTMENT_RESOURCES: ResourceConfig[] = [
 export interface DepartmentProps {
   departmentId?: string;
   departmentData?: DepartmentData;
-  saveDepartmentAction?: (
-    input: SaveDepartmentIn,
-  ) => Promise<SaveDepartmentOut>;
+  createDepartmentAction?: (
+    input: CreateDepartmentIn,
+  ) => Promise<CreateDepartmentOut>;
+  updateDepartmentAction?: (
+    input: UpdateDepartmentIn,
+  ) => Promise<UpdateDepartmentOut>;
   patchDepartmentDraftAction?: (
     input: PatchDepartmentDraftIn,
   ) => Promise<PatchDepartmentDraftOut>;
@@ -115,7 +122,8 @@ export interface DepartmentProps {
 function DepartmentComponent({
   departmentId,
   departmentData,
-  saveDepartmentAction,
+  createDepartmentAction,
+  updateDepartmentAction,
   patchDepartmentDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -125,7 +133,9 @@ function DepartmentComponent({
   const s = departmentData;
 
   const [formState, setFormState] = useState<DepartmentFormState>({
+    name: null,
     name_id: null,
+    description: null,
     description_id: null,
     active_flag_id: null,
     settings_ids: [],
@@ -144,14 +154,18 @@ function DepartmentComponent({
   const getInitialFormState = useCallback((): DepartmentFormState => {
     if (!s) {
       return {
+        name: null,
         name_id: null,
+        description: null,
         description_id: null,
         active_flag_id: null,
         settings_ids: [],
       };
     }
     return {
+      name: null,
       name_id: s.names?.resource?.id ?? null,
+      description: null,
       description_id: s.descriptions?.resource?.id ?? null,
       active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
       settings_ids:
@@ -174,7 +188,11 @@ function DepartmentComponent({
     });
   }, [getInitialFormState]);
 
-  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
+  const serverSyncPendingRef = React.useRef(false);
+  const formStateKey = useMemo(() => {
+    if (serverSyncPendingRef.current) return undefined;
+    return JSON.stringify(formState);
+  }, [formState]);
   const draftVersion = s?.draft_version ?? null;
 
   const patchActionRef = React.useRef<
@@ -185,8 +203,22 @@ function DepartmentComponent({
       patchActionRef.current = undefined;
       return;
     }
-    patchActionRef.current = async (payload: Record<string, unknown>) =>
-      patchDepartmentDraftAction({ body: payload } as PatchDepartmentDraftIn);
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchDepartmentDraftAction({ body: payload } as PatchDepartmentDraftIn);
+      const formStateFromServer = (result as any).form_state;
+      if (formStateFromServer) {
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          name_id: formStateFromServer.name_id ?? prev.name_id,
+          description_id: formStateFromServer.description_id ?? prev.description_id,
+        }));
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+      return result;
+    };
   }, [patchDepartmentDraftAction]);
 
   const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
@@ -202,15 +234,29 @@ function DepartmentComponent({
       inputDraftId: string | null,
       expectedVersion: number,
       flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => ({
-      input_draft_id: inputDraftId || null,
-      ...buildDraftPayload(DEPARTMENT_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState: lastPatchedFormStateRef.current,
-        flushResults: flushResults ?? {},
-      }),
-      expected_version: expectedVersion,
-    }),
+    ): Record<string, unknown> => {
+      const payload: Record<string, unknown> = {
+        input_draft_id: inputDraftId || null,
+        ...buildDraftPayload(DEPARTMENT_RESOURCES, {
+          formState: formStateRef.current,
+          referenceState: lastPatchedFormStateRef.current,
+          flushResults: flushResults ?? {},
+        }),
+        expected_version: expectedVersion,
+      };
+
+      const fs = formStateRef.current as unknown as DepartmentFormState;
+      if (fs.name) {
+        payload.name = fs.name;
+        delete payload.name_id;
+      }
+      if (fs.description) {
+        payload.description = fs.description;
+        delete payload.description_id;
+      }
+
+      return payload;
+    },
     [s],
   );
 
@@ -318,24 +364,44 @@ function DepartmentComponent({
       if (!profile?.id) {
         throw new Error("Profile not loaded");
       }
-      if (!s?.group_id) {
-        throw new Error("Missing group_id");
-      }
-      if (!saveDepartmentAction) {
+
+      if (isEditMode && departmentId && updateDepartmentAction) {
+        await updateDepartmentAction({
+          body: {
+            departments: [
+              {
+                department_id: departmentId,
+                name_id: effectiveFormState.name_id ?? undefined,
+                description_id: effectiveFormState.description_id ?? undefined,
+                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                settings_ids: effectiveFormState.settings_ids?.length
+                  ? effectiveFormState.settings_ids
+                  : null,
+              },
+            ],
+            group_id: s?.group_id ?? null,
+          },
+        } as UpdateDepartmentIn);
+      } else if (createDepartmentAction) {
+        await createDepartmentAction({
+          body: {
+            departments: [
+              {
+                name_id: effectiveFormState.name_id ?? undefined,
+                description_id: effectiveFormState.description_id ?? undefined,
+                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                settings_ids: effectiveFormState.settings_ids?.length
+                  ? effectiveFormState.settings_ids
+                  : null,
+              },
+            ],
+            group_id: s?.group_id ?? null,
+          },
+        } as CreateDepartmentIn);
+      } else {
         throw new Error("Save action not available");
       }
 
-      await saveDepartmentAction({
-        body: {
-          input_department_id: isEditMode ? departmentId ?? null : null,
-          name_id: effectiveFormState.name_id!,
-          description_id: effectiveFormState.description_id ?? null,
-          flag_id: effectiveFormState.active_flag_id ?? null,
-          settings_ids: effectiveFormState.settings_ids?.length
-            ? effectiveFormState.settings_ids
-            : null,
-        },
-      });
       toast.success(
         `Department ${isEditMode ? "updated" : "created"} successfully!`,
       );
@@ -346,7 +412,8 @@ function DepartmentComponent({
       flushAllResources,
       s,
       profile?.id,
-      saveDepartmentAction,
+      createDepartmentAction,
+      updateDepartmentAction,
       isEditMode,
       departmentId,
       router,
@@ -412,14 +479,16 @@ function DepartmentComponent({
             names={s?.names?.resources ?? []}
             disabled={disabled}
             onNameIdChange={(nameId) =>
-              setFormState((prev) => ({ ...prev, name_id: nameId }))
+              setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+            }
+            onNameChange={(name) =>
+              setFormState((prev) => ({ ...prev, name }))
             }
             onGenerate={() => handleGenerateResources(["names"])}
             required={s?.names?.required ?? false}
             hideDescription={true}
 
             showAiGenerate={s?.names?.show_ai_generate ?? false}
-            create_tool_id={s?.names?.create_tool_id ?? null}
             createNamesAction={createNamesAction}
             isAutosaveEnabled={isAutosaveEnabled}
             registerFlush={registerFlushCallbacks["names"]}
@@ -449,13 +518,15 @@ function DepartmentComponent({
             descriptions={s?.descriptions?.resources ?? []}
             disabled={disabled}
             onDescriptionIdChange={(descriptionId) =>
-              setFormState((prev) => ({ ...prev, description_id: descriptionId }))
+              setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
+            }
+            onDescriptionChange={(description) =>
+              setFormState((prev) => ({ ...prev, description }))
             }
             onGenerate={() => handleGenerateResources(["descriptions"])}
             required={s?.descriptions?.required ?? false}
 
             showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-            create_tool_id={s?.descriptions?.create_tool_id ?? null}
             createDescriptionsAction={createDescriptionsAction}
             isAutosaveEnabled={isAutosaveEnabled}
             registerFlush={registerFlushCallbacks["descriptions"]}
@@ -536,7 +607,9 @@ function DepartmentComponent({
           onReset={(stepId) => {
             if (stepId === "basic") {
               setFormState({
+                name: null,
                 name_id: null,
+                description: null,
                 description_id: null,
                 active_flag_id: null,
                 settings_ids: [],

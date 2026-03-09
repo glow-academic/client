@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from app.infra.department_permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.department.types import (
+    DepartmentDraftFormState,
     PatchDepartmentDraftApiRequest,
     PatchDepartmentDraftApiResponse,
     SaveDepartmentFieldError,
@@ -137,12 +138,21 @@ async def patch_department_draft_client(
                 setting_ids=request.setting_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = DepartmentDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_id=request.flag_id,
+        setting_ids=request.setting_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_department_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["departments", "drafts"], redis=redis)
 
@@ -151,4 +161,5 @@ async def patch_department_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

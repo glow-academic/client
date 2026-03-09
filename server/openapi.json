@@ -63314,6 +63314,60 @@
         "type": "object",
         "title": "DepartmentDescriptionSection"
       },
+      "DepartmentDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Id"
+          },
+          "setting_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Setting Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "setting_ids"
+        ],
+        "title": "DepartmentDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
+      },
       "DepartmentFieldError": {
         "properties": {
           "field": {
@@ -95425,6 +95479,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

@@ -18562,6 +18562,20 @@ export interface components {
             resources?: unknown[] | null;
         };
         /**
+         * DepartmentDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        DepartmentDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Setting Ids */
+            setting_ids: string[];
+        };
+        /**
          * DepartmentFieldError
          * @description Per-field error from value resolution.
          */
@@ -27819,6 +27833,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["DepartmentDraftFormState"] | null;
         };
         /**
          * PatchDocumentDraftApiRequest

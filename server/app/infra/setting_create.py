@@ -144,6 +144,10 @@ async def create_setting_client(
                     id=item.id,
                     name_id=item.name_id,
                     description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    provider_key_ids=item.provider_key_ids,
+                    auth_ids=item.auth_ids,
+                    system_ids=item.system_ids,
                 )
 
                 result = await create_setting_artifact(

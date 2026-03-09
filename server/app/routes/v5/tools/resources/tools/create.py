@@ -15,6 +15,11 @@ async def create_tool(
     name: str = "",
     description: str = "",
     redis: Redis = None,
+    department_ids: list[UUID] | None = None,
+    operation: str | None = None,
+    resources: list[str] | None = None,
+    entries: list[str] | None = None,
+    artifacts: list[str] | None = None,
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -24,12 +29,19 @@ async def create_tool(
     """Create a tool resource (plain INSERT — no unique constraint)."""
     new_tool_id = await conn.fetchval(
         """
-        INSERT INTO tools_resource (id, name, description, active, mcp, generated)
-        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
+        INSERT INTO tools_resource (
+            id, name, description, department_ids, operation, resources, entries, artifacts, active, mcp, generated
+        )
+        VALUES (COALESCE($11, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
         RETURNING id
         """,
         name,
         description,
+        department_ids or [],
+        operation,
+        resources or [],
+        entries or [],
+        artifacts or [],
         not soft,
         mcp,
         id,

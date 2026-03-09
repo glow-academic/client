@@ -19,8 +19,8 @@ import { cache } from "react";
 type GetDepartmentIn = InputOf<"/api/v5/artifacts/departments/get", "post">;
 type GetDepartmentOut = OutputOf<"/api/v5/artifacts/departments/get", "post">;
 
-type SaveDepartmentIn = InputOf<"/api/v5/artifacts/departments/save", "post">;
-type SaveDepartmentOut = OutputOf<"/api/v5/artifacts/departments/save", "post">;
+type CreateDepartmentIn = InputOf<"/api/v5/artifacts/departments/create", "post">;
+type CreateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/create", "post">;
 
 type PatchDepartmentDraftIn = InputOf<"/api/v5/artifacts/departments/draft", "patch">;
 type PatchDepartmentDraftOut = OutputOf<"/api/v5/artifacts/departments/draft", "patch">;
@@ -48,13 +48,11 @@ const getDepartmentDefault = cache(
 );
 
 /** ---- Strongly-typed server actions ---- */
-async function saveDepartment(
-  input: SaveDepartmentIn
-): Promise<SaveDepartmentOut> {
+async function createDepartment(
+  input: CreateDepartmentIn
+): Promise<CreateDepartmentOut> {
   "use server";
-  const out = await api.post("/artifacts/departments/save", input);
-  // No revalidateTag needed - Redis cache handles invalidation
-  return out;
+  return api.post("/artifacts/departments/create", input);
 }
 
 async function createDraftNames(
@@ -152,7 +150,7 @@ export default async function NewDepartmentPage({
         <Department
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           departmentData={departmentDetailDefault}
-          saveDepartmentAction={saveDepartment}
+          createDepartmentAction={createDepartment}
           patchDepartmentDraftAction={patchDepartmentDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}
@@ -172,6 +170,6 @@ export type {
   GetDepartmentOut,
   PatchDepartmentDraftIn,
   PatchDepartmentDraftOut,
-  SaveDepartmentIn,
-  SaveDepartmentOut,
+  CreateDepartmentIn,
+  CreateDepartmentOut,
 };

@@ -26,8 +26,12 @@ from app.routes.v5.tools.artifacts.tool.get import (
 )
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.artifacts.get import get_artifacts
+from app.routes.v5.tools.resources.entries.get import get_entries
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.operations.get import get_operations
+from app.routes.v5.tools.resources.resources.get import get_resources
 from app.routes.v5.tools.resources.tools.create import (
     create_tool as create_tool_resource,
 )
@@ -127,6 +131,11 @@ async def create_denormalized_snapshot(
     id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
+    department_ids: list[UUID] | None = None,
+    operation_ids: list[UUID] | None = None,
+    resource_ids: list[UUID] | None = None,
+    entry_ids: list[UUID] | None = None,
+    artifact_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create a tools_resource snapshot by hydrating IDs to values."""
 
@@ -136,10 +145,26 @@ async def create_denormalized_snapshot(
     (
         names,
         descriptions,
+        operations,
+        resources,
+        entries,
+        artifacts,
     ) = await asyncio.gather(
         get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
         get_descriptions(conn, [description_id], redis, bypass_cache=True)
         if description_id
+        else _empty(),
+        get_operations(conn, operation_ids, redis, bypass_cache=True)
+        if operation_ids
+        else _empty(),
+        get_resources(conn, resource_ids, redis, bypass_cache=True)
+        if resource_ids
+        else _empty(),
+        get_entries(conn, entry_ids, redis, bypass_cache=True)
+        if entry_ids
+        else _empty(),
+        get_artifacts(conn, artifact_ids, redis, bypass_cache=True)
+        if artifact_ids
         else _empty(),
     )
 
@@ -148,6 +173,11 @@ async def create_denormalized_snapshot(
         id=id,
         name=names[0].name if names else "",
         description=descriptions[0].description if descriptions else "",
+        department_ids=department_ids,
+        operation=operations[0].operation if operations else None,
+        resources=[item.resource for item in resources],
+        entries=[item.entry for item in entries],
+        artifacts=[item.artifact for item in artifacts],
         redis=redis,
     )
     return result.id

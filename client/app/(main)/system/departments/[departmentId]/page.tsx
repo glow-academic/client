@@ -18,8 +18,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetDepartmentIn = InputOf<"/api/v5/artifacts/departments/get", "post">;
 type GetDepartmentOut = OutputOf<"/api/v5/artifacts/departments/get", "post">;
-type SaveDepartmentIn = InputOf<"/api/v5/artifacts/departments/save", "post">;
-type SaveDepartmentOut = OutputOf<"/api/v5/artifacts/departments/save", "post">;
+type CreateDepartmentIn = InputOf<"/api/v5/artifacts/departments/create", "post">;
+type CreateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/create", "post">;
+type UpdateDepartmentIn = InputOf<"/api/v5/artifacts/departments/update", "post">;
+type UpdateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/update", "post">;
 type PatchDepartmentDraftIn = InputOf<"/api/v5/artifacts/departments/draft", "patch">;
 type PatchDepartmentDraftOut = OutputOf<"/api/v5/artifacts/departments/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -66,12 +68,18 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function saveDepartment(
-  input: SaveDepartmentIn
-): Promise<SaveDepartmentOut> {
+async function createDepartment(
+  input: CreateDepartmentIn
+): Promise<CreateDepartmentOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/departments/save", input);
+  return api.post("/artifacts/departments/create", input);
+}
+
+async function updateDepartment(
+  input: UpdateDepartmentIn
+): Promise<UpdateDepartmentOut> {
+  "use server";
+  return api.post("/artifacts/departments/update", input);
 }
 
 async function patchDepartmentDraft(
@@ -167,7 +175,8 @@ export default async function DepartmentEditPage({
             key={q.draftId || departmentId} // Force remount when draftId changes to ensure clean state reset
             departmentId={departmentId}
             departmentData={departmentDetail}
-            saveDepartmentAction={saveDepartment}
+            createDepartmentAction={createDepartment}
+            updateDepartmentAction={updateDepartment}
             patchDepartmentDraftAction={patchDepartmentDraft}
             createNamesAction={createDraftNames}
             createDescriptionsAction={createDraftDescriptions}
@@ -206,6 +215,8 @@ export type {
   GetDepartmentOut,
   PatchDepartmentDraftIn,
   PatchDepartmentDraftOut,
-  SaveDepartmentIn,
-  SaveDepartmentOut,
+  CreateDepartmentIn,
+  CreateDepartmentOut,
+  UpdateDepartmentIn,
+  UpdateDepartmentOut,
 };

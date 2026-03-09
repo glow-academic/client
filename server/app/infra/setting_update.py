@@ -128,6 +128,10 @@ async def update_setting_client(
                     redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    provider_key_ids=item.provider_key_ids,
+                    auth_ids=item.auth_ids,
+                    system_ids=item.system_ids,
                 )
 
                 await update_setting_artifact(
