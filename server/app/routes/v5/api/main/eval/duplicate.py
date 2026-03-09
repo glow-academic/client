@@ -46,6 +46,7 @@ async def duplicate_eval(
             redis,
             profile_id=profile_id,
             eval_id=request.eval_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -46,6 +46,7 @@ async def duplicate_document(
             redis,
             profile_id=profile_id,
             document_id=request.document_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

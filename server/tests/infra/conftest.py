@@ -104,7 +104,7 @@ async def profile_identity_factory(pool, redis_client):
             expected_role_artifacts: list[str] = []
             if role is not None:
                 role_key, role_name, role_description = role
-                expected_role = f"{role_key}_{tag}"
+                expected_role = role_key
                 expected_role_name = f"{role_name} {tag}"
                 expected_role_description = role_description
                 role_res = await create_role(

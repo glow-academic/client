@@ -46,6 +46,7 @@ async def delete_auth(
             redis,
             profile_id=profile_id,
             auth_ids=request.auth_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

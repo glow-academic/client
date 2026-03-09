@@ -521,7 +521,7 @@ function ModelComponent({
           ? [...effectiveFormState.pricing_ids, flushedPricingId]
           : effectiveFormState.pricing_ids;
 
-      return {
+      const payload: Record<string, unknown> = {
         input_draft_id: inputDraftId || null,
         ...buildDraftPayload(MODEL_RESOURCES, {
           formState: {
@@ -543,6 +543,19 @@ function ModelComponent({
         ].filter((id): id is string => id != null),
         expected_version: expectedVersion,
       };
+
+      // Value field overlay: send raw value instead of ID when set
+      const currentFs = formStateRef.current as typeof formState;
+      if (currentFs.name) {
+        payload.name = currentFs.name;
+        delete payload.name_id;
+      }
+      if (currentFs.description) {
+        payload.description = currentFs.description;
+        delete payload.description_id;
+      }
+
+      return payload;
     },
     [s],
   );

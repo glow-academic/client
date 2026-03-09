@@ -43,6 +43,7 @@ async def delete_document(
             redis,
             profile_id=profile_id,
             document_ids=request.document_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

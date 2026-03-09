@@ -43,6 +43,7 @@ async def delete_department(
             redis,
             profile_id=profile_id,
             department_ids=request.department_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -43,6 +43,7 @@ async def delete_cohort(
             redis,
             profile_id=profile_id,
             cohort_ids=request.cohort_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

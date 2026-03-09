@@ -49,6 +49,7 @@ async def duplicate_auth(
             redis,
             profile_id=profile_id,
             auth_id=request.auth_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

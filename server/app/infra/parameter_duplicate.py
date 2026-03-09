@@ -39,6 +39,7 @@ async def duplicate_parameter_client(
     *,
     profile_id: UUID,
     parameter_id: UUID,
+    session_id: UUID | None = None,
 ) -> DuplicateParameterApiResponse:
     """Parameter duplicate using composable infra functions.
 
@@ -53,7 +54,10 @@ async def duplicate_parameter_client(
 
     # -- Step 1: Profile context ------------------------------------------------
 
-    profile = await resolve_profile_identity_context(pool, profile_id, redis)
+    profile = await resolve_profile_identity_context(
+        pool, profile_id, redis,
+        session_id=session_id,
+    )
 
     if profile is None:
         raise HTTPException(

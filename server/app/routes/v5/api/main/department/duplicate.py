@@ -46,6 +46,7 @@ async def duplicate_department(
             redis,
             profile_id=profile_id,
             department_id=request.department_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -46,6 +46,7 @@ async def duplicate_cohort(
             redis,
             profile_id=profile_id,
             cohort_id=request.cohort_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

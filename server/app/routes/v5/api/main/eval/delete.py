@@ -43,6 +43,7 @@ async def delete_eval(
             redis,
             profile_id=profile_id,
             eval_ids=request.eval_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
