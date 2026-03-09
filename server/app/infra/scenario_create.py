@@ -91,7 +91,7 @@ def _collect_flag_ids(item: CreateScenarioItem) -> list[UUID] | None:
 
 
 async def create_scenario_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -115,7 +115,7 @@ async def create_scenario_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -137,7 +137,7 @@ async def create_scenario_client(
     error_results: list[ScenarioResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_scenario_values(conn, redis, item, is_create=True)
+        item_errors = await resolve_scenario_values(pool, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -157,47 +157,49 @@ async def create_scenario_client(
 
     results: list[ScenarioResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            scenarios_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        scenarios_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
-            flag_ids = _collect_flag_ids(item)
+        flag_ids = _collect_flag_ids(item)
 
-            result = await create_scenario_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=flag_ids,
-                document_ids=item.document_ids,
-                image_ids=item.image_ids,
-                objective_ids=item.objective_ids,
-                option_ids=item.option_ids,
-                parameter_field_ids=item.parameter_field_ids,
-                persona_ids=item.persona_ids,
-                problem_statement_ids=[item.problem_statement_id]
-                if item.problem_statement_id
-                else None,
-                question_ids=item.question_ids,
-                video_ids=item.video_ids,
-                scenario_ids=[scenarios_resource_id],
-            )
-
-            results.append(
-                ScenarioResultItem(
-                    success=True,
-                    scenario_id=result.id,
-                    message="Scenario created successfully",
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                result = await create_scenario_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=flag_ids,
+                    document_ids=item.document_ids,
+                    image_ids=item.image_ids,
+                    objective_ids=item.objective_ids,
+                    option_ids=item.option_ids,
+                    parameter_field_ids=item.parameter_field_ids,
+                    persona_ids=item.persona_ids,
+                    problem_statement_ids=[item.problem_statement_id]
+                    if item.problem_statement_id
+                    else None,
+                    question_ids=item.question_ids,
+                    video_ids=item.video_ids,
+                    scenario_ids=[scenarios_resource_id],
                 )
+
+        results.append(
+            ScenarioResultItem(
+                success=True,
+                scenario_id=result.id,
+                message="Scenario created successfully",
             )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

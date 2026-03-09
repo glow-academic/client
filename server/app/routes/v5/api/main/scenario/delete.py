@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.scenario_delete.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.scenario_delete import delete_scenario_client
 from app.routes.v5.api.main.scenario.types import (
     DeleteScenarioApiRequest,
@@ -26,7 +23,6 @@ async def delete_scenario(
     request: DeleteScenarioApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteScenarioApiResponse:
     """Bulk delete scenarios — composable infra architecture."""
     tags = ["scenarios"]
@@ -39,9 +35,10 @@ async def delete_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await delete_scenario_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             scenario_ids=request.scenario_ids,

@@ -45,7 +45,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def _resolve_creatable_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     request: PatchScenarioDraftApiRequest,
 ) -> list[SaveScenarioFieldError]:
@@ -61,66 +61,70 @@ async def _resolve_creatable_values(
     """
     errors: list[SaveScenarioFieldError] = []
 
-    # ── Single-select creatables ──────────────────────────────────────
+    async with pool.acquire() as conn:
+        # ── Single-select creatables ──────────────────────────────────────
 
-    if request.name is not None and request.name_id is None:
-        result = await create_name(conn, request.name, redis)
-        request.name_id = result.id
+        if request.name is not None and request.name_id is None:
+            result = await create_name(conn, request.name, redis)
+            request.name_id = result.id
 
-    if request.description is not None and request.description_id is None:
-        result = await create_description(conn, request.description, redis)
-        request.description_id = result.id
+        if request.description is not None and request.description_id is None:
+            result = await create_description(conn, request.description, redis)
+            request.description_id = result.id
 
-    if request.problem_statement is not None and request.problem_statement_id is None:
-        result = await create_problem_statement(
-            conn, request.name or "", request.problem_statement, redis
-        )
-        request.problem_statement_id = result.id
-
-    # ── Multi-select creatables (merged mode) ─────────────────────────
-
-    if request.objectives:
-        created_ids = []
-        for obj_text in request.objectives:
-            result = await create_objective(conn, obj_text, redis)
-            created_ids.append(result.id)
-        request.objective_ids = (request.objective_ids or []) + created_ids
-
-    if request.images:
-        created_ids = []
-        for img in request.images:
-            result = await create_image(conn, img.name, img.description, redis)
-            # TODO: if img.upload_id, call create_image_upload(conn, result.id, img.upload_id, ...)
-            #       to link the TUS-uploaded file to the image resource
-            created_ids.append(result.id)
-        request.image_ids = (request.image_ids or []) + created_ids
-
-    if request.videos:
-        created_ids = []
-        for vid in request.videos:
-            result = await create_video(conn, vid.name, vid.description, redis)
-            # TODO: if vid.upload_id, call create_video_upload(conn, result.id, vid.upload_id, ...)
-            #       to link the TUS-uploaded file to the video resource
-            created_ids.append(result.id)
-        request.video_ids = (request.video_ids or []) + created_ids
-
-    if request.questions:
-        created_ids = []
-        for q in request.questions:
-            result = await create_question(
-                conn, q.question_text, q.time, redis, allow_multiple=q.allow_multiple
+        if (
+            request.problem_statement is not None
+            and request.problem_statement_id is None
+        ):
+            result = await create_problem_statement(
+                conn, request.name or "", request.problem_statement, redis
             )
-            created_ids.append(result.id)
-        request.question_ids = (request.question_ids or []) + created_ids
+            request.problem_statement_id = result.id
 
-    if request.options:
-        created_ids = []
-        for opt in request.options:
-            result = await create_option(
-                conn, opt.option_text, redis, question_id=opt.question_id
-            )
-            created_ids.append(result.id)
-        request.option_ids = (request.option_ids or []) + created_ids
+        # ── Multi-select creatables (merged mode) ─────────────────────────
+
+        if request.objectives:
+            created_ids = []
+            for obj_text in request.objectives:
+                result = await create_objective(conn, obj_text, redis)
+                created_ids.append(result.id)
+            request.objective_ids = (request.objective_ids or []) + created_ids
+
+        if request.images:
+            created_ids = []
+            for img in request.images:
+                result = await create_image(conn, img.name, img.description, redis)
+                created_ids.append(result.id)
+            request.image_ids = (request.image_ids or []) + created_ids
+
+        if request.videos:
+            created_ids = []
+            for vid in request.videos:
+                result = await create_video(conn, vid.name, vid.description, redis)
+                created_ids.append(result.id)
+            request.video_ids = (request.video_ids or []) + created_ids
+
+        if request.questions:
+            created_ids = []
+            for q in request.questions:
+                result = await create_question(
+                    conn,
+                    q.question_text,
+                    q.time,
+                    redis,
+                    allow_multiple=q.allow_multiple,
+                )
+                created_ids.append(result.id)
+            request.question_ids = (request.question_ids or []) + created_ids
+
+        if request.options:
+            created_ids = []
+            for opt in request.options:
+                result = await create_option(
+                    conn, opt.option_text, redis, question_id=opt.question_id
+                )
+                created_ids.append(result.id)
+            request.option_ids = (request.option_ids or []) + created_ids
 
     return errors
 
@@ -131,7 +135,7 @@ async def _resolve_creatable_values(
 
 
 async def patch_scenario_draft_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -151,7 +155,7 @@ async def patch_scenario_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -169,7 +173,7 @@ async def patch_scenario_draft_client(
 
     # ── Step 3: Value resolution (creatable only) ──────────────────────
 
-    errors = await _resolve_creatable_values(conn, redis, request)
+    errors = await _resolve_creatable_values(pool, redis, request)
     if errors:
         raise HTTPException(
             status_code=400,
@@ -181,30 +185,31 @@ async def patch_scenario_draft_client(
     # Compute new version
     new_version = request.expected_version + 1
 
-    async with conn.transaction():
-        result = await create_scenario_draft(
-            conn,
-            group_id=request.group_id,
-            session_id=session_id,
-            version=new_version,
-            name_ids=[request.name_id] if request.name_id else None,
-            description_ids=[request.description_id]
-            if request.description_id
-            else None,
-            problem_statement_ids=[request.problem_statement_id]
-            if request.problem_statement_id
-            else None,
-            flag_ids=request.flag_ids,
-            department_ids=request.department_ids,
-            persona_ids=request.persona_ids,
-            document_ids=request.document_ids,
-            parameter_field_ids=request.parameter_field_ids,
-            objective_ids=request.objective_ids,
-            image_ids=request.image_ids,
-            video_ids=request.video_ids,
-            question_ids=request.question_ids,
-            option_ids=request.option_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_scenario_draft(
+                conn,
+                group_id=request.group_id,
+                session_id=session_id,
+                version=new_version,
+                name_ids=[request.name_id] if request.name_id else None,
+                description_ids=[request.description_id]
+                if request.description_id
+                else None,
+                problem_statement_ids=[request.problem_statement_id]
+                if request.problem_statement_id
+                else None,
+                flag_ids=request.flag_ids,
+                department_ids=request.department_ids,
+                persona_ids=request.persona_ids,
+                document_ids=request.document_ids,
+                parameter_field_ids=request.parameter_field_ids,
+                objective_ids=request.objective_ids,
+                image_ids=request.image_ids,
+                video_ids=request.video_ids,
+                question_ids=request.question_ids,
+                option_ids=request.option_ids,
+            )
 
     # ── Step 5: Build form state (server is source of truth) ──────────
 
@@ -226,7 +231,8 @@ async def patch_scenario_draft_client(
 
     # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
-    await refresh_scenario_drafts(conn)
+    async with pool.acquire() as conn:
+        await refresh_scenario_drafts(conn)
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────
 

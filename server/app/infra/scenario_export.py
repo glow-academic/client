@@ -60,7 +60,7 @@ CSV_COLUMNS = [
 
 
 async def export_scenario_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -82,7 +82,7 @@ async def export_scenario_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -92,42 +92,43 @@ async def export_scenario_client(
 
     # -- Step 2: Search all scenarios (full dump) --
 
-    if scenario_id:
-        scenario_ids = [scenario_id]
-    else:
-        scenario_ids, _total_count = await search_scenarios(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
-
-        if not scenario_ids:
-            return ExportScenarioApiResponse(
-                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-                file_name="",
-                row_count=0,
+    async with pool.acquire() as conn:
+        if scenario_id:
+            scenario_ids = [scenario_id]
+        else:
+            scenario_ids, _total_count = await search_scenarios(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
             )
 
-    # -- Step 3: Get scenario artifacts with all junction IDs --
+            if not scenario_ids:
+                return ExportScenarioApiResponse(
+                    upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                    file_name="",
+                    row_count=0,
+                )
 
-    artifacts = await get_scenarios(
-        conn,
-        scenario_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        documents=True,
-        images=True,
-        objectives=True,
-        options=True,
-        parameter_fields=True,
-        personas=True,
-        problem_statements=True,
-        questions=True,
-        videos=True,
-    )
+        # -- Step 3: Get scenario artifacts with all junction IDs --
+
+        artifacts = await get_scenarios(
+            conn,
+            scenario_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            documents=True,
+            images=True,
+            objectives=True,
+            options=True,
+            parameter_fields=True,
+            personas=True,
+            problem_statements=True,
+            questions=True,
+            videos=True,
+        )
 
     # -- Step 4: Parallel resource hydration --
 
@@ -158,8 +159,79 @@ async def export_scenario_client(
         all_question_ids.extend(a.question_ids or [])
         all_video_ids.extend(a.video_ids or [])
 
-    async def _empty() -> list:
-        return []
+    # Each branch acquires its own connection from the pool.
+
+    async def _get_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _get_documents() -> list:
+        if not all_document_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_documents(conn, all_document_ids, redis)
+
+    async def _get_images() -> list:
+        if not all_image_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_images(conn, all_image_ids, redis)
+
+    async def _get_objectives() -> list:
+        if not all_objective_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_objectives(conn, all_objective_ids, redis)
+
+    async def _get_options() -> list:
+        if not all_option_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_options(conn, all_option_ids, redis)
+
+    async def _get_parameter_fields() -> list:
+        if not all_parameter_field_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_parameter_fields(conn, all_parameter_field_ids, redis)
+
+    async def _get_personas() -> list:
+        if not all_persona_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_personas(conn, all_persona_ids, redis)
+
+    async def _get_problem_statements() -> list:
+        if not all_problem_statement_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_problem_statements(conn, all_problem_statement_ids, redis)
+
+    async def _get_questions() -> list:
+        if not all_question_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_questions(conn, all_question_ids, redis)
+
+    async def _get_videos() -> list:
+        if not all_video_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_videos(conn, all_video_ids, redis)
 
     (
         names_data,
@@ -175,28 +247,18 @@ async def export_scenario_client(
         questions_data,
         videos_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_documents(conn, all_document_ids, redis) if all_document_ids else _empty(),
-        get_images(conn, all_image_ids, redis) if all_image_ids else _empty(),
-        get_objectives(conn, all_objective_ids, redis)
-        if all_objective_ids
-        else _empty(),
-        get_options(conn, all_option_ids, redis) if all_option_ids else _empty(),
-        get_parameter_fields(conn, all_parameter_field_ids, redis)
-        if all_parameter_field_ids
-        else _empty(),
-        get_personas(conn, all_persona_ids, redis) if all_persona_ids else _empty(),
-        get_problem_statements(conn, all_problem_statement_ids, redis)
-        if all_problem_statement_ids
-        else _empty(),
-        get_questions(conn, all_question_ids, redis) if all_question_ids else _empty(),
-        get_videos(conn, all_video_ids, redis) if all_video_ids else _empty(),
+        _get_names(),
+        _get_descriptions(),
+        _get_departments(),
+        _get_documents(),
+        _get_images(),
+        _get_objectives(),
+        _get_options(),
+        _get_parameter_fields(),
+        _get_personas(),
+        _get_problem_statements(),
+        _get_questions(),
+        _get_videos(),
     )
 
     # Build lookup maps
@@ -217,7 +279,11 @@ async def export_scenario_client(
     # Parameter fields: two-hop (parameter_field -> field -> name)
     pf_field_id_map = {pf.id: pf.field_id for pf in parameter_fields_data}
     all_field_ids = list({fid for fid in pf_field_id_map.values() if fid})
-    fields_data = await get_fields(conn, all_field_ids, redis) if all_field_ids else []
+    if all_field_ids:
+        async with pool.acquire() as conn:
+            fields_data = await get_fields(conn, all_field_ids, redis)
+    else:
+        fields_data = []
     field_name_map = {f.id: f.name for f in fields_data}
     pf_name_map = {
         pf_id: field_name_map.get(field_id, "")
@@ -302,13 +368,14 @@ async def export_scenario_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportScenarioApiResponse(
         upload_id=upload_result.id,

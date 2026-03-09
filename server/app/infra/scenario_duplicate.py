@@ -34,7 +34,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def duplicate_scenario_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -54,7 +54,7 @@ async def duplicate_scenario_client(
 
     # -- Step 1: Profile context ------------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -72,80 +72,82 @@ async def duplicate_scenario_client(
 
     # -- Step 3: Fetch original scenario with all junctions ---------------------
 
-    originals = await get_scenarios(
-        conn,
-        [scenario_id],
-        names=True,
-        descriptions=True,
-        departments=True,
-        documents=True,
-        images=True,
-        objectives=True,
-        options=True,
-        parameter_fields=True,
-        personas=True,
-        problem_statements=True,
-        questions=True,
-        videos=True,
-        scenarios=True,
-    )
-
-    if not originals:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Scenario {scenario_id} not found.",
+    async with pool.acquire() as conn:
+        originals = await get_scenarios(
+            conn,
+            [scenario_id],
+            names=True,
+            descriptions=True,
+            departments=True,
+            documents=True,
+            images=True,
+            objectives=True,
+            options=True,
+            parameter_fields=True,
+            personas=True,
+            problem_statements=True,
+            questions=True,
+            videos=True,
+            scenarios=True,
         )
 
-    original = originals[0]
+        if not originals:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Scenario {scenario_id} not found.",
+            )
 
-    # -- Step 4: Create new name resource ---------------------------------------
+        original = originals[0]
 
-    original_name = "Unknown"
-    if original.name_ids:
-        name_resources = await get_names(conn, original.name_ids, redis)
-        if name_resources:
-            original_name = name_resources[0].name or "Unknown"
+        # -- Step 4: Create new name resource ---------------------------------------
 
-    new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
+        original_name = "Unknown"
+        if original.name_ids:
+            name_resources = await get_names(conn, original.name_ids, redis)
+            if name_resources:
+                original_name = name_resources[0].name or "Unknown"
 
-    # -- Step 5: Find inactive flag (scenario_active, value=false) --------------
+        new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
 
-    inactive_flag_id: UUID | None = None
-    flag_results = await search_flags(
-        conn,
-        redis,
-        flag_type="scenario_active",
-        scenario=True,
-        limit_count=10,
-    )
-    inactive_match = next((f for f in flag_results if not f.value), None)
-    if inactive_match:
-        inactive_flag_id = inactive_match.id
+        # -- Step 5: Find inactive flag (scenario_active, value=false) --------------
+
+        inactive_flag_id: UUID | None = None
+        flag_results = await search_flags(
+            conn,
+            redis,
+            flag_type="scenario_active",
+            scenario=True,
+            limit_count=10,
+        )
+        inactive_match = next((f for f in flag_results if not f.value), None)
+        if inactive_match:
+            inactive_flag_id = inactive_match.id
 
     # -- Step 6: Create new scenario artifact with inactive flag ----------------
 
     flag_ids = [inactive_flag_id] if inactive_flag_id else None
 
-    async with conn.transaction():
-        result = await create_scenario_artifact(
-            conn,
-            name_id=new_name_resource.id,
-            description_id=original.description_ids[0]
-            if original.description_ids
-            else None,
-            department_ids=original.department_ids,
-            document_ids=original.document_ids,
-            image_ids=original.image_ids,
-            objective_ids=original.objective_ids,
-            option_ids=original.option_ids,
-            parameter_field_ids=original.parameter_field_ids,
-            persona_ids=original.persona_ids,
-            problem_statement_ids=original.problem_statement_ids,
-            question_ids=original.question_ids,
-            video_ids=original.video_ids,
-            scenario_ids=original.scenario_ids,
-            flag_ids=flag_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_scenario_artifact(
+                conn,
+                name_id=new_name_resource.id,
+                description_id=original.description_ids[0]
+                if original.description_ids
+                else None,
+                department_ids=original.department_ids,
+                document_ids=original.document_ids,
+                image_ids=original.image_ids,
+                objective_ids=original.objective_ids,
+                option_ids=original.option_ids,
+                parameter_field_ids=original.parameter_field_ids,
+                persona_ids=original.persona_ids,
+                problem_statement_ids=original.problem_statement_ids,
+                question_ids=original.question_ids,
+                video_ids=original.video_ids,
+                scenario_ids=original.scenario_ids,
+                flag_ids=flag_ids,
+            )
 
     # -- Step 7: Invalidate cache -----------------------------------------------
 

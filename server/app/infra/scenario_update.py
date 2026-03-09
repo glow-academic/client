@@ -52,7 +52,7 @@ def _collect_flag_ids(item: UpdateScenarioItem) -> list[UUID] | None:
 
 
 async def update_scenario_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -76,7 +76,7 @@ async def update_scenario_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -87,7 +87,7 @@ async def update_scenario_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_scenario_permissions_context(conn, item.scenario_id)
+        perms = await resolve_scenario_permissions_context(pool, item.scenario_id)
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
@@ -110,7 +110,7 @@ async def update_scenario_client(
     error_results: list[ScenarioResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_scenario_values(conn, redis, item, is_create=False)
+        item_errors = await resolve_scenario_values(pool, redis, item, is_create=False)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -130,46 +130,50 @@ async def update_scenario_client(
 
     results: list[ScenarioResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            scenarios_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        scenarios_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
-            flag_ids = _collect_flag_ids(item)
+        flag_ids = _collect_flag_ids(item)
 
-            await update_scenario_artifact(
-                conn,
-                item.scenario_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=flag_ids,
-                document_ids=item.document_ids,
-                image_ids=item.image_ids,
-                objective_ids=item.objective_ids,
-                option_ids=item.option_ids,
-                parameter_field_ids=item.parameter_field_ids,
-                persona_ids=item.persona_ids,
-                problem_statement_ids=[item.problem_statement_id]
-                if item.problem_statement_id
-                else None,
-                question_ids=item.question_ids,
-                video_ids=item.video_ids,
-                scenario_ids=[scenarios_resource_id],
-            )
-
-            results.append(
-                ScenarioResultItem(
-                    success=True,
-                    scenario_id=item.scenario_id,
-                    message="Scenario updated successfully",
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                await update_scenario_artifact(
+                    conn,
+                    item.scenario_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=flag_ids,
+                    document_ids=item.document_ids,
+                    image_ids=item.image_ids,
+                    objective_ids=item.objective_ids,
+                    option_ids=item.option_ids,
+                    parameter_field_ids=item.parameter_field_ids,
+                    persona_ids=item.persona_ids,
+                    problem_statement_ids=[item.problem_statement_id]
+                    if item.problem_statement_id
+                    else None,
+                    question_ids=item.question_ids,
+                    video_ids=item.video_ids,
+                    scenario_ids=[scenarios_resource_id],
                 )
+
+        results.append(
+            ScenarioResultItem(
+                success=True,
+                scenario_id=item.scenario_id,
+                message="Scenario updated successfully",
             )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

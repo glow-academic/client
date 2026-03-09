@@ -155,7 +155,7 @@ SCENARIO_IMPORT_FIELDS: list[ImportField] = [
 
 
 async def search_scenario_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -184,7 +184,7 @@ async def search_scenario_client(
     from fastapi import HTTPException
 
     # -- Step 1: Profile context --
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
     if profile is None:
         raise HTTPException(
             status_code=401,
@@ -199,46 +199,48 @@ async def search_scenario_client(
 
     # simulation_ids -> scenarios_resource IDs via simulation's scenarios junction
     scenario_resource_ids: list[UUID] | None = None
-    if simulation_ids:
-        # search_simulations_resource returns simulation resources with scenario_ids
-        sims = await get_simulations_resource(conn, simulation_ids, redis)
-        sids: set[UUID] = set()
-        for s in sims:
-            sids.update(s.scenario_ids or [])
-        if sids:
-            scenario_resource_ids = list(sids)
-        else:
-            return _empty_response(actor_name)
 
-    # persona_ids are personas_resource IDs — direct junction filter on scenario
-    # search_scenarios supports persona_ids directly
+    async with pool.acquire() as conn:
+        if simulation_ids:
+            # search_simulations_resource returns simulation resources with scenario_ids
+            sims = await get_simulations_resource(conn, simulation_ids, redis)
+            sids: set[UUID] = set()
+            for s in sims:
+                sids.update(s.scenario_ids or [])
+            if sids:
+                scenario_resource_ids = list(sids)
+            else:
+                return _empty_response(actor_name)
 
-    # -- Step 3: Search scenarios --
-    scenario_ids_result, total_count = await search_scenarios(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        persona_ids=persona_ids,
-        scenario_ids=scenario_resource_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+        # persona_ids are personas_resource IDs — direct junction filter on scenario
+        # search_scenarios supports persona_ids directly
 
-    if not scenario_ids_result:
-        return _empty_response(actor_name, total_count=0)
+        # -- Step 3: Search scenarios --
+        scenario_ids_result, total_count = await search_scenarios(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            persona_ids=persona_ids,
+            scenario_ids=scenario_resource_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
-    # -- Step 4: Get scenario artifacts with junction IDs --
-    artifacts = await get_scenarios(
-        conn,
-        scenario_ids_result,
-        names=True,
-        descriptions=True,
-        departments=True,
-        objectives=True,
-        personas=True,
-        parameter_fields=True,
-        scenarios=True,
-    )
+        if not scenario_ids_result:
+            return _empty_response(actor_name, total_count=0)
+
+        # -- Step 4: Get scenario artifacts with junction IDs --
+        artifacts = await get_scenarios(
+            conn,
+            scenario_ids_result,
+            names=True,
+            descriptions=True,
+            departments=True,
+            objectives=True,
+            personas=True,
+            parameter_fields=True,
+            scenarios=True,
+        )
 
     # -- Step 5: Parallel hydration + facets --
 
@@ -264,6 +266,64 @@ async def search_scenario_client(
             all_scenario_resource_ids.add(sid)
 
     # Parallel: hydrate resources + facets
+    # Each branch acquires its own connection from the pool.
+
+    async def _get_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_personas() -> list:
+        if not all_persona_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_personas_resource(conn, list(all_persona_ids), redis)
+
+    async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, list(all_department_ids), redis)
+
+    async def _get_objectives() -> list:
+        if not all_objective_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_objectives(conn, list(all_objective_ids), redis)
+
+    async def _get_fields() -> list:
+        if not all_field_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_fields(conn, list(all_field_ids), redis)
+
+    async def _get_scenarios_resource() -> list:
+        if not all_scenario_resource_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_scenarios_resource(
+                conn, list(all_scenario_resource_ids), redis
+            )
+
+    async def _get_persona_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_personas_resource(
+                conn, redis, search=persona_search, scenario=True, limit_count=100
+            )
+
+    async def _get_simulation_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_simulations_resource(
+                conn, redis, search=simulation_search, simulation=True, limit_count=100
+            )
+
+    async def _get_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, scenario=True, limit_count=100
+            )
+
     (
         names_data,
         personas_data,
@@ -275,33 +335,15 @@ async def search_scenario_client(
         simulation_facet,
         department_facet,
     ) = await asyncio.gather(
-        # Resource hydration
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_personas_resource(conn, list(all_persona_ids), redis)
-        if all_persona_ids
-        else _empty_list(),
-        get_departments(conn, list(all_department_ids), redis)
-        if all_department_ids
-        else _empty_list(),
-        get_objectives(conn, list(all_objective_ids), redis)
-        if all_objective_ids
-        else _empty_list(),
-        get_fields(conn, list(all_field_ids), redis)
-        if all_field_ids
-        else _empty_list(),
-        get_scenarios_resource(conn, list(all_scenario_resource_ids), redis)
-        if all_scenario_resource_ids
-        else _empty_list(),
-        # Facets
-        search_personas_resource(
-            conn, redis, search=persona_search, scenario=True, limit_count=100
-        ),
-        search_simulations_resource(
-            conn, redis, search=simulation_search, simulation=True, limit_count=100
-        ),
-        search_departments(
-            conn, redis, search=department_search, scenario=True, limit_count=100
-        ),
+        _get_names(),
+        _get_personas(),
+        _get_departments(),
+        _get_objectives(),
+        _get_fields(),
+        _get_scenarios_resource(),
+        _get_persona_facet(),
+        _get_simulation_facet(),
+        _get_department_facet(),
     )
 
     # Build lookup maps
@@ -493,7 +535,3 @@ def _empty_response(
         total_count=total_count,
         import_fields=SCENARIO_IMPORT_FIELDS,
     )
-
-
-async def _empty_list() -> list:
-    return []

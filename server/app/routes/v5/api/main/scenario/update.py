@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.scenario_update.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.scenario_update import update_scenario_client
 from app.routes.v5.api.main.scenario.types import (
     UpdateScenarioApiRequest,
@@ -26,7 +23,6 @@ async def update_scenario(
     request: UpdateScenarioApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateScenarioApiResponse:
     """Update scenarios using composable infra architecture."""
     try:
@@ -37,10 +33,11 @@ async def update_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await update_scenario_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             items=request.scenarios,

@@ -3824,6 +3824,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v5/artifacts/group/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate
+         * @description Trigger artifact generation. Returns immediately; progress via socket.
+         */
+        post: operations["generate_api_v5_artifacts_group_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/group/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Group Events
+         * @description Poll for generation events. Returns events since cursor, with pagination URLs.
+         */
+        post: operations["group_events_api_v5_artifacts_group_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/session/get": {
         parameters: {
             query?: never;
@@ -4298,6 +4338,298 @@ export interface paths {
          * @description Export attempt data as a clean, denormalized ZIP.
          */
         post: operations["export_attempt_api_v5_artifacts_attempt_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Attempt
+         * @description Create a new attempt. Returns attempt_id + first chat_entry_id.
+         */
+        post: operations["start_attempt_api_v5_artifacts_attempt_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Next Attempt
+         * @description Proceed to the next scenario in an existing attempt.
+         */
+        post: operations["next_attempt_api_v5_artifacts_attempt_next_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Attempt
+         * @description End a single chat within an attempt.
+         *
+         *     Browser client: sends grade=True, internal AI generates full grade.
+         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
+         */
+        post: operations["end_attempt_api_v5_artifacts_attempt_end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/end-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End All Attempt
+         * @description End all remaining chats in an attempt.
+         */
+        post: operations["end_all_attempt_api_v5_artifacts_attempt_end_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/message": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Message
+         * @description Send a message in an attempt chat.
+         *
+         *     Browser client: sends message only, internal AI generates response + hints.
+         *     Agent: can optionally provide assistant_content, hints, contents to skip AI.
+         */
+        post: operations["attempt_message_api_v5_artifacts_attempt_message_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Grade
+         * @description Trigger grading for an attempt chat.
+         *
+         *     Browser client: sends chat_id only, internal AI generates full grade.
+         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
+         */
+        post: operations["attempt_grade_api_v5_artifacts_attempt_grade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Stop
+         * @description Stop message generation for an attempt chat.
+         */
+        post: operations["attempt_stop_api_v5_artifacts_attempt_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/response": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Response
+         * @description Submit a video question response.
+         */
+        post: operations["attempt_response_api_v5_artifacts_attempt_response_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/use-previous": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Use Previous
+         * @description Copy grades from a previous attempt's chats.
+         */
+        post: operations["attempt_use_previous_api_v5_artifacts_attempt_use_previous_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/audio/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Start
+         * @description Start a voice session. Returns an audio_session_id for subsequent calls.
+         */
+        post: operations["attempt_audio_start_api_v5_artifacts_attempt_audio_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/audio/chunk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Chunk
+         * @description Send an audio chunk. Returns current offset and transcription progress.
+         */
+        post: operations["attempt_audio_chunk_api_v5_artifacts_attempt_audio_chunk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/audio/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio End
+         * @description End a voice session. Returns final transcription and assistant response.
+         */
+        post: operations["attempt_audio_end_api_v5_artifacts_attempt_audio_end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Events
+         * @description Poll for chat events. Returns events since cursor, with pagination URLs.
+         */
+        post: operations["attempt_events_api_v5_artifacts_attempt_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Attempt
+         * @description Search attempt state — chats, messages, grades, entries.
+         *
+         *     Use include_entries to control which entry types are returned.
+         *     Supports cursor-based pagination via next_page_url.
+         */
+        post: operations["search_attempt_api_v5_artifacts_attempt_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5198,6 +5530,152 @@ export interface paths {
          * @description Get composed documentation for the test analytics.
          */
         post: operations["get_test_docs_endpoint_api_v5_artifacts_test_docs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/test/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Test
+         * @description Create a new test.
+         */
+        post: operations["start_test_api_v5_artifacts_test_start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/test/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Next Test
+         * @description Find next pending run in an existing test.
+         */
+        post: operations["next_test_api_v5_artifacts_test_next_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/test/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Test
+         * @description Run one auto-regressive replay. Returns immediately; progress via socket.
+         */
+        post: operations["run_test_api_v5_artifacts_test_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/test/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Test
+         * @description End a single invocation within a test.
+         *
+         *     Browser client: sends grade=True, internal AI generates grade + feedback.
+         *     Agent: can optionally provide score, passed, feedback to skip AI.
+         */
+        post: operations["end_test_api_v5_artifacts_test_end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/test/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Test
+         * @description Stop current test execution.
+         */
+        post: operations["stop_test_api_v5_artifacts_test_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/test/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Events
+         * @description Poll for test invocation events. Returns events since cursor, with pagination URLs.
+         */
+        post: operations["test_events_api_v5_artifacts_test_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/test/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Test
+         * @description Search test state — invocations, runs, grades, entries.
+         *
+         *     Use include_entries to control which entry types are returned.
+         *     Supports cursor-based pagination via next_page_url.
+         */
+        post: operations["search_test_api_v5_artifacts_test_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13316,9 +13794,17 @@ export interface components {
         };
         /**
          * AnalysisEntry
+         * @description Agent-provided analysis for a grade.
+         */
+        "AnalysisEntry-Input": {
+            /** Content */
+            content: string;
+        };
+        /**
+         * AnalysisEntry
          * @description Analysis entry for chat-level analysis content.
          */
-        AnalysisEntry: {
+        "AnalysisEntry-Output": {
             /** Content */
             content?: string | null;
         };
@@ -13888,6 +14374,45 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** AttemptEvent */
+        AttemptEvent: {
+            /** Id */
+            id: string;
+            /** Type */
+            type: string;
+            /** Created */
+            created: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** AttemptEventsApiResponse */
+        AttemptEventsApiResponse: {
+            /** Events */
+            events: components["schemas"]["AttemptEvent"][];
+            /** Next Page Url */
+            next_page_url?: string | null;
+            /** Previous Page Url */
+            previous_page_url?: string | null;
+        };
+        /** AttemptEventsPayload */
+        AttemptEventsPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /** Cursor */
+            cursor?: string | null;
+            /** Types */
+            types?: string[] | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
         /**
          * AttemptGradeCompleteEvent
          * @description Server-to-client: aggregate grade result.
@@ -14252,6 +14777,49 @@ export interface components {
             created_at: string;
             /** Item Id */
             item_id?: string | null;
+        };
+        /** AudioChunkApiResponse */
+        AudioChunkApiResponse: {
+            /** Offset */
+            offset: number;
+            /** Transcription Delta */
+            transcription_delta?: string | null;
+        };
+        /** AudioChunkPayload */
+        AudioChunkPayload: {
+            /** Audio Session Id */
+            audio_session_id: string;
+            /** Data */
+            data: string;
+            /** Mime Type */
+            mime_type?: string | null;
+        };
+        /** AudioEndApiResponse */
+        AudioEndApiResponse: {
+            /** Transcription */
+            transcription: string;
+            /** Assistant Message Id */
+            assistant_message_id?: string | null;
+            /** Assistant Content */
+            assistant_content?: string | null;
+        };
+        /** AudioEndPayload */
+        AudioEndPayload: {
+            /** Audio Session Id */
+            audio_session_id: string;
+        };
+        /** AudioStartApiResponse */
+        AudioStartApiResponse: {
+            /** Audio Session Id */
+            audio_session_id: string;
+        };
+        /** AudioStartPayload */
+        AudioStartPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
         };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
@@ -14840,9 +15408,9 @@ export interface components {
             position?: number | null;
             grade?: components["schemas"]["GradeData"] | null;
             /** Feedbacks */
-            feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
+            feedbacks?: components["schemas"]["FeedbackEntry-Output"][] | null;
             /** Analyses */
-            analyses?: components["schemas"]["AnalysisEntry"][] | null;
+            analyses?: components["schemas"]["AnalysisEntry-Output"][] | null;
             /** Show Problem Statement */
             show_problem_statement?: boolean | null;
             /** Show Objectives */
@@ -14965,6 +15533,92 @@ export interface components {
             current?: unknown[] | null;
             /** Resources */
             resources?: unknown[] | null;
+        };
+        /**
+         * ChatDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        ChatDraftFormState: {
+            /**
+             * Name Ids
+             * @default []
+             */
+            name_ids: string[];
+            /**
+             * Description Ids
+             * @default []
+             */
+            description_ids: string[];
+            /**
+             * Flag Ids
+             * @default []
+             */
+            flag_ids: string[];
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
+            /**
+             * Parameter Field Ids
+             * @default []
+             */
+            parameter_field_ids: string[];
+            /**
+             * Parameter Ids
+             * @default []
+             */
+            parameter_ids: string[];
+            /**
+             * Scenario Ids
+             * @default []
+             */
+            scenario_ids: string[];
+            /**
+             * Field Ids
+             * @default []
+             */
+            field_ids: string[];
+            /**
+             * Question Ids
+             * @default []
+             */
+            question_ids: string[];
+            /**
+             * Option Ids
+             * @default []
+             */
+            option_ids: string[];
+            /**
+             * Video Ids
+             * @default []
+             */
+            video_ids: string[];
+            /**
+             * Image Ids
+             * @default []
+             */
+            image_ids: string[];
+            /**
+             * Problem Statement Ids
+             * @default []
+             */
+            problem_statement_ids: string[];
+            /**
+             * Objective Ids
+             * @default []
+             */
+            objective_ids: string[];
         };
         /** ChatFieldSection */
         ChatFieldSection: {
@@ -15998,13 +16652,23 @@ export interface components {
         };
         /**
          * ContentEntry
+         * @description Agent-provided content entry for a message.
+         */
+        "ContentEntry-Input": {
+            /** Content */
+            content: string;
+            /** Persona Id */
+            persona_id?: string | null;
+        };
+        /**
+         * ContentEntry
          * @description Content entry with computed display fields.
          *
          *     Each content has its own display info (name/icon/color) computed from
          *     persona metadata on the server. Client renders each content with its
          *     own persona styling.
          */
-        ContentEntry: {
+        "ContentEntry-Output": {
             /** Content */
             content?: string | null;
             /** Name */
@@ -19293,6 +19957,116 @@ export interface components {
             /** Email */
             email?: string | null;
         };
+        /** EndAllAttemptApiResponse */
+        EndAllAttemptApiResponse: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Success */
+            success: boolean;
+            /**
+             * All Scenarios Complete
+             * @default false
+             */
+            all_scenarios_complete: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /** EndAttemptApiRequest */
+        EndAttemptApiRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Grade
+             * @default true
+             */
+            grade: boolean;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["FeedbackEntry-Input"][] | null;
+            /** Strengths */
+            strengths?: components["schemas"]["StrengthEntry"][] | null;
+            /** Improvements */
+            improvements?: components["schemas"]["ImprovementEntry"][] | null;
+            /** Analyses */
+            analyses?: components["schemas"]["AnalysisEntry-Input"][] | null;
+            /** Highlights */
+            highlights?: components["schemas"]["HighlightEntry-Input"][] | null;
+            /** Replacements */
+            replacements?: components["schemas"]["ReplacementEntry-Input"][] | null;
+        };
+        /** EndAttemptApiResponse */
+        EndAttemptApiResponse: {
+            /** Chat Id */
+            chat_id: string;
+            /** Is Attempt Finished */
+            is_attempt_finished?: boolean | null;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+        };
+        /** EndTestApiRequest */
+        EndTestApiRequest: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /**
+             * Test Invocation Id
+             * Format: uuid
+             */
+            test_invocation_id: string;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Grade
+             * @default true
+             */
+            grade: boolean;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Feedback */
+            feedback?: string | null;
+        };
+        /** EndTestApiResponse */
+        EndTestApiResponse: {
+            /** Invocation Id */
+            invocation_id: string;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Feedback */
+            feedback?: string | null;
+        };
         /** EndpointsGenerationEvent */
         EndpointsGenerationEvent: {
             /**
@@ -20435,11 +21209,21 @@ export interface components {
         };
         /**
          * FeedbackEntry
+         * @description Agent-provided feedback for a grade.
+         */
+        "FeedbackEntry-Input": {
+            /** Feedback */
+            feedback: string;
+            /** Total */
+            total?: number | null;
+        };
+        /**
+         * FeedbackEntry
          * @description Feedback by standard for grading state.
          *
          *     standard_group_id is derived from standards metadata lookup.
          */
-        FeedbackEntry: {
+        "FeedbackEntry-Output": {
             /** Id */
             id?: string | null;
             /** Standard Id */
@@ -20951,6 +21735,13 @@ export interface components {
              * @default neutral
              */
             status: string;
+        };
+        /** GenerateApiResponse */
+        GenerateApiResponse: {
+            /** Group Id */
+            group_id: string;
+            /** Run Id */
+            run_id: string;
         };
         /**
          * GeneratePayload
@@ -22949,6 +23740,49 @@ export interface components {
             arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
             args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
         };
+        /** GradeAttemptApiRequest */
+        GradeAttemptApiRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Resource Types */
+            resource_types?: string[] | null;
+            /** User Instructions */
+            user_instructions?: string[] | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+            /** Time Taken */
+            time_taken?: number | null;
+            /** Feedbacks */
+            feedbacks?: components["schemas"]["FeedbackEntry-Input"][] | null;
+            /** Strengths */
+            strengths?: components["schemas"]["StrengthEntry"][] | null;
+            /** Improvements */
+            improvements?: components["schemas"]["ImprovementEntry"][] | null;
+            /** Analyses */
+            analyses?: components["schemas"]["AnalysisEntry-Input"][] | null;
+            /** Highlights */
+            highlights?: components["schemas"]["HighlightEntry-Input"][] | null;
+            /** Replacements */
+            replacements?: components["schemas"]["ReplacementEntry-Input"][] | null;
+        };
+        /** GradeAttemptApiResponse */
+        GradeAttemptApiResponse: {
+            /** Chat Id */
+            chat_id: string;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+        };
         /**
          * GradeData
          * @description Grade information for a chat (no id - not a resource).
@@ -23144,6 +23978,50 @@ export interface components {
             /** Previous Context Start Index */
             previous_context_start_index?: number | null;
         };
+        /** GroupEvent */
+        GroupEvent: {
+            /** Id */
+            id: string;
+            /** Type */
+            type: string;
+            /** Created */
+            created: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** GroupEventsApiResponse */
+        GroupEventsApiResponse: {
+            /** Events */
+            events: components["schemas"]["GroupEvent"][];
+            /** Next Page Url */
+            next_page_url?: string | null;
+            /** Previous Page Url */
+            previous_page_url?: string | null;
+        };
+        /** GroupEventsPayload */
+        GroupEventsPayload: {
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Cursor */
+            cursor?: string | null;
+            /** Types */
+            types?: string[] | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
         /**
          * GroupMessageItem
          * @description A single message within a group.
@@ -23301,9 +24179,21 @@ export interface components {
         };
         /**
          * HighlightEntry
+         * @description Agent-provided highlight for a strength.
+         */
+        "HighlightEntry-Input": {
+            /** Strength Id */
+            strength_id?: string | null;
+            /** Section */
+            section: string;
+            /** Idx */
+            idx?: number | null;
+        };
+        /**
+         * HighlightEntry
          * @description Highlight entry within a strength.
          */
-        HighlightEntry: {
+        "HighlightEntry-Output": {
             /** Section */
             section?: string | null;
             /** Idx */
@@ -23354,9 +24244,19 @@ export interface components {
         };
         /**
          * HintEntry
+         * @description Agent-provided hint for a message.
+         */
+        "HintEntry-Input": {
+            /** Hint */
+            hint: string;
+            /** Message Id */
+            message_id?: string | null;
+        };
+        /**
+         * HintEntry
          * @description Hint entry (practice mode only, message_id implied by parent).
          */
-        HintEntry: {
+        "HintEntry-Output": {
             /** Hint */
             hint?: string | null;
             /** Idx */
@@ -23616,6 +24516,18 @@ export interface components {
             example?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * ImprovementEntry
+         * @description Agent-provided improvement for a grade.
+         */
+        ImprovementEntry: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Message Id */
+            message_id?: string | null;
         };
         /** ImprovementsGenerationEvent */
         ImprovementsGenerationEvent: {
@@ -25417,6 +26329,44 @@ export interface components {
             /** Can Delete */
             can_delete?: boolean | null;
         };
+        /** MessageAttemptApiRequest */
+        MessageAttemptApiRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /** Message */
+            message: string;
+            /** Parent Message Id */
+            parent_message_id?: string | null;
+            /** Assistant Content */
+            assistant_content?: string | null;
+            /** Hints */
+            hints?: components["schemas"]["HintEntry-Input"][] | null;
+            /** Contents */
+            contents?: components["schemas"]["ContentEntry-Input"][] | null;
+        };
+        /** MessageAttemptApiResponse */
+        MessageAttemptApiResponse: {
+            /** Chat Id */
+            chat_id: string;
+            /** User Message Id */
+            user_message_id: string;
+            /** Assistant Message Id */
+            assistant_message_id: string;
+            /** Assistant Content */
+            assistant_content: string;
+            /** Hints */
+            hints?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
         /**
          * MessageData
          * @description Message with contents, feedbacks, and hints.
@@ -25440,11 +26390,11 @@ export interface components {
             /** Completed */
             completed?: boolean | null;
             /** Contents */
-            contents?: components["schemas"]["ContentEntry"][] | null;
+            contents?: components["schemas"]["ContentEntry-Output"][] | null;
             /** Feedbacks */
             feedbacks?: components["schemas"]["MessageFeedbackEntry"][] | null;
             /** Hints */
-            hints?: components["schemas"]["HintEntry"][] | null;
+            hints?: components["schemas"]["HintEntry-Output"][] | null;
             /** Parent Message Id */
             parent_message_id?: string | null;
             /** Sibling Index */
@@ -25470,9 +26420,9 @@ export interface components {
             /** Type */
             type?: string | null;
             /** Highlights */
-            highlights?: components["schemas"]["HighlightEntry"][] | null;
+            highlights?: components["schemas"]["HighlightEntry-Output"][] | null;
             /** Replaces */
-            replaces?: components["schemas"]["ReplacementEntry"][] | null;
+            replaces?: components["schemas"]["ReplacementEntry-Output"][] | null;
         };
         /** ModalitiesGenerationEvent */
         ModalitiesGenerationEvent: {
@@ -26001,6 +26951,24 @@ export interface components {
             generated?: boolean | null;
             /** Name */
             name?: string | null;
+        };
+        /** NextAttemptApiResponse */
+        NextAttemptApiResponse: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Chat Id */
+            chat_id: string;
+        };
+        /** NextTestApiResponse */
+        NextTestApiResponse: {
+            /** Invocation Id */
+            invocation_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Current Run */
+            current_run: number;
+            /** Total Runs */
+            total_runs: number;
         };
         /**
          * ObjectiveEntry
@@ -26730,7 +27698,8 @@ export interface components {
          * PatchChatDraftApiRequest
          * @description Request model for new-style chat draft endpoint.
          *
-         *     All resources are ID-only (no creatable resources).
+         *     Single-select creatables: name, description
+         *       → value creates resource, ID replaces value (mutually exclusive).
          *
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
@@ -26747,6 +27716,10 @@ export interface components {
              * @default 0
              */
             expected_version: number;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
             /** Name Ids */
             name_ids?: string[] | null;
             /** Description Ids */
@@ -26796,6 +27769,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["ChatDraftFormState"] | null;
         };
         /**
          * PatchCohortDraftApiRequest
@@ -29961,9 +30935,23 @@ export interface components {
         };
         /**
          * ReplacementEntry
+         * @description Agent-provided replacement for an improvement.
+         */
+        "ReplacementEntry-Input": {
+            /** Improvement Id */
+            improvement_id?: string | null;
+            /** Section */
+            section: string;
+            /** Replace */
+            replace: string;
+            /** Idx */
+            idx?: number | null;
+        };
+        /**
+         * ReplacementEntry
          * @description Replacement entry within an improvement.
          */
-        ReplacementEntry: {
+        "ReplacementEntry-Output": {
             /** Section */
             section?: string | null;
             /** Replace */
@@ -30733,6 +31721,15 @@ export interface components {
             /** Creatable */
             creatable?: boolean | null;
         };
+        /** ResponseAttemptApiResponse */
+        ResponseAttemptApiResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+            /** Is Correct */
+            is_correct?: boolean | null;
+        };
         /** RolesGenerationEvent */
         RolesGenerationEvent: {
             /**
@@ -31272,6 +32269,15 @@ export interface components {
             runs_id?: string | null;
             /** Rubric Id */
             rubric_id?: string | null;
+        };
+        /** RunTestApiResponse */
+        RunTestApiResponse: {
+            /** Test Id */
+            test_id: string;
+            /** Invocation Id */
+            invocation_id: string;
+            /** Run Id */
+            run_id: string;
         };
         /**
          * RunViewItem
@@ -33703,6 +34709,41 @@ export interface components {
              */
             page_offset: number | null;
         };
+        /** SearchAttemptApiRequest */
+        SearchAttemptApiRequest: {
+            /** Attempt Id */
+            attempt_id?: string | null;
+            /** Chat Id */
+            chat_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Home Id */
+            home_id?: string | null;
+            /** Practice Id */
+            practice_id?: string | null;
+            /** Include Entries */
+            include_entries?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+            /** Cursor */
+            cursor?: string | null;
+        };
+        /** SearchAttemptApiResponse */
+        SearchAttemptApiResponse: {
+            /** Results */
+            results: {
+                [key: string]: unknown;
+            }[];
+            /** Next Page Url */
+            next_page_url?: string | null;
+            /** Previous Page Url */
+            previous_page_url?: string | null;
+        };
         /**
          * SearchAuthApiRequest
          * @description Request model for auth search endpoint.
@@ -34147,6 +35188,39 @@ export interface components {
              * @default 0
              */
             page_offset: number | null;
+        };
+        /** SearchTestApiRequest */
+        SearchTestApiRequest: {
+            /** Test Id */
+            test_id?: string | null;
+            /** Invocation Id */
+            invocation_id?: string | null;
+            /** Benchmark Id */
+            benchmark_id?: string | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Include Entries */
+            include_entries?: string[] | null;
+            /** Search */
+            search?: string | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+            /** Cursor */
+            cursor?: string | null;
+        };
+        /** SearchTestApiResponse */
+        SearchTestApiResponse: {
+            /** Results */
+            results: {
+                [key: string]: unknown;
+            }[];
+            /** Next Page Url */
+            next_page_url?: string | null;
+            /** Previous Page Url */
+            previous_page_url?: string | null;
         };
         /**
          * SearchToolApiRequest
@@ -35727,6 +36801,48 @@ export interface components {
             /** Standard Group Id */
             standard_group_id?: string | null;
         };
+        /** StartAttemptApiResponse */
+        StartAttemptApiResponse: {
+            /** Attempt Id */
+            attempt_id: string;
+            /** Chat Entry Id */
+            chat_entry_id: string;
+        };
+        /** StartTestApiResponse */
+        StartTestApiResponse: {
+            /** Test Id */
+            test_id: string;
+        };
+        /** StopAttemptApiResponse */
+        StopAttemptApiResponse: {
+            /** Chat Id */
+            chat_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /** StopTestApiResponse */
+        StopTestApiResponse: {
+            /** Invocation Id */
+            invocation_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+        };
+        /**
+         * StrengthEntry
+         * @description Agent-provided strength for a grade.
+         */
+        StrengthEntry: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Message Id */
+            message_id?: string | null;
+        };
         /** StrengthsGenerationEvent */
         StrengthsGenerationEvent: {
             /**
@@ -35877,6 +36993,45 @@ export interface components {
             message: string;
             /** Error Type */
             error_type?: string | null;
+        };
+        /** TestEvent */
+        TestEvent: {
+            /** Id */
+            id: string;
+            /** Type */
+            type: string;
+            /** Created */
+            created: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** TestEventsApiResponse */
+        TestEventsApiResponse: {
+            /** Events */
+            events: components["schemas"]["TestEvent"][];
+            /** Next Page Url */
+            next_page_url?: string | null;
+            /** Previous Page Url */
+            previous_page_url?: string | null;
+        };
+        /** TestEventsPayload */
+        TestEventsPayload: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+            /** Cursor */
+            cursor?: string | null;
+            /** Types */
+            types?: string[] | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
         };
         /**
          * TestGradedEvent
@@ -37582,6 +38737,13 @@ export interface components {
             generated?: boolean | null;
             /** Upload Id */
             upload_id?: string | null;
+        };
+        /** UsePreviousAttemptApiResponse */
+        UsePreviousAttemptApiResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -44723,6 +45885,80 @@ export interface operations {
             };
         };
     };
+    generate_api_v5_artifacts_group_generate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_events_api_v5_artifacts_group_events_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupEventsPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupEventsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_session_api_v5_artifacts_session_get_post: {
         parameters: {
             query?: never;
@@ -45570,6 +46806,524 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_attempt_api_v5_artifacts_attempt_start_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    next_attempt_api_v5_artifacts_attempt_next_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptNextPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_attempt_api_v5_artifacts_attempt_end_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_all_attempt_api_v5_artifacts_attempt_end_all_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptEndAllPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndAllAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_message_api_v5_artifacts_attempt_message_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_grade_api_v5_artifacts_attempt_grade_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_stop_api_v5_artifacts_attempt_stop_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StopAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_response_api_v5_artifacts_attempt_response_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptResponsePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_use_previous_api_v5_artifacts_attempt_use_previous_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptUsePreviousPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsePreviousAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_start_api_v5_artifacts_attempt_audio_start_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioStartApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_chunk_api_v5_artifacts_attempt_audio_chunk_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioChunkPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioChunkApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_end_api_v5_artifacts_attempt_audio_end_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioEndPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioEndApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_events_api_v5_artifacts_attempt_events_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptEventsPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptEventsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_attempt_api_v5_artifacts_attempt_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47171,6 +48925,265 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComposedDocsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_test_api_v5_artifacts_test_start_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestStartPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    next_test_api_v5_artifacts_test_next_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestNextPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_test_api_v5_artifacts_test_run_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestRunPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_test_api_v5_artifacts_test_end_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndTestApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_test_api_v5_artifacts_test_stop_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StopTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_events_api_v5_artifacts_test_events_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestEventsPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestEventsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_test_api_v5_artifacts_test_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Session-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchTestApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchTestApiResponse"];
                 };
             };
             /** @description Validation Error */

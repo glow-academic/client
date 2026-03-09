@@ -18743,6 +18743,208 @@
         ]
       }
     },
+    "/api/v5/artifacts/group/generate": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ],
+        "summary": "Generate",
+        "description": "Trigger artifact generation. Returns immediately; progress via socket.",
+        "operationId": "generate_api_v5_artifacts_group_generate_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
+      }
+    },
+    "/api/v5/artifacts/group/events": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ],
+        "summary": "Group Events",
+        "description": "Poll for generation events. Returns events since cursor, with pagination URLs.",
+        "operationId": "group_events_api_v5_artifacts_group_events_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroupEventsPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupEventsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
+      }
+    },
     "/api/v5/artifacts/session/get": {
       "post": {
         "tags": [
@@ -21074,6 +21276,1420 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/start": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Start Attempt",
+        "description": "Create a new attempt. Returns attempt_id + first chat_entry_id.",
+        "operationId": "start_attempt_api_v5_artifacts_attempt_start_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptStartPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/next": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Next Attempt",
+        "description": "Proceed to the next scenario in an existing attempt.",
+        "operationId": "next_attempt_api_v5_artifacts_attempt_next_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptNextPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NextAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/end": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "End Attempt",
+        "description": "End a single chat within an attempt.\n\nBrowser client: sends grade=True, internal AI generates full grade.\nAgent: can optionally provide score, feedbacks, strengths, etc. to skip AI.",
+        "operationId": "end_attempt_api_v5_artifacts_attempt_end_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndAttemptApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/end-all": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "End All Attempt",
+        "description": "End all remaining chats in an attempt.",
+        "operationId": "end_all_attempt_api_v5_artifacts_attempt_end_all_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptEndAllPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndAllAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/message": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Message",
+        "description": "Send a message in an attempt chat.\n\nBrowser client: sends message only, internal AI generates response + hints.\nAgent: can optionally provide assistant_content, hints, contents to skip AI.",
+        "operationId": "attempt_message_api_v5_artifacts_attempt_message_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageAttemptApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/grade": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Grade",
+        "description": "Trigger grading for an attempt chat.\n\nBrowser client: sends chat_id only, internal AI generates full grade.\nAgent: can optionally provide score, feedbacks, strengths, etc. to skip AI.",
+        "operationId": "attempt_grade_api_v5_artifacts_attempt_grade_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GradeAttemptApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/stop": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Stop",
+        "description": "Stop message generation for an attempt chat.",
+        "operationId": "attempt_stop_api_v5_artifacts_attempt_stop_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptStopPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/response": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Response",
+        "description": "Submit a video question response.",
+        "operationId": "attempt_response_api_v5_artifacts_attempt_response_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptResponsePayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponseAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/use-previous": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Use Previous",
+        "description": "Copy grades from a previous attempt's chats.",
+        "operationId": "attempt_use_previous_api_v5_artifacts_attempt_use_previous_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptUsePreviousPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsePreviousAttemptApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/audio/start": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Audio Start",
+        "description": "Start a voice session. Returns an audio_session_id for subsequent calls.",
+        "operationId": "attempt_audio_start_api_v5_artifacts_attempt_audio_start_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioStartPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioStartApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/audio/chunk": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Audio Chunk",
+        "description": "Send an audio chunk. Returns current offset and transcription progress.",
+        "operationId": "attempt_audio_chunk_api_v5_artifacts_attempt_audio_chunk_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioChunkPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioChunkApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/audio/end": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Audio End",
+        "description": "End a voice session. Returns final transcription and assistant response.",
+        "operationId": "attempt_audio_end_api_v5_artifacts_attempt_audio_end_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioEndPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioEndApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/events": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Events",
+        "description": "Poll for chat events. Returns events since cursor, with pagination URLs.",
+        "operationId": "attempt_events_api_v5_artifacts_attempt_events_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptEventsPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptEventsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/search": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Search Attempt",
+        "description": "Search attempt state \u2014 chats, messages, grades, entries.\n\nUse include_entries to control which entry types are returned.\nSupports cursor-based pagination via next_page_url.",
+        "operationId": "search_attempt_api_v5_artifacts_attempt_search_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchAttemptApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchAttemptApiResponse"
                 }
               }
             }
@@ -25385,6 +27001,713 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ComposedDocsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
+      }
+    },
+    "/api/v5/artifacts/test/start": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "Start Test",
+        "description": "Create a new test.",
+        "operationId": "start_test_api_v5_artifacts_test_start_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestStartPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartTestApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
+      }
+    },
+    "/api/v5/artifacts/test/next": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "Next Test",
+        "description": "Find next pending run in an existing test.",
+        "operationId": "next_test_api_v5_artifacts_test_next_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestNextPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NextTestApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
+      }
+    },
+    "/api/v5/artifacts/test/run": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "Run Test",
+        "description": "Run one auto-regressive replay. Returns immediately; progress via socket.",
+        "operationId": "run_test_api_v5_artifacts_test_run_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestRunPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunTestApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
+      }
+    },
+    "/api/v5/artifacts/test/end": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "End Test",
+        "description": "End a single invocation within a test.\n\nBrowser client: sends grade=True, internal AI generates grade + feedback.\nAgent: can optionally provide score, passed, feedback to skip AI.",
+        "operationId": "end_test_api_v5_artifacts_test_end_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndTestApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndTestApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
+      }
+    },
+    "/api/v5/artifacts/test/stop": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "Stop Test",
+        "description": "Stop current test execution.",
+        "operationId": "stop_test_api_v5_artifacts_test_stop_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestStopPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StopTestApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
+      }
+    },
+    "/api/v5/artifacts/test/events": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "Test Events",
+        "description": "Poll for test invocation events. Returns events since cursor, with pagination URLs.",
+        "operationId": "test_events_api_v5_artifacts_test_events_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestEventsPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestEventsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
+      }
+    },
+    "/api/v5/artifacts/test/search": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ],
+        "summary": "Search Test",
+        "description": "Search test state \u2014 invocations, runs, grades, entries.\n\nUse include_entries to control which entry types are returned.\nSupports cursor-based pagination via next_page_url.",
+        "operationId": "search_test_api_v5_artifacts_test_search_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Session-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Session-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchTestApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchTestApiResponse"
                 }
               }
             }
@@ -48923,7 +51246,21 @@
         "type": "object",
         "title": "AnalysesGenerationEvent"
       },
-      "AnalysisEntry": {
+      "AnalysisEntry-Input": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "AnalysisEntry",
+        "description": "Agent-provided analysis for a grade."
+      },
+      "AnalysisEntry-Output": {
         "properties": {
           "content": {
             "anyOf": [
@@ -50526,6 +52863,117 @@
         "title": "AttemptErrorEvent",
         "description": "Server-to-client: attempt error."
       },
+      "AttemptEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "created": {
+            "type": "string",
+            "title": "Created"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "created",
+          "data"
+        ],
+        "title": "AttemptEvent"
+      },
+      "AttemptEventsApiResponse": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/AttemptEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "next_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Url"
+          },
+          "previous_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Page Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "AttemptEventsApiResponse"
+      },
+      "AttemptEventsPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Types"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "AttemptEventsPayload"
+      },
       "AttemptGradeCompleteEvent": {
         "properties": {
           "chat_id": {
@@ -51432,6 +53880,134 @@
         ],
         "title": "AttemptUserStartEvent",
         "description": "Server-to-client: user message started (text or audio)."
+      },
+      "AudioChunkApiResponse": {
+        "properties": {
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "transcription_delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transcription Delta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "offset"
+        ],
+        "title": "AudioChunkApiResponse"
+      },
+      "AudioChunkPayload": {
+        "properties": {
+          "audio_session_id": {
+            "type": "string",
+            "title": "Audio Session Id"
+          },
+          "data": {
+            "type": "string",
+            "title": "Data"
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio_session_id",
+          "data"
+        ],
+        "title": "AudioChunkPayload"
+      },
+      "AudioEndApiResponse": {
+        "properties": {
+          "transcription": {
+            "type": "string",
+            "title": "Transcription"
+          },
+          "assistant_message_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Message Id"
+          },
+          "assistant_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transcription"
+        ],
+        "title": "AudioEndApiResponse"
+      },
+      "AudioEndPayload": {
+        "properties": {
+          "audio_session_id": {
+            "type": "string",
+            "title": "Audio Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio_session_id"
+        ],
+        "title": "AudioEndPayload"
+      },
+      "AudioStartApiResponse": {
+        "properties": {
+          "audio_session_id": {
+            "type": "string",
+            "title": "Audio Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio_session_id"
+        ],
+        "title": "AudioStartApiResponse"
+      },
+      "AudioStartPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "AudioStartPayload"
       },
       "AuthDescriptionSection": {
         "properties": {
@@ -53126,7 +55702,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FeedbackEntry"
+                  "$ref": "#/components/schemas/FeedbackEntry-Output"
                 },
                 "type": "array"
               },
@@ -53140,7 +55716,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/AnalysisEntry"
+                  "$ref": "#/components/schemas/AnalysisEntry-Output"
                 },
                 "type": "array"
               },
@@ -57292,7 +59868,33 @@
         "title": "ConnectionConfirmedPayload",
         "description": "Server-to-client: connection confirmed."
       },
-      "ContentEntry": {
+      "ContentEntry-Input": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "ContentEntry",
+        "description": "Agent-provided content entry for a message."
+      },
+      "ContentEntry-Output": {
         "properties": {
           "content": {
             "anyOf": [
@@ -67942,6 +70544,366 @@
         "type": "object",
         "title": "EmailsGenerationEvent"
       },
+      "EndAllAttemptApiResponse": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "all_scenarios_complete": {
+            "type": "boolean",
+            "title": "All Scenarios Complete",
+            "default": false
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "success"
+        ],
+        "title": "EndAllAttemptApiResponse"
+      },
+      "EndAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "grade": {
+            "type": "boolean",
+            "title": "Grade",
+            "default": true
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FeedbackEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          },
+          "strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StrengthEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strengths"
+          },
+          "improvements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ImprovementEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvements"
+          },
+          "analyses": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnalysisEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analyses"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HighlightEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          },
+          "replacements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReplacementEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "group_id",
+          "chat_id"
+        ],
+        "title": "EndAttemptApiRequest"
+      },
+      "EndAttemptApiResponse": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "is_attempt_finished": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Attempt Finished"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "EndAttemptApiResponse"
+      },
+      "EndTestApiRequest": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Test Id"
+          },
+          "test_invocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Test Invocation Id"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "grade": {
+            "type": "boolean",
+            "title": "Grade",
+            "default": true
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_id",
+          "test_invocation_id",
+          "run_id"
+        ],
+        "title": "EndTestApiRequest"
+      },
+      "EndTestApiResponse": {
+        "properties": {
+          "invocation_id": {
+            "type": "string",
+            "title": "Invocation Id"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invocation_id"
+        ],
+        "title": "EndTestApiResponse"
+      },
       "EndpointsGenerationEvent": {
         "properties": {
           "artifact_type": {
@@ -70784,7 +73746,32 @@
         "title": "ExportToolApiResponse",
         "description": "Response model for export tool endpoint."
       },
-      "FeedbackEntry": {
+      "FeedbackEntry-Input": {
+        "properties": {
+          "feedback": {
+            "type": "string",
+            "title": "Feedback"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback"
+        ],
+        "title": "FeedbackEntry",
+        "description": "Agent-provided feedback for a grade."
+      },
+      "FeedbackEntry-Output": {
         "properties": {
           "id": {
             "anyOf": [
@@ -72604,6 +75591,24 @@
         },
         "type": "object",
         "title": "FooterScenarioStats"
+      },
+      "GenerateApiResponse": {
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "title": "Group Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "run_id"
+        ],
+        "title": "GenerateApiResponse"
       },
       "GeneratePayload": {
         "properties": {
@@ -80292,6 +83297,223 @@
         "type": "object",
         "title": "GetToolApiResponse"
       },
+      "GradeAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "resource_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Types"
+          },
+          "user_instructions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Instructions"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "time_taken": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Taken"
+          },
+          "feedbacks": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FeedbackEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedbacks"
+          },
+          "strengths": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StrengthEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strengths"
+          },
+          "improvements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ImprovementEntry"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvements"
+          },
+          "analyses": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AnalysisEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analyses"
+          },
+          "highlights": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HighlightEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlights"
+          },
+          "replacements": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReplacementEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id"
+        ],
+        "title": "GradeAttemptApiRequest"
+      },
+      "GradeAttemptApiResponse": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "GradeAttemptApiResponse"
+      },
       "GradeData": {
         "properties": {
           "score": {
@@ -80896,6 +84118,123 @@
         "title": "GroupDetailRunWithMessages",
         "description": "A run with its messages and context boundary."
       },
+      "GroupEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "created": {
+            "type": "string",
+            "title": "Created"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "created",
+          "data"
+        ],
+        "title": "GroupEvent"
+      },
+      "GroupEventsApiResponse": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/GroupEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "next_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Url"
+          },
+          "previous_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Page Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "GroupEventsApiResponse"
+      },
+      "GroupEventsPayload": {
+        "properties": {
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Types"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_id",
+          "run_id"
+        ],
+        "title": "GroupEventsPayload"
+      },
       "GroupMessageItem": {
         "properties": {
           "message_id": {
@@ -81464,7 +84803,44 @@
         "title": "HealthViews",
         "description": "Health view data."
       },
-      "HighlightEntry": {
+      "HighlightEntry-Input": {
+        "properties": {
+          "strength_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strength Id"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "title": "HighlightEntry",
+        "description": "Agent-provided highlight for a strength."
+      },
+      "HighlightEntry-Output": {
         "properties": {
           "section": {
             "anyOf": [
@@ -81674,7 +85050,33 @@
         "type": "object",
         "title": "HighlightsGenerationEvent"
       },
-      "HintEntry": {
+      "HintEntry-Input": {
+        "properties": {
+          "hint": {
+            "type": "string",
+            "title": "Hint"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hint"
+        ],
+        "title": "HintEntry",
+        "description": "Agent-provided hint for a message."
+      },
+      "HintEntry-Output": {
         "properties": {
           "hint": {
             "anyOf": [
@@ -82673,6 +86075,37 @@
         ],
         "title": "ImportField",
         "description": "Field descriptor for CSV import column mapping."
+      },
+      "ImprovementEntry": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "ImprovementEntry",
+        "description": "Agent-provided improvement for a grade."
       },
       "ImprovementsGenerationEvent": {
         "properties": {
@@ -90062,6 +93495,125 @@
         "type": "object",
         "title": "ListToolApiTool"
       },
+      "MessageAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "parent_message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Message Id"
+          },
+          "assistant_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistant Content"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HintEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          },
+          "contents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ContentEntry-Input"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "chat_id",
+          "message"
+        ],
+        "title": "MessageAttemptApiRequest"
+      },
+      "MessageAttemptApiResponse": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "user_message_id": {
+            "type": "string",
+            "title": "User Message Id"
+          },
+          "assistant_message_id": {
+            "type": "string",
+            "title": "Assistant Message Id"
+          },
+          "assistant_content": {
+            "type": "string",
+            "title": "Assistant Content"
+          },
+          "hints": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "user_message_id",
+          "assistant_message_id",
+          "assistant_content"
+        ],
+        "title": "MessageAttemptApiResponse"
+      },
       "MessageData": {
         "properties": {
           "id": {
@@ -90118,7 +93670,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ContentEntry"
+                  "$ref": "#/components/schemas/ContentEntry-Output"
                 },
                 "type": "array"
               },
@@ -90146,7 +93698,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/HintEntry"
+                  "$ref": "#/components/schemas/HintEntry-Output"
                 },
                 "type": "array"
               },
@@ -90241,7 +93793,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/HighlightEntry"
+                  "$ref": "#/components/schemas/HighlightEntry-Output"
                 },
                 "type": "array"
               },
@@ -90255,7 +93807,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ReplacementEntry"
+                  "$ref": "#/components/schemas/ReplacementEntry-Output"
                 },
                 "type": "array"
               },
@@ -91996,6 +95548,52 @@
         },
         "type": "object",
         "title": "NamesGenerationEvent"
+      },
+      "NextAttemptApiResponse": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "chat_id"
+        ],
+        "title": "NextAttemptApiResponse"
+      },
+      "NextTestApiResponse": {
+        "properties": {
+          "invocation_id": {
+            "type": "string",
+            "title": "Invocation Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "current_run": {
+            "type": "integer",
+            "title": "Current Run"
+          },
+          "total_runs": {
+            "type": "integer",
+            "title": "Total Runs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invocation_id",
+          "run_id",
+          "current_run",
+          "total_runs"
+        ],
+        "title": "NextTestApiResponse"
       },
       "ObjectiveEntry": {
         "properties": {
@@ -105746,7 +109344,49 @@
         "title": "RefreshResponse",
         "description": "Standard response for composable refresh endpoints.\n\nReturned by all `refresh_{artifact}_client` infra functions."
       },
-      "ReplacementEntry": {
+      "ReplacementEntry-Input": {
+        "properties": {
+          "improvement_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvement Id"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "replace": {
+            "type": "string",
+            "title": "Replace"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section",
+          "replace"
+        ],
+        "title": "ReplacementEntry",
+        "description": "Agent-provided replacement for an improvement."
+      },
+      "ReplacementEntry-Output": {
         "properties": {
           "section": {
             "anyOf": [
@@ -107822,6 +111462,41 @@
         "type": "object",
         "title": "ResourcesGenerationEvent"
       },
+      "ResponseAttemptApiResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "is_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Correct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "ResponseAttemptApiResponse"
+      },
       "RolesGenerationEvent": {
         "properties": {
           "artifact_type": {
@@ -109674,6 +113349,29 @@
         },
         "type": "object",
         "title": "RunRubricsGenerationEvent"
+      },
+      "RunTestApiResponse": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          },
+          "invocation_id": {
+            "type": "string",
+            "title": "Invocation Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_id",
+          "invocation_id",
+          "run_id"
+        ],
+        "title": "RunTestApiResponse"
       },
       "RunViewItem": {
         "properties": {
@@ -118795,6 +122493,152 @@
         "title": "SearchAgentApiRequest",
         "description": "Request model for agent search endpoint."
       },
+      "SearchAttemptApiRequest": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "chat_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Id"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "home_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Home Id"
+          },
+          "practice_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Id"
+          },
+          "include_entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Include Entries"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 50
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          }
+        },
+        "type": "object",
+        "title": "SearchAttemptApiRequest"
+      },
+      "SearchAttemptApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "next_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Url"
+          },
+          "previous_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Page Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "SearchAttemptApiResponse"
+      },
       "SearchAuthApiRequest": {
         "properties": {
           "search": {
@@ -120434,6 +124278,140 @@
         "type": "object",
         "title": "SearchSimulationApiRequest",
         "description": "Request model for simulation search endpoint."
+      },
+      "SearchTestApiRequest": {
+        "properties": {
+          "test_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Id"
+          },
+          "invocation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invocation Id"
+          },
+          "benchmark_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Id"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "include_entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Include Entries"
+          },
+          "search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 50
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          }
+        },
+        "type": "object",
+        "title": "SearchTestApiRequest"
+      },
+      "SearchTestApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "next_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Url"
+          },
+          "previous_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Page Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "SearchTestApiResponse"
       },
       "SearchToolApiRequest": {
         "properties": {
@@ -125859,6 +129837,126 @@
         "type": "object",
         "title": "StandardsGenerationEvent"
       },
+      "StartAttemptApiResponse": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          },
+          "chat_entry_id": {
+            "type": "string",
+            "title": "Chat Entry Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "chat_entry_id"
+        ],
+        "title": "StartAttemptApiResponse"
+      },
+      "StartTestApiResponse": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "title": "Test Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "test_id"
+        ],
+        "title": "StartTestApiResponse"
+      },
+      "StopAttemptApiResponse": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "success"
+        ],
+        "title": "StopAttemptApiResponse"
+      },
+      "StopTestApiResponse": {
+        "properties": {
+          "invocation_id": {
+            "type": "string",
+            "title": "Invocation Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "invocation_id",
+          "success"
+        ],
+        "title": "StopTestApiResponse"
+      },
+      "StrengthEntry": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "StrengthEntry",
+        "description": "Agent-provided strength for a grade."
+      },
       "StrengthsGenerationEvent": {
         "properties": {
           "artifact_type": {
@@ -126414,6 +130512,117 @@
         ],
         "title": "TestErrorEvent",
         "description": "Server-to-client: test error."
+      },
+      "TestEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "created": {
+            "type": "string",
+            "title": "Created"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "created",
+          "data"
+        ],
+        "title": "TestEvent"
+      },
+      "TestEventsApiResponse": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TestEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "next_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Url"
+          },
+          "previous_page_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Page Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "TestEventsApiResponse"
+      },
+      "TestEventsPayload": {
+        "properties": {
+          "invocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Invocation Id"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Types"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "required": [
+          "invocation_id"
+        ],
+        "title": "TestEventsPayload"
       },
       "TestGradedEvent": {
         "properties": {
@@ -132658,6 +136867,30 @@
         },
         "type": "object",
         "title": "UploadsGenerationEvent"
+      },
+      "UsePreviousAttemptApiResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "UsePreviousAttemptApiResponse"
       },
       "ValidationError": {
         "properties": {
