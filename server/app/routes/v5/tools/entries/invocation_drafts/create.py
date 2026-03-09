@@ -19,15 +19,15 @@ async def create_invocation_draft(
     soft: bool = False,
     department_ids: list[UUID] | None = None,
     description_ids: list[UUID] | None = None,
+    endpoint_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
     key_ids: list[UUID] | None = None,
-    model_flag_ids: list[UUID] | None = None,
-    model_position_ids: list[UUID] | None = None,
-    model_rubric_ids: list[UUID] | None = None,
     name_ids: list[UUID] | None = None,
+    pricing_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,
     reasoning_level_ids: list[UUID] | None = None,
     temperature_level_ids: list[UUID] | None = None,
+    value_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
 ) -> CreateInvocationDraftResponse:
     """Create an invocation_drafts entry with optional connection table links."""
@@ -48,7 +48,8 @@ async def create_invocation_draft(
     if draft_id is None:
         raise ValueError("Failed to create invocation_drafts entry")
 
-    connections: list[tuple[str, str, list[UUID]]] = [
+    # Connections using `draft_id` as FK column
+    draft_fk_connections: list[tuple[str, str, list[UUID]]] = [
         (
             "invocation_drafts_departments_connection",
             "departments_id",
@@ -61,21 +62,6 @@ async def create_invocation_draft(
         ),
         ("invocation_drafts_flags_connection", "flags_id", flag_ids or []),
         ("invocation_drafts_keys_connection", "keys_id", key_ids or []),
-        (
-            "invocation_drafts_model_flags_connection",
-            "model_flags_id",
-            model_flag_ids or [],
-        ),
-        (
-            "invocation_drafts_model_positions_connection",
-            "model_positions_id",
-            model_position_ids or [],
-        ),
-        (
-            "invocation_drafts_model_rubrics_connection",
-            "model_rubrics_id",
-            model_rubric_ids or [],
-        ),
         ("invocation_drafts_names_connection", "names_id", name_ids or []),
         ("invocation_drafts_profiles_connection", "profiles_id", profile_ids or []),
         (
@@ -91,10 +77,37 @@ async def create_invocation_draft(
         ("invocation_drafts_voices_connection", "voices_id", voice_ids or []),
     ]
 
-    for table, col, ids in connections:
+    for table, col, ids in draft_fk_connections:
         for rid in ids:
             await conn.execute(
                 f"INSERT INTO {table} (draft_id, {col}) VALUES ($1, $2)",
+                draft_id,
+                rid,
+            )
+
+    # Connections using `invocation_drafts_id` as FK column
+    invocation_fk_connections: list[tuple[str, str, list[UUID]]] = [
+        (
+            "invocation_drafts_endpoints_connection",
+            "endpoints_id",
+            endpoint_ids or [],
+        ),
+        (
+            "invocation_drafts_pricing_connection",
+            "pricing_id",
+            pricing_ids or [],
+        ),
+        (
+            "invocation_drafts_values_connection",
+            "values_id",
+            value_ids or [],
+        ),
+    ]
+
+    for table, col, ids in invocation_fk_connections:
+        for rid in ids:
+            await conn.execute(
+                f"INSERT INTO {table} (invocation_drafts_id, {col}) VALUES ($1, $2)",
                 draft_id,
                 rid,
             )

@@ -2,15 +2,19 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Names } from "@/components/resources/Names";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Values } from "@/components/resources/Values";
+import { Flags } from "@/components/resources/Flags";
 import { Departments } from "@/components/resources/Departments";
-import { Models } from "@/components/resources/Models";
-import { Prompts } from "@/components/resources/Prompts";
-import { Instructions } from "@/components/resources/Instructions";
-import { Voices } from "@/components/resources/Voices";
-import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
-import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
-import { Tools } from "@/components/resources/Tools";
 import { Keys } from "@/components/resources/Keys";
+import { Endpoints } from "@/components/resources/Endpoints";
+import { Modalities } from "@/components/resources/Modalities";
+import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
+import { Pricing } from "@/components/resources/Pricing";
+import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
+import { Qualities } from "@/components/resources/Qualities";
+import { Voices } from "@/components/resources/Voices";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useRouter } from "next/navigation";
 import { parseAsString, useQueryStates } from "nuqs";
@@ -32,15 +36,21 @@ type PatchBenchmarkBundleDraftOut = OutputOf<
 >;
 
 type BenchmarkBundleFormState = {
+  name: string | null;
+  description: string | null;
+  name_ids: string[];
+  description_ids: string[];
+  value_ids: string[];
+  flag_ids: string[];
   department_ids: string[];
-  model_ids: string[];
-  prompt_ids: string[];
-  instruction_ids: string[];
-  voice_ids: string[];
-  temperature_level_ids: string[];
-  reasoning_level_ids: string[];
-  tool_ids: string[];
   key_ids: string[];
+  endpoint_ids: string[];
+  modality_ids: string[];
+  temperature_level_ids: string[];
+  pricing_ids: string[];
+  reasoning_level_ids: string[];
+  quality_ids: string[];
+  voice_ids: string[];
 };
 
 function extractIds<T>(
@@ -71,15 +81,21 @@ export default function Invocation({
 
   const initialFormState = useMemo<BenchmarkBundleFormState>(
     () => ({
+      name: null,
+      description: null,
+      name_ids: extractIds(s.names?.current, "id"),
+      description_ids: extractIds(s.descriptions?.current, "id"),
+      value_ids: extractIds(s.values?.current, "id"),
+      flag_ids: extractIds(s.flags?.current, "id"),
       department_ids: extractIds(s.departments?.current, "department_id"),
-      model_ids: extractIds(s.models?.current, "id"),
-      prompt_ids: extractIds(s.prompts?.current, "id"),
-      instruction_ids: extractIds(s.instructions?.current, "id"),
-      voice_ids: extractIds(s.voices?.current, "id"),
-      temperature_level_ids: extractIds(s.temperature_levels?.current, "id"),
-      reasoning_level_ids: extractIds(s.reasoning_levels?.current, "id"),
-      tool_ids: extractIds(s.tools?.current, "id"),
       key_ids: extractIds(s.keys?.current, "id"),
+      endpoint_ids: extractIds(s.endpoints?.current, "id"),
+      modality_ids: extractIds(s.modalities?.current, "id"),
+      temperature_level_ids: extractIds(s.temperature_levels?.current, "id"),
+      pricing_ids: extractIds(s.pricing?.current, "id"),
+      reasoning_level_ids: extractIds(s.reasoning_levels?.current, "id"),
+      quality_ids: extractIds(s.qualities?.current, "id"),
+      voice_ids: extractIds(s.voices?.current, "id"),
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -105,6 +121,7 @@ export default function Invocation({
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const savingRef = useRef(false);
+  const serverSyncPendingRef = useRef(false);
 
   useEffect(() => {
     if (draftId && draftId !== urlParams.draftId) {
@@ -117,20 +134,33 @@ export default function Invocation({
 
     savingRef.current = true;
     try {
+      // Build payload with ID fields
+      const payload: Record<string, unknown> = {
+        input_draft_id: draftId,
+        expected_version: draftVersion,
+        name_ids: formState.name_ids,
+        description_ids: formState.description_ids,
+        value_ids: formState.value_ids,
+        flag_ids: formState.flag_ids,
+        department_ids: formState.department_ids,
+        key_ids: formState.key_ids,
+        endpoint_ids: formState.endpoint_ids,
+        temperature_level_ids: formState.temperature_level_ids,
+        pricing_ids: formState.pricing_ids,
+        reasoning_level_ids: formState.reasoning_level_ids,
+        voice_ids: formState.voice_ids,
+      };
+
+      // Overlay value fields (name/description) if set
+      if (formState.name !== null) {
+        payload["name"] = formState.name;
+      }
+      if (formState.description !== null) {
+        payload["description"] = formState.description;
+      }
+
       const result = await patchBenchmarkDraftAction({
-        body: {
-          input_draft_id: draftId,
-          expected_version: draftVersion,
-          department_ids: formState.department_ids,
-          model_ids: formState.model_ids,
-          prompt_ids: formState.prompt_ids,
-          instruction_ids: formState.instruction_ids,
-          voice_ids: formState.voice_ids,
-          temperature_level_ids: formState.temperature_level_ids,
-          reasoning_level_ids: formState.reasoning_level_ids,
-          tool_ids: formState.tool_ids,
-          key_ids: formState.key_ids,
-        },
+        body: payload,
       } as PatchBenchmarkBundleDraftIn);
 
       if (result.draft_id) {
@@ -138,6 +168,42 @@ export default function Invocation({
       }
       if (typeof result.new_version === "number") {
         setDraftVersion(result.new_version);
+      }
+
+      // Sync form state from server response (server is source of truth)
+      const fs = (result as any).form_state as
+        | {
+            name_ids: string[];
+            description_ids: string[];
+            value_ids: string[];
+            flag_ids: string[];
+            department_ids: string[];
+            key_ids: string[];
+            endpoint_ids: string[];
+            temperature_level_ids: string[];
+            pricing_ids: string[];
+            reasoning_level_ids: string[];
+            voice_ids: string[];
+          }
+        | undefined;
+      if (fs) {
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          name: null,
+          description: null,
+          name_ids: fs.name_ids,
+          description_ids: fs.description_ids,
+          value_ids: fs.value_ids,
+          flag_ids: fs.flag_ids,
+          department_ids: fs.department_ids,
+          key_ids: fs.key_ids,
+          endpoint_ids: fs.endpoint_ids,
+          temperature_level_ids: fs.temperature_level_ids,
+          pricing_ids: fs.pricing_ids,
+          reasoning_level_ids: fs.reasoning_level_ids,
+          voice_ids: fs.voice_ids,
+        }));
       }
     } catch {
       toast.error("Failed to save draft selections.");
@@ -148,6 +214,12 @@ export default function Invocation({
 
   // Debounced autosave on form state change
   useEffect(() => {
+    // Skip autosave when syncing server state
+    if (serverSyncPendingRef.current) {
+      serverSyncPendingRef.current = false;
+      return;
+    }
+
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       void saveDraftNow();
@@ -190,6 +262,73 @@ export default function Invocation({
         </p>
       </div>
 
+      {s.names?.show && (
+        <Names
+          name_id={formState.name_ids[0] ?? null}
+          name_resource={s.names.current?.[0] ?? null}
+          show_name={s.names.show}
+          names={s.names.resources ?? []}
+          disabled={false}
+          onNameIdChange={(id: string | null) =>
+            setFormState((prev) => ({
+              ...prev,
+              name_ids: id ? [id] : [],
+            }))
+          }
+          onNameChange={(name: string) =>
+            setFormState((prev) => ({ ...prev, name }))
+          }
+        />
+      )}
+
+      {s.descriptions?.show && (
+        <Descriptions
+          description_id={formState.description_ids[0] ?? null}
+          description_resource={s.descriptions.current?.[0] ?? null}
+          show_description={s.descriptions.show}
+          descriptions={s.descriptions.resources ?? []}
+          disabled={false}
+          onDescriptionIdChange={(id: string | null) =>
+            setFormState((prev) => ({
+              ...prev,
+              description_ids: id ? [id] : [],
+            }))
+          }
+          onDescriptionChange={(description: string) =>
+            setFormState((prev) => ({ ...prev, description }))
+          }
+        />
+      )}
+
+      {s.values?.show && (
+        <Values
+          value_ids={formState.value_ids}
+          value_resources={s.values.current ?? []}
+          show_values={s.values.show}
+          values={s.values.resources ?? []}
+          disabled={false}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, value_ids: ids }))
+          }
+          label="Values"
+        />
+      )}
+
+      {s.flags?.show && (
+        <Flags
+          flags={
+            (s.flags.resources ?? []).map((f: any) => ({
+              key: f.id,
+              label: f.name ?? f.id,
+              description: f.description ?? null,
+              flag_option_id: formState.flag_ids.includes(f.id) ? f.id : null,
+              show: true,
+            }))
+          }
+          show_flags={s.flags.show}
+        />
+      )}
+
       {s.departments?.show && (
         <Departments
           department_ids={formState.department_ids}
@@ -204,62 +343,44 @@ export default function Invocation({
         />
       )}
 
-      {s.models?.show && (
-        <Models
-          model_id={formState.model_ids[0] ?? null}
-          model_resource={s.models.current?.[0] ?? null}
-          show_models={s.models.show}
-          models={s.models.resources ?? []}
+      {s.keys?.show && (
+        <Keys
+          key_id={formState.key_ids[0] ?? null}
+          key_resource={s.keys.current?.[0] ?? null}
+          show_key={s.keys.show}
+          keys={s.keys.resources ?? []}
           disabled={false}
-          onModelIdChange={(id: string | null) =>
-            setFormState((prev) => ({ ...prev, model_ids: id ? [id] : [] }))
+          onKeyIdChange={(id: string | null) =>
+            setFormState((prev) => ({ ...prev, key_ids: id ? [id] : [] }))
           }
-          label="Models"
         />
       )}
 
-      {s.prompts?.show && (
-        <Prompts
-          prompt_id={formState.prompt_ids[0] ?? null}
-          prompt_resource={s.prompts.current?.[0] ?? null}
-          show_prompts={s.prompts.show}
-          prompts={s.prompts.resources ?? []}
+      {s.endpoints?.show && (
+        <Endpoints
+          endpoint_ids={formState.endpoint_ids}
+          endpoint_resources={s.endpoints.current ?? []}
+          show_endpoints={s.endpoints.show}
+          endpoints={s.endpoints.resources ?? []}
           disabled={false}
-          onPromptIdChange={(id: string | null) =>
-            setFormState((prev) => ({ ...prev, prompt_ids: id ? [id] : [] }))
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, endpoint_ids: ids }))
           }
-          label="Prompts"
+          label="Endpoints"
         />
       )}
 
-      {s.instructions?.show && (
-        <Instructions
-          instruction_id={formState.instruction_ids[0] ?? null}
-          instruction_resource={s.instructions.current?.[0] ?? null}
-          show_instructions={s.instructions.show}
-          instructions={s.instructions.resources ?? []}
+      {s.modalities?.show && (
+        <Modalities
+          modality_ids={formState.modality_ids}
+          modality_resources={s.modalities.current ?? []}
+          show_modalities={s.modalities.show}
+          modalities={s.modalities.resources ?? []}
           disabled={false}
-          onInstructionIdChange={(id: string | null) =>
-            setFormState((prev) => ({
-              ...prev,
-              instruction_ids: id ? [id] : [],
-            }))
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, modality_ids: ids }))
           }
-          label="Instructions"
-        />
-      )}
-
-      {s.voices?.show && (
-        <Voices
-          voice_ids={formState.voice_ids}
-          voice_resources={s.voices.current ?? []}
-          show_voices={s.voices.show}
-          voices={s.voices.resources ?? []}
-          disabled={false}
-          onVoiceIdsChange={(ids) =>
-            setFormState((prev) => ({ ...prev, voice_ids: ids }))
-          }
-          label="Voices"
+          label="Modalities"
         />
       )}
 
@@ -279,6 +400,20 @@ export default function Invocation({
         />
       )}
 
+      {s.pricing?.show && (
+        <Pricing
+          pricing_ids={formState.pricing_ids}
+          pricing_resources={s.pricing.current ?? []}
+          show_pricing={s.pricing.show}
+          pricings={s.pricing.resources ?? []}
+          disabled={false}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, pricing_ids: ids }))
+          }
+          label="Pricing"
+        />
+      )}
+
       {s.reasoning_levels?.show && (
         <ReasoningLevels
           reasoning_level_id={formState.reasoning_level_ids[0] ?? null}
@@ -295,29 +430,31 @@ export default function Invocation({
         />
       )}
 
-      {s.tools?.show && (
-        <Tools
-          tool_ids={formState.tool_ids}
-          tool_resources={s.tools.current ?? []}
-          show_tools={s.tools.show}
-          tools={s.tools.resources ?? []}
+      {s.qualities?.show && (
+        <Qualities
+          quality_ids={formState.quality_ids}
+          quality_resources={s.qualities.current ?? []}
+          show_qualities={s.qualities.show}
+          qualities={s.qualities.resources ?? []}
           disabled={false}
           onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, tool_ids: ids }))
+            setFormState((prev) => ({ ...prev, quality_ids: ids }))
           }
+          label="Qualities"
         />
       )}
 
-      {s.keys?.show && (
-        <Keys
-          key_id={formState.key_ids[0] ?? null}
-          key_resource={s.keys.current?.[0] ?? null}
-          show_key={s.keys.show}
-          keys={s.keys.resources ?? []}
+      {s.voices?.show && (
+        <Voices
+          voice_ids={formState.voice_ids}
+          voice_resources={s.voices.current ?? []}
+          show_voices={s.voices.show}
+          voices={s.voices.resources ?? []}
           disabled={false}
-          onKeyIdChange={(id: string | null) =>
-            setFormState((prev) => ({ ...prev, key_ids: id ? [id] : [] }))
+          onVoiceIdsChange={(ids) =>
+            setFormState((prev) => ({ ...prev, voice_ids: ids }))
           }
+          label="Voices"
         />
       )}
 

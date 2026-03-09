@@ -159,10 +159,15 @@ class GetSuiteResponse(BaseModel):
 # =============================================================================
 
 
+class SaveInvocationFieldError(BaseModel):
+    """Error for a specific field during invocation draft save."""
+
+    field: str
+    message: str
+
+
 class PatchInvocationDraftApiRequest(BaseModel):
     """Request model for new-style invocation draft endpoint.
-
-    All resources are ID-only (no creatable resources).
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -171,18 +176,38 @@ class PatchInvocationDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     expected_version: int = 0
 
-    # All ID-only
+    # Single-select creatables — provide value OR ID
+    name: str | None = None
+    description: str | None = None
+
+    # All ID-only (matches GET response sections)
     name_ids: list[UUID] | None = None
     description_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
     flag_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+    endpoint_ids: list[UUID] | None = None
     temperature_level_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
+
+
+class InvocationDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_ids: list[UUID]
+    description_ids: list[UUID]
+    value_ids: list[UUID]
+    flag_ids: list[UUID]
+    department_ids: list[UUID]
+    key_ids: list[UUID]
+    endpoint_ids: list[UUID]
+    temperature_level_ids: list[UUID]
+    pricing_ids: list[UUID]
+    reasoning_level_ids: list[UUID]
+    voice_ids: list[UUID]
 
 
 class PatchInvocationDraftApiResponse(BaseModel):
@@ -192,3 +217,4 @@ class PatchInvocationDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: InvocationDraftFormState | None = None
