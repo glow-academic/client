@@ -35,8 +35,10 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsString, type Parser } from "nuqs";
 
-type SaveAuthIn = InputOf<"/api/v5/artifacts/auths/save", "post">;
-type SaveAuthOut = OutputOf<"/api/v5/artifacts/auths/save", "post">;
+type CreateAuthIn = InputOf<"/api/v5/artifacts/auths/create", "post">;
+type CreateAuthOut = OutputOf<"/api/v5/artifacts/auths/create", "post">;
+type UpdateAuthIn = InputOf<"/api/v5/artifacts/auths/update", "post">;
+type UpdateAuthOut = OutputOf<"/api/v5/artifacts/auths/update", "post">;
 type PatchAuthDraftIn = InputOf<"/api/v5/artifacts/auths/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/api/v5/artifacts/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -59,7 +61,9 @@ type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
 type AuthData = OutputOf<"/api/v5/artifacts/auths/get", "post">;
 
 type AuthFormState = {
+  name: string | null;
   name_id: string | null;
+  description: string | null;
   description_id: string | null;
   active_flag_id: string | null;
   protocol_ids: string[];
@@ -121,7 +125,8 @@ const AUTH_RESOURCES: ResourceConfig[] = [
 export interface AuthProps {
   authId?: string;
   authData?: AuthData;
-  saveAuthAction?: (input: SaveAuthIn) => Promise<SaveAuthOut>;
+  createAuthAction?: (input: CreateAuthIn) => Promise<CreateAuthOut>;
+  updateAuthAction?: (input: UpdateAuthIn) => Promise<UpdateAuthOut>;
   patchAuthDraftAction?: (input: PatchAuthDraftIn) => Promise<PatchAuthDraftOut>;
   createNamesAction?: (
     input: CreateDraftNamesIn,
@@ -140,7 +145,8 @@ export interface AuthProps {
 function AuthComponent({
   authId,
   authData,
-  saveAuthAction,
+  createAuthAction,
+  updateAuthAction,
   patchAuthDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -152,7 +158,9 @@ function AuthComponent({
   const s = authData;
 
   const [formState, setFormState] = useState<AuthFormState>({
+    name: null,
     name_id: null,
+    description: null,
     description_id: null,
     active_flag_id: null,
     protocol_ids: [],
@@ -173,7 +181,9 @@ function AuthComponent({
   const getInitialFormState = useCallback((): AuthFormState => {
     if (!s) {
       return {
+        name: null,
         name_id: null,
+        description: null,
         description_id: null,
         active_flag_id: null,
         protocol_ids: [],
@@ -183,7 +193,9 @@ function AuthComponent({
     }
 
     return {
+      name: null,
       name_id: s.names?.resource?.id ?? null,
+      description: null,
       description_id: s.descriptions?.resource?.id ?? null,
       active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
       protocol_ids:
@@ -215,7 +227,11 @@ function AuthComponent({
     });
   }, [getInitialFormState]);
 
-  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
+  const serverSyncPendingRef = React.useRef(false);
+  const formStateKey = useMemo(() => {
+    if (serverSyncPendingRef.current) return undefined;
+    return JSON.stringify(formState);
+  }, [formState]);
   const draftVersion = s?.draft_version ?? null;
 
   const patchActionRef = React.useRef<
@@ -226,8 +242,23 @@ function AuthComponent({
       patchActionRef.current = undefined;
       return;
     }
-    patchActionRef.current = async (payload: Record<string, unknown>) =>
-      patchAuthDraftAction({ body: payload } as PatchAuthDraftIn);
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchAuthDraftAction({ body: payload } as PatchAuthDraftIn);
+      // Sync form_state from server (resolved IDs for creatables)
+      const formStateFromServer = (result as any).form_state;
+      if (formStateFromServer) {
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          name_id: formStateFromServer.name_id ?? prev.name_id,
+          description_id: formStateFromServer.description_id ?? prev.description_id,
+        }));
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+      return result;
+    };
   }, [patchAuthDraftAction]);
 
   const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
@@ -243,19 +274,34 @@ function AuthComponent({
       inputDraftId: string | null,
       expectedVersion: number,
       flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => ({
-      input_draft_id: inputDraftId || null,
-      ...buildDraftPayload(AUTH_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState: lastPatchedFormStateRef.current,
-        flushResults: flushResults ?? {},
-      }),
-      items:
-        ((formStateRef.current["items"] as AuthFormState["items"]) ?? []).length > 0
-          ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
-          : null,
-      expected_version: expectedVersion,
-    }),
+    ): Record<string, unknown> => {
+      const payload: Record<string, unknown> = {
+        input_draft_id: inputDraftId || null,
+        ...buildDraftPayload(AUTH_RESOURCES, {
+          formState: formStateRef.current,
+          referenceState: lastPatchedFormStateRef.current,
+          flushResults: flushResults ?? {},
+        }),
+        items:
+          ((formStateRef.current["items"] as AuthFormState["items"]) ?? []).length > 0
+            ? ((formStateRef.current["items"] as AuthFormState["items"]) ?? [])
+            : null,
+        expected_version: expectedVersion,
+      };
+
+      // Value field overlay — send raw value instead of ID for creatables
+      const fs = formStateRef.current as unknown as AuthFormState;
+      if (fs.name) {
+        payload.name = fs.name;
+        delete payload.name_id;
+      }
+      if (fs.description) {
+        payload.description = fs.description;
+        delete payload.description_id;
+      }
+
+      return payload;
+    },
     [s],
   );
 
@@ -379,31 +425,57 @@ function AuthComponent({
       if (!profile?.id) {
         throw new Error("Profile not loaded");
       }
-      if (!s?.group_id) {
-        throw new Error("Missing group_id");
-      }
-      if (!saveAuthAction) {
+
+      if (isEditMode && authId && updateAuthAction) {
+        await updateAuthAction({
+          body: {
+            auths: [
+              {
+                auth_id: authId,
+                name_id: effectiveFormState.name_id ?? undefined,
+                description_id: effectiveFormState.description_id ?? undefined,
+                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                protocol_ids: effectiveFormState.protocol_ids?.length
+                  ? effectiveFormState.protocol_ids
+                  : null,
+                slug_ids: effectiveFormState.slug_ids?.length
+                  ? effectiveFormState.slug_ids
+                  : null,
+                item_ids:
+                  effectiveFormState.items.length > 0
+                    ? effectiveFormState.items.map((item) => item.key_id).filter((id): id is string => !!id)
+                    : null,
+              },
+            ],
+            group_id: s?.group_id ?? null,
+          },
+        } as UpdateAuthIn);
+      } else if (createAuthAction) {
+        await createAuthAction({
+          body: {
+            auths: [
+              {
+                name_id: effectiveFormState.name_id ?? undefined,
+                description_id: effectiveFormState.description_id ?? undefined,
+                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                protocol_ids: effectiveFormState.protocol_ids?.length
+                  ? effectiveFormState.protocol_ids
+                  : null,
+                slug_ids: effectiveFormState.slug_ids?.length
+                  ? effectiveFormState.slug_ids
+                  : null,
+                items:
+                  effectiveFormState.items.length > 0
+                    ? effectiveFormState.items
+                    : null,
+              },
+            ],
+            group_id: s?.group_id ?? null,
+          },
+        } as CreateAuthIn);
+      } else {
         throw new Error("Save action not available");
       }
-
-      await saveAuthAction({
-        body: {
-          input_auth_id: isEditMode ? authId ?? null : null,
-          name_id: effectiveFormState.name_id!,
-          description_id: effectiveFormState.description_id ?? null,
-          flag_id: effectiveFormState.active_flag_id ?? null,
-          protocol_ids: effectiveFormState.protocol_ids?.length
-            ? effectiveFormState.protocol_ids
-            : null,
-          slug_ids: effectiveFormState.slug_ids?.length
-            ? effectiveFormState.slug_ids
-            : null,
-          items:
-            effectiveFormState.items.length > 0
-              ? effectiveFormState.items
-              : null,
-        },
-      });
 
       toast.success(`Auth ${isEditMode ? "updated" : "created"} successfully!`);
       router.push("/system/auth");
@@ -413,7 +485,8 @@ function AuthComponent({
       flushAllResources,
       s,
       profile?.id,
-      saveAuthAction,
+      createAuthAction,
+      updateAuthAction,
       isEditMode,
       authId,
       router,
@@ -557,14 +630,16 @@ function AuthComponent({
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                  }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name }))
                   }
                   onGenerate={() => handleGenerateResources(["names"])}
                   required={s?.names?.required ?? false}
                   hideDescription={true}
 
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  create_tool_id={s?.names?.create_tool_id ?? null}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
@@ -594,7 +669,10 @@ function AuthComponent({
                   descriptions={s?.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({ ...prev, description_id: descriptionId }))
+                    setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
+                  }
+                  onDescriptionChange={(description) =>
+                    setFormState((prev) => ({ ...prev, description }))
                   }
                   onGenerate={() => handleGenerateResources(["descriptions"])}
                   searchTerm={
@@ -609,7 +687,6 @@ function AuthComponent({
                   required={s?.descriptions?.required ?? false}
 
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
@@ -670,7 +747,6 @@ function AuthComponent({
                 required={s?.protocols?.required ?? false}
 
                 showAiGenerate={s?.protocols?.show_ai_generate ?? false}
-                create_tool_id={s?.protocols?.create_tool_id ?? null}
                 createProtocolsAction={createProtocolsAction}
                 registerFlush={registerFlushCallbacks["protocols"]}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -716,7 +792,6 @@ function AuthComponent({
                 required={s?.slugs?.required ?? false}
 
                 showAiGenerate={s?.slugs?.show_ai_generate ?? false}
-                create_tool_id={s?.slugs?.create_tool_id ?? null}
                 createSlugsAction={createSlugsAction}
                 registerFlush={registerFlushCallbacks["slugs"]}
                 isAutosaveEnabled={isAutosaveEnabled}

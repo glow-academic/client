@@ -16,8 +16,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetToolIn = InputOf<"/api/v5/artifacts/tools/get", "post">;
 type GetToolOut = OutputOf<"/api/v5/artifacts/tools/get", "post">;
-type SaveToolIn = InputOf<"/api/v5/artifacts/tools/save", "post">;
-type SaveToolOut = OutputOf<"/api/v5/artifacts/tools/save", "post">;
+type CreateToolIn = InputOf<"/api/v5/artifacts/tools/create", "post">;
+type CreateToolOut = OutputOf<"/api/v5/artifacts/tools/create", "post">;
+type UpdateToolIn = InputOf<"/api/v5/artifacts/tools/update", "post">;
+type UpdateToolOut = OutputOf<"/api/v5/artifacts/tools/update", "post">;
 type PatchToolDraftIn = InputOf<"/api/v5/artifacts/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v5/artifacts/tools/draft", "patch">;
 type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
@@ -70,10 +72,14 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function saveTool(input: SaveToolIn): Promise<SaveToolOut> {
+async function createTool(input: CreateToolIn): Promise<CreateToolOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/artifacts/tools/save", input);
+  return api.post("/artifacts/tools/create", input);
+}
+
+async function updateTool(input: UpdateToolIn): Promise<UpdateToolOut> {
+  "use server";
+  return api.post("/artifacts/tools/update", input);
 }
 
 async function patchToolDraft(
@@ -181,7 +187,8 @@ export default async function ToolDetailPage({
           <Tool
             toolId={toolId}
             toolData={toolDetail}
-            saveToolAction={saveTool}
+            createToolAction={createTool}
+            updateToolAction={updateTool}
             patchToolDraftAction={patchToolDraft}
             createArgsAction={createDraftArgs}
             createArgPositionsAction={createDraftArgPositions}
@@ -216,6 +223,8 @@ export type {
   GetToolOut,
   PatchToolDraftIn,
   PatchToolDraftOut,
-  SaveToolIn,
-  SaveToolOut,
+  CreateToolIn,
+  CreateToolOut,
+  UpdateToolIn,
+  UpdateToolOut,
 };

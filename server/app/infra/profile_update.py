@@ -145,6 +145,7 @@ async def update_profile_client(
                     email_ids=item.email_ids,
                     role_ids=item.role_ids,
                     profile_ids=[profiles_resource_id],
+                    redis=redis,
                 )
 
                 results.append(

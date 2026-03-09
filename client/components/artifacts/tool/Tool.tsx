@@ -35,8 +35,10 @@ import { Check } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveToolIn = InputOf<"/api/v5/artifacts/tools/save", "post">;
-type SaveToolOut = OutputOf<"/api/v5/artifacts/tools/save", "post">;
+type CreateToolIn = InputOf<"/api/v5/artifacts/tools/create", "post">;
+type CreateToolOut = OutputOf<"/api/v5/artifacts/tools/create", "post">;
+type UpdateToolIn = InputOf<"/api/v5/artifacts/tools/update", "post">;
+type UpdateToolOut = OutputOf<"/api/v5/artifacts/tools/update", "post">;
 type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -95,7 +97,8 @@ export interface ToolProps {
   // Server-provided data (for server-side rendering)
   toolData?: ToolData;
   // Server actions (replaces useMutation)
-  saveToolAction?: (input: SaveToolIn) => Promise<SaveToolOut>;
+  createToolAction?: (input: CreateToolIn) => Promise<CreateToolOut>;
+  updateToolAction?: (input: UpdateToolIn) => Promise<UpdateToolOut>;
   patchToolDraftAction?: (
     input: PatchToolDraftIn
   ) => Promise<PatchToolDraftOut>;
@@ -112,7 +115,8 @@ export interface ToolProps {
 function ToolComponent({
   toolId,
   toolData,
-  saveToolAction,
+  createToolAction,
+  updateToolAction,
   patchToolDraftAction,
   createArgsAction,
   createArgsOutputsAction,
@@ -465,6 +469,9 @@ function ToolComponent({
     patchToolDraftActionRef.current = patchToolDraftAction;
   }, [patchToolDraftAction]);
 
+  // Prevent autosave re-trigger when syncing form_state from server
+  const serverSyncPendingRef = React.useRef(false);
+
   // Draft version tracking for optimistic concurrency control
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
   const lastSavedVersionRef = React.useRef(0);
@@ -487,18 +494,24 @@ function ToolComponent({
   }, [draftVersion]);
 
   const draftPatchKey = useMemo(
-    () =>
-      JSON.stringify({
+    () => {
+      if (serverSyncPendingRef.current) return undefined;
+      return JSON.stringify({
         draftId: draftId || null,
+        name: formState.name || null,
+        description: formState.description || null,
         name_id: stableToolDataFields?.names?.resource?.id ?? null,
         description_id: stableToolDataFields?.descriptions?.resource?.id ?? null,
         active_flag_id: stableToolDataFields?.flags?.current?.flag_option_id ?? null,
         args_ids: formState.args_ids,
         arg_position_ids: formState.arg_position_ids,
         args_outputs_ids: formState.args_outputs_ids,
-      }),
+      });
+    },
     [
       draftId,
+      formState.name,
+      formState.description,
       stableToolDataFields?.names?.resource?.id,
       stableToolDataFields?.descriptions?.resource?.id,
       stableToolDataFields?.flags,
@@ -511,12 +524,17 @@ function ToolComponent({
   const lastPatchedKeyRef = React.useRef<string | null>(null);
 
   useEffect(() => {
-    const hasResourceIds =
+    if (!draftPatchKey || !patchToolDraftActionRef.current) {
+      return;
+    }
+
+    const hasContent =
+      formState.name.trim() !== "" ||
       formState.args_ids.length > 0 ||
       formState.arg_position_ids.length > 0 ||
       formState.args_outputs_ids.length > 0;
 
-    if (!hasResourceIds || !patchToolDraftActionRef.current) {
+    if (!hasContent) {
       return;
     }
 
@@ -528,29 +546,56 @@ function ToolComponent({
       try {
         if (!patchToolDraftActionRef.current) return;
         const currentFields = toolDataRef.current as ToolDataWithArgPositions | undefined;
+        const fs = formStateRef.current;
+
+        // Build payload — value fields override ID fields
+        const payload: Record<string, unknown> = {
+          input_draft_id: draftId || null,
+          name_id: currentFields?.names?.resource?.id ?? null,
+          description_id: currentFields?.descriptions?.resource?.id ?? null,
+          flag_ids: currentFields?.flags?.current?.flag_option_id
+            ? [currentFields.flags.current.flag_option_id]
+            : null,
+          arg_ids: fs.args_ids,
+          arg_position_ids: fs.arg_position_ids,
+          args_output_ids: fs.args_outputs_ids,
+          expected_version: lastSavedVersionRef.current,
+        };
+
+        // Value field overlay — send raw value instead of ID for creatables
+        if (fs.name) {
+          payload.name = fs.name;
+          delete payload.name_id;
+        }
+        if (fs.description) {
+          payload.description = fs.description;
+          delete payload.description_id;
+        }
+
         const result = await patchToolDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: currentFields?.names?.resource?.id ?? null,
-            description_id: currentFields?.descriptions?.resource?.id ?? null,
-            flag_id: currentFields?.flags?.current?.flag_option_id ?? null,
-            arg_ids: formState.args_ids,
-            arg_position_ids: formState.arg_position_ids,
-            args_output_ids: formState.args_outputs_ids,
-            expected_version: lastSavedVersionRef.current,
-          },
+          body: payload,
         } as PatchToolDraftIn);
 
         lastPatchedKeyRef.current = draftPatchKey;
 
         if (result.draft_id && result.draft_id !== draftId) {
-          // Sync URL to server-returned draft_id to avoid stale draft mismatch
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
         if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
           setLastSavedVersion(result.new_version ?? 0);
           lastSavedVersionRef.current = result.new_version ?? 0;
+        }
+
+        // Sync form_state from server (resolved IDs for creatables)
+        const formStateFromServer = (result as any).form_state;
+        if (formStateFromServer) {
+          serverSyncPendingRef.current = true;
+          // Server resolved name/description values to IDs — no formState fields to sync
+          // (Tool uses raw strings in formState, not IDs)
+          requestAnimationFrame(() => {
+            serverSyncPendingRef.current = false;
+          });
         }
       } catch {
         // Draft save failed - API logs handle details
@@ -561,6 +606,8 @@ function ToolComponent({
   }, [
     draftPatchKey,
     draftId,
+    formState.name,
+    formState.description,
     formState.args_ids,
     formState.arg_position_ids,
     formState.args_outputs_ids,
@@ -626,35 +673,54 @@ function ToolComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveToolAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-
       if (!formState.name || !formState.name.trim()) {
         toast.error("Tool name is required");
         throw new Error("Tool name is required");
       }
 
-      // Get resource IDs from current selections
-      const nameId = toolData?.names?.resource?.id;
-      if (!nameId) {
-        toast.error("A name resource must be selected");
-        throw new Error("A name resource must be selected");
-      }
-
       try {
-        await saveToolAction({
-          body: {
-            input_tool_id: isEditMode && toolId ? toolId : null,
-            name_id: nameId,
-            description_id: toolData?.descriptions?.resource?.id ?? null,
-            flag_id: toolData?.flags?.current?.flag_option_id ?? null,
-            arg_ids: formState.args_ids?.length ? formState.args_ids : null,
-            arg_position_ids: formState.arg_position_ids?.length ? formState.arg_position_ids : null,
-            args_output_ids: formState.args_outputs_ids?.length ? formState.args_outputs_ids : null,
-          },
-        } as SaveToolIn);
+        if (isEditMode && toolId && updateToolAction) {
+          await updateToolAction({
+            body: {
+              tools: [
+                {
+                  tool_id: toolId,
+                  name: formState.name,
+                  description: formState.description || null,
+                  flag_ids: toolData?.flags?.current?.flag_option_id
+                    ? [toolData.flags.current.flag_option_id]
+                    : null,
+                  args_ids: formState.args_ids?.length ? formState.args_ids : null,
+                  arg_positions_ids: formState.arg_position_ids?.length ? formState.arg_position_ids : null,
+                  args_outputs_ids: formState.args_outputs_ids?.length ? formState.args_outputs_ids : null,
+                },
+              ],
+              group_id: toolData?.group_id ?? null,
+            },
+          } as UpdateToolIn);
+        } else if (createToolAction) {
+          await createToolAction({
+            body: {
+              tools: [
+                {
+                  name: formState.name,
+                  description: formState.description || null,
+                  flag_ids: toolData?.flags?.current?.flag_option_id
+                    ? [toolData.flags.current.flag_option_id]
+                    : null,
+                  args_ids: formState.args_ids?.length ? formState.args_ids : null,
+                  arg_positions_ids: formState.arg_position_ids?.length ? formState.arg_position_ids : null,
+                  args_outputs_ids: formState.args_outputs_ids?.length ? formState.args_outputs_ids : null,
+                },
+              ],
+              group_id: toolData?.group_id ?? null,
+            },
+          } as CreateToolIn);
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
+
         toast.success(
           `Tool ${isEditMode ? "updated" : "created"} successfully!`
         );
@@ -673,14 +739,14 @@ function ToolComponent({
       isEditMode,
       toolId,
       profile?.id,
-      saveToolAction,
+      createToolAction,
+      updateToolAction,
       router,
       toolData?.args?.required,
       toolDataAny?.arg_positions?.required,
       toolData?.args_outputs?.required,
-      toolData?.names?.resource?.id,
-      toolData?.descriptions?.resource?.id,
       toolData?.flags,
+      toolData?.group_id,
       isAutosaveEnabled,
       flushAllResources,
     ]
@@ -1094,8 +1160,6 @@ function ToolComponent({
                   }
                   disabled={disabled}
                   {...(createArgsAction ? { createArgsAction } : {})}
-
-                  create_tool_id={currentToolData?.args_create_tool_id ?? null}
                   registerFlush={registerFlushCallbacks["args"]}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
@@ -1219,9 +1283,7 @@ function ToolComponent({
                     })
                   )}
                   disabled={disabled}
-
                   tool_id={toolId ?? null}
-                  create_tool_id={currentToolData?.arg_positions_create_tool_id ?? null}
                   onPositionIdsChange={(ids) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1537,7 +1599,8 @@ export default React.memo(ToolComponent, (prevProps, nextProps) => {
 
   // Compare function props by reference (should be stable from server actions)
   if (
-    prevProps.saveToolAction !== nextProps.saveToolAction ||
+    prevProps.createToolAction !== nextProps.createToolAction ||
+    prevProps.updateToolAction !== nextProps.updateToolAction ||
     prevProps.patchToolDraftAction !== nextProps.patchToolDraftAction ||
     prevProps.createArgsAction !== nextProps.createArgsAction ||
     prevProps.createArgPositionsAction !== nextProps.createArgPositionsAction ||

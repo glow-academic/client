@@ -9,6 +9,7 @@ Data sources:
   - attempt_chat_mv: grades/stats (cohort-scoped superset for personal + instructional)
 """
 
+import asyncio
 from collections import defaultdict
 from typing import Annotated, Any
 from uuid import UUID
@@ -16,7 +17,14 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.common_context import resolve_common_context
+from app.infra.types import ArtifactContext
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.home_context import resolve_home_context
 from app.infra.home_permissions import (
@@ -27,6 +35,7 @@ from app.infra.home_permissions import (
     compute_status_instructional,
     format_cohort_names,
 )
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.chat.types import (
     ChatSimulationOperational,
     RubricMapping,
@@ -44,6 +53,21 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Home analytics facets config
+# ---------------------------------------------------------------------------
+
+HOME_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=VISIBLE,
+        roles=HIDDEN,
+        attempts=HIDDEN,
+    ),
+    mv_source="profile_facts",
+)
 
 # =============================================================================
 # Helpers
@@ -168,14 +192,26 @@ async def get_home_internal(
     view_mode = compute_mode(False, user_role)
     is_instructional = view_mode == "instructional"
 
-    # --- Phase 1: Resolve home context ---
-    async with pool.acquire() as c:
-        ctx = await resolve_home_context(
-            c,
+    # --- Phase 1: Resolve home context + analytics facets in parallel ---
+    async def _resolve_home_ctx() -> "ArtifactContext":
+        async with pool.acquire() as c:
+            return await resolve_home_context(
+                c,
+                redis,
+                profiles_resource_id=profiles_resource_id,
+                bypass_cache=bypass_cache,
+            )
+
+    ctx, analytics_facets = await asyncio.gather(
+        _resolve_home_ctx(),
+        resolve_analytics_facets(
+            pool,
             redis,
-            profiles_resource_id=profiles_resource_id,
+            config=HOME_FACETS_CONFIG,
+            profile=profile,
             bypass_cache=bypass_cache,
-        )
+        ),
+    )
 
     # --- Phase 2: Extract data from ArtifactContext ---
     homes = ctx.entries.get("homes", [])
@@ -419,6 +455,7 @@ async def get_home_internal(
         rubrics=rubrics,
         standard_groups=standard_groups,
         standards=standards,
+        analytics=analytics_facets,
     )
 
 

@@ -13782,6 +13782,41 @@ export interface components {
             content?: string | null;
         };
         /**
+         * AnalyticsFacets
+         * @description Resolved analytics facets — embeddable in any artifact response.
+         *
+         *     Contains filter field visibility, available options for dropdowns,
+         *     and date range boundaries. Returned inline from artifact get/search
+         *     responses so each page has its filter facets ready for SSR.
+         */
+        AnalyticsFacets: {
+            fields: components["schemas"]["AnalyticsFilterFields"];
+            /**
+             * Department Options
+             * @default []
+             */
+            department_options: components["schemas"]["AnalyticsFilterOption"][];
+            /**
+             * Cohort Options
+             * @default []
+             */
+            cohort_options: components["schemas"]["AnalyticsFilterOption"][];
+            /**
+             * Role Options
+             * @default []
+             */
+            role_options: string[];
+            /**
+             * Attempt Options
+             * @default []
+             */
+            attempt_options: string[];
+            /** Date Range Earliest */
+            date_range_earliest?: string | null;
+            /** Date Range Latest */
+            date_range_latest?: string | null;
+        };
+        /**
          * AnalyticsFilterField
          * @description Visibility/disabled state for a single filter field.
          */
@@ -14800,6 +14835,26 @@ export interface components {
             resource?: unknown | null;
             /** Resources */
             resources?: unknown[] | null;
+        };
+        /**
+         * AuthDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        AuthDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids: string[];
+            /** Protocol Ids */
+            protocol_ids: string[];
+            /** Slug Ids */
+            slug_ids: string[];
+            /** Item Ids */
+            item_ids: string[];
         };
         /**
          * AuthFieldError
@@ -21846,7 +21901,7 @@ export interface components {
         };
         /**
          * GetAnalyticsFiltersApiResponse
-         * @description Response for POST /auth/analytics.
+         * @description Response for POST /auth/analytics (backward-compatible).
          */
         GetAnalyticsFiltersApiResponse: {
             fields: components["schemas"]["AnalyticsFilterFields"];
@@ -22515,6 +22570,7 @@ export interface components {
          * @description Client-facing API response for home get (operational).
          *
          *     Returns simulations user can take, scoped by their cohorts.
+         *     Includes inline analytics facets for SSR filter rendering.
          */
         GetHomeResponse: {
             /** Actor Name */
@@ -22527,6 +22583,7 @@ export interface components {
             standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
             /** Standards */
             standards?: components["schemas"]["StandardMapping"][] | null;
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /** GetKeyForDecryptApiRequest */
         GetKeyForDecryptApiRequest: {
@@ -27551,6 +27608,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["AuthDraftFormState"] | null;
         };
         /**
          * PatchChatDraftApiRequest
@@ -28588,6 +28646,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["ToolDraftFormState"] | null;
         };
         /** PersonaChartRow */
         PersonaChartRow: {
@@ -37411,6 +37470,30 @@ export interface components {
             resource?: unknown | null;
             /** Resources */
             resources?: unknown[] | null;
+        };
+        /**
+         * ToolDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        ToolDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Arg Ids */
+            arg_ids: string[];
+            /** Arg Position Ids */
+            arg_position_ids: string[];
+            /** Args Output Ids */
+            args_output_ids: string[];
+            /** Entry Ids */
+            entry_ids: string[];
+            /** Resource Ids */
+            resource_ids: string[];
         };
         /**
          * ToolFieldError

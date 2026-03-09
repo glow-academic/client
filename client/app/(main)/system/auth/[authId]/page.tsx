@@ -16,8 +16,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetAuthIn = InputOf<"/api/v5/artifacts/auths/get", "post">;
 type GetAuthOut = OutputOf<"/api/v5/artifacts/auths/get", "post">;
-type SaveAuthIn = InputOf<"/api/v5/artifacts/auths/save", "post">;
-type SaveAuthOut = OutputOf<"/api/v5/artifacts/auths/save", "post">;
+type CreateAuthIn = InputOf<"/api/v5/artifacts/auths/create", "post">;
+type CreateAuthOut = OutputOf<"/api/v5/artifacts/auths/create", "post">;
+type UpdateAuthIn = InputOf<"/api/v5/artifacts/auths/update", "post">;
+type UpdateAuthOut = OutputOf<"/api/v5/artifacts/auths/update", "post">;
 type PatchAuthDraftIn = InputOf<"/api/v5/artifacts/auths/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/api/v5/artifacts/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -66,11 +68,14 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveAuth(input: SaveAuthIn): Promise<SaveAuthOut> {
+async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/auths/save", input);
+  return api.post("/artifacts/auths/create", input);
+}
+
+async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
+  "use server";
+  return api.post("/artifacts/auths/update", input);
 }
 
 async function patchAuthDraft(
@@ -177,7 +182,8 @@ export default async function AuthEditPage({
             key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
             authId={authId}
             authData={authData}
-            saveAuthAction={saveAuth}
+            createAuthAction={createAuth}
+            updateAuthAction={updateAuth}
             patchAuthDraftAction={patchAuthDraft}
             createNamesAction={createDraftNames}
             createDescriptionsAction={createDraftDescriptions}
@@ -222,6 +228,8 @@ export type {
   GetAuthOut,
   PatchAuthDraftIn,
   PatchAuthDraftOut,
-  SaveAuthIn,
-  SaveAuthOut,
+  CreateAuthIn,
+  CreateAuthOut,
+  UpdateAuthIn,
+  UpdateAuthOut,
 };

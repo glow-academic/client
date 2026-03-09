@@ -23,6 +23,7 @@ from app.routes.v5.api.main.tool.types import (
     PatchToolDraftApiRequest,
     PatchToolDraftApiResponse,
     SaveToolFieldError,
+    ToolDraftFormState,
 )
 from app.routes.v5.tools.entries.tool_drafts.create import create_tool_draft
 from app.routes.v5.tools.entries.tool_drafts.refresh import refresh_tool_drafts
@@ -138,12 +139,26 @@ async def patch_tool_draft_client(
                 resource_ids=request.resource_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = ToolDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_ids=request.flag_ids or [],
+        department_ids=request.department_ids or [],
+        arg_ids=request.arg_ids or [],
+        arg_position_ids=request.arg_position_ids or [],
+        args_output_ids=request.args_output_ids or [],
+        entry_ids=request.entry_ids or [],
+        resource_ids=request.resource_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_tool_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["tools", "drafts"], redis=redis)
 
@@ -152,4 +167,5 @@ async def patch_tool_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

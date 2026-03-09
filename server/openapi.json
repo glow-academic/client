@@ -47901,6 +47901,73 @@
         "title": "AnalysisEntry",
         "description": "Analysis entry for chat-level analysis content."
       },
+      "AnalyticsFacets": {
+        "properties": {
+          "fields": {
+            "$ref": "#/components/schemas/AnalyticsFilterFields"
+          },
+          "department_options": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsFilterOption"
+            },
+            "type": "array",
+            "title": "Department Options",
+            "default": []
+          },
+          "cohort_options": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsFilterOption"
+            },
+            "type": "array",
+            "title": "Cohort Options",
+            "default": []
+          },
+          "role_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Role Options",
+            "default": []
+          },
+          "attempt_options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Attempt Options",
+            "default": []
+          },
+          "date_range_earliest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Range Earliest"
+          },
+          "date_range_latest": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Range Latest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fields"
+        ],
+        "title": "AnalyticsFacets",
+        "description": "Resolved analytics facets \u2014 embeddable in any artifact response.\n\nContains filter field visibility, available options for dropdowns,\nand date range boundaries. Returned inline from artifact get/search\nresponses so each page has its filter facets ready for SSR."
+      },
       "AnalyticsFilterField": {
         "properties": {
           "visible": {
@@ -50639,6 +50706,87 @@
         },
         "type": "object",
         "title": "AuthDescriptionSection"
+      },
+      "AuthDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "protocol_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Protocol Ids"
+          },
+          "slug_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Slug Ids"
+          },
+          "item_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Item Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_ids",
+          "protocol_ids",
+          "slug_ids",
+          "item_ids"
+        ],
+        "title": "AuthDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
       },
       "AuthFieldError": {
         "properties": {
@@ -72595,7 +72743,7 @@
           "fields"
         ],
         "title": "GetAnalyticsFiltersApiResponse",
-        "description": "Response for POST /auth/analytics."
+        "description": "Response for POST /auth/analytics (backward-compatible)."
       },
       "GetAttemptDetailRequest": {
         "properties": {
@@ -75368,11 +75516,21 @@
               }
             ],
             "title": "Standards"
+          },
+          "analytics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsFacets"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
         "title": "GetHomeResponse",
-        "description": "Client-facing API response for home get (operational).\n\nReturns simulations user can take, scoped by their cohorts."
+        "description": "Client-facing API response for home get (operational).\n\nReturns simulations user can take, scoped by their cohorts.\nIncludes inline analytics facets for SSR filter rendering."
       },
       "GetKeyForDecryptApiRequest": {
         "properties": {
@@ -94433,6 +94591,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuthDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -98195,6 +98363,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -128793,6 +128971,102 @@
         },
         "type": "object",
         "title": "ToolDescriptionSection"
+      },
+      "ToolDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "arg_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Arg Ids"
+          },
+          "arg_position_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Arg Position Ids"
+          },
+          "args_output_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Args Output Ids"
+          },
+          "entry_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Entry Ids"
+          },
+          "resource_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Resource Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag_ids",
+          "department_ids",
+          "arg_ids",
+          "arg_position_ids",
+          "args_output_ids",
+          "entry_ids",
+          "resource_ids"
+        ],
+        "title": "ToolDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
       },
       "ToolFieldError": {
         "properties": {

@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.routes.auth.types import AnalyticsFacets
 from app.routes.v5.api.main.chat.types import (
     ChatSimulationOperational,
     RubricMapping,
@@ -40,6 +41,7 @@ class GetHomeResponse(BaseModel):
     """Client-facing API response for home get (operational).
 
     Returns simulations user can take, scoped by their cohorts.
+    Includes inline analytics facets for SSR filter rendering.
     """
 
     actor_name: str | None = None
@@ -47,6 +49,7 @@ class GetHomeResponse(BaseModel):
     rubrics: list[RubricMapping] | None = None
     standard_groups: list[StandardGroupMapping] | None = None
     standards: list[StandardMapping] | None = None
+    analytics: AnalyticsFacets | None = None
 
 
 # =============================================================================

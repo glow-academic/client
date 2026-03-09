@@ -368,6 +368,20 @@ class PatchToolDraftApiRequest(BaseModel):
     resource_ids: list[UUID] | None = None
 
 
+class ToolDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID]
+    department_ids: list[UUID]
+    arg_ids: list[UUID]
+    arg_position_ids: list[UUID]
+    args_output_ids: list[UUID]
+    entry_ids: list[UUID]
+    resource_ids: list[UUID]
+
+
 class PatchToolDraftApiResponse(BaseModel):
     """Response model for new-style tool draft endpoint."""
 
@@ -375,6 +389,7 @@ class PatchToolDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: ToolDraftFormState | None = None
 
 
 # ========== Export Endpoint Types ==========

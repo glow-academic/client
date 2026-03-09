@@ -15,8 +15,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetToolIn = InputOf<"/api/v5/artifacts/tools/get", "post">;
 type GetToolOut = OutputOf<"/api/v5/artifacts/tools/get", "post">;
-type SaveToolIn = InputOf<"/api/v5/artifacts/tools/save", "post">;
-type SaveToolOut = OutputOf<"/api/v5/artifacts/tools/save", "post">;
+type CreateToolIn = InputOf<"/api/v5/artifacts/tools/create", "post">;
+type CreateToolOut = OutputOf<"/api/v5/artifacts/tools/create", "post">;
 type PatchToolDraftIn = InputOf<"/api/v5/artifacts/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v5/artifacts/tools/draft", "patch">;
 type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
@@ -65,10 +65,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function saveTool(input: SaveToolIn): Promise<SaveToolOut> {
+async function createTool(input: CreateToolIn): Promise<CreateToolOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/artifacts/tools/save", input);
+  return api.post("/artifacts/tools/create", input);
 }
 
 async function patchToolDraft(
@@ -160,7 +159,7 @@ export default async function NewToolPage({
       >
         <Tool
           toolData={toolDetailDefault}
-          saveToolAction={saveTool}
+          createToolAction={createTool}
           patchToolDraftAction={patchToolDraft}
           createArgsAction={createDraftArgs}
           createArgPositionsAction={createDraftArgPositions}
@@ -177,6 +176,6 @@ export type {
   GetToolOut,
   PatchToolDraftIn,
   PatchToolDraftOut,
-  SaveToolIn,
-  SaveToolOut,
+  CreateToolIn,
+  CreateToolOut,
 };

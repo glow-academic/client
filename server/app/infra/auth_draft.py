@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from app.infra.auth_permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.auth.types import (
+    AuthDraftFormState,
     PatchAuthDraftApiRequest,
     PatchAuthDraftApiResponse,
     SaveAuthFieldError,
@@ -134,11 +135,23 @@ async def patch_auth_draft_client(
             item_ids=request.item_ids,
         )
 
-    # -- Step 5: Refresh MV -----------------------------------------------------
+    # -- Step 5: Build form state (server is source of truth) --------------------
+
+    form_state = AuthDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_id=request.flag_id,
+        department_ids=request.department_ids or [],
+        protocol_ids=request.protocol_ids or [],
+        slug_ids=request.slug_ids or [],
+        item_ids=request.item_ids or [],
+    )
+
+    # -- Step 6: Refresh MV -----------------------------------------------------
 
     await refresh_auth_drafts(conn)
 
-    # -- Step 6: Invalidate cache -----------------------------------------------
+    # -- Step 7: Invalidate cache -----------------------------------------------
 
     await invalidate_tags(["auths", "drafts"], redis=redis)
 
@@ -147,4 +160,5 @@ async def patch_auth_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

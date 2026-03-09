@@ -237,8 +237,13 @@ class AnalyticsFilterOption(BaseModel):
     label: str
 
 
-class GetAnalyticsFiltersApiResponse(BaseModel):
-    """Response for POST /auth/analytics."""
+class AnalyticsFacets(BaseModel):
+    """Resolved analytics facets — embeddable in any artifact response.
+
+    Contains filter field visibility, available options for dropdowns,
+    and date range boundaries. Returned inline from artifact get/search
+    responses so each page has its filter facets ready for SSR.
+    """
 
     fields: AnalyticsFilterFields
     department_options: list[AnalyticsFilterOption] = []
@@ -247,3 +252,9 @@ class GetAnalyticsFiltersApiResponse(BaseModel):
     attempt_options: list[str] = []
     date_range_earliest: str | None = None
     date_range_latest: str | None = None
+
+
+class GetAnalyticsFiltersApiResponse(AnalyticsFacets):
+    """Response for POST /auth/analytics (backward-compatible)."""
+
+    pass
