@@ -314,7 +314,7 @@ export function SimulationPositions({
         for (const pos of positionsArray) {
           createSimulationPositionsAction({
             body: {
-                simulation_id: pos.simulation_id,
+              simulation_id: pos.simulation_id,
               value: pos.value,
               mcp: false,
               tool_id: create_tool_id ?? undefined,
