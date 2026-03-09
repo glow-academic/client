@@ -296,7 +296,7 @@ async def user_start_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
 ) -> None:
     """Create user message shell and emit attempt_user_start."""
     sid = data.get("sid", "")
@@ -308,19 +308,20 @@ async def user_start_impl(
     try:
         from app.routes.v5.tools.entries.messages.create import create_message
 
-        result = await create_message(
-            conn,
-            run_id=uuid.UUID(run_id),
-            role="user",
-        )
-        await conn.execute(
-            """
-            INSERT INTO attempt_message_entry (id, chat_id)
-            VALUES ($1, $2)
-        """,
-            result.id,
-            uuid.UUID(chat_id),
-        )
+        async with pool.acquire() as conn:
+            result = await create_message(
+                conn,
+                run_id=uuid.UUID(run_id),
+                role="user",
+            )
+            await conn.execute(
+                """
+                INSERT INTO attempt_message_entry (id, chat_id)
+                VALUES ($1, $2)
+            """,
+                result.id,
+                uuid.UUID(chat_id),
+            )
 
         await emit(
             [
@@ -443,7 +444,7 @@ async def user_complete_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
 ) -> None:
     """Write content to open user message and emit attempt_user_complete."""
     from app.infra.websocket.attempt_types import AttemptUserCompleteData
@@ -465,48 +466,49 @@ async def user_complete_impl(
         return
 
     try:
-        # Find the open (uncompleted) user message for this chat
-        messages, _ = await search_attempt_messages(
-            conn,
-            chat_ids=[uuid.UUID(chat_id)],
-            bypass_mv=True,
-            limit=1000,
-        )
+        async with pool.acquire() as conn:
+            # Find the open (uncompleted) user message for this chat
+            messages, _ = await search_attempt_messages(
+                conn,
+                chat_ids=[uuid.UUID(chat_id)],
+                bypass_mv=True,
+                limit=1000,
+            )
 
-        # Filter: user messages that are not completed, most recent first
-        open_user_messages = [
-            m for m in messages if m.type == "user" and not m.completed
-        ]
+            # Filter: user messages that are not completed, most recent first
+            open_user_messages = [
+                m for m in messages if m.type == "user" and not m.completed
+            ]
 
-        if not open_user_messages:
-            logger.warning(f"No open user message found for chat={chat_id}")
-            return
+            if not open_user_messages:
+                logger.warning(f"No open user message found for chat={chat_id}")
+                return
 
-        message = open_user_messages[0]
-        message_id = message.message_id
-        created_at = message.created_at
+            message = open_user_messages[0]
+            message_id = message.message_id
+            created_at = message.created_at
 
-        # Write content
-        await create_attempt_content_entry_internal(
-            conn,
-            {
-                "message_id": message_id,
-                "content": content,
-                "persona_id": STUDENT_PERSONA_ID,
-            },
-            run_id=uuid.UUID(run_id),
-        )
+            # Write content
+            await create_attempt_content_entry_internal(
+                conn,
+                {
+                    "message_id": message_id,
+                    "content": content,
+                    "persona_id": STUDENT_PERSONA_ID,
+                },
+                run_id=uuid.UUID(run_id),
+            )
 
-        # TODO: link audio upload if present (audio_upload_id in data)
-        # Needs black-box for: create audio → audio_uploads → message_audios
+            # TODO: link audio upload if present (audio_upload_id in data)
+            # Needs black-box for: create audio → audio_uploads → message_audios
 
-        # Mark message as complete
-        # TODO: call_id required but not available in this context
-        await create_attempt_message_completion(
-            conn,
-            attempt_message_id=message_id,
-            call_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
-        )
+            # Mark message as complete
+            # TODO: call_id required but not available in this context
+            await create_attempt_message_completion(
+                conn,
+                attempt_message_id=message_id,
+                call_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+            )
 
         await emit(
             [
@@ -538,7 +540,7 @@ async def speech_complete_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     session_id: uuid.UUID | None = None,
 ) -> None:
     """Save audio, create upload record, emit attempt_user_received_complete."""
@@ -570,13 +572,14 @@ async def speech_complete_impl(
             file_path.write_bytes(audio)
 
             relative_path = f"audio/{filename}"
-            upload_result = await create_upload(
-                conn,
-                session_id=session_id or uuid.UUID(int=0),
-                file_path=relative_path,
-                mime_type="audio/pcm16",
-                size=len(audio),
-            )
+            async with pool.acquire() as conn:
+                upload_result = await create_upload(
+                    conn,
+                    session_id=session_id or uuid.UUID(int=0),
+                    file_path=relative_path,
+                    mime_type="audio/pcm16",
+                    size=len(audio),
+                )
             audio_upload_id = str(upload_result.id)
         except Exception as e:
             logger.exception(f"Failed to save user speech audio: {e}")
@@ -607,7 +610,7 @@ async def attempt_start_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None = None,
     profile_id: str,
     session_id: str,
@@ -650,7 +653,7 @@ async def attempt_start_impl(
     try:
         # 1. Resolve profiles_resource_id
         identity = await resolve_profile_identity_context(
-            conn, profile_id_uuid, redis or Redis(), bypass_cache=True
+            pool, profile_id_uuid, redis or Redis(), bypass_cache=True
         )
         profiles_resource_id = identity.profiles_id if identity else None
         if not profiles_resource_id:
@@ -661,10 +664,11 @@ async def attempt_start_impl(
         if not parent_id:
             raise ValueError("Either practice_id or home_id is required")
 
-        if is_practice:
-            entries = await get_practices(conn, [parent_id])
-        else:
-            entries = await get_homes(conn, [parent_id])
+        async with pool.acquire() as conn:
+            if is_practice:
+                entries = await get_practices(conn, [parent_id])
+            else:
+                entries = await get_homes(conn, [parent_id])
 
         if not entries:
             raise ValueError(f"Parent entry not found: {parent_id}")
@@ -675,12 +679,13 @@ async def attempt_start_impl(
         if not persona_ids:
             raise ValueError("No profile personas found in parent")
 
-        profile_personas = await get_profile_personas(
-            conn,
-            persona_ids,
-            redis=redis or Redis(),
-            bypass_cache=True,
-        )
+        async with pool.acquire() as conn:
+            profile_personas = await get_profile_personas(
+                conn,
+                persona_ids,
+                redis=redis or Redis(),
+                bypass_cache=True,
+            )
 
         persona_id = None
         for pp in profile_personas:
@@ -692,20 +697,21 @@ async def attempt_start_impl(
             raise ValueError("No profile persona found matching this profile")
 
         # 4. Count chats from parent
-        if is_practice:
-            chat_entries = await search_practice_chats(
-                conn,
-                practice_ids=[payload.practice_id],
-                limit=1000,
-                bypass_mv=True,
-            )
-        else:
-            chat_entries = await search_home_chats(
-                conn,
-                home_ids=[payload.home_id],
-                limit=1000,
-                bypass_mv=True,
-            )
+        async with pool.acquire() as conn:
+            if is_practice:
+                chat_entries = await search_practice_chats(
+                    conn,
+                    practice_ids=[payload.practice_id],
+                    limit=1000,
+                    bypass_mv=True,
+                )
+            else:
+                chat_entries = await search_home_chats(
+                    conn,
+                    home_ids=[payload.home_id],
+                    limit=1000,
+                    bypass_mv=True,
+                )
         num_chats = max(len(chat_entries), 1)
 
         # 5. Resolve simulation name/description
@@ -713,65 +719,68 @@ async def attempt_start_impl(
         sim_name = None
         sim_desc = None
         if simulation_ids:
-            simulations = await get_simulations(
-                conn,
-                simulation_ids[:1],
-                redis or Redis(),
-                bypass_cache=True,
-            )
+            async with pool.acquire() as conn:
+                simulations = await get_simulations(
+                    conn,
+                    simulation_ids[:1],
+                    redis or Redis(),
+                    bypass_cache=True,
+                )
             if simulations:
                 sim_name = simulations[0].name
                 sim_desc = simulations[0].description
 
         # 6. Create run + persona + call + attempt (transaction)
-        async with conn.transaction():
-            run_result = await create_run(
-                conn,
-                session_id=session_id_uuid,
-                group_id=payload.group_id,
-                profiles_id=profiles_resource_id,
-            )
-            run_id = run_result.id
-
-            persona_result = await create_persona(conn, personas_id=persona_id)
-
-            call = await create_call(
-                conn,
-                run_id=run_id,
-                session_id=session_id_uuid,
-            )
-            attempt_result = await create_attempt(
-                conn,
-                call_id=call.id,
-                user_persona_id=persona_result.id,
-                profiles_id=profiles_resource_id,
-                name=sim_name or "",
-                description=sim_desc or "",
-                infinite_mode=payload.infinite_mode,
-                num_chats=num_chats,
-                practice=is_practice,
-            )
-            attempt_id = attempt_result.id
-
-            # 7. Create parent bridge
-            if is_practice:
-                await create_attempt_practice(
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                run_result = await create_run(
                     conn,
-                    attempt_id=attempt_id,
-                    practice_id=payload.practice_id,
+                    session_id=session_id_uuid,
+                    group_id=payload.group_id,
+                    profiles_id=profiles_resource_id,
+                )
+                run_id = run_result.id
+
+                persona_result = await create_persona(conn, personas_id=persona_id)
+
+                call = await create_call(
+                    conn,
+                    run_id=run_id,
                     session_id=session_id_uuid,
                 )
-            else:
-                await create_attempt_home(
+                attempt_result = await create_attempt(
                     conn,
-                    attempt_id=attempt_id,
-                    home_id=payload.home_id,
-                    session_id=session_id_uuid,
+                    call_id=call.id,
+                    user_persona_id=persona_result.id,
+                    profiles_id=profiles_resource_id,
+                    name=sim_name or "",
+                    description=sim_desc or "",
+                    infinite_mode=payload.infinite_mode,
+                    num_chats=num_chats,
+                    practice=is_practice,
                 )
+                attempt_id = attempt_result.id
+
+                # 7. Create parent bridge
+                if is_practice:
+                    await create_attempt_practice(
+                        conn,
+                        attempt_id=attempt_id,
+                        practice_id=payload.practice_id,
+                        session_id=session_id_uuid,
+                    )
+                else:
+                    await create_attempt_home(
+                        conn,
+                        attempt_id=attempt_id,
+                        home_id=payload.home_id,
+                        session_id=session_id_uuid,
+                    )
 
         # 8. Refresh MVs
-        await refresh_attempt(conn)
-        await refresh_attempt_chat(conn)
+        async with pool.acquire() as conn:
+            await refresh_attempt(conn)
+            await refresh_attempt_chat(conn)
 
         # 9. Delegate to attempt_proceed
         await emit(
@@ -812,7 +821,7 @@ async def attempt_start_impl(
 async def emit_chat_generate_impl(
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     sid: str,
     profile_id: uuid.UUID,
     profiles_id: uuid.UUID | None,
@@ -838,16 +847,17 @@ async def emit_chat_generate_impl(
         "fields",
     ]
 
-    group_result = await create_group(conn, session_id=session_id)
-    group_id = group_result.id
+    async with pool.acquire() as conn:
+        group_result = await create_group(conn, session_id=session_id)
+        group_id = group_result.id
 
-    run_result = await create_run(
-        conn,
-        session_id=session_id,
-        group_id=group_id,
-        profiles_id=profiles_id,
-    )
-    run_id = run_result.id
+        run_result = await create_run(
+            conn,
+            session_id=session_id,
+            group_id=group_id,
+            profiles_id=profiles_id,
+        )
+        run_id = run_result.id
 
     await emit(
         [
@@ -913,7 +923,7 @@ async def attempt_proceed_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None = None,
     profile_id: str,
     session_id: str,

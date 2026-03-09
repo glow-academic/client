@@ -1,12 +1,8 @@
 """Health export endpoint — composable infra architecture."""
 
-from typing import Annotated
+from fastapi import APIRouter, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, Request, Response
-from redis.asyncio import Redis
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.health_export import export_health_client
 from app.routes.v5.api.main.health.types import ExportHealthApiResponse
 
@@ -17,16 +13,15 @@ router = APIRouter()
 async def export_health(
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportHealthApiResponse:
     """Export all health data as a clean, denormalized ZIP."""
+    pool = get_pool()
     profile_id = http_request.state.profile_id
     session_id = http_request.state.session_id
 
     return await export_health_client(
-        conn,
-        redis,
+        pool,
+        get_redis_client(),
         profile_id=profile_id,
         session_id=session_id,
     )

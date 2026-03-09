@@ -9,15 +9,14 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.invocation_context import resolve_invocation_context
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.invocation.types import (
@@ -86,7 +85,7 @@ _SECTION_CLASSES: dict[str, type] = {
 
 
 async def get_invocation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -107,13 +106,14 @@ async def get_invocation_client(
 
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
-    common = await resolve_common_context(
-        conn,
-        redis,
-        profile_id=profile_id,
-        group_id=group_id,
-        bypass_cache=bypass_cache,
-    )
+    async with pool.acquire() as conn:
+        common = await resolve_common_context(
+            conn,
+            redis,
+            profile_id=profile_id,
+            group_id=group_id,
+            bypass_cache=bypass_cache,
+        )
 
     if common is None:
         raise HTTPException(
@@ -126,7 +126,7 @@ async def get_invocation_client(
     # ── Step 2: Invocation context (draft-only) ───────────────────────────
 
     invocation = await resolve_invocation_context(
-        conn,
+        pool,
         redis,
         group_id=group_id,
         draft_id=draft_id,
@@ -184,7 +184,6 @@ async def get_invocation_client(
 async def invocation_get(
     request: GetSuiteRequest,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSuiteResponse:
     """Get hydrated resources for benchmark bundle customization."""
     try:
@@ -196,10 +195,11 @@ async def invocation_get(
             )
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+        pool = get_pool()
         redis = get_redis_client()
 
         return await get_invocation_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             test_id=request.test_id,

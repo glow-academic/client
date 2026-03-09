@@ -21,7 +21,7 @@ logger = get_logger(__name__)
 
 
 async def generate_new_impl(
-    data: dict[str, Any], *, emit: EmitFn, conn: asyncpg.Connection
+    data: dict[str, Any], *, emit: EmitFn, pool: asyncpg.Pool
 ) -> None:
     """Rate limit gate — uses requests_per_day from profile context.
 
@@ -66,7 +66,7 @@ async def generate_new_impl(
     requests_per_day = data.get("requests_per_day")
     if requests_per_day is not None:
         try:
-            runs_ctx = await resolve_runs_context(conn, profile_id=profile_id)
+            runs_ctx = await resolve_runs_context(pool, profile_id=profile_id)
 
             runs_today = runs_ctx.total_count if runs_ctx else 0
             if runs_today >= requests_per_day:

@@ -1,13 +1,12 @@
 """Get endpoint for leaderboard artifact — top sections (header metrics + accolades)."""
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Any
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.leaderboard_context import resolve_leaderboard_context
 from app.infra.leaderboard_permissions import (
     build_leaderboard_sections_v3,
@@ -80,7 +79,6 @@ async def get_leaderboard(
     request: LeaderboardRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> LeaderboardResponse:
     """Get leaderboard top sections (header metrics + accolades)."""
     tags = ["artifacts", "leaderboard"]
@@ -124,19 +122,18 @@ async def get_leaderboard(
         filters = _parse_filters(request)
 
         # --- Phase 2: Resolve leaderboard context ---
-        async with pool.acquire() as c:
-            ctx = await resolve_leaderboard_context(
-                c,
-                redis,
-                target_profile_id=request.target_profile_id,
-                cohort_ids=filters["cohort_ids"],
-                department_ids=filters["department_ids"],
-                attempt_type=filters["attempt_type"],
-                is_archived=filters["is_archived"],
-                date_from=filters["date_from"],
-                date_to=filters["date_to"],
-                bypass_cache=bypass_cache,
-            )
+        ctx = await resolve_leaderboard_context(
+            pool,
+            redis,
+            target_profile_id=request.target_profile_id,
+            cohort_ids=filters["cohort_ids"],
+            department_ids=filters["department_ids"],
+            attempt_type=filters["attempt_type"],
+            is_archived=filters["is_archived"],
+            date_from=filters["date_from"],
+            date_to=filters["date_to"],
+            bypass_cache=bypass_cache,
+        )
 
         # --- Phase 3: Extract data ---
         attempt_chats = ctx.entries.get("attempt_chats", [])

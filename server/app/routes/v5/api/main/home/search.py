@@ -7,14 +7,13 @@ Data sources:
 """
 
 from collections import defaultdict
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.home_context import resolve_home_search_context
 from app.infra.home_permissions import (
     compute_pass_pct,
@@ -222,18 +221,17 @@ async def list_home_internal(
     profiles_resource_id = common.profile.profiles_id
 
     # --- Phase 1: Resolve search context ---
-    async with pool.acquire() as c:
-        ctx = await resolve_home_search_context(
-            c,
-            redis,
-            profiles_resource_id=profiles_resource_id,
-            scenario_ids=request.scenario_ids,
-            infinite_mode=request.infinite_mode,
-            sort_order=request.sort_order or "desc",
-            page=request.page,
-            page_size=request.page_size,
-            bypass_cache=bypass_cache,
-        )
+    ctx = await resolve_home_search_context(
+        pool,
+        redis,
+        profiles_resource_id=profiles_resource_id,
+        scenario_ids=request.scenario_ids,
+        infinite_mode=request.infinite_mode,
+        sort_order=request.sort_order or "desc",
+        page=request.page,
+        page_size=request.page_size,
+        bypass_cache=bypass_cache,
+    )
 
     # --- Phase 2: Extract data ---
     attempts = ctx.entries.get("attempts", [])
@@ -343,7 +341,6 @@ async def search_home(
     request: ListHomeRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ListHomeResponse:
     """Get paginated attempt history for home."""
     tags = ["home", "list"]

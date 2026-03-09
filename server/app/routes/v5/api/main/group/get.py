@@ -11,14 +11,12 @@ Zero inline SQL — all data from context resolver + resource fetchers.
 
 import asyncio
 from collections import defaultdict
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.group_context import resolve_group_context
 from app.infra.pricing import compute_costs_from_runs
 from app.infra.tool_graph import score_tools
@@ -219,7 +217,6 @@ async def get_group(
     request: GetGroupDetailRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetGroupDetailResponse:
     """Get detailed group information with all runs and messages."""
     tags = ["artifacts", "group", "detail"]
@@ -265,7 +262,8 @@ async def get_group(
             )
 
         # Compute per-run costs
-        run_costs = await compute_costs_from_runs(conn, data.runs, bypass_cache)
+        async with pool.acquire() as conn:
+            run_costs = await compute_costs_from_runs(conn, data.runs, bypass_cache)
 
         # Group messages by run_id
         run_messages: dict[UUID, list] = defaultdict(list)

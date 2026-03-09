@@ -11,11 +11,10 @@ Data sources:
 
 import asyncio
 from collections import defaultdict
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.analytics_facets import (
     HIDDEN,
@@ -24,7 +23,7 @@ from app.infra.analytics_facets import (
     resolve_analytics_facets,
 )
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.home_context import resolve_home_context
 from app.infra.home_permissions import (
     compute_completion_pct,
@@ -193,17 +192,13 @@ async def get_home_internal(
     is_instructional = view_mode == "instructional"
 
     # --- Phase 1: Resolve home context + analytics facets in parallel ---
-    async def _resolve_home_ctx() -> "ArtifactContext":
-        async with pool.acquire() as c:
-            return await resolve_home_context(
-                c,
-                redis,
-                profiles_resource_id=profiles_resource_id,
-                bypass_cache=bypass_cache,
-            )
-
     ctx, analytics_facets = await asyncio.gather(
-        _resolve_home_ctx(),
+        resolve_home_context(
+            pool,
+            redis,
+            profiles_resource_id=profiles_resource_id,
+            bypass_cache=bypass_cache,
+        ),
         resolve_analytics_facets(
             pool,
             redis,
@@ -469,7 +464,6 @@ async def home_get(
     request: GetHomeRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetHomeResponse:
     """Get simulations available for home (operational)."""
     tags = ["home", "get"]

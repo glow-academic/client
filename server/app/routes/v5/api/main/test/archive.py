@@ -1,11 +1,8 @@
 """Benchmark test archive endpoint."""
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.test.types import ArchiveTestsRequest, ArchiveTestsResponse
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -22,31 +19,32 @@ async def archive_test_artifacts(
     request: ArchiveTestsRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ArchiveTestsResponse:
     """Archive or unarchive benchmark tests by IDs."""
     tags = ["benchmark", "test", "artifacts"]
 
     try:
+        pool = get_pool()
         # Create group → run → call chain, then archive each test
         session_id = http_request.state.session_id
-        group_result = await create_group(conn, session_id=session_id)
-        run_result = await create_run(
-            conn, group_id=group_result.id, session_id=session_id
-        )
-        call_result = await create_call(
-            conn, run_id=run_result.id, session_id=session_id
-        )
-
-        updated_count = 0
-        for test_id in request.test_ids:
-            await create_test_archive(
-                conn,
-                test_id=test_id,
-                call_id=call_result.id,
-                archived=request.archived,
+        async with pool.acquire() as conn:
+            group_result = await create_group(conn, session_id=session_id)
+            run_result = await create_run(
+                conn, group_id=group_result.id, session_id=session_id
             )
-            updated_count += 1
+            call_result = await create_call(
+                conn, run_id=run_result.id, session_id=session_id
+            )
+
+            updated_count = 0
+            for test_id in request.test_ids:
+                await create_test_archive(
+                    conn,
+                    test_id=test_id,
+                    call_id=call_result.id,
+                    archived=request.archived,
+                )
+                updated_count += 1
 
         await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -34,7 +34,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def duplicate_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -56,7 +56,7 @@ async def duplicate_auth_client(
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(
-        conn,
+        pool,
         profile_id,
         redis,
         session_id=session_id,
@@ -78,17 +78,18 @@ async def duplicate_auth_client(
 
     # ── Step 3: Fetch original auth with all junctions ─────────────────
 
-    originals = await get_auths(
-        conn,
-        [auth_id],
-        names=True,
-        descriptions=True,
-        departments=True,
-        items=True,
-        protocols=True,
-        slugs=True,
-        auths=True,
-    )
+    async with pool.acquire() as conn:
+        originals = await get_auths(
+            conn,
+            [auth_id],
+            names=True,
+            descriptions=True,
+            departments=True,
+            items=True,
+            protocols=True,
+            slugs=True,
+            auths=True,
+        )
 
     if not originals:
         raise HTTPException(
@@ -102,22 +103,25 @@ async def duplicate_auth_client(
 
     original_name = "Unknown"
     if original.name_ids:
-        name_resources = await get_names(conn, original.name_ids, redis)
+        async with pool.acquire() as conn:
+            name_resources = await get_names(conn, original.name_ids, redis)
         if name_resources:
             original_name = name_resources[0].name or "Unknown"
 
-    new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
+    async with pool.acquire() as conn:
+        new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
 
     # ── Step 5: Find inactive flag (auth_active, value=false) ──────────
 
     inactive_flag_id: UUID | None = None
-    flag_results = await search_flags(
-        conn,
-        redis,
-        flag_type="auth_active",
-        auth=True,
-        limit_count=10,
-    )
+    async with pool.acquire() as conn:
+        flag_results = await search_flags(
+            conn,
+            redis,
+            flag_type="auth_active",
+            auth=True,
+            limit_count=10,
+        )
     inactive_match = next((f for f in flag_results if not f.value), None)
     if inactive_match:
         inactive_flag_id = inactive_match.id
@@ -126,20 +130,21 @@ async def duplicate_auth_client(
 
     flag_ids = [inactive_flag_id] if inactive_flag_id else None
 
-    async with conn.transaction():
-        result = await create_auth_artifact(
-            conn,
-            name_id=new_name_resource.id,
-            description_id=original.description_ids[0]
-            if original.description_ids
-            else None,
-            slug_id=original.slug_ids[0] if original.slug_ids else None,
-            department_ids=original.department_ids,
-            item_ids=original.item_ids,
-            protocol_ids=original.protocol_ids,
-            auth_ids=original.auth_ids,
-            flag_ids=flag_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_auth_artifact(
+                conn,
+                name_id=new_name_resource.id,
+                description_id=original.description_ids[0]
+                if original.description_ids
+                else None,
+                slug_id=original.slug_ids[0] if original.slug_ids else None,
+                department_ids=original.department_ids,
+                item_ids=original.item_ids,
+                protocol_ids=original.protocol_ids,
+                auth_ids=original.auth_ids,
+                flag_ids=flag_ids,
+            )
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────
 

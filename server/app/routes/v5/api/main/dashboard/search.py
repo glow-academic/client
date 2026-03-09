@@ -5,11 +5,10 @@ Composable pattern: resolve_common_context → resolve_dashboard_search_context 
 
 from collections import defaultdict
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.chat_permissions import (
     compute_pass_pct,
@@ -19,7 +18,7 @@ from app.infra.chat_permissions import (
 )
 from app.infra.common_context import resolve_common_context
 from app.infra.dashboard_context import resolve_dashboard_search_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.dashboard.types import (
     ListDashboardRequest,
@@ -299,7 +298,6 @@ async def search_dashboard(
     request: ListDashboardRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> HistoryResponse:
     """Get dashboard attempt history (paginated)."""
     tags = ["artifacts", "dashboard", "list"]
@@ -332,22 +330,22 @@ async def search_dashboard(
         redis = get_redis_client()
 
         # --- Phase 0: Resolve common context ---
-        async with pool.acquire() as c:
-            common = await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-            )
+        common = await resolve_common_context(
+            pool, redis, profile_id=profile_id, bypass_cache=bypass_cache
+        )
         if not common:
             raise HTTPException(status_code=401, detail="Profile not found")
 
         # Resolve profile_resource_id
-        profile_resource_id: UUID | None = await conn.fetchval(
-            """
-            SELECT profiles_id FROM profile_profiles_junction
-            WHERE profile_id = $1 AND active = true
-            LIMIT 1
-            """,
-            profile_id,
-        )
+        async with pool.acquire() as c:
+            profile_resource_id: UUID | None = await c.fetchval(
+                """
+                SELECT profiles_id FROM profile_profiles_junction
+                WHERE profile_id = $1 AND active = true
+                LIMIT 1
+                """,
+                profile_id,
+            )
 
         # Parse dates
         date_from = None

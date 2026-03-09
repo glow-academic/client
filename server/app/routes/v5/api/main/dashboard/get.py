@@ -5,11 +5,9 @@ Zero extra queries in this file — all data comes from the context resolver.
 """
 
 from datetime import datetime
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
 from app.infra.dashboard_builders import (
@@ -26,7 +24,7 @@ from app.infra.dashboard_permissions import (
     compute_primary_metrics_v2,
     compute_secondary_metrics_v2,
 )
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
@@ -50,7 +48,6 @@ async def get_dashboard(
     request: DashboardRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DashboardBundleResponse:
     """Get full dashboard bundle with all 4 sections in a single call."""
     tags = ["artifacts", "dashboard", "views", "analytics"]
@@ -83,10 +80,9 @@ async def get_dashboard(
         redis = get_redis_client()
 
         # --- Phase 0: Resolve common context (profile identity) ---
-        async with pool.acquire() as c:
-            common = await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-            )
+        common = await resolve_common_context(
+            pool, redis, profile_id=profile_id, bypass_cache=bypass_cache
+        )
         if not common:
             raise HTTPException(status_code=401, detail="Profile not found")
 
@@ -368,14 +364,15 @@ async def get_dashboard(
 
             profile_resource_id: UUID | None = None
             if profile_id:
-                profile_resource_id = await conn.fetchval(
-                    """
-                    SELECT profiles_id FROM profile_profiles_junction
-                    WHERE profile_id = $1 AND active = true
-                    LIMIT 1
-                    """,
-                    profile_id,
-                )
+                async with pool.acquire() as c:
+                    profile_resource_id = await c.fetchval(
+                        """
+                        SELECT profiles_id FROM profile_profiles_junction
+                        WHERE profile_id = $1 AND active = true
+                        LIMIT 1
+                        """,
+                        profile_id,
+                    )
 
             date_from = parsed_start_date.date() if parsed_start_date else None
             date_to = parsed_end_date.date() if parsed_end_date else None
