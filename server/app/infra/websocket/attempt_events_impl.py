@@ -14,15 +14,18 @@ from redis.asyncio import Redis
 
 from app.infra.websocket.attempt_types import (
     AttemptAssistantProgressData,
+    AttemptAssistantStartData,
     AttemptAudioEndedData,
     AttemptAudioReadyData,
     AttemptErrorData,
     AttemptProceedData,
     AttemptStoppedData,
     AttemptUserProgressData,
+    AttemptUserReceivedCompleteData,
     AttemptUserReceivedProgressData,
     AttemptUserReceivedStartData,
     AttemptUserStartData,
+    GenerateRequestData,
 )
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.session_store import get_session_by_group_id
@@ -1378,6 +1381,264 @@ async def attempt_proceed_impl(
                         sid=sid,
                         error_type="proceed",
                         message=f"Failed to proceed: {e}",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+
+
+# ---------------------------------------------------------------------------
+# attempt_message — send a user message in an attempt chat
+# ---------------------------------------------------------------------------
+
+
+async def attempt_message_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    pool: asyncpg.Pool,
+    redis: Redis | None = None,
+    profile_id: str,
+    session_id: str,
+) -> None:
+    """Create user + assistant messages, wire tree edges, emit generate.
+
+    Flow:
+    1. Resolve group_id from attempt_chat_entry
+    2. Create run (with profile link)
+    3. Emit user_received_start + user_received_complete
+    4. Create assistant placeholder + tree edges
+    5. Emit assistant_start
+    6. Refresh MVs, invalidate cache
+    7. Emit to generate pipeline
+    """
+    from app.infra.profile_identity_context import resolve_profile_identity_context
+    from app.routes.v5.socket.types import MESSAGE_ENTRY_TYPES
+    from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
+    from app.routes.v5.tools.entries.attempt_message.create import (
+        create_attempt_message,
+    )
+    from app.routes.v5.tools.entries.attempt_message.refresh import (
+        refresh_attempt_message,
+    )
+    from app.routes.v5.tools.entries.attempt_message_tree.create import (
+        create_attempt_message_tree,
+    )
+    from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
+        refresh_attempt_message_tree,
+    )
+    from app.routes.v5.tools.entries.messages.create import create_message
+    from app.routes.v5.tools.entries.messages.search import search_messages
+    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.utils.cache.invalidate_tags import invalidate_tags
+
+    sid = data.get("sid", "")
+    chat_id_str = data.get("chat_id", "")
+    message_text = data.get("message", "")
+    attempt_id_str = data.get("attempt_id", "")
+    parent_message_id_raw = data.get("parent_message_id")
+
+    if not sid or not chat_id_str:
+        return
+
+    if not message_text or not message_text.strip():
+        await emit(
+            [
+                internal_event(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="send",
+                        message="Missing or empty message",
+                        chat_id=chat_id_str,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+        return
+
+    try:
+        profile_id_uuid = uuid.UUID(profile_id)
+        session_id_uuid = uuid.UUID(session_id)
+        chat_id = uuid.UUID(chat_id_str)
+        attempt_id = uuid.UUID(attempt_id_str)
+        parent_message_id = (
+            uuid.UUID(parent_message_id_raw) if parent_message_id_raw else None
+        )
+    except Exception as e:
+        logger.exception(f"Invalid attempt_message payload: {e}")
+        return
+
+    rooms = [sid, f"attempt_{chat_id}"]
+
+    try:
+        # Step 1: Resolve group_id from attempt_chat_entry
+        async with pool.acquire() as conn:
+            chat_entries = await get_attempt_chats(conn, [chat_id])
+
+        if not chat_entries or not chat_entries[0].group_id:
+            await emit(
+                [
+                    internal_event(
+                        "attempt_error",
+                        AttemptErrorData(
+                            sid=sid,
+                            error_type="send",
+                            message="No group found for chat",
+                            chat_id=chat_id_str,
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
+            return
+
+        group_id = chat_entries[0].group_id
+
+        # Step 2: Resolve profiles_id, then create run
+        identity = await resolve_profile_identity_context(
+            pool, profile_id_uuid, redis or Redis(), session_id=session_id_uuid
+        )
+        profiles_id = identity.profiles_id if identity else None
+
+        async with pool.acquire() as conn:
+            run_result = await create_run(
+                conn,
+                group_id=group_id,
+                session_id=session_id_uuid,
+                profiles_id=profiles_id,
+            )
+        run_id = run_result.id
+
+        # Step 3: Emit user_received_start
+        await emit(
+            [
+                internal_event(
+                    "attempt_user_received_start",
+                    AttemptUserReceivedStartData(
+                        sid=sid,
+                        chat_id=chat_id_str,
+                        run_id=str(run_id),
+                        profile_id=profile_id,
+                        rooms=rooms,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+
+        # Step 4: Emit user_received_complete (full message known upfront)
+        await emit(
+            [
+                internal_event(
+                    "attempt_user_received_complete",
+                    AttemptUserReceivedCompleteData(
+                        sid=sid,
+                        chat_id=chat_id_str,
+                        run_id=str(run_id),
+                        content=message_text,
+                        rooms=rooms,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+
+        # Step 5: Create assistant placeholder + tree edges
+        async with pool.acquire() as conn:
+            assistant_result = await create_message(
+                conn, run_id=run_id, role="assistant"
+            )
+            if chat_id is not None:
+                # TODO: wire up real call_id from generation context
+                await create_attempt_message(
+                    conn,
+                    chat_id=chat_id,
+                    message_id=assistant_result.id,
+                    call_id=uuid.uuid4(),
+                )
+            assistant_message_id = assistant_result.id
+            created_at = assistant_result.created_at
+
+            # Step 5a: Insert tree edges for message branching
+            messages, _ = await search_messages(
+                conn, run_ids=[run_id], bypass_mv=True
+            )
+            user_message_id = None
+            for msg in messages:
+                if msg.role == "user":
+                    user_message_id = msg.message_id
+                    break
+
+            if user_message_id:
+                if parent_message_id:
+                    await create_attempt_message_tree(
+                        conn,
+                        parent_id=parent_message_id,
+                        child_id=user_message_id,
+                        session_id=session_id_uuid,
+                    )
+                await create_attempt_message_tree(
+                    conn,
+                    parent_id=user_message_id,
+                    child_id=assistant_message_id,
+                    session_id=session_id_uuid,
+                )
+
+        # Step 5b: Emit assistant_start
+        await emit(
+            [
+                internal_event(
+                    "attempt_assistant_start",
+                    AttemptAssistantStartData(
+                        sid=sid,
+                        chat_id=chat_id_str,
+                        message_id=str(assistant_message_id),
+                        created_at=created_at.isoformat() if created_at else "",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+
+        # Step 6: Refresh MVs + invalidate cache
+        async with pool.acquire() as conn:
+            await refresh_attempt_message(conn)
+            await refresh_attempt_message_tree(conn)
+
+        await invalidate_tags(["attempt", "messages"], redis=redis)
+
+        # Step 7: Emit to generate pipeline
+        await emit(
+            [
+                internal_event(
+                    "generate",
+                    GenerateRequestData(
+                        sid=sid,
+                        profile_id=profile_id,
+                        artifact_types=[{"name": "attempt", "operation": "get"}],
+                        artifact_id=str(attempt_id),
+                        resource_types=MESSAGE_ENTRY_TYPES,
+                        save=True,
+                        run_id=str(run_id),
+                        group_id=str(group_id),
+                        modality="call",
+                        metadata={
+                            "attempt_id": str(attempt_id),
+                            "chat_id": chat_id_str,
+                        },
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+
+    except Exception as e:
+        logger.exception(f"Error in attempt_message: {e}")
+        await emit(
+            [
+                internal_event(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="send",
+                        message=f"Failed to send message: {e}",
+                        chat_id=chat_id_str,
                     ).model_dump(mode="json"),
                 )
             ]

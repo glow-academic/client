@@ -47,18 +47,20 @@ async def create_tool(
     operation_ids: list[UUID] | None = None,
     resource_ids: list[UUID] | None = None,
     tool_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateToolResponse:
     """Create a tool artifact with optional junction links."""
+    is_active = not soft if active is None else active
     tool_id: UUID = await conn.fetchval(
         """
         INSERT INTO tool_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

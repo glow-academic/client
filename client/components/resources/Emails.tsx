@@ -34,9 +34,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
 type CreateDraftEmailsOut = OutputOf<"/api/v5/resources/emails", "post">;
 
-// Derive resource item type from the GET endpoint response
-type EmailGetResponse = OutputOf<"/api/v5/resources/emails/get", "post">;
-export type EmailResourceItem = NonNullable<EmailGetResponse["items"]>[number];
+export interface EmailResourceItem {
+  id?: string | null;
+  email?: string | null;
+  generated?: boolean | null;
+}
 
 export interface EmailItem {
   id: string;

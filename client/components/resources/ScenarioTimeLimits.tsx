@@ -16,31 +16,31 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Clock, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftScenarioTimeLimitsIn = InputOf<
-  "/api/v5/resources/scenario_time_limits",
-  "post"
->;
-type CreateDraftScenarioTimeLimitsOut = OutputOf<
-  "/api/v5/resources/scenario_time_limits",
-  "post"
->;
-type LinkScenarioTimeLimitsIn = InputOf<"/api/v5/resources/scenario_time_limits/link", "post">;
-type LinkScenarioTimeLimitsOut = OutputOf<"/api/v5/resources/scenario_time_limits/link", "post">;
+type CreateDraftScenarioTimeLimitsIn = {
+  body: {
+    scenario_id: string;
+    time_limit_seconds: number;
+    mcp: boolean;
+    tool_id?: string;
+    negative: boolean;
+  };
+};
+type CreateDraftScenarioTimeLimitsOut = {
+  id?: string | null;
+};
 
-// Derive resource item type from the GET endpoint response
-type ScenarioTimeLimitGetResponse = OutputOf<
-  "/api/v5/resources/scenario_time_limits/get",
-  "post"
->;
-export type ScenarioTimeLimitResourceItem = NonNullable<
-  ScenarioTimeLimitGetResponse["items"]
->[number];
+export interface ScenarioTimeLimitResourceItem {
+  id?: string | null;
+  scenario_id?: string | null;
+  time_limit_seconds?: number | null;
+  negative?: boolean | null;
+  generated?: boolean | null;
+}
 
 export interface ScenarioTimeLimitsProps {
   scenario_time_limit_ids?: string[];
@@ -69,14 +69,10 @@ export interface ScenarioTimeLimitsProps {
   description?: string;
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioTimeLimitsAction?:
     | ((
         input: CreateDraftScenarioTimeLimitsIn,
       ) => Promise<CreateDraftScenarioTimeLimitsOut>)
-    | undefined;
-  linkScenarioTimeLimitsAction?:
-    | ((input: LinkScenarioTimeLimitsIn) => Promise<LinkScenarioTimeLimitsOut>)
     | undefined;
   onTimeLimitIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
@@ -110,9 +106,7 @@ export function ScenarioTimeLimits({
   description,
   group_id,
   create_tool_id,
-  link_tool_id: _link_tool_id,
   createScenarioTimeLimitsAction,
-  linkScenarioTimeLimitsAction: _linkScenarioTimeLimitsAction,
   onTimeLimitIdsChange,
   onGenerate,
   showAiGenerate = false,

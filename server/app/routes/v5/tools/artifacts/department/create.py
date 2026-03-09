@@ -33,18 +33,20 @@ async def create_department(
     department_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
     settings_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateDepartmentResponse:
     """Create a department artifact with optional junction links."""
+    is_active = not soft if active is None else active
     department_id: UUID = await conn.fetchval(
         """
         INSERT INTO department_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

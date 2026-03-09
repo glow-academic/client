@@ -17,14 +17,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type ThresholdsGetResponse = OutputOf<"/api/v5/resources/thresholds/get", "post">;
-export type ThresholdResourceItem = NonNullable<ThresholdsGetResponse["items"]>[number];
+export interface ThresholdResourceItem {
+  id?: string | null;
+  value?: number | null;
+  generated?: boolean | null;
+}
 
 export interface ThresholdItem {
   id: string;

@@ -16,14 +16,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type RunRubricsGetResponse = OutputOf<"/api/v5/resources/run_rubrics/get", "post">;
-export type RunRubricsResourceItem = NonNullable<RunRubricsGetResponse["items"]>[number];
+export interface RunRubricsResourceItem {
+  id?: string | null;
+  rubric_id?: string | null;
+  name?: string | null;
+}
 
 export interface RunRubricOption {
   rubric_id: string | null;

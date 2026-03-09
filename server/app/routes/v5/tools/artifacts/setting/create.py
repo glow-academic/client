@@ -49,18 +49,20 @@ async def create_setting(
     system_ids: list[UUID] | None = None,
     threshold_ids: list[UUID] | None = None,
     setting_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateSettingResponse:
     """Create a setting artifact with optional junction links."""
+    is_active = not soft if active is None else active
     setting_id: UUID = await conn.fetchval(
         """
         INSERT INTO setting_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

@@ -26,7 +26,6 @@ async def search_evals(
     model_position_ids: list[UUID] | None = None,
     model_rubric_ids: list[UUID] | None = None,
     model_ids: list[UUID] | None = None,
-    rubric_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -158,17 +157,6 @@ async def search_evals(
             owner_col=OWNER_COL,
             resource_col="models_id",
             ids=model_ids,
-        )
-
-    if rubric_ids:
-        idx = add_junction_filter(
-            conditions,
-            params,
-            idx,
-            junction_table="eval_rubrics_junction",
-            owner_col=OWNER_COL,
-            resource_col="rubrics_id",
-            ids=rubric_ids,
         )
 
     # Exclude

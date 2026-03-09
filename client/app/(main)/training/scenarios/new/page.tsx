@@ -9,7 +9,7 @@ import Scenario from "@/components/artifacts/scenario/Scenario";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -84,15 +84,11 @@ export default async function NewScenarioPage({
   const fieldShowSelectedByParam =
     extractFieldShowSelectedByParam(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "scenario" })).group_id;
-
   // Fetch default scenario detail server-side with filter params
   const [scenarioDetailDefault, draftsResult] = await Promise.all([
     getScenario({
     body: {
       draft_id: q.draftId ?? null,
-      group_id: groupId,
       filter_department_ids: csvToArray(q.departmentIds) ?? null,
       filter_persona_ids: csvToArray(q.personaIds) ?? null,
       filter_document_ids: csvToArray(q.documentIds) ?? null,

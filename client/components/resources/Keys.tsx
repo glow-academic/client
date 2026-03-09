@@ -24,9 +24,16 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftKeysIn = InputOf<"/api/v5/resources/keys", "post">;
 type CreateDraftKeysOut = OutputOf<"/api/v5/resources/keys", "post">;
 
-// Derive resource item type from the GET endpoint response
-type KeyGetResponse = OutputOf<"/api/v5/resources/keys/get", "post">;
-export type KeyResourceItem = NonNullable<KeyGetResponse["items"]>[number];
+export interface KeyResourceItem {
+  id?: string | null;
+  key_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  key_masked?: string | null;
+  masked_key?: string | null;
+  active?: boolean | null;
+  generated?: boolean | null;
+}
 
 export interface KeyItem {
   id: string;

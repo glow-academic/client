@@ -32,9 +32,11 @@ type CreateDraftRequestLimitsOut = OutputOf<
   "post"
 >;
 
-// Derive resource item type from the GET endpoint response
-type RequestLimitsGetResponse = OutputOf<"/api/v5/resources/request_limits/get", "post">;
-export type RequestLimitsResourceItem = NonNullable<RequestLimitsGetResponse["items"]>[number];
+export interface RequestLimitsResourceItem {
+  id?: string | null;
+  requests_per_day?: number | null;
+  generated?: boolean | null;
+}
 
 export interface RequestLimitItem {
   id: string;

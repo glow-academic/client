@@ -49,18 +49,20 @@ async def create_model(
     temperature_level_ids: list[UUID] | None = None,
     value_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateModelResponse:
     """Create a model artifact with optional junction links."""
+    is_active = not soft if active is None else active
     model_id: UUID = await conn.fetchval(
         """
         INSERT INTO model_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

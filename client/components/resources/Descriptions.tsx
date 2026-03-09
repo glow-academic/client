@@ -18,17 +18,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type LinkDescriptionsIn = InputOf<"/api/v5/resources/descriptions/link", "post">;
-type LinkDescriptionsOut = OutputOf<"/api/v5/resources/descriptions/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type DescriptionsGetResponse = OutputOf<"/api/v5/resources/descriptions/get", "post">;
-export type DescriptionResourceItem = NonNullable<DescriptionsGetResponse["items"]>[number];
+export interface DescriptionResourceItem {
+  id?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+}
 
 // Word-based diff types and utilities
 type DiffSegment = { type: "same" | "removed" | "added"; text: string };
@@ -162,10 +160,6 @@ export interface DescriptionsProps {
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onDescriptionChange?: (description: string) => void; // Report value changes to parent
-  link_tool_id?: string | null; // Tool ID for linking existing resources
-  linkDescriptionsAction?:
-    | ((input: LinkDescriptionsIn) => Promise<LinkDescriptionsOut>)
-    | undefined;
   searchTerm?: string; // Search term for filtering descriptions
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
@@ -192,8 +186,6 @@ export function Descriptions({
   create_tool_id,
   showAiGenerate = false,
   onDescriptionChange,
-  link_tool_id,
-  linkDescriptionsAction,
   searchTerm,
   onSearchChange,
   isAutosaveEnabled = true,
@@ -442,12 +434,6 @@ export function Descriptions({
               setInternalValue(nextValue);
               lastSavedValueRef.current = nextValue;
               lastServerTextRef.current = nextValue;
-              // Fire link tracking for selecting an existing resource
-              if (linkDescriptionsAction && group_id && link_tool_id) {
-                linkDescriptionsAction({
-                  body: { resource_id: selectedId, tool_id: link_tool_id },
-                }).catch(() => {});
-              }
             } else {
               setInternalValue("");
               lastSavedValueRef.current = "";

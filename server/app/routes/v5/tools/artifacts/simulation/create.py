@@ -43,18 +43,20 @@ async def create_simulation(
     scenario_rubric_ids: list[UUID] | None = None,
     scenario_time_limit_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateSimulationResponse:
     """Create a simulation artifact with optional junction links."""
+    is_active = not soft if active is None else active
     simulation_id: UUID = await conn.fetchval(
         """
         INSERT INTO simulation_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

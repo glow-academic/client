@@ -17,17 +17,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftToolsIn = InputOf<"/api/v5/resources/tools", "post">;
-type CreateDraftToolsOut = OutputOf<"/api/v5/resources/tools", "post">;
-
-// Derive resource item type from the GET endpoint response
-type ToolGetResponse = OutputOf<"/api/v5/resources/tools/get", "post">;
-export type ToolResourceItem = NonNullable<ToolGetResponse["items"]>[number];
+export interface ToolResourceItem {
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ToolsItem {
   id: string;

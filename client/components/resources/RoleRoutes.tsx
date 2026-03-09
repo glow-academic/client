@@ -16,15 +16,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// Derive resource item type from the GET endpoint response
-type RoleRoutesGetResponse = OutputOf<"/api/v5/resources/role_routes/get", "post">;
-export type RoleRoutesResourceItem = NonNullable<RoleRoutesGetResponse["items"]>[number];
+export interface RoleRoutesResourceItem {
+  id?: string | null;
+  role_id?: string | null;
+  route_id?: string | null;
+}
 
 export interface RoleRoutesProps {
   role_route_ids?: string[];

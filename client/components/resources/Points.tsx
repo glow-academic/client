@@ -26,9 +26,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftPointsIn = InputOf<"/api/v5/resources/points", "post">;
 type CreateDraftPointsOut = OutputOf<"/api/v5/resources/points", "post">;
 
-// Derive resource item type from the GET endpoint response
-type PointsGetResponse = OutputOf<"/api/v5/resources/points/get", "post">;
-export type PointsResourceItem = NonNullable<PointsGetResponse["items"]>[number];
+export interface PointsResourceItem {
+  id?: string | null;
+  value?: number | null;
+  generated?: boolean | null;
+}
 
 export interface PointsProps {
   points_id?: string | null; // Current points_id (standardized prop name)

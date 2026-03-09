@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Scenario from "@/components/artifacts/scenario/Scenario";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -75,7 +75,6 @@ const getScenario = async (
 
   if (filterParams) {
     if (filterParams.draftId) body.draft_id = filterParams.draftId;
-    if (filterParams.groupId) body.group_id = filterParams.groupId;
     if (filterParams.departmentIds)
       body.filter_department_ids = filterParams.departmentIds;
     if (filterParams.personaIds)

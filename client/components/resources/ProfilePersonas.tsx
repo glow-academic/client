@@ -21,33 +21,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 
-// Link types for tool call tracking
-type LinkProfilePersonasIn = InputOf<"/api/v5/resources/profile_personas/link", "post">;
-type LinkProfilePersonasOut = OutputOf<"/api/v5/resources/profile_personas/link", "post">;
+type CreateDraftProfilePersonasIn = {
+  body: {
+    cohort_id: string;
+    profile_id: string;
+    persona_id: string;
+    mcp: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftProfilePersonasOut = {
+  id?: string | null;
+};
 
-type CreateDraftProfilePersonasIn = InputOf<
-  "/api/v5/resources/profile_personas",
-  "post"
->;
-type CreateDraftProfilePersonasOut = OutputOf<
-  "/api/v5/resources/profile_personas",
-  "post"
->;
-
-// Derive resource item type from the GET endpoint response
-type ProfilePersonasGetResponse = OutputOf<
-  "/api/v5/resources/profile_personas/get",
-  "post"
->;
-export type ProfilePersonasResourceItem = NonNullable<
-  ProfilePersonasGetResponse["items"]
->[number];
+export interface ProfilePersonasResourceItem {
+  id?: string | null;
+  profile_id?: string | null;
+  persona_id?: string | null;
+}
 
 export interface ProfilePersonaItem {
   cohort_id: string;
@@ -111,9 +107,6 @@ export interface ProfilePersonasProps {
   aiProfilePersonaResources?:
     | Pick<ProfilePersonasResourceItem, "id" | "profile_id" | "persona_id">[]
     | null;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkProfilePersonasAction?: (input: LinkProfilePersonasIn) => Promise<LinkProfilePersonasOut>;
 }
 
 export function ProfilePersonas({
@@ -141,8 +134,6 @@ export function ProfilePersonas({
   isAutosaveEnabled = true,
   registerFlush,
   aiProfilePersonaResources,
-  link_tool_id: _link_tool_id,
-  linkProfilePersonasAction: _linkProfilePersonasAction,
 }: ProfilePersonasProps) {
   const show = show_profile_personas ?? false;
   const allPersonas = useMemo(

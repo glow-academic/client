@@ -17,14 +17,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type ConditionalParametersGetResponse = OutputOf<"/api/v5/resources/conditional_parameters/get", "post">;
-export type ConditionalParametersResourceItem = NonNullable<ConditionalParametersGetResponse["items"]>[number];
+export interface ConditionalParametersResourceItem {
+  id?: string | null;
+  parameter_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ConditionalParameterItem {
   id: string;

@@ -28,9 +28,10 @@ type CreateDraftArgsOutputsOut = OutputOf<
   "post"
 >;
 
-// Derive resource item type from the GET endpoint response
-type ArgsOutputsGetResponse = OutputOf<"/api/v5/resources/args_outputs/get", "post">;
-export type ArgsOutputsResourceItem = NonNullable<ArgsOutputsGetResponse["items"]>[number];
+export interface ArgsOutputsResourceItem {
+  id?: string | null;
+  name?: string | null;
+}
 
 export interface ArgsOutputsDetail {
   args_outputs_id: string;

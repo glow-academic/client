@@ -31,9 +31,15 @@ type CreateDraftParameterFieldsOut = OutputOf<
   "post"
 >;
 
-// Derive resource item type from the GET endpoint response
-type ParameterFieldGetResponse = OutputOf<"/api/v5/resources/parameter_fields/get", "post">;
-export type ParameterFieldResourceItem = NonNullable<ParameterFieldGetResponse["items"]>[number];
+export interface ParameterFieldResourceItem {
+  id?: string | null;
+  parameter_id?: string | null;
+  field_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  conditional_parameter_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ParameterFieldsProps {
   parameter_field_ids?: string[];

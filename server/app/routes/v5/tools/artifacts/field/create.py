@@ -35,18 +35,20 @@ async def create_field(
     flag_ids: list[UUID] | None = None,
     conditional_parameter_ids: list[UUID] | None = None,
     field_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateFieldResponse:
     """Create a field artifact with optional junction links."""
+    is_active = not soft if active is None else active
     field_id: UUID = await conn.fetchval(
         """
         INSERT INTO field_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

@@ -35,18 +35,20 @@ async def create_parameter(
     flag_ids: list[UUID] | None = None,
     field_ids: list[UUID] | None = None,
     parameter_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateParameterResponse:
     """Create a parameter artifact with optional junction links."""
+    is_active = not soft if active is None else active
     parameter_id: UUID = await conn.fetchval(
         """
         INSERT INTO parameter_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

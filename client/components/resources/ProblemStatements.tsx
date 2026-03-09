@@ -18,27 +18,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// Link types for tool call tracking
-type LinkProblemStatementsIn = InputOf<"/api/v5/resources/problem_statements/link", "post">;
-type LinkProblemStatementsOut = OutputOf<"/api/v5/resources/problem_statements/link", "post">;
+type CreateDraftProblemStatementsIn = {
+  body: {
+    name: string;
+    problem_statement: string;
+    mcp: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftProblemStatementsOut = {
+  problem_statement_id?: string | null;
+};
 
-type CreateDraftProblemStatementsIn = InputOf<
-  "/api/v5/resources/problem_statements",
-  "post"
->;
-type CreateDraftProblemStatementsOut = OutputOf<
-  "/api/v5/resources/problem_statements",
-  "post"
->;
-
-// Derive resource item type from the GET endpoint response
-type ProblemStatementGetResponse = OutputOf<"/api/v5/resources/problem_statements/get", "post">;
-export type ProblemStatementResourceItem = NonNullable<ProblemStatementGetResponse["item"]>;
+export interface ProblemStatementResourceItem {
+  id?: string | null;
+  problem_statement_id?: string | null;
+  problem_statement?: string | null;
+  generated?: boolean | null;
+}
 
 // Word-based diff types and utilities
 type DiffSegment = { type: "same" | "removed" | "added"; text: string };
@@ -185,9 +186,6 @@ export interface ProblemStatementsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<{ problem_statement_id: string | null } | void>) => void;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkProblemStatementsAction?: (input: LinkProblemStatementsIn) => Promise<LinkProblemStatementsOut>;
 }
 
 export function ProblemStatements({
@@ -215,8 +213,6 @@ export function ProblemStatements({
   onProblemStatementChange,
   isAutosaveEnabled = true,
   registerFlush,
-  link_tool_id: _link_tool_id,
-  linkProblemStatementsAction: _linkProblemStatementsAction,
 }: ProblemStatementsProps) {
   const resource = problem_statement_resource ?? null;
   const resourceId = problem_statement_id ?? null;

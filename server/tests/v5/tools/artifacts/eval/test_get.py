@@ -29,7 +29,6 @@ async def test_returns_base_columns(conn, redis_client):
     assert p.model_flag_ids is None
     assert p.model_position_ids is None
     assert p.model_rubric_ids is None
-    assert p.rubric_ids is None
     assert p.eval_ids is None
 
 
@@ -95,7 +94,6 @@ async def test_no_junctions_when_all_false(conn, redis_client):
         "model_flag_ids",
         "model_position_ids",
         "model_rubric_ids",
-        "rubric_ids",
         "eval_ids",
     ]:
         assert getattr(p, field) is None

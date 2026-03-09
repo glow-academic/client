@@ -25,9 +25,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
 type CreateDraftProtocolsOut = OutputOf<"/api/v5/resources/protocols", "post">;
 
-// Derive resource item type from the GET endpoint response
-type ProtocolsGetResponse = OutputOf<"/api/v5/resources/protocols/get", "post">;
-export type ProtocolResourceItem = NonNullable<ProtocolsGetResponse["items"]>[number];
+export interface ProtocolResourceItem {
+  id?: string | null;
+  value?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ProtocolItem {
   id: string;

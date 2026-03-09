@@ -15,7 +15,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
@@ -29,25 +28,24 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftScenarioPositionsIn = InputOf<
-  "/api/v5/resources/scenario_positions",
-  "post"
->;
-type CreateDraftScenarioPositionsOut = OutputOf<
-  "/api/v5/resources/scenario_positions",
-  "post"
->;
-type LinkScenarioPositionsIn = InputOf<"/api/v5/resources/scenario_positions/link", "post">;
-type LinkScenarioPositionsOut = OutputOf<"/api/v5/resources/scenario_positions/link", "post">;
+type CreateDraftScenarioPositionsIn = {
+  body: {
+    simulation_id: string;
+    scenario_id: string;
+    value: number;
+    mcp: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftScenarioPositionsOut = {
+  id?: string | null;
+};
 
-// Derive resource item type from the GET endpoint response
-type ScenarioPositionGetResponse = OutputOf<
-  "/api/v5/resources/scenario_positions/get",
-  "post"
->;
-export type ScenarioPositionResourceItem = NonNullable<
-  ScenarioPositionGetResponse["items"]
->[number];
+export interface ScenarioPositionResourceItem {
+  id?: string | null;
+  scenario_id?: string | null;
+  value?: number | null;
+}
 
 export interface ScenarioPositionItem {
   simulation_id: string;
@@ -87,14 +85,10 @@ export interface ScenarioPositionsProps {
   description?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioPositionsAction?:
     | ((
         input: CreateDraftScenarioPositionsIn,
       ) => Promise<CreateDraftScenarioPositionsOut>)
-    | undefined;
-  linkScenarioPositionsAction?:
-    | ((input: LinkScenarioPositionsIn) => Promise<LinkScenarioPositionsOut>)
     | undefined;
   onPositionIdsChange?: (ids: string[]) => void;
   onGenerate?: () => void | Promise<void>;
@@ -127,9 +121,7 @@ export function ScenarioPositions({
   description,
   group_id,
   create_tool_id,
-  link_tool_id: _link_tool_id,
   createScenarioPositionsAction,
-  linkScenarioPositionsAction: _linkScenarioPositionsAction,
   onPositionIdsChange,
   onGenerate,
   showAiGenerate = false,

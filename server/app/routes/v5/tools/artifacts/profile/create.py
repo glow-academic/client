@@ -106,19 +106,21 @@ async def create_profile(
     email_ids: list[UUID] | None = None,
     role_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
     redis: Redis | None = None,
 ) -> CreateProfileResponse:
     """Create a profile artifact with optional junction links."""
+    is_active = not soft if active is None else active
     profile_id: UUID = await conn.fetchval(
         """
         INSERT INTO profile_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

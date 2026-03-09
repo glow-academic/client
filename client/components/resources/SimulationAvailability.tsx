@@ -15,33 +15,31 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Calendar, Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// Link types for tool call tracking
-type LinkSimulationAvailabilityIn = InputOf<"/api/v5/resources/simulation_availability/link", "post">;
-type LinkSimulationAvailabilityOut = OutputOf<"/api/v5/resources/simulation_availability/link", "post">;
+type CreateDraftSimulationAvailabilityIn = {
+  body: {
+    simulation_id: string;
+    availability_time: string;
+    type: string;
+    mcp: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftSimulationAvailabilityOut = {
+  id?: string | null;
+};
 
-type CreateDraftSimulationAvailabilityIn = InputOf<
-  "/api/v5/resources/simulation_availability",
-  "post"
->;
-type CreateDraftSimulationAvailabilityOut = OutputOf<
-  "/api/v5/resources/simulation_availability",
-  "post"
->;
-
-// Derive resource item type from the GET endpoint response
-type SimulationAvailabilityGetResponse = OutputOf<
-  "/api/v5/resources/simulation_availability/get",
-  "post"
->;
-export type SimulationAvailabilityResourceItem = NonNullable<
-  SimulationAvailabilityGetResponse["items"]
->[number];
+export interface SimulationAvailabilityResourceItem {
+  id?: string | null;
+  simulation_id?: string | null;
+  time?: string | null;
+  type?: string | null;
+  generated?: boolean | null;
+}
 
 export interface SimulationAvailabilityProps {
   simulation_availability_ids?: string[];
@@ -91,9 +89,6 @@ export interface SimulationAvailabilityProps {
     | null;
   onAccept?: () => void;
   onReject?: () => void;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkSimulationAvailabilityAction?: (input: LinkSimulationAvailabilityIn) => Promise<LinkSimulationAvailabilityOut>;
 }
 
 export function SimulationAvailability({
@@ -119,8 +114,6 @@ export function SimulationAvailability({
   aiSimulationAvailabilityResources,
   onAccept: onAcceptProp,
   onReject: onRejectProp,
-  link_tool_id: _link_tool_id,
-  linkSimulationAvailabilityAction: _linkSimulationAvailabilityAction,
 }: SimulationAvailabilityProps) {
   const show = show_simulation_availability ?? false;
   const availabilityResources = useMemo(

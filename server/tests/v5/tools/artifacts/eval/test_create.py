@@ -71,7 +71,6 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
         model_flags=True,
         model_positions=True,
         model_rubrics=True,
-        rubrics=True,
         evals=True,
     )
     p = items[0]
@@ -82,5 +81,4 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     assert p.model_flag_ids == []
     assert p.model_position_ids == []
     assert p.model_rubric_ids == []
-    assert p.rubric_ids == []
     assert p.eval_ids == []

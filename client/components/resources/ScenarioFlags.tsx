@@ -16,26 +16,31 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { getIconComponent } from "@/utils/icons";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftSimulationScenarioFlagsIn = InputOf<
-  "/api/v5/resources/scenario_flags",
-  "post"
->;
-type CreateDraftSimulationScenarioFlagsOut = OutputOf<
-  "/api/v5/resources/scenario_flags",
-  "post"
->;
-type LinkScenarioFlagsIn = InputOf<"/api/v5/resources/scenario_flags/link", "post">;
-type LinkScenarioFlagsOut = OutputOf<"/api/v5/resources/scenario_flags/link", "post">;
+type CreateDraftSimulationScenarioFlagsIn = {
+  body: {
+    scenario_id: string;
+    flag_id: string;
+    mcp: boolean;
+  };
+};
+type CreateDraftSimulationScenarioFlagsOut = {
+  scenario_flags_id?: string | null;
+};
 
-// Derive resource item type from the GET endpoint response
-type ScenarioFlagsGetResponse = OutputOf<"/api/v5/resources/scenario_flags/get", "post">;
-export type ScenarioFlagsResourceItem = NonNullable<ScenarioFlagsGetResponse["items"]>[number];
+export interface ScenarioFlagsResourceItem {
+  id?: string | null;
+  scenario_id?: string | null;
+  flag_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  icon?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ScenarioFlagsProps {
   scenario_flag_ids?: string[];
@@ -77,14 +82,10 @@ export interface ScenarioFlagsProps {
   description?: string;
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioFlagsAction?:
     | ( (
         input: CreateDraftSimulationScenarioFlagsIn
       ) => Promise<CreateDraftSimulationScenarioFlagsOut>)
-    | undefined;
-  linkScenarioFlagsAction?:
-    | ((input: LinkScenarioFlagsIn) => Promise<LinkScenarioFlagsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
@@ -120,9 +121,7 @@ export function ScenarioFlags({
   description,
   group_id,
   create_tool_id,
-  link_tool_id: _link_tool_id,
   createScenarioFlagsAction,
-  linkScenarioFlagsAction: _linkScenarioFlagsAction,
   onGenerate,
   showAiGenerate = false,
   isAutosaveEnabled = true,

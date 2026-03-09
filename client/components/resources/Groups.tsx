@@ -16,15 +16,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type GroupGetResponse = OutputOf<"/api/v5/resources/groups/get", "post">;
-export type GroupResourceItem = NonNullable<GroupGetResponse["items"]>[number];
+export interface GroupResourceItem {
+  id?: string | null;
+  group_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface GroupItem {
   id: string;

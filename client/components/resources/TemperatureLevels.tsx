@@ -17,14 +17,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type TemperatureLevelGetResponse = OutputOf<"/api/v5/resources/temperature_levels/get", "post">;
-export type TemperatureLevelResourceItem = NonNullable<TemperatureLevelGetResponse["items"]>[number];
+export interface TemperatureLevelResourceItem {
+  id?: string | null;
+  temperature?: number | string | null;
+  generated?: boolean | null;
+}
 
 export interface TemperatureLevelItem {
   id: string;

@@ -25,9 +25,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
 
-// Derive resource item type from the GET endpoint response
-type ValueGetResponse = OutputOf<"/api/v5/resources/values/get", "post">;
-export type ValueResourceItem = NonNullable<ValueGetResponse["items"]>[number];
+export interface ValueResourceItem {
+  id?: string | null;
+  value?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ValuesProps {
   value_ids?: string[]; // Current value resource IDs (wrapped singular for compat)

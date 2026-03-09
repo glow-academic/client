@@ -17,19 +17,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 
-type CreateDraftScenariosIn = InputOf<"/api/v5/resources/scenarios", "post">;
-type CreateDraftScenariosOut = OutputOf<"/api/v5/resources/scenarios", "post">;
-type LinkScenariosIn = InputOf<"/api/v5/resources/scenarios/link", "post">;
-type LinkScenariosOut = OutputOf<"/api/v5/resources/scenarios/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type ScenariosGetResponse = OutputOf<"/api/v5/resources/scenarios/get", "post">;
-export type ScenarioResourceItem = NonNullable<ScenariosGetResponse["items"]>[number];
+export interface ScenarioResourceItem {
+  scenario_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ScenarioItem {
   id: string;
@@ -52,14 +49,12 @@ export interface ScenariosProps {
   description?: string;
   searchTerm?: string;
   group_id?: string | null; // Group ID for linking resources
-  link_tool_id?: string | null; // Tool ID for linking existing resources
-  linkScenariosAction?:
-    | ((input: LinkScenariosIn) => Promise<LinkScenariosOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   showSelectedOnly?: boolean;
-  aiScenarioResources?: Array<Pick<ScenarioResourceItem, "scenario_id" | "name">> | null;
+  aiScenarioResources?: Array<
+    Pick<ScenarioResourceItem, "scenario_id" | "name">
+  > | null;
 }
 
 export function Scenarios({
@@ -76,8 +71,6 @@ export function Scenarios({
   placeholder = "Select scenarios...",
   description,
   group_id,
-  link_tool_id,
-  linkScenariosAction,
   onGenerate,
   showAiGenerate = false,
   searchTerm,
@@ -92,7 +85,11 @@ export function Scenarios({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestions,
+    clear: clearAi,
+  } = useResourceAi({
     resourceType: "scenarios",
     groupId: group_id,
     accumulate: true,
@@ -103,20 +100,10 @@ export function Scenarios({
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiSuggestions
-          .map((s) => s.id)
-          .filter(Boolean) as string[]
+        aiSuggestions.map((s) => s.id).filter(Boolean) as string[]
       ),
     [aiSuggestions]
   );
-
-  // Track which scenario IDs have already had resources created
-  const createdScenarioIdsRef = useRef<Set<string>>(new Set());
-
-  // Initialize createdScenarioIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdScenarioIdsRef.current.add(id));
-  }, [ids]);
 
   // Convert scenarios array to ScenarioItem format for GenericPicker
   const scenarioItems = useMemo(() => {
@@ -149,15 +136,9 @@ export function Scenarios({
       const nextSelectedIds = alreadySelected
         ? ids.filter((id) => id !== scenarioId)
         : [...ids, scenarioId];
-      // Fire link tracking when adding a scenario
-      if (!alreadySelected && linkScenariosAction && group_id && link_tool_id) {
-        linkScenariosAction({
-          body: { resource_id: scenarioId, tool_id: link_tool_id },
-        }).catch(() => {});
-      }
       void handleSelect(nextSelectedIds);
     },
-    [ids, handleSelect, linkScenariosAction, group_id, link_tool_id]
+    [ids, handleSelect]
   );
 
   const normalizedSearch = useMemo(
@@ -307,7 +288,9 @@ export function Scenarios({
                 isSelected
                   ? "border-transparent ring-2 ring-primary bg-primary/5"
                   : "border-input",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
@@ -345,8 +328,8 @@ export function Scenarios({
           normalizedSearch
             ? `No scenarios match "${searchTerm?.trim()}".`
             : showSelectedOnly && ids.length === 0
-            ? "No scenarios selected."
-            : placeholder ?? "No scenarios available."
+              ? "No scenarios selected."
+              : (placeholder ?? "No scenarios available.")
         }
         disabled={disabled}
         className="pt-2"

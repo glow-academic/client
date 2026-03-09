@@ -25,9 +25,13 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
 type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
 
-// Derive resource item type from the GET endpoint response
-type PricingGetResponse = OutputOf<"/api/v5/resources/pricing/get", "post">;
-export type PricingResourceItem = NonNullable<PricingGetResponse["items"]>[number];
+export interface PricingResourceItem {
+  id?: string | null;
+  pricing_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+}
 
 export interface PricingItem {
   id: string;

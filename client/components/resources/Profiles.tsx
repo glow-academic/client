@@ -17,18 +17,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Link types for tool call tracking
-type LinkProfilesIn = InputOf<"/api/v5/resources/profiles/link", "post">;
-type LinkProfilesOut = OutputOf<"/api/v5/resources/profiles/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type ProfileGetResponse = OutputOf<"/api/v5/resources/profiles/get", "post">;
-export type ProfileResourceItem = NonNullable<ProfileGetResponse["items"]>[number];
+export interface ProfileResourceItem {
+  profile_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ProfilesItem {
   id: string;

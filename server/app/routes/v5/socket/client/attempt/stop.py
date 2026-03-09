@@ -8,10 +8,9 @@ Dual cancel (in-process + Redis) → entry mutation → emit stopped.
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, get_pool, sio
 from app.infra.websocket.cancel_active_result import cancel_active_result
 from app.infra.websocket.cancel_active_run import cancel_active_run
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.client.types import AttemptStopPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
@@ -43,7 +42,8 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
 
         # Step 3: Find latest message and mark complete
         # TODO: Add leaf-node filter (exclude messages with children in attempt_message_tree_entry)
-        async with get_db_connection() as conn:
+        pool = get_pool()
+        async with pool.acquire() as conn:
             messages, _ = await search_attempt_messages(
                 conn,
                 chat_ids=[uuid.UUID(chat_id)],

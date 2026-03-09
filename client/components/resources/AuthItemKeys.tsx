@@ -10,14 +10,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// Derive resource item type from the GET endpoint response
-type AuthItemKeysGetResponse = OutputOf<"/api/v5/resources/auth_item_keys/get", "post">;
-export type AuthItemKeysResourceItem = NonNullable<AuthItemKeysGetResponse["items"]>[number];
+export interface AuthItemKeysResourceItem {
+  id?: string | null;
+  auth_id?: string | null;
+  key_id?: string | null;
+  auth_name?: string | null;
+  key_name?: string | null;
+  key_description?: string | null;
+  generated?: boolean | null;
+}
 
 type AuthOption = {
   auth_id?: string | null;

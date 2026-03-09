@@ -14,7 +14,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
@@ -28,18 +27,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-// Link types for tool call tracking
-type LinkSimulationPositionsIn = InputOf<"/api/v5/resources/simulation_positions/link", "post">;
-type LinkSimulationPositionsOut = OutputOf<"/api/v5/resources/simulation_positions/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type SimulationPositionGetResponse = OutputOf<
-  "/api/v5/resources/simulation_positions/get",
-  "post"
->;
-export type SimulationPositionResourceItem = NonNullable<
-  SimulationPositionGetResponse["items"]
->[number];
+export interface SimulationPositionResourceItem {
+  id?: string | null;
+  simulation_id?: string | null;
+  value?: number | null;
+}
 
 export interface SimulationPositionItem {
   simulation_id: string;
@@ -94,9 +86,6 @@ export interface SimulationPositionsProps {
   registerFlush?: (
     flush: () => Promise<{ simulation_position_ids: string[] | null } | void>,
   ) => void;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkSimulationPositionsAction?: (input: LinkSimulationPositionsIn) => Promise<LinkSimulationPositionsOut>;
 }
 
 export function SimulationPositions({
@@ -120,8 +109,6 @@ export function SimulationPositions({
   onSimulationPositionValues,
   isAutosaveEnabled = true,
   registerFlush,
-  link_tool_id: _link_tool_id,
-  linkSimulationPositionsAction: _linkSimulationPositionsAction,
 }: SimulationPositionsProps) {
   const show = show_simulation_positions ?? false;
   const selectedSimulationIds = useMemo(

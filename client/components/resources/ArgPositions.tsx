@@ -2,14 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import type { OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-// Derive resource item type from the GET endpoint response
-type ArgPositionsGetResponse = OutputOf<"/api/v5/resources/arg_positions/get", "post">;
-export type ArgPositionResourceItem = NonNullable<ArgPositionsGetResponse["items"]>[number];
+export interface ArgPositionResourceItem {
+  id?: string | null;
+  args_id?: string | null;
+  value?: number | null;
+  generated?: boolean | null;
+}
 
 type CreateDraftArgPositionsIn = {
   body: {

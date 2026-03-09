@@ -39,18 +39,20 @@ async def create_auth(
     item_ids: list[UUID] | None = None,
     protocol_ids: list[UUID] | None = None,
     auth_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateAuthResponse:
     """Create an auth artifact with optional junction links."""
+    is_active = not soft if active is None else active
     auth_id: UUID = await conn.fetchval(
         """
         INSERT INTO auth_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

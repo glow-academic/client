@@ -16,17 +16,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-type LinkVoicesIn = InputOf<"/api/v5/resources/voices/link", "post">;
-type LinkVoicesOut = OutputOf<"/api/v5/resources/voices/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type VoicesGetResponse = OutputOf<"/api/v5/resources/voices/get", "post">;
-export type VoiceResourceItem = NonNullable<VoicesGetResponse["items"]>[number];
+export interface VoiceResourceItem {
+  id?: string | null;
+  voice?: string | null;
+  generated?: boolean | null;
+}
 
 export interface VoiceItem {
   id: string;
@@ -49,10 +47,6 @@ export interface VoicesProps {
   required?: boolean;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for linking existing resources
-  linkVoicesAction?:
-    | ((input: LinkVoicesIn) => Promise<LinkVoicesOut>)
-    | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   showAiGenerate?: boolean;
@@ -73,8 +67,6 @@ export function Voices({
   required = false,
   group_id,
   create_tool_id,
-  link_tool_id,
-  linkVoicesAction,
   isAutosaveEnabled = true,
   showAiGenerate = false,
   onGenerate,
@@ -114,25 +106,11 @@ export function Voices({
   }, [aiSuggestions]);
 
   const handleSelect = useCallback(
-    async (selectedIds: string[]) => {
-      // Find newly selected IDs
-      const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id)
-      );
-
-      // Fire link tracking for each newly selected existing resource
-      if (newlySelected.length > 0 && linkVoicesAction && group_id && link_tool_id) {
-        for (const voiceId of newlySelected) {
-          linkVoicesAction({
-            body: { resource_id: voiceId, tool_id: link_tool_id },
-          }).catch(() => {});
-        }
-      }
-
+    (selectedIds: string[]) => {
       // Update parent state
       onVoiceIdsChange(selectedIds);
     },
-    [ids, onVoiceIdsChange, group_id, linkVoicesAction, link_tool_id]
+    [onVoiceIdsChange]
   );
 
   // Handle grid card click — multi-select toggle

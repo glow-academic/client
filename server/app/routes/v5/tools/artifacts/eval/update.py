@@ -58,7 +58,6 @@ async def update_eval(
     model_flag_ids: list[UUID] | None = None,
     model_position_ids: list[UUID] | None = None,
     model_rubric_ids: list[UUID] | None = None,
-    rubric_ids: list[UUID] | None = None,
     eval_ids: list[UUID] | None = None,
     # Base columns
     active: bool | Any = _UNSET,
@@ -108,7 +107,6 @@ async def update_eval(
         model_flag_ids,
         model_position_ids,
         model_rubric_ids,
-        rubric_ids,
         eval_ids,
     ]
     for (table, col, constraint), vals in zip(MULTI_JUNCTIONS, multi_vals):

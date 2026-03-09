@@ -33,9 +33,17 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "post"
 >;
 
-// Derive resource item type from the GET endpoint response
-type StandardGroupGetResponse = OutputOf<"/api/v5/resources/standard_groups/get", "post">;
-export type StandardGroupResourceItem = NonNullable<StandardGroupGetResponse["items"]>[number];
+export interface StandardGroupResourceItem {
+  standard_group_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  points?: number | null;
+  pass_points?: number | null;
+  position?: number | null;
+  active?: boolean | null;
+  standard_ids?: string[] | null;
+  generated?: boolean | null;
+}
 
 export interface StandardGroupItem {
   id: string;

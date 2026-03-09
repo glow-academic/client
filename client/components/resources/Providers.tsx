@@ -17,14 +17,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type ProvidersGetResponse = OutputOf<"/api/v5/resources/providers/get", "post">;
-export type ProviderResourceItem = NonNullable<ProvidersGetResponse["items"]>[number];
+export interface ProviderResourceItem {
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  value?: string | null;
+  endpoint?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ProviderItem {
   id: string;

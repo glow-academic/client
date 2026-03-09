@@ -18,13 +18,16 @@ import {
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type FieldsGetResponse = OutputOf<"/api/v5/resources/fields/get", "post">;
-export type FieldResourceItem = NonNullable<FieldsGetResponse["items"]>[number];
+export interface FieldResourceItem {
+  field_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  conditional_parameter_ids?: string[] | null;
+  generated?: boolean | null;
+}
 
 export interface FieldItem {
   id: string;

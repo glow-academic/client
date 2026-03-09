@@ -28,15 +28,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { ICON_MAP, ICON_NAMES } from "@/utils/icons";
 import { Check, Loader2, Pencil, Plus, Sparkles, User, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
-// Derive resource item type from the GET endpoint response
-type RolesGetResponse = OutputOf<"/api/v5/resources/roles/get", "post">;
-export type RolesResourceItem = NonNullable<RolesGetResponse["items"]>[number];
+export interface RolesResourceItem {
+  id?: string | null;
+  role?: string | null;
+  name?: string | null;
+  description?: string | null;
+  icon_value?: string | null;
+  color_hex?: string | null;
+  generated?: boolean | null;
+}
 
 export interface RolesProps {
   role?: string | null;

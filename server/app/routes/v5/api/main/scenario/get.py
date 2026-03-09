@@ -105,7 +105,7 @@ async def get_scenario_client(
     profile_id: UUID,
     scenario_id: UUID | None,
     draft_id: UUID | None = None,
-    group_id: UUID,
+    group_id: UUID | None = None,
     parameter_ids: list[UUID] | None = None,
     # Search filters (threaded from client)
     description_search: str | None = None,
@@ -139,6 +139,8 @@ async def get_scenario_client(
         redis,
         profile_id=profile_id,
         group_id=group_id,
+        draft_id=draft_id,
+        artifact_type="scenario",
         bypass_cache=bypass_cache,
     )
 
@@ -689,13 +691,21 @@ async def get_scenario(
         pool = get_pool()
         redis = get_redis_client()
 
+        # Resolve group_id server-side from draft or create fresh
+        group_id = await resolve_group_for_artifact(
+            pool,
+            draft_id=request.draft_id,
+            artifact_type="scenario",
+            profiles_id=profile_id,
+        )
+
         response_data = await get_scenario_client(
             pool,
             redis,
             profile_id=profile_id,
             scenario_id=request.scenario_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
+            group_id=group_id,
             parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,

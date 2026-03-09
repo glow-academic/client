@@ -15,31 +15,29 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftScenarioRubricsIn = InputOf<
-  "/api/v5/resources/scenario_rubrics",
-  "post"
->;
-type CreateDraftScenarioRubricsOut = OutputOf<
-  "/api/v5/resources/scenario_rubrics",
-  "post"
->;
-type LinkScenarioRubricsIn = InputOf<"/api/v5/resources/scenario_rubrics/link", "post">;
-type LinkScenarioRubricsOut = OutputOf<"/api/v5/resources/scenario_rubrics/link", "post">;
+type CreateDraftScenarioRubricsIn = {
+  body: {
+    scenario_id: string;
+    rubric_id: string;
+    mcp: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftScenarioRubricsOut = {
+  id?: string | null;
+};
 
-// Derive resource item type from the GET endpoint response
-type ScenarioRubricGetResponse = OutputOf<
-  "/api/v5/resources/scenario_rubrics/get",
-  "post"
->;
-export type ScenarioRubricResourceItem = NonNullable<
-  ScenarioRubricGetResponse["items"]
->[number];
+export interface ScenarioRubricResourceItem {
+  id?: string | null;
+  scenario_id?: string | null;
+  rubric_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ScenarioRubricsProps {
   scenario_rubric_ids?: string[];
@@ -76,14 +74,10 @@ export interface ScenarioRubricsProps {
   description?: string;
   group_id?: string | null;
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for linking existing resources
   createScenarioRubricsAction?:
     | ((
         input: CreateDraftScenarioRubricsIn,
       ) => Promise<CreateDraftScenarioRubricsOut>)
-    | undefined;
-  linkScenarioRubricsAction?:
-    | ((input: LinkScenarioRubricsIn) => Promise<LinkScenarioRubricsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
@@ -127,9 +121,7 @@ export function ScenarioRubrics({
   description,
   group_id,
   create_tool_id,
-  link_tool_id: _link_tool_id,
   createScenarioRubricsAction,
-  linkScenarioRubricsAction: _linkScenarioRubricsAction,
   onGenerate,
   showAiGenerate = false,
   isAutosaveEnabled = true,

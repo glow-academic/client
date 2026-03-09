@@ -39,18 +39,20 @@ async def create_provider(
     key_ids: list[UUID] | None = None,
     provider_ids: list[UUID] | None = None,
     value_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateProviderResponse:
     """Create a provider artifact with optional junction links."""
+    is_active = not soft if active is None else active
     provider_id: UUID = await conn.fetchval(
         """
         INSERT INTO provider_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

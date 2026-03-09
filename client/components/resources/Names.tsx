@@ -15,16 +15,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type LinkNamesIn = InputOf<"/api/v5/resources/names/link", "post">;
-type LinkNamesOut = OutputOf<"/api/v5/resources/names/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type NamesGetResponse = OutputOf<"/api/v5/resources/names/get", "post">;
-export type NameResourceItem = NonNullable<NamesGetResponse["items"]>[number];
+export interface NameResourceItem {
+  id?: string | null;
+  name?: string | null;
+  generated?: boolean | null;
+}
 
 export interface NamesProps {
   name_id?: string | null; // Current name_id (standardized prop name)
@@ -45,10 +43,6 @@ export interface NamesProps {
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onNameChange?: (name: string) => void; // Report value changes upward
-  link_tool_id?: string | null; // Tool ID for linking existing resources
-  linkNamesAction?:
-    | ((input: LinkNamesIn) => Promise<LinkNamesOut>)
-    | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
 }
@@ -72,8 +66,6 @@ export function Names({
   create_tool_id,
   showAiGenerate = false,
   onNameChange,
-  link_tool_id,
-  linkNamesAction,
   isAutosaveEnabled = true,
 }: NamesProps) {
   const resource = name_resource ?? null;
@@ -221,16 +213,10 @@ export function Names({
         );
         if (matchedName?.id) {
           onNameIdChange(matchedName.id);
-          // Fire link tracking for selecting an existing resource
-          if (linkNamesAction && group_id && link_tool_id) {
-            linkNamesAction({
-              body: { resource_id: matchedName.id, tool_id: link_tool_id },
-            }).catch(() => {});
-          }
         }
       }
     },
-    [ghostSuffix, ghostMatch, namesArray, onNameIdChange, linkNamesAction, group_id, link_tool_id]
+    [ghostSuffix, ghostMatch, namesArray, onNameIdChange]
   );
 
   // Accept AI suggestion - update internal value and notify parent

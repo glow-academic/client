@@ -17,17 +17,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-type CreateDraftAgentsIn = InputOf<"/api/v5/resources/agents", "post">;
-type CreateDraftAgentsOut = OutputOf<"/api/v5/resources/agents", "post">;
-
-// Derive resource item type from the GET endpoint response
-type AgentsGetResponse = OutputOf<"/api/v5/resources/agents/get", "post">;
-export type AgentResourceItem = NonNullable<AgentsGetResponse["items"]>[number];
+export interface AgentResourceItem {
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+}
 
 export interface AgentItem {
   id: string;

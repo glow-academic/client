@@ -33,9 +33,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 
-// Derive resource item type from the GET endpoint response
-type ArgsGetResponse = OutputOf<"/api/v5/resources/args/get", "post">;
-export type ArgsResourceItem = NonNullable<ArgsGetResponse["items"]>[number];
+export interface ArgsResourceItem {
+  id?: string | null;
+  name?: string | null;
+}
 
 export interface ArgsFieldDetail {
   args_id: string;

@@ -23,7 +23,7 @@ async def test_hard_delete_single(conn, redis_client):
     result = await delete_simulations(conn, [p.id])
     assert p.id in result.deleted_ids
 
-    got = await get_simulations(conn, [p.id])
+    got = await get_simulations(conn, [p.id], active=None)
     assert len(got) == 0
 
 
@@ -64,7 +64,7 @@ async def test_soft_delete_sets_inactive(conn, redis_client):
     assert p.id in result.deleted_ids
 
     # Still exists but inactive
-    got = await get_simulations(conn, [p.id])
+    got = await get_simulations(conn, [p.id], active=None)
     assert len(got) == 1
     assert got[0].active is False  # get filters active=true by default
 

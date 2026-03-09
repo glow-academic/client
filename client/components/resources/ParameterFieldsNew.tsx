@@ -17,17 +17,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown, ChevronRight, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type LinkParameterFieldsIn = InputOf<"/api/v5/resources/parameter_fields/link", "post">;
-type LinkParameterFieldsOut = OutputOf<"/api/v5/resources/parameter_fields/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type ParameterFieldGetResponse = OutputOf<"/api/v5/resources/parameter_fields/get", "post">;
-export type ParameterFieldResourceItem = NonNullable<ParameterFieldGetResponse["items"]>[number];
+export interface ParameterFieldResourceItem {
+  id?: string | null;
+  field_id?: string | null;
+  parameter_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  value?: string | null;
+  conditional_parameter_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ParameterFieldsNewProps {
   parameterIds: string[];                    // from URL — which groups are expanded
@@ -40,10 +43,6 @@ export interface ParameterFieldsNewProps {
   disabled?: boolean;
   group_id?: string | null;
   showAiGenerate?: boolean;
-  link_tool_id?: string | null; // Tool ID for linking existing resources
-  linkParameterFieldsAction?:
-    | ((input: LinkParameterFieldsIn) => Promise<LinkParameterFieldsOut>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   isAutosaveEnabled?: boolean;
   create_tool_id?: string | null;
@@ -72,8 +71,6 @@ export function ParameterFieldsNew({
   disabled = false,
   group_id,
   showAiGenerate = false,
-  link_tool_id,
-  linkParameterFieldsAction,
   onGenerate,
   isAutosaveEnabled = true,
   create_tool_id,
@@ -144,12 +141,6 @@ export function ParameterFieldsNew({
       if (checked) {
         if (existingResourceId) {
           setResourceIds((prev) => new Map(prev).set(existingResourceId, existingResourceId));
-          // Fire link tracking for selecting an existing resource
-          if (linkParameterFieldsAction && group_id && link_tool_id) {
-            linkParameterFieldsAction({
-              body: { resource_id: existingResourceId, tool_id: link_tool_id },
-            }).catch(() => {});
-          }
         } else {
           void createParameterField(option.parameter_id, option.field_id);
         }
@@ -177,7 +168,7 @@ export function ParameterFieldsNew({
         }
       }
     },
-    [selectedFieldKeyToResourceId, localKeyToResourceId, pendingSelections, createParameterField, linkParameterFieldsAction, group_id, link_tool_id]
+    [selectedFieldKeyToResourceId, localKeyToResourceId, pendingSelections, createParameterField]
   );
 
   const isFieldSelected = useCallback(

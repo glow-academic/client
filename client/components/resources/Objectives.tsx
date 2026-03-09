@@ -17,25 +17,27 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, GripVertical, Loader2, PlusCircle, Sparkles, Target, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-// Link types for tool call tracking
-type LinkObjectivesIn = InputOf<"/api/v5/resources/objectives/link", "post">;
-type LinkObjectivesOut = OutputOf<"/api/v5/resources/objectives/link", "post">;
+type CreateDraftObjectivesIn = {
+  body: {
+    objective: string;
+    mcp: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftObjectivesOut = {
+  objective_id?: string | null;
+};
 
-type CreateDraftObjectivesIn = InputOf<"/api/v5/resources/objectives", "post">;
-type CreateDraftObjectivesOut = OutputOf<
-  "/api/v5/resources/objectives",
-  "post"
->;
-
-// Derive resource item type from the GET endpoint response
-type ObjectiveGetResponse = OutputOf<"/api/v5/resources/objectives/get", "post">;
-export type ObjectiveResourceItem = NonNullable<ObjectiveGetResponse["item"]>;
+export interface ObjectiveResourceItem {
+  objective_id?: string | null;
+  objective?: string | null;
+  generated?: boolean | null;
+}
 
 // ObjectiveInputWithAutocomplete component (ghost tab autocomplete)
 function ObjectiveInputWithAutocomplete({
@@ -175,9 +177,6 @@ export interface ObjectivesProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
   aiObjectiveResources?: Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkObjectivesAction?: (input: LinkObjectivesIn) => Promise<LinkObjectivesOut>;
 }
 
 export function Objectives({
@@ -205,8 +204,6 @@ export function Objectives({
   isAutosaveEnabled = true,
   registerFlush,
   aiObjectiveResources: _aiObjectiveResources,
-  link_tool_id: _link_tool_id,
-  linkObjectivesAction: _linkObjectivesAction,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);

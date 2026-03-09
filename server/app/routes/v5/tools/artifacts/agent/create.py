@@ -43,18 +43,20 @@ async def create_agent(
     tool_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
     agent_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateAgentResponse:
     """Create an agent artifact with optional junction links."""
+    is_active = not soft if active is None else active
     agent_id: UUID = await conn.fetchval(
         """
         INSERT INTO agent_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,

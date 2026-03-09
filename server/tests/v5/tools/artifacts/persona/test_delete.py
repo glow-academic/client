@@ -23,7 +23,7 @@ async def test_hard_delete_single(conn, redis_client):
     result = await delete_personas(conn, [p.id])
     assert p.id in result.deleted_ids
 
-    got = await get_personas(conn, [p.id])
+    got = await get_personas(conn, [p.id], active=None)
     assert len(got) == 0
 
 

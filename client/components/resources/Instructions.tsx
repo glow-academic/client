@@ -21,14 +21,13 @@ import { Check, Loader2, Sparkles, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 
-type LinkInstructionsIn = InputOf<"/api/v5/resources/instructions/link", "post">;
-type LinkInstructionsOut = OutputOf<"/api/v5/resources/instructions/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type InstructionsGetResponse = OutputOf<"/api/v5/resources/instructions/get", "post">;
-export type InstructionResourceItem = NonNullable<InstructionsGetResponse["items"]>[number];
+export interface InstructionResourceItem {
+  id?: string | null;
+  instruction?: string | null;
+  template?: string | null;
+  generated?: boolean | null;
+}
 
 // Word-based diff types and utilities
 type DiffSegment = { type: "same" | "removed" | "added"; text: string };
@@ -162,8 +161,6 @@ export interface InstructionsProps {
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onInstructionsChange?: (instructions: string) => void; // Report value changes to parent
-  link_tool_id?: string | null; // Tool ID for linking existing resources
-  linkInstructionsAction?: ((input: LinkInstructionsIn) => Promise<LinkInstructionsOut>) | undefined;
   searchTerm?: string; // Search term for filtering instructions
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
@@ -194,8 +191,6 @@ export function Instructions({
   create_tool_id,
   showAiGenerate = false,
   onInstructionsChange,
-  link_tool_id,
-  linkInstructionsAction,
   searchTerm,
   onSearchChange,
   isAutosaveEnabled = true,
@@ -321,7 +316,7 @@ export function Instructions({
           mapping[inst.id] = {
             id: inst.id,
             template: inst.template || `Instructions ${inst.id.slice(0, 8)}...`,
-            generated: inst.generated,
+            generated: inst.generated ?? null,
           };
         }
       });
@@ -434,12 +429,6 @@ export function Instructions({
               setInternalValue(nextValue);
               lastSavedValueRef.current = nextValue;
               lastServerTextRef.current = nextValue;
-              // Fire link tracking for selecting an existing resource
-              if (linkInstructionsAction && group_id && link_tool_id) {
-                linkInstructionsAction({
-                  body: { resource_id: selectedId, tool_id: link_tool_id },
-                }).catch(() => {});
-              }
             } else {
               setInternalValue("");
               lastSavedValueRef.current = "";

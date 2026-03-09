@@ -41,20 +41,21 @@ async def create_eval(
     model_flag_ids: list[UUID] | None = None,
     model_position_ids: list[UUID] | None = None,
     model_rubric_ids: list[UUID] | None = None,
-    rubric_ids: list[UUID] | None = None,
     eval_ids: list[UUID] | None = None,
+    active: bool | None = None,
     soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateEvalResponse:
     """Create an eval artifact with optional junction links."""
+    is_active = not soft if active is None else active
     eval_id: UUID = await conn.fetchval(
         """
         INSERT INTO eval_artifact (id, active, generated, mcp)
         VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
-        not soft,
+        is_active,
         generated,
         mcp,
         id,
@@ -82,7 +83,6 @@ async def create_eval(
         model_flag_ids,
         model_position_ids,
         model_rubric_ids,
-        rubric_ids,
         eval_ids,
     ]
     for (table, col), vals in zip(MULTI_JUNCTIONS, multi_vals):

@@ -3,22 +3,29 @@
 Handles: attempt_audio_start — start a voice session for an attempt chat.
 
 Flow:
-1. Resolve group_id from attempt_chat_entry
-2. Create run + profile link (config created by internal/generate.py)
+1. Resolve group_id + attempt_id from attempt_chat_entry
+2. Create run + call + conversation
 3. Emit to generate pipeline with modality="audio"
 """
 
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.routes.v5.socket.client.types import AttemptAudioStartPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
     GenerateRequestData,
 )
+from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
+from app.routes.v5.tools.entries.attempt_conversations.create import (
+    create_attempt_conversations,
+)
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -47,18 +54,31 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
 
-        async with get_db_connection() as conn:
-            # Step 1: Resolve group_id + attempt_id from attempt_chat_entry
-            row = await conn.fetchrow(
-                """SELECT ac.group_id, b.attempt_id
-                FROM attempt_chat_entry ac
-                JOIN attempt_chat_bridge_entry b ON b.attempt_chat_id = ac.id
-                WHERE ac.id = $1
-                LIMIT 1""",
-                chat_id,
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            await internal_sio.emit(
+                "attempt_error",
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="audio",
+                    message="Session not found. Please reconnect.",
+                    chat_id=str(chat_id),
+                ).model_dump(mode="json"),
             )
+            return
 
-            if not row or not row["group_id"]:
+        session_id = uuid.UUID(session_id_str)
+        pool = get_pool()
+        identity = await resolve_profile_identity_context(
+            pool, profile_id, get_redis_client(), session_id=session_id
+        )
+        profiles_id = identity.profiles_id if identity else None
+
+        async with pool.acquire() as conn:
+            # Step 1: Resolve group_id + attempt_id from attempt_chat_entry
+            chat_entries = await get_attempt_chats(conn, [chat_id])
+
+            if not chat_entries or not chat_entries[0].group_id:
                 await internal_sio.emit(
                     "attempt_error",
                     AttemptErrorData(
@@ -70,35 +90,27 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            group_id = row["group_id"]
-            attempt_id = row["attempt_id"]
+            group_id = chat_entries[0].group_id
+            attempt_id = chat_entries[0].attempt_id
 
-            # Step 2: Create run + profile link
-            run_id = await conn.fetchval(
-                """INSERT INTO runs_entry (group_id)
-                VALUES ($1) RETURNING id""",
-                group_id,
+            # Step 2: Create run + call + conversation
+            run = await create_run(
+                conn,
+                group_id=group_id,
+                session_id=session_id,
+                profiles_id=profiles_id,
+            )
+            call = await create_call(
+                conn, run_id=run.id, session_id=session_id
+            )
+            conversation = await create_attempt_conversations(
+                conn,
+                chat_id=chat_id,
+                call_id=call.id,
+                run_id=run.id,
             )
 
-            await conn.execute(
-                """INSERT INTO profiles_runs_connection (profiles_id, run_id)
-                SELECT ppj.profiles_id, $2
-                FROM profile_profiles_junction ppj
-                WHERE ppj.profile_id = $1
-                LIMIT 1""",
-                profile_id,
-                run_id,
-            )
-
-            # Step 3: Create attempt_conversations_entry
-            conversation_id = await conn.fetchval(
-                """INSERT INTO attempt_conversations_entry (chat_id, run_id)
-                VALUES ($1, $2) RETURNING id""",
-                chat_id,
-                run_id,
-            )
-
-        # Step 4: Emit to generate pipeline with modality=audio
+        # Step 3: Emit to generate pipeline with modality=audio
         resource_types = ["contents", "hints"]
 
         await internal_sio.emit(
@@ -110,22 +122,16 @@ async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
                 artifact_id=str(attempt_id),
                 resource_types=resource_types,
                 save=True,
-                run_id=str(run_id),
+                run_id=str(run.id),
                 group_id=str(group_id),
                 modality="audio",
                 metadata={
                     "attempt_id": str(attempt_id),
                     "chat_id": str(chat_id),
-                    "conversation_id": str(conversation_id),
+                    "conversation_id": str(conversation.id),
                 },
             ).model_dump(mode="json"),
         )
-
-        # Log activity
-        try:
-            pass
-        except Exception:
-            pass
 
     except Exception as e:
         logger.exception(f"Error in attempt_audio_start: {e}")

@@ -25,9 +25,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
 type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
 
-// Derive resource item type from the GET endpoint response
-type SlugsGetResponse = OutputOf<"/api/v5/resources/slugs/get", "post">;
-export type SlugResourceItem = NonNullable<SlugsGetResponse["items"]>[number];
+export interface SlugResourceItem {
+  id?: string | null;
+  value?: string | null;
+  generated?: boolean | null;
+}
 
 export interface SlugItem {
   id: string;

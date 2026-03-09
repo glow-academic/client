@@ -15,18 +15,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type LinkExamplesIn = InputOf<"/api/v5/resources/examples/link", "post">;
-type LinkExamplesOut = OutputOf<"/api/v5/resources/examples/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type ExampleGetResponse = OutputOf<"/api/v5/resources/examples/get", "post">;
-export type ExampleResourceItem = NonNullable<ExampleGetResponse["items"]>[number];
+export interface ExampleResourceItem {
+  id?: string | null;
+  example?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ExamplesProps {
   example_ids?: string[]; // Current example resource IDs (standardized prop name)
@@ -44,10 +42,6 @@ export interface ExamplesProps {
   itemPlaceholder?: string;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  link_tool_id?: string | null; // Tool ID for linking existing resources
-  linkExamplesAction?:
-    | ((input: LinkExamplesIn) => Promise<LinkExamplesOut>)
-    | undefined;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onGenerate?: () => void | Promise<void>;
   // Optional: mapping of example_id -> example text (for initial display)
@@ -75,8 +69,6 @@ export function Examples({
   itemPlaceholder = "Message",
   group_id,
   create_tool_id: _create_tool_id,
-  link_tool_id,
-  linkExamplesAction,
   showAiGenerate = false,
   onGenerate,
   exampleMapping = {},
@@ -202,23 +194,17 @@ export function Examples({
 
   const handleItemsChange = useCallback((items: string[]) => {
     const newItems = items.length > 0 ? items : [""];
-    // Check for newly added texts that match existing suggestions — fire link tracking
+    // Check for newly added texts that match existing suggestions
     for (const text of newItems) {
       if (text.trim() && !exampleIdMapRef.current.has(text)) {
         const existingId = suggestionTextToIdMap.get(text);
         if (existingId) {
           exampleIdMapRef.current.set(text, existingId);
-          // Fire link tracking
-          if (linkExamplesAction && group_id && link_tool_id) {
-            linkExamplesAction({
-              body: { resource_id: existingId, tool_id: link_tool_id },
-            }).catch(() => {});
-          }
         }
       }
     }
     setInternalTexts(newItems);
-  }, [suggestionTextToIdMap, linkExamplesAction, group_id, link_tool_id]);
+  }, [suggestionTextToIdMap]);
 
   // AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({

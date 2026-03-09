@@ -32,9 +32,13 @@ type FlushResult = { files_id: string | null } | void;
 type CreateDraftUploadsIn = InputOf<"/api/v5/resources/uploads", "post">;
 type CreateDraftUploadsOut = OutputOf<"/api/v5/resources/uploads", "post">;
 
-// Derive resource item type from the GET endpoint response
-type UploadGetResponse = OutputOf<"/api/v5/resources/uploads/get", "post">;
-export type UploadResourceItem = NonNullable<UploadGetResponse["items"]>[number];
+export interface UploadResourceItem {
+  files_id?: string | null;
+  file_path?: string | null;
+  mime_type?: string | null;
+  upload_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface UploadsProps {
   upload_ids?: string[]; // Current files_resource IDs (standardized prop name)

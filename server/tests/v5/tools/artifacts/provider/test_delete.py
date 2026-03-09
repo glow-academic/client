@@ -20,7 +20,7 @@ async def test_hard_delete_single(conn, redis_client):
     p = await create_provider(conn, name_id=name.id)
     result = await delete_providers(conn, [p.id])
     assert p.id in result.deleted_ids
-    got = await get_providers(conn, [p.id])
+    got = await get_providers(conn, [p.id], active=None)
     assert len(got) == 0
 
 
@@ -52,7 +52,7 @@ async def test_soft_delete_sets_inactive(conn, redis_client):
     p = await create_provider(conn, name_id=name.id)
     result = await delete_providers(conn, [p.id], soft=True)
     assert p.id in result.deleted_ids
-    got = await get_providers(conn, [p.id])
+    got = await get_providers(conn, [p.id], active=None)
     assert len(got) == 1
     assert got[0].active is False
 

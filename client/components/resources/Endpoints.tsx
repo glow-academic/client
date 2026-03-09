@@ -25,9 +25,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
 type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
 
-// Derive resource item type from the GET endpoint response
-type EndpointGetResponse = OutputOf<"/api/v5/resources/endpoints/get", "post">;
-export type EndpointResourceItem = NonNullable<EndpointGetResponse["items"]>[number];
+export interface EndpointResourceItem {
+  id?: string | null;
+  base_url?: string | null;
+  generated?: boolean | null;
+}
 
 export interface EndpointsProps {
   endpoint_ids?: string[]; // Current endpoint resource IDs (wrapped singular for compat)

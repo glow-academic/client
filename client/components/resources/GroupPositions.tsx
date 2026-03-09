@@ -27,9 +27,13 @@ type FlushResult = { group_positions_id: string | null } | void;
 type CreateDraftGroupPositionsIn = InputOf<"/api/v5/resources/group_positions", "post">;
 type CreateDraftGroupPositionsOut = OutputOf<"/api/v5/resources/group_positions", "post">;
 
-// Derive resource item type from the GET endpoint response
-type GroupPositionsGetResponse = OutputOf<"/api/v5/resources/group_positions/get", "post">;
-export type GroupPositionResourceItem = NonNullable<GroupPositionsGetResponse["items"]>[number];
+export interface GroupPositionResourceItem {
+  id?: string | null;
+  groups_id?: string | null;
+  eval_id?: string | null;
+  value?: number | null;
+  generated?: boolean | null;
+}
 
 export interface GroupPositionItem {
   id: string;

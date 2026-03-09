@@ -26,9 +26,11 @@ import { toast } from "sonner";
 type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
 type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
 
-// Derive resource item type from the GET endpoint response
-type TextGetResponse = OutputOf<"/api/v5/resources/texts/get", "post">;
-export type TextResourceItem = NonNullable<TextGetResponse["items"]>[number];
+export interface TextResourceItem {
+  texts_id?: string | null;
+  content?: string | null;
+  generated?: boolean | null;
+}
 
 export interface TextItem {
   texts_id?: string | null;

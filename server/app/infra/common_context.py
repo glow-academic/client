@@ -41,6 +41,9 @@ async def resolve_common_context(
     profile: ProfileIdentityContext | None = None,
     group_id: UUID | None = None,
     bypass_cache: bool = False,
+    # Group resolution hints — threaded to resolve_profile_identity_context
+    draft_id: UUID | None = None,
+    artifact_type: str | None = None,
 ) -> CommonContext | None:
     """Resolve common context for any artifact GET.
 
@@ -49,6 +52,7 @@ async def resolve_common_context(
     Steps:
       1. resolve_profile_identity_context — sequential (need settings_id for step 2)
          Skipped if ``profile`` is already provided (pre-resolved at boundary).
+         When draft_id/artifact_type are provided, also resolves group_id.
       2. In parallel:
          a. resolve_tool_graph(settings_id)
          b. resolve_runs_context(profile_id, group_id)
@@ -58,17 +62,22 @@ async def resolve_common_context(
     # Step 1: profile (skip if pre-resolved)
     if profile is None:
         profile = await resolve_profile_identity_context(
-            pool, profile_id, redis, bypass_cache
+            pool, profile_id, redis, bypass_cache,
+            draft_id=draft_id,
+            artifact_type=artifact_type,
         )
     if profile is None:
         return None
+
+    # Use profile-resolved group_id if none was explicitly provided
+    effective_group_id = group_id or profile.group_id
 
     # Step 2: tool graph + runs in parallel
     tool_graph, runs = await asyncio.gather(
         resolve_tool_graph(pool, profile.settings_id, redis, bypass_cache)
         if profile.settings_id
         else _empty_tool_graph(),
-        resolve_runs_context(pool, profile_id=profile_id, group_id=group_id),
+        resolve_runs_context(pool, profile_id=profile_id, group_id=effective_group_id),
     )
 
     return CommonContext(

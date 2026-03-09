@@ -17,18 +17,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Link types for tool call tracking
-type LinkSimulationsIn = InputOf<"/api/v5/resources/simulations/link", "post">;
-type LinkSimulationsOut = OutputOf<"/api/v5/resources/simulations/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type SimulationGetResponse = OutputOf<"/api/v5/resources/simulations/get", "post">;
-export type SimulationResourceItem = NonNullable<SimulationGetResponse["items"]>[number];
+export interface SimulationResourceItem {
+  simulation_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+}
 
 export interface SimulationItem {
   id: string;
@@ -54,12 +52,11 @@ export interface SimulationsProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering simulations
   showSelectedFilter?: boolean; // Whether to show only selected simulations
-  // Link tool call tracking
-  link_tool_id?: string | null;
-  linkSimulationsAction?: (input: LinkSimulationsIn) => Promise<LinkSimulationsOut>;
   // Legacy props for backward compatibility
   simulationIds?: string[];
-  aiSimulationResources?: Pick<SimulationResourceItem, "simulation_id" | "name">[] | null;
+  aiSimulationResources?:
+    | Pick<SimulationResourceItem, "simulation_id" | "name">[]
+    | null;
 }
 
 export function Simulations({
@@ -79,9 +76,6 @@ export function Simulations({
   showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
-  // Link tool call tracking
-  link_tool_id,
-  linkSimulationsAction,
   // Legacy props for backward compatibility
   simulationIds,
 }: SimulationsProps) {
@@ -91,18 +85,21 @@ export function Simulations({
     [simulation_ids, simulationIds]
   );
 
-  const normalizeDescription = useCallback((description?: string | null) => {
-    const trimmed = description?.trim() || "";
-    if (!trimmed) return null;
-    if (trimmed === "0") return null;
-    if (/^\d+$/.test(trimmed)) return null;
-    const trailingZeroMatch = trimmed.match(/^(.*)\s0$/);
-    if (trailingZeroMatch && !/\d/.test(trailingZeroMatch[1])) {
-      const withoutTrailingZero = trailingZeroMatch[1].trim();
-      return withoutTrailingZero || null;
-    }
-    return trimmed;
-  }, []);
+  const normalizeDescription = useCallback(
+    (description?: string | null) => {
+      const trimmed = description?.trim() || "";
+      if (!trimmed) return null;
+      if (trimmed === "0") return null;
+      if (/^\d+$/.test(trimmed)) return null;
+      const trailingZeroMatch = trimmed.match(/^(.*)\s0$/);
+      if (trailingZeroMatch && !/\d/.test(trailingZeroMatch[1])) {
+        const withoutTrailingZero = trailingZeroMatch[1].trim();
+        return withoutTrailingZero || null;
+      }
+      return trimmed;
+    },
+    []
+  );
   const show = show_simulations ?? false;
   const allSimulations = useMemo(() => simulations ?? [], [simulations]);
   const suggestionsList = useMemo(
@@ -111,7 +108,11 @@ export function Simulations({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestions,
+    clear: clearAi,
+  } = useResourceAi({
     resourceType: "simulations",
     groupId: group_id,
     accumulate: true,
@@ -122,9 +123,7 @@ export function Simulations({
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiSuggestions
-          .map((s) => s.id)
-          .filter(Boolean) as string[]
+        aiSuggestions.map((s) => s.id).filter(Boolean) as string[]
       ),
     [aiSuggestions]
   );
@@ -153,7 +152,8 @@ export function Simulations({
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((sim) => {
-        const searchText = `${sim.name} ${sim.description || ""}`.toLowerCase();
+        const searchText =
+          `${sim.name} ${sim.description || ""}`.toLowerCase();
         return searchText.includes(searchLower);
       });
     }
@@ -179,16 +179,9 @@ export function Simulations({
         ? ids.filter((id) => id !== simulationId)
         : [...ids, simulationId];
 
-      // Fire link tracking when adding (not removing)
-      if (!isSelected && linkSimulationsAction && group_id && link_tool_id) {
-        linkSimulationsAction({
-          body: { resource_id: simulationId, tool_id: link_tool_id },
-        }).catch(() => {});
-      }
-
       onChange(newIds);
     },
-    [ids, onChange, linkSimulationsAction, group_id, link_tool_id]
+    [ids, onChange]
   );
 
   // Check if any simulation resource is generated (must be before early return)
@@ -311,7 +304,9 @@ export function Simulations({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
@@ -336,7 +331,9 @@ export function Simulations({
               )}
 
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+                <h3 className="font-medium text-sm leading-tight">
+                  {item.name}
+                </h3>
                 {item.description && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                     {item.description && (

@@ -18,7 +18,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import {
   Check,
@@ -33,19 +32,24 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-// Link types for tool call tracking
-type LinkQuestionsIn = InputOf<"/api/v5/resources/questions/link", "post">;
-type LinkQuestionsOut = OutputOf<"/api/v5/resources/questions/link", "post">;
+type CreateDraftQuestionsIn = {
+  body: {
+    question_text: string;
+    allow_multiple: boolean;
+    time_value: number;
+    mcp: boolean;
+    tool_id?: string;
+  };
+};
+type CreateDraftQuestionsOut = {
+  question_id?: string | null;
+};
 
-type CreateDraftQuestionsIn = InputOf<"/api/v5/resources/questions", "post">;
-type CreateDraftQuestionsOut = OutputOf<
-  "/api/v5/resources/questions",
-  "post"
->;
-
-// Derive resource item type from the GET endpoint response
-type QuestionsGetResponse = OutputOf<"/api/v5/resources/questions/get", "post">;
-export type QuestionsResourceItem = NonNullable<QuestionsGetResponse["items"]>[number];
+export interface QuestionsResourceItem {
+  question_id?: string | null;
+  question_text?: string | null;
+  generated?: boolean | null;
+}
 
 export interface QuestionsProps {
   question_ids?: string[]; // Current question resource IDs (standardized prop name)
@@ -82,9 +86,6 @@ export interface QuestionsProps {
   aiQuestionResources?: Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null;
   /** Called whenever internal questions change (including unflushed) — allows parent to show dependent UI immediately */
   onInternalQuestionsChange?: (questions: { id: string; question_text: string }[]) => void;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkQuestionsAction?: (input: LinkQuestionsIn) => Promise<LinkQuestionsOut>;
 }
 
 // Internal question type (matching ContentSection pattern)
@@ -122,8 +123,6 @@ export function Questions({
   registerFlush,
   aiQuestionResources: _aiQuestionResources,
   onInternalQuestionsChange,
-  link_tool_id: _link_tool_id,
-  linkQuestionsAction: _linkQuestionsAction,
 }: QuestionsProps) {
   // Use standardized props
   const ids = useMemo(() => question_ids ?? [], [question_ids]);

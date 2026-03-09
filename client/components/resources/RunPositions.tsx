@@ -27,9 +27,13 @@ type FlushResult = { run_positions_id: string | null } | void;
 type CreateDraftRunPositionsIn = InputOf<"/api/v5/resources/run_positions", "post">;
 type CreateDraftRunPositionsOut = OutputOf<"/api/v5/resources/run_positions", "post">;
 
-// Derive resource item type from the GET endpoint response
-type RunPositionsGetResponse = OutputOf<"/api/v5/resources/run_positions/get", "post">;
-export type RunPositionsResourceItem = NonNullable<RunPositionsGetResponse["items"]>[number];
+export interface RunPositionsResourceItem {
+  id?: string | null;
+  runs_id?: string | null;
+  eval_id?: string | null;
+  value?: number | null;
+  generated?: boolean | null;
+}
 
 export interface RunPositionItem {
   id: string;

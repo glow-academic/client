@@ -18,13 +18,14 @@ import {
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import type { OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type ReasoningLevelsGetResponse = OutputOf<"/api/v5/resources/reasoning_levels/get", "post">;
-export type ReasoningLevelResourceItem = NonNullable<ReasoningLevelsGetResponse["items"]>[number];
+export interface ReasoningLevelResourceItem {
+  id?: string | null;
+  reasoning_level?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ReasoningLevelItem {
   id: string;
