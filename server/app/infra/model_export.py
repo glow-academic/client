@@ -55,7 +55,7 @@ CSV_COLUMNS = [
 
 
 async def export_model_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -77,7 +77,7 @@ async def export_model_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -90,12 +90,13 @@ async def export_model_client(
     if model_id:
         model_ids = [model_id]
     else:
-        model_ids, _total_count = await search_models(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            model_ids, _total_count = await search_models(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not model_ids:
             return ExportModelApiResponse(
@@ -106,21 +107,22 @@ async def export_model_client(
 
     # ── Step 3: Get model artifacts with all junction IDs ────────────
 
-    artifacts = await get_models(
-        conn,
-        model_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        values=True,
-        providers=True,
-        modalities=True,
-        temperature_levels=True,
-        reasoning_levels=True,
-        qualities=True,
-        voices=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_models(
+            conn,
+            model_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            values=True,
+            providers=True,
+            modalities=True,
+            temperature_levels=True,
+            reasoning_levels=True,
+            qualities=True,
+            voices=True,
+        )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
 
@@ -150,6 +152,46 @@ async def export_model_client(
     async def _empty() -> list:
         return []
 
+    async def _fetch_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _fetch_values() -> list:
+        async with pool.acquire() as conn:
+            return await get_values(conn, all_value_ids, redis)
+
+    async def _fetch_providers() -> list:
+        async with pool.acquire() as conn:
+            return await get_providers(conn, all_provider_ids, redis)
+
+    async def _fetch_modalities() -> list:
+        async with pool.acquire() as conn:
+            return await get_modalities(conn, all_modality_ids, redis)
+
+    async def _fetch_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_temperature_levels(conn, all_temperature_level_ids, redis)
+
+    async def _fetch_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_reasoning_levels(conn, all_reasoning_level_ids, redis)
+
+    async def _fetch_qualities() -> list:
+        async with pool.acquire() as conn:
+            return await get_qualities(conn, all_quality_ids, redis)
+
+    async def _fetch_voices() -> list:
+        async with pool.acquire() as conn:
+            return await get_voices(conn, all_voice_ids, redis)
+
     (
         names_data,
         descriptions_data,
@@ -162,24 +204,16 @@ async def export_model_client(
         qualities_data,
         voices_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_values(conn, all_value_ids, redis) if all_value_ids else _empty(),
-        get_providers(conn, all_provider_ids, redis) if all_provider_ids else _empty(),
-        get_modalities(conn, all_modality_ids, redis) if all_modality_ids else _empty(),
-        get_temperature_levels(conn, all_temperature_level_ids, redis)
-        if all_temperature_level_ids
-        else _empty(),
-        get_reasoning_levels(conn, all_reasoning_level_ids, redis)
-        if all_reasoning_level_ids
-        else _empty(),
-        get_qualities(conn, all_quality_ids, redis) if all_quality_ids else _empty(),
-        get_voices(conn, all_voice_ids, redis) if all_voice_ids else _empty(),
+        _fetch_names() if all_name_ids else _empty(),
+        _fetch_descriptions() if all_description_ids else _empty(),
+        _fetch_departments() if all_department_ids else _empty(),
+        _fetch_values() if all_value_ids else _empty(),
+        _fetch_providers() if all_provider_ids else _empty(),
+        _fetch_modalities() if all_modality_ids else _empty(),
+        _fetch_temperature_levels() if all_temperature_level_ids else _empty(),
+        _fetch_reasoning_levels() if all_reasoning_level_ids else _empty(),
+        _fetch_qualities() if all_quality_ids else _empty(),
+        _fetch_voices() if all_voice_ids else _empty(),
     )
 
     # Build lookup maps
@@ -257,13 +291,14 @@ async def export_model_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportModelApiResponse(
         upload_id=upload_result.id,

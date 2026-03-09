@@ -58,7 +58,7 @@ class CreateSimulationItem(BaseModel):
 
 
 async def create_simulation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -82,7 +82,7 @@ async def create_simulation_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -104,7 +104,7 @@ async def create_simulation_client(
     error_results: list[SimulationResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_simulation_values(conn, redis, item, is_create=True)
+        item_errors = await resolve_simulation_values(pool, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -126,39 +126,40 @@ async def create_simulation_client(
 
     results: list[SimulationResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            simulations_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_simulation_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                scenario_ids=item.scenario_ids,
-                scenario_flag_ids=item.scenario_flag_ids,
-                scenario_position_ids=item.scenario_position_ids,
-                scenario_rubric_ids=item.scenario_rubric_ids,
-                scenario_time_limit_ids=item.scenario_time_limit_ids,
-                simulation_ids=[simulations_resource_id],
-            )
-
-            results.append(
-                SimulationResultItem(
-                    success=True,
-                    simulation_id=result.id,
-                    message="Simulation created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                simulations_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_simulation_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    scenario_ids=item.scenario_ids,
+                    scenario_flag_ids=item.scenario_flag_ids,
+                    scenario_position_ids=item.scenario_position_ids,
+                    scenario_rubric_ids=item.scenario_rubric_ids,
+                    scenario_time_limit_ids=item.scenario_time_limit_ids,
+                    simulation_ids=[simulations_resource_id],
+                )
+
+                results.append(
+                    SimulationResultItem(
+                        success=True,
+                        simulation_id=result.id,
+                        message="Simulation created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

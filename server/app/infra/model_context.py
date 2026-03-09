@@ -77,7 +77,7 @@ MODEL_FLAG_NAMES = {
 
 
 async def resolve_model_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     model_id: UUID | None,
@@ -96,29 +96,34 @@ async def resolve_model_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_model_artifacts(
-            conn,
-            [model_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            values=True,
-            providers=True,
-            modalities=True,
-            temperature_levels=True,
-            pricing=True,
-            reasoning_levels=True,
-            qualities=True,
-            voices=True,
-        )
-        if model_id
-        else _empty()
-    )
-    draft_task = get_model_drafts(conn, [draft_id]) if draft_id else _empty()
+    async def _fetch_artifact() -> list:
+        if not model_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_model_artifacts(
+                conn,
+                [model_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                values=True,
+                providers=True,
+                modalities=True,
+                temperature_levels=True,
+                pricing=True,
+                reasoning_levels=True,
+                qualities=True,
+                voices=True,
+            )
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_draft() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_model_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifact(), _fetch_draft())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -129,6 +134,206 @@ async def resolve_model_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                model=True,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                model=True,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                model=True,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all" if model_id is None else "recent",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_values() -> list:
+        async with pool.acquire() as conn:
+            return await get_values(conn, merged.value_ids, redis, bypass_cache)
+
+    async def _search_values() -> list:
+        async with pool.acquire() as conn:
+            return await search_values(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.value_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_providers() -> list:
+        async with pool.acquire() as conn:
+            return await get_providers(
+                conn, merged.provider_ids, redis, bypass_cache=bypass_cache
+            )
+
+    async def _search_providers() -> list:
+        async with pool.acquire() as conn:
+            return await search_providers(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.provider_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_modalities() -> list:
+        async with pool.acquire() as conn:
+            return await get_modalities(conn, merged.modality_ids, redis, bypass_cache)
+
+    async def _search_modalities() -> list:
+        async with pool.acquire() as conn:
+            return await search_modalities(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.modality_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_temperature_levels(
+                conn, merged.temperature_level_ids, redis, bypass_cache
+            )
+
+    async def _search_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await search_temperature_levels(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.temperature_level_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_pricing() -> list:
+        async with pool.acquire() as conn:
+            return await get_pricing(conn, merged.pricing_ids, redis, bypass_cache)
+
+    async def _search_pricing() -> list:
+        async with pool.acquire() as conn:
+            return await search_pricing(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.pricing_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_reasoning_levels(
+                conn, merged.reasoning_level_ids, redis, bypass_cache
+            )
+
+    async def _search_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await search_reasoning_levels(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.reasoning_level_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_qualities() -> list:
+        async with pool.acquire() as conn:
+            return await get_qualities(conn, merged.quality_ids, redis, bypass_cache)
+
+    async def _search_qualities() -> list:
+        async with pool.acquire() as conn:
+            return await search_qualities(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.quality_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_voices() -> list:
+        async with pool.acquire() as conn:
+            return await get_voices(conn, merged.voice_ids, redis, bypass_cache)
+
+    async def _search_voices() -> list:
+        async with pool.acquire() as conn:
+            return await search_voices(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.voice_ids,
+                bypass_cache=bypass_cache,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -155,139 +360,30 @@ async def resolve_model_context(
         voices_selected,
         voices_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            model=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            model=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            model=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all" if model_id is None else "recent",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Values
-        get_values(conn, merged.value_ids, redis, bypass_cache),
-        search_values(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.value_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Providers
-        get_providers(conn, merged.provider_ids, redis, bypass_cache=bypass_cache),
-        search_providers(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.provider_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Modalities
-        get_modalities(conn, merged.modality_ids, redis, bypass_cache),
-        search_modalities(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.modality_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Temperature levels
-        get_temperature_levels(conn, merged.temperature_level_ids, redis, bypass_cache),
-        search_temperature_levels(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.temperature_level_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Pricing
-        get_pricing(conn, merged.pricing_ids, redis, bypass_cache),
-        search_pricing(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.pricing_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Reasoning levels
-        get_reasoning_levels(conn, merged.reasoning_level_ids, redis, bypass_cache),
-        search_reasoning_levels(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.reasoning_level_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Qualities
-        get_qualities(conn, merged.quality_ids, redis, bypass_cache),
-        search_qualities(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.quality_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Voices
-        get_voices(conn, merged.voice_ids, redis, bypass_cache),
-        search_voices(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.voice_ids,
-            bypass_cache=bypass_cache,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_values(),
+        _search_values(),
+        _get_providers(),
+        _search_providers(),
+        _get_modalities(),
+        _search_modalities(),
+        _get_temperature_levels(),
+        _search_temperature_levels(),
+        _get_pricing(),
+        _search_pricing(),
+        _get_reasoning_levels(),
+        _search_reasoning_levels(),
+        _get_qualities(),
+        _search_qualities(),
+        _get_voices(),
+        _search_voices(),
     )
 
     # Filter flags to model-specific types

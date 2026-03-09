@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_model_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -56,7 +56,7 @@ async def update_model_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -66,42 +66,46 @@ async def update_model_client(
 
     # ── Step 2: Per-item permission check ──────────────────────────────
 
-    for idx, item in enumerate(items):
-        perms = await resolve_model_permissions_context(conn, item.model_id)
-        if not perms.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Model {item.model_id} not found.",
-            )
-        if not compute_can_edit(
-            user_role=profile.role,
-            model_department_ids=perms.department_ids,
-            active_agent_count=perms.active_agent_count,
-            user_department_ids=profile.department_ids,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this model.",
-            )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            perms = await resolve_model_permissions_context(conn, item.model_id)
+            if not perms.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Model {item.model_id} not found.",
+                )
+            if not compute_can_edit(
+                user_role=profile.role,
+                model_department_ids=perms.department_ids,
+                active_agent_count=perms.active_agent_count,
+                user_department_ids=profile.department_ids,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to update this model.",
+                )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
     has_errors = False
     error_results: list[ModelResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_model_values(conn, redis, item, is_create=False)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                ModelResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_model_values(conn, redis, item, is_create=False)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    ModelResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
                 )
-            )
-        else:
-            error_results.append(ModelResultItem(success=True, message="Validated"))
+            else:
+                error_results.append(
+                    ModelResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return UpdateModelApiResponse(results=error_results)
@@ -110,41 +114,44 @@ async def update_model_client(
 
     results: list[ModelResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            models_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            await update_model_artifact(
-                conn,
-                item.model_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                modality_ids=item.modality_ids,
-                model_ids=[models_resource_id],
-                pricing_ids=item.pricing_ids,
-                provider_ids=item.provider_ids,
-                quality_ids=item.quality_ids,
-                reasoning_level_ids=item.reasoning_level_ids,
-                temperature_level_ids=item.temperature_level_ids,
-                value_ids=item.value_ids,
-                voice_ids=item.voice_ids,
-            )
-
-            results.append(
-                ModelResultItem(
-                    success=True,
-                    model_id=item.model_id,
-                    message="Model updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                models_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                await update_model_artifact(
+                    conn,
+                    item.model_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    modality_ids=item.modality_ids,
+                    model_ids=[models_resource_id],
+                    pricing_ids=item.pricing_ids,
+                    provider_ids=item.provider_ids,
+                    quality_ids=item.quality_ids,
+                    reasoning_level_ids=item.reasoning_level_ids,
+                    temperature_level_ids=item.temperature_level_ids,
+                    value_ids=item.value_ids,
+                    voice_ids=item.voice_ids,
+                )
+
+                results.append(
+                    ModelResultItem(
+                        success=True,
+                        model_id=item.model_id,
+                        message="Model updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

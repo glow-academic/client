@@ -69,7 +69,7 @@ logger = get_logger(__name__)
 
 
 async def resolve_cohort_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     item: SaveCohortItem,
     is_update: bool,
@@ -87,114 +87,115 @@ async def resolve_cohort_values(
 
     errors: list[SaveCohortFieldError] = []
 
-    # --- Create resources ---
+    async with pool.acquire() as conn:
+        # --- Create resources ---
 
-    if item.name is not None and item.name_id is None:
-        result = await create_name(conn, item.name, redis)
-        item.name_id = result.id
+        if item.name is not None and item.name_id is None:
+            result = await create_name(conn, item.name, redis)
+            item.name_id = result.id
 
-    if item.description is not None and item.description_id is None:
-        result = await create_description(conn, item.description, redis)
-        item.description_id = result.id
+        if item.description is not None and item.description_id is None:
+            result = await create_description(conn, item.description, redis)
+            item.description_id = result.id
 
-    # --- Match resources ---
+        # --- Match resources ---
 
-    if item.is_inactive is not None and item.flag_id is None:
-        results = await search_flags(
-            conn,
-            redis,
-            search=None,
-            flag_type="cohort_active",
-            limit_count=1000,
-            cohort=True,
-        )
-        match = next((f for f in results if f.type == "cohort_active"), None)
-        if match and match.id:
-            if not item.is_inactive:
-                # Active → set the cohort_active flag
-                item.flag_id = match.id
-            # Inactive → leave flag_id as None (no flag)
-        elif not item.is_inactive:
-            errors.append(
-                SaveCohortFieldError(
-                    field="is_inactive", message="Active flag resource not found"
-                )
+        if item.is_inactive is not None and item.flag_id is None:
+            results = await search_flags(
+                conn,
+                redis,
+                search=None,
+                flag_type="cohort_active",
+                limit_count=1000,
+                cohort=True,
             )
-
-    if item.departments is not None and item.department_ids is None:
-        all_depts = await search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-            cohort=True,
-        )
-        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
-        resolved_ids = []
-        for dept_name in item.departments:
-            dept_id = dept_name_map.get(dept_name.lower())
-            if dept_id:
-                resolved_ids.append(dept_id)
-            else:
+            match = next((f for f in results if f.type == "cohort_active"), None)
+            if match and match.id:
+                if not item.is_inactive:
+                    # Active → set the cohort_active flag
+                    item.flag_id = match.id
+                # Inactive → leave flag_id as None (no flag)
+            elif not item.is_inactive:
                 errors.append(
                     SaveCohortFieldError(
-                        field="departments",
-                        message=f'Department "{dept_name}" not found',
+                        field="is_inactive", message="Active flag resource not found"
                     )
                 )
-        if not any(e.field == "departments" for e in errors):
-            item.department_ids = resolved_ids
 
-    if item.simulations is not None and item.simulation_ids is None:
-        all_simulations = await search_simulations(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-            cohort=True,
-        )
-        sim_name_map = {
-            s.name.lower(): s.id for s in all_simulations if s.name and s.id
-        }
-        resolved_ids = []
-        for sim_name in item.simulations:
-            sid = sim_name_map.get(sim_name.lower())
-            if sid:
-                resolved_ids.append(sid)
-            else:
-                errors.append(
-                    SaveCohortFieldError(
-                        field="simulations",
-                        message=f'Simulation "{sim_name}" not found',
+        if item.departments is not None and item.department_ids is None:
+            all_depts = await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+                cohort=True,
+            )
+            dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
+            resolved_ids = []
+            for dept_name in item.departments:
+                dept_id = dept_name_map.get(dept_name.lower())
+                if dept_id:
+                    resolved_ids.append(dept_id)
+                else:
+                    errors.append(
+                        SaveCohortFieldError(
+                            field="departments",
+                            message=f'Department "{dept_name}" not found',
+                        )
                     )
-                )
-        if not any(e.field == "simulations" for e in errors):
-            item.simulation_ids = resolved_ids
+            if not any(e.field == "departments" for e in errors):
+                item.department_ids = resolved_ids
 
-    if item.profiles is not None and item.profile_ids is None:
-        all_profiles = await search_profiles(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-        )
-        profile_name_map = {
-            p.name.lower(): p.id for p in all_profiles if p.name and p.id
-        }
-        resolved_ids = []
-        for profile_name in item.profiles:
-            pid = profile_name_map.get(profile_name.lower())
-            if pid:
-                resolved_ids.append(pid)
-            else:
-                errors.append(
-                    SaveCohortFieldError(
-                        field="profiles",
-                        message=f'Profile "{profile_name}" not found',
+        if item.simulations is not None and item.simulation_ids is None:
+            all_simulations = await search_simulations(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+                cohort=True,
+            )
+            sim_name_map = {
+                s.name.lower(): s.id for s in all_simulations if s.name and s.id
+            }
+            resolved_ids = []
+            for sim_name in item.simulations:
+                sid = sim_name_map.get(sim_name.lower())
+                if sid:
+                    resolved_ids.append(sid)
+                else:
+                    errors.append(
+                        SaveCohortFieldError(
+                            field="simulations",
+                            message=f'Simulation "{sim_name}" not found',
+                        )
                     )
-                )
-        if not any(e.field == "profiles" for e in errors):
-            item.profile_ids = resolved_ids
+            if not any(e.field == "simulations" for e in errors):
+                item.simulation_ids = resolved_ids
+
+        if item.profiles is not None and item.profile_ids is None:
+            all_profiles = await search_profiles(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+            )
+            profile_name_map = {
+                p.name.lower(): p.id for p in all_profiles if p.name and p.id
+            }
+            resolved_ids = []
+            for profile_name in item.profiles:
+                pid = profile_name_map.get(profile_name.lower())
+                if pid:
+                    resolved_ids.append(pid)
+                else:
+                    errors.append(
+                        SaveCohortFieldError(
+                            field="profiles",
+                            message=f'Profile "{profile_name}" not found',
+                        )
+                    )
+            if not any(e.field == "profiles" for e in errors):
+                item.profile_ids = resolved_ids
 
     # --- Validate required fields ---
 
@@ -216,7 +217,10 @@ async def _create_denormalized_snapshot(
     name_id: UUID | None,
     description_id: UUID | None,
 ) -> UUID:
-    """Create a cohorts_resource snapshot by hydrating IDs to values."""
+    """Create a cohorts_resource snapshot by hydrating IDs to values.
+
+    Expects a connection (called within a transaction block).
+    """
 
     async def _empty() -> list:
         return []
@@ -243,7 +247,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_cohort_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -272,7 +276,7 @@ async def save_cohort_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -284,7 +288,8 @@ async def save_cohort_client(
 
     for idx, item in enumerate(items):
         if item.input_cohort_id is not None:
-            perms = await resolve_cohort_permissions_context(conn, item.input_cohort_id)
+            async with pool.acquire() as conn:
+                perms = await resolve_cohort_permissions_context(conn, item.input_cohort_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,
@@ -325,7 +330,7 @@ async def save_cohort_client(
 
     for idx, item in enumerate(items):
         item_errors = await resolve_cohort_values(
-            conn,
+            pool,
             redis,
             item,
             is_update=item.input_cohort_id is not None,
@@ -350,64 +355,65 @@ async def save_cohort_client(
     results: list[SaveCohortResult] = []
     sync_items: list[tuple[UUID, SaveCohortItem]] = []
 
-    async with conn.transaction():
-        for item in items:
-            is_update = item.input_cohort_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                is_update = item.input_cohort_id is not None
 
-            # Create denormalized snapshot
-            cohorts_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            flag_ids = [item.flag_id] if item.flag_id else None
-
-            if is_update:
-                result = await update_cohort_artifact(
+                # Create denormalized snapshot
+                cohorts_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_cohort_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    department_ids=item.department_ids,
-                    flag_ids=flag_ids,
-                    simulation_ids=item.simulation_ids,
-                    simulation_position_ids=item.simulation_position_ids,
-                    simulation_availability_ids=item.simulation_availability_ids,
-                    profile_ids=item.profile_ids,
-                    profile_persona_ids=item.profile_persona_ids,
-                    cohort_ids=[cohorts_resource_id],
-                )
-                cohort_id = result.id
-            else:
-                result = await create_cohort_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    flag_ids=flag_ids,
-                    simulation_ids=item.simulation_ids,
-                    simulation_position_ids=item.simulation_position_ids,
-                    simulation_availability_ids=item.simulation_availability_ids,
-                    profile_ids=item.profile_ids,
-                    profile_persona_ids=item.profile_persona_ids,
-                    cohort_ids=[cohorts_resource_id],
                 )
-                cohort_id = result.id
 
-            results.append(
-                SaveCohortResult(
-                    success=True,
-                    cohort_id=cohort_id,
-                    message="Cohort updated successfully"
-                    if is_update
-                    else "Cohort created successfully",
+                flag_ids = [item.flag_id] if item.flag_id else None
+
+                if is_update:
+                    result = await update_cohort_artifact(
+                        conn,
+                        item.input_cohort_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        description_id=item.description_id
+                        if item.description_id
+                        else _UNSET,
+                        department_ids=item.department_ids,
+                        flag_ids=flag_ids,
+                        simulation_ids=item.simulation_ids,
+                        simulation_position_ids=item.simulation_position_ids,
+                        simulation_availability_ids=item.simulation_availability_ids,
+                        profile_ids=item.profile_ids,
+                        profile_persona_ids=item.profile_persona_ids,
+                        cohort_ids=[cohorts_resource_id],
+                    )
+                    cohort_id = result.id
+                else:
+                    result = await create_cohort_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        department_ids=item.department_ids,
+                        flag_ids=flag_ids,
+                        simulation_ids=item.simulation_ids,
+                        simulation_position_ids=item.simulation_position_ids,
+                        simulation_availability_ids=item.simulation_availability_ids,
+                        profile_ids=item.profile_ids,
+                        profile_persona_ids=item.profile_persona_ids,
+                        cohort_ids=[cohorts_resource_id],
+                    )
+                    cohort_id = result.id
+
+                results.append(
+                    SaveCohortResult(
+                        success=True,
+                        cohort_id=cohort_id,
+                        message="Cohort updated successfully"
+                        if is_update
+                        else "Cohort created successfully",
+                    )
                 )
-            )
-            sync_items.append((cohorts_resource_id, item))
+                sync_items.append((cohorts_resource_id, item))
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
@@ -419,16 +425,17 @@ async def save_cohort_client(
         try:
             from app.infra.home_practice_sync import sync_home_practice_entries
 
-            await sync_home_practice_entries(
-                conn=conn,
-                cohorts_resource_id=resource_id,
-                simulation_ids=item.simulation_ids or [],
-                simulation_position_ids=item.simulation_position_ids or [],
-                simulation_availability_ids=item.simulation_availability_ids or [],
-                department_ids=item.department_ids or [],
-                profile_ids=item.profile_ids or [],
-                profile_persona_ids=item.profile_persona_ids or [],
-            )
+            async with pool.acquire() as conn:
+                await sync_home_practice_entries(
+                    conn=conn,
+                    cohorts_resource_id=resource_id,
+                    simulation_ids=item.simulation_ids or [],
+                    simulation_position_ids=item.simulation_position_ids or [],
+                    simulation_availability_ids=item.simulation_availability_ids or [],
+                    department_ids=item.department_ids or [],
+                    profile_ids=item.profile_ids or [],
+                    profile_persona_ids=item.profile_persona_ids or [],
+                )
         except Exception as sync_err:
             logger.warning(f"sync_home_practice_entries failed (non-fatal): {sync_err}")
 

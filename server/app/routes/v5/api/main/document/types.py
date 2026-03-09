@@ -510,14 +510,35 @@ class DuplicateDocumentApiResponse(BaseModel):
 # ========== Draft Endpoint Types ==========
 
 
+class DraftFileValue(BaseModel):
+    """Value for creating a file via the draft endpoint.
+
+    Client provides the upload_id from a finalized TUS upload.
+    Server creates the full chain: files_resource → files_entry → file_uploads_entry.
+    """
+
+    upload_id: UUID
+
+
+class DraftTextValue(BaseModel):
+    """Value for creating a text via the draft endpoint.
+
+    Client provides text content.
+    Server creates the full chain: uploads_entry → texts_resource → texts_entry → text_uploads_entry.
+    """
+
+    content: str
+
+
 class PatchDocumentDraftApiRequest(BaseModel):
     """Request model for new-style document draft endpoint.
 
     Dual-mode for creatable resources only:
       - name/name_id, description/description_id
+      - files (upload_id) / file_ids
+      - texts (content) / text_ids
     ID-only for non-creatable resources:
-      - flag_ids, department_ids, file_ids, image_ids, text_ids,
-        parameter_field_ids, parameter_ids
+      - flag_ids, department_ids, image_ids, parameter_field_ids, parameter_ids
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -532,12 +553,16 @@ class PatchDocumentDraftApiRequest(BaseModel):
     description: str | None = None
     description_id: UUID | None = None
 
+    # Creatable multi-select (merged mode) — values create resources, IDs merged
+    files: list[DraftFileValue] | None = None
+    file_ids: list[UUID] | None = None
+    texts: list[DraftTextValue] | None = None
+    text_ids: list[UUID] | None = None
+
     # Non-creatable — ID-only
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    file_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
-    text_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
 

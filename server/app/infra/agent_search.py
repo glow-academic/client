@@ -44,7 +44,7 @@ from app.routes.v5.tools.resources.tools.search import (
 
 
 async def search_agent_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -65,7 +65,7 @@ async def search_agent_client(
     from fastapi import HTTPException
 
     # -- Step 1: Profile context --
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
     if profile is None:
         raise HTTPException(
             status_code=401,
@@ -79,29 +79,31 @@ async def search_agent_client(
     # model_ids and tool_ids are direct junction filters on agent search
 
     # -- Step 3: Search agents --
-    agent_ids_result, total_count = await search_agents(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        model_ids=filter_model_ids,
-        tool_ids=filter_tool_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        agent_ids_result, total_count = await search_agents(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            model_ids=filter_model_ids,
+            tool_ids=filter_tool_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not agent_ids_result:
         return _empty_response(actor_name, total_count=0)
 
     # -- Step 4: Get agent artifacts with junction IDs --
-    artifacts = await get_agents(
-        conn,
-        agent_ids_result,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        models=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_agents(
+            conn,
+            agent_ids_result,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            models=True,
+        )
 
     # -- Step 5: Parallel hydration + facets --
 
@@ -116,6 +118,33 @@ async def search_agent_client(
             all_model_ids.add(mid)
 
     # Parallel: hydrate resources + facets
+
+    async def _fetch_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_models() -> list:
+        async with pool.acquire() as conn:
+            return await get_models_resource(conn, list(all_model_ids), redis)
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, agent=True, limit_count=100
+            )
+
+    async def _fetch_model_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_models_resource(
+                conn, redis, search=model_search, agent=True, limit_count=100
+            )
+
+    async def _fetch_tool_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_tools_resource(
+                conn, redis, search=tool_search, agent=True, limit_count=100
+            )
+
     (
         names_data,
         models_data,
@@ -123,21 +152,11 @@ async def search_agent_client(
         model_facet,
         tool_facet,
     ) = await asyncio.gather(
-        # Resource hydration
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_models_resource(conn, list(all_model_ids), redis)
-        if all_model_ids
-        else _empty_list(),
-        # Facets
-        search_departments(
-            conn, redis, search=department_search, agent=True, limit_count=100
-        ),
-        search_models_resource(
-            conn, redis, search=model_search, agent=True, limit_count=100
-        ),
-        search_tools_resource(
-            conn, redis, search=tool_search, agent=True, limit_count=100
-        ),
+        _fetch_names() if all_name_ids else _empty_list(),
+        _fetch_models() if all_model_ids else _empty_list(),
+        _fetch_department_facet(),
+        _fetch_model_facet(),
+        _fetch_tool_facet(),
     )
 
     # Build lookup maps

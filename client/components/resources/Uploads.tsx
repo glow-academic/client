@@ -67,6 +67,8 @@ export interface UploadsProps {
   /** Register a flush callback with parent for manual save - returns created ID */
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   aiUploadResources?: Array<{ id?: string | null; file_path?: string | null }> | null;
+  /** Called after TUS finalize when autosave is enabled — reports upload_id for server-side chain creation */
+  onFileUploadComplete?: (uploadId: string) => void;
 }
 
 export function Uploads({
@@ -89,9 +91,10 @@ export function Uploads({
   showAiGenerate = false,
   finalizeUploadAction,
   searchTerm = "",
-  isAutosaveEnabled: _isAutosaveEnabled = true,
+  isAutosaveEnabled = true,
   registerFlush,
   aiUploadResources: _aiUploadResources,
+  onFileUploadComplete,
 }: UploadsProps) {
   const ids = useMemo(() => upload_ids ?? [], [upload_ids]);
   const show = show_uploads ?? true;
@@ -278,27 +281,31 @@ export function Uploads({
 
               const databaseUploadId = finalizeResult.upload_id;
 
-              // Create files_resource entry
-              // Note: agent_id is deprecated, server now routes via tool_id
-              const createResult = await createUploadsAction({
-                body: {
-                  agent_id: "",
-                  group_id: group_id,
-                  upload_id: databaseUploadId,
-                  mcp: false,
-                  tool_id: create_tool_id ?? undefined,
-                },
-              });
+              if (isAutosaveEnabled && onFileUploadComplete) {
+                // In autosave mode, report upload_id to parent for server-side chain creation
+                onFileUploadComplete(databaseUploadId);
+              } else if (createUploadsAction) {
+                // Manual save mode: create files_resource entry client-side
+                const createResult = await createUploadsAction({
+                  body: {
+                    agent_id: "",
+                    group_id: group_id,
+                    upload_id: databaseUploadId,
+                    mcp: false,
+                    tool_id: create_tool_id ?? undefined,
+                  },
+                });
 
-              if (!createResult.files_id) {
-                throw new Error("Failed to create files resource");
+                if (!createResult.files_id) {
+                  throw new Error("Failed to create files resource");
+                }
+
+                const uploadsResourceId = createResult.files_id;
+                createdUploadIdsRef.current.add(uploadsResourceId);
+
+                // Add to selection
+                onChange([...ids, uploadsResourceId]);
               }
-
-              const uploadsResourceId = createResult.files_id;
-              createdUploadIdsRef.current.add(uploadsResourceId);
-
-              // Add to selection
-              onChange([...ids, uploadsResourceId]);
 
               toast.success(`Upload completed: ${file.name}!`, {
                 description: "File uploaded successfully",

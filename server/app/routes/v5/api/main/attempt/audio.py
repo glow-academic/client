@@ -1,12 +1,10 @@
-"""Attempt audio endpoints — TUS-like audio session lifecycle for agents.
+"""Attempt audio endpoint — upload-based audio submission for agents.
 
-REST equivalent of socket events: attempt_audio_start, bidirectional audio stream,
-attempt_audio_stop.
+The client uploads audio via the existing uploads router (TUS or standard),
+then passes the upload_id here. The server reads the file, transcribes it,
+and returns the assistant response.
 
-Agent creates a session, sends audio chunks (base64), gets back transcription
-progress, ends the session.
-
-TODO: Wire to actual infra (provision realtime session, process chunks, finalize).
+TODO: Wire to actual infra (read upload, transcribe, generate response).
 """
 
 from __future__ import annotations
@@ -20,71 +18,25 @@ router = APIRouter()
 
 
 # ---------------------------------------------------------------------------
-# audio/start
+# audio
 # ---------------------------------------------------------------------------
 
 
-class AudioStartPayload(BaseModel):
+class AudioPayload(BaseModel):
     chat_id: UUID
+    upload_id: UUID
 
 
-class AudioStartApiResponse(BaseModel):
-    audio_session_id: str
-
-
-@router.post("/audio/start", response_model=AudioStartApiResponse)
-async def attempt_audio_start(
-    request: AudioStartPayload,
-    http_request: Request,
-) -> AudioStartApiResponse:
-    """Start a voice session. Returns an audio_session_id for subsequent calls."""
-    raise HTTPException(status_code=501, detail="Not implemented")
-
-
-# ---------------------------------------------------------------------------
-# audio/chunk
-# ---------------------------------------------------------------------------
-
-
-class AudioChunkPayload(BaseModel):
-    audio_session_id: str
-    data: str  # base64-encoded audio
-    mime_type: str | None = None
-
-
-class AudioChunkApiResponse(BaseModel):
-    offset: int
-    transcription_delta: str | None = None
-
-
-@router.post("/audio/chunk", response_model=AudioChunkApiResponse)
-async def attempt_audio_chunk(
-    request: AudioChunkPayload,
-    http_request: Request,
-) -> AudioChunkApiResponse:
-    """Send an audio chunk. Returns current offset and transcription progress."""
-    raise HTTPException(status_code=501, detail="Not implemented")
-
-
-# ---------------------------------------------------------------------------
-# audio/end
-# ---------------------------------------------------------------------------
-
-
-class AudioEndPayload(BaseModel):
-    audio_session_id: str
-
-
-class AudioEndApiResponse(BaseModel):
+class AudioApiResponse(BaseModel):
     transcription: str
     assistant_message_id: str | None = None
     assistant_content: str | None = None
 
 
-@router.post("/audio/end", response_model=AudioEndApiResponse)
-async def attempt_audio_end(
-    request: AudioEndPayload,
+@router.post("/audio", response_model=AudioApiResponse)
+async def attempt_audio(
+    request: AudioPayload,
     http_request: Request,
-) -> AudioEndApiResponse:
-    """End a voice session. Returns final transcription and assistant response."""
+) -> AudioApiResponse:
+    """Submit audio for an attempt via upload_id. Returns transcription and assistant response."""
     raise HTTPException(status_code=501, detail="Not implemented")

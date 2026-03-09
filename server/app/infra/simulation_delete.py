@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def delete_simulation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -51,7 +51,7 @@ async def delete_simulation_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -61,41 +61,44 @@ async def delete_simulation_client(
 
     # ── Step 2+3: Per-item permission checks (fail fast) ──────────────
 
-    for idx, simulation_id in enumerate(simulation_ids):
-        ctx = await resolve_simulation_permissions_context(conn, simulation_id)
+    async with pool.acquire() as conn:
+        for idx, simulation_id in enumerate(simulation_ids):
+            ctx = await resolve_simulation_permissions_context(conn, simulation_id)
 
-        if not ctx.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Simulation {simulation_id} not found.",
-            )
+            if not ctx.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Simulation {simulation_id} not found.",
+                )
 
-        if not compute_can_delete(
-            user_role=profile.role,
-            simulation_department_ids=ctx.department_ids,
-            cohort_usage_count=ctx.cohort_usage_count,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to delete this simulation.",
-            )
+            if not compute_can_delete(
+                user_role=profile.role,
+                simulation_department_ids=ctx.department_ids,
+                cohort_usage_count=ctx.cohort_usage_count,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to delete this simulation.",
+                )
 
     # ── Step 4: Fetch names for result messages ───────────────────────
 
     name_map: dict[UUID, str] = {}
-    artifacts = await get_simulations(conn, simulation_ids, names=True)
-    for artifact in artifacts:
-        name = "Unknown"
-        if artifact.name_ids:
-            name_resources = await get_names(conn, artifact.name_ids, redis)
-            if name_resources:
-                name = name_resources[0].name or "Unknown"
-        name_map[artifact.id] = name
+    async with pool.acquire() as conn:
+        artifacts = await get_simulations(conn, simulation_ids, names=True)
+        for artifact in artifacts:
+            name = "Unknown"
+            if artifact.name_ids:
+                name_resources = await get_names(conn, artifact.name_ids, redis)
+                if name_resources:
+                    name = name_resources[0].name or "Unknown"
+            name_map[artifact.id] = name
 
     # ── Step 5: Single transaction — bulk delete ──────────────────────
 
-    async with conn.transaction():
-        result = await delete_simulations(conn, simulation_ids)
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await delete_simulations(conn, simulation_ids)
 
     # ── Step 6: Invalidate cache ──────────────────────────────────────
 

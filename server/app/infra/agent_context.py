@@ -71,7 +71,7 @@ AGENT_FLAG_NAMES = {"agent_active"}
 
 
 async def resolve_agent_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     agent_id: UUID | None,
@@ -90,29 +90,35 @@ async def resolve_agent_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_agent_artifacts(
-            conn,
-            [agent_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            models=True,
-            prompts=True,
-            tools=True,
-            temperature_levels=True,
-            reasoning_levels=True,
-            voices=True,
-            qualities=True,
-            rubrics=True,
-        )
-        if agent_id
-        else _empty()
-    )
-    draft_task = get_agent_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifact() -> list:
+        if not agent_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_agent_artifacts(
+                conn,
+                [agent_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                models=True,
+                prompts=True,
+                tools=True,
+                temperature_levels=True,
+                reasoning_levels=True,
+                voices=True,
+                qualities=True,
+                rubrics=True,
+            )
+
+    async def _fetch_draft() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_agent_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifact(), _fetch_draft())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -123,6 +129,224 @@ async def resolve_agent_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_models() -> list:
+        async with pool.acquire() as conn:
+            return await get_models(conn, merged.model_ids, redis, bypass_cache)
+
+    async def _search_models() -> list:
+        async with pool.acquire() as conn:
+            return await search_models(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.model_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_prompts() -> list:
+        async with pool.acquire() as conn:
+            return await get_prompts(conn, merged.prompt_ids, redis, bypass_cache)
+
+    async def _search_prompts() -> list:
+        async with pool.acquire() as conn:
+            return await search_prompts(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.prompt_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_instructions() -> list:
+        async with pool.acquire() as conn:
+            return await get_instructions(conn, merged.instruction_ids, redis, bypass_cache)
+
+    async def _search_instructions() -> list:
+        async with pool.acquire() as conn:
+            return await search_instructions(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.instruction_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_tools() -> list:
+        async with pool.acquire() as conn:
+            return await get_tools(conn, merged.tool_ids, redis, bypass_cache)
+
+    async def _search_tools() -> list:
+        async with pool.acquire() as conn:
+            return await search_tools(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.tool_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_temperature_levels(
+                conn, merged.temperature_level_ids, redis, bypass_cache
+            )
+
+    async def _search_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await search_temperature_levels(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.temperature_level_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_reasoning_levels(
+                conn, merged.reasoning_level_ids, redis, bypass_cache
+            )
+
+    async def _search_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await search_reasoning_levels(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.reasoning_level_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_voices() -> list:
+        async with pool.acquire() as conn:
+            return await get_voices(conn, merged.voice_ids, redis, bypass_cache)
+
+    async def _search_voices() -> list:
+        async with pool.acquire() as conn:
+            return await search_voices(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.voice_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
+            )
+
+    async def _get_qualities() -> list:
+        async with pool.acquire() as conn:
+            return await get_qualities(conn, merged.quality_ids, redis, bypass_cache)
+
+    async def _search_qualities() -> list:
+        async with pool.acquire() as conn:
+            return await search_qualities(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.quality_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_rubrics() -> list:
+        async with pool.acquire() as conn:
+            return await get_rubrics(conn, merged.rubric_ids, redis, bypass_cache)
+
+    async def _search_rubrics() -> list:
+        async with pool.acquire() as conn:
+            return await search_rubrics(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.rubric_ids,
+                bypass_cache=bypass_cache,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -151,154 +375,32 @@ async def resolve_agent_context(
         rubrics_selected,
         rubrics_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Models
-        get_models(conn, merged.model_ids, redis, bypass_cache),
-        search_models(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.model_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Prompts
-        get_prompts(conn, merged.prompt_ids, redis, bypass_cache),
-        search_prompts(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.prompt_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Instructions (no agent filter available)
-        get_instructions(conn, merged.instruction_ids, redis, bypass_cache),
-        search_instructions(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.instruction_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Tools
-        get_tools(conn, merged.tool_ids, redis, bypass_cache),
-        search_tools(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.tool_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Temperature levels
-        get_temperature_levels(conn, merged.temperature_level_ids, redis, bypass_cache),
-        search_temperature_levels(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.temperature_level_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Reasoning levels
-        get_reasoning_levels(conn, merged.reasoning_level_ids, redis, bypass_cache),
-        search_reasoning_levels(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.reasoning_level_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Voices
-        get_voices(conn, merged.voice_ids, redis, bypass_cache),
-        search_voices(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.voice_ids,
-            bypass_cache=bypass_cache,
-            agent=True,
-        ),
-        # Qualities (no agent filter available)
-        get_qualities(conn, merged.quality_ids, redis, bypass_cache),
-        search_qualities(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.quality_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Rubrics
-        get_rubrics(conn, merged.rubric_ids, redis, bypass_cache),
-        search_rubrics(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.rubric_ids,
-            bypass_cache=bypass_cache,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_models(),
+        _search_models(),
+        _get_prompts(),
+        _search_prompts(),
+        _get_instructions(),
+        _search_instructions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_tools(),
+        _search_tools(),
+        _get_temperature_levels(),
+        _search_temperature_levels(),
+        _get_reasoning_levels(),
+        _search_reasoning_levels(),
+        _get_voices(),
+        _search_voices(),
+        _get_qualities(),
+        _search_qualities(),
+        _get_rubrics(),
+        _search_rubrics(),
     )
 
     # Filter flags to agent-specific types

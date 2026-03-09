@@ -62,7 +62,7 @@ if TYPE_CHECKING:
 
 
 async def resolve_model_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     item: SaveModelItem,
     is_update: bool,
@@ -80,41 +80,42 @@ async def resolve_model_values(
 
     errors: list[SaveModelFieldError] = []
 
-    # --- Create resources ---
+    async with pool.acquire() as conn:
+        # --- Create resources ---
 
-    if item.name is not None and item.name_id is None:
-        result = await create_name(conn, item.name, redis)
-        item.name_id = result.id
+        if item.name is not None and item.name_id is None:
+            result = await create_name(conn, item.name, redis)
+            item.name_id = result.id
 
-    if item.description is not None and item.description_id is None:
-        result = await create_description(conn, item.description, redis)
-        item.description_id = result.id
+        if item.description is not None and item.description_id is None:
+            result = await create_description(conn, item.description, redis)
+            item.description_id = result.id
 
-    # --- Match resources ---
+        # --- Match resources ---
 
-    if item.departments is not None and item.department_ids is None:
-        all_depts = await search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-            model=True,
-        )
-        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
-        resolved_ids = []
-        for dept_name in item.departments:
-            dept_id = dept_name_map.get(dept_name.lower())
-            if dept_id:
-                resolved_ids.append(dept_id)
-            else:
-                errors.append(
-                    SaveModelFieldError(
-                        field="departments",
-                        message=f'Department "{dept_name}" not found',
+        if item.departments is not None and item.department_ids is None:
+            all_depts = await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+                model=True,
+            )
+            dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
+            resolved_ids = []
+            for dept_name in item.departments:
+                dept_id = dept_name_map.get(dept_name.lower())
+                if dept_id:
+                    resolved_ids.append(dept_id)
+                else:
+                    errors.append(
+                        SaveModelFieldError(
+                            field="departments",
+                            message=f'Department "{dept_name}" not found',
+                        )
                     )
-                )
-        if not any(e.field == "departments" for e in errors):
-            item.department_ids = resolved_ids
+            if not any(e.field == "departments" for e in errors):
+                item.department_ids = resolved_ids
 
     # --- Validate required fields (create only) ---
 
@@ -168,7 +169,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_model_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -196,7 +197,7 @@ async def save_model_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -206,40 +207,43 @@ async def save_model_client(
 
     # -- Step 2: Per-item permission check --
 
-    for idx, item in enumerate(items):
-        if item.input_model_id is not None:
-            perms = await resolve_model_permissions_context(conn, item.input_model_id)
-            if not perms.exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Item {idx}: Model {item.input_model_id} not found.",
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            if item.input_model_id is not None:
+                perms = await resolve_model_permissions_context(
+                    conn, item.input_model_id
                 )
-            if not has_access(
-                profile.role, profile.department_ids, perms.department_ids
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have access to this model.",
-                )
-            if not compute_can_edit(
-                user_role=profile.role,
-                model_department_ids=perms.department_ids,
-                active_agent_count=perms.active_agent_count,
-                user_department_ids=profile.department_ids,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to save this model.",
-                )
-        else:
-            if not compute_can_create(
-                user_role=profile.role,
-                department_ids=profile.department_ids,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to create a model.",
-                )
+                if not perms.exists:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Item {idx}: Model {item.input_model_id} not found.",
+                    )
+                if not has_access(
+                    profile.role, profile.department_ids, perms.department_ids
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have access to this model.",
+                    )
+                if not compute_can_edit(
+                    user_role=profile.role,
+                    model_department_ids=perms.department_ids,
+                    active_agent_count=perms.active_agent_count,
+                    user_department_ids=profile.department_ids,
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to save this model.",
+                    )
+            else:
+                if not compute_can_create(
+                    user_role=profile.role,
+                    department_ids=profile.department_ids,
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to create a model.",
+                    )
 
     # -- Step 3: Per-item value resolution --
 
@@ -248,7 +252,7 @@ async def save_model_client(
 
     for idx, item in enumerate(items):
         item_errors = await resolve_model_values(
-            conn,
+            pool,
             redis,
             item,
             is_update=item.input_model_id is not None,
@@ -272,67 +276,68 @@ async def save_model_client(
 
     results: list[SaveModelResult] = []
 
-    async with conn.transaction():
-        for _idx, item in enumerate(items):
-            is_update = item.input_model_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for _idx, item in enumerate(items):
+                is_update = item.input_model_id is not None
 
-            # Create denormalized snapshot
-            models_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            if is_update:
-                result = await update_model_artifact(
+                # Create denormalized snapshot
+                models_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_model_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    department_ids=item.department_ids,
-                    flag_ids=item.flag_ids,
-                    modality_ids=item.modality_ids,
-                    model_ids=[models_resource_id],
-                    pricing_ids=item.pricing_ids,
-                    provider_ids=item.provider_ids,
-                    quality_ids=item.quality_ids,
-                    reasoning_level_ids=item.reasoning_level_ids,
-                    temperature_level_ids=item.temperature_level_ids,
-                    value_ids=item.value_ids,
-                    voice_ids=item.voice_ids,
-                )
-                model_id = result.id
-            else:
-                result = await create_model_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    flag_ids=item.flag_ids,
-                    modality_ids=item.modality_ids,
-                    model_ids=[models_resource_id],
-                    pricing_ids=item.pricing_ids,
-                    provider_ids=item.provider_ids,
-                    quality_ids=item.quality_ids,
-                    reasoning_level_ids=item.reasoning_level_ids,
-                    temperature_level_ids=item.temperature_level_ids,
-                    value_ids=item.value_ids,
-                    voice_ids=item.voice_ids,
                 )
-                model_id = result.id
 
-            results.append(
-                SaveModelResult(
-                    success=True,
-                    model_id=model_id,
-                    message="Model updated successfully"
-                    if is_update
-                    else "Model created successfully",
+                if is_update:
+                    result = await update_model_artifact(
+                        conn,
+                        item.input_model_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        description_id=item.description_id
+                        if item.description_id
+                        else _UNSET,
+                        department_ids=item.department_ids,
+                        flag_ids=item.flag_ids,
+                        modality_ids=item.modality_ids,
+                        model_ids=[models_resource_id],
+                        pricing_ids=item.pricing_ids,
+                        provider_ids=item.provider_ids,
+                        quality_ids=item.quality_ids,
+                        reasoning_level_ids=item.reasoning_level_ids,
+                        temperature_level_ids=item.temperature_level_ids,
+                        value_ids=item.value_ids,
+                        voice_ids=item.voice_ids,
+                    )
+                    model_id = result.id
+                else:
+                    result = await create_model_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        department_ids=item.department_ids,
+                        flag_ids=item.flag_ids,
+                        modality_ids=item.modality_ids,
+                        model_ids=[models_resource_id],
+                        pricing_ids=item.pricing_ids,
+                        provider_ids=item.provider_ids,
+                        quality_ids=item.quality_ids,
+                        reasoning_level_ids=item.reasoning_level_ids,
+                        temperature_level_ids=item.temperature_level_ids,
+                        value_ids=item.value_ids,
+                        voice_ids=item.voice_ids,
+                    )
+                    model_id = result.id
+
+                results.append(
+                    SaveModelResult(
+                        success=True,
+                        model_id=model_id,
+                        message="Model updated successfully"
+                        if is_update
+                        else "Model created successfully",
+                    )
                 )
-            )
 
     # -- Step 5: Invalidate cache --
 

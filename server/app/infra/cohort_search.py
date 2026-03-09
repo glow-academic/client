@@ -98,7 +98,7 @@ COHORT_IMPORT_FIELDS: list[dict[str, Any]] = [
 
 
 async def search_cohort_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -119,7 +119,7 @@ async def search_cohort_client(
     from fastapi import HTTPException
 
     # -- Step 1: Profile context --
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
     if profile is None:
         raise HTTPException(
             status_code=401,
@@ -136,30 +136,32 @@ async def search_cohort_client(
     # filter_simulation_ids are simulations_resource IDs — direct junction filter
 
     # -- Step 3: Search cohorts --
-    cohort_ids_result, total_count = await search_cohorts(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        profile_ids=filter_profile_ids,
-        simulation_ids=filter_simulation_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        cohort_ids_result, total_count = await search_cohorts(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            profile_ids=filter_profile_ids,
+            simulation_ids=filter_simulation_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not cohort_ids_result:
         return _empty_response(actor_name, user_role, total_count=0)
 
     # -- Step 4: Get cohort artifacts with junction IDs --
-    artifacts = await get_cohorts(
-        conn,
-        cohort_ids_result,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        profiles=True,
-        simulations=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_cohorts(
+            conn,
+            cohort_ids_result,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            profiles=True,
+            simulations=True,
+        )
 
     # -- Step 5: Parallel hydration + facets --
 
@@ -178,6 +180,49 @@ async def search_cohort_client(
             all_department_ids.add(did)
 
     # Parallel: hydrate resources + facets
+
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_profiles() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_profiles_resource(conn, list(all_profile_ids), redis)
+
+    async def _fetch_simulations() -> list:
+        if not all_simulation_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_simulations_resource(conn, list(all_simulation_ids), redis)
+
+    async def _fetch_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, list(all_department_ids), redis)
+
+    async def _fetch_profile_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_profiles_resource(
+                conn, redis, search=profile_search, cohort=True, limit_count=100
+            )
+
+    async def _fetch_simulation_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_simulations_resource(
+                conn, redis, search=simulation_search, cohort=True, limit_count=100
+            )
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, cohort=True, limit_count=100
+            )
+
     (
         names_data,
         profiles_data,
@@ -187,27 +232,13 @@ async def search_cohort_client(
         simulation_facet,
         department_facet,
     ) = await asyncio.gather(
-        # Resource hydration
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_profiles_resource(conn, list(all_profile_ids), redis)
-        if all_profile_ids
-        else _empty_list(),
-        get_simulations_resource(conn, list(all_simulation_ids), redis)
-        if all_simulation_ids
-        else _empty_list(),
-        get_departments(conn, list(all_department_ids), redis)
-        if all_department_ids
-        else _empty_list(),
-        # Facets
-        search_profiles_resource(
-            conn, redis, search=profile_search, cohort=True, limit_count=100
-        ),
-        search_simulations_resource(
-            conn, redis, search=simulation_search, cohort=True, limit_count=100
-        ),
-        search_departments(
-            conn, redis, search=department_search, cohort=True, limit_count=100
-        ),
+        _fetch_names(),
+        _fetch_profiles(),
+        _fetch_simulations(),
+        _fetch_departments(),
+        _fetch_profile_facet(),
+        _fetch_simulation_facet(),
+        _fetch_department_facet(),
     )
 
     # Build lookup maps

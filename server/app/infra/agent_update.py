@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_agent_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -59,7 +59,7 @@ async def update_agent_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -69,45 +69,51 @@ async def update_agent_client(
 
     # ── Step 2: Per-item permission check ──────────────────────────────
 
-    for idx, item in enumerate(items):
-        perms = await resolve_agent_permissions_context(conn, item.agent_id)
-        if not perms.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Agent {item.agent_id} not found.",
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            perms = await resolve_agent_permissions_context(conn, item.agent_id)
+            if not perms.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Agent {item.agent_id} not found.",
+                )
+            has_agent_access = has_access(
+                profile.role, profile.department_ids, perms.department_ids
             )
-        has_agent_access = has_access(
-            profile.role, profile.department_ids, perms.department_ids
-        )
-        if not compute_can_edit(
-            user_role=profile.role,
-            has_agent_access=has_agent_access,
-            missing_tools=[],
-            agent_id=item.agent_id,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this agent.",
-            )
+            if not compute_can_edit(
+                user_role=profile.role,
+                has_agent_access=has_agent_access,
+                missing_tools=[],
+                agent_id=item.agent_id,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to update this agent.",
+                )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
     has_errors = False
     error_results: list[AgentResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_agent_values(conn, redis, item, is_create=False)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                AgentResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_agent_values(
+                conn, redis, item, is_create=False
             )
-        else:
-            error_results.append(AgentResultItem(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    AgentResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    AgentResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return UpdateAgentApiResponse(results=error_results)
@@ -116,38 +122,41 @@ async def update_agent_client(
 
     results: list[AgentResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            agents_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            await update_agent_artifact(
-                conn,
-                item.agent_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                model_ids=item.model_ids,
-                reasoning_level_ids=item.reasoning_level_ids,
-                temperature_level_ids=item.temperature_level_ids,
-                tool_ids=item.tool_ids,
-                voice_ids=item.voice_ids,
-                agent_ids=[agents_resource_id],
-            )
-
-            results.append(
-                AgentResultItem(
-                    success=True,
-                    agent_id=item.agent_id,
-                    message="Agent updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                agents_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                await update_agent_artifact(
+                    conn,
+                    item.agent_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    model_ids=item.model_ids,
+                    reasoning_level_ids=item.reasoning_level_ids,
+                    temperature_level_ids=item.temperature_level_ids,
+                    tool_ids=item.tool_ids,
+                    voice_ids=item.voice_ids,
+                    agent_ids=[agents_resource_id],
+                )
+
+                results.append(
+                    AgentResultItem(
+                        success=True,
+                        agent_id=item.agent_id,
+                        message="Agent updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

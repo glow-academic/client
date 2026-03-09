@@ -11,6 +11,8 @@ Core draft function that composes existing black-box tools:
 
 from __future__ import annotations
 
+import uuid
+from pathlib import Path
 from uuid import UUID
 
 import asyncpg
@@ -18,6 +20,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.document_permissions import compute_can_draft
+from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.document.types import (
     DocumentDraftFormState,
@@ -27,8 +30,15 @@ from app.routes.v5.api.main.document.types import (
 )
 from app.routes.v5.tools.entries.document_drafts.create import create_document_draft
 from app.routes.v5.tools.entries.document_drafts.refresh import refresh_document_drafts
+from app.routes.v5.tools.entries.file_uploads.create import create_file_upload
+from app.routes.v5.tools.entries.files.create import create_file as create_file_entry
+from app.routes.v5.tools.entries.text_uploads.create import create_text_upload
+from app.routes.v5.tools.entries.texts.create import create_text as create_text_entry
+from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.files.create import create_file as create_file_resource
 from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.texts.create import create_text as create_text_resource
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------
@@ -40,13 +50,21 @@ async def _resolve_creatable_values(
     conn: asyncpg.Connection,
     redis: Redis,
     request: PatchDocumentDraftApiRequest,
+    session_id: UUID,
 ) -> list[SaveDocumentFieldError]:
     """Resolve raw value fields to resource IDs (mutates request in place).
 
-    Only handles creatable resources: name, description.
+    Single-select creatables: name, description
+      → value creates resource, ID replaces value (mutually exclusive).
+
+    Multi-select creatables: files, texts
+      → values create resources (full entry chain), created IDs merged with existing IDs.
+
     Returns a list of errors (empty if all resolved).
     """
     errors: list[SaveDocumentFieldError] = []
+
+    # ── Single-select creatables ──────────────────────────────────────
 
     if request.name is not None and request.name_id is None:
         result = await create_name(conn, request.name, redis)
@@ -55,6 +73,67 @@ async def _resolve_creatable_values(
     if request.description is not None and request.description_id is None:
         result = await create_description(conn, request.description, redis)
         request.description_id = result.id
+
+    # ── Multi-select creatables (merged mode) ─────────────────────────
+
+    if request.files:
+        created_ids = []
+        for file_val in request.files:
+            # Full chain: files_resource → files_entry (with connection) → file_uploads_entry
+            file_resource = await create_file_resource(conn, redis)
+            file_entry = await create_file_entry(
+                conn, session_id=session_id, files_id=file_resource.id
+            )
+            await create_file_upload(
+                conn,
+                file_id=file_entry.id,
+                upload_id=file_val.upload_id,
+                session_id=session_id,
+            )
+            created_ids.append(file_resource.id)
+        request.file_ids = (request.file_ids or []) + created_ids
+
+    if request.texts:
+        created_ids = []
+        for text_val in request.texts:
+            # Write content to disk as upload
+            text_uuid = uuid.uuid4()
+            final_file_path = f"{text_uuid}.txt"
+            final_full_path = UPLOAD_FOLDER / f"{text_uuid}.txt"
+            Path(final_full_path).write_text(text_val.content, encoding="utf-8")
+            size = final_full_path.stat().st_size
+
+            # Full chain: uploads_entry → texts_resource → texts_entry
+            #           → texts_texts_connection → text_uploads_entry
+            upload_result = await create_upload(
+                conn,
+                session_id=session_id,
+                file_path=final_file_path,
+                mime_type="text/plain",
+                size=size,
+            )
+            text_resource = await create_text_resource(conn, redis)
+            text_entry = await create_text_entry(conn, session_id=session_id)
+
+            # Link texts_resource ↔ texts_entry (no auto-connection in create_text)
+            await conn.execute(
+                """
+                INSERT INTO texts_texts_connection (texts_id, text_id)
+                VALUES ($1, $2)
+            """,
+                text_resource.id,
+                text_entry.id,
+            )
+
+            # Link texts_entry ↔ uploads_entry
+            await create_text_upload(
+                conn,
+                text_id=text_entry.id,
+                upload_id=upload_result.id,
+                session_id=session_id,
+            )
+            created_ids.append(text_resource.id)
+        request.text_ids = (request.text_ids or []) + created_ids
 
     return errors
 
@@ -103,7 +182,7 @@ async def patch_document_draft_client(
 
     # ── Step 3: Value resolution (creatable only) ──────────────────────
 
-    errors = await _resolve_creatable_values(conn, redis, request)
+    errors = await _resolve_creatable_values(conn, redis, request, session_id)
     if errors:
         raise HTTPException(
             status_code=400,

@@ -55,7 +55,7 @@ CSV_COLUMNS = [
 
 
 async def export_cohort_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -77,7 +77,7 @@ async def export_cohort_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -90,12 +90,13 @@ async def export_cohort_client(
     if cohort_id:
         cohort_ids = [cohort_id]
     else:
-        cohort_ids, _total_count = await search_cohorts(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            cohort_ids, _total_count = await search_cohorts(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not cohort_ids:
             return ExportCohortApiResponse(
@@ -106,19 +107,20 @@ async def export_cohort_client(
 
     # -- Step 3: Get cohort artifacts with all junction IDs --
 
-    artifacts = await get_cohorts(
-        conn,
-        cohort_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        profiles=True,
-        profile_personas=True,
-        simulations=True,
-        simulation_availability=True,
-        simulation_positions=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_cohorts(
+            conn,
+            cohort_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            profiles=True,
+            profile_personas=True,
+            simulations=True,
+            simulation_availability=True,
+            simulation_positions=True,
+        )
 
     # -- Step 4: Parallel resource hydration --
 
@@ -141,8 +143,55 @@ async def export_cohort_client(
         all_profile_ids.extend(a.profiles_ids or [])
         all_profile_persona_ids.extend(a.profile_persona_ids or [])
 
-    async def _empty() -> list:
-        return []
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _fetch_simulations() -> list:
+        if not all_simulation_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_simulations(conn, all_simulation_ids, redis)
+
+    async def _fetch_simulation_positions() -> list:
+        if not all_simulation_position_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_simulation_positions(conn, all_simulation_position_ids, redis)
+
+    async def _fetch_simulation_availability() -> list:
+        if not all_simulation_availability_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_simulation_availability(
+                conn, all_simulation_availability_ids, redis
+            )
+
+    async def _fetch_profiles() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, all_profile_ids, redis)
+
+    async def _fetch_profile_personas() -> list:
+        if not all_profile_persona_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_profile_personas(conn, all_profile_persona_ids, redis)
 
     (
         names_data,
@@ -154,26 +203,14 @@ async def export_cohort_client(
         profiles_data,
         profile_personas_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_simulations(conn, all_simulation_ids, redis)
-        if all_simulation_ids
-        else _empty(),
-        get_simulation_positions(conn, all_simulation_position_ids, redis)
-        if all_simulation_position_ids
-        else _empty(),
-        get_simulation_availability(conn, all_simulation_availability_ids, redis)
-        if all_simulation_availability_ids
-        else _empty(),
-        get_profiles(conn, all_profile_ids, redis) if all_profile_ids else _empty(),
-        get_profile_personas(conn, all_profile_persona_ids, redis)
-        if all_profile_persona_ids
-        else _empty(),
+        _fetch_names(),
+        _fetch_descriptions(),
+        _fetch_departments(),
+        _fetch_simulations(),
+        _fetch_simulation_positions(),
+        _fetch_simulation_availability(),
+        _fetch_profiles(),
+        _fetch_profile_personas(),
     )
 
     # Build lookup maps
@@ -258,13 +295,14 @@ async def export_cohort_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportCohortApiResponse(
         upload_id=upload_result.id,

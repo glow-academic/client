@@ -63,20 +63,21 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def _resolve_entity_name(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
     """Get display name for a simulation by ID using black-box tools."""
-    artifacts = await get_simulation_artifacts(conn, [entity_id], names=True)
-    if not artifacts or not artifacts[0].name_ids:
-        return None
-    names_data = await get_names(conn, artifacts[0].name_ids, redis)
-    return names_data[0].name if names_data else None
+    async with pool.acquire() as conn:
+        artifacts = await get_simulation_artifacts(conn, [entity_id], names=True)
+        if not artifacts or not artifacts[0].name_ids:
+            return None
+        names_data = await get_names(conn, artifacts[0].name_ids, redis)
+        return names_data[0].name if names_data else None
 
 
 async def docs_simulation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -93,7 +94,7 @@ async def docs_simulation_client(
 
     # -- Step 1: Profile context -----------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -102,6 +103,54 @@ async def docs_simulation_client(
         )
 
     # -- Step 2: Parallel docs fetches -----------------------------------------
+
+    async def _doc_simulation() -> object:
+        async with pool.acquire() as conn:
+            return await get_simulation_docs(conn)
+
+    async def _doc_drafts() -> object:
+        async with pool.acquire() as conn:
+            return await get_simulation_drafts_docs(conn)
+
+    async def _doc_names() -> object:
+        async with pool.acquire() as conn:
+            return await get_names_docs(conn)
+
+    async def _doc_descriptions() -> object:
+        async with pool.acquire() as conn:
+            return await get_descriptions_docs(conn)
+
+    async def _doc_departments() -> object:
+        async with pool.acquire() as conn:
+            return await get_departments_docs(conn)
+
+    async def _doc_flags() -> object:
+        async with pool.acquire() as conn:
+            return await get_flags_docs(conn)
+
+    async def _doc_rubrics() -> object:
+        async with pool.acquire() as conn:
+            return await get_rubrics_docs(conn)
+
+    async def _doc_scenario_flags() -> object:
+        async with pool.acquire() as conn:
+            return await get_scenario_flags_docs(conn)
+
+    async def _doc_scenario_positions() -> object:
+        async with pool.acquire() as conn:
+            return await get_scenario_positions_docs(conn)
+
+    async def _doc_scenario_rubrics() -> object:
+        async with pool.acquire() as conn:
+            return await get_scenario_rubrics_docs(conn)
+
+    async def _doc_scenario_time_limits() -> object:
+        async with pool.acquire() as conn:
+            return await get_scenario_time_limits_docs(conn)
+
+    async def _doc_scenarios() -> object:
+        async with pool.acquire() as conn:
+            return await get_scenarios_docs(conn)
 
     (
         artifact,
@@ -117,25 +166,25 @@ async def docs_simulation_client(
         scenario_time_limits,
         scenarios,
     ) = await asyncio.gather(
-        get_simulation_docs(conn),
-        get_simulation_drafts_docs(conn),
-        get_names_docs(conn),
-        get_descriptions_docs(conn),
-        get_departments_docs(conn),
-        get_flags_docs(conn),
-        get_rubrics_docs(conn),
-        get_scenario_flags_docs(conn),
-        get_scenario_positions_docs(conn),
-        get_scenario_rubrics_docs(conn),
-        get_scenario_time_limits_docs(conn),
-        get_scenarios_docs(conn),
+        _doc_simulation(),
+        _doc_drafts(),
+        _doc_names(),
+        _doc_descriptions(),
+        _doc_departments(),
+        _doc_flags(),
+        _doc_rubrics(),
+        _doc_scenario_flags(),
+        _doc_scenario_positions(),
+        _doc_scenario_rubrics(),
+        _doc_scenario_time_limits(),
+        _doc_scenarios(),
     )
 
     # -- Step 3: Page metadata ---------------------------------------------------
 
     entity_name = None
     if entity_id is not None:
-        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+        entity_name = await _resolve_entity_name(pool, redis, entity_id)
 
     page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
 

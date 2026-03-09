@@ -34,7 +34,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def duplicate_model_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -54,7 +54,7 @@ async def duplicate_model_client(
 
     # -- Step 1: Profile context ------------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -72,22 +72,23 @@ async def duplicate_model_client(
 
     # -- Step 3: Fetch original model with all junctions ------------------------
 
-    originals = await get_models(
-        conn,
-        [model_id],
-        names=True,
-        descriptions=True,
-        departments=True,
-        modalities=True,
-        pricing=True,
-        providers=True,
-        qualities=True,
-        reasoning_levels=True,
-        temperature_levels=True,
-        values=True,
-        voices=True,
-        models=True,
-    )
+    async with pool.acquire() as conn:
+        originals = await get_models(
+            conn,
+            [model_id],
+            names=True,
+            descriptions=True,
+            departments=True,
+            modalities=True,
+            pricing=True,
+            providers=True,
+            qualities=True,
+            reasoning_levels=True,
+            temperature_levels=True,
+            values=True,
+            voices=True,
+            models=True,
+        )
 
     if not originals:
         raise HTTPException(
@@ -99,51 +100,54 @@ async def duplicate_model_client(
 
     # -- Step 4: Create new name resource ---------------------------------------
 
-    original_name = "Unknown"
-    if original.name_ids:
-        name_resources = await get_names(conn, original.name_ids, redis)
-        if name_resources:
-            original_name = name_resources[0].name or "Unknown"
+    async with pool.acquire() as conn:
+        original_name = "Unknown"
+        if original.name_ids:
+            name_resources = await get_names(conn, original.name_ids, redis)
+            if name_resources:
+                original_name = name_resources[0].name or "Unknown"
 
-    new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
+        new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
 
     # -- Step 5: Find inactive flag (model_active, value=false) -----------------
 
-    inactive_flag_id: UUID | None = None
-    flag_results = await search_flags(
-        conn,
-        redis,
-        flag_type="model_active",
-        model=True,
-        limit_count=10,
-    )
-    inactive_match = next((f for f in flag_results if not f.value), None)
-    if inactive_match:
-        inactive_flag_id = inactive_match.id
+    async with pool.acquire() as conn:
+        inactive_flag_id: UUID | None = None
+        flag_results = await search_flags(
+            conn,
+            redis,
+            flag_type="model_active",
+            model=True,
+            limit_count=10,
+        )
+        inactive_match = next((f for f in flag_results if not f.value), None)
+        if inactive_match:
+            inactive_flag_id = inactive_match.id
 
     # -- Step 6: Create new model artifact with inactive flag -------------------
 
     flag_ids = [inactive_flag_id] if inactive_flag_id else None
 
-    async with conn.transaction():
-        result = await create_model_artifact(
-            conn,
-            name_id=new_name_resource.id,
-            description_id=original.description_ids[0]
-            if original.description_ids
-            else None,
-            department_ids=original.department_ids,
-            modality_ids=original.modality_ids,
-            model_ids=original.model_ids,
-            pricing_ids=original.pricing_ids,
-            provider_ids=original.provider_ids,
-            quality_ids=original.quality_ids,
-            reasoning_level_ids=original.reasoning_level_ids,
-            temperature_level_ids=original.temperature_level_ids,
-            value_ids=original.value_ids,
-            voice_ids=original.voice_ids,
-            flag_ids=flag_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_model_artifact(
+                conn,
+                name_id=new_name_resource.id,
+                description_id=original.description_ids[0]
+                if original.description_ids
+                else None,
+                department_ids=original.department_ids,
+                modality_ids=original.modality_ids,
+                model_ids=original.model_ids,
+                pricing_ids=original.pricing_ids,
+                provider_ids=original.provider_ids,
+                quality_ids=original.quality_ids,
+                reasoning_level_ids=original.reasoning_level_ids,
+                temperature_level_ids=original.temperature_level_ids,
+                value_ids=original.value_ids,
+                voice_ids=original.voice_ids,
+                flag_ids=flag_ids,
+            )
 
     # -- Step 7: Invalidate cache -----------------------------------------------
 

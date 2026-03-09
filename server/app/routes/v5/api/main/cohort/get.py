@@ -10,11 +10,10 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.cohort_context import resolve_cohort_context
@@ -44,7 +43,7 @@ from app.infra.cohort_permissions import (
 )
 from app.infra.cohort_permissions_context import resolve_cohort_permissions_context
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.cohort.types import (
@@ -78,7 +77,7 @@ router = APIRouter()
 
 
 async def get_cohort_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -105,7 +104,7 @@ async def get_cohort_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -124,7 +123,8 @@ async def get_cohort_client(
 
     perms = None
     if cohort_id is not None:
-        perms = await resolve_cohort_permissions_context(conn, cohort_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_cohort_permissions_context(conn, cohort_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -142,7 +142,7 @@ async def get_cohort_client(
     # ── Step 3: Cohort artifact context ─────────────────────────────────
 
     cohort = await resolve_cohort_context(
-        conn,
+        pool,
         redis,
         cohort_id=cohort_id,
         group_id=group_id,
@@ -445,7 +445,6 @@ async def get_cohort(
     request: GetCohortApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetCohortApiResponse:
     """Get cohort information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -458,10 +457,11 @@ async def get_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_cohort_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             cohort_id=request.cohort_id,

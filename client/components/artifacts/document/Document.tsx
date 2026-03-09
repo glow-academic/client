@@ -204,6 +204,9 @@ function DocumentComponent({
         upload_ids: [] as string[],
         image_ids: [] as string[],
         text_ids: [] as string[],
+        // Pending values for server-side creation
+        pending_upload_ids: [] as string[],
+        pending_text_contents: [] as string[],
       };
     }
     // Extract resource IDs from section-first response
@@ -233,6 +236,9 @@ function DocumentComponent({
         documentDetail.texts?.current
           ?.map((t) => t.texts_id)
           .filter((x): x is string => x != null) ?? ([] as string[]),
+      // Pending values for server-side creation
+      pending_upload_ids: [] as string[],
+      pending_text_contents: [] as string[],
     };
   }, [documentDetail]);
 
@@ -335,6 +341,9 @@ function DocumentComponent({
             image_ids: fs.image_ids ?? prev.image_ids,
             text_ids: fs.text_ids ?? prev.text_ids,
             field_ids: fs.parameter_field_ids ?? prev.field_ids,
+            // Clear pending values — server has resolved them into IDs
+            pending_upload_ids: [],
+            pending_text_contents: [],
           }));
         }
 
@@ -358,6 +367,8 @@ function DocumentComponent({
         upload_ids: formState.upload_ids,
         image_ids: formState.image_ids,
         text_ids: formState.text_ids,
+        pending_upload_ids: formState.pending_upload_ids,
+        pending_text_contents: formState.pending_text_contents,
       }),
     [formState],
   );
@@ -394,6 +405,16 @@ function DocumentComponent({
       }
       if (currentFormState["description"] !== null && currentFormState["description"] !== undefined) {
         payload["description"] = currentFormState["description"];
+      }
+      // Include pending file uploads for server-side chain creation
+      const pendingUploads = currentFormState["pending_upload_ids"] as string[] | undefined;
+      if (pendingUploads && pendingUploads.length > 0) {
+        payload["files"] = pendingUploads.map((id: string) => ({ upload_id: id }));
+      }
+      // Include pending text content for server-side chain creation
+      const pendingTexts = currentFormState["pending_text_contents"] as string[] | undefined;
+      if (pendingTexts && pendingTexts.length > 0) {
+        payload["texts"] = pendingTexts.map((content: string) => ({ content }));
       }
       return payload;
     },
@@ -780,6 +801,7 @@ function DocumentComponent({
           return {
             ...prev,
             upload_ids: [],
+            pending_upload_ids: [],
           };
         case "images":
           return {
@@ -790,6 +812,7 @@ function DocumentComponent({
           return {
             ...prev,
             text_ids: [],
+            pending_text_contents: [],
           };
         default:
           return prev;
@@ -1113,7 +1136,7 @@ function DocumentComponent({
                 }
                 label="Files"
                 required={documentDetail?.uploads?.required ?? false}
-    
+
                 showAiGenerate={
                   documentDetail?.uploads?.show_ai_generate ?? false
                 }
@@ -1122,6 +1145,12 @@ function DocumentComponent({
                 searchTerm={uploadSearchTerm}
                 registerFlush={registerFlushCallbacks["uploads"]}
                 isAutosaveEnabled={isAutosaveEnabled}
+                onFileUploadComplete={(uploadId) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    pending_upload_ids: [...prev.pending_upload_ids, uploadId],
+                  }))
+                }
               />
             </StepCard>
           );
@@ -1220,7 +1249,7 @@ function DocumentComponent({
                 }
                 label="Texts"
                 required={documentDetail?.texts?.required ?? false}
-    
+
                 showAiGenerate={
                   documentDetail?.texts?.show_ai_generate ?? false
                 }
@@ -1228,6 +1257,12 @@ function DocumentComponent({
                 createTextsAction={createTextsAction}
                 registerFlush={registerFlushCallbacks["texts"]}
                 isAutosaveEnabled={isAutosaveEnabled}
+                onTextContentCreate={(content) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    pending_text_contents: [...prev.pending_text_contents, content],
+                  }))
+                }
               />
             </StepCard>
           );

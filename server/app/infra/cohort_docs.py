@@ -61,20 +61,21 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def _resolve_entity_name(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
     """Get display name for a cohort by ID using black-box tools."""
-    artifacts = await get_cohort_artifacts(conn, [entity_id], names=True)
-    if not artifacts or not artifacts[0].name_ids:
-        return None
-    names_data = await get_names(conn, artifacts[0].name_ids, redis)
-    return names_data[0].name if names_data else None
+    async with pool.acquire() as conn:
+        artifacts = await get_cohort_artifacts(conn, [entity_id], names=True)
+        if not artifacts or not artifacts[0].name_ids:
+            return None
+        names_data = await get_names(conn, artifacts[0].name_ids, redis)
+        return names_data[0].name if names_data else None
 
 
 async def docs_cohort_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -91,7 +92,7 @@ async def docs_cohort_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -100,6 +101,54 @@ async def docs_cohort_client(
         )
 
     # ── Step 2: Parallel docs fetches ──────────────────────────────────
+
+    async def _fetch_cohort_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_cohort_docs(conn)
+
+    async def _fetch_cohort_drafts_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_cohort_drafts_docs(conn)
+
+    async def _fetch_names_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_names_docs(conn)
+
+    async def _fetch_descriptions_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_descriptions_docs(conn)
+
+    async def _fetch_departments_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_departments_docs(conn)
+
+    async def _fetch_flags_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_flags_docs(conn)
+
+    async def _fetch_personas_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_personas_docs(conn)
+
+    async def _fetch_profile_personas_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_profile_personas_docs(conn)
+
+    async def _fetch_profiles_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_profiles_docs(conn)
+
+    async def _fetch_simulations_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_simulations_docs(conn)
+
+    async def _fetch_simulation_availability_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_simulation_availability_docs(conn)
+
+    async def _fetch_simulation_positions_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_simulation_positions_docs(conn)
 
     (
         artifact,
@@ -115,24 +164,24 @@ async def docs_cohort_client(
         simulation_availability,
         simulation_positions,
     ) = await asyncio.gather(
-        get_cohort_docs(conn),
-        get_cohort_drafts_docs(conn),
-        get_names_docs(conn),
-        get_descriptions_docs(conn),
-        get_departments_docs(conn),
-        get_flags_docs(conn),
-        get_personas_docs(conn),
-        get_profile_personas_docs(conn),
-        get_profiles_docs(conn),
-        get_simulations_docs(conn),
-        get_simulation_availability_docs(conn),
-        get_simulation_positions_docs(conn),
+        _fetch_cohort_docs(),
+        _fetch_cohort_drafts_docs(),
+        _fetch_names_docs(),
+        _fetch_descriptions_docs(),
+        _fetch_departments_docs(),
+        _fetch_flags_docs(),
+        _fetch_personas_docs(),
+        _fetch_profile_personas_docs(),
+        _fetch_profiles_docs(),
+        _fetch_simulations_docs(),
+        _fetch_simulation_availability_docs(),
+        _fetch_simulation_positions_docs(),
     )
 
     # ── Step 3: Page metadata ───────────────────────────────────────────
     entity_name = None
     if entity_id is not None:
-        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+        entity_name = await _resolve_entity_name(pool, redis, entity_id)
     page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
 
     # ── Step 4: Assemble response ──────────────────────────────────────

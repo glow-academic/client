@@ -50,7 +50,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def _resolve_creatable_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     request: PatchSimulationDraftApiRequest,
 ) -> list[SaveSimulationFieldError]:
@@ -67,63 +67,64 @@ async def _resolve_creatable_values(
     """
     errors: list[SaveSimulationFieldError] = []
 
-    # ── Single-select creatables ──────────────────────────────────────
+    async with pool.acquire() as conn:
+        # ── Single-select creatables ──────────────────────────────────────
 
-    if request.name is not None and request.name_id is None:
-        result = await create_name(conn, request.name, redis)
-        request.name_id = result.id
+        if request.name is not None and request.name_id is None:
+            result = await create_name(conn, request.name, redis)
+            request.name_id = result.id
 
-    if request.description is not None and request.description_id is None:
-        result = await create_description(conn, request.description, redis)
-        request.description_id = result.id
+        if request.description is not None and request.description_id is None:
+            result = await create_description(conn, request.description, redis)
+            request.description_id = result.id
 
-    # ── Multi-select compound creatables (merged mode) ────────────────
+        # ── Multi-select compound creatables (merged mode) ────────────────
 
-    if request.scenario_flags:
-        created_ids = []
-        for sf in request.scenario_flags:
-            result = await create_scenario_flag(
-                conn, sf.scenario_id, sf.flag_id, redis
-            )
-            created_ids.append(result.id)
-        request.scenario_flag_ids = (request.scenario_flag_ids or []) + created_ids
+        if request.scenario_flags:
+            created_ids = []
+            for sf in request.scenario_flags:
+                result = await create_scenario_flag(
+                    conn, sf.scenario_id, sf.flag_id, redis
+                )
+                created_ids.append(result.id)
+            request.scenario_flag_ids = (request.scenario_flag_ids or []) + created_ids
 
-    if request.scenario_positions:
-        created_ids = []
-        for sp in request.scenario_positions:
-            result = await create_scenario_position(
-                conn, sp.scenario_id, sp.value, redis
-            )
-            created_ids.append(result.id)
-        request.scenario_position_ids = (
-            request.scenario_position_ids or []
-        ) + created_ids
+        if request.scenario_positions:
+            created_ids = []
+            for sp in request.scenario_positions:
+                result = await create_scenario_position(
+                    conn, sp.scenario_id, sp.value, redis
+                )
+                created_ids.append(result.id)
+            request.scenario_position_ids = (
+                request.scenario_position_ids or []
+            ) + created_ids
 
-    if request.scenario_rubrics:
-        created_ids = []
-        for sr in request.scenario_rubrics:
-            result = await create_scenario_rubric(
-                conn, sr.scenario_id, sr.rubric_id, redis
-            )
-            created_ids.append(result.id)
-        request.scenario_rubric_ids = (
-            request.scenario_rubric_ids or []
-        ) + created_ids
+        if request.scenario_rubrics:
+            created_ids = []
+            for sr in request.scenario_rubrics:
+                result = await create_scenario_rubric(
+                    conn, sr.scenario_id, sr.rubric_id, redis
+                )
+                created_ids.append(result.id)
+            request.scenario_rubric_ids = (
+                request.scenario_rubric_ids or []
+            ) + created_ids
 
-    if request.scenario_time_limits:
-        created_ids = []
-        for stl in request.scenario_time_limits:
-            result = await create_scenario_time_limit(
-                conn,
-                stl.scenario_id,
-                stl.time_limit_seconds,
-                redis,
-                negative=stl.negative,
-            )
-            created_ids.append(result.id)
-        request.scenario_time_limit_ids = (
-            request.scenario_time_limit_ids or []
-        ) + created_ids
+        if request.scenario_time_limits:
+            created_ids = []
+            for stl in request.scenario_time_limits:
+                result = await create_scenario_time_limit(
+                    conn,
+                    stl.scenario_id,
+                    stl.time_limit_seconds,
+                    redis,
+                    negative=stl.negative,
+                )
+                created_ids.append(result.id)
+            request.scenario_time_limit_ids = (
+                request.scenario_time_limit_ids or []
+            ) + created_ids
 
     return errors
 
@@ -134,7 +135,7 @@ async def _resolve_creatable_values(
 
 
 async def patch_simulation_draft_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -155,7 +156,7 @@ async def patch_simulation_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -173,7 +174,7 @@ async def patch_simulation_draft_client(
 
     # ── Step 3: Value resolution (creatable only) ──────────────────────
 
-    errors = await _resolve_creatable_values(conn, redis, request)
+    errors = await _resolve_creatable_values(pool, redis, request)
     if errors:
         raise HTTPException(
             status_code=400,
@@ -185,24 +186,25 @@ async def patch_simulation_draft_client(
     # Compute new version
     new_version = request.expected_version + 1
 
-    async with conn.transaction():
-        result = await create_simulation_draft(
-            conn,
-            group_id=request.group_id,
-            session_id=session_id,
-            version=new_version,
-            name_ids=[request.name_id] if request.name_id else None,
-            description_ids=[request.description_id]
-            if request.description_id
-            else None,
-            flag_ids=request.flag_ids,
-            department_ids=request.department_ids,
-            scenario_ids=request.scenario_ids,
-            scenario_flag_ids=request.scenario_flag_ids,
-            scenario_position_ids=request.scenario_position_ids,
-            scenario_rubric_ids=request.scenario_rubric_ids,
-            scenario_time_limit_ids=request.scenario_time_limit_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_simulation_draft(
+                conn,
+                group_id=request.group_id,
+                session_id=session_id,
+                version=new_version,
+                name_ids=[request.name_id] if request.name_id else None,
+                description_ids=[request.description_id]
+                if request.description_id
+                else None,
+                flag_ids=request.flag_ids,
+                department_ids=request.department_ids,
+                scenario_ids=request.scenario_ids,
+                scenario_flag_ids=request.scenario_flag_ids,
+                scenario_position_ids=request.scenario_position_ids,
+                scenario_rubric_ids=request.scenario_rubric_ids,
+                scenario_time_limit_ids=request.scenario_time_limit_ids,
+            )
 
     # ── Step 5: Build form state (server is source of truth) ──────────
 
@@ -220,7 +222,8 @@ async def patch_simulation_draft_client(
 
     # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
-    await refresh_simulation_drafts(conn)
+    async with pool.acquire() as conn:
+        await refresh_simulation_drafts(conn)
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────
 

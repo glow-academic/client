@@ -340,6 +340,17 @@ class PatchProfileDraftApiRequest(BaseModel):
     request_limit_ids: list[UUID] | None = None
 
 
+class ProfileDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID]
+    email_ids: list[UUID]
+    role_ids: list[UUID]
+    request_limit_ids: list[UUID]
+
+
 class PatchProfileDraftApiResponse(BaseModel):
     """Response model for new-style profile draft endpoint."""
 
@@ -347,6 +358,7 @@ class PatchProfileDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: ProfileDraftFormState | None = None
 
 
 # ========== List Endpoint Types ==========

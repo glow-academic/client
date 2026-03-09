@@ -59,7 +59,7 @@ class CreateModelItem(BaseModel):
 
 
 async def create_model_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -83,7 +83,7 @@ async def create_model_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -107,19 +107,22 @@ async def create_model_client(
     has_errors = False
     error_results: list[ModelResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_model_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                ModelResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_model_values(conn, redis, item, is_create=True)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    ModelResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
                 )
-            )
-        else:
-            error_results.append(ModelResultItem(success=True, message="Validated"))
+            else:
+                error_results.append(
+                    ModelResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return CreateModelApiResponse(results=error_results)
@@ -128,42 +131,43 @@ async def create_model_client(
 
     results: list[ModelResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            models_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_model_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                modality_ids=item.modality_ids,
-                model_ids=[models_resource_id],
-                pricing_ids=item.pricing_ids,
-                provider_ids=item.provider_ids,
-                quality_ids=item.quality_ids,
-                reasoning_level_ids=item.reasoning_level_ids,
-                temperature_level_ids=item.temperature_level_ids,
-                value_ids=item.value_ids,
-                voice_ids=item.voice_ids,
-            )
-
-            results.append(
-                ModelResultItem(
-                    success=True,
-                    model_id=result.id,
-                    message="Model created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                models_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_model_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    modality_ids=item.modality_ids,
+                    model_ids=[models_resource_id],
+                    pricing_ids=item.pricing_ids,
+                    provider_ids=item.provider_ids,
+                    quality_ids=item.quality_ids,
+                    reasoning_level_ids=item.reasoning_level_ids,
+                    temperature_level_ids=item.temperature_level_ids,
+                    value_ids=item.value_ids,
+                    voice_ids=item.voice_ids,
+                )
+
+                results.append(
+                    ModelResultItem(
+                        success=True,
+                        model_id=result.id,
+                        message="Model created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

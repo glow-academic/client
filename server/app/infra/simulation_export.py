@@ -51,7 +51,7 @@ CSV_COLUMNS = [
 
 
 async def export_simulation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -73,7 +73,7 @@ async def export_simulation_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -86,12 +86,13 @@ async def export_simulation_client(
     if simulation_id:
         simulation_ids = [simulation_id]
     else:
-        simulation_ids, _total_count = await search_simulations(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            simulation_ids, _total_count = await search_simulations(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not simulation_ids:
             return ExportSimulationApiResponse(
@@ -102,19 +103,20 @@ async def export_simulation_client(
 
     # -- Step 3: Get simulation artifacts with all junction IDs --
 
-    artifacts = await get_simulations(
-        conn,
-        simulation_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        scenarios=True,
-        scenario_flags=True,
-        scenario_positions=True,
-        scenario_rubrics=True,
-        scenario_time_limits=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_simulations(
+            conn,
+            simulation_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            scenarios=True,
+            scenario_flags=True,
+            scenario_positions=True,
+            scenario_rubrics=True,
+            scenario_time_limits=True,
+        )
 
     # -- Step 4: Parallel resource hydration --
 
@@ -133,8 +135,41 @@ async def export_simulation_client(
         all_scenario_position_ids.extend(a.scenario_position_ids or [])
         all_scenario_time_limit_ids.extend(a.scenario_time_limit_ids or [])
 
-    async def _empty() -> list:
-        return []
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _fetch_scenarios() -> list:
+        if not all_scenario_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_scenarios_resource(conn, all_scenario_ids, redis)
+
+    async def _fetch_scenario_positions() -> list:
+        if not all_scenario_position_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_scenario_positions(conn, all_scenario_position_ids, redis)
+
+    async def _fetch_scenario_time_limits() -> list:
+        if not all_scenario_time_limit_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_scenario_time_limits(conn, all_scenario_time_limit_ids, redis)
 
     (
         names_data,
@@ -144,22 +179,12 @@ async def export_simulation_client(
         scenario_positions_data,
         scenario_time_limits_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_scenarios_resource(conn, all_scenario_ids, redis)
-        if all_scenario_ids
-        else _empty(),
-        get_scenario_positions(conn, all_scenario_position_ids, redis)
-        if all_scenario_position_ids
-        else _empty(),
-        get_scenario_time_limits(conn, all_scenario_time_limit_ids, redis)
-        if all_scenario_time_limit_ids
-        else _empty(),
+        _fetch_names(),
+        _fetch_descriptions(),
+        _fetch_departments(),
+        _fetch_scenarios(),
+        _fetch_scenario_positions(),
+        _fetch_scenario_time_limits(),
     )
 
     # Build lookup maps
@@ -235,13 +260,14 @@ async def export_simulation_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportSimulationApiResponse(
         upload_id=upload_result.id,

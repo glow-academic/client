@@ -61,6 +61,8 @@ export interface TextsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ text_ids: string[] } | void>) => void;
+  /** Called when text content is created in autosave mode — reports content for server-side chain creation */
+  onTextContentCreate?: (content: string) => void;
 }
 
 export function Texts({
@@ -81,6 +83,7 @@ export function Texts({
   searchTerm,
   isAutosaveEnabled = true,
   registerFlush,
+  onTextContentCreate,
 }: TextsProps) {
   // AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating } = useResourceAi({
@@ -125,6 +128,16 @@ export function Texts({
       toast.error("Text content cannot be empty");
       return;
     }
+
+    if (isAutosaveEnabled && onTextContentCreate) {
+      // In autosave mode, report content to parent for server-side chain creation
+      onTextContentCreate(newTextContent.trim());
+      setNewTextContent("");
+      setShowCreateForm(false);
+      toast.success("Text added");
+      return;
+    }
+
     if (!createTextsAction) {
       toast.error("Create action not available");
       return;
@@ -154,7 +167,7 @@ export function Texts({
     } finally {
       setIsCreating(false);
     }
-  }, [newTextContent, createTextsAction, create_tool_id, group_id, text_ids, onChange]);
+  }, [newTextContent, createTextsAction, create_tool_id, group_id, text_ids, onChange, isAutosaveEnabled, onTextContentCreate]);
 
   // Flush function for manual save mode - returns all current text IDs
   flushRef.current = async (): Promise<{ text_ids: string[] } | void> => {

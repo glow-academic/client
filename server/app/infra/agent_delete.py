@@ -30,7 +30,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def delete_agent_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -50,7 +50,7 @@ async def delete_agent_client(
 
     # -- Step 1: Profile context ------------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -60,51 +60,54 @@ async def delete_agent_client(
 
     # -- Step 2+3: Per-item permission checks (fail fast) -----------------------
 
-    for idx, agent_id in enumerate(agent_ids):
-        ctx = await resolve_agent_permissions_context(conn, agent_id)
+    async with pool.acquire() as conn:
+        for idx, agent_id in enumerate(agent_ids):
+            ctx = await resolve_agent_permissions_context(conn, agent_id)
 
-        if not ctx.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Agent {agent_id} not found.",
+            if not ctx.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Agent {agent_id} not found.",
+                )
+
+            # Active settings count via runs_agents_connection through agent_agents_junction
+            active_settings_count: int = await conn.fetchval(
+                """
+                SELECT COUNT(DISTINCT rac.run_id)::int
+                FROM agent_agents_junction aaj
+                JOIN runs_agents_connection rac ON rac.agents_id = aaj.agents_id AND rac.active = true
+                WHERE aaj.agent_id = $1 AND aaj.active = true
+                """,
+                agent_id,
             )
 
-        # Active settings count via runs_agents_connection through agent_agents_junction
-        active_settings_count: int = await conn.fetchval(
-            """
-            SELECT COUNT(DISTINCT rac.run_id)::int
-            FROM agent_agents_junction aaj
-            JOIN runs_agents_connection rac ON rac.agents_id = aaj.agents_id AND rac.active = true
-            WHERE aaj.agent_id = $1 AND aaj.active = true
-            """,
-            agent_id,
-        )
-
-        if not compute_can_delete(
-            user_role=profile.role,
-            active_settings_count=active_settings_count or 0,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to delete this agent.",
-            )
+            if not compute_can_delete(
+                user_role=profile.role,
+                active_settings_count=active_settings_count or 0,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to delete this agent.",
+                )
 
     # -- Step 4: Fetch names for result messages --------------------------------
 
-    name_map: dict[UUID, str] = {}
-    artifacts = await get_agents(conn, agent_ids, names=True)
-    for artifact in artifacts:
-        name = "Unknown"
-        if artifact.name_ids:
-            name_resources = await get_names(conn, artifact.name_ids, redis)
-            if name_resources:
-                name = name_resources[0].name or "Unknown"
-        name_map[artifact.id] = name
+    async with pool.acquire() as conn:
+        name_map: dict[UUID, str] = {}
+        artifacts = await get_agents(conn, agent_ids, names=True)
+        for artifact in artifacts:
+            name = "Unknown"
+            if artifact.name_ids:
+                name_resources = await get_names(conn, artifact.name_ids, redis)
+                if name_resources:
+                    name = name_resources[0].name or "Unknown"
+            name_map[artifact.id] = name
 
     # -- Step 5: Single transaction -- bulk delete ------------------------------
 
-    async with conn.transaction():
-        result = await delete_agents(conn, agent_ids)
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await delete_agents(conn, agent_ids)
 
     # -- Step 6: Invalidate cache -----------------------------------------------
 

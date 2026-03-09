@@ -51,7 +51,7 @@ CSV_COLUMNS = [
 
 
 async def export_agent_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -73,7 +73,7 @@ async def export_agent_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -86,12 +86,13 @@ async def export_agent_client(
     if agent_id:
         agent_ids = [agent_id]
     else:
-        agent_ids, _total_count = await search_agents(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            agent_ids, _total_count = await search_agents(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not agent_ids:
             return ExportAgentApiResponse(
@@ -102,19 +103,20 @@ async def export_agent_client(
 
     # -- Step 3: Get agent artifacts with all junction IDs --
 
-    artifacts = await get_agents(
-        conn,
-        agent_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        models=True,
-        reasoning_levels=True,
-        temperature_levels=True,
-        tools=True,
-        voices=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_agents(
+            conn,
+            agent_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            models=True,
+            reasoning_levels=True,
+            temperature_levels=True,
+            tools=True,
+            voices=True,
+        )
 
     # -- Step 4: Parallel resource hydration --
 
@@ -140,6 +142,38 @@ async def export_agent_client(
     async def _empty() -> list:
         return []
 
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _get_models() -> list:
+        async with pool.acquire() as conn:
+            return await get_models(conn, all_model_ids, redis)
+
+    async def _get_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_reasoning_levels(conn, all_reasoning_level_ids, redis)
+
+    async def _get_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_temperature_levels(conn, all_temperature_level_ids, redis)
+
+    async def _get_tools() -> list:
+        async with pool.acquire() as conn:
+            return await get_tools(conn, all_tool_ids, redis)
+
+    async def _get_voices() -> list:
+        async with pool.acquire() as conn:
+            return await get_voices(conn, all_voice_ids, redis)
+
     (
         names_data,
         descriptions_data,
@@ -150,22 +184,14 @@ async def export_agent_client(
         tools_data,
         voices_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_models(conn, all_model_ids, redis) if all_model_ids else _empty(),
-        get_reasoning_levels(conn, all_reasoning_level_ids, redis)
-        if all_reasoning_level_ids
-        else _empty(),
-        get_temperature_levels(conn, all_temperature_level_ids, redis)
-        if all_temperature_level_ids
-        else _empty(),
-        get_tools(conn, all_tool_ids, redis) if all_tool_ids else _empty(),
-        get_voices(conn, all_voice_ids, redis) if all_voice_ids else _empty(),
+        _get_names() if all_name_ids else _empty(),
+        _get_descriptions() if all_description_ids else _empty(),
+        _get_departments() if all_department_ids else _empty(),
+        _get_models() if all_model_ids else _empty(),
+        _get_reasoning_levels() if all_reasoning_level_ids else _empty(),
+        _get_temperature_levels() if all_temperature_level_ids else _empty(),
+        _get_tools() if all_tool_ids else _empty(),
+        _get_voices() if all_voice_ids else _empty(),
     )
 
     # Build lookup maps
@@ -238,13 +264,14 @@ async def export_agent_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportAgentApiResponse(
         upload_id=upload_result.id,

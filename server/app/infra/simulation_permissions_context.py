@@ -104,7 +104,7 @@ async def resolve_simulation_permissions_context(
 
 
 async def resolve_simulation_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     item: CreateSimulationItem | UpdateSimulationItem,
     is_create: bool,
@@ -122,108 +122,113 @@ async def resolve_simulation_values(
 
     errors: list[SimulationFieldError] = []
 
-    # --- Create resources ---
+    async with pool.acquire() as conn:
+        # --- Create resources ---
 
-    if item.name is not None and item.name_id is None:
-        result = await create_name(conn, item.name, redis)
-        item.name_id = result.id
+        if item.name is not None and item.name_id is None:
+            result = await create_name(conn, item.name, redis)
+            item.name_id = result.id
 
-    if item.description is not None and item.description_id is None:
-        result = await create_description(conn, item.description, redis)
-        item.description_id = result.id
+        if item.description is not None and item.description_id is None:
+            result = await create_description(conn, item.description, redis)
+            item.description_id = result.id
 
-    # --- Match resources ---
+        # --- Match resources ---
 
-    if item.is_inactive is not None and item.flag_ids is None:
-        results = await search_flags(
-            conn,
-            redis,
-            search=None,
-            flag_type="simulation_inactive",
-            limit_count=1000,
-            simulation=True,
-        )
-        match = next((f for f in results if f.type == "simulation_inactive"), None)
-        if match and match.id:
-            if item.is_inactive:
-                item.flag_ids = [match.id]
-        elif item.is_inactive:
-            errors.append(
-                SimulationFieldError(
-                    field="is_inactive", message="Inactive flag resource not found"
-                )
+        if item.is_inactive is not None and item.flag_ids is None:
+            results = await search_flags(
+                conn,
+                redis,
+                search=None,
+                flag_type="simulation_inactive",
+                limit_count=1000,
+                simulation=True,
             )
-
-    if item.is_practice is not None:
-        results = await search_flags(
-            conn,
-            redis,
-            search=None,
-            flag_type="simulation_practice",
-            limit_count=1000,
-            simulation=True,
-        )
-        match = next((f for f in results if f.type == "simulation_practice"), None)
-        if match and match.id:
-            if item.is_practice:
-                item.flag_ids = (item.flag_ids or []) + [match.id]
-        elif item.is_practice:
-            errors.append(
-                SimulationFieldError(
-                    field="is_practice",
-                    message="Practice flag resource not found",
-                )
-            )
-
-    if item.departments is not None and item.department_ids is None:
-        all_depts = await search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-            simulation=True,
-        )
-        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
-        resolved_ids = []
-        for dept_name in item.departments:
-            dept_id = dept_name_map.get(dept_name.lower())
-            if dept_id:
-                resolved_ids.append(dept_id)
-            else:
+            match = next((f for f in results if f.type == "simulation_inactive"), None)
+            if match and match.id:
+                if item.is_inactive:
+                    item.flag_ids = [match.id]
+            elif item.is_inactive:
                 errors.append(
                     SimulationFieldError(
-                        field="departments",
-                        message=f'Department "{dept_name}" not found',
+                        field="is_inactive", message="Inactive flag resource not found"
                     )
                 )
-        if not any(e.field == "departments" for e in errors):
-            item.department_ids = resolved_ids
 
-    if item.scenarios is not None and item.scenario_ids is None:
-        all_scenarios = await search_scenarios(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-            simulation=True,
-        )
-        scenario_name_map = {
-            s.name.lower(): s.id for s in all_scenarios if s.name and s.id
-        }
-        resolved_ids = []
-        for scenario_name in item.scenarios:
-            sid = scenario_name_map.get(scenario_name.lower())
-            if sid:
-                resolved_ids.append(sid)
-            else:
+        if item.is_practice is not None:
+            results = await search_flags(
+                conn,
+                redis,
+                search=None,
+                flag_type="simulation_practice",
+                limit_count=1000,
+                simulation=True,
+            )
+            match = next(
+                (f for f in results if f.type == "simulation_practice"), None
+            )
+            if match and match.id:
+                if item.is_practice:
+                    item.flag_ids = (item.flag_ids or []) + [match.id]
+            elif item.is_practice:
                 errors.append(
                     SimulationFieldError(
-                        field="scenarios",
-                        message=f'Scenario "{scenario_name}" not found',
+                        field="is_practice",
+                        message="Practice flag resource not found",
                     )
                 )
-        if not any(e.field == "scenarios" for e in errors):
-            item.scenario_ids = resolved_ids
+
+        if item.departments is not None and item.department_ids is None:
+            all_depts = await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+                simulation=True,
+            )
+            dept_name_map = {
+                d.name.lower(): d.id for d in all_depts if d.name and d.id
+            }
+            resolved_ids = []
+            for dept_name in item.departments:
+                dept_id = dept_name_map.get(dept_name.lower())
+                if dept_id:
+                    resolved_ids.append(dept_id)
+                else:
+                    errors.append(
+                        SimulationFieldError(
+                            field="departments",
+                            message=f'Department "{dept_name}" not found',
+                        )
+                    )
+            if not any(e.field == "departments" for e in errors):
+                item.department_ids = resolved_ids
+
+        if item.scenarios is not None and item.scenario_ids is None:
+            all_scenarios = await search_scenarios(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+                simulation=True,
+            )
+            scenario_name_map = {
+                s.name.lower(): s.id for s in all_scenarios if s.name and s.id
+            }
+            resolved_ids = []
+            for scenario_name in item.scenarios:
+                sid = scenario_name_map.get(scenario_name.lower())
+                if sid:
+                    resolved_ids.append(sid)
+                else:
+                    errors.append(
+                        SimulationFieldError(
+                            field="scenarios",
+                            message=f'Scenario "{scenario_name}" not found',
+                        )
+                    )
+            if not any(e.field == "scenarios" for e in errors):
+                item.scenario_ids = resolved_ids
 
     # --- Validate required fields (create only) ---
 

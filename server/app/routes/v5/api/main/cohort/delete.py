@@ -5,13 +5,10 @@ Thin route handler. Core logic lives in app.infra.cohort_delete.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.cohort_delete import delete_cohort_client
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import (
     DeleteCohortApiRequest,
     DeleteCohortApiResponse,
@@ -26,7 +23,6 @@ async def delete_cohort(
     request: DeleteCohortApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteCohortApiResponse:
     """Bulk delete cohorts — composable infra architecture."""
     tags = ["cohorts"]
@@ -39,9 +35,10 @@ async def delete_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await delete_cohort_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             cohort_ids=request.cohort_ids,

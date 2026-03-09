@@ -142,6 +142,7 @@ const VALID_RESOURCE_TYPES = [
 ] as const;
 type ProfileResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 type ProfileFormState = {
+  name: string | null;
   name_id: string | null;
   active_flag_id: string | null;
   request_limit_id: string | null;
@@ -320,6 +321,7 @@ function ProfileComponent({
     const data = profileDataRef.current;
     if (!data) {
       return {
+        name: null as string | null,
         name_id: null as string | null,
         active_flag_id: null as string | null,
         request_limit_id: null as string | null,
@@ -335,6 +337,7 @@ function ProfileComponent({
         ? data.primary_department_id
         : (data.department_ids?.[0] ?? null);
     return {
+      name: null as string | null,
       name_id: data.name_id ?? null,
       active_flag_id: data.active_flag_id ?? null,
       request_limit_id: data.request_limit_id ?? null,
@@ -440,8 +443,37 @@ function ProfileComponent({
   >(undefined);
   React.useEffect(() => {
     if (patchProfileDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) =>
-        patchProfileDraftAction({ body: payload } as PatchProfileDraftIn);
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchProfileDraftAction({
+          body: payload,
+        } as PatchProfileDraftIn);
+
+        // Sync form_state from server response (server is source of truth)
+        const fs = (result as any).form_state as
+          | {
+              name_id: string | null;
+              flag_id: string | null;
+              department_ids: string[];
+              email_ids: string[];
+              role_ids: string[];
+              request_limit_ids: string[];
+            }
+          | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name: null,
+            name_id: fs.name_id ?? prev.name_id,
+            active_flag_id: fs.flag_id ?? prev.active_flag_id,
+            department_ids: fs.department_ids ?? prev.department_ids,
+            email_ids: fs.email_ids ?? prev.email_ids,
+            request_limit_id: fs.request_limit_ids?.[0] ?? prev.request_limit_id,
+          }));
+        }
+
+        return result;
+      };
     } else {
       patchActionRef.current = undefined;
     }
@@ -450,6 +482,7 @@ function ProfileComponent({
   const formStateKey = useMemo(
     () =>
       JSON.stringify({
+        name: formState.name,
         name_id: formState.name_id,
         active_flag_id: formState.active_flag_id,
         request_limit_id: formState.request_limit_id,
@@ -460,6 +493,7 @@ function ProfileComponent({
         role: formState.role || null,
       }),
     [
+      formState.name,
       formState.name_id,
       formState.active_flag_id,
       formState.request_limit_id,
@@ -529,11 +563,17 @@ function ProfileComponent({
         draftFields["role"] = current.role || null;
       }
 
-      return {
+      const payload: Record<string, unknown> = {
         input_draft_id: draftId || null,
         ...draftFields,
         expected_version: expectedVersion,
       };
+      // Overlay name value field if set
+      const currentFormState = formStateRef.current;
+      if (currentFormState["name"] !== null && currentFormState["name"] !== undefined) {
+        payload["name"] = currentFormState["name"];
+      }
+      return payload;
     },
     [currentProfileData, orderDepartmentsByPrimary, orderEmailsByPrimary]
   );
@@ -548,6 +588,7 @@ function ProfileComponent({
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey,
@@ -927,6 +968,9 @@ function ProfileComponent({
                         name_id: nameId,
                       }))
                     }
+                    onNameChange={(name) =>
+                      setFormState((prev) => ({ ...prev, name }))
+                    }
                     onGenerate={handleGenerateName}
                     placeholder="e.g., Jane Doe"
                     defaultName="Name"
@@ -934,6 +978,7 @@ function ProfileComponent({
                     hideDescription={true}
 
                     createNamesAction={createNamesAction}
+                    isAutosaveEnabled={isAutosaveEnabled}
                     registerFlush={registerFlushCallbacks["names"]}
                   />
                 </div>

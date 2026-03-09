@@ -87,7 +87,7 @@ SCENARIO_FLAG_TYPES_ORDERED = [
 
 
 async def resolve_simulation_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     simulation_id: UUID | None,
@@ -109,26 +109,32 @@ async def resolve_simulation_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_simulation_artifacts(
-            conn,
-            [simulation_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            scenarios=True,
-            scenario_flags=True,
-            scenario_positions=True,
-            scenario_rubrics=True,
-            scenario_time_limits=True,
-        )
-        if simulation_id
-        else _empty()
-    )
-    draft_task = get_simulation_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifact() -> list:
+        if not simulation_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_simulation_artifacts(
+                conn,
+                [simulation_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                scenarios=True,
+                scenario_flags=True,
+                scenario_positions=True,
+                scenario_rubrics=True,
+                scenario_time_limits=True,
+            )
+
+    async def _fetch_draft() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_simulation_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifact(), _fetch_draft())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -141,6 +147,149 @@ async def resolve_simulation_context(
     effective_scenario_ids = filter_scenario_ids or merged.scenario_ids
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+    # Each branch acquires its own connection from the pool.
+
+    async def _get_names_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names_suggestions() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                simulation=True,
+            )
+
+    async def _get_descriptions_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions_suggestions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                simulation=True,
+            )
+
+    async def _search_flags_all() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=None,
+                bypass_cache=bypass_cache,
+                simulation=True,
+            )
+
+    async def _get_departments_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, merged.department_ids, redis, bypass_cache=bypass_cache)
+
+    async def _search_departments_suggestions() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all" if simulation_id is None else "recent",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_scenarios_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_scenario_resources(conn, merged.scenario_ids, redis, bypass_cache)
+
+    async def _search_scenarios_suggestions() -> list:
+        async with pool.acquire() as conn:
+            return await search_scenario_resources(
+                conn,
+                redis,
+                search=scenario_search,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all",
+                exclude_ids=merged.scenario_ids,
+                bypass_cache=bypass_cache,
+                simulation=True,
+            )
+
+    async def _get_scenario_flags_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_scenario_flags(conn, merged.scenario_flag_ids, redis, bypass_cache)
+
+    async def _search_scenario_flag_types_all() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=None,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_scenario_positions_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_scenario_positions(conn, merged.scenario_position_ids, redis, bypass_cache)
+
+    async def _search_scenario_positions_suggestions() -> list:
+        async with pool.acquire() as conn:
+            return await search_scenario_positions(
+                conn,
+                redis,
+                scenario_ids=effective_scenario_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_scenario_rubrics_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_scenario_rubrics(conn, merged.scenario_rubric_ids, redis, bypass_cache)
+
+    async def _search_scenario_rubrics_suggestions() -> list:
+        async with pool.acquire() as conn:
+            return await search_scenario_rubrics(
+                conn,
+                redis,
+                scenario_ids=effective_scenario_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_scenario_time_limits_selected() -> list:
+        async with pool.acquire() as conn:
+            return await get_scenario_time_limits(
+                conn, merged.scenario_time_limit_ids, redis, bypass_cache
+            )
+
+    async def _search_scenario_time_limits_suggestions() -> list:
+        async with pool.acquire() as conn:
+            return await search_scenario_time_limits(
+                conn,
+                redis,
+                scenario_ids=effective_scenario_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_rubrics_catalog() -> list:
+        async with pool.acquire() as conn:
+            return await get_rubrics(conn, None, redis, bypass_cache)
+
     (
         names_selected,
         names_suggestions,
@@ -161,104 +310,24 @@ async def resolve_simulation_context(
         scenario_time_limits_suggestions,
         rubrics_catalog,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            simulation=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            simulation=True,
-        ),
-        # Flags (fetch all simulation flags — ordering done later)
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=None,
-            bypass_cache=bypass_cache,
-            simulation=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache=bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all" if simulation_id is None else "recent",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Scenarios
-        get_scenario_resources(conn, merged.scenario_ids, redis, bypass_cache),
-        search_scenario_resources(
-            conn,
-            redis,
-            search=scenario_search,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all",
-            exclude_ids=merged.scenario_ids,
-            bypass_cache=bypass_cache,
-            simulation=True,
-        ),
-        # Scenario flags (selected)
-        get_scenario_flags(conn, merged.scenario_flag_ids, redis, bypass_cache),
-        # Scenario flag types (all flags for cross-product)
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=None,
-            bypass_cache=bypass_cache,
-        ),
-        # Scenario positions
-        get_scenario_positions(conn, merged.scenario_position_ids, redis, bypass_cache),
-        search_scenario_positions(
-            conn,
-            redis,
-            scenario_ids=effective_scenario_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Scenario rubrics
-        get_scenario_rubrics(conn, merged.scenario_rubric_ids, redis, bypass_cache),
-        search_scenario_rubrics(
-            conn,
-            redis,
-            scenario_ids=effective_scenario_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Scenario time limits
-        get_scenario_time_limits(
-            conn, merged.scenario_time_limit_ids, redis, bypass_cache
-        ),
-        search_scenario_time_limits(
-            conn,
-            redis,
-            scenario_ids=effective_scenario_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Rubrics catalog (all rubrics)
-        get_rubrics(conn, None, redis, bypass_cache),
+        _get_names_selected(),
+        _search_names_suggestions(),
+        _get_descriptions_selected(),
+        _search_descriptions_suggestions(),
+        _search_flags_all(),
+        _get_departments_selected(),
+        _search_departments_suggestions(),
+        _get_scenarios_selected(),
+        _search_scenarios_suggestions(),
+        _get_scenario_flags_selected(),
+        _search_scenario_flag_types_all(),
+        _get_scenario_positions_selected(),
+        _search_scenario_positions_suggestions(),
+        _get_scenario_rubrics_selected(),
+        _search_scenario_rubrics_suggestions(),
+        _get_scenario_time_limits_selected(),
+        _search_scenario_time_limits_suggestions(),
+        _get_rubrics_catalog(),
     )
 
     # Order simulation flags by SIMULATION_FLAG_TYPES_ORDERED

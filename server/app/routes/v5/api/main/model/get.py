@@ -10,15 +10,14 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.model_context import resolve_model_context
 from app.infra.model_permissions import (
@@ -85,7 +84,7 @@ router = APIRouter()
 
 
 async def get_model_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -107,7 +106,7 @@ async def get_model_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -126,7 +125,8 @@ async def get_model_client(
 
     perms = None
     if model_id is not None:
-        perms = await resolve_model_permissions_context(conn, model_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_model_permissions_context(conn, model_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -143,7 +143,7 @@ async def get_model_client(
     # ── Step 3: Model artifact context ────────────────────────────────────
 
     model_ctx = await resolve_model_context(
-        conn,
+        pool,
         redis,
         model_id=model_id,
         group_id=group_id,
@@ -447,7 +447,6 @@ async def get_model(
     request: GetModelApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetModelApiResponse:
     """Get model information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -460,10 +459,11 @@ async def get_model(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_model_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             model_id=request.model_id,

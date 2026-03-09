@@ -22,6 +22,7 @@ from app.infra.profile_permissions import compute_can_draft
 from app.routes.v5.api.main.profile.types import (
     PatchProfileDraftApiRequest,
     PatchProfileDraftApiResponse,
+    ProfileDraftFormState,
     SaveProfileFieldError,
 )
 from app.routes.v5.tools.entries.profile_drafts.create import create_profile_draft
@@ -123,11 +124,22 @@ async def patch_profile_draft_client(
             request_limit_ids=request.request_limit_ids,
         )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ──────────
+
+    form_state = ProfileDraftFormState(
+        name_id=request.name_id,
+        flag_id=request.flag_id,
+        department_ids=request.department_ids or [],
+        email_ids=request.email_ids or [],
+        role_ids=request.role_ids or [],
+        request_limit_ids=request.request_limit_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     await refresh_profile_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["profiles", "drafts"], redis=redis)
 
@@ -136,4 +148,5 @@ async def patch_profile_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

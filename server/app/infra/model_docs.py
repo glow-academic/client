@@ -61,20 +61,21 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def _resolve_entity_name(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
     """Get display name for a model by ID using black-box tools."""
-    artifacts = await get_model_artifacts(conn, [entity_id], names=True)
-    if not artifacts or not artifacts[0].name_ids:
-        return None
-    names_data = await get_names(conn, artifacts[0].name_ids, redis)
-    return names_data[0].name if names_data else None
+    async with pool.acquire() as conn:
+        artifacts = await get_model_artifacts(conn, [entity_id], names=True)
+        if not artifacts or not artifacts[0].name_ids:
+            return None
+        names_data = await get_names(conn, artifacts[0].name_ids, redis)
+        return names_data[0].name if names_data else None
 
 
 async def docs_model_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -91,7 +92,7 @@ async def docs_model_client(
 
     # -- Step 1: Profile context -----------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -100,6 +101,62 @@ async def docs_model_client(
         )
 
     # -- Step 2: Parallel docs fetches -----------------------------------------
+
+    async def _get_model_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_model_docs(conn)
+
+    async def _get_model_drafts_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_model_drafts_docs(conn)
+
+    async def _get_names_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_names_docs(conn)
+
+    async def _get_descriptions_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_descriptions_docs(conn)
+
+    async def _get_departments_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_departments_docs(conn)
+
+    async def _get_flags_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_flags_docs(conn)
+
+    async def _get_modalities_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_modalities_docs(conn)
+
+    async def _get_pricing_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_pricing_docs(conn)
+
+    async def _get_providers_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_providers_docs(conn)
+
+    async def _get_qualities_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_qualities_docs(conn)
+
+    async def _get_reasoning_levels_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_reasoning_levels_docs(conn)
+
+    async def _get_temperature_levels_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_temperature_levels_docs(conn)
+
+    async def _get_values_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_values_docs(conn)
+
+    async def _get_voices_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_voices_docs(conn)
 
     (
         artifact,
@@ -117,26 +174,26 @@ async def docs_model_client(
         values,
         voices,
     ) = await asyncio.gather(
-        get_model_docs(conn),
-        get_model_drafts_docs(conn),
-        get_names_docs(conn),
-        get_descriptions_docs(conn),
-        get_departments_docs(conn),
-        get_flags_docs(conn),
-        get_modalities_docs(conn),
-        get_pricing_docs(conn),
-        get_providers_docs(conn),
-        get_qualities_docs(conn),
-        get_reasoning_levels_docs(conn),
-        get_temperature_levels_docs(conn),
-        get_values_docs(conn),
-        get_voices_docs(conn),
+        _get_model_docs(),
+        _get_model_drafts_docs(),
+        _get_names_docs(),
+        _get_descriptions_docs(),
+        _get_departments_docs(),
+        _get_flags_docs(),
+        _get_modalities_docs(),
+        _get_pricing_docs(),
+        _get_providers_docs(),
+        _get_qualities_docs(),
+        _get_reasoning_levels_docs(),
+        _get_temperature_levels_docs(),
+        _get_values_docs(),
+        _get_voices_docs(),
     )
 
     # -- Step 3: Page metadata ───────────────────────────────────────────
     entity_name = None
     if entity_id is not None:
-        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+        entity_name = await _resolve_entity_name(pool, redis, entity_id)
     page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
 
     # -- Step 4: Assemble response ---------------------------------------------

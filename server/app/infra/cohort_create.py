@@ -63,7 +63,7 @@ class CreateCohortItem(BaseModel):
 
 
 async def create_cohort_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -88,7 +88,7 @@ async def create_cohort_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -116,7 +116,8 @@ async def create_cohort_client(
     error_results: list[CohortResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_cohort_values(conn, redis, item, is_create=True)
+        async with pool.acquire() as conn:
+            item_errors = await resolve_cohort_values(conn, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -137,42 +138,43 @@ async def create_cohort_client(
     results: list[CohortResultItem] = []
     sync_items: list[tuple[UUID, object]] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            cohorts_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            flag_ids = [item.flag_id] if item.flag_id else None
-
-            result = await create_cohort_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=flag_ids,
-                simulation_ids=item.simulation_ids,
-                simulation_position_ids=item.simulation_position_ids,
-                simulation_availability_ids=item.simulation_availability_ids,
-                profile_ids=item.profile_ids,
-                profile_persona_ids=item.profile_persona_ids,
-                cohort_ids=[cohorts_resource_id],
-            )
-
-            results.append(
-                CohortResultItem(
-                    success=True,
-                    cohort_id=result.id,
-                    message="Cohort created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                cohorts_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
-            sync_items.append((cohorts_resource_id, item))
+
+                flag_ids = [item.flag_id] if item.flag_id else None
+
+                result = await create_cohort_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=flag_ids,
+                    simulation_ids=item.simulation_ids,
+                    simulation_position_ids=item.simulation_position_ids,
+                    simulation_availability_ids=item.simulation_availability_ids,
+                    profile_ids=item.profile_ids,
+                    profile_persona_ids=item.profile_persona_ids,
+                    cohort_ids=[cohorts_resource_id],
+                )
+
+                results.append(
+                    CohortResultItem(
+                        success=True,
+                        cohort_id=result.id,
+                        message="Cohort created successfully",
+                    )
+                )
+                sync_items.append((cohorts_resource_id, item))
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
@@ -184,16 +186,17 @@ async def create_cohort_client(
         try:
             from app.infra.home_practice_sync import sync_home_practice_entries
 
-            await sync_home_practice_entries(
-                conn=conn,
-                cohorts_resource_id=resource_id,
-                simulation_ids=item.simulation_ids or [],
-                simulation_position_ids=item.simulation_position_ids or [],
-                simulation_availability_ids=item.simulation_availability_ids or [],
-                department_ids=item.department_ids or [],
-                profile_ids=item.profile_ids or [],
-                profile_persona_ids=item.profile_persona_ids or [],
-            )
+            async with pool.acquire() as conn:
+                await sync_home_practice_entries(
+                    conn=conn,
+                    cohorts_resource_id=resource_id,
+                    simulation_ids=item.simulation_ids or [],
+                    simulation_position_ids=item.simulation_position_ids or [],
+                    simulation_availability_ids=item.simulation_availability_ids or [],
+                    department_ids=item.department_ids or [],
+                    profile_ids=item.profile_ids or [],
+                    profile_persona_ids=item.profile_persona_ids or [],
+                )
         except Exception as sync_err:
             logger.warning(f"sync_home_practice_entries failed (non-fatal): {sync_err}")
 
