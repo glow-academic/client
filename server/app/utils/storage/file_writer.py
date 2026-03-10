@@ -2,7 +2,7 @@
 
 Provides `write_text_file()` and `write_json_file()` that:
 1. Write content to UPLOAD_FOLDER/{subdir}/{uuid}.{ext}
-2. INSERT INTO uploads_entry with file_path, mime_type, size
+2. Create an uploads entry via the canonical helper
 3. Return the new upload_id for FK usage
 """
 
@@ -18,6 +18,7 @@ import asyncpg  # type: ignore
 
 from app.infra.globals import UPLOAD_FOLDER
 from app.infra.upload_paths import ensure_upload_subdir, resolve_upload_path
+from app.routes.v5.tools.entries.uploads.create import create_upload
 
 
 async def _create_upload_record(
@@ -27,19 +28,19 @@ async def _create_upload_record(
     size: int,
     session_id: UUID | None = None,
 ) -> UUID:
-    """INSERT INTO uploads_entry and return the new id."""
-    row = await conn.fetchrow(
-        """
-        INSERT INTO uploads_entry (file_path, mime_type, size, session_id)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id
-        """,
-        relative_path,
-        mime_type,
-        size,
-        session_id,
-    )
-    return row["id"]  # type: ignore[index,no-any-return]
+    """Create an uploads entry via the canonical black-box tool."""
+    if session_id is None:
+        raise ValueError("session_id is required to create uploads entries")
+
+    return (
+        await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=relative_path,
+            mime_type=mime_type,
+            size=size,
+        )
+    ).id
 
 
 def read_text_file(file_path: str, *, upload_folder: Path = UPLOAD_FOLDER) -> str:

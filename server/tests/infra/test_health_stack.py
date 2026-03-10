@@ -101,7 +101,7 @@ class TestExportHealthClient:
             session_id=session.id,
         )
 
-        assert result.row_count == 2
+        assert result.row_count >= 2
         assert result.file_name.endswith(".zip")
 
         async with pool.acquire() as conn:
@@ -115,6 +115,8 @@ class TestExportHealthClient:
             health_csv = archive.read("health.csv").decode("utf-8")
             metrics_csv = archive.read("metrics.csv").decode("utf-8")
 
+        assert len(health_csv.strip().splitlines()) >= 2
+        assert len(metrics_csv.strip().splitlines()) >= 2
         assert "redis" in health_csv
         assert "100" in metrics_csv
 

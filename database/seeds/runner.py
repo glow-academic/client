@@ -552,6 +552,31 @@ async def _run_setting_seeds(
     return created_ids
 
 
+async def _run_color_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    color_defs: list[dict],
+) -> list[UUID]:
+    """Run color seed definitions (resource-level create)."""
+    from app.routes.v5.tools.resources.colors.create import create_color
+
+    created_ids: list[UUID] = []
+    for c in color_defs:
+        async with pool.acquire() as conn:
+            result = await create_color(
+                conn,
+                name=c["name"],
+                description=c["description"],
+                hex_code=c["hex_code"],
+                redis=redis,
+                id=c.get("id"),
+            )
+            created_ids.append(result.id)
+            print(f"  OK: Color created successfully")
+
+    return created_ids
+
+
 async def _run_post_links(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -560,9 +585,10 @@ async def _run_post_links(
     """Run post-creation link updates (bidirectional refs).
 
     Calls the tool-layer update functions directly (not the client-level ones)
-    to bypass permission checks — the department may already be "in use" by
-    child artifacts, which blocks update_department_client.
+    to bypass permission checks — artifacts may already be "in use" by
+    child artifacts, which blocks the client-level update functions.
     """
+    # ── Department → Setting link ─────────────────────────────────────
     if hasattr(mod, "department_updates"):
         from app.routes.v5.tools.artifacts.department.update import (
             update_department,
@@ -576,7 +602,53 @@ async def _run_post_links(
                     dept_id,
                     settings_ids=d.get("settings_ids"),
                 )
-            print(f"  OK: Department {dept_id} linked")
+            print(f"  OK: Department {dept_id} linked to settings")
+
+    # ── Setting → Colors link ─────────────────────────────────────────
+    if hasattr(mod, "setting_updates"):
+        from app.routes.v5.tools.artifacts.setting.update import (
+            update_setting,
+        )
+
+        for s in mod.setting_updates:
+            setting_id = s["id"]
+            async with pool.acquire() as conn:
+                await update_setting(
+                    conn,
+                    setting_id,
+                    color_ids=s.get("color_ids"),
+                )
+            print(f"  OK: Setting {setting_id} linked to colors")
+
+    # ── Pre-existing Profile → Department + Email link ────────────────
+    if hasattr(mod, "profile_department_links"):
+        from app.routes.v5.tools.artifacts.profile.update import (
+            update_profile,
+        )
+        from app.routes.v5.tools.resources.emails.create import create_email
+
+        for p in mod.profile_department_links:
+            profile_id = p["profile_id"]
+
+            # Create email resource
+            email_id = None
+            if "email" in p:
+                async with pool.acquire() as conn:
+                    email_result = await create_email(
+                        conn, email=p["email"], redis=redis,
+                    )
+                    email_id = email_result.id
+
+            # Update profile with department + email
+            async with pool.acquire() as conn:
+                await update_profile(
+                    conn,
+                    profile_id,
+                    department_ids=p.get("department_ids"),
+                    email_ids=[email_id] if email_id else None,
+                    redis=redis,
+                )
+            print(f"  OK: Profile {profile_id} linked to department")
 
 
 async def _run_cohort_seeds(
@@ -815,6 +887,8 @@ async def main(setup: str = "university") -> None:
                 await _run_profile_seeds(pool, redis_client, mod.profiles)
             elif module_name == "settings":
                 await _run_setting_seeds(pool, redis_client, mod.settings)
+            elif module_name == "colors":
+                await _run_color_seeds(pool, redis_client, mod.colors)
             elif module_name == "post_links":
                 await _run_post_links(pool, redis_client, mod)
 

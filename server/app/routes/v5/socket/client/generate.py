@@ -7,12 +7,16 @@ the internal "generate" event. Config creation lives in internal/generate.py.
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.typed_emit import emit_to_internal
 from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.types import GenerateErrorApiRequest
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -64,54 +68,57 @@ async def generate(sid: str, data: dict[str, Any]) -> None:
 
         profile_id = uuid.UUID(profile_id_str)
 
-        # Canonical prepare: group + run + profile-run link
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            await _emit_error(
+                sid,
+                "Session not found. Please reconnect.",
+                artifact_type,
+            )
+            return
+
+        session_id = uuid.UUID(session_id_str)
+        identity = await resolve_profile_identity_context(
+            get_pool(),
+            profile_id,
+            get_redis_client(),
+            session_id=session_id,
+            draft_id=payload.draft_id,
+            artifact_type=artifact_type,
+        )
+        if identity is None:
+            await _emit_error(
+                sid,
+                "Profile context could not be resolved.",
+                artifact_type,
+            )
+            return
+
+        group_id = identity.group_id
+        profiles_id = identity.profiles_id
+        if group_id is None:
+            async with get_db_connection() as conn:
+                group_id = (await create_group(conn, session_id=session_id)).id
+
+        # Canonical prepare: group + run
         async with get_db_connection() as conn:
-            # 1. Resolve group_id from draft or create new
-            group_id: uuid.UUID | None = None
-            if payload.draft_id:
-                draft_table = f"{artifact_type}_drafts_entry"
-                group_id = await conn.fetchval(
-                    f"SELECT group_id FROM {draft_table} WHERE id = $1",  # noqa: S608
-                    payload.draft_id,
+            run_id = (
+                await create_run(
+                    conn,
+                    group_id=group_id,
+                    session_id=session_id,
+                    profiles_id=profiles_id,
                 )
-
-            if not group_id:
-                group_id = await conn.fetchval(
-                    """INSERT INTO groups_entry (created_at, updated_at, session_id)
-                    VALUES (NOW(), NOW(), (
-                        SELECT id FROM sessions_entry
-                        WHERE profile_id = $1 AND active = true
-                        ORDER BY created_at DESC LIMIT 1
-                    )) RETURNING id""",
-                    profile_id,
-                )
-
-            # 2. Create run
-            run_id = await conn.fetchval(
-                """INSERT INTO runs_entry (group_id)
-                VALUES ($1) RETURNING id""",
-                group_id,
-            )
-
-            # 3. Profile-run link
-            await conn.execute(
-                """INSERT INTO profiles_runs_connection (profiles_id, run_id)
-                SELECT ppj.profiles_id, $2
-                FROM profile_profiles_junction ppj
-                WHERE ppj.profile_id = $1
-                LIMIT 1""",
-                profile_id,
-                run_id,
-            )
+            ).id
 
         await internal_sio.emit(
             "generate",
             {
                 "sid": sid,
                 "profile_id": profile_id_str,
+                **payload.model_dump(mode="json"),
                 "run_id": str(run_id),
                 "group_id": str(group_id),
-                **payload.model_dump(mode="json"),
             },
         )
     except Exception as e:

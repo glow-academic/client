@@ -46,7 +46,6 @@ class GroupListItem(BaseModel):
 class GetGroupListRequest(BaseModel):
     """Request for group list endpoint."""
 
-    session_id: UUID | None = Field(default=None)
     agent_id: UUID | None = Field(default=None)
     model_id: UUID | None = Field(default=None)
     date_from: datetime | None = Field(default=None)

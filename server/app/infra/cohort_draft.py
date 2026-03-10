@@ -177,7 +177,7 @@ async def patch_cohort_draft_client(
         async with conn.transaction():
             result = await create_cohort_draft(
                 conn,
-                group_id=profile.group_id or request.group_id,
+                group_id=profile.group_id,
                 session_id=session_id,
                 version=new_version,
                 name_ids=[request.name_id] if request.name_id else None,

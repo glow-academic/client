@@ -5,6 +5,7 @@ Each function receives raw event data and emits a translated event.
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 import asyncpg
@@ -426,7 +427,10 @@ async def test_group_impl(
     try:
         test_id = payload.test_id
         test_invocation_id = payload.test_invocation_id
-        group_id = payload.group_id
+        group_id_raw = data.get("group_id")
+        if not group_id_raw:
+            raise ValueError(f"Group not found for test {test_id}")
+        group_id = uuid.UUID(str(group_id_raw))
         prev_run_id = payload.prev_run_id
 
         async with pool.acquire() as conn:

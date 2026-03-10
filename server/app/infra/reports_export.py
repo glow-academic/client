@@ -133,22 +133,24 @@ async def export_reports_client(
     # -- Step 3: Search groups and runs --
     invocation_ids = [inv.invocation_id for inv in invocations]
 
-    async def _fetch_groups() -> list:
+    async def _fetch_groups() -> tuple[list, int]:
         async with pool.acquire() as conn:
             return await search_test_invocation_groups(
                 conn, test_invocation_ids=invocation_ids, limit=100000, offset=0
             )
 
-    async def _fetch_runs() -> list:
+    async def _fetch_runs() -> tuple[list, int]:
         async with pool.acquire() as conn:
             return await search_test_invocation_runs(
                 conn, test_invocation_ids=invocation_ids, limit=100000, offset=0
             )
 
-    groups, runs = await asyncio.gather(
+    group_result, run_result = await asyncio.gather(
         _fetch_groups(),
         _fetch_runs(),
     )
+    groups, _groups_total = group_result
+    runs, _runs_total = run_result
 
     # -- Step 4: Parallel resource hydration --
     all_name_ids: set[UUID] = set()

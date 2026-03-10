@@ -134,7 +134,7 @@ async def patch_profile_draft_client(
         async with conn.transaction():
             result = await create_profile_draft(
                 conn,
-                group_id=profile.group_id or request.group_id,
+                group_id=profile.group_id,
                 session_id=session_id,
                 version=new_version,
                 profile_ids=[profile.profiles_id],

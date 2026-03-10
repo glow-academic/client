@@ -107,8 +107,7 @@ async def _resolve_creatable_values(
             Path(final_full_path).write_text(text_val.content, encoding="utf-8")
             size = final_full_path.stat().st_size
 
-            # Full chain: uploads_entry → texts_resource → texts_entry
-            #           → texts_texts_connection → text_uploads_entry
+            # Full chain: uploads_entry → texts_resource → texts_entry → text_uploads_entry
             upload_result = await create_upload(
                 conn,
                 session_id=session_id,
@@ -117,16 +116,10 @@ async def _resolve_creatable_values(
                 size=size,
             )
             text_resource = await create_text_resource(conn, redis)
-            text_entry = await create_text_entry(conn, session_id=session_id)
-
-            # Link texts_resource ↔ texts_entry (no auto-connection in create_text)
-            await conn.execute(
-                """
-                INSERT INTO texts_texts_connection (texts_id, text_id)
-                VALUES ($1, $2)
-            """,
-                text_resource.id,
-                text_entry.id,
+            text_entry = await create_text_entry(
+                conn,
+                session_id=session_id,
+                texts_id=text_resource.id,
             )
 
             # Link texts_entry ↔ uploads_entry
@@ -208,7 +201,7 @@ async def patch_document_draft_client(
         async with conn.transaction():
             result = await create_document_draft(
                 conn,
-                group_id=profile.group_id or request.group_id,
+                group_id=profile.group_id,
                 session_id=session_id,
                 version=new_version,
                 name_ids=[request.name_id] if request.name_id else None,

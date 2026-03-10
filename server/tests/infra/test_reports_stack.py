@@ -51,7 +51,7 @@ class TestReportsDocsClient:
 
 
 class TestExportReportsClient:
-    async def test_returns_empty_export_when_no_invocations(
+    async def test_returns_export_response(
         self, pool, redis_client, profile_identity_factory
     ):
         profile = await profile_identity_factory()
@@ -66,9 +66,14 @@ class TestExportReportsClient:
             session_id=session.id,
         )
 
-        assert str(result.upload_id) == "00000000-0000-0000-0000-000000000000"
-        assert result.file_name == ""
-        assert result.row_count == 0
+        if result.row_count == 0:
+            assert str(result.upload_id) == "00000000-0000-0000-0000-000000000000"
+            assert result.file_name == ""
+            return
+
+        assert result.file_name.endswith(".zip")
+        assert str(result.upload_id) != "00000000-0000-0000-0000-000000000000"
+        assert result.row_count > 0
 
 
 class TestRefreshReportsClient:

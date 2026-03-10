@@ -11,11 +11,12 @@ async def create_text(
     conn: asyncpg.Connection,
     session_id: UUID,
     *,
+    texts_id: UUID | None = None,
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateTextResponse:
-    """Create a texts entry."""
+    """Create a texts entry and optionally link it to a texts resource."""
     text_id = await conn.fetchval(
         """
         INSERT INTO texts_entry (id, session_id, active, mcp, generated)
@@ -30,5 +31,15 @@ async def create_text(
 
     if text_id is None:
         raise ValueError("Failed to create texts entry")
+
+    if texts_id is not None:
+        await conn.execute(
+            """
+            INSERT INTO texts_texts_connection (texts_id, text_id)
+            VALUES ($1, $2)
+            """,
+            texts_id,
+            text_id,
+        )
 
     return CreateTextResponse(id=text_id)

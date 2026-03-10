@@ -6,11 +6,15 @@ from app.infra.artifacts.discovery import (
     extract_template_variable_name,
     get_agent_end_event_name,
     get_entry_table_columns,
+    get_resource_output_schema_fields,
     get_resource_schema_fields,
     get_resource_sql_function_name,
     get_resource_table_columns,
     map_template_values_to_table_columns,
 )
+from app.routes.v5.tools.resources.args.create import create_arg
+from app.routes.v5.tools.resources.args_outputs.create import create_args_output
+from app.routes.v5.tools.resources.tools.create import create_tool
 
 pytestmark = pytest.mark.asyncio
 
@@ -82,6 +86,113 @@ async def test_map_template_values_to_table_columns_direct_and_template_match(co
         is_entry=True,
     )
     assert mapped_entry == {}
+
+
+async def test_get_resource_output_schema_fields_reads_tool_args_outputs(
+    conn, redis_client
+):
+    arg = await create_arg(conn, name="query", field_type="string", redis=redis_client)
+    output_one = await create_args_output(
+        conn,
+        args_id=arg.id,
+        name="display_name",
+        template="{{ name }}",
+        redis=redis_client,
+    )
+    output_two = await create_args_output(
+        conn,
+        args_id=arg.id,
+        name="summary_text",
+        template="{{ description }}",
+        redis=redis_client,
+    )
+    tool = await create_tool(
+        conn,
+        name="lookup_names",
+        redis=redis_client,
+        args_ids=[arg.id],
+        args_output_ids=[output_one.id, output_two.id],
+        operation="create",
+    )
+
+    fields = await get_resource_output_schema_fields(conn, str(tool.id))
+
+    assert fields == [
+        {
+            "name": "display_name",
+            "field_type": "string",
+            "required": False,
+            "position": 0,
+            "template": "{{ name }}",
+        },
+        {
+            "name": "summary_text",
+            "field_type": "string",
+            "required": False,
+            "position": 0,
+            "template": "{{ description }}",
+        },
+    ]
+
+
+async def test_map_template_values_to_table_columns_uses_tool_output_template_mapping(
+    conn, redis_client
+):
+    arg = await create_arg(conn, name="query", field_type="string", redis=redis_client)
+    output = await create_args_output(
+        conn,
+        args_id=arg.id,
+        name="display_name",
+        template="{{ name }}",
+        redis=redis_client,
+    )
+    tool = await create_tool(
+        conn,
+        name="lookup_names",
+        redis=redis_client,
+        args_ids=[arg.id],
+        args_output_ids=[output.id],
+        operation="create",
+    )
+
+    mapped = await map_template_values_to_table_columns(
+        conn,
+        "names",
+        {"display_name": "Alice"},
+        tool_id=str(tool.id),
+    )
+
+    assert mapped == {"name": "Alice"}
+
+
+async def test_map_template_values_to_table_columns_falls_back_when_column_missing(
+    conn, redis_client
+):
+    arg = await create_arg(conn, name="query", field_type="string", redis=redis_client)
+    output = await create_args_output(
+        conn,
+        args_id=arg.id,
+        name="custom_value",
+        template="{{ missing_column }}",
+        redis=redis_client,
+    )
+    tool = await create_tool(
+        conn,
+        name="lookup_names",
+        redis=redis_client,
+        args_ids=[arg.id],
+        args_output_ids=[output.id],
+        operation="create",
+    )
+
+    mapped = await map_template_values_to_table_columns(
+        conn,
+        "names",
+        {"custom_value": "Alice"},
+        tool_id=str(tool.id),
+    )
+
+    assert mapped == {"custom_value": "Alice"}
 
 
 async def test_get_agent_end_event_name_handles_known_and_special_cases(conn):
