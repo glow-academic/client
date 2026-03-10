@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.provider.search import search_provider_impl
 from app.routes.v5.api.main.provider.types import ListProviderApiResponse
@@ -53,18 +54,31 @@ async def search_provider(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_provider_impl(
+        async def _runner() -> ListProviderApiResponse:
+            return await search_provider_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                filter_department_ids=request.filter_department_ids,
+                filter_model_ids=request.filter_model_ids,
+                filter_status=request.filter_status,
+                department_search=request.department_search,
+                model_search=request.model_search,
+                page_size=request.page_size or 12,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="provider",
             profile_id=profile_id,
-            search=request.search,
-            filter_department_ids=request.filter_department_ids,
-            filter_model_ids=request.filter_model_ids,
-            filter_status=request.filter_status,
-            department_search=request.department_search,
-            model_search=request.model_search,
-            page_size=request.page_size or 12,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListProviderApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.rubric.search import search_rubric_impl
 from app.routes.v5.api.main.rubric.types import ListRubricApiResponse
@@ -52,17 +53,30 @@ async def search_rubric(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_rubric_impl(
+        async def _runner() -> ListRubricApiResponse:
+            return await search_rubric_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                filter_department_ids=request.filter_department_ids,
+                filter_simulation_ids=request.filter_simulation_ids,
+                department_search=request.department_search,
+                simulation_search=request.simulation_search,
+                page_size=request.page_size or 12,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="rubric",
             profile_id=profile_id,
-            search=request.search,
-            filter_department_ids=request.filter_department_ids,
-            filter_simulation_ids=request.filter_simulation_ids,
-            department_search=request.department_search,
-            simulation_search=request.simulation_search,
-            page_size=request.page_size or 12,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListRubricApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

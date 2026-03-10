@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.rubric.export import export_rubric_impl
 from app.routes.v5.api.main.rubric.types import ExportRubricApiResponse
@@ -30,10 +31,23 @@ async def export_rubrics(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_rubric_impl(
+    async def _runner() -> ExportRubricApiResponse:
+        return await export_rubric_impl(
+            pool,
+            redis,
+            profile_id=profile_id,
+            session_id=session_id,
+            rubric_id=body.rubric_id,
+        )
+
+    return await run_artifact_operation_with_audit(
         pool,
         redis,
+        artifact="rubric",
         profile_id=profile_id,
         session_id=session_id,
-        rubric_id=body.rubric_id,
+        operation="export",
+        arguments=body.model_dump(mode="json"),
+        response_model=ExportRubricApiResponse,
+        runner=_runner,
     )
