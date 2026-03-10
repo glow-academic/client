@@ -10,6 +10,7 @@ Flag IDs reference pre-existing resources from 01-resources/02-flags.sql.
 from uuid import UUID
 
 from database.seeds.ids import sid
+from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 from database.seeds.setups.university.scenarios import (
     ACADEMIC_INTEGRITY_SCENARIO,
     AGGRESSIVE_SCENARIO,
@@ -53,6 +54,7 @@ simulations = [
         description="Seeks to understand by asking questions and exploring ideas.",
         scenario_ids=[CONFUSED_SCENARIO],
         flag_ids=[PRACTICE_FLAG],
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=HAPPY_PRACTICE,
@@ -60,6 +62,7 @@ simulations = [
         description="Provides uplifting feedback and cheerful responses.",
         scenario_ids=[HAPPY_SCENARIO],
         flag_ids=[PRACTICE_FLAG],
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=PASSIVE_PRACTICE,
@@ -67,6 +70,7 @@ simulations = [
         description="Responds with minimal engagement and requires prompting.",
         scenario_ids=[PASSIVE_SCENARIO],
         flag_ids=[PRACTICE_FLAG],
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=AGGRESSIVE_PRACTICE,
@@ -74,6 +78,7 @@ simulations = [
         description="Challenges with confrontational and resistant responses.",
         scenario_ids=[AGGRESSIVE_SCENARIO],
         flag_ids=[PRACTICE_FLAG],
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=GENERAL_PRACTICE,
@@ -81,6 +86,7 @@ simulations = [
         description="A flexible simulation for open-ended practice with any persona.",
         scenario_ids=[GENERAL_SCENARIO],
         flag_ids=[PRACTICE_FLAG],
+        department_ids=[UNIVERSITY_DEPT],
     ),
 
     # ── Training Simulations (multiple scenarios, structured) ──────────────
@@ -90,17 +96,20 @@ simulations = [
         name="Academic Integrity Training",
         description="Training simulation for practicing responses to academic integrity violations.",
         scenario_ids=[ACADEMIC_INTEGRITY_SCENARIO],
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=FERPA_TRAINING,
         name="FERPA Training",
         description="Training simulation for practicing FERPA compliance and student privacy protection.",
         scenario_ids=[FERPA_SCENARIO],
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=UPSET_STUDENT_TRAINING,
         name="Upset Student Training",
         description="Training simulation for practicing de-escalation techniques with upset students.",
         scenario_ids=[UPSET_STUDENT_SCENARIO],
+        department_ids=[UNIVERSITY_DEPT],
     ),
 ]

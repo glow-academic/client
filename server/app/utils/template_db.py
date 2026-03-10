@@ -80,7 +80,7 @@ async def clone_from_template(
             """,
             target_db,
         )
-        await admin_conn.execute(f'DROP DATABASE "{target_db}"')
+        await admin_conn.execute(f'DROP DATABASE IF EXISTS "{target_db}"')
 
     await admin_conn.execute(
         f'CREATE DATABASE "{target_db}" TEMPLATE "{template_name}"'
@@ -136,7 +136,7 @@ async def create_fresh_db(admin_conn: asyncpg.Connection, db_name: str) -> None:
             """,
             db_name,
         )
-        await admin_conn.execute(f'DROP DATABASE "{db_name}"')
+        await admin_conn.execute(f'DROP DATABASE IF EXISTS "{db_name}"')
     await admin_conn.execute(f'CREATE DATABASE "{db_name}"')
 
 

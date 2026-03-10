@@ -7,6 +7,7 @@ Names and descriptions are CREATED as new resources.
 """
 
 from database.seeds.ids import sid
+from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 from database.seeds.setups.university.simulations import (
     ACADEMIC_INTEGRITY_TRAINING,
     AGGRESSIVE_PRACTICE,
@@ -41,6 +42,7 @@ cohorts = [
             AGGRESSIVE_PRACTICE,
             GENERAL_PRACTICE,
         ],
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=TRAINING_COHORT,
@@ -51,5 +53,6 @@ cohorts = [
             FERPA_TRAINING,
             UPSET_STUDENT_TRAINING,
         ],
+        department_ids=[UNIVERSITY_DEPT],
     ),
 ]

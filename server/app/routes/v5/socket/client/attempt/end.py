@@ -148,12 +148,6 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
             ).model_dump(mode="json"),
         )
 
-        # Log activity
-        try:
-            pass
-        except Exception:
-            pass
-
     except Exception as e:
         logger.exception(f"Error in attempt_end: {e}")
         await internal_sio.emit(

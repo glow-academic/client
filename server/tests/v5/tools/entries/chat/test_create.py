@@ -1,9 +1,11 @@
 """Tests for create_chat."""
 
+from uuid import UUID
+
 import pytest
 
 from app.routes.v5.tools.entries.chat.create import create_chat
-from app.routes.v5.tools.entries.chat.get import get_chats
+from app.routes.v5.tools.entries.chat.get import get_chat_entries_internal, get_chats
 from app.routes.v5.tools.entries.chat.refresh import refresh_chat
 from app.routes.v5.tools.entries.sessions.create import create_session
 
@@ -59,3 +61,16 @@ async def test_passes_mcp_flag(conn, profile_id, simulation_bundle):
     )
     assert row is not None
     assert row["mcp"] is True
+
+
+async def test_internal_get_returns_created_chat(conn, profile_id, simulation_bundle):
+    _, result = await _chat(conn, profile_id, simulation_bundle)
+    await refresh_chat(conn)
+
+    items = await get_chat_entries_internal(conn, [result.id], bypass_cache=True)
+
+    assert len(items) == 1
+    assert items[0]["chat_entry_id"] == str(result.id)
+    assert simulation_bundle.department_id in {
+        UUID(item_id) for item_id in items[0]["department_ids"]
+    }

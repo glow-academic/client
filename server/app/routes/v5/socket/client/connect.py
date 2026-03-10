@@ -182,11 +182,6 @@ async def connect(
             },
         )
 
-    try:
-        pass
-    except Exception:
-        pass
-
     return True
 
 
@@ -198,12 +193,6 @@ async def connect(
 @sio.event  # type: ignore
 async def disconnect(sid: str) -> None:
     """Handle WebSocket disconnection with cleanup."""
-    # Log before cleanup so profile lookup still works
-    try:
-        pass
-    except Exception:
-        pass
-
     # Profile cleanup
     profile_to_cleanup = await find_profile_by_socket(sid)
     if profile_to_cleanup:

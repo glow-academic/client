@@ -37,12 +37,6 @@ async def _attempt_end_all_impl(sid: str, data: AttemptEndAllPayload) -> None:
             ).model_dump(mode="json"),
         )
 
-        # Log activity
-        try:
-            pass
-        except Exception:
-            pass
-
     except Exception as e:
         logger.exception(f"Error in attempt_end_all: {e}")
         await internal_sio.emit(

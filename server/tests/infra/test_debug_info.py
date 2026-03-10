@@ -7,8 +7,6 @@ import pytest
 
 from app.infra.debug.debug_info import debug_info, extract_debug_context
 
-pytestmark = pytest.mark.asyncio
-
 
 class FakeConn:
     def __init__(self) -> None:
@@ -27,12 +25,14 @@ def test_extract_debug_context_supports_multiple_shapes():
     assert extract_debug_context(nested) == ("r3", conn)
 
 
+@pytest.mark.asyncio
 async def test_debug_info_returns_error_when_context_is_missing():
     result = await debug_info({}, "blocked")
 
     assert result == "Error: Missing run_id or conn in context"
 
 
+@pytest.mark.asyncio
 async def test_debug_info_schedules_problem_insert():
     conn = FakeConn()
 

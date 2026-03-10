@@ -91,8 +91,8 @@ def derive_theme_tokens(primitives: ThemePrimitives) -> ThemeTokens:
         Full ThemeTokens object with all derived colors
     """
     # Import color utilities (same as profile/context.py)
-    from utils.theme.color_utils import ensure_contrast, shade, tint
-    from utils.theme.oklch_to_hex import hex_to_oklch
+    from app.utils.theme.color_utils import ensure_contrast, shade, tint
+    from app.utils.theme.oklch_to_hex import hex_to_oklch
 
     def normalize_color_to_oklch(color: str) -> str:
         """Normalize color input to oklch format."""

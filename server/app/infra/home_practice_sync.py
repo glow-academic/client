@@ -59,6 +59,7 @@ async def sync_home_practice_entries(
         create_practice_chat,
     )
     from app.routes.v5.tools.entries.sessions.create import create_session
+    from app.routes.v5.tools.resources.flags.get import get_flags
     from app.routes.v5.tools.resources.rubrics.get import get_rubrics
     from app.routes.v5.tools.resources.scenario_flags.get import (
         get_scenario_flags,
@@ -102,15 +103,11 @@ async def sync_home_practice_entries(
     all_scenario_time_limit_ids: list[UUID] = []
 
     for sim in simulations:
-        all_scenario_ids.extend(UUID(s) for s in (sim.scenario_ids or []))
-        all_scenario_rubric_ids.extend(UUID(s) for s in (sim.scenario_rubric_ids or []))
-        all_scenario_flag_ids.extend(UUID(s) for s in (sim.scenario_flag_ids or []))
-        all_scenario_position_ids.extend(
-            UUID(s) for s in (sim.scenario_position_ids or [])
-        )
-        all_scenario_time_limit_ids.extend(
-            UUID(s) for s in (sim.scenario_time_limit_ids or [])
-        )
+        all_scenario_ids.extend(sim.scenario_ids or [])
+        all_scenario_rubric_ids.extend(sim.scenario_rubric_ids or [])
+        all_scenario_flag_ids.extend(sim.scenario_flag_ids or [])
+        all_scenario_position_ids.extend(sim.scenario_position_ids or [])
+        all_scenario_time_limit_ids.extend(sim.scenario_time_limit_ids or [])
 
     # ── Pass 2a: Parallel fetch all sub-resources ──
     # Each fetch acquires its own connection from the pool to avoid
@@ -211,7 +208,7 @@ async def sync_home_practice_entries(
     # ── Pass 3: Build lookup dicts ──
 
     # scenario_id → scenario data
-    scenario_map = {s.scenario_id: s for s in scenarios if s.scenario_id}
+    scenario_map = {s.id: s for s in scenarios if s.id}
 
     # scenario_rubric_id → rubrics_resource.id (resolved)
     rubric_map: dict[UUID, UUID] = {}
@@ -231,13 +228,25 @@ async def sync_home_practice_entries(
         if std.standard_group_id and std.id:
             sg_standards_map.setdefault(std.standard_group_id, []).append(std.id)
 
+    # Resolve flag names from flags_resource (scenario_flags only have flag_id)
+    all_flag_ids = list({sf.flag_id for sf in scenario_flags if sf.flag_id})
+    flag_name_map: dict[UUID, str] = {}
+    if all_flag_ids:
+        async with pool.acquire() as flag_conn:
+            flags = await get_flags(
+                flag_conn, all_flag_ids, get_redis_client(), bypass_cache=True
+            )
+            flag_name_map = {f.id: f.name for f in flags if f.id and f.name}
+
     # scenario_flag_id → {column_name: True}
     flag_map: dict[UUID, dict[str, bool]] = {}
-    for f in scenario_flags:
-        if f.id and f.name:
-            col = FLAG_NAME_TO_COLUMN.get(f.name)
-            if col:
-                flag_map.setdefault(f.id, {})[col] = True
+    for sf in scenario_flags:
+        if sf.id and sf.flag_id:
+            flag_name = flag_name_map.get(sf.flag_id)
+            if flag_name:
+                col = FLAG_NAME_TO_COLUMN.get(flag_name)
+                if col:
+                    flag_map.setdefault(sf.id, {})[col] = True
 
     # scenario_position_id → value (int)
     pos_map: dict[UUID, int] = {}
@@ -257,13 +266,13 @@ async def sync_home_practice_entries(
     # Build per-simulation structures
     sim_data_list: list[dict[str, Any]] = []
     for sim in simulations:
-        if not sim.simulation_id:
+        if not sim.id:
             continue
 
         # Resolve position from simulation_positions
         resolved_position = 0
         for p in sim_positions:
-            if p.simulation_id and UUID(str(p.simulation_id)) == sim.simulation_id:
+            if p.simulation_id and p.simulation_id == sim.id:
                 resolved_position = p.value or 0
                 break
 
@@ -271,7 +280,7 @@ async def sync_home_practice_entries(
         start_time: datetime | None = None
         end_time: datetime | None = None
         for a in sim_availability:
-            if a.simulation_id and UUID(str(a.simulation_id)) == sim.simulation_id:
+            if a.simulation_id and a.simulation_id == sim.id:
                 if a.type == "start":
                     start_time = (
                         a.time
@@ -290,27 +299,23 @@ async def sync_home_practice_entries(
             p.id
             for p in sim_positions
             if p.simulation_id
-            and UUID(str(p.simulation_id)) == sim.simulation_id
+            and p.simulation_id == sim.id
             and p.id
         ]
         sim_avail_resource_ids = [
             a.id
             for a in sim_availability
             if a.simulation_id
-            and UUID(str(a.simulation_id)) == sim.simulation_id
+            and a.simulation_id == sim.id
             and a.id
         ]
 
         # Build chat data for this simulation
-        scenario_ids_for_sim = [UUID(s) for s in (sim.scenario_ids or [])]
-        scenario_rubric_ids_for_sim = [UUID(s) for s in (sim.scenario_rubric_ids or [])]
-        scenario_flag_ids_for_sim = [UUID(s) for s in (sim.scenario_flag_ids or [])]
-        scenario_position_ids_for_sim = [
-            UUID(s) for s in (sim.scenario_position_ids or [])
-        ]
-        scenario_time_limit_ids_for_sim = [
-            UUID(s) for s in (sim.scenario_time_limit_ids or [])
-        ]
+        scenario_ids_for_sim = list(sim.scenario_ids or [])
+        scenario_rubric_ids_for_sim = list(sim.scenario_rubric_ids or [])
+        scenario_flag_ids_for_sim = list(sim.scenario_flag_ids or [])
+        scenario_position_ids_for_sim = list(sim.scenario_position_ids or [])
+        scenario_time_limit_ids_for_sim = list(sim.scenario_time_limit_ids or [])
 
         chat_data_list: list[dict[str, Any]] = []
         for scenario_id in scenario_ids_for_sim:
@@ -480,7 +485,7 @@ async def sync_home_practice_entries(
 
         sim_data_list.append(
             {
-                "simulation_id": sim.simulation_id,
+                "simulation_id": sim.id,
                 "is_practice": sim.practice or False,
                 "position": resolved_position,
                 "start_time": start_time,

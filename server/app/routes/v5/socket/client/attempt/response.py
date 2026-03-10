@@ -61,12 +61,6 @@ async def _attempt_response_impl(
             ).model_dump(mode="json"),
         )
 
-        # Log activity
-        try:
-            pass
-        except Exception:
-            pass
-
     except Exception as e:
         logger.exception(f"Error in attempt_response_submit: {e}")
         await internal_sio.emit(
