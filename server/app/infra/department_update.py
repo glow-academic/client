@@ -127,17 +127,18 @@ async def update_department_client(
     results: list[DepartmentResultItem] = []
     saved_department_ids: list[UUID] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                departments_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        departments_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 await update_department_artifact(
                     conn,
                     item.department_id,
@@ -150,14 +151,14 @@ async def update_department_client(
                     settings_ids=item.settings_ids,
                 )
 
-                saved_department_ids.append(item.department_id)
-                results.append(
-                    DepartmentResultItem(
-                        success=True,
-                        department_id=item.department_id,
-                        message="Department updated successfully",
-                    )
-                )
+        saved_department_ids.append(item.department_id)
+        results.append(
+            DepartmentResultItem(
+                success=True,
+                department_id=item.department_id,
+                message="Department updated successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

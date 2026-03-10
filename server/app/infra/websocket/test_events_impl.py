@@ -510,6 +510,10 @@ async def test_start_impl(
 
     from app.infra.websocket.test_types import TestErrorData, TestProceedData
     from app.routes.v5.tools.entries.benchmark_test.create import create_benchmark_test
+    from app.routes.v5.tools.entries.calls.create import create_call
+    from app.routes.v5.tools.entries.groups.create import create_group
+    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.routes.v5.tools.entries.sessions.create import create_session
     from app.routes.v5.tools.entries.test.create import create_test
     from app.routes.v5.tools.entries.test_invocation.refresh import (
         refresh_test_invocation,
@@ -548,9 +552,26 @@ async def test_start_impl(
         profiles_id = uuid.UUID(profiles_id_str)
 
         async with pool.acquire() as conn:
+            session_id = (
+                uuid.UUID(session_id_str)
+                if session_id_str
+                else (await create_session(conn, profile_id=profiles_id)).id
+            )
+            group_id = (await create_group(conn, session_id=session_id)).id
+            run_id = (
+                await create_run(
+                    conn,
+                    group_id=group_id,
+                    session_id=session_id,
+                    profiles_id=profiles_id,
+                )
+            ).id
+            call_id = (await create_call(conn, run_id=run_id, session_id=session_id)).id
+
             # Step 1: Create test entry (black box)
             result = await create_test(
                 conn,
+                call_id=call_id,
                 profiles_id=profiles_id,
                 infinite_mode=infinite_mode,
             )
@@ -558,9 +579,6 @@ async def test_start_impl(
 
             # Step 2: Optional benchmark bridge (black box)
             if benchmark_id:
-                session_id = (
-                    uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
-                )
                 await create_benchmark_test(
                     conn,
                     benchmark_id=benchmark_id,

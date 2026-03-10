@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema",
+    "description": "Auto-generated OpenAPI schema from FastAPI v5 API",
     "version": "0.1.0"
   },
   "paths": {
@@ -97,7 +97,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/search": {
@@ -191,7 +196,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/create": {
@@ -285,7 +295,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/update": {
@@ -379,7 +394,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/duplicate": {
@@ -473,7 +493,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/delete": {
@@ -567,7 +592,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/draft": {
@@ -661,7 +691,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/drafts": {
@@ -745,7 +780,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/docs": {
@@ -839,7 +879,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/export": {
@@ -933,7 +978,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/personas/refresh": {
@@ -1017,7 +1067,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/get": {
@@ -1111,7 +1166,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/search": {
@@ -1205,7 +1265,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/create": {
@@ -1299,7 +1364,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/update": {
@@ -1393,7 +1463,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/duplicate": {
@@ -1487,7 +1562,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/delete": {
@@ -1581,7 +1661,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/draft": {
@@ -1675,7 +1760,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/drafts": {
@@ -1759,7 +1849,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/export": {
@@ -1853,7 +1948,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/docs": {
@@ -1947,7 +2047,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/scenarios/refresh": {
@@ -2031,7 +2136,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/get": {
@@ -2125,7 +2235,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/search": {
@@ -2219,7 +2334,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/create": {
@@ -2313,7 +2433,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/update": {
@@ -2407,7 +2532,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/duplicate": {
@@ -2501,7 +2631,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/delete": {
@@ -2595,7 +2730,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/draft": {
@@ -2689,7 +2829,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/drafts": {
@@ -2773,7 +2918,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/export": {
@@ -2867,7 +3017,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/docs": {
@@ -2961,7 +3116,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/simulations/refresh": {
@@ -3045,7 +3205,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
       }
     },
     "/api/v5/artifacts/documents/search": {
@@ -3139,7 +3304,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/get": {
@@ -3233,7 +3403,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/create": {
@@ -3327,7 +3502,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/update": {
@@ -3421,7 +3601,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/duplicate": {
@@ -3515,7 +3700,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/delete": {
@@ -3609,7 +3799,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/draft": {
@@ -3703,7 +3898,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/drafts": {
@@ -3787,7 +3987,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/docs": {
@@ -3881,7 +4086,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/refresh": {
@@ -3965,7 +4175,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/documents/export": {
@@ -4059,7 +4274,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
       }
     },
     "/api/v5/artifacts/departments/get": {
@@ -4153,7 +4373,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/search": {
@@ -4247,7 +4472,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/create": {
@@ -4341,7 +4571,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/update": {
@@ -4435,7 +4670,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/duplicate": {
@@ -4529,7 +4769,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/delete": {
@@ -4623,7 +4868,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/draft": {
@@ -4717,7 +4967,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/drafts": {
@@ -4801,7 +5056,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/docs": {
@@ -4895,7 +5155,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/export": {
@@ -4989,7 +5254,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/departments/refresh": {
@@ -5073,7 +5343,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/search": {
@@ -5167,7 +5442,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/get": {
@@ -5261,7 +5541,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/create": {
@@ -5355,7 +5640,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/update": {
@@ -5449,7 +5739,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/duplicate": {
@@ -5543,7 +5838,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/delete": {
@@ -5637,7 +5937,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/draft": {
@@ -5731,7 +6036,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/drafts": {
@@ -5815,7 +6125,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/export": {
@@ -5909,7 +6224,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/docs": {
@@ -6003,7 +6323,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/cohorts/refresh": {
@@ -6087,7 +6412,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
       }
     },
     "/api/v5/artifacts/evals/search": {
@@ -6181,7 +6511,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/get": {
@@ -6275,7 +6610,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/create": {
@@ -6369,7 +6709,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/update": {
@@ -6463,7 +6808,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/duplicate": {
@@ -6557,7 +6907,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/delete": {
@@ -6651,7 +7006,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/draft": {
@@ -6745,7 +7105,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/drafts": {
@@ -6829,7 +7194,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/docs": {
@@ -6923,7 +7293,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/refresh": {
@@ -7007,7 +7382,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/evals/export": {
@@ -7101,7 +7481,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/get": {
@@ -7195,7 +7580,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/search": {
@@ -7289,7 +7679,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/create": {
@@ -7383,7 +7778,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/update": {
@@ -7477,7 +7877,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/duplicate": {
@@ -7571,7 +7976,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/delete": {
@@ -7665,7 +8075,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/draft": {
@@ -7759,7 +8174,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/drafts": {
@@ -7843,7 +8263,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/docs": {
@@ -7937,7 +8362,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/export": {
@@ -8031,7 +8461,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/rubrics/refresh": {
@@ -8115,7 +8550,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
       }
     },
     "/api/v5/artifacts/settings/search": {
@@ -8209,7 +8649,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/get": {
@@ -8303,7 +8748,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/create": {
@@ -8397,7 +8847,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/update": {
@@ -8491,7 +8946,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/duplicate": {
@@ -8585,7 +9045,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/delete": {
@@ -8679,7 +9144,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/draft": {
@@ -8773,7 +9243,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/drafts": {
@@ -8857,7 +9332,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/export": {
@@ -8951,7 +9431,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/docs": {
@@ -9045,7 +9530,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/refresh": {
@@ -9129,7 +9619,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/settings/decrypt": {
@@ -9223,7 +9718,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
       }
     },
     "/api/v5/artifacts/agents/get": {
@@ -9317,7 +9817,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/search": {
@@ -9411,7 +9916,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/create": {
@@ -9505,7 +10015,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/update": {
@@ -9599,7 +10114,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/duplicate": {
@@ -9693,7 +10213,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/delete": {
@@ -9787,7 +10312,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/draft": {
@@ -9881,7 +10411,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/drafts": {
@@ -9965,7 +10500,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/docs": {
@@ -10059,7 +10599,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/export": {
@@ -10153,7 +10698,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/agents/refresh": {
@@ -10237,7 +10787,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
       }
     },
     "/api/v5/artifacts/models/get": {
@@ -10331,7 +10886,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/search": {
@@ -10425,7 +10985,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/create": {
@@ -10519,7 +11084,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/update": {
@@ -10613,7 +11183,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/duplicate": {
@@ -10707,7 +11282,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/delete": {
@@ -10801,7 +11381,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/draft": {
@@ -10895,7 +11480,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/drafts": {
@@ -10979,7 +11569,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/docs": {
@@ -11073,7 +11668,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/export": {
@@ -11167,7 +11767,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/models/refresh": {
@@ -11251,7 +11856,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
       }
     },
     "/api/v5/artifacts/providers/search": {
@@ -11345,7 +11955,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/get": {
@@ -11439,7 +12054,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/create": {
@@ -11533,7 +12153,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/update": {
@@ -11627,7 +12252,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/duplicate": {
@@ -11721,7 +12351,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/delete": {
@@ -11815,7 +12450,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/draft": {
@@ -11909,7 +12549,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/drafts": {
@@ -11993,7 +12638,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/docs": {
@@ -12087,7 +12737,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/export": {
@@ -12181,7 +12836,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/refresh": {
@@ -12265,7 +12925,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/providers/decrypt": {
@@ -12359,7 +13024,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/get": {
@@ -12453,7 +13123,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/search": {
@@ -12547,7 +13222,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/create": {
@@ -12641,7 +13321,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/update": {
@@ -12735,7 +13420,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/duplicate": {
@@ -12829,7 +13519,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/delete": {
@@ -12923,7 +13618,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/draft": {
@@ -13017,7 +13717,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/drafts": {
@@ -13101,7 +13806,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/docs": {
@@ -13195,7 +13905,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/export": {
@@ -13289,7 +14004,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/parameters/refresh": {
@@ -13373,7 +14093,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
       }
     },
     "/api/v5/artifacts/fields/get": {
@@ -13467,7 +14192,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/search": {
@@ -13561,7 +14291,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/create": {
@@ -13655,7 +14390,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/update": {
@@ -13749,7 +14489,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/duplicate": {
@@ -13843,7 +14588,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/delete": {
@@ -13937,7 +14687,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/draft": {
@@ -14031,7 +14786,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/drafts": {
@@ -14115,7 +14875,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/docs": {
@@ -14209,7 +14974,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/export": {
@@ -14303,7 +15073,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/fields/refresh": {
@@ -14387,7 +15162,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/context": {
@@ -14481,7 +15261,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/get": {
@@ -14575,7 +15360,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/search": {
@@ -14669,7 +15459,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/create": {
@@ -14763,7 +15558,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/update": {
@@ -14857,7 +15657,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/duplicate": {
@@ -14951,7 +15756,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/draft": {
@@ -15045,7 +15855,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/drafts": {
@@ -15129,7 +15944,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/delete": {
@@ -15223,7 +16043,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/docs": {
@@ -15317,7 +16142,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/emulate": {
@@ -15411,7 +16241,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/unemulate": {
@@ -15495,7 +16330,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/export": {
@@ -15589,7 +16429,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/profiles/refresh": {
@@ -15673,7 +16518,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "profiles"
+        ]
       }
     },
     "/api/v5/artifacts/auths/get": {
@@ -15767,7 +16617,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/search": {
@@ -15861,7 +16716,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/create": {
@@ -15955,7 +16815,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/update": {
@@ -16049,7 +16914,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/duplicate": {
@@ -16143,7 +17013,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/delete": {
@@ -16237,7 +17112,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/draft": {
@@ -16331,7 +17211,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/drafts": {
@@ -16415,7 +17300,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/docs": {
@@ -16509,7 +17399,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/export": {
@@ -16603,7 +17498,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/auths/refresh": {
@@ -16687,7 +17587,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "auths"
+        ]
       }
     },
     "/api/v5/artifacts/tools/search": {
@@ -16781,7 +17686,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/get": {
@@ -16875,7 +17785,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/create": {
@@ -16969,7 +17884,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/update": {
@@ -17063,7 +17983,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/duplicate": {
@@ -17157,7 +18082,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/delete": {
@@ -17251,7 +18181,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/draft": {
@@ -17345,7 +18280,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/drafts": {
@@ -17429,7 +18369,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/export": {
@@ -17523,7 +18468,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/docs": {
@@ -17617,7 +18567,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/tools/refresh": {
@@ -17701,7 +18656,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
       }
     },
     "/api/v5/artifacts/group/get": {
@@ -17796,7 +18756,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v5/artifacts/group/refresh": {
@@ -17881,7 +18847,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v5/artifacts/group/docs": {
@@ -17976,7 +18948,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v5/artifacts/group/export": {
@@ -18071,7 +19049,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v5/artifacts/group/generate": {
@@ -18166,7 +19150,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v5/artifacts/group/events": {
@@ -18261,7 +19251,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "group"
+        ]
       }
     },
     "/api/v5/artifacts/session/get": {
@@ -18356,7 +19352,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "session"
+        ]
       }
     },
     "/api/v5/artifacts/session/refresh": {
@@ -18441,7 +19443,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "session"
+        ]
       }
     },
     "/api/v5/artifacts/session/docs": {
@@ -18536,7 +19544,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "session"
+        ]
       }
     },
     "/api/v5/artifacts/session/export": {
@@ -18631,7 +19645,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "session"
+        ]
       }
     },
     "/api/v5/artifacts/chat/get": {
@@ -18726,7 +19746,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "chat"
+        ]
       }
     },
     "/api/v5/artifacts/chat/draft": {
@@ -18821,7 +19847,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "chat"
+        ]
       }
     },
     "/api/v5/artifacts/chat/drafts": {
@@ -18906,7 +19938,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "chat"
+        ]
       }
     },
     "/api/v5/artifacts/chat/export": {
@@ -19001,7 +20039,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "chat"
+        ]
       }
     },
     "/api/v5/artifacts/chat/refresh": {
@@ -19086,7 +20130,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "chat"
+        ]
       }
     },
     "/api/v5/artifacts/chat/docs": {
@@ -19181,7 +20231,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "chat"
+        ]
       }
     },
     "/api/v5/artifacts/home/get": {
@@ -19276,7 +20332,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "home"
+        ]
       }
     },
     "/api/v5/artifacts/home/search": {
@@ -19371,7 +20433,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "home"
+        ]
       }
     },
     "/api/v5/artifacts/home/refresh": {
@@ -19456,7 +20524,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "home"
+        ]
       }
     },
     "/api/v5/artifacts/home/export": {
@@ -19541,7 +20615,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "home"
+        ]
       }
     },
     "/api/v5/artifacts/home/docs": {
@@ -19636,7 +20716,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "home"
+        ]
       }
     },
     "/api/v5/artifacts/practice/get": {
@@ -19731,7 +20817,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "practice"
+        ]
       }
     },
     "/api/v5/artifacts/practice/search": {
@@ -19826,7 +20918,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "practice"
+        ]
       }
     },
     "/api/v5/artifacts/practice/refresh": {
@@ -19911,7 +21009,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "practice"
+        ]
       }
     },
     "/api/v5/artifacts/practice/export": {
@@ -19996,7 +21100,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "practice"
+        ]
       }
     },
     "/api/v5/artifacts/practice/docs": {
@@ -20091,7 +21201,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "practice"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/get": {
@@ -20186,7 +21302,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/archive": {
@@ -20281,7 +21403,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/refresh": {
@@ -20366,7 +21494,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/docs": {
@@ -20461,7 +21595,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/export": {
@@ -20556,7 +21696,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/start": {
@@ -20651,7 +21797,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/next": {
@@ -20746,7 +21898,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/end": {
@@ -20841,7 +21999,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/end-all": {
@@ -20936,7 +22100,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/message": {
@@ -21031,7 +22201,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/grade": {
@@ -21126,7 +22302,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/stop": {
@@ -21221,7 +22403,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/response": {
@@ -21316,7 +22504,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/use-previous": {
@@ -21411,7 +22605,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/audio": {
@@ -21506,7 +22706,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/events": {
@@ -21601,7 +22807,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/attempt/search": {
@@ -21696,7 +22908,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
       }
     },
     "/api/v5/artifacts/record/get": {
@@ -21790,7 +23008,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "record"
+        ]
       }
     },
     "/api/v5/artifacts/record/search": {
@@ -21884,7 +23107,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "record"
+        ]
       }
     },
     "/api/v5/artifacts/record/refresh": {
@@ -21968,7 +23196,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "record"
+        ]
       }
     },
     "/api/v5/artifacts/record/export": {
@@ -22062,7 +23295,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "record"
+        ]
       }
     },
     "/api/v5/artifacts/record/docs": {
@@ -22156,7 +23394,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "record"
+        ]
       }
     },
     "/api/v5/artifacts/dashboard/get": {
@@ -22250,7 +23493,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v5/artifacts/dashboard/search": {
@@ -22344,7 +23592,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v5/artifacts/dashboard/refresh": {
@@ -22428,7 +23681,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v5/artifacts/dashboard/export": {
@@ -22512,7 +23770,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v5/artifacts/dashboard/docs": {
@@ -22606,7 +23869,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "dashboard"
+        ]
       }
     },
     "/api/v5/artifacts/reports/export": {
@@ -22691,7 +23959,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "reports",
+          "reports"
+        ]
       }
     },
     "/api/v5/artifacts/reports/search": {
@@ -22785,7 +24059,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "reports"
+        ]
       }
     },
     "/api/v5/artifacts/reports/refresh": {
@@ -22869,7 +24148,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "reports"
+        ]
       }
     },
     "/api/v5/artifacts/reports/docs": {
@@ -22963,7 +24247,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "reports"
+        ]
       }
     },
     "/api/v5/artifacts/leaderboard/get": {
@@ -23057,7 +24346,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v5/artifacts/leaderboard/search": {
@@ -23151,7 +24445,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v5/artifacts/leaderboard/refresh": {
@@ -23235,7 +24534,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v5/artifacts/leaderboard/export": {
@@ -23319,7 +24623,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v5/artifacts/leaderboard/docs": {
@@ -23413,7 +24722,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "leaderboard"
+        ]
       }
     },
     "/api/v5/artifacts/pricing/get": {
@@ -23507,7 +24821,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v5/artifacts/pricing/search": {
@@ -23601,7 +24920,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v5/artifacts/pricing/refresh": {
@@ -23685,7 +25009,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v5/artifacts/pricing/export": {
@@ -23769,7 +25098,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v5/artifacts/pricing/docs": {
@@ -23863,7 +25197,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "pricing"
+        ]
       }
     },
     "/api/v5/artifacts/activity/get": {
@@ -23957,7 +25296,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v5/artifacts/activity/search": {
@@ -24051,7 +25395,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v5/artifacts/activity/problem": {
@@ -24146,7 +25495,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "activity",
+          "activity"
+        ]
       }
     },
     "/api/v5/artifacts/activity/refresh": {
@@ -24230,7 +25585,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v5/artifacts/activity/resolve": {
@@ -24325,7 +25685,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "activity",
+          "activity"
+        ]
       }
     },
     "/api/v5/artifacts/activity/export": {
@@ -24409,7 +25775,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v5/artifacts/activity/docs": {
@@ -24503,7 +25874,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "activity"
+        ]
       }
     },
     "/api/v5/artifacts/health/get": {
@@ -24597,7 +25973,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "health"
+        ]
       }
     },
     "/api/v5/artifacts/health/refresh": {
@@ -24681,7 +26062,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "health"
+        ]
       }
     },
     "/api/v5/artifacts/health/export": {
@@ -24765,7 +26151,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "health"
+        ]
       }
     },
     "/api/v5/artifacts/health/docs": {
@@ -24859,7 +26250,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "health"
+        ]
       }
     },
     "/api/v5/artifacts/benchmark/get": {
@@ -24953,7 +26349,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v5/artifacts/benchmark/search": {
@@ -25047,7 +26448,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v5/artifacts/benchmark/refresh": {
@@ -25131,7 +26537,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v5/artifacts/benchmark/export": {
@@ -25215,7 +26626,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v5/artifacts/benchmark/docs": {
@@ -25309,7 +26725,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "benchmark"
+        ]
       }
     },
     "/api/v5/artifacts/test/get": {
@@ -25404,7 +26825,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/archive": {
@@ -25499,7 +26926,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/refresh": {
@@ -25584,7 +27017,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/export": {
@@ -25679,7 +27118,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/docs": {
@@ -25774,7 +27219,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/start": {
@@ -25869,7 +27320,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/next": {
@@ -25964,7 +27421,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/run": {
@@ -26059,7 +27522,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/end": {
@@ -26154,7 +27623,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/stop": {
@@ -26249,7 +27724,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/events": {
@@ -26344,7 +27825,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/api/v5/artifacts/test/search": {
@@ -26439,7 +27926,13 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "test"
+        ]
       }
     },
     "/socket/v5/client/connect": {
@@ -26466,7 +27959,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/disconnect": {
@@ -26493,7 +27990,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/generate": {
@@ -26540,7 +28041,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/start": {
@@ -26587,7 +28092,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/next": {
@@ -26634,7 +28143,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/join": {
@@ -26681,7 +28194,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/leave": {
@@ -26728,7 +28245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/end": {
@@ -26775,7 +28296,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/end_all": {
@@ -26822,7 +28347,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/stop": {
@@ -26869,7 +28398,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/message": {
@@ -26916,7 +28449,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/grade": {
@@ -26963,7 +28500,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/response_submit": {
@@ -27010,7 +28551,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/use_previous": {
@@ -27057,7 +28602,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/audio_start": {
@@ -27104,7 +28653,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/attempt/audio_stop": {
@@ -27151,7 +28704,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/test/start": {
@@ -27198,7 +28755,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/test/next": {
@@ -27245,7 +28806,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/test/run": {
@@ -27292,7 +28857,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/test/end": {
@@ -27339,7 +28908,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/test/join": {
@@ -27386,7 +28959,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/test/leave": {
@@ -27433,7 +29010,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/client/test/stop": {
@@ -27480,7 +29061,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-client"
+        ]
       }
     },
     "/socket/v5/server/connection_confirmed": {
@@ -27527,7 +29112,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/started": {
@@ -27574,7 +29163,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/chat_started": {
@@ -27621,7 +29214,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/chat_ended": {
@@ -27668,7 +29265,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/ended": {
@@ -27715,7 +29316,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/error": {
@@ -27762,7 +29367,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/graded": {
@@ -27809,7 +29418,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/joined": {
@@ -27856,7 +29469,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/stopped": {
@@ -27903,7 +29520,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/response_result": {
@@ -27950,7 +29571,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/assistant_start": {
@@ -27997,7 +29622,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/assistant_complete": {
@@ -28044,7 +29673,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/progress": {
@@ -28091,7 +29724,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/assistant_audio": {
@@ -28138,7 +29775,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/user_start": {
@@ -28185,7 +29826,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/user_complete": {
@@ -28232,7 +29877,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/user_delta": {
@@ -28279,7 +29928,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/audio_ready": {
@@ -28326,7 +29979,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/audio_ended": {
@@ -28373,7 +30030,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/content_progress": {
@@ -28420,7 +30081,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/hint_progress": {
@@ -28467,7 +30132,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt/grading_progress": {
@@ -28514,7 +30183,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/started": {
@@ -28561,7 +30234,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/joined": {
@@ -28608,7 +30285,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/run_start": {
@@ -28655,7 +30336,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/run_complete": {
@@ -28702,7 +30387,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/progress": {
@@ -28749,7 +30438,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/graded": {
@@ -28796,7 +30489,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/error": {
@@ -28843,7 +30540,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/test/stopped": {
@@ -28890,7 +30591,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/generation_complete": {
@@ -28937,7 +30642,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/generation_error": {
@@ -28984,7 +30693,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/generation_progress": {
@@ -29031,7 +30744,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/generation_saved": {
@@ -29078,7 +30795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/agents_generation_started": {
@@ -29124,7 +30845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/agents_generation_progress": {
@@ -29170,7 +30895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/agents_generation_complete": {
@@ -29216,7 +30945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/agents_generation_error": {
@@ -29262,7 +30995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/arg_positions_generation_started": {
@@ -29308,7 +31045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/arg_positions_generation_progress": {
@@ -29354,7 +31095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/arg_positions_generation_complete": {
@@ -29400,7 +31145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/arg_positions_generation_error": {
@@ -29446,7 +31195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_generation_started": {
@@ -29492,7 +31245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_generation_progress": {
@@ -29538,7 +31295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_generation_complete": {
@@ -29584,7 +31345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_generation_error": {
@@ -29630,7 +31395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_outputs_generation_started": {
@@ -29676,7 +31445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_outputs_generation_progress": {
@@ -29722,7 +31495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_outputs_generation_complete": {
@@ -29768,7 +31545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/args_outputs_generation_error": {
@@ -29814,7 +31595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/artifacts_generation_started": {
@@ -29860,7 +31645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/artifacts_generation_progress": {
@@ -29906,7 +31695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/artifacts_generation_complete": {
@@ -29952,7 +31745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/artifacts_generation_error": {
@@ -29998,7 +31795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auth_item_keys_generation_started": {
@@ -30044,7 +31845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auth_item_keys_generation_progress": {
@@ -30090,7 +31895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auth_item_keys_generation_complete": {
@@ -30136,7 +31945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auth_item_keys_generation_error": {
@@ -30182,7 +31995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auths_generation_started": {
@@ -30228,7 +32045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auths_generation_progress": {
@@ -30274,7 +32095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auths_generation_complete": {
@@ -30320,7 +32145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/auths_generation_error": {
@@ -30366,7 +32195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/cohorts_generation_started": {
@@ -30412,7 +32245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/cohorts_generation_progress": {
@@ -30458,7 +32295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/cohorts_generation_complete": {
@@ -30504,7 +32345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/cohorts_generation_error": {
@@ -30550,7 +32395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/colors_generation_started": {
@@ -30596,7 +32445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/colors_generation_progress": {
@@ -30642,7 +32495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/colors_generation_complete": {
@@ -30688,7 +32545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/colors_generation_error": {
@@ -30734,7 +32595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/conditional_parameters_generation_started": {
@@ -30780,7 +32645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/conditional_parameters_generation_progress": {
@@ -30826,7 +32695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/conditional_parameters_generation_complete": {
@@ -30872,7 +32745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/conditional_parameters_generation_error": {
@@ -30918,7 +32795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/departments_generation_started": {
@@ -30964,7 +32845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/departments_generation_progress": {
@@ -31010,7 +32895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/departments_generation_complete": {
@@ -31056,7 +32945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/departments_generation_error": {
@@ -31102,7 +32995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/descriptions_generation_started": {
@@ -31148,7 +33045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/descriptions_generation_progress": {
@@ -31194,7 +33095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/descriptions_generation_complete": {
@@ -31240,7 +33145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/descriptions_generation_error": {
@@ -31286,7 +33195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/documents_generation_started": {
@@ -31332,7 +33245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/documents_generation_progress": {
@@ -31378,7 +33295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/documents_generation_complete": {
@@ -31424,7 +33345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/documents_generation_error": {
@@ -31470,7 +33395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/emails_generation_started": {
@@ -31516,7 +33445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/emails_generation_progress": {
@@ -31562,7 +33495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/emails_generation_complete": {
@@ -31608,7 +33545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/emails_generation_error": {
@@ -31654,7 +33595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/endpoints_generation_started": {
@@ -31700,7 +33645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/endpoints_generation_progress": {
@@ -31746,7 +33695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/endpoints_generation_complete": {
@@ -31792,7 +33745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/endpoints_generation_error": {
@@ -31838,7 +33795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/entries_generation_started": {
@@ -31884,7 +33845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/entries_generation_progress": {
@@ -31930,7 +33895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/entries_generation_complete": {
@@ -31976,7 +33945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/entries_generation_error": {
@@ -32022,7 +33995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/evals_generation_started": {
@@ -32068,7 +34045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/evals_generation_progress": {
@@ -32114,7 +34095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/evals_generation_complete": {
@@ -32160,7 +34145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/evals_generation_error": {
@@ -32206,7 +34195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/examples_generation_started": {
@@ -32252,7 +34245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/examples_generation_progress": {
@@ -32298,7 +34295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/examples_generation_complete": {
@@ -32344,7 +34345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/examples_generation_error": {
@@ -32390,7 +34395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/fields_generation_started": {
@@ -32436,7 +34445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/fields_generation_progress": {
@@ -32482,7 +34495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/fields_generation_complete": {
@@ -32528,7 +34545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/fields_generation_error": {
@@ -32574,7 +34595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/flags_generation_started": {
@@ -32620,7 +34645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/flags_generation_progress": {
@@ -32666,7 +34695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/flags_generation_complete": {
@@ -32712,7 +34745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/flags_generation_error": {
@@ -32758,7 +34795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_positions_generation_started": {
@@ -32804,7 +34845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_positions_generation_progress": {
@@ -32850,7 +34895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_positions_generation_complete": {
@@ -32896,7 +34945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_positions_generation_error": {
@@ -32942,7 +34995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_rubrics_generation_started": {
@@ -32988,7 +35045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_rubrics_generation_progress": {
@@ -33034,7 +35095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_rubrics_generation_complete": {
@@ -33080,7 +35145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/group_rubrics_generation_error": {
@@ -33126,7 +35195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/icons_generation_started": {
@@ -33172,7 +35245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/icons_generation_progress": {
@@ -33218,7 +35295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/icons_generation_complete": {
@@ -33264,7 +35345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/icons_generation_error": {
@@ -33310,7 +35395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/images_generation_started": {
@@ -33356,7 +35445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/images_generation_progress": {
@@ -33402,7 +35495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/images_generation_complete": {
@@ -33448,7 +35545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/images_generation_error": {
@@ -33494,7 +35595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/instructions_generation_started": {
@@ -33540,7 +35645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/instructions_generation_progress": {
@@ -33586,7 +35695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/instructions_generation_complete": {
@@ -33632,7 +35745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/instructions_generation_error": {
@@ -33678,7 +35795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/items_generation_started": {
@@ -33724,7 +35845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/items_generation_progress": {
@@ -33770,7 +35895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/items_generation_complete": {
@@ -33816,7 +35945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/items_generation_error": {
@@ -33862,7 +35995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/keys_generation_started": {
@@ -33908,7 +36045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/keys_generation_progress": {
@@ -33954,7 +36095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/keys_generation_complete": {
@@ -34000,7 +36145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/keys_generation_error": {
@@ -34046,7 +36195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/modalities_generation_started": {
@@ -34092,7 +36245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/modalities_generation_progress": {
@@ -34138,7 +36295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/modalities_generation_complete": {
@@ -34184,7 +36345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/modalities_generation_error": {
@@ -34230,7 +36395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/models_generation_started": {
@@ -34276,7 +36445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/models_generation_progress": {
@@ -34322,7 +36495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/models_generation_complete": {
@@ -34368,7 +36545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/models_generation_error": {
@@ -34414,7 +36595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/names_generation_started": {
@@ -34460,7 +36645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/names_generation_progress": {
@@ -34506,7 +36695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/names_generation_complete": {
@@ -34552,7 +36745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/names_generation_error": {
@@ -34598,7 +36795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/objectives_generation_started": {
@@ -34644,7 +36845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/objectives_generation_progress": {
@@ -34690,7 +36895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/objectives_generation_complete": {
@@ -34736,7 +36945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/objectives_generation_error": {
@@ -34782,7 +36995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/operations_generation_started": {
@@ -34828,7 +37045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/operations_generation_progress": {
@@ -34874,7 +37095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/operations_generation_complete": {
@@ -34920,7 +37145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/operations_generation_error": {
@@ -34966,7 +37195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/options_generation_started": {
@@ -35012,7 +37245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/options_generation_progress": {
@@ -35058,7 +37295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/options_generation_complete": {
@@ -35104,7 +37345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/options_generation_error": {
@@ -35150,7 +37395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameter_fields_generation_started": {
@@ -35196,7 +37445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameter_fields_generation_progress": {
@@ -35242,7 +37495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameter_fields_generation_complete": {
@@ -35288,7 +37545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameter_fields_generation_error": {
@@ -35334,7 +37595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameters_generation_started": {
@@ -35380,7 +37645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameters_generation_progress": {
@@ -35426,7 +37695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameters_generation_complete": {
@@ -35472,7 +37745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/parameters_generation_error": {
@@ -35518,7 +37795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/personas_generation_started": {
@@ -35564,7 +37845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/personas_generation_progress": {
@@ -35610,7 +37895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/personas_generation_complete": {
@@ -35656,7 +37945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/personas_generation_error": {
@@ -35702,7 +37995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/points_generation_started": {
@@ -35748,7 +38045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/points_generation_progress": {
@@ -35794,7 +38095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/points_generation_complete": {
@@ -35840,7 +38145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/points_generation_error": {
@@ -35886,7 +38195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/pricing_generation_started": {
@@ -35932,7 +38245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/pricing_generation_progress": {
@@ -35978,7 +38295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/pricing_generation_complete": {
@@ -36024,7 +38345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/pricing_generation_error": {
@@ -36070,7 +38395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/problem_statements_generation_started": {
@@ -36116,7 +38445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/problem_statements_generation_progress": {
@@ -36162,7 +38495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/problem_statements_generation_complete": {
@@ -36208,7 +38545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/problem_statements_generation_error": {
@@ -36254,7 +38595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profile_personas_generation_started": {
@@ -36300,7 +38645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profile_personas_generation_progress": {
@@ -36346,7 +38695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profile_personas_generation_complete": {
@@ -36392,7 +38745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profile_personas_generation_error": {
@@ -36438,7 +38795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profiles_generation_started": {
@@ -36484,7 +38845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profiles_generation_progress": {
@@ -36530,7 +38895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profiles_generation_complete": {
@@ -36576,7 +38945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/profiles_generation_error": {
@@ -36622,7 +38995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/prompts_generation_started": {
@@ -36668,7 +39045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/prompts_generation_progress": {
@@ -36714,7 +39095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/prompts_generation_complete": {
@@ -36760,7 +39145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/prompts_generation_error": {
@@ -36806,7 +39195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/protocols_generation_started": {
@@ -36852,7 +39245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/protocols_generation_progress": {
@@ -36898,7 +39295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/protocols_generation_complete": {
@@ -36944,7 +39345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/protocols_generation_error": {
@@ -36990,7 +39395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/provider_keys_generation_started": {
@@ -37036,7 +39445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/provider_keys_generation_progress": {
@@ -37082,7 +39495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/provider_keys_generation_complete": {
@@ -37128,7 +39545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/provider_keys_generation_error": {
@@ -37174,7 +39595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/providers_generation_started": {
@@ -37220,7 +39645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/providers_generation_progress": {
@@ -37266,7 +39695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/providers_generation_complete": {
@@ -37312,7 +39745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/providers_generation_error": {
@@ -37358,7 +39795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/qualities_generation_started": {
@@ -37404,7 +39845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/qualities_generation_progress": {
@@ -37450,7 +39895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/qualities_generation_complete": {
@@ -37496,7 +39945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/qualities_generation_error": {
@@ -37542,7 +39995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/questions_generation_started": {
@@ -37588,7 +40045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/questions_generation_progress": {
@@ -37634,7 +40095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/questions_generation_complete": {
@@ -37680,7 +40145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/questions_generation_error": {
@@ -37726,7 +40195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/reasoning_levels_generation_started": {
@@ -37772,7 +40245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/reasoning_levels_generation_progress": {
@@ -37818,7 +40295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/reasoning_levels_generation_complete": {
@@ -37864,7 +40345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/reasoning_levels_generation_error": {
@@ -37910,7 +40395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/request_limits_generation_started": {
@@ -37956,7 +40445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/request_limits_generation_progress": {
@@ -38002,7 +40495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/request_limits_generation_complete": {
@@ -38048,7 +40545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/request_limits_generation_error": {
@@ -38094,7 +40595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/resources_generation_started": {
@@ -38140,7 +40645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/resources_generation_progress": {
@@ -38186,7 +40695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/resources_generation_complete": {
@@ -38232,7 +40745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/resources_generation_error": {
@@ -38278,7 +40795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/roles_generation_started": {
@@ -38324,7 +40845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/roles_generation_progress": {
@@ -38370,7 +40895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/roles_generation_complete": {
@@ -38416,7 +40945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/roles_generation_error": {
@@ -38462,7 +40995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/rubrics_generation_started": {
@@ -38508,7 +41045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/rubrics_generation_progress": {
@@ -38554,7 +41095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/rubrics_generation_complete": {
@@ -38600,7 +41145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/rubrics_generation_error": {
@@ -38646,7 +41195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_positions_generation_started": {
@@ -38692,7 +41245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_positions_generation_progress": {
@@ -38738,7 +41295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_positions_generation_complete": {
@@ -38784,7 +41345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_positions_generation_error": {
@@ -38830,7 +41395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_rubrics_generation_started": {
@@ -38876,7 +41445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_rubrics_generation_progress": {
@@ -38922,7 +41495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_rubrics_generation_complete": {
@@ -38968,7 +41545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/run_rubrics_generation_error": {
@@ -39014,7 +41595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_flags_generation_started": {
@@ -39060,7 +41645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_flags_generation_progress": {
@@ -39106,7 +41695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_flags_generation_complete": {
@@ -39152,7 +41745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_flags_generation_error": {
@@ -39198,7 +41795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_positions_generation_started": {
@@ -39244,7 +41845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_positions_generation_progress": {
@@ -39290,7 +41895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_positions_generation_complete": {
@@ -39336,7 +41945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_positions_generation_error": {
@@ -39382,7 +41995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_rubrics_generation_started": {
@@ -39428,7 +42045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_rubrics_generation_progress": {
@@ -39474,7 +42095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_rubrics_generation_complete": {
@@ -39520,7 +42145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_rubrics_generation_error": {
@@ -39566,7 +42195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_time_limits_generation_started": {
@@ -39612,7 +42245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_time_limits_generation_progress": {
@@ -39658,7 +42295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_time_limits_generation_complete": {
@@ -39704,7 +42345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenario_time_limits_generation_error": {
@@ -39750,7 +42395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenarios_generation_started": {
@@ -39796,7 +42445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenarios_generation_progress": {
@@ -39842,7 +42495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenarios_generation_complete": {
@@ -39888,7 +42545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/scenarios_generation_error": {
@@ -39934,7 +42595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/settings_generation_started": {
@@ -39980,7 +42645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/settings_generation_progress": {
@@ -40026,7 +42695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/settings_generation_complete": {
@@ -40072,7 +42745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/settings_generation_error": {
@@ -40118,7 +42795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_availability_generation_started": {
@@ -40164,7 +42845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_availability_generation_progress": {
@@ -40210,7 +42895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_availability_generation_complete": {
@@ -40256,7 +42945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_availability_generation_error": {
@@ -40302,7 +42995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_positions_generation_started": {
@@ -40348,7 +43045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_positions_generation_progress": {
@@ -40394,7 +43095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_positions_generation_complete": {
@@ -40440,7 +43145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulation_positions_generation_error": {
@@ -40486,7 +43195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulations_generation_started": {
@@ -40532,7 +43245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulations_generation_progress": {
@@ -40578,7 +43295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulations_generation_complete": {
@@ -40624,7 +43345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/simulations_generation_error": {
@@ -40670,7 +43395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/slugs_generation_started": {
@@ -40716,7 +43445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/slugs_generation_progress": {
@@ -40762,7 +43495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/slugs_generation_complete": {
@@ -40808,7 +43545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/slugs_generation_error": {
@@ -40854,7 +43595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standard_groups_generation_started": {
@@ -40900,7 +43645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standard_groups_generation_progress": {
@@ -40946,7 +43695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standard_groups_generation_complete": {
@@ -40992,7 +43745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standard_groups_generation_error": {
@@ -41038,7 +43795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standards_generation_started": {
@@ -41084,7 +43845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standards_generation_progress": {
@@ -41130,7 +43895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standards_generation_complete": {
@@ -41176,7 +43945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/standards_generation_error": {
@@ -41222,7 +43995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/temperature_levels_generation_started": {
@@ -41268,7 +44045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/temperature_levels_generation_progress": {
@@ -41314,7 +44095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/temperature_levels_generation_complete": {
@@ -41360,7 +44145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/temperature_levels_generation_error": {
@@ -41406,7 +44195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/texts_generation_started": {
@@ -41452,7 +44245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/texts_generation_progress": {
@@ -41498,7 +44295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/texts_generation_complete": {
@@ -41544,7 +44345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/texts_generation_error": {
@@ -41590,7 +44395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/thresholds_generation_started": {
@@ -41636,7 +44445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/thresholds_generation_progress": {
@@ -41682,7 +44495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/thresholds_generation_complete": {
@@ -41728,7 +44545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/thresholds_generation_error": {
@@ -41774,7 +44595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/tools_generation_started": {
@@ -41820,7 +44645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/tools_generation_progress": {
@@ -41866,7 +44695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/tools_generation_complete": {
@@ -41912,7 +44745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/tools_generation_error": {
@@ -41958,7 +44795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/uploads_generation_started": {
@@ -42004,7 +44845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/uploads_generation_progress": {
@@ -42050,7 +44895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/uploads_generation_complete": {
@@ -42096,7 +44945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/uploads_generation_error": {
@@ -42142,7 +44995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/values_generation_started": {
@@ -42188,7 +45045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/values_generation_progress": {
@@ -42234,7 +45095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/values_generation_complete": {
@@ -42280,7 +45145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/values_generation_error": {
@@ -42326,7 +45195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/videos_generation_started": {
@@ -42372,7 +45245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/videos_generation_progress": {
@@ -42418,7 +45295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/videos_generation_complete": {
@@ -42464,7 +45345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/videos_generation_error": {
@@ -42510,7 +45395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/voices_generation_started": {
@@ -42556,7 +45445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/voices_generation_progress": {
@@ -42602,7 +45495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/voices_generation_complete": {
@@ -42648,7 +45545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/voices_generation_error": {
@@ -42694,7 +45595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/analyses_generation_started": {
@@ -42740,7 +45645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/analyses_generation_progress": {
@@ -42786,7 +45695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/analyses_generation_complete": {
@@ -42832,7 +45745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/analyses_generation_error": {
@@ -42878,7 +45795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/contents_generation_started": {
@@ -42924,7 +45845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/contents_generation_progress": {
@@ -42970,7 +45895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/contents_generation_complete": {
@@ -43016,7 +45945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/contents_generation_error": {
@@ -43062,7 +45995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/feedbacks_generation_started": {
@@ -43108,7 +46045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/feedbacks_generation_progress": {
@@ -43154,7 +46095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/feedbacks_generation_complete": {
@@ -43200,7 +46145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/feedbacks_generation_error": {
@@ -43246,7 +46195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/grades_generation_started": {
@@ -43292,7 +46245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/grades_generation_progress": {
@@ -43338,7 +46295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/grades_generation_complete": {
@@ -43384,7 +46345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/grades_generation_error": {
@@ -43430,7 +46395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/highlights_generation_started": {
@@ -43476,7 +46445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/highlights_generation_progress": {
@@ -43522,7 +46495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/highlights_generation_complete": {
@@ -43568,7 +46545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/highlights_generation_error": {
@@ -43614,7 +46595,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/hints_generation_started": {
@@ -43660,7 +46645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/hints_generation_progress": {
@@ -43706,7 +46695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/hints_generation_complete": {
@@ -43752,7 +46745,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/hints_generation_error": {
@@ -43798,7 +46795,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/improvements_generation_started": {
@@ -43844,7 +46845,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/improvements_generation_progress": {
@@ -43890,7 +46895,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/improvements_generation_complete": {
@@ -43936,7 +46945,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/improvements_generation_error": {
@@ -43982,7 +46995,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/replacements_generation_started": {
@@ -44028,7 +47045,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/replacements_generation_progress": {
@@ -44074,7 +47095,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/replacements_generation_complete": {
@@ -44120,7 +47145,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/replacements_generation_error": {
@@ -44166,7 +47195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt_responses_generation_started": {
@@ -44212,7 +47245,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt_responses_generation_progress": {
@@ -44258,7 +47295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt_responses_generation_complete": {
@@ -44304,7 +47345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/attempt_responses_generation_error": {
@@ -44350,7 +47395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/strengths_generation_started": {
@@ -44396,7 +47445,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/strengths_generation_progress": {
@@ -44442,7 +47495,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/strengths_generation_complete": {
@@ -44488,7 +47545,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/socket/v5/server/strengths_generation_error": {
@@ -44534,29 +47595,11 @@
               }
             }
           }
-        }
-      }
-    },
-    "/auth/config": {
-      "get": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Get Auth Config",
-        "description": "Auth discovery \u2014 returns OIDC URLs for client configuration.\n\nNo authentication required. Any client can call this to discover\nwhere to send users for login.\n\nUsage:\n    GET /auth/config\n    \u2192 Use the returned URLs with any OAuth2/OIDC library",
-        "operationId": "get_auth_config_auth_config_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetAuthConfigApiResponse"
-                }
-              }
-            }
-          }
-        }
+        },
+        "x-cache-tags": [
+          "socket-v5",
+          "socket-v5-server"
+        ]
       }
     },
     "/default-idp/.well-known/openid-configuration": {
@@ -44580,7 +47623,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/authorize": {
@@ -44724,7 +47770,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/token": {
@@ -44768,7 +47817,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/userinfo": {
@@ -44820,7 +47872,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/default-idp/jwks": {
@@ -44840,7 +47895,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "default-idp"
+        ]
       }
     },
     "/uploads/discover": {
@@ -44860,7 +47918,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/discover/{upload_id}": {
@@ -44901,7 +47962,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/create": {
@@ -44921,7 +47985,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/{upload_id}/status": {
@@ -44962,7 +48029,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/{upload_id}/chunk": {
@@ -45003,7 +48073,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/{upload_id}/finalize": {
@@ -45046,7 +48119,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/upload": {
@@ -45106,7 +48182,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       },
       "put": {
         "tags": [
@@ -45164,7 +48243,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/{upload_id}/download": {
@@ -45205,7 +48287,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/{upload_id}/preview": {
@@ -45246,7 +48331,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/{upload_id}/template": {
@@ -45287,7 +48375,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/uploads/csv": {
@@ -45329,7 +48420,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "uploads"
+        ]
       }
     },
     "/health": {
@@ -45385,22 +48479,6 @@
       "get": {
         "summary": "Root Info",
         "operationId": "root_info__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/schema-changed": {
-      "post": {
-        "summary": "Schema Changed",
-        "operationId": "schema_changed_schema_changed_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -73009,68 +76087,6 @@
         "type": "object",
         "title": "GetAuthApiResponse",
         "description": "Response model for get auth endpoint."
-      },
-      "GetAuthConfigApiResponse": {
-        "properties": {
-          "issuer": {
-            "type": "string",
-            "title": "Issuer"
-          },
-          "authorization_endpoint": {
-            "type": "string",
-            "title": "Authorization Endpoint"
-          },
-          "token_endpoint": {
-            "type": "string",
-            "title": "Token Endpoint"
-          },
-          "jwks_uri": {
-            "type": "string",
-            "title": "Jwks Uri"
-          },
-          "userinfo_endpoint": {
-            "type": "string",
-            "title": "Userinfo Endpoint"
-          },
-          "openid_configuration": {
-            "type": "string",
-            "title": "Openid Configuration"
-          },
-          "default_idp": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "title": "Default Idp"
-          },
-          "grant_types_supported": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Grant Types Supported"
-          },
-          "code_challenge_methods_supported": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Code Challenge Methods Supported"
-          }
-        },
-        "type": "object",
-        "required": [
-          "issuer",
-          "authorization_endpoint",
-          "token_endpoint",
-          "jwks_uri",
-          "userinfo_endpoint",
-          "openid_configuration",
-          "default_idp",
-          "grant_types_supported",
-          "code_challenge_methods_supported"
-        ],
-        "title": "GetAuthConfigApiResponse"
       },
       "GetAuthDraftResponse": {
         "properties": {

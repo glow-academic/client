@@ -12614,33 +12614,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/config": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Auth Config
-         * @description Auth discovery — returns OIDC URLs for client configuration.
-         *
-         *     No authentication required. Any client can call this to discover
-         *     where to send users for login.
-         *
-         *     Usage:
-         *         GET /auth/config
-         *         → Use the returned URLs with any OAuth2/OIDC library
-         */
-        get: operations["get_auth_config_auth_config_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/default-idp/.well-known/openid-configuration": {
         parameters: {
             query?: never;
@@ -13040,23 +13013,6 @@ export interface paths {
         get: operations["root_info__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/schema-changed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Schema Changed */
-        post: operations["schema_changed_schema_changed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -22098,29 +22054,6 @@ export interface components {
             protocols?: components["schemas"]["AuthProtocolSection"] | null;
             slugs?: components["schemas"]["AuthSlugSection"] | null;
             items?: components["schemas"]["AuthItemSection"] | null;
-        };
-        /** GetAuthConfigApiResponse */
-        GetAuthConfigApiResponse: {
-            /** Issuer */
-            issuer: string;
-            /** Authorization Endpoint */
-            authorization_endpoint: string;
-            /** Token Endpoint */
-            token_endpoint: string;
-            /** Jwks Uri */
-            jwks_uri: string;
-            /** Userinfo Endpoint */
-            userinfo_endpoint: string;
-            /** Openid Configuration */
-            openid_configuration: string;
-            /** Default Idp */
-            default_idp: {
-                [key: string]: string;
-            };
-            /** Grant Types Supported */
-            grant_types_supported: string[];
-            /** Code Challenge Methods Supported */
-            code_challenge_methods_supported: string[];
         };
         /** GetAuthDraftResponse */
         GetAuthDraftResponse: {
@@ -62438,26 +62371,6 @@ export interface operations {
             };
         };
     };
-    get_auth_config_auth_config_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAuthConfigApiResponse"];
-                };
-            };
-        };
-    };
     openid_configuration_default_idp__well_known_openid_configuration_get: {
         parameters: {
             query?: never;
@@ -63025,26 +62938,6 @@ export interface operations {
         };
     };
     root_info__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    schema_changed_schema_changed_post: {
         parameters: {
             query?: never;
             header?: never;

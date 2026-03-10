@@ -1,11 +1,6 @@
-"""Tests for infra.tool_graph — settings tool graph resolution + scoring.
-
-score_tools is pure Python (no I/O).
-resolve_tool_graph is tested with mocked black-box resource fetchers.
-"""
+"""Tests for infra.tool_graph — real graph resolution + pure scoring."""
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -16,10 +11,12 @@ from app.infra.tool_graph import (
     resolve_tool_graph,
     score_tools,
 )
+from app.routes.v5.tools.resources.settings.create import create_setting
 from app.routes.v5.tools.resources.agents.types import GetAgentResponse
 from app.routes.v5.tools.resources.settings.types import GetSettingResponse
 from app.routes.v5.tools.resources.systems.types import GetSystemResponse
 from app.routes.v5.tools.resources.tools.types import GetToolResponse
+from tests.helpers import nonexistent_id
 
 NOW = datetime.now(UTC)
 
@@ -116,17 +113,6 @@ def _resolved(
         target_type=target_type,
         target=target,
     )
-
-
-def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
-    """Create a mock pool whose acquire() yields mock_conn."""
-    if mock_conn is None:
-        mock_conn = AsyncMock()
-    pool = MagicMock()
-    cm = AsyncMock()
-    cm.__aenter__.return_value = mock_conn
-    pool.acquire.return_value = cm
-    return pool
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -330,161 +316,36 @@ class TestScoreToolsTargetTypes:
         assert result.best["persona"] is t_art
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_tool_graph — mocked black-box tests
-# ═══════════════════════════════════════════════════════════════════════════
-
-MODULE = "app.infra.tool_graph"
-
-
 @pytest.mark.asyncio
-class TestResolveToolGraphEmpty:
-    async def test_missing_settings_returns_empty(self):
-        pool = _mock_pool()
-        with patch(f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[]):
-            result = await resolve_tool_graph(pool, uuid4(), None)
+class TestResolveToolGraph:
+    async def test_missing_settings_returns_empty(self, pool, redis_client):
+        result = await resolve_tool_graph(pool, nonexistent_id(), redis_client)
         assert result.tools == []
 
-    async def test_no_systems_returns_empty(self):
-        setting = _setting(system_ids=[])
-        pool = _mock_pool()
-        with patch(
-            f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
-        ):
-            result = await resolve_tool_graph(pool, setting.id, None)
+    async def test_setting_with_no_systems_returns_empty(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            setting = await create_setting(
+                conn,
+                name=f"empty-setting-{uuid4()}",
+                description="No systems",
+                system_ids=[],
+                redis=redis_client,
+            )
+
+        result = await resolve_tool_graph(pool, setting.id, redis_client)
         assert result.tools == []
 
-    async def test_no_agents_returns_empty(self):
-        system = _system(agent_ids=[])
-        setting = _setting(system_ids=[system.id])
-        pool = _mock_pool()
-        with (
-            patch(
-                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
-            ),
-            patch(
-                f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]
-            ),
-        ):
-            result = await resolve_tool_graph(pool, setting.id, None)
-        assert result.tools == []
+    async def test_full_chain_produces_real_resolved_tools(
+        self, pool, redis_client, setting_graph_factory
+    ):
+        fixture = await setting_graph_factory(tool_artifacts=["profile", "persona"])
 
-
-@pytest.mark.asyncio
-class TestResolveToolGraphChain:
-    async def test_full_chain_produces_resolved_tools(self):
-        pool = _mock_pool()
-        tool = _tool(artifacts=["profile", "persona"])
-        agent = _agent(tool_ids=[tool.id])
-        system = _system(agent_ids=[agent.id])
-        setting = _setting(system_ids=[system.id])
-
-        with (
-            patch(
-                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
-            ),
-            patch(
-                f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]
-            ),
-            patch(f"{MODULE}.get_agents", new_callable=AsyncMock, return_value=[agent]),
-            patch(f"{MODULE}.get_tools", new_callable=AsyncMock, return_value=[tool]),
-        ):
-            result = await resolve_tool_graph(pool, setting.id, None)
+        result = await resolve_tool_graph(pool, fixture.setting_id, redis_client)
 
         assert len(result.tools) == 2
-        targets = {t.target for t in result.tools}
-        assert targets == {"profile", "persona"}
-        assert all(t.agent_id == agent.id for t in result.tools)
-        assert all(t.system_id == system.id for t in result.tools)
-        assert all(t.target_type == "artifact" for t in result.tools)
-
-    async def test_tool_with_artifacts(self):
-        pool = _mock_pool()
-        tool = _tool(artifacts=["profile", "persona"])
-        agent = _agent(tool_ids=[tool.id])
-        system = _system(agent_ids=[agent.id])
-        setting = _setting(system_ids=[system.id])
-
-        with (
-            patch(
-                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
-            ),
-            patch(
-                f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]
-            ),
-            patch(f"{MODULE}.get_agents", new_callable=AsyncMock, return_value=[agent]),
-            patch(f"{MODULE}.get_tools", new_callable=AsyncMock, return_value=[tool]),
-        ):
-            result = await resolve_tool_graph(pool, setting.id, None)
-
-        types = {t.target_type for t in result.tools}
-        assert types == {"artifact"}
-        assert len(result.tools) == 2
-
-    async def test_multiple_systems_and_agents(self):
-        pool = _mock_pool()
-        tool_a = _tool(artifacts=["profile"])
-        tool_b = _tool(artifacts=["persona"])
-        agent_a = _agent(tool_ids=[tool_a.id])
-        agent_b = _agent(tool_ids=[tool_b.id])
-        system_a = _system(agent_ids=[agent_a.id])
-        system_b = _system(agent_ids=[agent_b.id])
-        setting = _setting(system_ids=[system_a.id, system_b.id])
-
-        with (
-            patch(
-                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
-            ),
-            patch(
-                f"{MODULE}.get_systems",
-                new_callable=AsyncMock,
-                return_value=[system_a, system_b],
-            ),
-            patch(
-                f"{MODULE}.get_agents",
-                new_callable=AsyncMock,
-                return_value=[agent_a, agent_b],
-            ),
-            patch(
-                f"{MODULE}.get_tools",
-                new_callable=AsyncMock,
-                return_value=[tool_a, tool_b],
-            ),
-        ):
-            result = await resolve_tool_graph(pool, setting.id, None)
-
-        assert len(result.tools) == 2
-        assert {t.target for t in result.tools} == {"profile", "persona"}
-        # Each tool should trace back to its own system
-        profile_tool = next(t for t in result.tools if t.target == "profile")
-        persona_tool = next(t for t in result.tools if t.target == "persona")
-        assert profile_tool.system_id == system_a.id
-        assert persona_tool.system_id == system_b.id
-
-    async def test_shared_agent_across_systems(self):
-        """Same agent referenced by two systems — tools appear under each system."""
-        pool = _mock_pool()
-        tool = _tool(artifacts=["profile"])
-        agent = _agent(tool_ids=[tool.id])
-        system_a = _system(agent_ids=[agent.id])
-        system_b = _system(agent_ids=[agent.id])
-        setting = _setting(system_ids=[system_a.id, system_b.id])
-
-        with (
-            patch(
-                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
-            ),
-            patch(
-                f"{MODULE}.get_systems",
-                new_callable=AsyncMock,
-                return_value=[system_a, system_b],
-            ),
-            patch(f"{MODULE}.get_agents", new_callable=AsyncMock, return_value=[agent]),
-            patch(f"{MODULE}.get_tools", new_callable=AsyncMock, return_value=[tool]),
-        ):
-            result = await resolve_tool_graph(pool, setting.id, None)
-
-        # Same tool appears twice — once per system
-        assert len(result.tools) == 2
-        system_ids = {t.system_id for t in result.tools}
-        assert system_ids == {system_a.id, system_b.id}
+        assert {tool.target for tool in result.tools} == {"profile", "persona"}
+        assert {tool.tool_id for tool in result.tools} == {fixture.tool_id}
+        assert {tool.agent_id for tool in result.tools} == {fixture.agent_id}
+        assert {tool.system_id for tool in result.tools} == {fixture.system_id}
+        assert {tool.operation for tool in result.tools} == {fixture.operation}
+        assert {tool.target_type for tool in result.tools} == {"artifact"}

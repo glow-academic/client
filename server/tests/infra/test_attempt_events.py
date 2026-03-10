@@ -95,6 +95,7 @@ from app.routes.v5.tools.entries.attempt_message_completion.create import (
 from app.routes.v5.tools.entries.attempt_message_completion.search import (
     search_attempt_message_completions,
 )
+from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -1062,9 +1063,7 @@ class TestGroupImpl:
         await _test_group_impl({"sid": "s1"}, emit=emit, pool=_mock_pool())
         assert events == []
 
-    @patch(f"{_RUNS_SEARCH}.search_runs", new_callable=AsyncMock)
-    async def test_no_runs_emits_group_complete(self, mock_search):
-        mock_search.return_value = ([], 0)
+    async def test_no_runs_emits_group_complete(self, pool):
         emit, events = recording_emit()
         await _test_group_impl(
             {
@@ -1075,51 +1074,58 @@ class TestGroupImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert len(events) == 1
         assert events[0].event == "test_group_complete"
 
-    @patch(f"{_RUNS_SEARCH}.search_runs", new_callable=AsyncMock)
-    async def test_first_run_emits_test_run(self, mock_search):
-        mock_search.return_value = (
-            [SimpleNamespace(run_id="r1"), SimpleNamespace(run_id="r2")],
-            2,
-        )
+    async def test_first_run_emits_test_run(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            profile = await create_profile(conn, redis_client)
+            session = await create_session(conn, profile_id=profile.id)
+            group = await create_group(conn, session_id=session.id)
+            first_run = await create_run(conn, group_id=group.id, session_id=session.id)
+            await create_run(conn, group_id=group.id, session_id=session.id)
+
         emit, events = recording_emit()
         await _test_group_impl(
             {
                 "sid": "s1",
-                "profile_id": "prof-1",
+                "profile_id": str(profile.id),
                 "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
                 "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917941",
-                "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "group_id": str(group.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert len(events) == 1
         assert events[0].event == "test_run"
-        assert events[0].data["run_id"] == "r1"
+        assert events[0].data["run_id"] == str(first_run.id)
 
-    @patch(f"{_RUNS_SEARCH}.search_runs", new_callable=AsyncMock)
-    async def test_error_emits_test_error(self, mock_search):
-        mock_search.side_effect = RuntimeError("db down")
+    async def test_last_run_emits_group_complete(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            profile = await create_profile(conn, redis_client)
+            session = await create_session(conn, profile_id=profile.id)
+            group = await create_group(conn, session_id=session.id)
+            await create_run(conn, group_id=group.id, session_id=session.id)
+            last_run = await create_run(conn, group_id=group.id, session_id=session.id)
+
         emit, events = recording_emit()
         await _test_group_impl(
             {
                 "sid": "s1",
-                "profile_id": "prof-1",
+                "profile_id": str(profile.id),
                 "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
                 "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917941",
-                "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "group_id": str(group.id),
+                "prev_run_id": str(last_run.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert len(events) == 1
-        assert events[0].event == "test_error"
-        assert events[0].data["error_type"] == "group"
+        assert events[0].event == "test_group_complete"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1153,51 +1159,70 @@ class TestStartImpl:
         )
         assert events == []
 
-    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
-    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
-    @patch(f"{_TEST_CREATE}.create_test", new_callable=AsyncMock)
-    async def test_creates_test_and_emits_proceed(
-        self, mock_create, mock_refresh, mock_invalidate
-    ):
-        mock_create.return_value = SimpleNamespace(
-            id="019b3be4-36f0-788c-9df2-481eb5917940"
-        )
+    async def test_creates_test_and_emits_proceed(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            profile = await create_profile(conn, redis_client)
+
         emit, events = recording_emit()
         await _test_start_impl(
             {
                 "sid": "s1",
-                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
-                "profiles_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "profile_id": str(profile.id),
+                "profiles_id": str(profile.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
+            redis=redis_client,
         )
-        mock_create.assert_called_once()
-        mock_refresh.assert_called_once()
+
+        test_id = UUID(events[0].data["test_id"])
+        async with pool.acquire() as conn:
+            created_profiles_id = await conn.fetchval(
+                "SELECT profiles_id FROM test_profiles_connection WHERE attempt_id = $1",
+                test_id,
+            )
+
         assert len(events) == 1
         assert events[0].event == "test_proceed"
-        assert events[0].data["test_id"] == "019b3be4-36f0-788c-9df2-481eb5917940"
+        assert created_profiles_id == profile.id
 
-    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
-    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
-    @patch(f"{_TEST_CREATE}.create_test", new_callable=AsyncMock)
-    async def test_error_emits_test_error(
-        self, mock_create, mock_refresh, mock_invalidate
+    async def test_creates_benchmark_bridge_when_requested(
+        self, pool, redis_client
     ):
-        mock_create.side_effect = RuntimeError("db down")
+        async with pool.acquire() as conn:
+            profile = await create_profile(conn, redis_client)
+            session = await create_session(conn, profile_id=profile.id)
+            benchmark = await create_benchmark(conn, session_id=session.id)
+
         emit, events = recording_emit()
         await _test_start_impl(
             {
                 "sid": "s1",
-                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
-                "profiles_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "profile_id": str(profile.id),
+                "profiles_id": str(profile.id),
+                "session_id": str(session.id),
+                "benchmark_id": str(benchmark.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
+            redis=redis_client,
         )
+
+        test_id = UUID(events[0].data["test_id"])
+        async with pool.acquire() as conn:
+            bridge_count = await conn.fetchval(
+                """
+                SELECT COUNT(*)
+                FROM benchmark_test_entry
+                WHERE benchmark_id = $1 AND test_id = $2
+                """,
+                benchmark.id,
+                test_id,
+            )
+
         assert len(events) == 1
-        assert events[0].event == "test_error"
-        assert events[0].data["error_type"] == "start"
+        assert events[0].event == "test_proceed"
+        assert bridge_count == 1
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -19,9 +19,11 @@ SETUP_NAME = "university"
 # Dependency-ordered list of module names to seed.
 # Each corresponds to a .py file in this package.
 MODULES = [
+    "departments",
+    "documents",
     "personas",
     "scenarios",
     "simulations",
     "cohorts",
-    # TODO: departments, documents, profiles, settings
+    # TODO: profiles, settings
 ]

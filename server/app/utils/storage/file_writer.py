@@ -10,22 +10,14 @@ from __future__ import annotations
 
 import json
 import uuid
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
 from app.infra.globals import UPLOAD_FOLDER
-
-# Sub-directories under UPLOAD_FOLDER
-TEXT_FOLDER = UPLOAD_FOLDER / "text"
-TEXT_FOLDER.mkdir(parents=True, exist_ok=True)
-
-CALL_FOLDER = UPLOAD_FOLDER / "call"
-CALL_FOLDER.mkdir(parents=True, exist_ok=True)
-
-FILE_FOLDER = UPLOAD_FOLDER / "file"
-FILE_FOLDER.mkdir(parents=True, exist_ok=True)
+from app.infra.upload_paths import ensure_upload_subdir, resolve_upload_path
 
 
 async def _create_upload_record(
@@ -50,9 +42,9 @@ async def _create_upload_record(
     return row["id"]  # type: ignore[index,no-any-return]
 
 
-def read_text_file(file_path: str) -> str:
+def read_text_file(file_path: str, *, upload_folder: Path = UPLOAD_FOLDER) -> str:
     """Read text content from an upload file path."""
-    full_path = UPLOAD_FOLDER / file_path
+    full_path = resolve_upload_path(file_path, upload_folder=upload_folder)
     return full_path.read_text(encoding="utf-8")
 
 
@@ -60,15 +52,18 @@ async def write_text_file(
     conn: asyncpg.Connection,
     session_id: UUID | None,
     content: str,
+    *,
+    upload_folder: Path = UPLOAD_FOLDER,
 ) -> UUID:
     """Write a .txt file and create an uploads_entry record.
 
     Returns the upload_id (uploads_entry.id).
     """
+    text_folder = ensure_upload_subdir("text", upload_folder=upload_folder)
     file_id = str(uuid.uuid4())
     filename = f"{file_id}.txt"
     relative_path = f"text/{filename}"
-    full_path = TEXT_FOLDER / filename
+    full_path = text_folder / filename
 
     data = content.encode("utf-8")
     full_path.write_bytes(data)
@@ -88,6 +83,7 @@ async def write_json_file(
     data: dict[str, Any] | list[Any],
     *,
     subdir: str = "call",
+    upload_folder: Path = UPLOAD_FOLDER,
 ) -> UUID:
     """Write a .json file and create an uploads_entry record.
 
@@ -99,8 +95,7 @@ async def write_json_file(
 
     Returns the upload_id (uploads_entry.id).
     """
-    folder = UPLOAD_FOLDER / subdir
-    folder.mkdir(parents=True, exist_ok=True)
+    folder = ensure_upload_subdir(subdir, upload_folder=upload_folder)
 
     file_id = str(uuid.uuid4())
     filename = f"{file_id}.json"

@@ -164,34 +164,44 @@ async def resolve_model_values(
 
 
 async def create_denormalized_snapshot(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
 ) -> UUID:
-    """Create a models_resource snapshot by hydrating IDs to values."""
+    """Create a models_resource snapshot by hydrating IDs to values.
 
-    async def _empty() -> list:
-        return []
+    Each parallel branch acquires its own connection from the pool.
+    """
 
-    (
-        names,
-        descriptions,
-    ) = await asyncio.gather(
-        get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
-        get_descriptions(conn, [description_id], redis, bypass_cache=True)
-        if description_id
-        else _empty(),
+    async def _get_names() -> list:
+        if not name_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, [name_id], redis, bypass_cache=True)
+
+    async def _get_descriptions() -> list:
+        if not description_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(
+                conn, [description_id], redis, bypass_cache=True
+            )
+
+    names, descriptions = await asyncio.gather(
+        _get_names(),
+        _get_descriptions(),
     )
 
-    result = await create_model_resource(
-        conn,
-        id=id,
-        value="",
-        name=names[0].name if names else "",
-        description=descriptions[0].description if descriptions else "",
-        redis=redis,
-    )
+    async with pool.acquire() as conn:
+        result = await create_model_resource(
+            conn,
+            id=id,
+            value="",
+            name=names[0].name if names else "",
+            description=descriptions[0].description if descriptions else "",
+            redis=redis,
+        )
     return result.id

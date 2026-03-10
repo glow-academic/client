@@ -124,6 +124,73 @@ def _load_pre_existing_modules() -> str:
 # ---------------------------------------------------------------------------
 
 
+async def _run_document_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    document_defs: list[dict],
+) -> list[UUID]:
+    """Run document seed definitions through create_document_client."""
+    from app.infra.document_create import CreateDocumentItem, create_document_client
+
+    items = [CreateDocumentItem(**d) for d in document_defs]
+
+    result = await create_document_client(
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
+    )
+
+    created_ids: list[UUID] = []
+    for r in result.results:
+        if not r.success:
+            print(f"  ERROR: {r.message}")
+            if hasattr(r, "errors") and r.errors:
+                for e in r.errors:
+                    print(f"    - {e.field}: {e.message}")
+        else:
+            if hasattr(r, "document_id") and r.document_id:
+                created_ids.append(r.document_id)
+            print(f"  OK: {r.message}")
+
+    return created_ids
+
+
+async def _run_department_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    department_defs: list[dict],
+) -> list[UUID]:
+    """Run department seed definitions through create_department_client."""
+    from app.infra.department_create import (
+        CreateDepartmentItem,
+        create_department_client,
+    )
+
+    items = [CreateDepartmentItem(**d) for d in department_defs]
+
+    result = await create_department_client(
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
+    )
+
+    created_ids: list[UUID] = []
+    for r in result.results:
+        if not r.success:
+            print(f"  ERROR: {r.message}")
+            if hasattr(r, "errors") and r.errors:
+                for e in r.errors:
+                    print(f"    - {e.field}: {e.message}")
+        else:
+            if hasattr(r, "department_id") and r.department_id:
+                created_ids.append(r.department_id)
+            print(f"  OK: {r.message}")
+
+    return created_ids
+
+
 async def _run_persona_seeds(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -430,7 +497,11 @@ async def main(setup: str = "university") -> None:
                 f"database.seeds.setups.{setup}.{module_name}"
             )
 
-            if module_name == "personas":
+            if module_name == "departments":
+                await _run_department_seeds(pool, redis_client, mod.departments)
+            elif module_name == "documents":
+                await _run_document_seeds(pool, redis_client, mod.documents)
+            elif module_name == "personas":
                 await _run_persona_seeds(pool, redis_client, mod.personas)
             elif module_name == "scenarios":
                 await _run_scenario_seeds(pool, redis_client, mod.scenarios)

@@ -186,7 +186,7 @@ async def log_metrics_snapshot() -> None:
 
                 await create_metrics_entry_internal(
                     conn,
-                    ts=ts.isoformat(),
+                    ts=ts,
                     requests_total=requests_total,
                     errors_total=errors_total,
                     avg_latency_ms=avg_latency_ms,

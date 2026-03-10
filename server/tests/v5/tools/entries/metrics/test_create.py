@@ -1,7 +1,10 @@
 """Tests for metrics entry."""
 
+from datetime import UTC, datetime
+
 import pytest
 
+from app.routes.v5.tools.entries.metrics.create import create_metrics_entry_internal
 from app.routes.v5.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
@@ -52,3 +55,21 @@ async def test_roundtrip_via_db(conn, profile_id):
     assert row["session_id"] == session.id
     assert row["active"] is True
     assert row["mcp"] is False
+
+
+async def test_create_metrics_entry_internal_with_datetime(pool):
+    """Verify create_metrics_entry_internal accepts a datetime object (not a string)."""
+    ts = datetime(2031, 1, 1, 10, 0, tzinfo=UTC)
+
+    async with pool.acquire() as conn:
+        result = await create_metrics_entry_internal(
+            conn,
+            ts=ts,
+            requests_total=100,
+            errors_total=2,
+            avg_latency_ms=45.5,
+            cpu_percent=33.3,
+            memory_bytes=123456,
+        )
+
+    assert result.ts is not None

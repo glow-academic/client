@@ -240,8 +240,9 @@ def nest(
             if prefix not in result:
                 result[prefix] = {}
 
-            if isinstance(result[prefix], dict) and not any(
-                k.startswith(f"{prefix}__") and k != col_name for k in all_column_names
+            if (
+                isinstance(result[prefix], dict)
+                and prefix not in dict_prefixes
             ):
                 # Use value from first row
                 result[prefix][field] = rows_list[0].get(col_name)

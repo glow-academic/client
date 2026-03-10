@@ -1,5 +1,6 @@
 """metrics/create internal — reusable data-access layer."""
 
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -10,7 +11,7 @@ from app.routes.v5.tools.entries.sessions.create import create_session
 
 async def create_metrics_entry_internal(
     conn: asyncpg.Connection,
-    ts: str,
+    ts: datetime,
     requests_total: int,
     errors_total: int,
     avg_latency_ms: float,

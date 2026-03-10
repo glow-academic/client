@@ -153,20 +153,21 @@ async def create_document_client(
 
     results: list[DocumentResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                documents_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        documents_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
-                flag_ids = [item.flag_id] if item.flag_id else None
+        flag_ids = [item.flag_id] if item.flag_id else None
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_document_artifact(
                     conn,
                     id=item.id,
@@ -181,13 +182,13 @@ async def create_document_client(
                     document_ids=[documents_resource_id],
                 )
 
-                results.append(
-                    DocumentResultItem(
-                        success=True,
-                        document_id=result.id,
-                        message="Document created successfully",
-                    )
-                )
+        results.append(
+            DocumentResultItem(
+                success=True,
+                document_id=result.id,
+                message="Document created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
