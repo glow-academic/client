@@ -2,6 +2,7 @@
 
 Usage:
     python -m database.seeds.runner --resources            # Seed module 01
+    python -m database.seeds.runner --modules              # Seed modules 02-10
     python -m database.seeds.runner --setup university     # Seed setup 11
     python -m database.seeds.runner --setup organization   # Seed setup 11
 
@@ -10,6 +11,14 @@ Flow (resources):
   2. Load schema
   3. Run resource seed functions (tool-level create_*)
   4. Dump rows → database/modules/01-resources/seed.sql
+
+Flow (modules):
+  1. Spin up Postgres + Redis testcontainers
+  2. Load schema + module 01 SQL
+  3. Bootstrap profiles (artifact + resource creates)
+  4. Run _impl functions for providers, models, agents, auth, evals
+  5. Run tool-level create for systems
+  6. Dump rows → database/modules/modules-02-10-seed.sql
 
 Flow (setup):
   1. Spin up Postgres + Redis testcontainers
@@ -288,6 +297,149 @@ async def _seed_operations(conn: asyncpg.Connection, redis: Redis, items: list[d
     for item in items:
         await create_operation(conn, redis=redis, **item)
     print(f"  OK: {len(items)} operations created")
+
+
+# ---------------------------------------------------------------------------
+# Module seed execution (modules 02-10)
+# ---------------------------------------------------------------------------
+
+
+async def _run_profile_bootstrap(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Module 09 — Bootstrap profiles using artifact + resource creates.
+
+    Profiles require lower-level creates because _impl functions need a
+    profile_id, but no profiles exist yet. This creates the Default Superadmin
+    first, then remaining profiles.
+    """
+    from database.seeds.profiles import profiles
+
+    from app.routes.v5.tools.resources.names.create import create_name
+    from app.routes.v5.tools.resources.profiles.create import (
+        create_profile as create_profile_resource,
+    )
+    from app.routes.v5.tools.artifacts.profile.create import (
+        create_profile as create_profile_artifact,
+    )
+
+    async with pool.acquire() as conn:
+        for p in profiles:
+            async with conn.transaction():
+                # Step 1: create name resource
+                name_resp = await create_name(conn, name=p["name"], redis=redis)
+                name_id = name_resp.id
+
+                # Step 2: create profiles_resource (denormalized snapshot)
+                profile_resource = await create_profile_resource(
+                    conn, redis, id=p["id"], name=p["name"],
+                )
+                profiles_resource_id = profile_resource.id
+
+                # Step 3: create profile artifact with junctions
+                await create_profile_artifact(
+                    conn,
+                    id=p["id"],
+                    name_id=name_id,
+                    role_ids=p.get("role_ids"),
+                    flag_ids=p.get("flag_ids"),
+                    profile_ids=[profiles_resource_id],
+                    request_limit_id=p.get("request_limit_id"),
+                    redis=redis,
+                )
+
+    print(f"  OK: {len(profiles)} profiles bootstrapped")
+
+
+async def _run_provider_module_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Module 02 — Create providers via _impl."""
+    from database.seeds.providers import providers
+    from app.infra.provider.create import CreateProviderItem, create_provider_impl
+
+    items = [CreateProviderItem(**d) for d in providers]
+    await create_provider_impl(
+        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+    )
+    print(f"  OK: {len(providers)} providers created")
+
+
+async def _run_model_module_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Module 03 — Create models via _impl."""
+    from database.seeds.models import models
+    from app.infra.model.create import CreateModelItem, create_model_impl
+
+    items = [CreateModelItem(**d) for d in models]
+    await create_model_impl(
+        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+    )
+    print(f"  OK: {len(models)} models created")
+
+
+async def _run_agent_module_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Module 04 — Create agents via _impl."""
+    from database.seeds.agents import agents
+    from app.infra.agent.create import CreateAgentItem, create_agent_impl
+
+    items = [CreateAgentItem(**d) for d in agents]
+    await create_agent_impl(
+        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+    )
+    print(f"  OK: {len(agents)} agents created")
+
+
+async def _run_auth_module_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Module 06 — Create auths via _impl."""
+    from database.seeds.auths import auths
+    from app.infra.auth.create import CreateAuthItem, create_auth_impl
+
+    items = [CreateAuthItem(**d) for d in auths]
+    await create_auth_impl(
+        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+    )
+    print(f"  OK: {len(auths)} auths created")
+
+
+async def _run_eval_module_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Module 08 — Create evals via _impl."""
+    from database.seeds.evals import evals
+    from app.infra.eval.create import CreateEvalItem, create_eval_impl
+
+    items = [CreateEvalItem(**d) for d in evals]
+    await create_eval_impl(
+        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+    )
+    print(f"  OK: {len(evals)} evals created")
+
+
+async def _run_system_module_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Module 10 — Create systems via tool-level create."""
+    from database.seeds.systems import systems
+    from app.routes.v5.tools.resources.systems.create import create_system
+
+    async with pool.acquire() as conn:
+        for s in systems:
+            await create_system(conn, redis=redis, **s)
+
+    print(f"  OK: {len(systems)} systems created")
 
 
 # ---------------------------------------------------------------------------
@@ -1167,6 +1319,101 @@ async def main_resources() -> None:
     print("\nDone!")
 
 
+async def main_modules() -> None:
+    """Seed modules 02-10 through Python definitions.
+
+    Execution order:
+      01 (resources) — loaded from existing SQL
+      09 (profiles)  — bootstrap with artifact + resource creates
+      02 (providers)  — _impl with SEED_PROFILE_ID
+      03 (models)     — _impl
+      04 (agents)     — _impl
+      06 (auth)       — _impl
+      08 (evals)      — _impl
+      10 (systems)    — tool-level create
+    """
+    print("=== Seed Runner: modules 02-10 ===\n")
+
+    pg, pg_url, redis_container, redis_url = await _start_containers()
+
+    try:
+        conn = await asyncpg.connect(pg_url)
+        await _load_schema(conn)
+
+        # Load module 01 resources (pre-existing SQL)
+        print("Loading module 01 (resources)...")
+        res_dir = MODULES_DIR / "01-resources"
+        res_sql = ""
+        for f in sorted(res_dir.rglob("*.sql")):
+            res_sql += f.read_text() + "\n"
+        await conn.execute("SET session_replication_role = replica;")
+        await conn.execute(_filter_meta_commands(res_sql))
+        await conn.execute("SET session_replication_role = DEFAULT;")
+        print("  Module 01 loaded.")
+
+        await _refresh_mvs(conn)
+
+        print("Taking pre-seed snapshot...")
+        all_tables = await _get_all_tables(conn)
+        before = await _snapshot_counts(conn, all_tables)
+        await conn.close()
+
+        pool = await asyncpg.create_pool(pg_url)
+        redis_client = Redis.from_url(redis_url)
+
+        os.environ.setdefault("SECRET_KEY", "seed_runner_secret_key")
+        os.environ.setdefault("AUTH_SECRET", "seed_runner_auth_secret")
+
+        # Module 09: profiles (bootstrap — no profile_id needed)
+        print("\nSeeding module 09 (profiles)...")
+        await _run_profile_bootstrap(pool, redis_client)
+
+        # Module 02: providers
+        print("\nSeeding module 02 (providers)...")
+        await _run_provider_module_seeds(pool, redis_client)
+
+        # Module 03: models
+        print("\nSeeding module 03 (models)...")
+        await _run_model_module_seeds(pool, redis_client)
+
+        # Module 04: agents
+        print("\nSeeding module 04 (agents)...")
+        await _run_agent_module_seeds(pool, redis_client)
+
+        # Module 06: auth
+        print("\nSeeding module 06 (auth)...")
+        await _run_auth_module_seeds(pool, redis_client)
+
+        # Module 08: evals
+        print("\nSeeding module 08 (evals)...")
+        await _run_eval_module_seeds(pool, redis_client)
+
+        # Module 10: systems
+        print("\nSeeding module 10 (systems)...")
+        await _run_system_module_seeds(pool, redis_client)
+
+        print("\nDumping seed-created rows...")
+        async with pool.acquire() as conn:
+            new_rows = await _dump_new_rows(conn, before, all_tables)
+
+        # Write combined output
+        module_names = [
+            "09-profiles", "02-providers", "03-models", "04-agents",
+            "06-auth", "08-evals", "10-systems",
+        ]
+        output_file = MODULES_DIR / "modules-02-10-seed.sql"
+        _write_seed_sql(output_file, "Modules 02-10", module_names, new_rows)
+
+        await redis_client.aclose()
+        await pool.close()
+
+    finally:
+        pg.stop()
+        redis_container.stop()
+
+    print("\nDone!")
+
+
 async def main_setup(setup: str = "university") -> None:
     """Seed a setup (module 11) through Python definitions."""
     print(f"=== Seed Runner: {setup} ===\n")
@@ -1283,9 +1530,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run seed definitions")
     parser.add_argument("--setup", default=None, help="Setup name (university, organization)")
     parser.add_argument("--resources", action="store_true", help="Seed resources (module 01)")
+    parser.add_argument("--modules", action="store_true", help="Seed modules 02-10")
     args = parser.parse_args()
 
     if args.resources:
         asyncio.run(main_resources())
+    elif args.modules:
+        asyncio.run(main_modules())
     else:
         asyncio.run(main_setup(args.setup or "university"))

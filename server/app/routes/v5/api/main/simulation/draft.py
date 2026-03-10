@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.simulation.draft import patch_simulation_draft_impl
 from app.routes.v5.api.main.simulation.types import (
@@ -47,12 +48,26 @@ async def patch_simulation_draft(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await patch_simulation_draft_impl(
+        async def _runner() -> PatchSimulationDraftApiResponse:
+            return await patch_simulation_draft_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                request=request,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="simulation",
             profile_id=profile_id,
             session_id=session_id,
-            request=request,
+            draft_id=request.input_draft_id,
+            operation="draft",
+            arguments=request.model_dump(mode="json"),
+            response_model=PatchSimulationDraftApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

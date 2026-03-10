@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.setting.search import search_setting_impl
 from app.routes.v5.api.main.setting.types import ListSettingApiResponse
@@ -41,10 +42,23 @@ async def search_setting(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_setting_impl(
+        async def _runner() -> ListSettingApiResponse:
+            return await search_setting_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="setting",
             profile_id=profile_id,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListSettingApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

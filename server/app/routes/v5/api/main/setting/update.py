@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.setting.update import update_setting_impl
 from app.routes.v5.api.main.setting.types import (
@@ -37,12 +38,25 @@ async def update_setting(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_setting_impl(
+        async def _runner() -> UpdateSettingApiResponse:
+            return await update_setting_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                items=request.settings,
+                session_id=session_id,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="setting",
             profile_id=profile_id,
-            items=request.settings,
             session_id=session_id,
+            operation="update",
+            arguments={"settings": [item.model_dump(mode="json") for item in request.settings]},
+            response_model=UpdateSettingApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = "settings"
