@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.department.duplicate import duplicate_department_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import (
     DuplicateDepartmentApiRequest,
@@ -41,12 +42,25 @@ async def duplicate_department(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_department_impl(
+        async def _runner() -> DuplicateDepartmentApiResponse:
+            return await duplicate_department_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                department_id=request.department_id,
+                session_id=session_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="department",
             profile_id=profile_id,
-            department_id=request.department_id,
             session_id=session_id,
+            operation="duplicate",
+            arguments=request.model_dump(mode="json"),
+            response_model=DuplicateDepartmentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

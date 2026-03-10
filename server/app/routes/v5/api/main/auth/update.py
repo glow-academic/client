@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.update import update_auth_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import (
     UpdateAuthApiRequest,
@@ -37,12 +38,25 @@ async def update_auth(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_auth_impl(
+        async def _runner() -> UpdateAuthApiResponse:
+            return await update_auth_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                items=request.auths,
+                session_id=session_id,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="auth",
             profile_id=profile_id,
-            items=request.auths,
             session_id=session_id,
+            operation="update",
+            arguments={"auths": [item.model_dump(mode="json") for item in request.auths]},
+            response_model=UpdateAuthApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = "auths"

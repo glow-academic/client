@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.department.delete import delete_department_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import (
     DeleteDepartmentApiRequest,
@@ -38,12 +39,25 @@ async def delete_department(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_department_impl(
+        async def _runner() -> DeleteDepartmentApiResponse:
+            return await delete_department_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                department_ids=request.department_ids,
+                session_id=session_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="department",
             profile_id=profile_id,
-            department_ids=request.department_ids,
             session_id=session_id,
+            operation="delete",
+            arguments=request.model_dump(mode="json"),
+            response_model=DeleteDepartmentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

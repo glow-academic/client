@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.drafts import list_auth_drafts_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import GetAuthDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -35,17 +36,29 @@ async def get_auth_drafts(
         redis = get_redis_client()
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        context = await list_auth_drafts_impl(
+        async def _runner() -> GetAuthDraftsApiResponse:
+            context = await list_auth_drafts_impl(
+                pool,
+                redis,
+                profile_id=UUID(profile_id),
+                bypass_cache=bypass_cache,
+            )
+            return GetAuthDraftsApiResponse(entries=context.entries.get("drafts"))
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="auth",
             profile_id=UUID(profile_id),
+            session_id=http_request.state.session_id,
+            operation="drafts",
+            arguments={},
             bypass_cache=bypass_cache,
+            response_model=GetAuthDraftsApiResponse,
+            runner=_runner,
         )
-
         response.headers["X-Cache-Tags"] = "auths,drafts"
-        return GetAuthDraftsApiResponse(
-            entries=context.entries.get("drafts"),
-        )
+        return result
 
     except HTTPException:
         raise

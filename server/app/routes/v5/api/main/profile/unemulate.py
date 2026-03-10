@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.identity.emulate import resolve_unemulation
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.profile.types import UnemulateProfileApiResponse
@@ -33,24 +34,37 @@ async def unemulate_profile(
         actor_profile_id = (
             getattr(identity, "actor_profile_id", None) if identity else None
         )
+        session_id = getattr(http_request.state, "session_id", None)
 
-        # Walk chain from the real JWT profile (actor) to find innermost grant
-        origin = actor_profile_id or UUID(profile_id)
         pool = get_pool()
-
-        result = await resolve_unemulation(pool, actor_profile_id=origin)
-
-        if not result.ok:
-            raise HTTPException(
-                status_code=400, detail=result.reason or "Cannot exit emulation"
-            )
-
         redis = get_redis_client()
-        tags = ["profile"]
-        await invalidate_tags(tags, redis=redis)
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return UnemulateProfileApiResponse(ok=result.ok, reason=result.reason)
+        async def _runner() -> UnemulateProfileApiResponse:
+            origin = actor_profile_id or UUID(profile_id)
+            result = await resolve_unemulation(pool, actor_profile_id=origin)
+
+            if not result.ok:
+                raise HTTPException(
+                    status_code=400, detail=result.reason or "Cannot exit emulation"
+                )
+
+            tags = ["profile"]
+            await invalidate_tags(tags, redis=redis)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+            return UnemulateProfileApiResponse(ok=result.ok, reason=result.reason)
+
+        return await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="profile",
+            profile_id=UUID(profile_id),
+            session_id=session_id,
+            operation="unemulate",
+            arguments={"profile_id": str(profile_id)},
+            response_model=UnemulateProfileApiResponse,
+            runner=_runner,
+        )
     except HTTPException:
         raise
     except Exception as e:

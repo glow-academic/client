@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.identity.emulate import resolve_emulation
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.profile.types import (
@@ -41,29 +42,46 @@ async def emulate_profile(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         redis = get_redis_client()
         pool = get_pool()
+        session_id = getattr(http_request.state, "session_id", None)
 
-        result = await resolve_emulation(
+        async def _runner() -> EmulateProfileApiResponse:
+            result = await resolve_emulation(
+                pool,
+                redis,
+                requester_profile_id=UUID(profile_id),
+                target_profile_id=request.target_profile_id,
+                ttl_minutes=request.ttl_minutes or 120,
+                bypass_cache=bypass_cache,
+                actor_profile_id=actor_profile_id,
+            )
+
+            if not result.allowed:
+                raise HTTPException(
+                    status_code=403, detail=result.reason or "Forbidden"
+                )
+
+            tags = ["profile"]
+            await invalidate_tags(tags, redis=redis)
+            response.headers["X-Invalidate-Tags"] = ",".join(tags)
+
+            return EmulateProfileApiResponse(
+                allowed=result.allowed,
+                reason=result.reason,
+                grant_id=result.grant_id,
+                expires_at=result.expires_at,
+            )
+
+        return await run_artifact_operation_with_audit(
             pool,
             redis,
-            requester_profile_id=UUID(profile_id),
-            target_profile_id=request.target_profile_id,
-            ttl_minutes=request.ttl_minutes or 120,
+            artifact="profile",
+            profile_id=UUID(profile_id),
+            session_id=session_id,
+            operation="emulate",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
-            actor_profile_id=actor_profile_id,
-        )
-
-        if not result.allowed:
-            raise HTTPException(status_code=403, detail=result.reason or "Forbidden")
-
-        tags = ["profile"]
-        await invalidate_tags(tags, redis=redis)
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-        return EmulateProfileApiResponse(
-            allowed=result.allowed,
-            reason=result.reason,
-            grant_id=result.grant_id,
-            expires_at=result.expires_at,
+            response_model=EmulateProfileApiResponse,
+            runner=_runner,
         )
     except HTTPException:
         raise

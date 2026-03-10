@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile.search import search_profile_impl
 from app.routes.v5.api.main.profile.types import ListProfilesApiResponse
@@ -54,19 +55,32 @@ async def search_profile(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_profile_impl(
+        async def _runner() -> ListProfilesApiResponse:
+            return await search_profile_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                cohort_ids=request.cohort_ids,
+                filter_department_ids=request.filter_department_ids,
+                role_filter=request.role_filter,
+                cohort_search=request.cohort_search,
+                department_search=request.department_search,
+                role_search=request.role_search,
+                page_size=request.page_size or 12,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="profile",
             profile_id=profile_id,
-            search=request.search,
-            cohort_ids=request.cohort_ids,
-            filter_department_ids=request.filter_department_ids,
-            role_filter=request.role_filter,
-            cohort_search=request.cohort_search,
-            department_search=request.department_search,
-            role_search=request.role_search,
-            page_size=request.page_size or 12,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListProfilesApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

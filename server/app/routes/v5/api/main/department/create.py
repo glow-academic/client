@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.department.create import create_department_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import (
     CreateDepartmentApiRequest,
@@ -37,12 +38,27 @@ async def create_department(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_department_impl(
+        async def _runner() -> CreateDepartmentApiResponse:
+            return await create_department_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                items=request.departments,
+                session_id=session_id,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="department",
             profile_id=profile_id,
-            items=request.departments,
             session_id=session_id,
+            operation="create",
+            arguments={
+                "departments": [item.model_dump(mode="json") for item in request.departments]
+            },
+            response_model=CreateDepartmentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = "departments"

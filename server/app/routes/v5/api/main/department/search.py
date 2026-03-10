@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.department.search import search_department_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import ListDepartmentApiResponse
@@ -45,13 +46,26 @@ async def search_department(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_department_impl(
+        async def _runner() -> ListDepartmentApiResponse:
+            return await search_department_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                page_size=request.page_size or 12,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="department",
             profile_id=profile_id,
-            search=request.search,
-            page_size=request.page_size or 12,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListDepartmentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

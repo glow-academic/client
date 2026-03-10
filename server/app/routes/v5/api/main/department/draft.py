@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.department.draft import patch_department_draft_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import (
     PatchDepartmentDraftApiRequest,
@@ -47,12 +48,26 @@ async def patch_department_draft(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await patch_department_draft_impl(
+        async def _runner() -> PatchDepartmentDraftApiResponse:
+            return await patch_department_draft_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                request=request,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="department",
             profile_id=profile_id,
             session_id=session_id,
-            request=request,
+            draft_id=request.input_draft_id,
+            operation="draft",
+            arguments=request.model_dump(mode="json"),
+            response_model=PatchDepartmentDraftApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

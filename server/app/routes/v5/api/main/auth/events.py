@@ -1,10 +1,63 @@
 """Auth event declarations for centralized delivery."""
 
+from __future__ import annotations
+
+from typing import Any
+from uuid import UUID
+
 from app.events.types import (
     ArtifactEventsConfig,
     OperationEventConfig,
     require_authenticated_profile,
 )
+
+
+def _uuid_list(values: list[Any] | None) -> list[UUID]:
+    """Normalize a list of UUID-like values."""
+    return [UUID(str(value)) for value in values or [] if value]
+
+
+def _auth_result_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+) -> list[UUID]:
+    """Resolve auth IDs from bulk create/update/delete outputs."""
+    del arguments
+    return _uuid_list(
+        [
+            item.get("auth_id")
+            for item in output.get("results", [])
+            if isinstance(item, dict) and item.get("auth_id")
+        ]
+    )
+
+
+def _auth_duplicate_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+) -> list[UUID]:
+    """Resolve duplicated auth ID from output."""
+    del arguments
+    return _uuid_list([output.get("auth_id")])
+
+
+def _auth_request_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+    key: str,
+) -> list[UUID]:
+    """Resolve a single entity ID from request arguments."""
+    del output
+    return _uuid_list([arguments.get(key)])
+
+
+def _auth_draft_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+) -> list[UUID]:
+    """Resolve draft ID from output first, then request input_draft_id."""
+    return _uuid_list([output.get("draft_id"), arguments.get("input_draft_id")])
+
 
 AUTH_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
@@ -13,6 +66,85 @@ AUTH_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="auth_id",
         can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=lambda arguments, output: _auth_request_entity_ids(
+            arguments, output, "auth_id"
+        ),
+    ),
+    "create": OperationEventConfig(
+        operation="create",
+        domain_events=("artifacts.auth.created",),
+        scope="collection",
+        entity_key=None,
+        can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=_auth_result_entity_ids,
+    ),
+    "update": OperationEventConfig(
+        operation="update",
+        domain_events=("artifacts.auth.updated",),
+        scope="entity",
+        entity_key="auth_id",
+        can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=_auth_result_entity_ids,
+    ),
+    "delete": OperationEventConfig(
+        operation="delete",
+        domain_events=("artifacts.auth.deleted",),
+        scope="entity",
+        entity_key="auth_id",
+        can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=_auth_result_entity_ids,
+    ),
+    "duplicate": OperationEventConfig(
+        operation="duplicate",
+        domain_events=("artifacts.auth.duplicated",),
+        scope="entity",
+        entity_key="auth_id",
+        can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=_auth_duplicate_entity_ids,
+    ),
+    "draft": OperationEventConfig(
+        operation="draft",
+        domain_events=("artifacts.auth.draft.saved",),
+        scope="entity",
+        entity_key="draft_id",
+        can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=_auth_draft_entity_ids,
+    ),
+    "drafts": OperationEventConfig(
+        operation="drafts",
+        domain_events=("artifacts.auth.drafts.viewed",),
+        scope="collection",
+        entity_key=None,
+        can_subscribe=require_authenticated_profile,
+        include_call_lifecycle=False,
+    ),
+    "search": OperationEventConfig(
+        operation="search",
+        domain_events=("artifacts.auth.search.performed",),
+        scope="collection",
+        entity_key=None,
+        can_subscribe=require_authenticated_profile,
+        include_call_lifecycle=False,
+    ),
+    "docs": OperationEventConfig(
+        operation="docs",
+        domain_events=("artifacts.auth.docs.viewed",),
+        scope="entity",
+        entity_key="entity_id",
+        can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=lambda arguments, output: _auth_request_entity_ids(
+            arguments, output, "entity_id"
+        ),
+    ),
+    "export": OperationEventConfig(
+        operation="export",
+        domain_events=("artifacts.auth.exported",),
+        scope="collection",
+        entity_key="auth_id",
+        can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=lambda arguments, output: _auth_request_entity_ids(
+            arguments, output, "auth_id"
+        ),
     ),
     "refresh": OperationEventConfig(
         operation="refresh",

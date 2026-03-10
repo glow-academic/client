@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile.delete import delete_profile_impl
 from app.routes.v5.api.main.profile.types import (
@@ -38,12 +39,25 @@ async def delete_profile(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_profile_impl(
+        async def _runner() -> DeleteProfileApiResponse:
+            return await delete_profile_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                profile_ids=request.profile_ids,
+                session_id=session_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="profile",
             profile_id=profile_id,
-            profile_ids=request.profile_ids,
             session_id=session_id,
+            operation="delete",
+            arguments=request.model_dump(mode="json"),
+            response_model=DeleteProfileApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
