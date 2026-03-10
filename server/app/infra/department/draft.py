@@ -138,6 +138,7 @@ async def patch_department_draft_impl(
                 else None,
                 flag_ids=[request.flag_id] if request.flag_id else None,
                 setting_ids=request.setting_ids,
+                profile_ids=[profile.profiles_id],
             )
 
     # ── Step 5: Build form state (server is source of truth) ────────────

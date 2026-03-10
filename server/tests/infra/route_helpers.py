@@ -30,8 +30,9 @@ async def create_admin_route_actor(
     tool_artifacts: list[str] | None = None,
     group_name: str,
     role_name_prefix: str,
+    role: str = "admin",
 ) -> RouteActor:
-    """Create a route actor with admin role, session, and group."""
+    """Create a route actor with a requested role, session, and group."""
     from app.routes.v5.tools.artifacts.profile.update import update_profile
     from app.routes.v5.tools.resources.roles.create import create_role
 
@@ -42,9 +43,9 @@ async def create_admin_route_actor(
     async with pool.acquire() as conn:
         admin_role = await create_role(
             conn,
-            role="admin",
+            role=role,
             name=f"{role_name_prefix} {unique_tag()}",
-            description=f"{group_name} admin role",
+            description=f"{group_name} {role} role",
             redis=redis_client,
         )
         await update_profile(

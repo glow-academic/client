@@ -258,7 +258,7 @@ async def search_simulation_impl(
         p_ids = s.persona_ids or []
         scenario_mapping.append(
             ListSimulationApiScenario(
-                scenario_id=s.scenario_id,
+                scenario_id=s.id,
                 name=s.name,
                 persona_ids=[str(pid) for pid in p_ids],
                 persona_mapping=[
@@ -331,7 +331,7 @@ async def search_simulation_impl(
     # -- Step 7: Build facet sections --
     scenario_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(s.scenario_id), name=s.name, count=0)
+            ListFilterOption(id=str(s.id), name=s.name, count=0)
             for s in scenario_facet
         ],
         selected_ids=[str(sid) for sid in filter_scenario_ids]
@@ -342,7 +342,7 @@ async def search_simulation_impl(
 
     cohort_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(c.cohort_id), name=c.name, count=0)
+            ListFilterOption(id=str(c.id), name=c.name, count=0)
             for c in cohort_facet
         ],
         selected_ids=[str(cid) for cid in filter_cohort_ids]

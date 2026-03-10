@@ -592,6 +592,7 @@ async def _run_text_seeds(
       3. Calls update_document to link text_ids
     """
     from app.infra.tools.entries.create_document_text import create_document_text
+    from app.routes.v5.tools.artifacts.document.update import update_document
     from app.routes.v5.tools.entries.sessions.create import create_session
 
     # Create a temp upload folder for text file writes
@@ -615,18 +616,62 @@ async def _run_text_seeds(
                 upload_folder=upload_folder,
             )
 
-        # Link text to document via junction
-        # (direct INSERT — document_texts_junction lacks mcp column
-        #  so update_document's upsert_multi doesn't work here)
         async with pool.acquire() as conn:
-            await conn.execute(
-                "INSERT INTO document_texts_junction (document_id, texts_id) "
-                "VALUES ($1, $2) ON CONFLICT DO NOTHING",
+            await update_document(
+                conn,
                 dt["document_id"],
-                result.texts_resource_id,
+                text_ids=[result.texts_resource_id],
             )
 
         print(f"  OK: Text linked to document {dt['document_id']}")
+
+
+async def _run_file_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    document_file_defs: list[dict],
+    assets_dir: Path,
+) -> None:
+    """Run file seed definitions using create_document_file.
+
+    Creates a session, then for each document-file mapping:
+      1. Copies source file from assets_dir
+      2. Calls create_document_file (full entry chain)
+      3. Links result to document via document_files_junction
+    """
+    from app.infra.tools.entries.create_document_file import create_document_file
+    from app.routes.v5.tools.artifacts.document.update import update_document
+    from app.routes.v5.tools.entries.sessions.create import create_session
+
+    # Create a temp upload folder for file copies
+    upload_folder = Path(tempfile.mkdtemp(prefix="seed_uploads_"))
+
+    # Create a session for entry ownership (no profile link — avoids FK issues)
+    async with pool.acquire() as conn:
+        session = await create_session(conn)
+    session_id = session.id
+
+    for df in document_file_defs:
+        source_path = assets_dir / df["source_file"]
+
+        async with pool.acquire() as conn:
+            result = await create_document_file(
+                conn,
+                redis,
+                source_path=source_path,
+                mime_type=df["mime_type"],
+                session_id=session_id,
+                upload_folder=upload_folder,
+            )
+
+        async with pool.acquire() as conn:
+            await update_document(
+                conn,
+                df["document_id"],
+                file_ids=[result.files_resource_id],
+            )
+
+        print(f"  OK: File linked to document {df['document_id']}")
 
 
 async def _run_post_links(
@@ -947,6 +992,13 @@ async def main(setup: str = "university") -> None:
                 )
                 await _run_text_seeds(
                     pool, redis_client, mod.document_texts, assets_dir
+                )
+            elif module_name == "files":
+                assets_dir = (
+                    MODULES_DIR / "11-setups" / setup / "uploads" / "files"
+                )
+                await _run_file_seeds(
+                    pool, redis_client, mod.document_files, assets_dir
                 )
             elif module_name == "post_links":
                 await _run_post_links(pool, redis_client, mod)

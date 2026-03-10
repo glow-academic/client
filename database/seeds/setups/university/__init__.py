@@ -16,7 +16,8 @@ Dependency order (each module may reference IDs from earlier modules):
   13. settings      (refs: departments, auth, providers, systems)
   14. colors        (standalone color resources)
   15. texts         (refs: documents — text upload chain + document link)
-  16. post_links    (refs: departments, settings, colors, pre-existing profiles)
+  16. files         (refs: documents — file upload chain + document link)
+  17. post_links    (refs: departments, settings, colors, pre-existing profiles)
 """
 
 SETUP_NAME = "university"
@@ -39,5 +40,6 @@ MODULES = [
     "settings",
     "colors",
     "texts",
+    "files",
     "post_links",
 ]

@@ -135,7 +135,9 @@ async def patch_setting_draft_impl(
                 flag_ids=[request.flag_id] if request.flag_id else None,
                 department_ids=request.department_ids,
                 color_ids=request.color_ids,
-                profile_ids=request.profile_ids,
+                profile_ids=list(
+                    dict.fromkeys((request.profile_ids or []) + [profile.profiles_id])
+                ),
                 auth_ids=request.auth_ids,
                 provider_key_ids=request.provider_key_ids,
                 auth_item_key_ids=request.auth_item_key_ids,

@@ -69,6 +69,18 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
     return (key, label)
 
 
+def _serialize_model(value):
+    """Convert Pydantic-style resource models into route-friendly plain data."""
+    if value is None:
+        return None
+    return value.model_dump(mode="json") if hasattr(value, "model_dump") else value
+
+
+def _serialize_models(values):
+    """Convert a list of resource models into plain data for response validation."""
+    return [_serialize_model(value) for value in values]
+
+
 async def get_document_impl(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -334,17 +346,17 @@ async def get_document_impl(
         content_show_ai_generate=content_show_ai_generate,
         names=DocumentNameSection(
             **_section("names"),
-            resource=document.resources["names"].selected[0]
+            resource=_serialize_model(document.resources["names"].selected[0])
             if document.resources["names"].selected
             else None,
-            resources=all_names,
+            resources=_serialize_models(all_names),
         ),
         descriptions=DocumentDescriptionSection(
             **_section("descriptions"),
-            resource=document.resources["descriptions"].selected[0]
+            resource=_serialize_model(document.resources["descriptions"].selected[0])
             if document.resources["descriptions"].selected
             else None,
-            resources=all_descriptions,
+            resources=_serialize_models(all_descriptions),
         ),
         flags=DocumentFlagSection(
             **_section("flags"),
@@ -353,13 +365,14 @@ async def get_document_impl(
         ),
         departments=DocumentDepartmentSection(
             **_section("departments"),
-            current=document.resources["departments"].selected or None,
-            resources=all_departments,
+            current=_serialize_models(document.resources["departments"].selected) or None,
+            resources=_serialize_models(all_departments),
         ),
         fields=DocumentFieldSection(
             **_section("fields"),
-            current=document.resources["parameter_fields"].selected or None,
-            resources=all_fields,
+            current=_serialize_models(document.resources["parameter_fields"].selected)
+            or None,
+            resources=_serialize_models(all_fields),
         ),
         parameters=DocumentParameterSection(
             **_section("parameters"),
@@ -368,18 +381,18 @@ async def get_document_impl(
         ),
         uploads=DocumentUploadSection(
             **_section("uploads"),
-            current=document.resources["files"].selected or None,
-            resources=all_files,
+            current=_serialize_models(document.resources["files"].selected) or None,
+            resources=_serialize_models(all_files),
         ),
         images=DocumentImageSection(
             **_section("images"),
-            current=document.resources["images"].selected or None,
-            resources=all_images,
+            current=_serialize_models(document.resources["images"].selected) or None,
+            resources=_serialize_models(all_images),
         ),
         texts=DocumentTextSection(
             **_section("texts"),
-            current=document.resources["texts"].selected or None,
-            resources=all_texts,
+            current=_serialize_models(document.resources["texts"].selected) or None,
+            resources=_serialize_models(all_texts),
         ),
     )
 
@@ -387,5 +400,4 @@ async def get_document_impl(
 # ---------------------------------------------------------------------------
 # get_document_websocket — stub (to be rewritten with infra functions)
 # ---------------------------------------------------------------------------
-
 

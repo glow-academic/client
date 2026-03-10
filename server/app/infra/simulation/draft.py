@@ -209,6 +209,7 @@ async def patch_simulation_draft_impl(
                 scenario_position_ids=request.scenario_position_ids,
                 scenario_rubric_ids=request.scenario_rubric_ids,
                 scenario_time_limit_ids=request.scenario_time_limit_ids,
+                profile_ids=[profile.profiles_id],
             )
 
     # ── Step 5: Build form state (server is source of truth) ──────────

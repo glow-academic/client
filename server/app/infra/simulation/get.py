@@ -70,6 +70,18 @@ from app.routes.v5.api.main.simulation.types import (
 # ---------------------------------------------------------------------------
 
 
+def _serialize_model(item):
+    if item is None:
+        return None
+    if hasattr(item, "model_dump"):
+        return item.model_dump(mode="json")
+    return item
+
+
+def _serialize_models(items: list) -> list:
+    return [_serialize_model(item) for item in items]
+
+
 async def get_simulation_impl(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -346,17 +358,19 @@ async def get_simulation_impl(
         # Per-resource sections
         names=SimulationNameSection(
             **_section("names"),
-            resource=simulation.resources["names"].selected[0]
+            resource=_serialize_model(simulation.resources["names"].selected[0])
             if simulation.resources["names"].selected
             else None,
-            resources=all_names,
+            resources=_serialize_models(all_names),
         ),
         descriptions=SimulationDescriptionSection(
             **_section("descriptions"),
-            resource=simulation.resources["descriptions"].selected[0]
+            resource=_serialize_model(
+                simulation.resources["descriptions"].selected[0]
+            )
             if simulation.resources["descriptions"].selected
             else None,
-            resources=all_descriptions,
+            resources=_serialize_models(all_descriptions),
         ),
         flags=SimulationFlagSection(
             **_section("flags"),
@@ -375,24 +389,29 @@ async def get_simulation_impl(
         ),
         scenario_flags=SimulationScenarioFlagSection(
             **_section("scenario_flags"),
-            current=simulation.resources["scenario_flags"].selected,
-            resources=all_scenario_flags,
+            current=_serialize_models(simulation.resources["scenario_flags"].selected),
+            resources=_serialize_models(all_scenario_flags),
         ),
         scenario_positions=SimulationScenarioPositionSection(
             **_section("scenario_positions"),
-            current=simulation.resources["scenario_positions"].selected,
-            resources=all_scenario_positions,
+            current=_serialize_models(
+                simulation.resources["scenario_positions"].selected
+            ),
+            resources=_serialize_models(all_scenario_positions),
         ),
         scenario_rubrics=SimulationScenarioRubricSection(
             **_section("scenario_rubrics"),
-            current=simulation.resources["scenario_rubrics"].selected,
-            resources=all_scenario_rubrics,
+            current=_serialize_models(
+                simulation.resources["scenario_rubrics"].selected
+            ),
+            resources=_serialize_models(all_scenario_rubrics),
         ),
         scenario_time_limits=SimulationScenarioTimeLimitSection(
             **_section("scenario_time_limits"),
-            current=simulation.resources["scenario_time_limits"].selected,
-            resources=all_scenario_time_limits,
+            current=_serialize_models(
+                simulation.resources["scenario_time_limits"].selected
+            ),
+            resources=_serialize_models(all_scenario_time_limits),
         ),
-        rubrics=simulation.resources["rubrics"].suggestions,
+        rubrics=_serialize_models(simulation.resources["rubrics"].suggestions),
     )
-

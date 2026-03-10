@@ -84,7 +84,9 @@ CREATE TABLE public.document_images_junction (
     document_id uuid CONSTRAINT document_images_document_id_not_null NOT NULL,
     images_id uuid CONSTRAINT document_images_images_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT document_images_active_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT document_images_created_at_not_null NOT NULL
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT document_images_created_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT document_images_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT document_images_mcp_not_null NOT NULL
 );
 
 
@@ -127,7 +129,9 @@ CREATE TABLE public.document_texts_junction (
     document_id uuid CONSTRAINT document_texts_document_id_not_null NOT NULL,
     texts_id uuid CONSTRAINT document_texts_texts_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT document_texts_active_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT document_texts_created_at_not_null NOT NULL
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT document_texts_created_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT document_texts_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT document_texts_mcp_not_null NOT NULL
 );
 
 

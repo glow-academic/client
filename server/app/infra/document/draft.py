@@ -215,6 +215,7 @@ async def patch_document_draft_impl(
                 text_ids=request.text_ids,
                 parameter_field_ids=request.parameter_field_ids,
                 parameter_ids=request.parameter_ids,
+                profile_ids=[profile.profiles_id],
             )
 
     # ── Step 5: Build form state (server is source of truth) ──────────

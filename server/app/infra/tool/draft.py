@@ -139,6 +139,7 @@ async def patch_tool_draft_impl(
                 args_output_ids=request.args_output_ids,
                 artifact_ids=request.artifact_ids,
                 operation_ids=request.operation_ids,
+                profile_ids=[profile.profiles_id],
             )
 
     # ── Step 5: Build form state (server is source of truth) ────────────

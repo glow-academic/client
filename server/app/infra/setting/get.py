@@ -70,6 +70,18 @@ from app.routes.v5.api.main.setting.types import (
 # ---------------------------------------------------------------------------
 
 
+def _serialize_model(item):
+    if item is None:
+        return None
+    if hasattr(item, "model_dump"):
+        return item.model_dump(mode="json")
+    return item
+
+
+def _serialize_models(items: list) -> list:
+    return [_serialize_model(item) for item in items]
+
+
 async def get_setting_impl(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -310,22 +322,22 @@ async def get_setting_impl(
         # Per-resource sections
         names=SettingNameSection(
             **_section("names"),
-            resource=setting.resources["names"].selected[0]
+            resource=_serialize_model(setting.resources["names"].selected[0])
             if setting.resources["names"].selected
             else None,
-            resources=all_names,
+            resources=_serialize_models(all_names),
         ),
         descriptions=SettingDescriptionSection(
             **_section("descriptions"),
-            resource=setting.resources["descriptions"].selected[0]
+            resource=_serialize_model(setting.resources["descriptions"].selected[0])
             if setting.resources["descriptions"].selected
             else None,
-            resources=all_descriptions,
+            resources=_serialize_models(all_descriptions),
         ),
         colors=SettingColorSection(
             **_section("colors"),
-            current=setting.resources["colors"].selected,
-            resources=all_colors,
+            current=_serialize_models(setting.resources["colors"].selected),
+            resources=_serialize_models(all_colors),
         ),
         flags=SettingFlagSection(
             **_section("flags"),
@@ -334,33 +346,32 @@ async def get_setting_impl(
         ),
         departments=SettingDepartmentSection(
             **_section("departments"),
-            current=setting.resources["departments"].selected,
-            resources=all_departments,
+            current=_serialize_models(setting.resources["departments"].selected),
+            resources=_serialize_models(all_departments),
         ),
         profiles=SettingProfileSection(
             **_section("profiles"),
-            current=setting.resources["profiles"].selected,
-            resources=all_profiles,
+            current=_serialize_models(setting.resources["profiles"].selected),
+            resources=_serialize_models(all_profiles),
         ),
         auths=SettingAuthSection(
             **_section("auths"),
-            current=setting.resources["auths"].selected,
-            resources=all_auths,
+            current=_serialize_models(setting.resources["auths"].selected),
+            resources=_serialize_models(all_auths),
         ),
         provider_keys=SettingProviderKeySection(
             **_section("provider_keys"),
-            current=setting.resources["provider_keys"].selected,
-            resources=all_provider_keys,
+            current=_serialize_models(setting.resources["provider_keys"].selected),
+            resources=_serialize_models(all_provider_keys),
         ),
         auth_item_keys=SettingAuthItemKeySection(
             **_section("auth_item_keys"),
-            current=setting.resources["auth_item_keys"].selected,
-            resources=all_auth_item_keys,
+            current=_serialize_models(setting.resources["auth_item_keys"].selected),
+            resources=_serialize_models(all_auth_item_keys),
         ),
         systems=SettingSystemSection(
             **_section("systems"),
-            current=setting.resources["systems"].selected,
-            resources=all_systems,
+            current=_serialize_models(setting.resources["systems"].selected),
+            resources=_serialize_models(all_systems),
         ),
     )
-
