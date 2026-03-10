@@ -1,13 +1,13 @@
 """Agent update endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.agent_update.
+Thin route handler. Core logic lives in app.infra.agent.update.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.agent_update import update_agent_client
+from app.infra.agent.update import update_agent_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import (
     UpdateAgentApiRequest,
@@ -36,7 +36,7 @@ async def update_agent(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_agent_client(
+        response_data = await update_agent_impl(
             pool,
             redis,
             profile_id=profile_id,

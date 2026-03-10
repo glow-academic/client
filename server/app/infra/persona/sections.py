@@ -43,17 +43,26 @@ from app.infra.tool_graph import ArtifactToolScores
 from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.persona.types import (
     GetPersonaApiResponse,
+    PersonaColorResource,
     PersonaColorSection,
+    PersonaDepartmentResource,
     PersonaDepartmentSection,
+    PersonaDescriptionResource,
     PersonaDescriptionSection,
+    PersonaExampleResource,
     PersonaExampleSection,
     PersonaFlagConfig,
     PersonaFlagSection,
+    PersonaIconResource,
     PersonaIconSection,
+    PersonaInstructionResource,
     PersonaInstructionSection,
+    PersonaNameResource,
     PersonaNameSection,
+    PersonaParameterFieldResource,
     PersonaParameterFieldSection,
     PersonaParameterSection,
+    PersonaVoiceResource,
     PersonaVoiceSection,
 )
 
@@ -254,6 +263,17 @@ def build_persona_get_result(
             "tool_id": tool_ids_map.get(resource_key),
         }
 
+    def _model(item, model_cls):
+        return model_cls.model_validate(item.model_dump())
+
+    def _model_many(items, model_cls):
+        return [_model(item, model_cls) for item in items]
+
+    def _department_model(item) -> PersonaDepartmentResource:
+        payload = item.model_dump()
+        payload["department_id"] = payload.pop("id", None)
+        return PersonaDepartmentResource.model_validate(payload)
+
     return GetPersonaApiResponse(
         actor_name=profile.name,
         persona_exists=persona.artifact_id is not None,
@@ -266,38 +286,44 @@ def build_persona_get_result(
         parameters_step_show_ai_generate=parameters_step_show_ai_generate,
         names=PersonaNameSection(
             **_section("names"),
-            resource=persona.resources["names"].selected[0]
+            resource=_model(persona.resources["names"].selected[0], PersonaNameResource)
             if persona.resources["names"].selected
             else None,
-            resources=all_names,
+            resources=_model_many(all_names, PersonaNameResource),
         ),
         descriptions=PersonaDescriptionSection(
             **_section("descriptions"),
-            resource=persona.resources["descriptions"].selected[0]
+            resource=_model(
+                persona.resources["descriptions"].selected[0],
+                PersonaDescriptionResource,
+            )
             if persona.resources["descriptions"].selected
             else None,
-            resources=all_descriptions,
+            resources=_model_many(all_descriptions, PersonaDescriptionResource),
         ),
         colors=PersonaColorSection(
             **_section("colors"),
-            resource=persona.resources["colors"].selected[0]
+            resource=_model(persona.resources["colors"].selected[0], PersonaColorResource)
             if persona.resources["colors"].selected
             else None,
-            resources=all_colors,
+            resources=_model_many(all_colors, PersonaColorResource),
         ),
         icons=PersonaIconSection(
             **_section("icons"),
-            resource=persona.resources["icons"].selected[0]
+            resource=_model(persona.resources["icons"].selected[0], PersonaIconResource)
             if persona.resources["icons"].selected
             else None,
-            resources=all_icons,
+            resources=_model_many(all_icons, PersonaIconResource),
         ),
         instructions=PersonaInstructionSection(
             **_section("instructions"),
-            resource=persona.resources["instructions"].selected[0]
+            resource=_model(
+                persona.resources["instructions"].selected[0],
+                PersonaInstructionResource,
+            )
             if persona.resources["instructions"].selected
             else None,
-            resources=all_instructions,
+            resources=_model_many(all_instructions, PersonaInstructionResource),
         ),
         flags=PersonaFlagSection(
             **_section("flags"),
@@ -306,18 +332,24 @@ def build_persona_get_result(
         ),
         departments=PersonaDepartmentSection(
             **_section("departments"),
-            current=persona.resources["departments"].selected,
-            resources=all_departments,
+            current=[_department_model(item) for item in persona.resources["departments"].selected],
+            resources=[_department_model(item) for item in all_departments],
         ),
         parameter_fields=PersonaParameterFieldSection(
             **_section("parameter_fields"),
-            current=persona.resources["parameter_fields"].selected,
-            resources=persona.resources["parameter_fields"].suggestions,
+            current=_model_many(
+                persona.resources["parameter_fields"].selected,
+                PersonaParameterFieldResource,
+            ),
+            resources=_model_many(
+                persona.resources["parameter_fields"].suggestions,
+                PersonaParameterFieldResource,
+            ),
         ),
         examples=PersonaExampleSection(
             **_section("examples"),
-            current=persona.resources["examples"].selected,
-            resources=all_examples,
+            current=_model_many(persona.resources["examples"].selected, PersonaExampleResource),
+            resources=_model_many(all_examples, PersonaExampleResource),
         ),
         parameters=PersonaParameterSection(
             **_section("parameters"),
@@ -326,8 +358,8 @@ def build_persona_get_result(
         ),
         voices=PersonaVoiceSection(
             **_section("voices"),
-            current=persona.resources["voices"].selected,
-            resources=all_voices,
+            current=_model_many(persona.resources["voices"].selected, PersonaVoiceResource),
+            resources=_model_many(all_voices, PersonaVoiceResource),
         ),
         fields=persona.resources["fields"].suggestions,
         resolved_parameter_ids=resolved_parameter_ids or None,

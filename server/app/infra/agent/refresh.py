@@ -24,7 +24,7 @@ _TAGS = ["agents", "artifacts"]
 _VIEWS = ["agent_drafts_mv"]
 
 
-async def refresh_agent_client(
+async def refresh_agent_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

@@ -1,10 +1,10 @@
-"""Agent update logic — composable infra architecture.
+"""Agent create logic — composable infra architecture.
 
 Composes existing black-box tools:
   1. resolve_profile_identity_context — profile (role, departments)
-  2. resolve_agent_permissions_context — per-item access + edit check
+  2. compute_can_create — permission check
   3. resolve_agent_values — raw value → ID resolution
-  4. update_agent_artifact — junction writes (partial update)
+  4. create_agent_artifact — junction writes
   5. create_denormalized_snapshot — agents_resource snapshot
 """
 
@@ -14,24 +14,70 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.agent_permissions_context import (
+from app.infra.agent.permissions_context import (
     create_denormalized_snapshot,
-    resolve_agent_permissions_context,
     resolve_agent_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.agent.update import (
-    _UNSET,
-)
-from app.routes.v5.tools.artifacts.agent.update import (
-    update_agent as update_agent_artifact,
+from app.routes.v5.tools.artifacts.agent.create import (
+    create_agent as create_agent_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def update_agent_client(
+class CreateAgentItem(BaseModel):
+    """Single agent item for create — no agent_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
+    description_id: UUID | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+
+
+class AgentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class AgentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    agent_id: UUID | None = None
+    message: str
+    errors: list[AgentFieldError] | None = None
+
+
+class CreateAgentApiResponse(BaseModel):
+    """Response model for bulk create agent endpoint."""
+
+    results: list[AgentResultItem]
+
+
+async def create_agent_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -41,23 +87,16 @@ async def update_agent_client(
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
 ) -> dict:
-    """Agent bulk update using composable infra functions.
+    """Agent bulk create using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context → role, department_ids
-      2. Per-item: resolve_agent_permissions_context → exists + compute_can_edit
-      3. Per-item value resolution (raw → ID, no required field enforcement)
-      4. Single transaction: update_agent_artifact + denormalized snapshot per item
+      2. compute_can_create — single check (applies to all items)
+      3. Per-item value resolution (raw → ID, required field enforcement)
+      4. Single transaction: create_agent_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.agent_permissions import (
-        compute_can_edit,
-        has_access,
-    )
-    from app.routes.v5.api.main.agent.types import (
-        AgentResultItem,
-        UpdateAgentApiResponse,
-    )
+    from app.infra.agent.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
@@ -75,29 +114,16 @@ async def update_agent_client(
             detail="Profile not found. Please sign in again.",
         )
 
-    # ── Step 2: Per-item permission check ──────────────────────────────
+    # ── Step 2: Permission check ───────────────────────────────────────
 
-    async with pool.acquire() as conn:
-        for idx, item in enumerate(items):
-            perms = await resolve_agent_permissions_context(conn, item.agent_id)
-            if not perms.exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Item {idx}: Agent {item.agent_id} not found.",
-                )
-            has_agent_access = has_access(
-                profile.role, profile.department_ids, perms.department_ids
-            )
-            if not compute_can_edit(
-                user_role=profile.role,
-                has_agent_access=has_agent_access,
-                missing_tools=[],
-                agent_id=item.agent_id,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to update this agent.",
-                )
+    if not compute_can_create(
+        user_role=profile.role,
+        user_department_ids=profile.department_ids,
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to create agents.",
+        )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
@@ -106,7 +132,7 @@ async def update_agent_client(
 
     async with pool.acquire() as conn:
         for idx, item in enumerate(items):
-            item_errors = await resolve_agent_values(conn, redis, item, is_create=False)
+            item_errors = await resolve_agent_values(conn, redis, item, is_create=True)
             if item_errors:
                 has_errors = True
                 error_results.append(
@@ -120,7 +146,7 @@ async def update_agent_client(
                 error_results.append(AgentResultItem(success=True, message="Validated"))
 
     if has_errors:
-        return UpdateAgentApiResponse(results=error_results)
+        return CreateAgentApiResponse(results=error_results)
 
     # ── Step 4: Single transaction ─────────────────────────────────────
 
@@ -131,22 +157,21 @@ async def update_agent_client(
         agents_resource_id = await create_denormalized_snapshot(
             pool,
             redis,
+            id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
             department_ids=item.department_ids,
             tool_ids=item.tool_ids,
         )
 
-        # Artifact update inside transaction
+        # Artifact create inside transaction
         async with pool.acquire() as conn:
             async with conn.transaction():
-                await update_agent_artifact(
+                result = await create_agent_artifact(
                     conn,
-                    item.agent_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                     department_ids=item.department_ids,
                     flag_ids=item.flag_ids,
                     model_ids=item.model_ids,
@@ -160,8 +185,8 @@ async def update_agent_client(
         results.append(
             AgentResultItem(
                 success=True,
-                agent_id=item.agent_id,
-                message="Agent updated successfully",
+                agent_id=result.id,
+                message="Agent created successfully",
             )
         )
 
@@ -169,4 +194,4 @@ async def update_agent_client(
 
     await invalidate_tags(["agents"], redis=redis)
 
-    return UpdateAgentApiResponse(results=results)
+    return CreateAgentApiResponse(results=results)

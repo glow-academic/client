@@ -33,7 +33,7 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.agent_create import AgentFieldError, CreateAgentItem
+    from app.infra.agent.create import AgentFieldError, CreateAgentItem
     from app.routes.v5.api.main.agent.types import (
         UpdateAgentItem,
     )
@@ -97,7 +97,7 @@ async def resolve_agent_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.infra.agent_create import AgentFieldError
+    from app.infra.agent.create import AgentFieldError
 
     errors: list[AgentFieldError] = []
 

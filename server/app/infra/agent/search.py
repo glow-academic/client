@@ -17,7 +17,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.agent_permissions import (
+from app.infra.agent.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_list_can_edit,
@@ -43,7 +43,7 @@ from app.routes.v5.tools.resources.tools.search import (
 )
 
 
-async def search_agent_client(
+async def search_agent_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

@@ -1,10 +1,10 @@
-"""Integration tests for infra.agent_context — real DB, no mocks."""
+"""Integration tests for infra.agent.context — real DB, no mocks."""
 
 from uuid import uuid4
 
 import pytest
 
-from app.infra.agent_context import resolve_agent_context
+from app.infra.agent.context import resolve_agent_context
 from app.routes.v5.tools.artifacts.agent.create import create_agent
 from app.routes.v5.tools.artifacts.agent.update import update_agent
 

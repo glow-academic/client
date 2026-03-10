@@ -1,13 +1,13 @@
 """Agent delete endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.agent_delete.
+Thin route handler. Core logic lives in app.infra.agent.delete.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.agent_delete import delete_agent_client
+from app.infra.agent.delete import delete_agent_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import (
     DeleteAgentApiRequest,
@@ -38,7 +38,7 @@ async def delete_agent(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_agent_client(
+        result = await delete_agent_impl(
             pool,
             redis,
             profile_id=profile_id,

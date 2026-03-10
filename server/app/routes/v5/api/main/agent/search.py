@@ -1,6 +1,6 @@
 """Agent search endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.agent_search.
+Thin route handler. Core logic lives in app.infra.agent.search.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.agent_search import search_agent_client
+from app.infra.agent.search import search_agent_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import ListAgentApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -54,7 +54,7 @@ async def search_agent(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_agent_client(
+        result = await search_agent_impl(
             pool,
             redis,
             profile_id=profile_id,

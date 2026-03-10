@@ -1,13 +1,13 @@
 """Agent create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.agent_create.
+Thin route handler. Core logic lives in app.infra.agent.create.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.agent_create import create_agent_client
+from app.infra.agent.create import create_agent_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import (
     CreateAgentApiRequest,
@@ -36,7 +36,7 @@ async def create_agent(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_agent_client(
+        response_data = await create_agent_impl(
             pool,
             redis,
             profile_id=profile_id,

@@ -107,8 +107,11 @@ async def persona_context_factory(pool, redis_client):
 
 
 @pytest_asyncio.fixture
-async def v5_route_client(pool, redis_client) -> AsyncGenerator[V5RouteClient, None]:
-    """HTTP client mounted on the real v5 artifact router with test auth state."""
+async def v5_persona_route_client(
+    pool,
+    redis_client,
+) -> AsyncGenerator[V5RouteClient, None]:
+    """HTTP client mounted on the real persona v5 route stack."""
     import app.infra.globals as globals_mod
     from app.infra.auth.middleware import require_auth
     from app.routes.v5.api.main.persona import router as persona_router

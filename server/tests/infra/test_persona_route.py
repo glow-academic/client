@@ -30,8 +30,10 @@ class PersonaRouteResources:
     description: str
     color_id: UUID
     color_name: str
+    color_hex_code: str
     icon_id: UUID
     icon_name: str
+    icon_value: str
     instruction_id: UUID
     instruction_template: str
 
@@ -42,6 +44,7 @@ async def _create_persona_route_actor(
     setting_graph_factory,
 ) -> PersonaRouteActor:
     from app.routes.v5.tools.artifacts.profile.update import update_profile
+    from app.routes.v5.tools.entries.groups.create import create_group
     from app.routes.v5.tools.resources.roles.create import create_role
 
     graph = await setting_graph_factory()
@@ -61,6 +64,7 @@ async def _create_persona_route_actor(
             redis=redis_client,
         )
         session = await create_session(conn, profile_id=graph.profile_resource_id)
+        await create_group(conn, session_id=session.id, name="persona-route")
 
     identity = await resolve_profile_identity_context(
         pool,
@@ -96,6 +100,8 @@ async def _create_persona_route_resources(
     color_name = f"Route Yellow {tag}"
     icon_name = f"Route User {tag}"
     instruction_template = f"You are persona route test {tag}."
+    color_hex_code = "#F5C542"
+    icon_value = "user"
 
     async with pool.acquire() as conn:
         name_res = await create_name(conn, name, redis_client)
@@ -104,14 +110,14 @@ async def _create_persona_route_resources(
             conn,
             color_name,
             f"Color for {tag}",
-            "#F5C542",
+            color_hex_code,
             redis_client,
         )
         icon_res = await create_icon(
             conn,
             icon_name,
             f"Icon for {tag}",
-            "user",
+            icon_value,
             redis_client,
         )
         instruction_res = await create_instruction(
@@ -127,8 +133,10 @@ async def _create_persona_route_resources(
         description=description_res.description,
         color_id=color_res.id,
         color_name=color_res.name,
+        color_hex_code=color_res.hex_code,
         icon_id=icon_res.id,
         icon_name=icon_res.name,
+        icon_value=icon_res.value,
         instruction_id=instruction_res.id,
         instruction_template=instruction_res.template,
     )
@@ -149,16 +157,16 @@ class TestPersonaRoute:
         self,
         pool,
         redis_client,
-        v5_route_client,
+        v5_persona_route_client,
         persona_route_actor,
     ):
         resources = await _create_persona_route_resources(pool, redis_client)
-        v5_route_client.authenticate(
+        v5_persona_route_client.authenticate(
             profile_id=persona_route_actor.profile_id,
             session_id=persona_route_actor.session_id,
         )
 
-        response = await v5_route_client.client.post(
+        response = await v5_persona_route_client.client.post(
             "/api/v5/artifacts/personas/create",
             json={
                 "personas": [
@@ -174,7 +182,7 @@ class TestPersonaRoute:
             },
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.headers["X-Invalidate-Tags"] == "personas"
 
         payload = response.json()
@@ -186,23 +194,23 @@ class TestPersonaRoute:
         self,
         pool,
         redis_client,
-        v5_route_client,
+        v5_persona_route_client,
         persona_route_actor,
     ):
         created = await self._create_persona_via_route(
             pool,
             redis_client,
-            v5_route_client,
+            v5_persona_route_client,
             persona_route_actor,
         )
 
-        response = await v5_route_client.client.post(
+        response = await v5_persona_route_client.client.post(
             "/api/v5/artifacts/personas/get",
             json={"persona_id": created["persona_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
 
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         assert response.headers["X-Cache-Tags"] == "personas"
         assert response.headers["X-Cache-Hit"] == "0"
 
@@ -227,17 +235,17 @@ class TestPersonaRoute:
         self,
         pool,
         redis_client,
-        v5_route_client,
+        v5_persona_route_client,
         persona_route_actor,
     ):
         created = await self._create_persona_via_route(
             pool,
             redis_client,
-            v5_route_client,
+            v5_persona_route_client,
             persona_route_actor,
         )
 
-        response = await v5_route_client.client.post(
+        response = await v5_persona_route_client.client.post(
             "/api/v5/artifacts/personas/search",
             json={
                 "search": created["name"],
@@ -265,8 +273,8 @@ class TestPersonaRoute:
         )
         assert created_persona["name"] == created["name"]
         assert created_persona["description"] == created["description"]
-        assert created_persona["color"] == created["color_name"]
-        assert created_persona["icon"] == created["icon_name"]
+        assert created_persona["color"] == created["color_hex_code"]
+        assert created_persona["icon"] == created["icon_value"]
         assert created_persona["can_edit"] is True
         assert created_persona["can_duplicate"] is True
         assert created_persona["can_delete"] is True
@@ -275,16 +283,16 @@ class TestPersonaRoute:
         self,
         pool,
         redis_client,
-        v5_route_client,
+        v5_persona_route_client,
         persona_route_actor: PersonaRouteActor,
     ) -> dict[str, str]:
         resources = await _create_persona_route_resources(pool, redis_client)
-        v5_route_client.authenticate(
+        v5_persona_route_client.authenticate(
             profile_id=persona_route_actor.profile_id,
             session_id=persona_route_actor.session_id,
         )
 
-        response = await v5_route_client.client.post(
+        response = await v5_persona_route_client.client.post(
             "/api/v5/artifacts/personas/create",
             json={
                 "personas": [
@@ -307,6 +315,8 @@ class TestPersonaRoute:
             "name": resources.name,
             "description": resources.description,
             "color_name": resources.color_name,
+            "color_hex_code": resources.color_hex_code,
             "icon_name": resources.icon_name,
+            "icon_value": resources.icon_value,
             "instruction_template": resources.instruction_template,
         }
