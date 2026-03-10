@@ -1,13 +1,13 @@
 """Field update endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.field_update.
+Thin route handler. Core logic lives in app.infra.field.update.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.field_update import update_field_client
+from app.infra.field.update import update_field_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.field.types import (
     UpdateFieldApiRequest,
@@ -37,7 +37,7 @@ async def update_field(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_field_client(
+        response_data = await update_field_impl(
             pool,
             redis,
             profile_id=profile_id,

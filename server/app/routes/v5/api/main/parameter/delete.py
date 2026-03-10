@@ -1,6 +1,6 @@
 """Parameter delete endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.parameter_delete.
+Thin route handler. Core logic lives in app.infra.parameter.delete.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.parameter_delete import delete_parameter_client
+from app.infra.parameter.delete import delete_parameter_impl
 from app.routes.v5.api.main.parameter.types import (
     DeleteParameterApiRequest,
     DeleteParameterApiResponse,
@@ -38,7 +38,7 @@ async def delete_parameter(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_parameter_client(
+        result = await delete_parameter_impl(
             pool,
             redis,
             profile_id=profile_id,

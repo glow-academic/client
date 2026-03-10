@@ -1,9 +1,11 @@
 """Tests for canonical agent section assembly."""
 
+from pathlib import Path
 from types import SimpleNamespace
+from types import ModuleType
 from uuid import uuid4
+import sys
 
-from app.infra.agent.sections import build_agent_get_result
 from app.infra.common_context import CommonContext
 from app.infra.profile_identity_context import ProfileIdentityContext
 from app.infra.runs_context import RunsContext
@@ -11,7 +13,23 @@ from app.infra.tool_graph import ArtifactToolScores, SettingsToolGraph
 from app.infra.types import ArtifactContext, ResourcePair
 
 
+def _ensure_agent_type_packages() -> None:
+    main_dir = Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    artifact_dir = main_dir / "agent"
+    if "app.routes.v5.api.main" not in sys.modules:
+        package = ModuleType("app.routes.v5.api.main")
+        package.__path__ = [str(main_dir)]  # type: ignore[attr-defined]
+        sys.modules["app.routes.v5.api.main"] = package
+    if "app.routes.v5.api.main.agent" not in sys.modules:
+        package = ModuleType("app.routes.v5.api.main.agent")
+        package.__path__ = [str(artifact_dir)]  # type: ignore[attr-defined]
+        sys.modules["app.routes.v5.api.main.agent"] = package
+
+
 def test_build_agent_get_result_builds_canonical_response():
+    _ensure_agent_type_packages()
+    from app.infra.agent.sections import build_agent_get_result
+
     group_id = uuid4()
 
     common = CommonContext(

@@ -1,6 +1,6 @@
 """Field search endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.field_search.
+Thin route handler. Core logic lives in app.infra.field.search.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.field_search import search_field_client
+from app.infra.field.search import search_field_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.field.types import ListFieldApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -54,7 +54,7 @@ async def search_field(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_field_client(
+        result = await search_field_impl(
             pool,
             redis,
             profile_id=profile_id,

@@ -257,7 +257,7 @@ async def search_cohort_impl(
     # Build mapping arrays
     api_profiles: list[ListCohortApiProfile] = [
         ListCohortApiProfile(
-            profile_id=p.profile_id,
+            profile_id=p.id,
             name=p.name,
             description=getattr(p, "description", None) or "",
         )
@@ -266,7 +266,7 @@ async def search_cohort_impl(
 
     api_simulations: list[ListCohortApiSimulation] = [
         ListCohortApiSimulation(
-            simulation_id=s.simulation_id,
+            simulation_id=s.id,
             name=getattr(s, "name", None),
             description=s.description,
             department_ids=getattr(s, "department_ids", None),
@@ -276,7 +276,7 @@ async def search_cohort_impl(
 
     api_departments: list[ListCohortApiDepartment] = [
         ListCohortApiDepartment(
-            department_id=d.department_id,
+            department_id=d.id,
             name=d.name,
             description=d.description,
         )
@@ -331,7 +331,7 @@ async def search_cohort_impl(
     # -- Step 7: Build facet sections --
     profile_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(p.profile_id), name=p.name, count=0)
+            ListFilterOption(id=str(p.id), name=p.name, count=0)
             for p in profile_facet
         ],
         selected_ids=[str(pid) for pid in filter_profile_ids]
@@ -343,7 +343,7 @@ async def search_cohort_impl(
     simulation_filter = ListFilterSection(
         options=[
             ListFilterOption(
-                id=str(s.simulation_id), name=getattr(s, "name", None), count=0
+                id=str(s.id), name=getattr(s, "name", None), count=0
             )
             for s in simulation_facet
         ],

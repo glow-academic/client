@@ -1,6 +1,6 @@
 """Model search endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.model_search.
+Thin route handler. Core logic lives in app.infra.model.search.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.model_search import search_model_client
+from app.infra.model.search import search_model_impl
 from app.routes.v5.api.main.model.types import ListModelApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -54,7 +54,7 @@ async def search_model(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_model_client(
+        result = await search_model_impl(
             pool,
             redis,
             profile_id=profile_id,

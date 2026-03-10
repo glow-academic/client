@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.parameter_create import CreateParameterItem
+from app.infra.parameter.create import CreateParameterItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.parameter_drafts.types import GetParameterDraftResponse
 

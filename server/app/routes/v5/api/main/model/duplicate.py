@@ -1,6 +1,6 @@
 """Model duplicate endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.model_duplicate.
+Thin route handler. Core logic lives in app.infra.model.duplicate.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.model_duplicate import duplicate_model_client
+from app.infra.model.duplicate import duplicate_model_impl
 from app.routes.v5.api.main.model.types import (
     DuplicateModelApiRequest,
     DuplicateModelApiResponse,
@@ -41,7 +41,7 @@ async def duplicate_model(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_model_client(
+        result = await duplicate_model_impl(
             pool,
             redis,
             profile_id=profile_id,

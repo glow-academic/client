@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.model_context import resolve_model_context
+from app.infra.model.context import resolve_model_context
 from app.routes.v5.tools.artifacts.model.create import create_model
 from app.routes.v5.tools.artifacts.model.update import update_model
 

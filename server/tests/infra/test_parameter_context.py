@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.parameter_context import resolve_parameter_context
+from app.infra.parameter.context import resolve_parameter_context
 from app.routes.v5.tools.artifacts.parameter.create import create_parameter
 from app.routes.v5.tools.artifacts.parameter.update import update_parameter
 

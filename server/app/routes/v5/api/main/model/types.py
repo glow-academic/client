@@ -13,7 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.model_create import CreateModelItem
+from app.infra.model.create import CreateModelItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.model_drafts.types import GetModelDraftResponse
 

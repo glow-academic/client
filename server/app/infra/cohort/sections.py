@@ -35,9 +35,11 @@ from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.cohort.types import (
     CohortDepartment,
     CohortDepartmentSection,
+    CohortDescriptionResource,
     CohortDescriptionSection,
     CohortFlagConfig,
     CohortFlagSection,
+    CohortNameResource,
     CohortNameSection,
     CohortProfile,
     CohortProfilePersona,
@@ -167,6 +169,20 @@ def build_cohort_get_result(
             generated=item.generated,
         )
 
+    def _to_name(item) -> CohortNameResource:
+        return CohortNameResource(
+            id=item.id,
+            name=item.name,
+            generated=item.generated,
+        )
+
+    def _to_description(item) -> CohortDescriptionResource:
+        return CohortDescriptionResource(
+            id=item.id,
+            description=item.description,
+            generated=item.generated,
+        )
+
     def _to_simulation(item) -> CohortSimulation:
         return CohortSimulation(
             simulation_id=item.id,
@@ -229,6 +245,8 @@ def build_cohort_get_result(
     all_descriptions = dedupe_by_id(
         cohort.resources["descriptions"].selected + cohort.resources["descriptions"].suggestions
     )
+    all_names_conv = [_to_name(item) for item in all_names]
+    all_descriptions_conv = [_to_description(item) for item in all_descriptions]
     all_departments_conv = [_to_department(item) for item in all_departments]
     all_simulations_conv = [_to_simulation(item) for item in all_simulations]
     all_profiles_conv = [_to_profile(item) for item in all_profiles]
@@ -252,15 +270,17 @@ def build_cohort_get_result(
         profiles_step_show_ai_generate=profiles_step_show_ai_generate,
         names=CohortNameSection(
             **_section("names"),
-            resource=cohort.resources["names"].selected[0] if cohort.resources["names"].selected else None,
-            resources=all_names,
+            resource=_to_name(cohort.resources["names"].selected[0])
+            if cohort.resources["names"].selected
+            else None,
+            resources=all_names_conv,
         ),
         descriptions=CohortDescriptionSection(
             **_section("descriptions"),
-            resource=cohort.resources["descriptions"].selected[0]
+            resource=_to_description(cohort.resources["descriptions"].selected[0])
             if cohort.resources["descriptions"].selected
             else None,
-            resources=all_descriptions,
+            resources=all_descriptions_conv,
         ),
         flags=CohortFlagSection(
             **_section("flags"),

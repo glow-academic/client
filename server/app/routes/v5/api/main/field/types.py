@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.field_create import CreateFieldItem
+from app.infra.field.create import CreateFieldItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.field_drafts.types import GetFieldDraftResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse

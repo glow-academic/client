@@ -1,13 +1,13 @@
 """Field create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.field_create.
+Thin route handler. Core logic lives in app.infra.field.create.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.field_create import create_field_client
+from app.infra.field.create import create_field_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.field.types import (
     CreateFieldApiRequest,
@@ -37,7 +37,7 @@ async def create_field(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_field_client(
+        response_data = await create_field_impl(
             pool,
             redis,
             profile_id=profile_id,

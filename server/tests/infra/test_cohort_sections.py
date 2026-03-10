@@ -1,9 +1,11 @@
 """Tests for canonical cohort section assembly."""
 
+from pathlib import Path
 from types import SimpleNamespace
+from types import ModuleType
 from uuid import uuid4
+import sys
 
-from app.infra.cohort.sections import build_cohort_get_result
 from app.infra.common_context import CommonContext
 from app.infra.profile_identity_context import ProfileIdentityContext
 from app.infra.runs_context import RunsContext
@@ -11,7 +13,23 @@ from app.infra.tool_graph import ArtifactToolScores, SettingsToolGraph
 from app.infra.types import ArtifactContext, ResourcePair
 
 
+def _ensure_cohort_type_packages() -> None:
+    main_dir = Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    artifact_dir = main_dir / "cohort"
+    if "app.routes.v5.api.main" not in sys.modules:
+        package = ModuleType("app.routes.v5.api.main")
+        package.__path__ = [str(main_dir)]  # type: ignore[attr-defined]
+        sys.modules["app.routes.v5.api.main"] = package
+    if "app.routes.v5.api.main.cohort" not in sys.modules:
+        package = ModuleType("app.routes.v5.api.main.cohort")
+        package.__path__ = [str(artifact_dir)]  # type: ignore[attr-defined]
+        sys.modules["app.routes.v5.api.main.cohort"] = package
+
+
 def test_build_cohort_get_result_builds_canonical_response():
+    _ensure_cohort_type_packages()
+    from app.infra.cohort.sections import build_cohort_get_result
+
     group_id = uuid4()
 
     common = CommonContext(
@@ -43,11 +61,19 @@ def test_build_cohort_get_result_builds_canonical_response():
         draft_version=4,
         resources={
             "names": ResourcePair(
-                selected=[SimpleNamespace(id=uuid4(), name="Fall Cohort")],
+                selected=[
+                    SimpleNamespace(id=uuid4(), name="Fall Cohort", generated=False)
+                ],
                 suggestions=[],
             ),
             "descriptions": ResourcePair(
-                selected=[SimpleNamespace(id=uuid4(), description="Learner group")],
+                selected=[
+                    SimpleNamespace(
+                        id=uuid4(),
+                        description="Learner group",
+                        generated=False,
+                    )
+                ],
                 suggestions=[],
             ),
             "flags": ResourcePair(selected=[], suggestions=[]),
@@ -62,7 +88,14 @@ def test_build_cohort_get_result_builds_canonical_response():
             "simulation_positions": ResourcePair(selected=[], suggestions=[]),
             "simulation_availability": ResourcePair(selected=[], suggestions=[]),
             "profiles": ResourcePair(
-                selected=[SimpleNamespace(id=uuid4(), name="Jane", description="Desc")],
+                selected=[
+                    SimpleNamespace(
+                        id=uuid4(),
+                        name="Jane",
+                        description="Desc",
+                        generated=False,
+                    )
+                ],
                 suggestions=[],
             ),
             "profile_personas": ResourcePair(selected=[], suggestions=[]),

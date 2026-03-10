@@ -1,6 +1,6 @@
 """Model create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.model_create.
+Thin route handler. Core logic lives in app.infra.model.create.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.model_create import create_model_client
+from app.infra.model.create import create_model_impl
 from app.routes.v5.api.main.model.types import (
     CreateModelApiRequest,
     CreateModelApiResponse,
@@ -37,7 +37,7 @@ async def create_model(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_model_client(
+        response_data = await create_model_impl(
             pool,
             redis,
             profile_id=profile_id,
