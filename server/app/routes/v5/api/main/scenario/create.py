@@ -1,6 +1,6 @@
 """Scenario create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.scenario_create.
+Thin route handler. Core logic lives in app.infra.scenario.create.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.scenario_create import create_scenario_client
+from app.infra.scenario.create import create_scenario_impl
 from app.routes.v5.api.main.scenario.types import (
     CreateScenarioApiRequest,
     CreateScenarioApiResponse,
@@ -37,7 +37,7 @@ async def create_scenario(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_scenario_client(
+        response_data = await create_scenario_impl(
             pool,
             redis,
             profile_id=profile_id,

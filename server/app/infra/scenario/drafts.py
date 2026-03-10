@@ -17,7 +17,7 @@ from app.infra.types import ArtifactContext
 from app.routes.v5.tools.entries.scenario_drafts.search import search_scenario_drafts
 
 
-async def list_scenario_drafts_client(
+async def list_scenario_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

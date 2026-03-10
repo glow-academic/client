@@ -1,6 +1,6 @@
 """Scenario update endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.scenario_update.
+Thin route handler. Core logic lives in app.infra.scenario.update.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.scenario_update import update_scenario_client
+from app.infra.scenario.update import update_scenario_impl
 from app.routes.v5.api.main.scenario.types import (
     UpdateScenarioApiRequest,
     UpdateScenarioApiResponse,
@@ -37,7 +37,7 @@ async def update_scenario(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_scenario_client(
+        response_data = await update_scenario_impl(
             pool,
             redis,
             profile_id=profile_id,

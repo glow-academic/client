@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
-from app.infra.scenario_refresh import refresh_scenario_client
+from app.infra.scenario.refresh import refresh_scenario_impl
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ async def scenario_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_scenario_client(
+    result = await refresh_scenario_impl(
         pool,
         redis,
         profile_id=profile_id,

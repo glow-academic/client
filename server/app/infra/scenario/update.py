@@ -18,7 +18,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.scenario_permissions_context import (
+from app.infra.scenario.permissions_context import (
     create_denormalized_snapshot,
     resolve_scenario_permissions_context,
     resolve_scenario_values,
@@ -51,7 +51,7 @@ def _collect_flag_ids(item: UpdateScenarioItem) -> list[UUID] | None:
     return flag_ids if flag_ids else None
 
 
-async def update_scenario_client(
+async def update_scenario_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -70,7 +70,7 @@ async def update_scenario_client(
       4. Single transaction: update_scenario_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.scenario_permissions import compute_can_edit
+    from app.infra.scenario.permissions import compute_can_edit
     from app.routes.v5.api.main.scenario.types import (
         ScenarioResultItem,
         UpdateScenarioApiResponse,

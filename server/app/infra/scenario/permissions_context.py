@@ -49,7 +49,7 @@ from app.routes.v5.tools.resources.scenarios.create import (
 from app.routes.v5.tools.resources.videos.search import search_videos
 
 if TYPE_CHECKING:
-    from app.infra.scenario_create import CreateScenarioItem, ScenarioFieldError
+    from app.infra.scenario.create import CreateScenarioItem, ScenarioFieldError
     from app.routes.v5.api.main.scenario.types import (
         UpdateScenarioItem,
     )
@@ -131,7 +131,7 @@ async def resolve_scenario_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.infra.scenario_create import ScenarioFieldError
+    from app.infra.scenario.create import ScenarioFieldError
 
     errors: list[ScenarioFieldError] = []
 

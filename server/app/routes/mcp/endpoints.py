@@ -227,7 +227,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "duplicate_scenario",
         ),
         "draft": ("app.routes.v5.api.main.scenario.draft", "patch_scenario_draft"),
-        "docs": ("app.infra.scenario_docs", "docs_scenario_client"),
+        "docs": ("app.infra.scenario.docs", "docs_scenario_impl"),
     },
     "session": {
         "get": ("app.routes.v5.api.main.session.get", "get_session"),

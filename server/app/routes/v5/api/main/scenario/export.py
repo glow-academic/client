@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.scenario_export import export_scenario_client
+from app.infra.scenario.export import export_scenario_impl
 from app.routes.v5.api.main.scenario.types import (
     ExportScenarioApiRequest,
     ExportScenarioApiResponse,
@@ -24,7 +24,7 @@ async def export_scenarios(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_scenario_client(
+    return await export_scenario_impl(
         pool,
         redis,
         profile_id=profile_id,

@@ -1,6 +1,6 @@
 """Scenario search endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.scenario_search.
+Thin route handler. Core logic lives in app.infra.scenario.search.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.scenario_search import search_scenario_client
+from app.infra.scenario.search import search_scenario_impl
 from app.routes.v5.api.main.scenario.types import ListScenarioApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -55,7 +55,7 @@ async def search_scenario(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_scenario_client(
+        result = await search_scenario_impl(
             pool,
             redis,
             profile_id=profile_id,

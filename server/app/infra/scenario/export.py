@@ -59,7 +59,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_scenario_client(
+async def export_scenario_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

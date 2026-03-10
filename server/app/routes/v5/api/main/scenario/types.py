@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.infra.scenario_create import CreateScenarioItem
+from app.infra.scenario.create import CreateScenarioItem
 from app.routes.v5.api.main.persona.types import ImportField
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.scenario_drafts.types import GetScenarioDraftResponse

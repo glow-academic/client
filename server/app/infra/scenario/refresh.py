@@ -26,7 +26,7 @@ _TAGS = ["scenarios", "artifacts"]
 _VIEWS = ["scenario_drafts_mv"]
 
 
-async def refresh_scenario_client(
+async def refresh_scenario_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

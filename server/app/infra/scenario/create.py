@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.scenario_permissions_context import (
+from app.infra.scenario.permissions_context import (
     create_denormalized_snapshot,
     resolve_scenario_values,
 )
@@ -112,7 +112,7 @@ def _collect_flag_ids(item: CreateScenarioItem) -> list[UUID] | None:
     return flag_ids if flag_ids else None
 
 
-async def create_scenario_client(
+async def create_scenario_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -131,7 +131,7 @@ async def create_scenario_client(
       4. Single transaction: create_scenario_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.scenario_permissions import compute_can_create
+    from app.infra.scenario.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

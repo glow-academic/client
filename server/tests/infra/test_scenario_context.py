@@ -1,10 +1,10 @@
-"""Integration tests for infra.scenario_context — real DB, no mocks."""
+"""Integration tests for infra.scenario.context — real DB, no mocks."""
 
 from uuid import uuid4
 
 import pytest
 
-from app.infra.scenario_context import resolve_scenario_context
+from app.infra.scenario.context import resolve_scenario_context
 from app.routes.v5.tools.artifacts.scenario.create import create_scenario
 from app.routes.v5.tools.artifacts.scenario.update import update_scenario
 

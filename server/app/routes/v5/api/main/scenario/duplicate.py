@@ -1,6 +1,6 @@
 """Scenario duplicate endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.scenario_duplicate.
+Thin route handler. Core logic lives in app.infra.scenario.duplicate.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.scenario_duplicate import duplicate_scenario_client
+from app.infra.scenario.duplicate import duplicate_scenario_impl
 from app.routes.v5.api.main.scenario.types import (
     DuplicateScenarioApiRequest,
     DuplicateScenarioApiResponse,
@@ -41,7 +41,7 @@ async def duplicate_scenario(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_scenario_client(
+        result = await duplicate_scenario_impl(
             pool,
             redis,
             profile_id=profile_id,

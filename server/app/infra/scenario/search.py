@@ -19,7 +19,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.scenario_permissions import (
+from app.infra.scenario.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
@@ -155,7 +155,7 @@ SCENARIO_IMPORT_FIELDS: list[ImportField] = [
 ]
 
 
-async def search_scenario_client(
+async def search_scenario_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

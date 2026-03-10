@@ -83,6 +83,18 @@ class CreatePersonaApiResponse(BaseModel):
     results: list[PersonaResultItem]
 
 
+def _batch_department_scope(items: list[CreatePersonaItem]) -> list[str] | None:
+    """Summarize whether every item is department-scoped for create permissions."""
+    if not items:
+        return None
+
+    for item in items:
+        if not (item.department_ids or item.departments):
+            return None
+
+    return ["department-scoped"]
+
+
 async def create_persona_impl(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -123,7 +135,10 @@ async def create_persona_impl(
 
     # ── Step 2: Permission check ───────────────────────────────────────
 
-    if not compute_can_create(user_role=profile.role, department_ids=None):
+    if not compute_can_create(
+        user_role=profile.role,
+        department_ids=_batch_department_scope(items),
+    ):
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to create personas.",
