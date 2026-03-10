@@ -63,7 +63,6 @@ class RubricStandardsSection(BaseResourceSection):
 class GetRubricApiRequest(BaseModel):
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
 
 
 class GetRubricApiResponse(BaseModel):

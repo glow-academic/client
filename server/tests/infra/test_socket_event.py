@@ -1,11 +1,4 @@
-"""Tests for infra.websocket.socket_event — SocketEvent + EmitFn pattern.
-
-SocketEvent construction is pure (no mocks needed).
-flush_events uses dependency injection — pass mock emitters directly.
-make_emit / recording_emit provide the canonical EmitFn factories.
-"""
-
-from unittest.mock import AsyncMock
+"""Tests for infra.websocket.socket_event using simple recording emitters."""
 
 import pytest
 
@@ -17,6 +10,14 @@ from app.infra.websocket.socket_event import (
     make_emit,
     recording_emit,
 )
+
+
+class RecorderEmitter:
+    def __init__(self):
+        self.calls: list[tuple[str, dict, dict]] = []
+
+    async def emit(self, event: str, data, **kwargs) -> None:
+        self.calls.append((event, data, kwargs))
 
 # ═══════════════════════════════════════════════════════════════════════════
 # SocketEvent construction — pure unit tests
@@ -63,38 +64,36 @@ class TestSocketEventConstruction:
 class TestFlushEvents:
     async def test_empty_list_does_nothing(self):
         """No events → no emit calls."""
-        mock_client = AsyncMock()
-        mock_internal = AsyncMock()
-        await flush_events([], client_sio=mock_client, internal_sio=mock_internal)
-        mock_client.emit.assert_not_called()
-        mock_internal.emit.assert_not_called()
+        client = RecorderEmitter()
+        internal = RecorderEmitter()
+        await flush_events([], client_sio=client, internal_sio=internal)
+        assert client.calls == []
+        assert internal.calls == []
 
     async def test_client_event_emits_to_sio(self):
         e = client_event("gen_complete", {"id": "1"}, room="room-1")
-        mock_client = AsyncMock()
-        mock_internal = AsyncMock()
-        await flush_events([e], client_sio=mock_client, internal_sio=mock_internal)
+        client = RecorderEmitter()
+        internal = RecorderEmitter()
+        await flush_events([e], client_sio=client, internal_sio=internal)
 
-        mock_client.emit.assert_called_once_with(
-            "gen_complete", {"id": "1"}, room="room-1"
-        )
-        mock_internal.emit.assert_not_called()
+        assert client.calls == [("gen_complete", {"id": "1"}, {"room": "room-1"})]
+        assert internal.calls == []
 
     async def test_client_event_room_defaults_to_empty(self):
         e = client_event("test", {"x": 1})
-        mock_client = AsyncMock()
-        await flush_events([e], client_sio=mock_client, internal_sio=AsyncMock())
+        client = RecorderEmitter()
+        await flush_events([e], client_sio=client, internal_sio=RecorderEmitter())
 
-        mock_client.emit.assert_called_once_with("test", {"x": 1}, room="")
+        assert client.calls == [("test", {"x": 1}, {"room": ""})]
 
     async def test_internal_event_emits_to_internal_sio(self):
         e = internal_event("generate_artifact", {"agent": "a"}, sid="sid-1")
-        mock_client = AsyncMock()
-        mock_internal = AsyncMock()
-        await flush_events([e], client_sio=mock_client, internal_sio=mock_internal)
+        client = RecorderEmitter()
+        internal = RecorderEmitter()
+        await flush_events([e], client_sio=client, internal_sio=internal)
 
-        mock_internal.emit.assert_called_once_with("generate_artifact", {"agent": "a"})
-        mock_client.emit.assert_not_called()
+        assert internal.calls == [("generate_artifact", {"agent": "a"}, {})]
+        assert client.calls == []
 
     async def test_mixed_events_emit_in_order(self):
         """Client and internal events interleaved — all emitted in order."""
@@ -105,27 +104,27 @@ class TestFlushEvents:
             client_event("done", {"d": 4}, room="r1"),
         ]
 
-        mock_client = AsyncMock()
-        mock_internal = AsyncMock()
-        await flush_events(events, client_sio=mock_client, internal_sio=mock_internal)
+        client = RecorderEmitter()
+        internal = RecorderEmitter()
+        await flush_events(events, client_sio=client, internal_sio=internal)
 
-        assert mock_client.emit.call_count == 2
-        assert mock_internal.emit.call_count == 2
-
-        # Verify order for client
-        client_calls = mock_client.emit.call_args_list
-        assert client_calls[0].args == ("started", {"a": 1})
-        assert client_calls[1].args == ("done", {"d": 4})
-
-        # Verify order for internal
-        internal_calls = mock_internal.emit.call_args_list
-        assert internal_calls[0].args == ("dispatch_1", {"b": 2})
-        assert internal_calls[1].args == ("dispatch_2", {"c": 3})
+        assert client.calls == [
+            ("started", {"a": 1}, {"room": "r1"}),
+            ("done", {"d": 4}, {"room": "r1"}),
+        ]
+        assert internal.calls == [
+            ("dispatch_1", {"b": 2}, {}),
+            ("dispatch_2", {"c": 3}, {}),
+        ]
 
     async def test_unknown_bus_raises(self):
         e = SocketEvent(bus="unknown", event="x", data={})
         with pytest.raises(ValueError, match="Unknown bus: unknown"):
-            await flush_events([e], client_sio=AsyncMock(), internal_sio=AsyncMock())
+            await flush_events(
+                [e],
+                client_sio=RecorderEmitter(),
+                internal_sio=RecorderEmitter(),
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -137,9 +136,9 @@ class TestFlushEvents:
 class TestMakeEmit:
     async def test_delegates_to_flush_events(self):
         """make_emit wraps flush_events with injected emitters."""
-        mock_client = AsyncMock()
-        mock_internal = AsyncMock()
-        emit = make_emit(client_sio=mock_client, internal_sio=mock_internal)
+        client = RecorderEmitter()
+        internal = RecorderEmitter()
+        emit = make_emit(client_sio=client, internal_sio=internal)
 
         await emit(
             [
@@ -148,19 +147,23 @@ class TestMakeEmit:
             ]
         )
 
-        mock_client.emit.assert_called_once_with("started", {"a": 1}, room="r1")
-        mock_internal.emit.assert_called_once_with("dispatch", {"b": 2})
+        assert client.calls == [("started", {"a": 1}, {"room": "r1"})]
+        assert internal.calls == [("dispatch", {"b": 2}, {})]
 
     async def test_multiple_calls_accumulate(self):
         """Calling emit multiple times works (streaming pattern)."""
-        mock_internal = AsyncMock()
-        emit = make_emit(client_sio=AsyncMock(), internal_sio=mock_internal)
+        internal = RecorderEmitter()
+        emit = make_emit(client_sio=RecorderEmitter(), internal_sio=internal)
 
         await emit([internal_event("progress", {"pct": 25})])
         await emit([internal_event("progress", {"pct": 50})])
         await emit([internal_event("complete", {"ok": True})])
 
-        assert mock_internal.emit.call_count == 3
+        assert internal.calls == [
+            ("progress", {"pct": 25}, {}),
+            ("progress", {"pct": 50}, {}),
+            ("complete", {"ok": True}, {}),
+        ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -103,6 +103,7 @@ async def get_scenario_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    session_id: UUID | None = None,
     scenario_id: UUID | None,
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
@@ -138,6 +139,7 @@ async def get_scenario_client(
         pool,
         redis,
         profile_id=profile_id,
+        session_id=session_id,
         group_id=group_id,
         draft_id=draft_id,
         artifact_type="scenario",
@@ -683,6 +685,7 @@ async def get_scenario(
 
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -696,6 +699,7 @@ async def get_scenario(
             pool,
             redis,
             profile_id=profile_id,
+            session_id=session_id,
             scenario_id=request.scenario_id,
             draft_id=request.draft_id,
             group_id=request.group_id,

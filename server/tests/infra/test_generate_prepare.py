@@ -15,6 +15,7 @@ import pytest
 
 from app.infra.websocket.generate_prepare_impl import generate_prepare_impl
 from app.infra.websocket.socket_event import recording_emit
+from tests.helpers import nonexistent_id
 
 _P = "app.infra.websocket.generate_prepare_impl"
 _PP = "app.infra.websocket.prepare_pipeline"
@@ -60,6 +61,7 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             {"sid": ""},
             emit=emit,
+            pool=AsyncMock(),
             conn=AsyncMock(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
@@ -71,6 +73,7 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(profile_id=None),
             emit=emit,
+            pool=AsyncMock(),
             conn=AsyncMock(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
@@ -84,6 +87,7 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(profiles_id=None),
             emit=emit,
+            pool=AsyncMock(),
             conn=AsyncMock(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
@@ -96,6 +100,7 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(session_id=None),
             emit=emit,
+            pool=AsyncMock(),
             conn=AsyncMock(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
@@ -108,6 +113,7 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(group_id=None),
             emit=emit,
+            pool=AsyncMock(),
             conn=AsyncMock(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
@@ -120,6 +126,7 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(),
             emit=emit,
+            pool=AsyncMock(),
             conn=AsyncMock(),
             redis=object(),
             artifact_config=None,
@@ -132,6 +139,7 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(profile_id="not-a-uuid"),
             emit=emit,
+            pool=AsyncMock(),
             conn=AsyncMock(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
@@ -139,37 +147,52 @@ class TestGeneratePrepareImpl:
         assert len(events) == 1
         assert "Invalid request" in events[0].data["error_message"]
 
-    async def test_context_resolution_failure_emits_error(self):
+    async def test_context_resolution_failure_emits_error(self, pool, redis_client):
         emit, events = recording_emit()
-        with patch(
-            f"{_P}.resolve_websocket_context",
-            new_callable=AsyncMock,
-            return_value=None,
-        ):
+        async with pool.acquire() as conn:
             await generate_prepare_impl(
-                _base_data(),
+                _base_data(
+                    profile_id=str(nonexistent_id()),
+                    profiles_id=str(nonexistent_id()),
+                    session_id=str(nonexistent_id()),
+                    group_id=str(nonexistent_id()),
+                    artifact_types=[{"name": "persona", "operation": "get"}],
+                ),
                 emit=emit,
-                conn=AsyncMock(),
-                redis=object(),
-                artifact_config=FakeArtifactConfig(),
+                pool=pool,
+                conn=conn,
+                redis=redis_client,
+                artifact_config=FakeArtifactConfig(artifact_type="persona"),
             )
         assert len(events) == 1
         assert "Failed to resolve context" in events[0].data["error_message"]
 
-    async def test_no_agents_emits_error(self):
+    async def test_no_agents_emits_error(
+        self,
+        pool,
+        redis_client,
+        profile_identity_factory,
+        persona_context_factory,
+    ):
         emit, events = recording_emit()
-        ws_ctx = SimpleNamespace(agents=[], models=[], providers=[], tools=[])
-        with patch(
-            f"{_P}.resolve_websocket_context",
-            new_callable=AsyncMock,
-            return_value=ws_ctx,
-        ):
+        profile = await profile_identity_factory(departments=[], emails=[])
+        persona = await persona_context_factory()
+
+        async with pool.acquire() as conn:
             await generate_prepare_impl(
-                _base_data(),
+                _base_data(
+                    profile_id=str(profile.artifact_id),
+                    profiles_id=str(profile.profile_resource_id),
+                    session_id=str(nonexistent_id()),
+                    group_id=str(persona.group_id),
+                    artifact_types=[{"name": "persona", "operation": "get"}],
+                    artifact_id=str(persona.persona_id),
+                ),
                 emit=emit,
-                conn=AsyncMock(),
-                redis=object(),
-                artifact_config=FakeArtifactConfig(),
+                pool=pool,
+                conn=conn,
+                redis=redis_client,
+                artifact_config=FakeArtifactConfig(artifact_type="persona"),
             )
         assert len(events) == 1
         assert "No system/agent" in events[0].data["error_message"]
@@ -257,6 +280,7 @@ class TestGeneratePrepareImpl:
             await generate_prepare_impl(
                 _base_data(),
                 emit=emit,
+                pool=AsyncMock(),
                 conn=AsyncMock(),
                 redis=object(),
                 artifact_config=FakeArtifactConfig(),

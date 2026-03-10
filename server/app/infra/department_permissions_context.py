@@ -70,12 +70,12 @@ async def resolve_department_permissions_context(
     usage_count = await conn.fetchval(
         """
         SELECT (
-            (SELECT COUNT(*) FROM profile_departments_junction WHERE department_id = $1 AND active = true) +
-            (SELECT COUNT(*) FROM simulation_departments_junction WHERE department_id = $1 AND active = true) +
-            (SELECT COUNT(*) FROM scenario_departments_junction WHERE department_id = $1 AND active = true) +
-            (SELECT COUNT(*) FROM persona_departments_junction WHERE department_id = $1 AND active = true) +
-            (SELECT COUNT(*) FROM document_departments_junction WHERE department_id = $1 AND active = true) +
-            (SELECT COUNT(*) FROM cohort_departments_junction WHERE department_id = $1 AND active = true)
+            (SELECT COUNT(*) FROM profile_departments_junction WHERE departments_id = $1 AND active = true) +
+            (SELECT COUNT(*) FROM simulation_departments_junction WHERE departments_id = $1 AND active = true) +
+            (SELECT COUNT(*) FROM scenario_departments_junction WHERE departments_id = $1 AND active = true) +
+            (SELECT COUNT(*) FROM persona_departments_junction WHERE departments_id = $1 AND active = true) +
+            (SELECT COUNT(*) FROM document_departments_junction WHERE departments_id = $1 AND active = true) +
+            (SELECT COUNT(*) FROM cohort_departments_junction WHERE departments_id = $1 AND active = true)
         )::bigint
         """,
         department_id,

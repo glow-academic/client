@@ -26,6 +26,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         await generate_prepare_impl(
             data,
             emit=make_emit(),
+            pool=pool,
             conn=conn,
             redis=redis,
             artifact_config=artifact_config,

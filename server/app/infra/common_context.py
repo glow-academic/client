@@ -39,6 +39,7 @@ async def resolve_common_context(
     *,
     profile_id: UUID,
     profile: ProfileIdentityContext | None = None,
+    session_id: UUID | None = None,
     group_id: UUID | None = None,
     bypass_cache: bool = False,
     # Group resolution hints — threaded to resolve_profile_identity_context
@@ -66,6 +67,7 @@ async def resolve_common_context(
             profile_id,
             redis,
             bypass_cache,
+            session_id=session_id,
             draft_id=draft_id,
             artifact_type=artifact_type,
         )

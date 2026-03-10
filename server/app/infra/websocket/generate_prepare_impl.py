@@ -38,6 +38,7 @@ async def generate_prepare_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
+    pool: asyncpg.Pool,
     conn: asyncpg.Connection,
     redis: Any,
     artifact_config: Any,
@@ -146,7 +147,7 @@ async def generate_prepare_impl(
         bypass_cache = True
 
         ws_ctx = await resolve_websocket_context(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             requests=[

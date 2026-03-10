@@ -123,7 +123,6 @@ class GetParameterApiRequest(BaseModel):
 
     parameter_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
 
 
 class GetParameterApiResponse(BaseModel):

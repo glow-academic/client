@@ -83,6 +83,7 @@ async def get_eval_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    session_id: UUID | None = None,
     eval_id: UUID | None,
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
@@ -104,6 +105,7 @@ async def get_eval_client(
         pool,
         redis,
         profile_id=profile_id,
+        session_id=session_id,
         group_id=group_id,
         draft_id=draft_id,
         artifact_type="eval",
@@ -413,6 +415,7 @@ async def get_eval(
 
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -426,9 +429,9 @@ async def get_eval(
             pool,
             redis,
             profile_id=profile_id,
+            session_id=session_id,
             eval_id=request.eval_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
 

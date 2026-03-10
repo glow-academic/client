@@ -45,7 +45,6 @@ class GetModelApiRequest(BaseModel):
 
     model_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
 
 
 class ModelNameSection(BaseResourceSection):

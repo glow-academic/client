@@ -14,6 +14,7 @@ import pytest
 import pytest_asyncio
 
 import app.infra.globals as globals_mod
+import app.infra.websocket.audio_lifecycle as audio_lifecycle
 from app.infra.websocket.attempt_events_impl import (
     attempt_next_impl,
     audio_delta_impl,
@@ -43,6 +44,7 @@ from app.infra.websocket.attempt_events_impl import (
 )
 from app.infra.websocket.session_store import (
     _session_store,
+    get_session_by_group_id,
     remove_session,
 )
 from app.infra.websocket.session_store import create_session as create_audio_session
@@ -126,6 +128,8 @@ from app.routes.v5.tools.entries.test_invocation.search import (
 from app.routes.v5.tools.entries.test_invocation_completion.search import (
     search_test_invocation_completions,
 )
+from app.routes.v5.tools.entries.tokens.refresh import refresh_tokens
+from app.routes.v5.tools.entries.tokens.search import search_tokens
 from app.routes.v5.tools.entries.attempt_chat_completion.search import (
     search_attempt_chat_completions,
 )
@@ -143,6 +147,7 @@ from app.routes.v5.tools.resources.personas.create import (
     create_persona as create_persona_resource,
 )
 from app.routes.v5.tools.resources.simulations.create import create_simulation
+from tests.helpers import nonexistent_id
 
 _P = "app.infra.websocket.attempt_events_impl"
 
@@ -607,17 +612,26 @@ class TestAudioStopImpl:
         assert events[0].event == "attempt_audio_ended"
         assert events[0].data["chat_id"] == "g1"
 
-    async def test_with_session_cleans_up_and_emits(self, audio_session_factory):
+    async def test_with_session_cleans_up_and_emits(
+        self, audio_session_factory, monkeypatch
+    ):
         emit, events = recording_emit()
-        session = await audio_session_factory()
-        with (
-            patch(
-                "app.infra.websocket.audio_lifecycle.cleanup_audio_session",
-                new_callable=AsyncMock,
-            ) as mock_cleanup,
-        ):
-            await audio_stop_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
-        mock_cleanup.assert_called_once_with(session)
+        await audio_session_factory()
+
+        class FakeAudioAdapter:
+            def __init__(self):
+                self.stopped_sessions: list[str] = []
+
+            async def stop_session(self, session) -> None:
+                self.stopped_sessions.append(session.group_id)
+
+        adapter = FakeAudioAdapter()
+        monkeypatch.setattr(audio_lifecycle, "_audio_adapter", adapter)
+
+        await audio_stop_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
+
+        assert adapter.stopped_sessions == ["g1"]
+        assert get_session_by_group_id("g1") is None
         assert events[0].data["chat_id"] == "c1"
 
 
@@ -961,9 +975,6 @@ class TestExtractGradeHelpers:
 # test_grade_complete_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_TOKEN_CREATE = "app.routes.v5.tools.entries.tokens.create"
-
-
 @pytest.mark.asyncio
 class TestGradeCompleteImpl:
     async def test_emits_test_grade_progress(self):
@@ -989,27 +1000,45 @@ class TestGradeCompleteImpl:
         assert events[0].data["grade_id"] == "g1"
         assert events[0].data["invocation_id"] == "inv-1"
 
-    @patch(f"{_TOKEN_CREATE}.create_token", new_callable=AsyncMock)
-    async def test_creates_token_when_run_and_session(self, mock_create):
-        mock_create.return_value = SimpleNamespace(id="tok-1")
+    async def test_creates_token_when_run_and_session(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            profile = await create_profile(conn, redis_client)
+            session = await create_session(conn, profile_id=profile.id)
+            group = await create_group(conn, session_id=session.id)
+            run = await create_run(
+                conn,
+                group_id=group.id,
+                session_id=session.id,
+                profiles_id=profile.id,
+            )
+
         emit, events = recording_emit()
         await _test_grade_complete_impl(
             {
                 "sid": "s1",
                 "grade_id": "g1",
                 "invocation_id": "inv-1",
-                "run_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "session_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "run_id": str(run.id),
+                "session_id": str(session.id),
                 "input_tokens": 100,
                 "output_tokens": 50,
                 "tool_results": [],
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
             profile_id="prof-1",
         )
-        mock_create.assert_called_once()
+
+        async with pool.acquire() as conn:
+            await refresh_tokens(conn)
+            tokens = await search_tokens(conn, run_ids=[run.id], bypass_mv=True)
+
         assert len(events) == 1
+        assert len(tokens) == 1
+        assert tokens[0].run_id == run.id
+        assert tokens[0].session_id == session.id
+        assert tokens[0].input_tokens == 100
+        assert tokens[0].output_tokens == 50
 
     async def test_skips_token_without_session(self):
         emit, events = recording_emit()
@@ -2024,21 +2053,26 @@ class TestAttemptStartImpl:
         assert attempts[0].practice is True
         assert attempts[0].num_chats == 2
 
-    @patch(f"{_PROFILE_CTX}.resolve_profile_identity_context", new_callable=AsyncMock)
-    async def test_error_emits_attempt_error(self, mock_ctx):
-        mock_ctx.side_effect = RuntimeError("db down")
+    async def test_error_emits_attempt_error(
+        self, pool, redis_client, profile_identity_factory
+    ):
+        fixture = await profile_identity_factory()
+        async with pool.acquire() as conn:
+            session = await create_session(conn, profile_id=fixture.profile_resource_id)
+            group = await create_group(conn, session_id=session.id)
 
         emit, events = recording_emit()
         await _attempt_start_impl(
             {
                 "sid": "s1",
-                "practice_id": "019b3be4-36f0-788c-9df2-481eb5917950",
-                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+                "practice_id": str(nonexistent_id()),
+                "group_id": str(group.id),
             },
             emit=emit,
-            pool=_mock_pool(),
-            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
-            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+            pool=pool,
+            redis=redis_client,
+            profile_id=str(fixture.artifact_id),
+            session_id=str(session.id),
         )
 
         assert len(events) == 1
@@ -2500,31 +2534,25 @@ class TestAttemptProceedImpl:
         assert events[0].event == "attempt_started"
         assert events[0].data["chat_entry_id"] == str(graph.parent_chat.id)
 
-    @patch(_RUNS, new_callable=AsyncMock)
-    async def test_error_emits_attempt_error(self, mock_run):
-        mock_run.side_effect = RuntimeError("db down")
-
-        from contextlib import asynccontextmanager
-        from unittest.mock import MagicMock
-
-        @asynccontextmanager
-        async def fake_txn():
-            yield
-
-        mock_conn = AsyncMock()
-        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+    async def test_error_emits_attempt_error(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            profile = await create_profile(conn, redis_client)
+            session = await create_session(conn, profile_id=profile.id)
+            group = await create_group(conn, session_id=session.id)
 
         emit, events = recording_emit()
         await _attempt_proceed_impl(
             {
                 "sid": "s1",
-                "attempt_id": "019b3be4-36f0-788c-9df2-481eb5917950",
-                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+                "attempt_id": str(nonexistent_id()),
+                "group_id": str(group.id),
             },
             emit=emit,
-            pool=_mock_pool(mock_conn),
-            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
-            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+            pool=pool,
+            redis=redis_client,
+            profile_id=str(profile.id),
+            session_id=str(session.id),
+            profiles_id=profile.id,
         )
 
         assert len(events) == 1

@@ -1,284 +1,118 @@
-"""Tests for infra.auth.email — profile-by-email lookup via canonical black boxes.
+"""Tests for infra.auth.email using the real profile/email lookup path."""
 
-resolve_profile_by_email is tested with mocked black-box fetchers.
-Tests verify: correct arguments flow, chaining, error cases.
-"""
-
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from __future__ import annotations
 
 import pytest
 
 from app.infra.auth.email import ProfileByEmailResult, resolve_profile_by_email
-from app.infra.profile_identity_context import ProfileIdentityContext
-from app.routes.v5.tools.resources.emails.types import GetEmailResponse
+from app.routes.v5.tools.resources.emails.create import create_email
 
-NOW = datetime.now(UTC)
-MODULE = "app.infra.auth.email"
+pytestmark = pytest.mark.asyncio
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _identity(
-    *,
-    profiles_id=None,
-    name="Alice",
-    role="admin",
-    primary_email="alice@example.com",
-    emails=None,
-    primary_department_id=None,
-    requests_per_day=100,
-    is_active=True,
-) -> ProfileIdentityContext:
-    return ProfileIdentityContext(
-        profiles_id=profiles_id or uuid4(),
-        name=name,
-        role=role,
-        role_name="Admin",
-        role_description="Administrator",
-        role_artifacts=["agent"],
-        primary_email=primary_email,
-        emails=emails or [primary_email],
-        primary_department_id=primary_department_id or uuid4(),
-        department_ids=[primary_department_id or uuid4()],
-        settings_id=uuid4(),
-        requests_per_day=requests_per_day,
-        is_active=is_active,
-    )
-
-
-def _email_response(
-    *, email_id=None, email="alice@example.com", is_primary=True
-) -> GetEmailResponse:
-    return GetEmailResponse(
-        id=email_id or uuid4(),
-        email=email,
-        is_primary=is_primary,
-        created_at=NOW,
-        active=True,
-        mcp=False,
-        generated=False,
-    )
-
-
-def _patch(target, return_value):
-    return patch(
-        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
-    )
-
-
-def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
-    """Create a mock pool whose acquire() yields mock_conn."""
-    if mock_conn is None:
-        mock_conn = AsyncMock()
-    pool = MagicMock()
-    cm = AsyncMock()
-    cm.__aenter__.return_value = mock_conn
-    pool.acquire.return_value = cm
-    return pool
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_by_email — success
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-class TestResolveProfileByEmailSuccess:
-    async def test_returns_full_result(self):
-        dept_id = uuid4()
-        profile_id = uuid4()
-        identity = _identity(
+class TestResolveProfileByEmail:
+    async def test_returns_full_result(self, pool, redis_client, profile_identity_factory):
+        fixture = await profile_identity_factory(
             name="Bob",
-            role="member",
-            primary_email="bob@example.com",
+            role=("member", "Member", "Member role"),
             emails=["bob@example.com", "bob2@example.com"],
-            primary_department_id=dept_id,
-            requests_per_day=50,
-            is_active=True,
         )
-        email_res = _email_response(email="bob@example.com")
-        pool = _mock_pool()
 
-        with (
-            _patch("search_emails", [email_res]),
-            _patch("search_profiles", ([profile_id], 1)),
-            _patch("resolve_profile_identity_context", identity),
-        ):
-            result = await resolve_profile_by_email(
-                pool, None, email="bob@example.com"
-            )
+        result = await resolve_profile_by_email(
+            pool,
+            redis_client,
+            email=fixture.emails[0],
+        )
 
         assert isinstance(result, ProfileByEmailResult)
-        assert result.profile_id == profile_id
-        assert result.name == "Bob"
-        assert result.role == "member"
-        assert result.primary_email == "bob@example.com"
-        assert result.emails == ["bob@example.com", "bob2@example.com"]
+        assert result is not None
+        assert result.profile_id == fixture.artifact_id
+        assert result.name == fixture.name
+        assert result.role == fixture.role
+        assert result.emails == fixture.emails
         assert result.active is True
-        assert result.req_per_day == 50
-        assert result.primary_department_id == dept_id
-
-    async def test_case_insensitive_email_match(self):
-        email_res = _email_response(email="Alice@Example.COM")
-        profile_id = uuid4()
-        identity = _identity()
-        pool = _mock_pool()
-
-        with (
-            _patch("search_emails", [email_res]),
-            _patch("search_profiles", ([profile_id], 1)),
-            _patch("resolve_profile_identity_context", identity),
-        ):
-            result = await resolve_profile_by_email(
-                pool, None, email="alice@example.com"
-            )
-
-        assert result is not None
-        assert result.profile_id == profile_id
-
-    async def test_actor_name_resolved_from_actor_profile(self):
-        email_res = _email_response(email="target@example.com")
-        target_id = uuid4()
-        actor_id = uuid4()
-        target_identity = _identity(name="Target")
-        actor_identity = _identity(name="Actor")
-        pool = _mock_pool()
-
-        call_count = 0
-
-        async def _mock_identity(conn, pid, redis, bypass_cache=False):
-            nonlocal call_count
-            call_count += 1
-            if pid == target_id:
-                return target_identity
-            if pid == actor_id:
-                return actor_identity
-            return None
-
-        with (
-            _patch("search_emails", [email_res]),
-            _patch("search_profiles", ([target_id], 1)),
-            patch(
-                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
-            ),
-        ):
-            result = await resolve_profile_by_email(
-                pool, None, email="target@example.com", actor_profile_id=actor_id
-            )
-
-        assert result is not None
-        assert result.actor_name == "Actor"
-        assert result.name == "Target"
-        assert call_count == 2
-
-    async def test_no_actor_name_when_no_actor_profile(self):
-        email_res = _email_response(email="target@example.com")
-        profile_id = uuid4()
-        identity = _identity(name="Target")
-        pool = _mock_pool()
-
-        with (
-            _patch("search_emails", [email_res]),
-            _patch("search_profiles", ([profile_id], 1)),
-            _patch("resolve_profile_identity_context", identity),
-        ):
-            result = await resolve_profile_by_email(
-                pool, None, email="target@example.com"
-            )
-
-        assert result is not None
         assert result.actor_name is None
 
-    async def test_passes_correct_args_to_search_emails(self):
-        conn = AsyncMock()
-        pool = _mock_pool(conn)
-        with (
-            _patch("search_emails", []) as mock_search,
-        ):
-            await resolve_profile_by_email(
-                pool,
-                "fake_redis",
-                email="test@example.com",
-                bypass_cache=True,
-            )
+    async def test_case_insensitive_email_match(
+        self,
+        pool,
+        redis_client,
+        profile_identity_factory,
+    ):
+        fixture = await profile_identity_factory(emails=["Alice@example.com"])
 
-        mock_search.assert_awaited_once_with(
-            conn,
-            "fake_redis",
-            search="test@example.com",
-            limit_count=100,
-            bypass_cache=True,
+        result = await resolve_profile_by_email(
+            pool,
+            redis_client,
+            email=fixture.emails[0].upper(),
         )
 
-    async def test_passes_email_ids_to_search_profiles(self):
-        email_id = uuid4()
-        email_res = _email_response(email_id=email_id, email="x@example.com")
-        conn = AsyncMock()
-        pool = _mock_pool(conn)
+        assert result is not None
+        assert result.profile_id == fixture.artifact_id
 
-        with (
-            _patch("search_emails", [email_res]),
-            _patch("search_profiles", ([], 0)) as mock_search,
-        ):
-            await resolve_profile_by_email(pool, None, email="x@example.com")
-
-        mock_search.assert_awaited_once_with(
-            conn, email_ids=[email_id], active_only=False, limit_count=1
+    async def test_actor_name_resolved_from_actor_profile(
+        self,
+        pool,
+        redis_client,
+        profile_identity_factory,
+    ):
+        target = await profile_identity_factory(
+            name="Target",
+            emails=["target@example.com"],
+        )
+        actor = await profile_identity_factory(
+            name="Actor",
+            emails=["actor@example.com"],
         )
 
+        result = await resolve_profile_by_email(
+            pool,
+            redis_client,
+            email=target.emails[0],
+            actor_profile_id=actor.artifact_id,
+        )
 
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_by_email — not found cases
-# ═══════════════════════════════════════════════════════════════════════════
+        assert result is not None
+        assert result.name == target.name
+        assert result.actor_name == actor.name
 
+    async def test_no_email_match_returns_none(self, pool, redis_client):
+        result = await resolve_profile_by_email(
+            pool,
+            redis_client,
+            email="nobody@example.com",
+        )
 
-@pytest.mark.asyncio
-class TestResolveProfileByEmailNotFound:
-    async def test_no_email_match_returns_none(self):
-        pool = _mock_pool()
-        with _patch("search_emails", []):
-            result = await resolve_profile_by_email(
-                pool, None, email="nobody@example.com"
-            )
         assert result is None
 
-    async def test_email_substring_match_but_no_exact_returns_none(self):
-        email_res = _email_response(email="alice@example.com.au")
-        pool = _mock_pool()
+    async def test_email_substring_match_but_no_exact_returns_none(
+        self,
+        pool,
+        redis_client,
+        profile_identity_factory,
+    ):
+        await profile_identity_factory(emails=["alice@example.com.au"])
 
-        with _patch("search_emails", [email_res]):
-            result = await resolve_profile_by_email(
-                pool, None, email="alice@example.com"
-            )
+        result = await resolve_profile_by_email(
+            pool,
+            redis_client,
+            email="alice@example.com",
+        )
+
         assert result is None
 
-    async def test_no_profile_for_email_returns_none(self):
-        email_res = _email_response(email="orphan@example.com")
-        pool = _mock_pool()
-
-        with (
-            _patch("search_emails", [email_res]),
-            _patch("search_profiles", ([], 0)),
-        ):
-            result = await resolve_profile_by_email(
-                pool, None, email="orphan@example.com"
+    async def test_no_profile_for_email_returns_none(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            orphan_email = await create_email(
+                conn,
+                email="orphan@example.com",
+                redis=redis_client,
             )
-        assert result is None
 
-    async def test_profile_identity_not_found_returns_none(self):
-        email_res = _email_response(email="broken@example.com")
-        profile_id = uuid4()
-        pool = _mock_pool()
+        result = await resolve_profile_by_email(
+            pool,
+            redis_client,
+            email=orphan_email.email,
+        )
 
-        with (
-            _patch("search_emails", [email_res]),
-            _patch("search_profiles", ([profile_id], 1)),
-            _patch("resolve_profile_identity_context", None),
-        ):
-            result = await resolve_profile_by_email(
-                pool, None, email="broken@example.com"
-            )
         assert result is None

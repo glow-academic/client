@@ -5,12 +5,10 @@ import json
 import os
 from typing import Any
 
-from openai.types.responses.response_input_image_param import ResponseInputImageParam
 from openai.types.responses.response_input_item_param import Message
 from openai.types.responses.response_input_message_content_list_param import (
     ResponseInputMessageContentListParam,
 )
-from openai.types.responses.response_input_text_param import ResponseInputTextParam
 
 from app.infra.agents.types import TResponseInputItem
 from app.infra.globals import UPLOAD_FOLDER
@@ -80,6 +78,94 @@ def _format_template_args_notice(template_args: Any) -> str:
     return notice
 
 
+def build_document_content_items(
+    document: dict[str, Any],
+    *,
+    doc_index: int,
+    text_pages: list[str] | None = None,
+    image_urls: list[str] | None = None,
+    text_content: str | None = None,
+    show_images: bool = False,
+) -> ResponseInputMessageContentListParam:
+    """Build message content items for one document from already-loaded content."""
+    if not document or not document.get("file_path"):
+        return []
+
+    content_items: ResponseInputMessageContentListParam = []
+    tags_display = ""
+    file_path = document["file_path"]
+    mime_lower = (document.get("mime_type") or "").lower()
+
+    template_notice = ""
+    if document.get("template") and document.get("template_args"):
+        template_notice = _format_template_args_notice(document.get("template_args"))
+
+    is_pdf = file_path.lower().endswith(".pdf") or "pdf" in mime_lower
+    is_image = mime_lower.startswith("image/") or file_path.lower().endswith(
+        (".png", ".jpg", ".jpeg", ".webp", ".gif")
+    )
+
+    if is_pdf:
+        loaded_text_pages = text_pages or []
+        loaded_image_urls = image_urls or []
+        total_pages = (
+            max(len(loaded_text_pages), len(loaded_image_urls))
+            if show_images
+            else len(loaded_text_pages)
+        )
+        for page_num in range(total_pages):
+            if show_images and page_num < len(loaded_image_urls):
+                content_items.append(
+                    {
+                        "type": "input_image",
+                        "detail": "auto",
+                        "image_url": loaded_image_urls[page_num],
+                    }
+                )
+
+            page_text = loaded_text_pages[page_num] if page_num < len(loaded_text_pages) else ""
+            header = (
+                f"--- doc{doc_index}-text-page{page_num + 1} ---\n"
+                f"Name: {document['name']}\n"
+                f"File Type: {document.get('mime_type', 'unknown')}\n"
+                f"Tags: {tags_display if tags_display else 'None'}\n"
+                f"Content:\n"
+            )
+            content_items.append(
+                {
+                    "type": "input_text",
+                    "text": header + (template_notice if page_num == 0 else "") + page_text,
+                }
+            )
+        return content_items
+
+    if is_image:
+        if show_images and image_urls:
+            content_items.append(
+                {
+                    "type": "input_image",
+                    "detail": "auto",
+                    "image_url": image_urls[0],
+                }
+            )
+        return content_items
+
+    header = (
+        f"--- doc{doc_index}-text-page1 ---\n"
+        f"Name: {document['name']}\n"
+        f"File Type: {document.get('mime_type', 'unknown')}\n"
+        f"Tags: {tags_display if tags_display else 'None'}\n"
+        f"Content:\n"
+    )
+    content_items.append(
+        {
+            "type": "input_text",
+            "text": header + template_notice + (text_content or ""),
+        }
+    )
+    return content_items
+
+
 def format_document_info(
     documents: list[dict[str, Any]], show_images: bool = False
 ) -> TResponseInputItem:
@@ -116,16 +202,7 @@ def format_document_info(
             continue
 
         full_path = os.path.join(UPLOAD_FOLDER, file_path)
-        # Note: document.tags removed in BCNF migration (now via simulation_tags)
-        tags_display = ""  # document.tags removed
         mime_lower = (document.get("mime_type") or "").lower()
-
-        # Check if this is a template document
-        is_template = document.get("template", False)
-        template_args = document.get("template_args")
-        template_notice = ""
-        if is_template and template_args:
-            template_notice = _format_template_args_notice(template_args)
 
         is_pdf = file_path.lower().endswith(".pdf") or "pdf" in mime_lower
         is_image = mime_lower.startswith("image/") or file_path.lower().endswith(
@@ -138,37 +215,15 @@ def format_document_info(
             # Optional images via PyMuPDF if enabled
             image_urls = pdf_pages_to_image_data_urls(full_path) if show_images else []
 
-            total_pages = (
-                max(len(text_pages), len(image_urls))
-                if show_images
-                else len(text_pages)
-            )
-            for page_num in range(total_pages):
-                # Image first if available
-                if show_images and page_num < len(image_urls):
-                    image_item: ResponseInputImageParam = {
-                        "type": "input_image",
-                        "detail": "auto",
-                        "image_url": image_urls[page_num],
-                    }
-                    content_items.append(image_item)
-
-                # Then text for this page (include minimal header/context)
-                page_text = text_pages[page_num] if page_num < len(text_pages) else ""
-                header = (
-                    f"--- doc{doc_index}-text-page{page_num + 1} ---\n"
-                    f"Name: {document['name']}\n"
-                    f"File Type: {document.get('mime_type', 'unknown')}\n"
-                    f"Tags: {tags_display if tags_display else 'None'}\n"
-                    f"Content:\n"
+            content_items.extend(
+                build_document_content_items(
+                    document,
+                    doc_index=doc_index,
+                    text_pages=text_pages,
+                    image_urls=image_urls,
+                    show_images=show_images,
                 )
-                # Add template notice before content (only on first page)
-                page_content = (template_notice if page_num == 0 else "") + page_text
-                text_item_page: ResponseInputTextParam = {
-                    "type": "input_text",
-                    "text": header + page_content,
-                }
-                content_items.append(text_item_page)
+            )
         elif is_image:
             # For image files, include the image only (no text)
             if show_images:
@@ -194,12 +249,14 @@ def format_document_info(
                             mime = "image/gif"
                         else:
                             mime = "image/png"
-                    img_item: ResponseInputImageParam = {
-                        "type": "input_image",
-                        "detail": "auto",
-                        "image_url": f"data:{mime};base64,{b64}",
-                    }
-                    content_items.append(img_item)
+                    content_items.extend(
+                        build_document_content_items(
+                            document,
+                            doc_index=doc_index,
+                            image_urls=[f"data:{mime};base64,{b64}"],
+                            show_images=show_images,
+                        )
+                    )
                 except Exception:
                     # If reading fails, skip the image silently
                     pass
@@ -207,20 +264,13 @@ def format_document_info(
         else:
             # Treat other files as a single-page text document
             content = read_text_file(full_path)
-            header = (
-                f"--- doc{doc_index}-text-page1 ---\n"
-                f"Name: {document['name']}\n"
-                f"File Type: {document.get('mime_type', 'unknown')}\n"
-                f"Tags: {tags_display if tags_display else 'None'}\n"
-                f"Content:\n"
+            content_items.extend(
+                build_document_content_items(
+                    document,
+                    doc_index=doc_index,
+                    text_content=content,
+                )
             )
-            # Add template notice before content
-            full_content = template_notice + content
-            text_item_single: ResponseInputTextParam = {
-                "type": "input_text",
-                "text": header + full_content,
-            }
-            content_items.append(text_item_single)
 
     if not content_items:
         # Fallback to a minimal text item if nothing could be built

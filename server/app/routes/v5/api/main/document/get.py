@@ -54,7 +54,6 @@ from app.routes.v5.api.main.document.types import (
     GetDocumentApiRequest,
     GetDocumentApiResponse,
 )
-from app.routes.v5.tools.entries.groups.create import create_group
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -79,6 +78,7 @@ async def get_document_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    session_id: UUID | None = None,
     document_id: UUID | None,
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
@@ -103,6 +103,7 @@ async def get_document_client(
         pool,
         redis,
         profile_id=profile_id,
+        session_id=session_id,
         group_id=group_id,
         draft_id=draft_id,
         artifact_type="document",
@@ -423,22 +424,15 @@ async def get_document(
             )
 
         pool = get_pool()
-
-        # Resolve group_id: client provides it, or create a new one
-        group_id = request.group_id
-        if not group_id:
-            async with pool.acquire() as conn:
-                group_id = (await create_group(conn, session_id=session_id)).id
-
         redis = get_redis_client()
 
         response_data = await get_document_client(
             pool,
             redis,
             profile_id=profile_id,
+            session_id=session_id,
             document_id=request.document_id,
             draft_id=request.draft_id,
-            group_id=group_id,
             bypass_cache=bypass_cache,
         )
 

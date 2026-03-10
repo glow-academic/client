@@ -381,6 +381,65 @@ async def _run_profile_seeds(
     return created_ids
 
 
+async def _run_setting_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    setting_defs: list[dict],
+) -> list[UUID]:
+    """Run setting seed definitions through create_setting_client."""
+    from app.infra.setting_create import CreateSettingItem, create_setting_client
+
+    items = [CreateSettingItem(**s) for s in setting_defs]
+
+    result = await create_setting_client(
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
+    )
+
+    created_ids: list[UUID] = []
+    for r in result.results:
+        if not r.success:
+            print(f"  ERROR: {r.message}")
+            if hasattr(r, "errors") and r.errors:
+                for e in r.errors:
+                    print(f"    - {e.field}: {e.message}")
+        else:
+            if hasattr(r, "setting_id") and r.setting_id:
+                created_ids.append(r.setting_id)
+            print(f"  OK: {r.message}")
+
+    return created_ids
+
+
+async def _run_post_links(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    mod: object,
+) -> None:
+    """Run post-creation link updates (bidirectional refs).
+
+    Calls the tool-layer update functions directly (not the client-level ones)
+    to bypass permission checks — the department may already be "in use" by
+    child artifacts, which blocks update_department_client.
+    """
+    if hasattr(mod, "department_updates"):
+        from app.routes.v5.tools.artifacts.department.update import (
+            update_department,
+        )
+
+        for d in mod.department_updates:
+            dept_id = d["id"]
+            async with pool.acquire() as conn:
+                await update_department(
+                    conn,
+                    dept_id,
+                    settings_ids=d.get("settings_ids"),
+                )
+            print(f"  OK: Department {dept_id} linked")
+
+
 async def _run_cohort_seeds(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -607,6 +666,10 @@ async def main(setup: str = "university") -> None:
                 await _run_cohort_seeds(pool, redis_client, mod.cohorts)
             elif module_name == "profiles":
                 await _run_profile_seeds(pool, redis_client, mod.profiles)
+            elif module_name == "settings":
+                await _run_setting_seeds(pool, redis_client, mod.settings)
+            elif module_name == "post_links":
+                await _run_post_links(pool, redis_client, mod)
 
         # 7. Dump new rows
         print("\nDumping seed-created rows...")

@@ -76,6 +76,7 @@ async def get_profile_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    session_id: UUID | None = None,
     target_profile_id: UUID | None,
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
@@ -97,6 +98,7 @@ async def get_profile_client(
         pool,
         redis,
         profile_id=profile_id,
+        session_id=session_id,
         group_id=group_id,
         draft_id=draft_id,
         artifact_type="profile",
@@ -378,6 +380,7 @@ async def get_profile(
 
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -391,9 +394,9 @@ async def get_profile(
             pool,
             redis,
             profile_id=profile_id,
+            session_id=session_id,
             target_profile_id=request.target_profile_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
 

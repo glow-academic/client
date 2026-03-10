@@ -33,7 +33,7 @@ from app.routes.v5.tools.entries.document_drafts.get import get_document_drafts
 from app.routes.v5.tools.entries.eval_drafts.get import get_eval_drafts
 from app.routes.v5.tools.entries.field_drafts.get import get_field_drafts
 
-# Canonical entry black boxes — groups + sessions
+# Canonical entry black boxes — groups
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.invocation_drafts.get import get_invocation_drafts
 from app.routes.v5.tools.entries.model_drafts.get import get_model_drafts
@@ -43,7 +43,6 @@ from app.routes.v5.tools.entries.profile_drafts.get import get_profile_drafts
 from app.routes.v5.tools.entries.provider_drafts.get import get_provider_drafts
 from app.routes.v5.tools.entries.rubric_drafts.get import get_rubric_drafts
 from app.routes.v5.tools.entries.scenario_drafts.get import get_scenario_drafts
-from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.setting_drafts.get import get_setting_drafts
 from app.routes.v5.tools.entries.simulation_drafts.get import get_simulation_drafts
 
@@ -89,6 +88,7 @@ _DRAFT_FN_MAP: dict[
 async def resolve_group(
     conn: asyncpg.Connection,
     profiles_id: UUID | None,
+    session_id: UUID | None = None,
     attempt_id: UUID | None = None,
     test_id: UUID | None = None,
     draft_id: UUID | None = None,
@@ -117,7 +117,7 @@ async def resolve_group(
             return result
 
     # Priority 4: fresh group
-    return await _create_fresh_group(conn, profiles_id)
+    return await _create_fresh_group(conn, profiles_id, session_id)
 
 
 # ---------------------------------------------------------------------------
@@ -284,11 +284,17 @@ async def _resolve_from_draft(
 async def _create_fresh_group(
     conn: asyncpg.Connection,
     profiles_id: UUID | None,
+    session_id: UUID | None,
 ) -> ResolveGroupApiResponse:
-    """Create a fresh session + group via canonical black boxes."""
-    if profiles_id is None:
-        raise ValueError("Cannot create fresh group without a profile")
+    """Create a fresh group via canonical black boxes.
 
-    session = await create_session(conn, profile_id=profiles_id)
-    group = await create_group(conn, session_id=session.id)
+    Requires the caller's session. Session ownership stays at the boundary
+    layer instead of silently creating a second session.
+    """
+    if session_id is None:
+        if profiles_id is None:
+            raise ValueError("Cannot create fresh group without a profile")
+        raise ValueError("session_id is required to create a fresh group")
+
+    group = await create_group(conn, session_id=session_id)
     return ResolveGroupApiResponse(group_id=str(group.id))

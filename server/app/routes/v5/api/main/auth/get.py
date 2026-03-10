@@ -74,6 +74,7 @@ async def get_auth_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    session_id: UUID | None = None,
     auth_id: UUID | None,
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
@@ -95,6 +96,7 @@ async def get_auth_client(
         pool,
         redis,
         profile_id=profile_id,
+        session_id=session_id,
         group_id=group_id,
         draft_id=draft_id,
         artifact_type="auth",
@@ -333,6 +335,7 @@ async def get_auth(
 
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -346,9 +349,9 @@ async def get_auth(
             pool,
             redis,
             profile_id=profile_id,
+            session_id=session_id,
             auth_id=request.auth_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
 

@@ -28,5 +28,6 @@ MODULES = [
     "simulations",
     "profiles",
     "cohorts",
-    # TODO: settings
+    "settings",
+    "post_links",
 ]

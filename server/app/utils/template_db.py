@@ -66,25 +66,34 @@ async def clone_from_template(
     admin_conn: asyncpg.Connection, template_name: str, target_db: str
 ) -> None:
     """``CREATE DATABASE target TEMPLATE template_name``."""
-    # DROP if leftover from a previous crashed run
-    existing = await admin_conn.fetchval(
-        "SELECT 1 FROM pg_database WHERE datname = $1", target_db
-    )
-    if existing:
-        # Terminate lingering connections before dropping
-        await admin_conn.execute(
-            """
-            SELECT pg_terminate_backend(pid)
-            FROM pg_stat_activity
-            WHERE datname = $1 AND pid <> pg_backend_pid()
-            """,
-            target_db,
+    async def _drop_target_if_exists() -> None:
+        existing = await admin_conn.fetchval(
+            "SELECT 1 FROM pg_database WHERE datname = $1", target_db
         )
-        await admin_conn.execute(f'DROP DATABASE IF EXISTS "{target_db}"')
+        if existing:
+            await admin_conn.execute(
+                """
+                SELECT pg_terminate_backend(pid)
+                FROM pg_stat_activity
+                WHERE datname = $1 AND pid <> pg_backend_pid()
+                """,
+                target_db,
+            )
+            await admin_conn.execute(f'DROP DATABASE IF EXISTS "{target_db}"')
 
-    await admin_conn.execute(
-        f'CREATE DATABASE "{target_db}" TEMPLATE "{template_name}"'
-    )
+    # DROP if leftover from a previous crashed run
+    await _drop_target_if_exists()
+
+    try:
+        await admin_conn.execute(
+            f'CREATE DATABASE "{target_db}" TEMPLATE "{template_name}"'
+        )
+    except (asyncpg.DuplicateDatabaseError, asyncpg.UniqueViolationError):
+        # Another process may win the race between our existence check and CREATE.
+        await _drop_target_if_exists()
+        await admin_conn.execute(
+            f'CREATE DATABASE "{target_db}" TEMPLATE "{template_name}"'
+        )
 
 
 async def save_as_template(
