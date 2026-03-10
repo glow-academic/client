@@ -252,7 +252,7 @@ async def _resolve_group_id(
       3. draft_id → draft's group_id
       4. otherwise create a fresh group for the provided session
     """
-    from app.infra.auth.group import resolve_group
+    from app.infra.identity.group import resolve_group
 
     async with pool.acquire() as conn:
         result = await resolve_group(

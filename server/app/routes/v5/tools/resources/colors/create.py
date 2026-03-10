@@ -17,6 +17,7 @@ async def create_color(
     hex_code: str,
     redis: Redis,
     id: UUID | None = None,
+    color_type: str = "primary",
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -25,13 +26,14 @@ async def create_color(
     """Create a color resource."""
     color_id = await conn.fetchval(
         """
-        INSERT INTO colors_resource (id, name, description, hex_code, active, mcp, generated)
-        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
+        INSERT INTO colors_resource (id, name, description, hex_code, type, active, mcp, generated)
+        VALUES (COALESCE($7, uuidv7()), $1, $2, $3, $4, $5, $6, $6)
         RETURNING id
     """,
         name,
         description,
         hex_code,
+        color_type,
         not soft,
         mcp,
         id,

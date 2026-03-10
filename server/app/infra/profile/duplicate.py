@@ -135,10 +135,11 @@ async def duplicate_profile_impl(
                 if original.request_limit_ids
                 else None,
                 department_ids=original.department_ids,
-                email_ids=original.email_ids,
+                email_ids=None,
                 role_ids=original.role_ids,
                 profile_ids=original.profile_ids,
                 flag_ids=flag_ids,
+                redis=redis,
             )
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────

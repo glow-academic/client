@@ -1,23 +1,19 @@
-"""Persona event declarations for future centralized delivery.
-
-This module is intentionally declarative:
-  - which persona operations emit which domain events
-  - which operations also expose call lifecycle events
-  - who can subscribe to each operation stream
-
-It does not define any HTTP/SSE/webhook endpoints.
-"""
+"""Persona event declarations for future centralized delivery."""
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
 
+from app.events.types import (
+    ArtifactEventsConfig,
+    OperationEventConfig,
+    default_filter_events,
+    require_authenticated_profile,
+)
 from app.infra.persona.permissions import (
     compute_can_create,
     compute_can_delete,
@@ -29,36 +25,13 @@ from app.infra.persona.permissions import (
 from app.infra.persona.permissions_context import resolve_persona_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
-EventScope = Literal["entity", "collection"]
 EventRecord = dict[str, Any]
-CanSubscribe = Callable[..., Awaitable[bool]]
-FilterEvents = Callable[[UUID, list[EventRecord]], Awaitable[list[EventRecord]]]
 
 CALL_LIFECYCLE_EVENTS: tuple[str, ...] = (
     "call.started",
     "call.completed",
     "call.failed",
 )
-
-
-@dataclass(frozen=True)
-class PersonaEventConfig:
-    """Declarative event policy for a single persona operation."""
-
-    operation: str
-    domain_events: tuple[str, ...]
-    scope: EventScope
-    entity_key: str | None
-    can_subscribe: CanSubscribe
-    filter_events: FilterEvents | None = None
-    include_call_lifecycle: bool = True
-
-    @property
-    def all_event_types(self) -> tuple[str, ...]:
-        """Return domain events plus lifecycle events when enabled."""
-        if self.include_call_lifecycle:
-            return (*self.domain_events, *CALL_LIFECYCLE_EVENTS)
-        return self.domain_events
 
 
 async def _resolve_profile(
@@ -252,37 +225,16 @@ async def _can_subscribe_persona_draft(
     return compute_can_draft(profile.role)
 
 
-async def _can_subscribe_authenticated(
-    pool: asyncpg.Pool,
-    redis: Redis,
-    *,
-    profile_id: UUID,
-    entity_id: UUID | None = None,
-    session_id: UUID | None = None,
-    event_types: list[str] | None = None,
-) -> bool:
-    """Fallback for operations that currently only require an authenticated profile."""
-    del entity_id, event_types
-    profile = await _resolve_profile(
-        pool,
-        redis,
-        profile_id=profile_id,
-        session_id=session_id,
-    )
-    return profile is not None
-
-
 async def _passthrough_filter(
     profile_id: UUID,
     events: list[EventRecord],
 ) -> list[EventRecord]:
     """Default event filter placeholder."""
-    del profile_id
-    return events
+    return await default_filter_events(profile_id, events)
 
 
-PERSONA_EVENT_CONFIGS: dict[str, PersonaEventConfig] = {
-    "get": PersonaEventConfig(
+PERSONA_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
+    "get": OperationEventConfig(
         operation="get",
         domain_events=("persona.viewed",),
         scope="entity",
@@ -290,42 +242,42 @@ PERSONA_EVENT_CONFIGS: dict[str, PersonaEventConfig] = {
         can_subscribe=_can_subscribe_persona_read,
         filter_events=_passthrough_filter,
     ),
-    "create": PersonaEventConfig(
+    "create": OperationEventConfig(
         operation="create",
         domain_events=("persona.created",),
         scope="collection",
         entity_key=None,
         can_subscribe=_can_subscribe_persona_create,
     ),
-    "update": PersonaEventConfig(
+    "update": OperationEventConfig(
         operation="update",
         domain_events=("persona.updated",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_edit,
     ),
-    "delete": PersonaEventConfig(
+    "delete": OperationEventConfig(
         operation="delete",
         domain_events=("persona.deleted",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_delete,
     ),
-    "duplicate": PersonaEventConfig(
+    "duplicate": OperationEventConfig(
         operation="duplicate",
         domain_events=("persona.duplicated",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_duplicate,
     ),
-    "draft": PersonaEventConfig(
+    "draft": OperationEventConfig(
         operation="draft",
         domain_events=("persona.draft.saved",),
         scope="entity",
         entity_key="draft_id",
         can_subscribe=_can_subscribe_persona_draft,
     ),
-    "drafts": PersonaEventConfig(
+    "drafts": OperationEventConfig(
         operation="drafts",
         domain_events=("persona.drafts.viewed",),
         scope="collection",
@@ -333,7 +285,7 @@ PERSONA_EVENT_CONFIGS: dict[str, PersonaEventConfig] = {
         can_subscribe=_can_subscribe_persona_draft,
         include_call_lifecycle=False,
     ),
-    "search": PersonaEventConfig(
+    "search": OperationEventConfig(
         operation="search",
         domain_events=("persona.search.performed",),
         scope="collection",
@@ -341,38 +293,38 @@ PERSONA_EVENT_CONFIGS: dict[str, PersonaEventConfig] = {
         can_subscribe=_can_subscribe_persona_read,
         include_call_lifecycle=False,
     ),
-    "docs": PersonaEventConfig(
+    "docs": OperationEventConfig(
         operation="docs",
         domain_events=("persona.docs.viewed",),
         scope="entity",
         entity_key="entity_id",
-        can_subscribe=_can_subscribe_authenticated,
+        can_subscribe=require_authenticated_profile,
     ),
-    "export": PersonaEventConfig(
+    "export": OperationEventConfig(
         operation="export",
         domain_events=("persona.exported",),
         scope="collection",
         entity_key="persona_id",
-        can_subscribe=_can_subscribe_authenticated,
+        can_subscribe=require_authenticated_profile,
     ),
-    "refresh": PersonaEventConfig(
+    "refresh": OperationEventConfig(
         operation="refresh",
         domain_events=("persona.refreshed",),
         scope="collection",
         entity_key=None,
-        can_subscribe=_can_subscribe_authenticated,
+        can_subscribe=require_authenticated_profile,
     ),
 }
 
-PERSONA_EVENT_TYPES: tuple[str, ...] = tuple(
-    dict.fromkeys(
-        event_type
-        for config in PERSONA_EVENT_CONFIGS.values()
-        for event_type in config.all_event_types
-    )
+PERSONA_EVENTS = ArtifactEventsConfig(
+    artifact="persona",
+    operations=PERSONA_EVENT_CONFIGS,
+    call_lifecycle_events=CALL_LIFECYCLE_EVENTS,
 )
 
+PERSONA_EVENT_TYPES: tuple[str, ...] = PERSONA_EVENTS.event_types
 
-def get_persona_event_config(operation: str) -> PersonaEventConfig | None:
+
+def get_persona_event_config(operation: str) -> OperationEventConfig | None:
     """Resolve event policy for a persona operation."""
-    return PERSONA_EVENT_CONFIGS.get(operation)
+    return PERSONA_EVENTS.get_operation(operation)

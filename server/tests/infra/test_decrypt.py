@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.auth.decrypt import DecryptResult, resolve_decrypt
+from app.infra.identity.decrypt import DecryptResult, resolve_decrypt
 from app.infra.profile_identity_context import ProfileIdentityContext
 from app.routes.v5.tools.resources.keys.types import GetKeyResponse
 

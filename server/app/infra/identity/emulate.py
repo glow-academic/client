@@ -17,13 +17,14 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.auth.resolve_identity import (
+from app.infra.identity.resolve_identity import (
     MAX_EMULATION_DEPTH,
     resolve_emulation_chain,
 )
-from app.infra.auth.simulatable import SIMULATABLE_ROLES
+from app.infra.identity.simulatable import SIMULATABLE_ROLES
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.emulations.create import create_emulation
+from app.routes.v5.tools.entries.emulations.refresh import refresh_emulations
 from app.routes.v5.tools.entries.grant_consumptions.create import (
     create_grant_consumption,
 )
@@ -158,6 +159,10 @@ async def resolve_emulation(
                 session_id=target_session_id,
                 profile_id=target.profiles_id,
             )
+
+    async with pool.acquire() as conn:
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY grants_mv")
+        await refresh_emulations(conn)
 
     return EmulationResult(
         allowed=True,

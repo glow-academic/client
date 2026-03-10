@@ -99,8 +99,8 @@ async def connect(
     # Primary: resolve identity from auth token
     if auth and auth.get("token"):
         try:
-            from app.infra.auth.license_key import validate_license_key
-            from app.infra.auth.resolve_identity import (
+            from app.infra.identity.license_key import validate_license_key
+            from app.infra.identity.resolve_identity import (
                 extract_bearer_token,
                 resolve_identity,
             )

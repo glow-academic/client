@@ -5,7 +5,6 @@ from fastapi import APIRouter
 from app.routes.v5.api.main.test.archive import router as archive_router
 from app.routes.v5.api.main.test.docs import router as docs_router
 from app.routes.v5.api.main.test.end import router as end_router
-from app.routes.v5.api.main.test.events import router as events_router
 from app.routes.v5.api.main.test.export import router as export_router
 from app.routes.v5.api.main.test.get import router as get_router
 from app.routes.v5.api.main.test.next import router as next_router
@@ -28,5 +27,4 @@ router.include_router(next_router)
 router.include_router(run_router)
 router.include_router(end_router)
 router.include_router(stop_router)
-router.include_router(events_router)
 router.include_router(search_router)

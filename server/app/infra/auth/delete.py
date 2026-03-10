@@ -17,8 +17,8 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.auth_artifact.permissions import compute_can_delete
-from app.infra.auth_artifact.permissions_context import (
+from app.infra.auth.permissions import compute_can_delete
+from app.infra.auth.permissions_context import (
     resolve_auth_permissions_context,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
@@ -123,7 +123,7 @@ async def delete_auth_impl(
     # -- Step 7: Keycloak sync --------------------------------------------------
 
     try:
-        from app.infra.auth.keycloak_sync import perform_keycloak_sync
+        from app.infra.identity.keycloak_sync import perform_keycloak_sync
 
         await perform_keycloak_sync(department_id=None)
     except Exception:

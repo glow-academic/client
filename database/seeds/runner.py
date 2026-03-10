@@ -1,15 +1,21 @@
 """Seed runner — executes Python seed definitions against a temp DB and dumps SQL.
 
 Usage:
-    cd server && python -m database.seeds.runner [--setup university]
+    python -m database.seeds.runner --resources            # Seed module 01
+    python -m database.seeds.runner --setup university     # Seed setup 11
+    python -m database.seeds.runner --setup organization   # Seed setup 11
 
-Flow:
+Flow (resources):
   1. Spin up Postgres + Redis testcontainers
-  2. Load schema from database/schema/
-  3. Load pre-existing modules (01-resources through 10-systems) as SQL
-  4. Run Python seed functions (create_*_client) for the selected setup
-  5. Dump only the seed-created rows as SQL INSERT statements
-  6. Write to database/modules/11-setups/{setup}/
+  2. Load schema
+  3. Run resource seed functions (tool-level create_*)
+  4. Dump rows → database/modules/01-resources/seed.sql
+
+Flow (setup):
+  1. Spin up Postgres + Redis testcontainers
+  2. Load schema + pre-existing modules (01-10) as SQL
+  3. Run setup seed functions (infra-level create_*_impl)
+  4. Dump rows → database/modules/11-setups/{setup}/seed.sql
 """
 
 from __future__ import annotations
@@ -121,7 +127,171 @@ def _load_pre_existing_modules() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Seed execution
+# Resource seed execution (tool-level create_* functions)
+# ---------------------------------------------------------------------------
+
+
+async def _run_resource_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Run all resource seed definitions through tool-level create_* functions."""
+    from database.seeds.resources import MODULES
+
+    for module_name in MODULES:
+        print(f"\nSeeding {module_name}...")
+        mod = importlib.import_module(f"database.seeds.resources.{module_name}")
+        items = getattr(mod, module_name)  # e.g. mod.colors, mod.icons
+
+        async with pool.acquire() as conn:
+            if module_name == "colors":
+                await _seed_colors(conn, redis, items)
+            elif module_name == "icons":
+                await _seed_icons(conn, redis, items)
+            elif module_name == "flags":
+                await _seed_flags(conn, redis, items)
+            elif module_name == "roles":
+                await _seed_roles(conn, redis, items)
+            elif module_name == "modalities":
+                await _seed_modalities(conn, redis, items)
+            elif module_name == "qualities":
+                await _seed_qualities(conn, redis, items)
+            elif module_name == "thresholds":
+                await _seed_thresholds(conn, redis, items)
+            elif module_name == "points":
+                await _seed_points(conn, redis, items)
+            elif module_name == "request_limits":
+                await _seed_request_limits(conn, redis, items)
+            elif module_name == "voices":
+                await _seed_voices(conn, redis, items)
+            elif module_name == "pricing":
+                await _seed_pricing(conn, redis, items)
+            elif module_name == "reasoning_levels":
+                await _seed_reasoning_levels(conn, redis, items)
+            elif module_name == "temperature_levels":
+                await _seed_temperature_levels(conn, redis, items)
+            elif module_name == "operations":
+                await _seed_operations(conn, redis, items)
+
+
+async def _seed_colors(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.colors.create import create_color
+
+    for item in items:
+        color_type = item.pop("type", "primary")
+        await create_color(conn, redis=redis, color_type=color_type, **item)
+    print(f"  OK: {len(items)} colors created")
+
+
+async def _seed_icons(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.icons.create import create_icon
+
+    for item in items:
+        await create_icon(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} icons created")
+
+
+async def _seed_flags(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.flags.create import create_flag
+
+    for item in items:
+        flag_type = item.pop("type", "active")
+        await create_flag(conn, redis=redis, flag_type=flag_type, **item)
+    print(f"  OK: {len(items)} flags created")
+
+
+async def _seed_roles(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.roles.create import create_role
+
+    for item in items:
+        await create_role(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} roles created")
+
+
+async def _seed_modalities(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.modalities.create import create_modality
+
+    for item in items:
+        await create_modality(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} modalities created")
+
+
+async def _seed_qualities(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.qualities.create import create_quality
+
+    for item in items:
+        await create_quality(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} qualities created")
+
+
+async def _seed_thresholds(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.thresholds.create import create_threshold
+
+    for item in items:
+        threshold_type = item.pop("type", "success")
+        await create_threshold(conn, redis=redis, threshold_type=threshold_type, **item)
+    print(f"  OK: {len(items)} thresholds created")
+
+
+async def _seed_points(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.points.create import create_point
+
+    for item in items:
+        point_type = item.pop("type", "total")
+        await create_point(conn, redis=redis, point_type=point_type, **item)
+    print(f"  OK: {len(items)} points created")
+
+
+async def _seed_request_limits(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.request_limits.create import create_request_limit
+
+    for item in items:
+        await create_request_limit(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} request_limits created")
+
+
+async def _seed_voices(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.voices.create import create_voice
+
+    for item in items:
+        await create_voice(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} voices created")
+
+
+async def _seed_pricing(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.pricing.create import create_pricing
+
+    for item in items:
+        await create_pricing(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} pricing entries created")
+
+
+async def _seed_reasoning_levels(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
+
+    for item in items:
+        await create_reasoning_level(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} reasoning_levels created")
+
+
+async def _seed_temperature_levels(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.temperature_levels.create import create_temperature_level
+
+    for item in items:
+        await create_temperature_level(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} temperature_levels created")
+
+
+async def _seed_operations(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+    from app.routes.v5.tools.resources.operations.create import create_operation
+
+    for item in items:
+        await create_operation(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} operations created")
+
+
+# ---------------------------------------------------------------------------
+# Setup seed execution (infra-level create_*_impl functions)
 # ---------------------------------------------------------------------------
 
 
@@ -882,10 +1052,8 @@ PERSONA_TABLES = [
 # ---------------------------------------------------------------------------
 
 
-async def main(setup: str = "university") -> None:
-    print(f"=== Seed Runner: {setup} ===\n")
-
-    # 1. Start containers
+async def _start_containers() -> tuple:
+    """Start Postgres and Redis testcontainers, return (pg, pg_url, redis_container, redis_url)."""
     print("Starting Postgres container...")
     pg = PostgresContainer("postgres:18")
     pg.start()
@@ -898,22 +1066,118 @@ async def main(setup: str = "university") -> None:
     redis_port = redis_container.get_exposed_port(6379)
     redis_url = f"redis://{redis_host}:{redis_port}/0"
 
+    return pg, pg_url, redis_container, redis_url
+
+
+async def _load_schema(conn: asyncpg.Connection) -> None:
+    """Load schema into the database."""
+    print("Loading schema...")
+    await conn.execute("""
+        CREATE SCHEMA IF NOT EXISTS keycloak;
+        CREATE TABLE IF NOT EXISTS keycloak.org (id text PRIMARY KEY, alias text);
+        CREATE TABLE IF NOT EXISTS keycloak.realm (name text PRIMARY KEY, ssl_required text);
+    """)
+    schema_sql = _filter_meta_commands(_concat_schema(SCHEMA_DIR))
+    await conn.execute(schema_sql)
+    print("  Schema loaded.")
+
+
+async def _refresh_mvs(conn: asyncpg.Connection) -> None:
+    """Refresh all unpopulated materialized views."""
+    print("Refreshing materialized views...")
+    unpopulated = await conn.fetch(
+        "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated"
+    )
+    for row in unpopulated:
+        await conn.execute(f'REFRESH MATERIALIZED VIEW "{row["matviewname"]}"')
+    print(f"  {len(unpopulated)} MVs refreshed.")
+
+
+def _write_seed_sql(
+    output_file: Path,
+    label: str,
+    module_names: list[str],
+    new_rows: dict[str, list],
+) -> None:
+    """Write seed rows as SQL INSERT statements."""
+    total = sum(len(rows) for rows in new_rows.values())
+    print(f"  {total} new rows across {len(new_rows)} tables.")
+
+    lines = [
+        f"-- {label}",
+        "-- Generated by: database/seeds/runner.py",
+        f"-- Modules: {', '.join(module_names)}",
+        "-- ============================================================",
+        "",
+    ]
+
+    for table, rows in sorted(new_rows.items()):
+        if rows:
+            lines.append(f"-- {table}")
+            for row in rows:
+                lines.append(_record_to_insert(table, row))
+            lines.append("")
+
+    output_file.write_text("\n".join(lines) + "\n")
+    print(f"  Wrote {output_file}")
+
+
+async def main_resources() -> None:
+    """Seed resources (module 01) through Python definitions."""
+    from database.seeds.resources import MODULES
+
+    print("=== Seed Runner: resources ===\n")
+
+    pg, pg_url, redis_container, redis_url = await _start_containers()
+
     try:
-        # Use a single connection for schema/module setup
         conn = await asyncpg.connect(pg_url)
+        await _load_schema(conn)
+        await _refresh_mvs(conn)
 
-        # 2. Load schema
-        print("Loading schema...")
-        await conn.execute("""
-            CREATE SCHEMA IF NOT EXISTS keycloak;
-            CREATE TABLE IF NOT EXISTS keycloak.org (id text PRIMARY KEY, alias text);
-            CREATE TABLE IF NOT EXISTS keycloak.realm (name text PRIMARY KEY, ssl_required text);
-        """)
-        schema_sql = _filter_meta_commands(_concat_schema(SCHEMA_DIR))
-        await conn.execute(schema_sql)
-        print("  Schema loaded.")
+        print("Taking pre-seed snapshot...")
+        all_tables = await _get_all_tables(conn)
+        before = await _snapshot_counts(conn, all_tables)
+        await conn.close()
 
-        # 3. Load pre-existing modules (disable FK checks like load-modules.sh)
+        pool = await asyncpg.create_pool(pg_url)
+        redis_client = Redis.from_url(redis_url)
+
+        os.environ.setdefault("SECRET_KEY", "seed_runner_secret_key")
+        os.environ.setdefault("AUTH_SECRET", "seed_runner_auth_secret")
+
+        await _run_resource_seeds(pool, redis_client)
+
+        print("\nDumping seed-created rows...")
+        async with pool.acquire() as conn:
+            new_rows = await _dump_new_rows(conn, before, all_tables)
+
+        output_dir = MODULES_DIR / "01-resources"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = output_dir / "seed.sql"
+        _write_seed_sql(output_file, "Resources: 01-resources", MODULES, new_rows)
+
+        await redis_client.aclose()
+        await pool.close()
+
+    finally:
+        pg.stop()
+        redis_container.stop()
+
+    print("\nDone!")
+
+
+async def main_setup(setup: str = "university") -> None:
+    """Seed a setup (module 11) through Python definitions."""
+    print(f"=== Seed Runner: {setup} ===\n")
+
+    pg, pg_url, redis_container, redis_url = await _start_containers()
+
+    try:
+        conn = await asyncpg.connect(pg_url)
+        await _load_schema(conn)
+
+        # Load pre-existing modules (disable FK checks like load-modules.sh)
         print("Loading pre-existing modules (01-resources through 10-systems)...")
         await conn.execute("SET session_replication_role = replica;")
         modules_sql = _filter_meta_commands(_load_pre_existing_modules())
@@ -921,28 +1185,16 @@ async def main(setup: str = "university") -> None:
         await conn.execute("SET session_replication_role = DEFAULT;")
         print("  Modules loaded.")
 
-        # 4. Refresh materialized views
-        print("Refreshing materialized views...")
-        unpopulated = await conn.fetch(
-            "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated"
-        )
-        for row in unpopulated:
-            await conn.execute(f'REFRESH MATERIALIZED VIEW "{row["matviewname"]}"')
-        print(f"  {len(unpopulated)} MVs refreshed.")
+        await _refresh_mvs(conn)
 
-        # 5. Snapshot all tables
         print("Taking pre-seed snapshot...")
         all_tables = await _get_all_tables(conn)
         before = await _snapshot_counts(conn, all_tables)
-
         await conn.close()
 
-        # 6. Create pool for seed operations (infra functions need asyncpg.Pool)
         pool = await asyncpg.create_pool(pg_url)
-
         redis_client = Redis.from_url(redis_url)
 
-        # Set env vars needed by app imports
         os.environ.setdefault("SECRET_KEY", "seed_runner_secret_key")
         os.environ.setdefault("AUTH_SECRET", "seed_runner_auth_secret")
 
@@ -1003,36 +1255,19 @@ async def main(setup: str = "university") -> None:
             elif module_name == "post_links":
                 await _run_post_links(pool, redis_client, mod)
 
-        # 7. Dump new rows
         print("\nDumping seed-created rows...")
         async with pool.acquire() as conn:
             new_rows = await _dump_new_rows(conn, before, all_tables)
 
-        total = sum(len(rows) for rows in new_rows.values())
-        print(f"  {total} new rows across {len(new_rows)} tables.")
-
-        # 8. Write single SQL dump
         output_dir = MODULES_DIR / "11-setups" / setup
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / "seed.sql"
-
-        lines = [
-            f"-- Setup: {setup}",
-            f"-- Generated by: database/seeds/runner.py",
-            f"-- Modules: {', '.join(setup_module.MODULES)}",
-            "-- ============================================================",
-            "",
-        ]
-
-        for table, rows in sorted(new_rows.items()):
-            if rows:
-                lines.append(f"-- {table}")
-                for row in rows:
-                    lines.append(_record_to_insert(table, row))
-                lines.append("")
-
-        output_file.write_text("\n".join(lines) + "\n")
-        print(f"  Wrote {output_file}")
+        _write_seed_sql(
+            output_file,
+            f"Setup: {setup}",
+            setup_module.MODULES,
+            new_rows,
+        )
 
         await redis_client.aclose()
         await pool.close()
@@ -1046,6 +1281,11 @@ async def main(setup: str = "university") -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run seed definitions")
-    parser.add_argument("--setup", default="university", help="Setup name")
+    parser.add_argument("--setup", default=None, help="Setup name (university, organization)")
+    parser.add_argument("--resources", action="store_true", help="Seed resources (module 01)")
     args = parser.parse_args()
-    asyncio.run(main(args.setup))
+
+    if args.resources:
+        asyncio.run(main_resources())
+    else:
+        asyncio.run(main_setup(args.setup or "university"))

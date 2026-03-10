@@ -3,7 +3,6 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.group.docs import router as docs_router
-from app.routes.v5.api.main.group.events import router as events_router
 from app.routes.v5.api.main.group.export import router as export_router
 from app.routes.v5.api.main.group.generate import router as generate_router
 from app.routes.v5.api.main.group.get import router as get_router
@@ -17,4 +16,3 @@ router.include_router(docs_router)
 router.include_router(export_router)
 # Socket event API equivalents
 router.include_router(generate_router)
-router.include_router(events_router)

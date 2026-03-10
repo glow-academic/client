@@ -15,6 +15,7 @@ async def create_threshold(
     value: int,
     redis: Redis,
     id: UUID | None = None,
+    threshold_type: str = "success",
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -23,11 +24,12 @@ async def create_threshold(
     """Create a threshold resource (plain INSERT — no unique constraint)."""
     threshold_id = await conn.fetchval(
         """
-        INSERT INTO thresholds_resource (id, value, active, mcp, generated)
-        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
+        INSERT INTO thresholds_resource (id, value, type, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         value,
+        threshold_type,
         not soft,
         mcp,
         id,

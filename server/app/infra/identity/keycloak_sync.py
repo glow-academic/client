@@ -6,7 +6,7 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
-from app.infra.auth.keycloak_resolvers import (
+from app.infra.identity.keycloak_resolvers import (
     resolve_auth_items,
     resolve_auths_for_department,
     resolve_auths_for_realm,
@@ -2103,7 +2103,7 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         # Generate theme provider mapping (client_id -> allowed IdP aliases)
         logger.info("Generating comprehensive Keycloak theme provider mapping...")
         try:
-            from app.infra.auth.keycloak_theme import (
+            from app.infra.identity.keycloak_theme import (
                 generate_keycloak_theme_providers,
             )
 

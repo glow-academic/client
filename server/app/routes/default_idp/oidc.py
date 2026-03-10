@@ -43,7 +43,7 @@ def get_idp_base_url() -> str:
     Uses the same logic as keycloak_sync.py get_idp_public_url().
     This URL is used in the issuer claim and must be accessible from browsers.
     """
-    from app.infra.auth.keycloak_sync import get_idp_public_url
+    from app.infra.identity.keycloak_sync import get_idp_public_url
 
     return get_idp_public_url()
 

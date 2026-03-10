@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.infra.auth.emulate import EmulationResult, resolve_emulation
+from app.infra.identity.emulate import EmulationResult, resolve_emulation
 from app.routes.v5.tools.entries.emulations.search import search_emulations
 from app.routes.v5.tools.entries.grants.search import search_grants
 from app.routes.v5.tools.entries.sessions.create import create_session

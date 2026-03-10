@@ -105,7 +105,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         # Initialize system session (for background tasks like health checks, metrics)
         if pool:
-            from app.infra.auth.resolve_identity import get_system_session_id
+            from app.infra.identity.resolve_identity import get_system_session_id
 
             async with pool.acquire() as conn:
                 system_session_id = await get_system_session_id(conn)

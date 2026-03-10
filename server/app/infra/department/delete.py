@@ -114,7 +114,7 @@ async def delete_department_impl(
     # -- Step 7: Keycloak sync per department -----------------------------------
 
     try:
-        from app.infra.auth.keycloak_sync import perform_keycloak_sync
+        from app.infra.identity.keycloak_sync import perform_keycloak_sync
 
         for dept_id in result.deleted_ids:
             await perform_keycloak_sync(department_id=str(dept_id))

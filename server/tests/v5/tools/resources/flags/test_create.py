@@ -15,8 +15,17 @@ async def test_creates_new_flag(conn, redis_client):
     assert result.description == "A flag"
     assert result.icon == "home"
     assert result.type == "active"
+    assert result.value is True
     assert result.active is True
     assert result.mcp is False
+
+
+async def test_creates_flag_with_value_false(conn, redis_client):
+    result = await create_flag(
+        conn, "inactive-flag", "desc", "x", redis_client, value=False
+    )
+
+    assert result.value is False
 
 
 async def test_visible_via_get(conn, redis_client):

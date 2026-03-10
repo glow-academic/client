@@ -14,8 +14,17 @@ async def test_creates_new_color(conn, redis_client):
     assert result.name == "test-color"
     assert result.description == "A color"
     assert result.hex_code == "#AABBCC"
+    assert result.type == "primary"
     assert result.active is True
     assert result.mcp is False
+
+
+async def test_creates_color_with_custom_type(conn, redis_client):
+    result = await create_color(
+        conn, "typed-color", "desc", "#112233", redis_client, color_type="accent"
+    )
+
+    assert result.type == "accent"
 
 
 async def test_visible_via_get(conn, redis_client):

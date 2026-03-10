@@ -161,7 +161,7 @@ async def docs_auth_impl(
     # ── Step 4: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.auth_artifact.permissions import (
+    from app.infra.auth.permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

@@ -4,6 +4,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.globals import get_redis_client
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 

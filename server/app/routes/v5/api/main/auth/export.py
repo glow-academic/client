@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
-from app.infra.auth_artifact.export import export_auth_impl
+from app.infra.auth.export import export_auth_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import ExportAuthApiResponse
 

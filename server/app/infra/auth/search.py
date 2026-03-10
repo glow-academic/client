@@ -18,12 +18,12 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.auth_artifact.permissions import (
+from app.infra.auth.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.infra.auth_artifact.permissions_context import (
+from app.infra.auth.permissions_context import (
     AuthPermissionsContext,
     resolve_auth_permissions_context,
 )

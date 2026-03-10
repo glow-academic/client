@@ -1,13 +1,13 @@
 """Auth draft endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.auth_artifact.draft.
+Thin route handler. Core logic lives in app.infra.auth.draft.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth_artifact.draft import patch_auth_draft_impl
+from app.infra.auth.draft import patch_auth_draft_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import (
     PatchAuthDraftApiRequest,

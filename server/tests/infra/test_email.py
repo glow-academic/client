@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.infra.auth.email import ProfileByEmailResult, resolve_profile_by_email
+from app.infra.identity.email import ProfileByEmailResult, resolve_profile_by_email
 from app.routes.v5.tools.resources.emails.create import create_email
 
 pytestmark = pytest.mark.asyncio

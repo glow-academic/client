@@ -38,7 +38,7 @@ async def get_profile(
             get_redis_client(),
             profile_id=profile_id,
             session_id=session_id,
-            target_profile_id=request.profile_id,
+            target_profile_id=request.target_profile_id,
             draft_id=request.draft_id,
             bypass_cache=bypass_cache,
         )

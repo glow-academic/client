@@ -1,10 +1,10 @@
-"""Auth update logic — composable infra architecture.
+"""Auth create logic — composable infra architecture.
 
 Composes existing black-box tools:
   1. resolve_profile_identity_context — profile (role, departments)
-  2. resolve_auth_permissions_context — per-item access + edit check
+  2. compute_can_create — permission check
   3. resolve_auth_values — raw value → ID resolution
-  4. update_auth_artifact — junction writes (partial update)
+  4. create_auth_artifact — junction writes
   5. create_denormalized_snapshot — auths_resource snapshot
   6. perform_keycloak_sync — sync auth state (non-fatal)
 """
@@ -15,20 +15,17 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.auth.keycloak_sync import perform_keycloak_sync
-from app.infra.auth_artifact.permissions_context import (
+from app.infra.identity.keycloak_sync import perform_keycloak_sync
+from app.infra.auth.permissions_context import (
     create_denormalized_snapshot,
-    resolve_auth_permissions_context,
     resolve_auth_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.auth.update import (
-    _UNSET,
-)
-from app.routes.v5.tools.artifacts.auth.update import (
-    update_auth as update_auth_artifact,
+from app.routes.v5.tools.artifacts.auth.create import (
+    create_auth as create_auth_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
@@ -36,7 +33,55 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 
-async def update_auth_impl(
+class CreateAuthItem(BaseModel):
+    """Single auth item for create — no auth_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    slug_id: UUID | None = None
+    # Optional flag
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    protocol_ids: list[UUID] | None = None
+    item_ids: list[UUID] | None = None
+    auth_resource_ids: list[UUID] | None = None
+
+
+class AuthFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class AuthResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    auth_id: UUID | None = None
+    message: str
+    errors: list[AuthFieldError] | None = None
+
+
+class CreateAuthApiResponse(BaseModel):
+    """Response model for bulk create auth endpoint."""
+
+    results: list[AuthResultItem]
+
+
+async def create_auth_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -46,21 +91,17 @@ async def update_auth_impl(
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
 ) -> dict:
-    """Auth bulk update using composable infra functions.
+    """Auth bulk create using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context → role, department_ids
-      2. Per-item: resolve_auth_permissions_context → exists + compute_can_edit
-      3. Per-item value resolution (raw → ID, no required field enforcement)
-      4. Single transaction: update_auth_artifact + denormalized snapshot per item
+      2. compute_can_create — single check (applies to all items)
+      3. Per-item value resolution (raw → ID, required field enforcement)
+      4. Single transaction: create_auth_artifact + denormalized snapshot per item
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.infra.auth_artifact.permissions import compute_can_edit
-    from app.routes.v5.api.main.auth.types import (
-        AuthResultItem,
-        UpdateAuthApiResponse,
-    )
+    from app.infra.auth.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
@@ -78,24 +119,13 @@ async def update_auth_impl(
             detail="Profile not found. Please sign in again.",
         )
 
-    # ── Step 2: Per-item permission check ──────────────────────────────
+    # ── Step 2: Permission check ───────────────────────────────────────
 
-    for idx, item in enumerate(items):
-        async with pool.acquire() as conn:
-            perms = await resolve_auth_permissions_context(conn, item.auth_id)
-        if not perms.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Auth {item.auth_id} not found.",
-            )
-        if not compute_can_edit(
-            user_role=profile.role,
-            active_settings_count=perms.active_settings_count,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this auth.",
-            )
+    if not compute_can_create(user_role=profile.role):
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to create auths.",
+        )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
@@ -104,7 +134,7 @@ async def update_auth_impl(
 
     for idx, item in enumerate(items):
         async with pool.acquire() as conn:
-            item_errors = await resolve_auth_values(conn, redis, item, is_create=False)
+            item_errors = await resolve_auth_values(conn, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -118,7 +148,7 @@ async def update_auth_impl(
             error_results.append(AuthResultItem(success=True, message="Validated"))
 
     if has_errors:
-        return UpdateAuthApiResponse(results=error_results)
+        return CreateAuthApiResponse(results=error_results)
 
     # ── Step 4: Single transaction ─────────────────────────────────────
 
@@ -129,22 +159,21 @@ async def update_auth_impl(
         auths_resource_id = await create_denormalized_snapshot(
             pool,
             redis,
+            id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
             department_ids=item.department_ids,
         )
 
-        # Artifact update inside transaction
+        # Artifact create inside transaction
         async with pool.acquire() as conn:
             async with conn.transaction():
-                await update_auth_artifact(
+                result = await create_auth_artifact(
                     conn,
-                    item.auth_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    slug_id=item.slug_id if item.slug_id else _UNSET,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    slug_id=item.slug_id,
                     department_ids=item.department_ids,
                     flag_ids=[item.active_flag_id] if item.active_flag_id else None,
                     item_ids=item.item_ids,
@@ -157,8 +186,8 @@ async def update_auth_impl(
         results.append(
             AuthResultItem(
                 success=True,
-                auth_id=item.auth_id,
-                message="Auth updated successfully",
+                auth_id=result.id,
+                message="Auth created successfully",
             )
         )
 
@@ -171,6 +200,6 @@ async def update_auth_impl(
     try:
         await perform_keycloak_sync(department_id=None)
     except Exception:
-        logger.warning("Keycloak sync failed after auth update (non-fatal)")
+        logger.warning("Keycloak sync failed after auth create (non-fatal)")
 
-    return UpdateAuthApiResponse(results=results)
+    return CreateAuthApiResponse(results=results)

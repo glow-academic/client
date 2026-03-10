@@ -7,7 +7,7 @@ This enables dynamic IdP visibility filtering based on department selection via 
 from datetime import datetime
 from typing import Any
 
-from app.infra.auth.keycloak_resolvers import (
+from app.infra.identity.keycloak_resolvers import (
     resolve_auths_for_department,
     resolve_auths_for_realm,
     resolve_departments_for_sync,

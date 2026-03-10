@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from app.infra.auth.upsert import UpsertProfileResult, resolve_profile_upsert
+from app.infra.identity.upsert import UpsertProfileResult, resolve_profile_upsert
 
 
 class _TransactionContext:

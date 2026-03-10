@@ -12,8 +12,17 @@ async def test_creates_new_threshold(conn, redis_client):
     result = await create_threshold(conn, 80, redis_client)
 
     assert result.value == 80
+    assert result.type == "success"
     assert result.active is True
     assert result.mcp is False
+
+
+async def test_creates_threshold_with_custom_type(conn, redis_client):
+    result = await create_threshold(
+        conn, 60, redis_client, threshold_type="warning"
+    )
+
+    assert result.type == "warning"
 
 
 async def test_visible_via_get(conn, redis_client):

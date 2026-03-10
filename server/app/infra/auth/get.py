@@ -8,8 +8,8 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.auth_artifact.context import resolve_auth_context
-from app.infra.auth_artifact.permissions import (
+from app.infra.auth.context import resolve_auth_context
+from app.infra.auth.permissions import (
     AUTH_BASIC_RESOURCES,
     AUTH_RESOURCES,
     compute_can_edit,
@@ -25,7 +25,7 @@ from app.infra.auth_artifact.permissions import (
     compute_show_slugs,
     compute_slugs_required,
 )
-from app.infra.auth_artifact.permissions_context import (
+from app.infra.auth.permissions_context import (
     resolve_auth_permissions_context,
 )
 from app.infra.common_context import resolve_common_context

@@ -16,6 +16,12 @@ async def test_creates_new_point(conn, redis_client):
     assert result.mcp is False
 
 
+async def test_creates_point_with_custom_type(conn, redis_client):
+    result = await create_point(conn, 15, redis_client, point_type="pass")
+
+    assert result.value == 15
+
+
 async def test_visible_via_get(conn, redis_client):
     result = await create_point(conn, 25, redis_client)
 

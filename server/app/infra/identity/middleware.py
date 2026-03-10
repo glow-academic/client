@@ -12,8 +12,8 @@ import logging
 
 from fastapi import Header, HTTPException, Request
 
-from app.infra.auth.license_key import validate_license_key
-from app.infra.auth.resolve_identity import (
+from app.infra.identity.license_key import validate_license_key
+from app.infra.identity.resolve_identity import (
     Identity,
     extract_api_key,
     extract_bearer_token,

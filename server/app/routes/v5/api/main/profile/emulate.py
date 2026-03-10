@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth.emulate import resolve_emulation
+from app.infra.identity.emulate import resolve_emulation
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.profile.types import (
     EmulateProfileApiRequest,

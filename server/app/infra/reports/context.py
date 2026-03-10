@@ -13,7 +13,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.auth.settings import resolve_thresholds
+from app.infra.identity.settings import resolve_thresholds
 from app.infra.types import ArtifactContext, ResourcePair
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import (

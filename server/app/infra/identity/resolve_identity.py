@@ -342,7 +342,7 @@ async def _auto_create_guest_profile(
     name = (claims.get("name") or "").strip() or "Unknown User"
 
     try:
-        from app.infra.auth.upsert import resolve_profile_upsert
+        from app.infra.identity.upsert import resolve_profile_upsert
         from app.infra.globals import get_redis_client
 
         redis = get_redis_client()

@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.auth.settings import SettingsThemeResult
+from app.infra.identity.settings import SettingsThemeResult
 from app.routes.shared_types import (
     QGetAgentsV4Item,
     QGetProfileContextV4ThemeTokens,

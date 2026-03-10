@@ -188,7 +188,7 @@ async def create_department_impl(
 
     # ── Step 6: Keycloak sync (non-fatal) ──────────────────────────────
 
-    from app.infra.auth.keycloak_sync import perform_keycloak_sync
+    from app.infra.identity.keycloak_sync import perform_keycloak_sync
 
     for department_id in saved_department_ids:
         try:

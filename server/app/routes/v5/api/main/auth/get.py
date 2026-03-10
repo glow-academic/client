@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth_artifact.get import get_auth_impl
+from app.infra.auth.get import get_auth_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import GetAuthApiRequest, GetAuthApiResponse
 from app.utils.error.handle_route_error import handle_route_error

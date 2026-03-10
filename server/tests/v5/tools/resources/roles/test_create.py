@@ -16,8 +16,23 @@ async def test_creates_new_role(conn, redis_client):
     assert result.role == "admin"
     assert result.name == "New Admin Role"
     assert result.description == "desc"
+    assert result.icon_id is None
+    assert result.color_id is None
+    assert result.artifacts == []
     assert result.active is True
     assert result.mcp is False
+
+
+async def test_creates_role_with_artifacts(conn, redis_client):
+    result = await create_role(
+        conn,
+        "instructional",
+        redis_client,
+        name="Artifact Role",
+        artifacts=["persona", "scenario"],
+    )
+
+    assert result.artifacts == ["persona", "scenario"]
 
 
 async def test_visible_via_get(conn, redis_client):

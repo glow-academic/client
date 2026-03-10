@@ -102,7 +102,7 @@ class MessageStats:
 
 # Entry search tools
 # Settings
-from app.infra.auth.settings import resolve_thresholds
+from app.infra.identity.settings import resolve_thresholds
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import (

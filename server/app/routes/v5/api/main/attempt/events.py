@@ -1,53 +1,78 @@
-"""Attempt events endpoint — poll for chat events.
+"""Attempt event declarations for centralized delivery."""
 
-REST equivalent of socket events: attempt_join / attempt_leave.
-Instead of subscribing to a room, agents poll for events with a cursor.
+from app.events.types import (
+    ArtifactEventsConfig,
+    OperationEventConfig,
+    default_filter_events,
+    require_authenticated_profile,
+)
 
-Event types mirror socket server-to-client events:
-  - assistant_start, assistant_progress, assistant_complete
-  - user_complete
-  - grade_start, grade_progress, grade_complete
-  - chat_ended, attempt_ended
-  - error
+ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
+    "start": OperationEventConfig(
+        operation="start",
+        domain_events=("attempt.started",),
+        scope="collection",
+        entity_key=None,
+        can_subscribe=require_authenticated_profile,
+    ),
+    "message": OperationEventConfig(
+        operation="message",
+        domain_events=(
+            "attempt.assistant.start",
+            "attempt.assistant.progress",
+            "attempt.assistant.complete",
+        ),
+        scope="entity",
+        entity_key="chat_id",
+        can_subscribe=require_authenticated_profile,
+        filter_events=default_filter_events,
+    ),
+    "grade": OperationEventConfig(
+        operation="grade",
+        domain_events=(
+            "attempt.grade.start",
+            "attempt.grade.progress",
+            "attempt.grade.complete",
+        ),
+        scope="entity",
+        entity_key="attempt_id",
+        can_subscribe=require_authenticated_profile,
+        filter_events=default_filter_events,
+    ),
+    "end": OperationEventConfig(
+        operation="end",
+        domain_events=("attempt.ended",),
+        scope="entity",
+        entity_key="attempt_id",
+        can_subscribe=require_authenticated_profile,
+    ),
+    "response": OperationEventConfig(
+        operation="response",
+        domain_events=("attempt.response.saved",),
+        scope="entity",
+        entity_key="attempt_id",
+        can_subscribe=require_authenticated_profile,
+    ),
+    "audio": OperationEventConfig(
+        operation="audio",
+        domain_events=(
+            "attempt.audio.start",
+            "attempt.audio.progress",
+            "attempt.audio.complete",
+        ),
+        scope="entity",
+        entity_key="attempt_id",
+        can_subscribe=require_authenticated_profile,
+        filter_events=default_filter_events,
+    ),
+}
 
-TODO: Wire to actual infra (query event store by chat_id + cursor).
-"""
-
-from __future__ import annotations
-
-from typing import Any
-from uuid import UUID
-
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
-
-router = APIRouter()
+ATTEMPT_EVENTS = ArtifactEventsConfig(
+    artifact="attempt",
+    operations=ATTEMPT_EVENT_CONFIGS,
+)
 
 
-class AttemptEventsPayload(BaseModel):
-    chat_id: UUID
-    cursor: str | None = None
-    types: list[str] | None = None
-    limit: int = 50
-
-
-class AttemptEvent(BaseModel):
-    id: str
-    type: str
-    created: str
-    data: dict[str, Any]
-
-
-class AttemptEventsApiResponse(BaseModel):
-    events: list[AttemptEvent]
-    next_page_url: str | None = None
-    previous_page_url: str | None = None
-
-
-@router.post("/events", response_model=AttemptEventsApiResponse)
-async def attempt_events(
-    request: AttemptEventsPayload,
-    http_request: Request,
-) -> AttemptEventsApiResponse:
-    """Poll for chat events. Returns events since cursor, with pagination URLs."""
-    raise HTTPException(status_code=501, detail="Not implemented")
+def get_attempt_event_config(operation: str) -> OperationEventConfig | None:
+    """Resolve event policy for an attempt operation."""
+    return ATTEMPT_EVENTS.get_operation(operation)

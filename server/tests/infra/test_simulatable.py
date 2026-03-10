@@ -1,6 +1,6 @@
 """Tests for infra.auth.simulatable."""
 
-from app.infra.auth.simulatable import SIMULATABLE_ROLES
+from app.infra.identity.simulatable import SIMULATABLE_ROLES
 
 
 def test_superadmin_can_simulate_all_roles():

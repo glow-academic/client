@@ -25,7 +25,7 @@ async def write_metrics_snapshot(
     memory_bytes: int,
 ) -> CreateMetricsEntryResponse:
     """Write a metrics snapshot to the database."""
-    from app.infra.auth.resolve_identity import get_system_session_id
+    from app.infra.identity.resolve_identity import get_system_session_id
 
     async with pool.acquire() as conn:
         async with conn.transaction():
@@ -50,7 +50,7 @@ async def write_health_checks(
     checks: dict,
 ) -> None:
     """Write health check results to the database."""
-    from app.infra.auth.resolve_identity import get_system_session_id
+    from app.infra.identity.resolve_identity import get_system_session_id
     from app.routes.v5.tools.entries.health.create import create_health
 
     async with pool.acquire() as conn:

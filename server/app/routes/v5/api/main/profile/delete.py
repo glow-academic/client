@@ -25,7 +25,7 @@ async def delete_profile(
     response: Response,
 ) -> DeleteProfileApiResponse:
     """Bulk delete profiles — composable infra architecture."""
-    tags = ["profile"]
+    tags = ["profiles"]
 
     try:
         profile_id = http_request.state.profile_id

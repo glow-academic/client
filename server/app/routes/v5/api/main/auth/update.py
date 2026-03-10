@@ -1,13 +1,13 @@
 """Auth update endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.auth_artifact.update.
+Thin route handler. Core logic lives in app.infra.auth.update.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth_artifact.update import update_auth_impl
+from app.infra.auth.update import update_auth_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import (
     UpdateAuthApiRequest,

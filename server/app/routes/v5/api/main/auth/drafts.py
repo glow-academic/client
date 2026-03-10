@@ -1,6 +1,6 @@
 """Auth drafts list endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.auth_artifact.drafts.
+Thin route handler. Core logic lives in app.infra.auth.drafts.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth_artifact.drafts import list_auth_drafts_impl
+from app.infra.auth.drafts import list_auth_drafts_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import GetAuthDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error

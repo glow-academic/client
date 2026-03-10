@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.post("/init")
 async def init_system() -> JSONResponse:
-    from app.infra.auth.keycloak_sync import perform_keycloak_sync
+    from app.infra.identity.keycloak_sync import perform_keycloak_sync
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger("app.main")

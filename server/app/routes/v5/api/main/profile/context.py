@@ -10,8 +10,8 @@ import asyncio
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth.settings import resolve_settings_theme
-from app.infra.auth.simulatable import SIMULATABLE_ROLES
+from app.infra.identity.settings import resolve_settings_theme
+from app.infra.identity.simulatable import SIMULATABLE_ROLES
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.route_permissions import compute_available_sections
@@ -94,8 +94,8 @@ async def get_profile_context(
                 role=r.role,
                 name=r.name,
                 description=r.description,
-                icon_value=r.icon_value,
-                color_hex=r.color_hex,
+                icon_value=None,
+                color_hex=None,
             )
             for r in roles_raw
         ]

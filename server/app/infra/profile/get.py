@@ -66,6 +66,18 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
     return (key, label)
 
 
+def _serialize_model(item):
+    if item is None:
+        return None
+    if hasattr(item, "model_dump"):
+        return item.model_dump(mode="json")
+    return item
+
+
+def _serialize_models(items: list) -> list:
+    return [_serialize_model(item) for item in items]
+
+
 async def get_profile_impl(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -324,22 +336,22 @@ async def get_profile_impl(
         general_show_ai_generate=general_show_ai_generate,
         names=ProfileNameSection(
             **_section("names"),
-            resource=profile_ctx.resources["names"].selected[0]
+            resource=_serialize_model(profile_ctx.resources["names"].selected[0])
             if profile_ctx.resources["names"].selected
             else None,
-            resources=all_names,
+            resources=_serialize_models(all_names),
         ),
         emails=ProfileEmailSection(
             **_section("emails"),
-            current=profile_ctx.resources["emails"].selected or None,
-            resources=all_emails,
+            current=_serialize_models(profile_ctx.resources["emails"].selected) or None,
+            resources=_serialize_models(all_emails),
         ),
         request_limits=ProfileRequestLimitSection(
             **_section("request_limits"),
-            resource=profile_ctx.resources["request_limits"].selected[0]
+            resource=_serialize_model(profile_ctx.resources["request_limits"].selected[0])
             if profile_ctx.resources["request_limits"].selected
             else None,
-            resources=all_request_limits,
+            resources=_serialize_models(all_request_limits),
         ),
         flags=ProfileFlagSection(
             **_section("flags"),
@@ -348,12 +360,13 @@ async def get_profile_impl(
         ),
         departments=ProfileDepartmentSection(
             **_section("departments"),
-            current=profile_ctx.resources["departments"].selected or None,
-            resources=all_departments,
+            current=_serialize_models(profile_ctx.resources["departments"].selected)
+            or None,
+            resources=_serialize_models(all_departments),
         ),
         roles=ProfileRoleSection(
             **_section("roles"),
-            current=profile_ctx.resources["roles"].selected or None,
-            resources=all_roles,
+            current=_serialize_models(profile_ctx.resources["roles"].selected) or None,
+            resources=_serialize_models(all_roles),
         ),
     )

@@ -18,14 +18,14 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.auth.analytics import (
+from app.infra.identity.analytics import (
     AnalyticsFiltersResult,
     resolve_benchmark_filters,
     resolve_health_filters,
     resolve_pricing_filters,
     resolve_profile_facts_filters,
 )
-from app.infra.auth.simulatable import SIMULATABLE_ROLES
+from app.infra.identity.simulatable import SIMULATABLE_ROLES
 from app.infra.profile_identity_context import ProfileIdentityContext
 from app.routes.auth.types import (
     AnalyticsFacets,

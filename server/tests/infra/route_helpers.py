@@ -8,6 +8,7 @@ from uuid import UUID
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
 from tests.helpers import unique_tag
 
 
@@ -55,6 +56,7 @@ async def create_admin_route_actor(
             redis=redis_client,
         )
         session = await create_session(conn, profile_id=graph.profile_resource_id)
+        await refresh_sessions(conn)
         await create_group(conn, session_id=session.id, name=group_name)
 
     identity = await resolve_profile_identity_context(

@@ -42,7 +42,7 @@ async def search_profile(
     response: Response,
 ) -> ListProfilesApiResponse:
     """Search profiles — composable infra architecture."""
-    tags = ["profile"]
+    tags = ["profiles"]
 
     try:
         profile_id = http_request.state.profile_id

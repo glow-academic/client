@@ -4,7 +4,7 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from app.infra.auth.analytics import (
+from app.infra.identity.analytics import (
     AnalyticsFiltersResult,
     resolve_benchmark_filters,
     resolve_health_filters,
