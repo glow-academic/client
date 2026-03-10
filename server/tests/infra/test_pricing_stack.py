@@ -159,7 +159,7 @@ class TestPricingDocsClient:
 
 class TestExportPricingClient:
     async def test_exports_pricing_zip(
-        self, pool, redis_client, profile_identity_factory, tmp_path, monkeypatch
+        self, pool, redis_client, profile_identity_factory, tmp_path
     ):
         profile = await profile_identity_factory()
 
@@ -168,13 +168,12 @@ class TestExportPricingClient:
                 conn, redis_client, profile.profile_resource_id
             )
 
-        monkeypatch.setattr("app.infra.pricing.export.UPLOAD_FOLDER", tmp_path)
-
         result = await export_pricing_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
             session_id=session.id,
+            upload_folder=tmp_path,
         )
 
         assert result.row_count >= 1

@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.cohort.get import get_cohort_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import (
     GetCohortApiRequest,
@@ -31,19 +32,37 @@ async def get_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_cohort_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetCohortApiResponse:
+            return await get_cohort_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                cohort_id=request.cohort_id,
+                draft_id=request.draft_id,
+                descriptions_search=request.descriptions_search,
+                simulation_search=request.simulation_search,
+                simulation_show_selected=request.simulation_show_selected,
+                profile_search=request.profile_search,
+                profile_show_selected=request.profile_show_selected,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="cohort",
             profile_id=profile_id,
             session_id=session_id,
-            cohort_id=request.cohort_id,
             draft_id=request.draft_id,
-            descriptions_search=request.descriptions_search,
-            simulation_search=request.simulation_search,
-            simulation_show_selected=request.simulation_show_selected,
-            profile_search=request.profile_search,
-            profile_show_selected=request.profile_show_selected,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetCohortApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "cohorts"

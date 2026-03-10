@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.model.get import get_model_impl
 from app.routes.v5.api.main.model.types import GetModelApiRequest, GetModelApiResponse
@@ -30,14 +31,32 @@ async def get_model(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_model_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetModelApiResponse:
+            return await get_model_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                model_id=request.model_id,
+                draft_id=request.draft_id,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="model",
             profile_id=profile_id,
             session_id=session_id,
-            model_id=request.model_id,
             draft_id=request.draft_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetModelApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "models"

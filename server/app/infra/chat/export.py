@@ -57,6 +57,7 @@ async def export_chat_impl(
     group_id: UUID,
     attempt_id: UUID | None = None,
     draft_id: UUID | None = None,
+    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
 ) -> dict:
     """Chat single-item export using composable infra functions.
 
@@ -221,9 +222,9 @@ async def export_chat_impl(
     # Write CSV to upload folder
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"chat_export_{timestamp}.csv"
-    file_path = os.path.join(str(UPLOAD_FOLDER), file_name)
+    file_path = os.path.join(str(upload_folder), file_name)
 
-    os.makedirs(str(UPLOAD_FOLDER), exist_ok=True)
+    os.makedirs(str(upload_folder), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(csv_content)
 

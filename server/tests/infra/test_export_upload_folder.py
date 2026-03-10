@@ -122,3 +122,63 @@ async def test_export_scenario_impl_writes_to_injected_upload_folder(
     assert exported.exists()
     assert exported.suffix == ".csv"
     assert Path(exported).parent == tmp_path
+
+
+async def test_export_profile_impl_writes_to_injected_upload_folder(
+    pool,
+    redis_client,
+    setting_graph_factory,
+    tmp_path,
+):
+    _ensure_export_type_packages("profile")
+    from app.infra.profile.export import export_profile_impl
+    from app.routes.v5.tools.artifacts.profile.create import create_profile
+    from app.routes.v5.tools.resources.emails.create import create_email
+    from app.routes.v5.tools.resources.names.create import create_name
+    from app.routes.v5.tools.resources.request_limits.create import create_request_limit
+    from app.routes.v5.tools.resources.roles.create import create_role
+
+    actor = await create_admin_route_actor(
+        pool,
+        redis_client,
+        setting_graph_factory,
+        tool_artifacts=["profile"],
+        group_name="profile-export-folder",
+        role_name_prefix="Profile Export Admin",
+    )
+
+    tag = unique_tag()
+    async with pool.acquire() as conn:
+        name = await create_name(conn, f"profile-export-{tag}", redis_client)
+        email = await create_email(conn, f"profile-export-{tag}@example.com", redis_client)
+        request_limit = await create_request_limit(conn, 42, redis_client)
+        role = await create_role(
+            conn,
+            role="member",
+            name=f"Profile Export Role {tag}",
+            description=f"Profile export role {tag}",
+            redis=redis_client,
+        )
+        profile = await create_profile(
+            conn,
+            name_id=name.id,
+            email_ids=[email.id],
+            request_limit_id=request_limit.id,
+            department_ids=[actor.department_id],
+            role_ids=[role.id],
+            redis=redis_client,
+        )
+
+    result = await export_profile_impl(
+        pool,
+        redis_client,
+        profile_id=actor.profile_id,
+        session_id=actor.session_id,
+        profile_export_id=profile.id,
+        upload_folder=tmp_path,
+    )
+
+    exported = tmp_path / result.file_name
+    assert exported.exists()
+    assert exported.suffix == ".csv"
+    assert Path(exported).parent == tmp_path

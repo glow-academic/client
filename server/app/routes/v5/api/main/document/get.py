@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.document.get import get_document_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.document.types import (
@@ -33,14 +34,32 @@ async def get_document(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_document_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetDocumentApiResponse:
+            return await get_document_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                document_id=request.document_id,
+                draft_id=request.draft_id,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="document",
             profile_id=profile_id,
             session_id=session_id,
-            document_id=request.document_id,
             draft_id=request.draft_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetDocumentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "documents"

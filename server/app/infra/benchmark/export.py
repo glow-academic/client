@@ -91,6 +91,7 @@ async def export_benchmark_impl(
     *,
     profile_id: UUID,
     session_id: UUID,
+    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
 ) -> ExportBenchmarkApiResponse:
     """Benchmark full export using composable infra functions.
 
@@ -240,9 +241,9 @@ async def export_benchmark_impl(
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"benchmark_export_{timestamp}.zip"
-    file_path = os.path.join(str(UPLOAD_FOLDER), file_name)
+    file_path = os.path.join(str(upload_folder), file_name)
 
-    os.makedirs(str(UPLOAD_FOLDER), exist_ok=True)
+    os.makedirs(str(upload_folder), exist_ok=True)
     with open(file_path, "wb") as f:
         f.write(zip_content)
 

@@ -59,6 +59,7 @@ async def export_group_impl(
     profile_id: UUID,
     session_id: UUID,
     group_id: UUID,
+    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
 ) -> dict:
     """Group export using composable infra functions."""
     from fastapi import HTTPException
@@ -169,9 +170,9 @@ async def export_group_impl(
     # Write ZIP to upload folder
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"group_export_{timestamp}.zip"
-    file_path = os.path.join(str(UPLOAD_FOLDER), file_name)
+    file_path = os.path.join(str(upload_folder), file_name)
 
-    os.makedirs(str(UPLOAD_FOLDER), exist_ok=True)
+    os.makedirs(str(upload_folder), exist_ok=True)
     with open(file_path, "wb") as f:
         f.write(zip_content)
 

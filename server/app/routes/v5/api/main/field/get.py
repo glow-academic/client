@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.field.get import get_field_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.field.types import GetFieldApiRequest, GetFieldApiResponse
@@ -30,14 +31,32 @@ async def get_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_field_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetFieldApiResponse:
+            return await get_field_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                field_id=request.field_id,
+                draft_id=request.draft_id,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="field",
             profile_id=profile_id,
             session_id=session_id,
-            field_id=request.field_id,
             draft_id=request.draft_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetFieldApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "fields"
