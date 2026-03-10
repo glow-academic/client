@@ -79,7 +79,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "delete": ("app.routes.v5.api.main.cohort.delete", "delete_cohort"),
         "duplicate": ("app.routes.v5.api.main.cohort.duplicate", "duplicate_cohort"),
         "draft": ("app.routes.v5.api.main.cohort.draft", "patch_cohort_draft"),
-        "docs": ("app.infra.cohort_docs", "docs_cohort_client"),
+        "docs": ("app.infra.cohort.docs", "docs_cohort_impl"),
     },
     "dashboard": {
         "get": ("app.routes.v5.api.main.dashboard.get", "get_dashboard"),

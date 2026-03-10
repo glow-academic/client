@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.cohort_draft import patch_cohort_draft_client
+from app.infra.cohort.draft import patch_cohort_draft_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import (
     PatchCohortDraftApiRequest,
@@ -47,7 +47,7 @@ async def patch_cohort_draft(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await patch_cohort_draft_client(
+        result = await patch_cohort_draft_impl(
             pool,
             redis,
             profile_id=profile_id,

@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.cohort_drafts import list_cohort_drafts_client
+from app.infra.cohort.drafts import list_cohort_drafts_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import GetCohortDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -35,7 +35,7 @@ async def get_cohort_drafts(
         redis = get_redis_client()
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        context = await list_cohort_drafts_client(
+        context = await list_cohort_drafts_impl(
             pool,
             redis,
             profile_id=UUID(profile_id),

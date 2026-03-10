@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.cohort_docs import docs_cohort_client
+from app.infra.cohort.docs import docs_cohort_impl
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_pool, get_redis_client
@@ -21,7 +21,7 @@ async def get_cohort_docs_endpoint(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await docs_cohort_client(
+    return await docs_cohort_impl(
         pool,
         redis,
         profile_id=profile_id,

@@ -17,7 +17,7 @@ from app.infra.types import ArtifactContext
 from app.routes.v5.tools.entries.cohort_drafts.search import search_cohort_drafts
 
 
-async def list_cohort_drafts_client(
+async def list_cohort_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

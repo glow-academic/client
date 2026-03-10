@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.cohort_search import search_cohort_client
+from app.infra.cohort.search import search_cohort_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import ListCohortApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -55,7 +55,7 @@ async def search_cohort(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_cohort_client(
+        result = await search_cohort_impl(
             pool,
             redis,
             profile_id=profile_id,

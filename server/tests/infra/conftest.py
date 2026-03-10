@@ -231,3 +231,34 @@ async def v5_agent_route_client(
 
     globals_mod._db_pool = prior_pool
     globals_mod.redis_client = prior_redis
+
+
+@pytest_asyncio.fixture
+async def v5_group_route_client(
+    pool,
+    redis_client,
+) -> AsyncGenerator[V5RouteClient, None]:
+    """HTTP client mounted on the real group v5 route stack."""
+    import app.infra.globals as globals_mod
+    from app.routes.v5.api.main.group import router as group_router
+
+    request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
+    app = _build_v5_artifact_test_app(
+        artifact_router=group_router,
+        request_state=request_state,
+    )
+
+    prior_pool = globals_mod._db_pool
+    prior_redis = globals_mod.redis_client
+    globals_mod._db_pool = pool
+    globals_mod.redis_client = redis_client
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        yield V5RouteClient(client=client, _request_state=request_state)
+
+    globals_mod._db_pool = prior_pool
+    globals_mod.redis_client = prior_redis

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.cohort_create import create_cohort_client
+from app.infra.cohort.create import create_cohort_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import (
     CreateCohortApiRequest,
@@ -37,7 +37,7 @@ async def create_cohort(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_cohort_client(
+        response_data = await create_cohort_impl(
             pool,
             redis,
             profile_id=profile_id,

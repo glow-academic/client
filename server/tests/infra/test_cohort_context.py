@@ -1,10 +1,10 @@
-"""Integration tests for infra.cohort_context — real DB, no mocks."""
+"""Integration tests for infra.cohort.context — real DB, no mocks."""
 
 from uuid import uuid4
 
 import pytest
 
-from app.infra.cohort_context import resolve_cohort_context
+from app.infra.cohort.context import resolve_cohort_context
 from app.routes.v5.tools.artifacts.cohort.create import create_cohort
 from app.routes.v5.tools.artifacts.cohort.update import update_cohort
 

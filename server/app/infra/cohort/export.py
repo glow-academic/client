@@ -54,7 +54,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_cohort_client(
+async def export_cohort_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

@@ -19,7 +19,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.cohort_permissions import (
+from app.infra.cohort.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
@@ -98,7 +98,7 @@ COHORT_IMPORT_FIELDS: list[dict[str, Any]] = [
 ]
 
 
-async def search_cohort_client(
+async def search_cohort_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

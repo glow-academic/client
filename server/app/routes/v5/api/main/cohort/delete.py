@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.cohort_delete import delete_cohort_client
+from app.infra.cohort.delete import delete_cohort_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import (
     DeleteCohortApiRequest,
@@ -38,7 +38,7 @@ async def delete_cohort(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_cohort_client(
+        result = await delete_cohort_impl(
             pool,
             redis,
             profile_id=profile_id,

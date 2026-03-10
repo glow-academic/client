@@ -17,7 +17,7 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.cohort_permissions_context import (
+from app.infra.cohort.permissions_context import (
     create_denormalized_snapshot,
     resolve_cohort_permissions_context,
     resolve_cohort_values,
@@ -35,7 +35,7 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 
-async def update_cohort_client(
+async def update_cohort_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -55,7 +55,7 @@ async def update_cohort_client(
       5. invalidate_tags
       6. sync_home_practice_entries (non-fatal)
     """
-    from app.infra.cohort_permissions import (
+    from app.infra.cohort.permissions import (
         compute_can_edit,
         has_access,
     )

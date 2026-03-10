@@ -24,7 +24,7 @@ _TAGS = ["cohorts", "artifacts"]
 _VIEWS = ["cohort_drafts_mv"]
 
 
-async def refresh_cohort_client(
+async def refresh_cohort_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,
