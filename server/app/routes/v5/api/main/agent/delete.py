@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.agent.delete import delete_agent_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import (
     DeleteAgentApiRequest,
@@ -38,11 +39,24 @@ async def delete_agent(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_agent_impl(
+        async def _runner() -> DeleteAgentApiResponse:
+            return await delete_agent_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                agent_ids=request.agent_ids,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="agent",
             profile_id=profile_id,
-            agent_ids=request.agent_ids,
+            session_id=session_id,
+            operation="delete",
+            arguments=request.model_dump(mode="json"),
+            response_model=DeleteAgentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

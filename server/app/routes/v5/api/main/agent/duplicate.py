@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.agent.duplicate import duplicate_agent_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import (
     DuplicateAgentApiRequest,
@@ -41,11 +42,24 @@ async def duplicate_agent(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_agent_impl(
+        async def _runner() -> DuplicateAgentApiResponse:
+            return await duplicate_agent_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                agent_id=request.agent_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="agent",
             profile_id=profile_id,
-            agent_id=request.agent_id,
+            session_id=session_id,
+            operation="duplicate",
+            arguments=request.model_dump(mode="json"),
+            response_model=DuplicateAgentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

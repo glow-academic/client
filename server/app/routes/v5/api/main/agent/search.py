@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.agent.search import search_agent_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import ListAgentApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -54,19 +55,32 @@ async def search_agent(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_agent_impl(
+        async def _runner() -> ListAgentApiResponse:
+            return await search_agent_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                filter_department_ids=request.filter_department_ids,
+                filter_model_ids=request.filter_model_ids,
+                filter_tool_ids=request.filter_tool_ids,
+                department_search=request.department_search,
+                model_search=request.model_search,
+                tool_search=request.tool_search,
+                page_size=request.page_size or 12,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="agent",
             profile_id=profile_id,
-            search=request.search,
-            filter_department_ids=request.filter_department_ids,
-            filter_model_ids=request.filter_model_ids,
-            filter_tool_ids=request.filter_tool_ids,
-            department_search=request.department_search,
-            model_search=request.model_search,
-            tool_search=request.tool_search,
-            page_size=request.page_size or 12,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListAgentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

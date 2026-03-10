@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.agent.update import update_agent_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.agent.types import (
     UpdateAgentApiRequest,
@@ -36,11 +37,26 @@ async def update_agent(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_agent_impl(
+        async def _runner() -> UpdateAgentApiResponse:
+            return await update_agent_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                items=request.agents,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="agent",
             profile_id=profile_id,
-            items=request.agents,
+            session_id=http_request.state.session_id,
+            operation="update",
+            arguments={
+                "agents": [item.model_dump(mode="json") for item in request.agents]
+            },
+            response_model=UpdateAgentApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = "agents"
