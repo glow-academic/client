@@ -25,7 +25,7 @@ _TAGS = ["activity", "artifacts"]
 _VIEWS = ["activity_mv"]
 
 
-async def refresh_activity_client(
+async def refresh_activity_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

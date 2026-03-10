@@ -10,15 +10,15 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.dashboard_builders import (
+from app.infra.dashboard.builders import (
     build_field_meta,
     build_parameter_meta,
     build_rubric_meta,
     build_scenario_meta,
     build_simulation_meta,
 )
-from app.infra.dashboard_context import resolve_dashboard_context
-from app.infra.dashboard_permissions import (
+from app.infra.dashboard.context import resolve_dashboard_context
+from app.infra.dashboard.permissions import (
     compute_footer_metrics_v2,
     compute_header_metrics_v2,
     compute_primary_metrics_v2,
@@ -358,7 +358,7 @@ async def get_record(
 
         # Inline history
         if request.history_page_size and request.history_page_size > 0:
-            from app.infra.dashboard_context import resolve_dashboard_search_context
+            from app.infra.dashboard.context import resolve_dashboard_search_context
             from app.routes.v5.api.main.dashboard.search import _build_history_response
 
             async with pool.acquire() as c:

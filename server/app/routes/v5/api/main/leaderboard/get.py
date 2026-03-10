@@ -1,101 +1,15 @@
-"""Get endpoint for leaderboard artifact — top sections (header metrics + accolades)."""
+"""Leaderboard GET endpoint — thin HTTP adapter over the canonical shared operation."""
 
-import asyncio
-from datetime import datetime
-from typing import Any
+from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.analytics_facets import (
-    HIDDEN,
-    VISIBLE,
-    AnalyticsFacetsConfig,
-    resolve_analytics_facets,
-)
-from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_pool, get_redis_client
-from app.infra.leaderboard_context import resolve_leaderboard_context
-from app.infra.leaderboard_permissions import (
-    build_leaderboard_sections_v3,
-)
-from app.routes.auth.types import AnalyticsFilterFields
-from app.routes.v5.api.main.leaderboard.types import (
-    LeaderboardProfileResource,
-    LeaderboardRequest,
-    LeaderboardResources,
-    LeaderboardResponse,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+from app.infra.globals import get_pool
+from app.infra.leaderboard.get import get_leaderboard_impl_cached
+from app.routes.v5.api.main.leaderboard.types import LeaderboardRequest, LeaderboardResponse
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-# ---------------------------------------------------------------------------
-# Leaderboard analytics facets config
-# ---------------------------------------------------------------------------
-
-LEADERBOARD_FACETS_CONFIG = AnalyticsFacetsConfig(
-    fields=AnalyticsFilterFields(
-        date_range=VISIBLE,
-        departments=VISIBLE,
-        cohorts=VISIBLE,
-        roles=HIDDEN,
-        attempts=VISIBLE,
-    ),
-    mv_source="profile_facts",
-    attempt_options=["general", "practice", "archived"],
-)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _parse_filters(request: LeaderboardRequest) -> dict[str, Any]:
-    """Parse common filters from leaderboard request."""
-    parsed_start_date = (
-        datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
-        if request.start_date
-        else None
-    )
-    parsed_end_date = (
-        datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
-        if request.end_date
-        else None
-    )
-
-    cohort_ids_filter = (
-        request.cohort_ids
-        if request.cohort_ids
-        else ([request.cohort_id] if request.cohort_id else None)
-    )
-
-    is_archived = bool(
-        request.simulation_filters and "archived" in request.simulation_filters
-    )
-    if request.simulation_filters and "general" in request.simulation_filters:
-        attempt_type = "general"
-    elif request.simulation_filters and "practice" in request.simulation_filters:
-        attempt_type = "practice"
-    else:
-        attempt_type = "general"
-
-    return {
-        "date_from": parsed_start_date.date() if parsed_start_date else None,
-        "date_to": parsed_end_date.date() if parsed_end_date else None,
-        "cohort_ids": cohort_ids_filter,
-        "department_ids": request.department_ids,
-        "attempt_type": attempt_type,
-        "is_archived": is_archived,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Route handler
-# ---------------------------------------------------------------------------
 
 
 @router.post("/get", response_model=LeaderboardResponse)
@@ -104,118 +18,21 @@ async def get_leaderboard(
     http_request: Request,
     response: Response,
 ) -> LeaderboardResponse:
-    """Get leaderboard top sections (header metrics + accolades)."""
-    tags = ["artifacts", "leaderboard"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
-    cache_key_val = cache_key(
-        http_request.url.path,
-        request.model_dump(mode="json"),
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            response.headers["X-Cache-Tags"] = ",".join(tags)
-            response.headers["X-Cache-Hit"] = "1"
-            return LeaderboardResponse.model_validate(cached["data"])
-
     try:
-        pool = get_pool()
-        if not pool:
-            raise RuntimeError("Database pool not initialized")
-
         profile_id = http_request.state.profile_id
         if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
-            )
+            raise HTTPException(status_code=401, detail="Profile ID is required. Please sign in again.")
 
-        redis = get_redis_client()
-
-        # --- Phase 0: Resolve common context (profile identity) ---
-        async with pool.acquire() as c:
-            common = await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-            )
-        if not common:
-            raise HTTPException(status_code=401, detail="Profile not found")
-
-        # --- Phase 1: Parse filters ---
-        filters = _parse_filters(request)
-
-        profile = common.profile
-
-        # --- Phase 2: Resolve leaderboard context + analytics facets in parallel ---
-        ctx, analytics_facets = await asyncio.gather(
-            resolve_leaderboard_context(
-                pool,
-                redis,
-                target_profile_id=request.target_profile_id,
-                cohort_ids=filters["cohort_ids"],
-                department_ids=filters["department_ids"],
-                attempt_type=filters["attempt_type"],
-                is_archived=filters["is_archived"],
-                date_from=filters["date_from"],
-                date_to=filters["date_to"],
-                bypass_cache=bypass_cache,
-            ),
-            resolve_analytics_facets(
-                pool,
-                redis,
-                config=LEADERBOARD_FACETS_CONFIG,
-                profile=profile,
-                bypass_cache=bypass_cache,
-            ),
+        response_data, cache_hit = await get_leaderboard_impl_cached(
+            get_pool(),
+            request,
+            profile_id=profile_id,
+            bypass_cache=http_request.headers.get("X-Bypass-Cache") == "1",
+            cache_key_path=http_request.url.path,
         )
-
-        # --- Phase 3: Extract data ---
-        attempt_chats = ctx.entries.get("attempt_chats", [])
-        attempt_messages = ctx.entries.get("attempt_messages", [])
-
-        profiles_rp = ctx.resources.get("profiles")
-        profile_list = profiles_rp.selected if profiles_rp else []
-
-        # --- Phase 4: Build sections ---
-        sections = build_leaderboard_sections_v3(
-            attempt_chats=attempt_chats,
-            attempt_messages=attempt_messages,
-        )
-
-        # Build profile resources
-        profile_resources = {
-            str(item.profile_id): LeaderboardProfileResource(
-                profile_id=str(item.profile_id),
-                name=item.name,
-                role=None,
-            )
-            for item in profile_list
-            if item.profile_id is not None
-        }
-
-        resources = LeaderboardResources(
-            profiles=profile_resources,
-        )
-
-        api_response = LeaderboardResponse(
-            sections=sections,
-            resources=resources,
-            analytics=analytics_facets,
-        )
-
-        await set_cached(
-            cache_key_val,
-            {"data": api_response.model_dump(mode="json")},
-            ttl=300,
-            tags=tags,
-            redis=redis,
-        )
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "0"
-
-        return api_response
-
+        response.headers["X-Cache-Tags"] = "artifacts,leaderboard"
+        response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:

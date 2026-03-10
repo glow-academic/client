@@ -17,7 +17,7 @@ from app.infra.chat.permissions import (
     compute_show_view,
 )
 from app.infra.common_context import resolve_common_context
-from app.infra.dashboard_context import resolve_dashboard_search_context
+from app.infra.dashboard.context import resolve_dashboard_search_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.dashboard.types import (

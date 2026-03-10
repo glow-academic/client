@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.activity_refresh import refresh_activity_client
+from app.infra.activity.refresh import refresh_activity_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -19,7 +19,7 @@ async def activity_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_activity_client(
+    result = await refresh_activity_impl(
         pool,
         redis,
         profile_id=profile_id,

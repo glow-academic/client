@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.leaderboard_export import export_leaderboard_client
+from app.infra.leaderboard.export import export_leaderboard_impl
 from app.routes.v5.api.main.leaderboard.types import ExportLeaderboardApiResponse
 
 router = APIRouter()
@@ -20,7 +20,7 @@ async def export_leaderboard(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_leaderboard_client(
+    return await export_leaderboard_impl(
         pool,
         redis,
         profile_id=profile_id,

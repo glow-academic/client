@@ -3,7 +3,7 @@
 from types import SimpleNamespace
 from uuid import uuid4
 
-from app.infra.dashboard_builders import (
+from app.infra.dashboard.builders import (
     build_field_meta,
     build_parameter_meta,
     build_rubric_meta,

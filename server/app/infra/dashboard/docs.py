@@ -28,7 +28,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_dashboard_client(
+async def docs_dashboard_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -60,7 +60,7 @@ async def docs_dashboard_client(
     # -- Step 2: Assemble response ----------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.dashboard_permissions import (
+    from app.infra.dashboard.permissions import (
         build_dashboard_bundle,
         compute_footer_metrics,
         compute_header_metrics,

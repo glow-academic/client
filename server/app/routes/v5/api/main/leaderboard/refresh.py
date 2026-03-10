@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.leaderboard_refresh import refresh_leaderboard_client
+from app.infra.leaderboard.refresh import refresh_leaderboard_impl
 from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
@@ -19,7 +19,7 @@ async def leaderboard_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_leaderboard_client(
+    result = await refresh_leaderboard_impl(
         pool,
         redis,
         profile_id=profile_id,

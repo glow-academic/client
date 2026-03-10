@@ -43,7 +43,7 @@ def _get_handler(module_path: str, func_name: str) -> Any:
 ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "activity": {
         "get": ("app.routes.v5.api.main.activity.get", "get_activity"),
-        "docs": ("app.infra.activity_docs", "docs_activity_client"),
+        "docs": ("app.infra.activity.docs", "docs_activity_impl"),
         "refresh": ("app.routes.v5.api.main.activity.refresh", "activity_refresh"),
     },
     # "agent": {
@@ -94,7 +94,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "get_dashboard_secondary",
         ),
         "refresh": ("app.routes.v5.api.main.dashboard.refresh", "dashboard_refresh"),
-        "docs": ("app.infra.dashboard_docs", "docs_dashboard_client"),
+        "docs": ("app.infra.dashboard.docs", "docs_dashboard_impl"),
     },
     # "department": {
     #     "get": ("app.routes.v5.api.main.department.get", "get_department"),
@@ -150,7 +150,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "app.routes.v5.api.main.leaderboard.refresh",
             "leaderboard_refresh",
         ),
-        "docs": ("app.infra.leaderboard_docs", "docs_leaderboard_client"),
+        "docs": ("app.infra.leaderboard.docs", "docs_leaderboard_impl"),
     },
     # "model": {
     #     "get": ("app.routes.v5.api.main.model.get", "get_model"),

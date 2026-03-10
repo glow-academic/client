@@ -6,8 +6,8 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.leaderboard_context import resolve_leaderboard_search_context
-from app.infra.leaderboard_permissions import (
+from app.infra.leaderboard.context import resolve_leaderboard_search_context
+from app.infra.leaderboard.permissions import (
     build_leaderboard_rows_v3,
 )
 from app.routes.v5.api.main.leaderboard.types import (
@@ -64,10 +64,9 @@ async def search_leaderboard(
         redis = get_redis_client()
 
         # --- Phase 0: Resolve common context (profile identity) ---
-        async with pool.acquire() as c:
-            common = await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-            )
+        common = await resolve_common_context(
+            pool, redis, profile_id=profile_id, bypass_cache=bypass_cache
+        )
         if not common:
             raise HTTPException(status_code=401, detail="Profile not found")
 

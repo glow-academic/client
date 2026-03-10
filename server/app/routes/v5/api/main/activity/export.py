@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.activity_export import export_activity_client
+from app.infra.activity.export import export_activity_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.activity.types import ExportActivityApiResponse
 
@@ -20,7 +20,7 @@ async def export_activity(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_activity_client(
+    return await export_activity_impl(
         pool,
         redis,
         profile_id=profile_id,

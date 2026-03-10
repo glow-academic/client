@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.dashboard_export import export_dashboard_client
+from app.infra.dashboard.export import export_dashboard_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.dashboard.types import ExportDashboardApiResponse
 
@@ -19,7 +19,7 @@ async def export_dashboard(
     session_id = http_request.state.session_id
     pool = get_pool()
 
-    return await export_dashboard_client(
+    return await export_dashboard_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

@@ -28,7 +28,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_leaderboard_client(
+async def docs_leaderboard_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -59,7 +59,7 @@ async def docs_leaderboard_client(
     # ── Step 2: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.leaderboard_permissions import (
+    from app.infra.leaderboard.permissions import (
         build_leaderboard_rows,
         build_leaderboard_sections,
         compute_accolade_winners,

@@ -1,4 +1,4 @@
-"""Leaderboard export logic — composable infra architecture.
+"""Dashboard export logic — composable infra architecture.
 
 Composes existing black-box tools:
   1. resolve_profile_identity_context — profile (role, departments)
@@ -63,25 +63,25 @@ CHAT_CSV_COLUMNS = [
 ]
 
 
-async def export_leaderboard_client(
+async def export_dashboard_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
     session_id: UUID,
 ) -> dict:
-    """Leaderboard full export using composable infra functions.
+    """Dashboard full export using composable infra functions.
 
     Flow:
-      1. resolve_profile_identity_context -> role, department_ids
-      2. search_attempts -> all entries (full dump, no pagination)
-      3. search_chat_entries_internal -> all chat entries (full dump)
-      4. Parallel resource hydration -> human-readable values
+      1. resolve_profile_identity_context → role, department_ids
+      2. search_attempts → all entries (full dump, no pagination)
+      3. search_chat_entries_internal → all chat entries (full dump)
+      4. Parallel resource hydration → human-readable values
       5. Generate ZIP (attempts.csv + chats.csv) + create upload entry
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.leaderboard.types import ExportLeaderboardApiResponse
+    from app.routes.v5.api.main.dashboard.types import ExportDashboardApiResponse
 
     # -- Step 1: Profile context --
 
@@ -112,7 +112,7 @@ async def export_leaderboard_client(
         )
 
     if not attempts and not chats:
-        return ExportLeaderboardApiResponse(
+        return ExportDashboardApiResponse(
             upload_id=UUID("00000000-0000-0000-0000-000000000000"),
             file_name="",
             row_count=0,
@@ -151,30 +151,39 @@ async def export_leaderboard_client(
         if c.get("department_ids"):
             all_department_ids.update(c["department_ids"])
 
-    async def _empty() -> list:
-        return []
-
     async def _get_profiles() -> list:
+        if not all_profile_ids:
+            return []
         async with pool.acquire() as conn:
             return await get_profiles(conn, list(all_profile_ids), redis)
 
     async def _get_simulations() -> list:
+        if not all_simulation_ids:
+            return []
         async with pool.acquire() as conn:
             return await get_simulations(conn, list(all_simulation_ids), redis)
 
     async def _get_scenarios() -> list:
+        if not all_scenario_ids:
+            return []
         async with pool.acquire() as conn:
             return await get_scenarios(conn, list(all_scenario_ids), redis)
 
     async def _get_personas() -> list:
+        if not all_persona_ids:
+            return []
         async with pool.acquire() as conn:
             return await get_personas(conn, list(all_persona_ids), redis)
 
     async def _get_cohorts() -> list:
+        if not all_cohort_ids:
+            return []
         async with pool.acquire() as conn:
             return await get_cohorts(conn, list(all_cohort_ids), redis)
 
     async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
         async with pool.acquire() as conn:
             return await get_departments(conn, list(all_department_ids), redis)
 
@@ -186,12 +195,12 @@ async def export_leaderboard_client(
         cohorts_data,
         departments_data,
     ) = await asyncio.gather(
-        _get_profiles() if all_profile_ids else _empty(),
-        _get_simulations() if all_simulation_ids else _empty(),
-        _get_scenarios() if all_scenario_ids else _empty(),
-        _get_personas() if all_persona_ids else _empty(),
-        _get_cohorts() if all_cohort_ids else _empty(),
-        _get_departments() if all_department_ids else _empty(),
+        _get_profiles(),
+        _get_simulations(),
+        _get_scenarios(),
+        _get_personas(),
+        _get_cohorts(),
+        _get_departments(),
     )
 
     # Build lookup maps
@@ -271,7 +280,7 @@ async def export_leaderboard_client(
 
     # Write ZIP to upload folder
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    file_name = f"leaderboard_export_{timestamp}.zip"
+    file_name = f"dashboard_export_{timestamp}.zip"
     file_path = os.path.join(str(UPLOAD_FOLDER), file_name)
 
     os.makedirs(str(UPLOAD_FOLDER), exist_ok=True)
@@ -289,7 +298,7 @@ async def export_leaderboard_client(
             size=file_size,
         )
 
-    return ExportLeaderboardApiResponse(
+    return ExportDashboardApiResponse(
         upload_id=upload_result.id,
         file_name=file_name,
         row_count=row_count,

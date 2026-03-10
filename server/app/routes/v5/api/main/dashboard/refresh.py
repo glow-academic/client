@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.dashboard_refresh import refresh_dashboard_client
+from app.infra.dashboard.refresh import refresh_dashboard_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -18,7 +18,7 @@ async def dashboard_refresh(
     profile_id = http_request.state.profile_id
     pool = get_pool()
 
-    result = await refresh_dashboard_client(
+    result = await refresh_dashboard_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

@@ -1,6 +1,6 @@
-"""Dashboard refresh logic — composable infra architecture.
+"""Leaderboard refresh logic — composable infra architecture.
 
-Dashboard has no entry refresh tools — only permission check and cache invalidation.
+No dedicated entry refresh tools — permission check + cache invalidation only.
 """
 
 from __future__ import annotations
@@ -14,27 +14,27 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Tags to invalidate — artifact cache + resource caches
-_TAGS = ["dashboard", "artifacts"]
+_TAGS = ["leaderboard", "artifacts"]
 
-# Views refreshed by this endpoint (none for dashboard)
+# No dedicated entry MVs to refresh
 _VIEWS: list[str] = []
 
 
-async def refresh_dashboard_client(
+async def refresh_leaderboard_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
 ) -> RefreshResponse:
-    """Dashboard refresh using composable infra functions.
+    """Leaderboard refresh using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context — permission check
-      2. Invalidate cache tags (no MVs to refresh)
+      2. Invalidate cache tags
     """
     from fastapi import HTTPException
 
-    # -- Step 1: Permission check ------------------------------------------
+    # ── Step 1: Permission check ─────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
@@ -44,7 +44,7 @@ async def refresh_dashboard_client(
             detail="Profile not found. Please sign in again.",
         )
 
-    # -- Step 2: Invalidate cache tags -------------------------------------
+    # ── Step 2: Invalidate cache tags ────────────────────────────────────
 
     if redis is not None:
         from app.utils.cache.invalidate_tags import invalidate_tags

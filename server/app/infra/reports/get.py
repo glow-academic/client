@@ -109,7 +109,7 @@ async def get_reports_impl(
     thresholds = ctx.entries.get("thresholds", [{}])[0]
     total_count = len(chat_items)
 
-    sections: ReportsSections = build_reports_sections_v2(
+    sections = build_reports_sections_v2(
         profile_facts_items=chat_items,
         total_count=total_count,
         thresholds=thresholds,
@@ -186,7 +186,7 @@ async def get_reports_impl(
     ]
 
     return ReportsResponse(
-        sections=sections,
+        sections=ReportsSections.model_validate(sections.model_dump()),
         views=views,
         resources=resources,
         total_count=total_count,

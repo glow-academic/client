@@ -569,6 +569,80 @@ async def v5_pricing_route_client(
 
 
 @pytest_asyncio.fixture
+async def v5_reports_route_client(
+    pool,
+    redis_client,
+) -> AsyncGenerator[V5RouteClient, None]:
+    """HTTP client mounted on the real reports v5 route stack."""
+    import app.infra.globals as globals_mod
+
+    reports_router = _build_artifact_router_for_tests(
+        artifact_name="reports",
+        prefix="/reports",
+        tags=["reports"],
+        module_names=["search", "refresh", "export", "docs"],
+    )
+
+    request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
+    app = _build_v5_artifact_test_app(
+        artifact_router=reports_router,
+        request_state=request_state,
+    )
+
+    prior_pool = globals_mod._db_pool
+    prior_redis = globals_mod.redis_client
+    globals_mod._db_pool = pool
+    globals_mod.redis_client = redis_client
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        yield V5RouteClient(client=client, _request_state=request_state)
+
+    globals_mod._db_pool = prior_pool
+    globals_mod.redis_client = prior_redis
+
+
+@pytest_asyncio.fixture
+async def v5_leaderboard_route_client(
+    pool,
+    redis_client,
+) -> AsyncGenerator[V5RouteClient, None]:
+    """HTTP client mounted on the real leaderboard v5 route stack."""
+    import app.infra.globals as globals_mod
+
+    leaderboard_router = _build_artifact_router_for_tests(
+        artifact_name="leaderboard",
+        prefix="/leaderboard",
+        tags=["leaderboard"],
+        module_names=["get", "search", "refresh", "export", "docs"],
+    )
+
+    request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
+    app = _build_v5_artifact_test_app(
+        artifact_router=leaderboard_router,
+        request_state=request_state,
+    )
+
+    prior_pool = globals_mod._db_pool
+    prior_redis = globals_mod.redis_client
+    globals_mod._db_pool = pool
+    globals_mod.redis_client = redis_client
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        yield V5RouteClient(client=client, _request_state=request_state)
+
+    globals_mod._db_pool = prior_pool
+    globals_mod.redis_client = prior_redis
+
+
+@pytest_asyncio.fixture
 async def attempt_route_actor(pool, redis_client, setting_graph_factory):
     from tests.infra.route_helpers import create_admin_route_actor
 

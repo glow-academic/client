@@ -87,7 +87,7 @@ EMULATIONS_CSV_COLUMNS = [
 ]
 
 
-async def export_activity_client(
+async def export_activity_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
