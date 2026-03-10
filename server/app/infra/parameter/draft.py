@@ -130,6 +130,7 @@ async def patch_parameter_draft_impl(
                 group_id=profile.group_id,
                 session_id=session_id,
                 version=new_version,
+                profile_ids=[profile.profiles_id],
                 name_ids=[request.name_id] if request.name_id else None,
                 description_ids=[request.description_id]
                 if request.description_id

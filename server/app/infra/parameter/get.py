@@ -67,6 +67,18 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
     return (key, label)
 
 
+def _serialize_model(item):
+    if item is None:
+        return None
+    if hasattr(item, "model_dump"):
+        return item.model_dump(mode="json")
+    return item
+
+
+def _serialize_models(items: list) -> list:
+    return [_serialize_model(item) for item in items]
+
+
 async def get_parameter_impl(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -297,17 +309,17 @@ async def get_parameter_impl(
         fields_step_show_ai_generate=fields_step_show_ai_generate,
         names=ParameterNameSection(
             **_section("names"),
-            resource=param_ctx.resources["names"].selected[0]
+            resource=_serialize_model(param_ctx.resources["names"].selected[0])
             if param_ctx.resources["names"].selected
             else None,
-            resources=all_names,
+            resources=_serialize_models(all_names),
         ),
         descriptions=ParameterDescriptionSection(
             **_section("descriptions"),
-            resource=param_ctx.resources["descriptions"].selected[0]
+            resource=_serialize_model(param_ctx.resources["descriptions"].selected[0])
             if param_ctx.resources["descriptions"].selected
             else None,
-            resources=all_descriptions,
+            resources=_serialize_models(all_descriptions),
         ),
         flags=ParameterFlagSection(
             **_section("flags"),
@@ -316,12 +328,12 @@ async def get_parameter_impl(
         ),
         departments=ParameterDepartmentSection(
             **_section("departments"),
-            current=param_ctx.resources["departments"].selected or None,
-            resources=all_departments,
+            current=_serialize_models(param_ctx.resources["departments"].selected) or None,
+            resources=_serialize_models(all_departments),
         ),
         fields=ParameterFieldSection(
             **_section("fields"),
-            current=param_ctx.resources["fields"].selected or None,
-            resources=all_fields,
+            current=_serialize_models(param_ctx.resources["fields"].selected) or None,
+            resources=_serialize_models(all_fields),
         ),
     )
