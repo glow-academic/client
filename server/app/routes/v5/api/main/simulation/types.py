@@ -374,7 +374,6 @@ class GetSimulationApiRequest(BaseModel):
 
     simulation_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
     scenario_search: str | None = None
     filter_scenario_ids: list[UUID] | None = None
 

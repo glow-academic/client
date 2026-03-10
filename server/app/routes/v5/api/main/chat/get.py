@@ -75,10 +75,11 @@ async def get_chat_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    session_id: UUID | None = None,
     chat_entry_id: UUID | None = None,
     attempt_id: UUID | None = None,
     draft_id: UUID | None = None,
-    group_id: UUID,
+    group_id: UUID | None = None,
     # Search filters
     description_search: str | None = None,
     persona_search: str | None = None,
@@ -108,7 +109,10 @@ async def get_chat_client(
         pool,
         redis,
         profile_id=profile_id,
+        session_id=session_id,
         group_id=group_id,
+        attempt_id=attempt_id,
+        draft_id=draft_id,
         bypass_cache=bypass_cache,
     )
 
@@ -117,6 +121,9 @@ async def get_chat_client(
             status_code=401,
             detail="Profile not found. Please sign in again.",
         )
+    group_id = common.profile.group_id
+    if group_id is None:
+        raise HTTPException(status_code=400, detail="Failed to resolve group context.")
 
     # ── Step 2: Chat artifact context (draft-only) ────────────────────────
 
@@ -194,6 +201,7 @@ async def chat_get(
     """Get hydrated resources for chat bundle customization."""
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -208,10 +216,10 @@ async def chat_get(
             pool,
             redis,
             profile_id=cast(UUID, profile_id),
+            session_id=cast(UUID, session_id),
             chat_entry_id=request.chat_entry_id,
             attempt_id=request.attempt_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             description_search=request.description_search,
             persona_search=request.persona_search,
             document_search=request.document_search,

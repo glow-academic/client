@@ -89,9 +89,10 @@ async def get_invocation_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    session_id: UUID | None = None,
     test_id: UUID,
     draft_id: UUID | None = None,
-    group_id: UUID,
+    group_id: UUID | None = None,
     descriptions_search: str | None = None,
     bypass_cache: bool = False,
 ) -> GetSuiteResponse:
@@ -111,7 +112,10 @@ async def get_invocation_client(
             conn,
             redis,
             profile_id=profile_id,
+            session_id=session_id,
             group_id=group_id,
+            draft_id=draft_id,
+            test_id=test_id,
             bypass_cache=bypass_cache,
         )
 
@@ -120,6 +124,9 @@ async def get_invocation_client(
             status_code=401,
             detail="Profile not found. Please sign in again.",
         )
+    group_id = common.profile.group_id
+    if group_id is None:
+        raise HTTPException(status_code=400, detail="Failed to resolve group context.")
 
     profile = common.profile
 
@@ -188,6 +195,7 @@ async def invocation_get(
     """Get hydrated resources for benchmark bundle customization."""
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -202,9 +210,9 @@ async def invocation_get(
             pool,
             redis,
             profile_id=profile_id,
+            session_id=session_id,
             test_id=request.test_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             descriptions_search=request.descriptions_search,
             bypass_cache=bypass_cache,
         )

@@ -17,6 +17,43 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 
+def resolve_generation_progress_target(
+    data: dict[str, Any],
+) -> tuple[str, str, str | None]:
+    """Resolve the completed target kind, name, and id from a tool result."""
+    tool_result = data.get("result") or {}
+    resource_id = tool_result.get("resource_id")
+    entry_id = tool_result.get("entry_id")
+    resource_type = tool_result.get("resource_type") or data.get("resource_type", "")
+    entry_type = tool_result.get("entry_type") or ""
+
+    target_type = "resource" if resource_id else "entry"
+    target_name = resource_type if resource_id else entry_type
+    result_id = resource_id or entry_id
+    return target_type, target_name, result_id
+
+
+def build_generation_progress_payload(
+    data: dict[str, Any],
+    *,
+    completed: int,
+    total: int,
+    last_completed_resource: str,
+) -> dict[str, Any]:
+    """Build the generation_channel progress payload."""
+    percentage = round((completed / total) * 100) if total > 0 else 0
+    return GenerationProgressData(
+        sid=data.get("sid", ""),
+        artifact_type=data.get("artifact_type", "unknown"),
+        group_id=data.get("group_id", ""),
+        run_id=data.get("run_id"),
+        completed_resources=completed,
+        total_resources=total,
+        percentage=min(percentage, 100),
+        last_completed_resource=last_completed_resource,
+    ).model_dump(mode="json")
+
+
 async def generation_progress_impl(
     data: dict[str, Any], *, emit: EmitFn, redis: Any
 ) -> None:
@@ -37,14 +74,8 @@ async def generation_progress_impl(
     if not resource_id and not entry_id:
         return
 
-    artifact_type = data.get("artifact_type", "unknown")
-    group_id_str = data.get("group_id", "")
+    target_type, target_name, result_id = resolve_generation_progress_target(data)
     resource_type = tool_result.get("resource_type") or data.get("resource_type", "")
-    entry_type = tool_result.get("entry_type") or ""
-
-    target_type = "resource" if resource_id else "entry"
-    target_name = resource_type if resource_id else entry_type
-    result_id = resource_id or entry_id
 
     # New tracker: record_unit_soft
     agent_id = data.get("agent_id") or "unknown"
@@ -69,22 +100,16 @@ async def generation_progress_impl(
         except Exception:
             pass  # Best-effort legacy compat
 
-    percentage = round((completed / total) * 100) if total > 0 else 0
-
     await emit(
         [
             internal_event(
                 "generation_channel",
-                GenerationProgressData(
-                    sid=sid,
-                    artifact_type=artifact_type,
-                    group_id=group_id_str,
-                    run_id=run_id,
-                    completed_resources=completed,
-                    total_resources=total,
-                    percentage=min(percentage, 100),
+                build_generation_progress_payload(
+                    data,
+                    completed=completed,
+                    total=total,
                     last_completed_resource=target_name,
-                ).model_dump(mode="json"),
+                ),
             )
         ]
     )

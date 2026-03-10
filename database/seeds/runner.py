@@ -317,6 +317,78 @@ async def _run_scenario_rubric_seeds(
     return created_ids
 
 
+async def _run_objective_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    objective_defs: list[dict],
+) -> list[UUID]:
+    """Run objective seed definitions (resource-level create)."""
+    from app.routes.v5.tools.resources.objectives.create import create_objective
+
+    created_ids: list[UUID] = []
+    for o in objective_defs:
+        async with pool.acquire() as conn:
+            result = await create_objective(
+                conn,
+                objective=o["objective"],
+                redis=redis,
+                id=o.get("id"),
+            )
+            created_ids.append(result.id)
+            print(f"  OK: Objective created successfully")
+
+    return created_ids
+
+
+async def _run_question_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    question_defs: list[dict],
+) -> list[UUID]:
+    """Run question seed definitions (resource-level create)."""
+    from app.routes.v5.tools.resources.questions.create import create_question
+
+    created_ids: list[UUID] = []
+    for q in question_defs:
+        async with pool.acquire() as conn:
+            result = await create_question(
+                conn,
+                question_text=q["question_text"],
+                time=q["time"],
+                redis=redis,
+                id=q.get("id"),
+                allow_multiple=q.get("allow_multiple", False),
+            )
+            created_ids.append(result.id)
+            print(f"  OK: Question created successfully")
+
+    return created_ids
+
+
+async def _run_option_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    option_defs: list[dict],
+) -> list[UUID]:
+    """Run option seed definitions (resource-level create)."""
+    from app.routes.v5.tools.resources.options.create import create_option
+
+    created_ids: list[UUID] = []
+    for o in option_defs:
+        async with pool.acquire() as conn:
+            result = await create_option(
+                conn,
+                option_text=o["option_text"],
+                redis=redis,
+                id=o.get("id"),
+                question_id=o.get("question_id"),
+            )
+            created_ids.append(result.id)
+            print(f"  OK: Option created successfully")
+
+    return created_ids
+
+
 async def _run_rubric_seeds(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -660,6 +732,10 @@ async def main(setup: str = "university") -> None:
                 await _run_scenario_rubric_seeds(
                     pool, redis_client, mod.scenario_rubrics
                 )
+            elif module_name == "content":
+                await _run_objective_seeds(pool, redis_client, mod.objectives)
+                await _run_question_seeds(pool, redis_client, mod.questions)
+                await _run_option_seeds(pool, redis_client, mod.options)
             elif module_name == "simulations":
                 await _run_simulation_seeds(pool, redis_client, mod.simulations)
             elif module_name == "cohorts":

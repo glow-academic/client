@@ -275,7 +275,6 @@ class GetChatRequest(BaseModel):
     chat_entry_id: UUID
     attempt_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
     # Search filters (analogous to scenario)
     description_search: str | None = None
     persona_search: str | None = None

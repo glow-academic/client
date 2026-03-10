@@ -702,7 +702,6 @@ async def get_scenario(
             session_id=session_id,
             scenario_id=request.scenario_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,

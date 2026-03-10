@@ -88,8 +88,7 @@ async def connect(
     Auth flow:
       1. Client sends auth.token (Bearer JWT) and auth.apiKey (license key)
       2. Server validates both and resolves profile_id + session_id
-      3. Falls back to query string params for backward compatibility
-      4. Guest connections use guestId query param (no auth required)
+      3. Guest connections use guestId query param (no auth required)
     """
     from urllib.parse import parse_qs
 
@@ -124,23 +123,16 @@ async def connect(
         except Exception:
             logger.warning("Failed to resolve identity from auth token for sid %s", sid)
 
-    # Fallback: query string params (backward compatibility)
+    # Guest fallback: only guestId may come from the query string.
     if not profile_id:
         query_string = environ.get("QUERY_STRING", "")
         try:
             params = parse_qs(query_string)
-            profile_id = params.get("profileId", [None])[0]
             guest_id = params.get("guestId", [None])[0]
-            session_id = params.get("sessionId", [None])[0]
         except Exception:
             logger.warning("Failed to parse query string params for sid %s", sid)
 
-        # Validate UUIDs
-        if profile_id:
-            try:
-                uuid.UUID(profile_id)
-            except ValueError:
-                profile_id = None
+        # Validate guest UUIDs
         if guest_id:
             try:
                 uuid.UUID(guest_id)

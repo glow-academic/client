@@ -26,30 +26,69 @@ logger = get_logger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════
 
 
+def build_generation_error_payload(data: dict[str, Any]) -> dict[str, Any]:
+    """Build the generation_channel error payload."""
+    error_message = data.get("error_message") or data.get(
+        "message", "An error occurred during generation"
+    )
+    return GenerationErrorData(
+        sid=data.get("sid", ""),
+        artifact_type=data.get("artifact_type", "unknown"),
+        group_id=data.get("group_id"),
+        resource_type=data.get("resource_type"),
+        resource_types=data.get("resource_types"),
+        resource_id=data.get("resource_id"),
+        run_id=data.get("run_id"),
+        message=error_message,
+    ).model_dump(mode="json")
+
+
+def build_text_progress_payload(data: dict[str, Any]) -> dict[str, Any]:
+    """Build attempt assistant progress payload from a text delta event."""
+    metadata = data.get("metadata") or {}
+    return AttemptAssistantProgressData(
+        sid=data.get("sid", ""),
+        chat_id=metadata.get("chat_id", ""),
+        content_type="delta",
+        content=data.get("delta", ""),
+    ).model_dump(mode="json")
+
+
+def build_hints_payload(data: dict[str, Any]) -> dict[str, Any]:
+    """Build attempt assistant hints payload from a tool result."""
+    metadata = data.get("metadata") or {}
+    result = data.get("result") or {}
+    return AttemptAssistantHintsData(
+        sid=data.get("sid", ""),
+        chat_id=metadata.get("chat_id", ""),
+        hints=result.get("hints", []),
+    ).model_dump(mode="json")
+
+
+def build_grade_progress_payload(data: dict[str, Any]) -> dict[str, Any]:
+    """Build attempt grade progress payload from a tool result."""
+    metadata = data.get("metadata") or {}
+    result = data.get("result") or {}
+    return AttemptGradeProgressData(
+        sid=data.get("sid", ""),
+        chat_id=metadata.get("chat_id", ""),
+        grade_id=metadata.get("grade_id", ""),
+        resource_type=data.get("resource_type", ""),
+        entry=result,
+    ).model_dump(mode="json")
+
+
 async def generation_error_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     """Re-emit generation errors to generation_channel for the server layer."""
     sid = data.get("sid", "")
     if not sid:
         return
 
-    error_message = data.get("error_message") or data.get(
-        "message", "An error occurred during generation"
-    )
-
     await emit(
         [
             internal_event(
                 "generation_channel",
-                GenerationErrorData(
-                    sid=sid,
-                    artifact_type=data.get("artifact_type", "unknown"),
-                    group_id=data.get("group_id"),
-                    resource_type=data.get("resource_type"),
-                    resource_types=data.get("resource_types"),
-                    resource_id=data.get("resource_id"),
-                    run_id=data.get("run_id"),
-                    message=error_message,
-                ).model_dump(mode="json"),
+                build_generation_error_payload(data),
             )
         ]
     )
@@ -68,17 +107,11 @@ async def text_progress_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     metadata = data.get("metadata") or {}
     if metadata.get("grade_id"):
         return
-    chat_id = metadata.get("chat_id", "")
     await emit(
         [
             internal_event(
                 "attempt_assistant_progress",
-                AttemptAssistantProgressData(
-                    sid=data.get("sid", ""),
-                    chat_id=chat_id,
-                    content_type="delta",
-                    content=data.get("delta", ""),
-                ).model_dump(mode="json"),
+                build_text_progress_payload(data),
             )
         ]
     )
@@ -106,31 +139,19 @@ async def call_complete_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
 
     # Hints extraction
     if data.get("entry_type") == "hints":
-        result = data.get("result") or {}
         events.append(
             internal_event(
                 "attempt_assistant_hints",
-                AttemptAssistantHintsData(
-                    sid=sid,
-                    chat_id=metadata.get("chat_id", ""),
-                    hints=result.get("hints", []),
-                ).model_dump(mode="json"),
+                build_hints_payload(data),
             )
         )
 
     # Grade progress (per-criterion)
     if metadata.get("grade_id"):
-        result = data.get("result") or {}
         events.append(
             internal_event(
                 "attempt_grade_progress",
-                AttemptGradeProgressData(
-                    sid=sid,
-                    chat_id=metadata.get("chat_id", ""),
-                    grade_id=metadata.get("grade_id", ""),
-                    resource_type=data.get("resource_type", ""),
-                    entry=result,
-                ).model_dump(mode="json"),
+                build_grade_progress_payload(data),
             )
         )
 

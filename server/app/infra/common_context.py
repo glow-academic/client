@@ -44,6 +44,8 @@ async def resolve_common_context(
     bypass_cache: bool = False,
     # Group resolution hints — threaded to resolve_profile_identity_context
     draft_id: UUID | None = None,
+    attempt_id: UUID | None = None,
+    test_id: UUID | None = None,
     artifact_type: str | None = None,
 ) -> CommonContext | None:
     """Resolve common context for any artifact GET.
@@ -69,6 +71,8 @@ async def resolve_common_context(
             bypass_cache,
             session_id=session_id,
             draft_id=draft_id,
+            attempt_id=attempt_id,
+            test_id=test_id,
             artifact_type=artifact_type,
         )
     if profile is None:

@@ -8,17 +8,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
 from app.infra.websocket.generate_prepare_impl import generate_prepare_impl
+from app.infra.websocket.prepare_types import AgentDispatch, LLMConfig, MessageSpec
 from app.infra.websocket.socket_event import recording_emit
 from tests.helpers import nonexistent_id
-
-_P = "app.infra.websocket.generate_prepare_impl"
-_PP = "app.infra.websocket.prepare_pipeline"
 
 _PROFILE_ID = "00000000-0000-0000-0000-000000000001"
 _PROFILES_ID = "00000000-0000-0000-0000-000000000002"
@@ -61,8 +58,8 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             {"sid": ""},
             emit=emit,
-            pool=AsyncMock(),
-            conn=AsyncMock(),
+            pool=object(),
+            conn=object(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
         )
@@ -73,8 +70,8 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(profile_id=None),
             emit=emit,
-            pool=AsyncMock(),
-            conn=AsyncMock(),
+            pool=object(),
+            conn=object(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
         )
@@ -87,8 +84,8 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(profiles_id=None),
             emit=emit,
-            pool=AsyncMock(),
-            conn=AsyncMock(),
+            pool=object(),
+            conn=object(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
         )
@@ -100,8 +97,8 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(session_id=None),
             emit=emit,
-            pool=AsyncMock(),
-            conn=AsyncMock(),
+            pool=object(),
+            conn=object(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
         )
@@ -113,8 +110,8 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(group_id=None),
             emit=emit,
-            pool=AsyncMock(),
-            conn=AsyncMock(),
+            pool=object(),
+            conn=object(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
         )
@@ -126,8 +123,8 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(),
             emit=emit,
-            pool=AsyncMock(),
-            conn=AsyncMock(),
+            pool=object(),
+            conn=object(),
             redis=object(),
             artifact_config=None,
         )
@@ -139,8 +136,8 @@ class TestGeneratePrepareImpl:
         await generate_prepare_impl(
             _base_data(profile_id="not-a-uuid"),
             emit=emit,
-            pool=AsyncMock(),
-            conn=AsyncMock(),
+            pool=object(),
+            conn=object(),
             redis=object(),
             artifact_config=FakeArtifactConfig(),
         )
@@ -201,37 +198,22 @@ class TestGeneratePrepareImpl:
         """Full path: context → run → dispatch → emit started + generate_artifact."""
         emit, events = recording_emit()
         agent_id = uuid4()
-        model_id = uuid4()
-        provider_id = uuid4()
         run_id = uuid4()
 
         agent = SimpleNamespace(
             id=agent_id,
-            model_id=model_id,
+            model_id=uuid4(),
             prompt_id=None,
             instruction_ids=[],
             tool_ids=[],
             rubric_id=None,
             department_ids=None,
         )
-        model = SimpleNamespace(
-            id=model_id,
-            value="gpt-4o",
-            name="GPT-4o",
-            provider_id=provider_id,
-        )
-        provider = SimpleNamespace(
-            id=provider_id,
-            key="enc-key",
-            name="openai",
-            value="openai",
-            endpoint="https://api.openai.com",
-        )
 
         ws_ctx = SimpleNamespace(
             agents=[agent],
-            models=[model],
-            providers=[provider],
+            models=[],
+            providers=[],
             tools=[],
             prompts=[],
             instructions=[],
@@ -242,7 +224,7 @@ class TestGeneratePrepareImpl:
         )
 
         mock_run = SimpleNamespace(id=run_id)
-        llm_config = SimpleNamespace(
+        llm_config = LLMConfig(
             model="gpt-4o",
             api_key="sk-test",
             base_url="https://api.openai.com",
@@ -253,38 +235,70 @@ class TestGeneratePrepareImpl:
             quality=None,
         )
 
-        with (
-            patch(
-                f"{_P}.resolve_websocket_context",
-                new_callable=AsyncMock,
-                return_value=ws_ctx,
-            ),
-            patch(
-                f"{_PP}.resolve_agent_config",
-                return_value=llm_config,
-            ),
-            patch(
-                "app.routes.v5.tools.entries.runs.create.create_run",
-                new_callable=AsyncMock,
-                return_value=mock_run,
-            ),
-            patch(
-                f"{_P}.init_run_trackers",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                f"{_P}.persist_run_message",
-                new_callable=AsyncMock,
-            ),
-        ):
-            await generate_prepare_impl(
-                _base_data(),
-                emit=emit,
-                pool=AsyncMock(),
-                conn=AsyncMock(),
-                redis=object(),
-                artifact_config=FakeArtifactConfig(),
+        recorded_runs: list[dict[str, object]] = []
+        recorded_trackers: list[dict[str, object]] = []
+        recorded_messages: list[dict[str, object]] = []
+
+        async def fake_resolve_context(*args, **kwargs):
+            return ws_ctx
+
+        def fake_resolve_agent_config(*args, **kwargs):
+            return llm_config
+
+        async def fake_create_run(conn, **kwargs):
+            recorded_runs.append(kwargs)
+            return mock_run
+
+        async def fake_init_run_trackers(redis, **kwargs):
+            recorded_trackers.append(kwargs)
+
+        async def fake_persist_run_message(
+            conn, *, run_id, session_id, role, content
+        ) -> None:
+            recorded_messages.append(
+                {
+                    "run_id": run_id,
+                    "session_id": session_id,
+                    "role": role,
+                    "content": content,
+                }
             )
+
+        def fake_build_agent_dispatch(**kwargs):
+            return AgentDispatch(
+                agent_id=agent_id,
+                resource_types=["names"],
+                entry_types=[],
+                messages=[
+                    MessageSpec(
+                        role="developer",
+                        content="Do the thing",
+                        raw_text="Do the thing",
+                        persist=True,
+                    )
+                ],
+                llm_config=llm_config,
+                scoped_tools=[],
+                metadata=kwargs["payload_metadata"],
+                developer_instruction_templates=None,
+            )
+
+        await generate_prepare_impl(
+            _base_data(user_instructions=["User asks for output"]),
+            emit=emit,
+            pool=object(),
+            conn=object(),
+            redis=object(),
+            artifact_config=FakeArtifactConfig(),
+            resolve_websocket_context_fn=fake_resolve_context,
+            build_agent_groups_from_scores_fn=lambda **kwargs: {agent_id: ["names"]},
+            build_jinja_from_ws_ctx_fn=lambda *args, **kwargs: {},
+            resolve_agent_config_fn=fake_resolve_agent_config,
+            create_run_fn=fake_create_run,
+            init_run_trackers_fn=fake_init_run_trackers,
+            persist_run_message_fn=fake_persist_run_message,
+            build_agent_dispatch_fn=fake_build_agent_dispatch,
+        )
 
         # Should emit generation_started + generate_artifact
         assert len(events) >= 2
@@ -300,3 +314,21 @@ class TestGeneratePrepareImpl:
         assert artifact.data["artifact_type"] == "agent"
         assert artifact.data["run_id"] == str(run_id)
         assert artifact.data["llm_config"]["model"] == "gpt-4o"
+        assert artifact.data["messages"][-1] == {
+            "role": "user",
+            "content": "User asks for output",
+        }
+        assert recorded_runs == [
+            {
+                "group_id": UUID(_GROUP_ID),
+                "session_id": UUID(_SESSION_ID),
+                "profiles_id": UUID(_PROFILES_ID),
+                "agent_ids": [agent_id],
+            }
+        ]
+        assert len(recorded_trackers) == 1
+        assert recorded_trackers[0]["run_id"] == str(run_id)
+        assert [(m["role"], m["content"]) for m in recorded_messages] == [
+            ("developer", "Do the thing"),
+            ("user", "User asks for output"),
+        ]

@@ -8,6 +8,17 @@ Names, descriptions, and problem_statements are CREATED as new resources.
 """
 
 from database.seeds.ids import sid
+from database.seeds.setups.university.content import (
+    ACADEMIC_INTEGRITY_OBJECTIVES,
+    ACADEMIC_INTEGRITY_OPTIONS,
+    ACADEMIC_INTEGRITY_QUESTIONS,
+    FERPA_OBJECTIVES,
+    FERPA_OPTIONS,
+    FERPA_QUESTIONS,
+    UPSET_STUDENT_OBJECTIVES,
+    UPSET_STUDENT_OPTIONS,
+    UPSET_STUDENT_QUESTIONS,
+)
 from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 from database.seeds.setups.university.documents import (
     ACADEMIC_INTEGRITY_POLICY,
@@ -99,7 +110,9 @@ scenarios = [
         active_flag=True,
         department_ids=[UNIVERSITY_DEPT],
         document_ids=[ACADEMIC_INTEGRITY_POLICY],
-        # TODO: objective_ids, question_ids, option_ids
+        objective_ids=ACADEMIC_INTEGRITY_OBJECTIVES,
+        question_ids=ACADEMIC_INTEGRITY_QUESTIONS,
+        option_ids=ACADEMIC_INTEGRITY_OPTIONS,
     ),
     dict(
         id=FERPA_SCENARIO,
@@ -115,7 +128,9 @@ scenarios = [
         active_flag=True,
         department_ids=[UNIVERSITY_DEPT],
         document_ids=[FERPA_POLICY],
-        # TODO: objective_ids, question_ids, option_ids, image_ids
+        objective_ids=FERPA_OBJECTIVES,
+        question_ids=FERPA_QUESTIONS,
+        option_ids=FERPA_OPTIONS,
     ),
     dict(
         id=UPSET_STUDENT_SCENARIO,
@@ -130,6 +145,8 @@ scenarios = [
         ),
         active_flag=True,
         department_ids=[UNIVERSITY_DEPT],
-        # TODO: objective_ids, question_ids, option_ids
+        objective_ids=UPSET_STUDENT_OBJECTIVES,
+        question_ids=UPSET_STUDENT_QUESTIONS,
+        option_ids=UPSET_STUDENT_OPTIONS,
     ),
 ]

@@ -2,16 +2,17 @@
 
 Dependency order (each module may reference IDs from earlier modules):
   1. departments
-  2. personas
-  3. documents
-  4. fields
-  5. parameters
-  6. rubrics
-  7. scenarios      (refs: personas, documents, fields)
-  8. simulations    (refs: scenarios)
-  9. cohorts        (refs: simulations)
-  10. profiles      (refs: departments)
+  2. documents
+  3. personas
+  4. rubrics
+  5. content        (objectives, questions, options — standalone resources)
+  6. scenarios      (refs: personas, documents, content)
+  7. scenario_rubrics (refs: scenarios, rubrics)
+  8. simulations    (refs: scenarios, scenario_rubrics)
+  9. profiles       (refs: departments)
+  10. cohorts       (refs: simulations, profiles)
   11. settings      (refs: departments, auth, providers, systems)
+  12. post_links    (refs: departments, settings)
 """
 
 SETUP_NAME = "university"
@@ -23,6 +24,7 @@ MODULES = [
     "documents",
     "personas",
     "rubrics",
+    "content",
     "scenarios",
     "scenario_rubrics",
     "simulations",

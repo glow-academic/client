@@ -435,7 +435,6 @@ async def get_simulation(
             session_id=session_id,
             simulation_id=request.simulation_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             scenario_search=request.scenario_search,
             filter_scenario_ids=request.filter_scenario_ids,
             bypass_cache=bypass_cache,

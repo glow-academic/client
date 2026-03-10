@@ -1,11 +1,8 @@
-"""Tests for infra.auth.decrypt — key decryption via canonical black boxes.
+"""Tests for infra.auth.decrypt using explicit collaborator boundaries."""
 
-resolve_decrypt is tested with mocked black-box fetchers.
-Tests verify: correct arguments flow, error cases, decryption result.
-"""
+from __future__ import annotations
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -15,10 +12,6 @@ from app.infra.profile_identity_context import ProfileIdentityContext
 from app.routes.v5.tools.resources.keys.types import GetKeyResponse
 
 NOW = datetime.now(UTC)
-MODULE = "app.infra.auth.decrypt"
-
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
 
 
 def _identity(*, name: str = "Alice") -> ProfileIdentityContext:
@@ -54,148 +47,162 @@ def _key_response(
     )
 
 
-def _patch(target, return_value):
-    return patch(
-        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
-    )
+class _AcquireContext:
+    def __init__(self, conn: object) -> None:
+        self._conn = conn
+
+    async def __aenter__(self) -> object:
+        return self._conn
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        return None
 
 
-def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
-    """Create a mock pool whose acquire() yields mock_conn."""
-    if mock_conn is None:
-        mock_conn = AsyncMock()
-    pool = MagicMock()
-    cm = AsyncMock()
-    cm.__aenter__.return_value = mock_conn
-    pool.acquire.return_value = cm
-    return pool
+class FakePool:
+    def __init__(self, conn: object | None = None) -> None:
+        self.conn = conn or object()
 
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_decrypt — success
-# ═══════════════════════════════════════════════════════════════════════════
+    def acquire(self) -> _AcquireContext:
+        return _AcquireContext(self.conn)
 
 
 @pytest.mark.asyncio
-class TestResolveDecryptSuccess:
-    async def test_returns_decrypt_result(self):
+class TestResolveDecrypt:
+    async def test_returns_decrypt_result(self) -> None:
         profile_id = uuid4()
         key_id = uuid4()
         identity = _identity(name="Bob")
         key = _key_response(key_id=key_id, key="enc_secret", name="API Key")
-        pool = _mock_pool()
 
-        with (
-            _patch("resolve_profile_identity_context", identity),
-            _patch("get_keys", [key]),
-            patch(f"{MODULE}.decrypt_api_key", return_value="decrypted_secret"),
-        ):
-            result = await resolve_decrypt(
-                pool, None, profile_id=profile_id, key_id=key_id
-            )
+        async def fake_identity(pool, profile_id_arg, redis, *, bypass_cache=False):
+            assert profile_id_arg == profile_id
+            return identity
+
+        async def fake_get_keys(conn, key_ids, redis, *, bypass_cache=False):
+            assert key_ids == [key_id]
+            return [key]
+
+        result = await resolve_decrypt(
+            FakePool(),
+            None,
+            profile_id=profile_id,
+            key_id=key_id,
+            resolve_profile_identity_fn=fake_identity,
+            get_keys_fn=fake_get_keys,
+            decrypt_api_key_fn=lambda encrypted: "decrypted_secret",
+        )
 
         assert isinstance(result, DecryptResult)
         assert result.key == "decrypted_secret"
         assert result.name == "API Key"
         assert result.actor_name == "Bob"
 
-    async def test_passes_correct_args_to_identity(self):
+    async def test_passes_correct_args_to_collaborators(self) -> None:
         profile_id = uuid4()
         key_id = uuid4()
-        identity = _identity()
-        key = _key_response()
-        pool = _mock_pool()
-
-        with (
-            _patch("resolve_profile_identity_context", identity) as mock_identity,
-            _patch("get_keys", [key]),
-            patch(f"{MODULE}.decrypt_api_key", return_value="x"),
-        ):
-            await resolve_decrypt(
-                pool,
-                "fake_redis",
-                profile_id=profile_id,
-                key_id=key_id,
-                bypass_cache=True,
-            )
-
-        mock_identity.assert_awaited_once_with(
-            pool, profile_id, "fake_redis", bypass_cache=True
-        )
-
-    async def test_passes_correct_args_to_get_keys(self):
-        profile_id = uuid4()
-        key_id = uuid4()
-        identity = _identity()
+        conn = object()
+        pool = FakePool(conn)
         key = _key_response(key_id=key_id)
-        conn = AsyncMock()
-        pool = _mock_pool(conn)
+        calls: dict[str, object] = {}
 
-        with (
-            _patch("resolve_profile_identity_context", identity),
-            _patch("get_keys", [key]) as mock_keys,
-            patch(f"{MODULE}.decrypt_api_key", return_value="x"),
-        ):
-            await resolve_decrypt(
-                pool,
-                "fake_redis",
-                profile_id=profile_id,
-                key_id=key_id,
-                bypass_cache=True,
-            )
+        async def fake_identity(pool_arg, profile_id_arg, redis, *, bypass_cache=False):
+            calls["identity"] = {
+                "pool": pool_arg,
+                "profile_id": profile_id_arg,
+                "redis": redis,
+                "bypass_cache": bypass_cache,
+            }
+            return _identity()
 
-        mock_keys.assert_awaited_once_with(
-            conn, [key_id], "fake_redis", bypass_cache=True
+        async def fake_get_keys(conn_arg, key_ids, redis, *, bypass_cache=False):
+            calls["keys"] = {
+                "conn": conn_arg,
+                "key_ids": key_ids,
+                "redis": redis,
+                "bypass_cache": bypass_cache,
+            }
+            return [key]
+
+        def fake_decrypt(encrypted: str) -> str:
+            calls["decrypt"] = encrypted
+            return "plain"
+
+        await resolve_decrypt(
+            pool,
+            "fake_redis",
+            profile_id=profile_id,
+            key_id=key_id,
+            bypass_cache=True,
+            resolve_profile_identity_fn=fake_identity,
+            get_keys_fn=fake_get_keys,
+            decrypt_api_key_fn=fake_decrypt,
         )
 
-    async def test_passes_key_value_to_decrypt(self):
-        identity = _identity()
-        key = _key_response(key="the_encrypted_value")
-        pool = _mock_pool()
+        assert calls == {
+            "identity": {
+                "pool": pool,
+                "profile_id": profile_id,
+                "redis": "fake_redis",
+                "bypass_cache": True,
+            },
+            "keys": {
+                "conn": conn,
+                "key_ids": [key_id],
+                "redis": "fake_redis",
+                "bypass_cache": True,
+            },
+            "decrypt": "encrypted_value",
+        }
 
-        with (
-            _patch("resolve_profile_identity_context", identity),
-            _patch("get_keys", [key]),
-            patch(f"{MODULE}.decrypt_api_key", return_value="plain") as mock_decrypt,
-        ):
-            await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())
+    async def test_missing_profile_raises_value_error(self) -> None:
+        async def fake_identity(pool, profile_id_arg, redis, *, bypass_cache=False):
+            return None
 
-        mock_decrypt.assert_called_once_with("the_encrypted_value")
+        with pytest.raises(ValueError, match="Profile not found"):
+            await resolve_decrypt(
+                FakePool(),
+                None,
+                profile_id=uuid4(),
+                key_id=uuid4(),
+                resolve_profile_identity_fn=fake_identity,
+            )
 
+    async def test_missing_key_raises_value_error(self) -> None:
+        async def fake_identity(pool, profile_id_arg, redis, *, bypass_cache=False):
+            return _identity()
 
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_decrypt — errors
-# ═══════════════════════════════════════════════════════════════════════════
+        async def fake_get_keys(conn, key_ids, redis, *, bypass_cache=False):
+            return []
 
+        with pytest.raises(ValueError, match="Key not found"):
+            await resolve_decrypt(
+                FakePool(),
+                None,
+                profile_id=uuid4(),
+                key_id=uuid4(),
+                resolve_profile_identity_fn=fake_identity,
+                get_keys_fn=fake_get_keys,
+            )
 
-@pytest.mark.asyncio
-class TestResolveDecryptErrors:
-    async def test_missing_profile_raises_value_error(self):
-        pool = _mock_pool()
-        with _patch("resolve_profile_identity_context", None):
-            with pytest.raises(ValueError, match="Profile not found"):
-                await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())
+    async def test_decrypt_failure_propagates(self) -> None:
+        key = _key_response(key="bad_encrypted_key")
 
-    async def test_missing_key_raises_value_error(self):
-        identity = _identity()
-        pool = _mock_pool()
+        async def fake_identity(pool, profile_id_arg, redis, *, bypass_cache=False):
+            return _identity()
 
-        with (
-            _patch("resolve_profile_identity_context", identity),
-            _patch("get_keys", []),
-        ):
-            with pytest.raises(ValueError, match="Key not found"):
-                await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())
+        async def fake_get_keys(conn, key_ids, redis, *, bypass_cache=False):
+            return [key]
 
-    async def test_decrypt_failure_propagates(self):
-        identity = _identity()
-        key = _key_response()
-        pool = _mock_pool()
+        def fake_decrypt(encrypted: str) -> str:
+            raise ValueError("bad key")
 
-        with (
-            _patch("resolve_profile_identity_context", identity),
-            _patch("get_keys", [key]),
-            patch(f"{MODULE}.decrypt_api_key", side_effect=ValueError("bad key")),
-        ):
-            with pytest.raises(ValueError, match="bad key"):
-                await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())
+        with pytest.raises(ValueError, match="bad key"):
+            await resolve_decrypt(
+                FakePool(),
+                None,
+                profile_id=uuid4(),
+                key_id=uuid4(),
+                resolve_profile_identity_fn=fake_identity,
+                get_keys_fn=fake_get_keys,
+                decrypt_api_key_fn=fake_decrypt,
+            )

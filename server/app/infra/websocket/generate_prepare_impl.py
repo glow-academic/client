@@ -7,7 +7,7 @@ and emits generate_artifact events.
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, Awaitable, Callable
 
 import asyncpg
 
@@ -33,6 +33,18 @@ from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
+ResolveWebsocketContextFn = Callable[..., Awaitable[Any]]
+FetchEntryTypesFn = Callable[[list[Any], Any], Awaitable[dict[str, dict[str, Any]]]]
+BuildAgentGroupsFromScoresFn = Callable[..., dict[uuid.UUID, list[str]]]
+BuildJinjaFromWsCtxFn = Callable[..., dict[str, Any]]
+ResolveAgentConfigFn = Callable[..., Any]
+BuildAgentDispatchFn = Callable[..., Any]
+CreateRunFn = Callable[..., Awaitable[Any]]
+InitRunTrackersFn = Callable[..., Awaitable[None]]
+PersistRunMessageFn = Callable[..., Awaitable[None]]
+SetupGenerationTestFn = Callable[..., Awaitable[Any]]
+ValidatePayloadFn = Callable[..., str | None]
+
 
 async def generate_prepare_impl(
     data: dict[str, Any],
@@ -42,6 +54,17 @@ async def generate_prepare_impl(
     conn: asyncpg.Connection,
     redis: Any,
     artifact_config: Any,
+    validate_payload_fn: ValidatePayloadFn | None = None,
+    resolve_websocket_context_fn: ResolveWebsocketContextFn | None = None,
+    fetch_entry_types_fn: FetchEntryTypesFn | None = None,
+    build_agent_groups_from_scores_fn: BuildAgentGroupsFromScoresFn | None = None,
+    build_jinja_from_ws_ctx_fn: BuildJinjaFromWsCtxFn | None = None,
+    resolve_agent_config_fn: ResolveAgentConfigFn | None = None,
+    build_agent_dispatch_fn: BuildAgentDispatchFn | None = None,
+    create_run_fn: CreateRunFn | None = None,
+    init_run_trackers_fn: InitRunTrackersFn | None = None,
+    persist_run_message_fn: PersistRunMessageFn | None = None,
+    setup_generation_test_fn: SetupGenerationTestFn | None = None,
 ) -> None:
     """Handle generate_prepare — orchestrate context resolution and dispatch.
 
@@ -118,10 +141,29 @@ async def generate_prepare_impl(
             resolve_agent_config,
             validate_payload,
         )
+        from app.routes.v5.tools.entries.runs.create import create_run
+
+        validate_payload_fn = validate_payload_fn or validate_payload
+        resolve_websocket_context_fn = (
+            resolve_websocket_context_fn or resolve_websocket_context
+        )
+        fetch_entry_types_fn = fetch_entry_types_fn or _fetch_entry_types
+        build_agent_groups_from_scores_fn = (
+            build_agent_groups_from_scores_fn or build_agent_groups_from_scores
+        )
+        build_jinja_from_ws_ctx_fn = (
+            build_jinja_from_ws_ctx_fn or build_jinja_from_ws_ctx
+        )
+        resolve_agent_config_fn = resolve_agent_config_fn or resolve_agent_config
+        build_agent_dispatch_fn = build_agent_dispatch_fn or build_agent_dispatch
+        create_run_fn = create_run_fn or create_run
+        init_run_trackers_fn = init_run_trackers_fn or init_run_trackers
+        persist_run_message_fn = persist_run_message_fn or persist_run_message
+        setup_generation_test_fn = setup_generation_test_fn or setup_generation_test
 
         # --- Step 1: Validate (pure) ---
         resource_types = [rt.name for rt in payload.resource_types if rt]
-        error = validate_payload(
+        error = validate_payload_fn(
             resource_types_raw=resource_types,
             artifact_type=artifact_type,
             valid_resource_types=artifact_config.valid_resource_types,
@@ -146,7 +188,7 @@ async def generate_prepare_impl(
         # --- Steps 3–7: Resolve context ---
         bypass_cache = True
 
-        ws_ctx = await resolve_websocket_context(
+        ws_ctx = await resolve_websocket_context_fn(
             pool,
             redis,
             profile_id=profile_id,
@@ -178,7 +220,7 @@ async def generate_prepare_impl(
         config_agents = ws_ctx.agents
 
         # Agent groups from tool scores
-        agent_groups = build_agent_groups_from_scores(
+        agent_groups = build_agent_groups_from_scores_fn(
             resource_types=resource_types,
             scores=ws_ctx.scores,
         )
@@ -186,9 +228,9 @@ async def generate_prepare_impl(
         # Jinja context
         entry_results: dict[str, dict[str, Any]] | None = None
         if payload.entry_types:
-            entry_results = await _fetch_entry_types(payload.entry_types, conn)
+            entry_results = await fetch_entry_types_fn(payload.entry_types, conn)
 
-        jinja_context_base = build_jinja_from_ws_ctx(ws_ctx, entry_results)
+        jinja_context_base = build_jinja_from_ws_ctx_fn(ws_ctx, entry_results)
         wrap_media_entries(jinja_context_base)
 
         # Tools
@@ -208,10 +250,8 @@ async def generate_prepare_impl(
         instructions_by_id = {i.id: i for i in ws_ctx.instructions}
 
         # --- Step 8: Create run ---
-        from app.routes.v5.tools.entries.runs.create import create_run
-
         agent_ids_for_run = [aid for aid in agent_groups if aid]
-        run = await create_run(
+        run = await create_run_fn(
             conn,
             group_id=group_id,
             session_id=session_id,
@@ -230,7 +270,7 @@ async def generate_prepare_impl(
             for aid, rts in agent_groups.items()
             for rt in rts
         ]
-        await init_run_trackers(
+        await init_run_trackers_fn(
             redis,
             run_id=str(run_id),
             num_agents=len(agent_groups),
@@ -256,7 +296,7 @@ async def generate_prepare_impl(
         ]
 
         if agents_with_rubrics:
-            gen_test = await setup_generation_test(
+            gen_test = await setup_generation_test_fn(
                 conn,
                 agents=agents_with_rubrics,
                 run_id=run_id,
@@ -284,7 +324,7 @@ async def generate_prepare_impl(
         for agent_group_id, agent_resource_types in agent_groups.items():
             agent_resource = agents_by_id.get(agent_group_id) or config_agents[0]
 
-            llm_config = resolve_agent_config(
+            llm_config = resolve_agent_config_fn(
                 agent_resource, models_by_id, providers_by_id
             )
             if not llm_config:
@@ -316,7 +356,7 @@ async def generate_prepare_impl(
                         generation_invocation_map[agent_group_id]
                     )
 
-            dispatch = build_agent_dispatch(
+            dispatch = build_agent_dispatch_fn(
                 agent_id=agent_group_id,
                 agent_resource_types=agent_resource_types,
                 agent=agent_resource,
@@ -334,7 +374,7 @@ async def generate_prepare_impl(
             # Persist messages
             for msg in dispatch.messages:
                 if msg.persist:
-                    await persist_run_message(
+                    await persist_run_message_fn(
                         conn,
                         run_id=run_id,
                         session_id=session_id,
@@ -352,7 +392,7 @@ async def generate_prepare_impl(
             if payload.user_instructions:
                 for instruction in payload.user_instructions:
                     all_messages.append({"role": "user", "content": instruction})
-                    await persist_run_message(
+                    await persist_run_message_fn(
                         conn,
                         run_id=run_id,
                         session_id=session_id,

@@ -42,6 +42,39 @@ def _table_name(target_type: str, target_name: str) -> str:
     return f"{target_name}_{suffix}"
 
 
+def parse_generation_resolution_context(
+    ctx: dict[str, Any],
+    data: dict[str, Any],
+) -> tuple[str | None, str, str, str, dict[str, Any]]:
+    """Normalize stored resolution context with request fallbacks."""
+    run_id = ctx.get("run_id")
+    sid = ctx.get("sid", data.get("sid", ""))
+    artifact_type = ctx.get("artifact_type", "unknown")
+    group_id_str = ctx.get("group_id", "")
+    resource_actions = ctx.get("resource_actions", {})
+    return run_id, sid, artifact_type, group_id_str, resource_actions
+
+
+def build_generation_complete_payload(
+    *,
+    sid: str,
+    artifact_type: str,
+    group_id: str,
+    run_id: str,
+    resource_actions: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the final generation completion payload."""
+    return GenerationCompleteData(
+        sid=sid,
+        artifact_type=artifact_type,
+        group_id=group_id,
+        run_id=run_id,
+        success=True,
+        message=f"{artifact_type.capitalize()} generation resolved",
+        resource_actions=resource_actions,
+    ).model_dump(mode="json")
+
+
 async def generation_ended_impl(
     data: dict[str, Any],
     *,
@@ -80,15 +113,12 @@ async def generation_ended_impl(
     except Exception as e:
         logger.warning(f"Failed to load resolution context for test {test_id}: {e}")
 
-    run_id = ctx.get("run_id")
+    run_id, sid, artifact_type, group_id_str, resource_actions = (
+        parse_generation_resolution_context(ctx, data)
+    )
     if not run_id:
         logger.warning(f"No run_id in resolution context for test {test_id}")
         return
-
-    sid = ctx.get("sid", data.get("sid", ""))
-    artifact_type = ctx.get("artifact_type", "unknown")
-    group_id_str = ctx.get("group_id", "")
-    resource_actions = ctx.get("resource_actions", {})
 
     # Step 3: Get all units and promote winner / fail losers
     units = await get_all_units(redis, run_id=run_id)
@@ -139,15 +169,13 @@ async def generation_ended_impl(
         [
             internal_event(
                 "generation_channel",
-                GenerationCompleteData(
+                build_generation_complete_payload(
                     sid=sid,
                     artifact_type=artifact_type,
                     group_id=group_id_str,
                     run_id=run_id,
-                    success=True,
-                    message=f"{artifact_type.capitalize()} generation resolved",
                     resource_actions=resource_actions,
-                ).model_dump(mode="json"),
+                ),
             )
         ]
     )

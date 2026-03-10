@@ -55,7 +55,6 @@ class GetSuiteRequest(BaseModel):
     """Client API request for one benchmark bundle customization payload."""
 
     test_id: UUID
-    group_id: UUID | None = None
     draft_id: UUID | None = None
     # Search filters
     descriptions_search: str | None = None

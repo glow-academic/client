@@ -472,7 +472,6 @@ async def get_persona(
             session_id=session_id,
             persona_id=request.persona_id,
             draft_id=request.draft_id,
-            group_id=request.group_id,
             parameter_ids=[UUID(pid) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,

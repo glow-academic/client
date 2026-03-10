@@ -264,7 +264,6 @@ class GetScenarioApiRequest(BaseModel):
         default_factory=list
     )
     draft_id: UUID | None = None
-    group_id: UUID | None = None
     mcp: bool | None = False
     parameter_ids: list[UUID] | None = None
 
