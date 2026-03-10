@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.persona_refresh import refresh_persona_client
+from app.infra.persona.refresh import refresh_persona_impl
 from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
@@ -19,7 +19,7 @@ async def persona_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_persona_client(
+    result = await refresh_persona_impl(
         pool,
         redis,
         profile_id=profile_id,

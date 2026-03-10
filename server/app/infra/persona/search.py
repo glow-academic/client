@@ -20,7 +20,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.persona_permissions import (
+from app.infra.persona.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
@@ -125,7 +125,7 @@ PERSONA_IMPORT_FIELDS: list[ImportField] = [
 ]
 
 
-async def search_persona_client(
+async def search_persona_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

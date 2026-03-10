@@ -1,6 +1,6 @@
 """Persona create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.persona_create.
+Thin route handler. Core logic lives in app.infra.persona.create.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.persona_create import create_persona_client
+from app.infra.persona.create import create_persona_impl
 from app.routes.v5.api.main.persona.types import (
     CreatePersonaApiRequest,
     CreatePersonaApiResponse,
@@ -37,7 +37,7 @@ async def create_persona(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_persona_client(
+        response_data = await create_persona_impl(
             pool,
             redis,
             profile_id=profile_id,

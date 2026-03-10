@@ -1,0 +1,2 @@
+"""Canonical persona infra package."""
+

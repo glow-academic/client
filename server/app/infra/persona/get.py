@@ -9,10 +9,10 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.persona_context import resolve_persona_context
-from app.infra.persona_permissions import PERSONA_RESOURCES, has_access
-from app.infra.persona_permissions_context import resolve_persona_permissions_context
-from app.infra.persona_sections import build_persona_get_result
+from app.infra.persona.context import resolve_persona_context
+from app.infra.persona.permissions import PERSONA_RESOURCES, has_access
+from app.infra.persona.permissions_context import resolve_persona_permissions_context
+from app.infra.persona.sections import build_persona_get_result
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.persona.types import GetPersonaApiResponse
 

@@ -17,7 +17,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.persona_permissions_context import (
+from app.infra.persona.permissions_context import (
     create_denormalized_snapshot,
     resolve_persona_values,
 )
@@ -83,7 +83,7 @@ class CreatePersonaApiResponse(BaseModel):
     results: list[PersonaResultItem]
 
 
-async def create_persona_client(
+async def create_persona_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -103,7 +103,7 @@ async def create_persona_client(
       5. Single transaction: create_persona_artifact per item
       6. invalidate_tags
     """
-    from app.infra.persona_permissions import compute_can_create
+    from app.infra.persona.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

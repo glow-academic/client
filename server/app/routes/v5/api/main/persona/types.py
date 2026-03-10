@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.persona_create import CreatePersonaItem
+from app.infra.persona.create import CreatePersonaItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.persona_drafts.types import GetPersonaDraftResponse
 from app.routes.v5.tools.resources.fields.types import GetFieldResponse
@@ -336,7 +336,7 @@ class PersonaInternalData:
 
     This dataclass contains all computed data needed by both:
     - get_persona_websocket() - minimal data for WebSocket handlers
-    - get_persona_client() - full BFF response for HTTP/frontend
+    - get_persona_impl() - canonical full artifact bundle for all surfaces
     """
 
     # Access/context

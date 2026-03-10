@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.persona_context import (
+from app.infra.persona.context import (
     PERSONA_FLAG_TYPES,
     _merge_junction_ids,
     resolve_persona_context,

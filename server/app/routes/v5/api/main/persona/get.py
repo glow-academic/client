@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.persona_get import get_persona_impl
+from app.infra.persona.get import get_persona_impl
 from app.routes.v5.api.main.persona.types import (
     GetPersonaApiRequest,
     GetPersonaApiResponse,

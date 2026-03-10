@@ -1,6 +1,6 @@
 """Persona draft endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.persona_draft.
+Thin route handler. Core logic lives in app.infra.persona.draft.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.persona_draft import patch_persona_draft_client
+from app.infra.persona.draft import patch_persona_draft_impl
 from app.routes.v5.api.main.persona.types import (
     PatchPersonaDraftApiRequest,
     PatchPersonaDraftApiResponse,
@@ -47,7 +47,7 @@ async def patch_persona_draft(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await patch_persona_draft_client(
+        result = await patch_persona_draft_impl(
             pool,
             redis,
             profile_id=profile_id,

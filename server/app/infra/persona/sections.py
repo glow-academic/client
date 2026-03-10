@@ -10,7 +10,7 @@ from uuid import UUID
 
 from app.infra.common_context import CommonContext
 from app.infra.helpers import dedupe_by_id
-from app.infra.persona_permissions import (
+from app.infra.persona.permissions import (
     PERSONA_RESOURCES,
     compute_can_edit,
     compute_color_required,
@@ -38,7 +38,7 @@ from app.infra.persona_permissions import (
     compute_show_voices,
     compute_voices_required,
 )
-from app.infra.persona_permissions_context import PersonaPermissionsContext
+from app.infra.persona.permissions_context import PersonaPermissionsContext
 from app.infra.tool_graph import ArtifactToolScores
 from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.persona.types import (

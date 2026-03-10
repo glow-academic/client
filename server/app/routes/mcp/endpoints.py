@@ -179,7 +179,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "delete": ("app.routes.v5.api.main.persona.delete", "delete_persona"),
         "duplicate": ("app.routes.v5.api.main.persona.duplicate", "duplicate_persona"),
         "draft": ("app.routes.v5.api.main.persona.draft", "patch_persona_draft"),
-        "docs": ("app.infra.persona_docs", "docs_persona_client"),
+        "docs": ("app.infra.persona.docs", "docs_persona_impl"),
     },
     "pricing": {
         "get": ("app.routes.v5.api.main.pricing.get", "get_pricing"),

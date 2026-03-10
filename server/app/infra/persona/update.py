@@ -16,7 +16,7 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.persona_permissions_context import (
+from app.infra.persona.permissions_context import (
     create_denormalized_snapshot,
     resolve_persona_permissions_context,
     resolve_persona_values,
@@ -31,7 +31,7 @@ from app.routes.v5.tools.artifacts.persona.update import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def update_persona_client(
+async def update_persona_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -50,7 +50,7 @@ async def update_persona_client(
       4. Single transaction: update_persona_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.persona_permissions import compute_can_edit
+    from app.infra.persona.permissions import compute_can_edit
     from app.routes.v5.api.main.persona.types import (
         PersonaResultItem,
         UpdatePersonaApiResponse,

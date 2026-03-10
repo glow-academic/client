@@ -23,7 +23,7 @@ from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
 from app.infra.helpers import dedupe_by_id
-from app.infra.persona_context import resolve_persona_context
+from app.infra.persona.context import resolve_persona_context
 from app.infra.system_context import resolve_system_context
 from app.infra.tool_graph import score_tools
 from app.infra.types import (

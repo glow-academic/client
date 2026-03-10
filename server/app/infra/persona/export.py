@@ -53,7 +53,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_persona_client(
+async def export_persona_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

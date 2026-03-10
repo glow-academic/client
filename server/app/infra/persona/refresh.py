@@ -26,7 +26,7 @@ _TAGS = ["personas", "artifacts"]
 _VIEWS = ["personas_mv", "persona_drafts_mv"]
 
 
-async def refresh_persona_client(
+async def refresh_persona_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,
