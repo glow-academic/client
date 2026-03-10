@@ -1,175 +1,134 @@
-"""Tests for infra.persona_permissions_context — lightweight permission checks.
-
-resolve_persona_permissions_context is tested with mocked black-box fetchers.
-Tests verify: exists detection, department_ids extraction, and active scenario counting.
-"""
-
-from contextlib import asynccontextmanager
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+"""Integration tests for infra.persona_permissions_context."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
-from app.infra.persona_permissions_context import (
-    resolve_persona_permissions_context,
+from app.infra.persona_permissions_context import resolve_persona_permissions_context
+from app.routes.v5.tools.artifacts.persona.create import create_persona
+from app.routes.v5.tools.artifacts.scenario.create import create_scenario
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.personas.create import (
+    create_persona as create_persona_resource,
 )
 
-NOW = datetime.now(UTC)
-MODULE = "app.infra.persona_permissions_context"
+pytestmark = pytest.mark.asyncio
 
 
-def _mock_pool() -> MagicMock:
-    """Create a mock asyncpg.Pool whose acquire() yields a sentinel connection."""
-    pool = MagicMock()
-    sentinel_conn = MagicMock(name="mock_conn")
+async def _create_persona_fixture(
+    pool,
+    redis_client,
+    *,
+    with_department: bool = True,
+    with_persona_resource: bool = True,
+):
+    tag = unique_tag()
 
-    @asynccontextmanager
-    async def _acquire():
-        yield sentinel_conn
+    async with pool.acquire() as conn:
+        name = await create_name(conn, f"persona-{tag}", redis_client)
 
-    pool.acquire = _acquire
-    return pool
+        department_ids = None
+        if with_department:
+            department = await create_department(
+                conn,
+                name=f"department-{tag}",
+                description="Persona permissions test department",
+                redis=redis_client,
+            )
+            department_ids = [department.id]
+
+        persona_ids = None
+        if with_persona_resource:
+            persona_resource = await create_persona_resource(
+                conn,
+                redis_client,
+                name=f"persona-resource-{tag}",
+                description="Persona permissions test resource",
+                department_ids=department_ids or [],
+            )
+            persona_ids = [persona_resource.id]
+        else:
+            persona_resource = None
+
+        artifact = await create_persona(
+            conn,
+            name_id=name.id,
+            department_ids=department_ids,
+            persona_ids=persona_ids,
+        )
+
+    return artifact, department_ids or [], persona_resource
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
-
-
-class _FakeArtifact:
-    """Minimal stand-in for GetPersonasResponse with only the fields we need."""
-
-    def __init__(self, *, department_ids=None, persona_ids=None):
-        self.department_ids = department_ids
-        self.persona_ids = persona_ids
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_persona_permissions_context tests
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
 class TestResolvePersonaPermissionsContext:
-    async def test_not_found(self):
-        """Returns exists=False when artifact not found."""
-        persona_id = uuid4()
-
-        with (
-            patch(
-                f"{MODULE}.get_persona_artifacts",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
-        ):
-            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
+    async def test_not_found(self, pool):
+        result = await resolve_persona_permissions_context(pool, nonexistent_id())
 
         assert result.exists is False
         assert result.department_ids == []
         assert result.active_scenario_count == 0
 
-    async def test_exists_with_departments(self):
-        """Returns department_ids from the artifact."""
-        persona_id = uuid4()
-        dept_id_1 = uuid4()
-        dept_id_2 = uuid4()
-
-        artifact = _FakeArtifact(
-            department_ids=[dept_id_1, dept_id_2],
-            persona_ids=[],
+    async def test_exists_with_departments(self, pool, redis_client):
+        artifact, department_ids, _persona_resource = await _create_persona_fixture(
+            pool, redis_client
         )
 
-        with (
-            patch(
-                f"{MODULE}.get_persona_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.search_scenarios",
-                new_callable=AsyncMock,
-                return_value=[],
-            ),
-        ):
-            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
+        result = await resolve_persona_permissions_context(pool, artifact.id)
 
         assert result.exists is True
-        assert result.department_ids == [dept_id_1, dept_id_2]
+        assert result.department_ids == department_ids
         assert result.active_scenario_count == 0
 
-    async def test_active_scenarios_counted(self):
-        """Returns active_scenario_count from search_scenarios."""
-        persona_id = uuid4()
-        personas_resource_id = uuid4()
-        scenario_id = uuid4()
-
-        artifact = _FakeArtifact(
-            department_ids=[],
-            persona_ids=[personas_resource_id],
+    async def test_active_scenarios_counted(self, pool, redis_client):
+        artifact, department_ids, persona_resource = await _create_persona_fixture(
+            pool, redis_client
         )
+        assert persona_resource is not None
 
-        with (
-            patch(
-                f"{MODULE}.get_persona_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.search_scenarios",
-                new_callable=AsyncMock,
-                return_value=([scenario_id], 1),
-            ) as mock_scenarios,
-        ):
-            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
+        async with pool.acquire() as conn:
+            scenario_name = await create_name(
+                conn, f"scenario-{unique_tag()}", redis_client
+            )
+            await create_scenario(
+                conn,
+                name_id=scenario_name.id,
+                department_ids=department_ids,
+                persona_ids=[persona_resource.id],
+            )
 
+        result = await resolve_persona_permissions_context(pool, artifact.id)
+
+        assert result.exists is True
+        assert result.department_ids == department_ids
         assert result.active_scenario_count == 1
-        mock_scenarios.assert_called_once()
-        assert mock_scenarios.call_args.kwargs["persona_ids"] == [personas_resource_id]
-        assert mock_scenarios.call_args.kwargs["active_only"] is True
-        assert mock_scenarios.call_args.kwargs["limit_count"] == 1
 
-    async def test_no_personas_resource_skips_scenario_search(self):
-        """When artifact has no persona_ids, search_scenarios is not called."""
-        persona_id = uuid4()
-
-        artifact = _FakeArtifact(
-            department_ids=[uuid4()],
-            persona_ids=[],
+    async def test_no_personas_resource_skips_scenario_search(
+        self, pool, redis_client
+    ):
+        artifact, department_ids, persona_resource = await _create_persona_fixture(
+            pool,
+            redis_client,
+            with_persona_resource=False,
         )
 
-        with (
-            patch(
-                f"{MODULE}.get_persona_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.search_scenarios",
-                new_callable=AsyncMock,
-            ) as mock_scenarios,
-        ):
-            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
+        assert persona_resource is None
 
-        mock_scenarios.assert_not_called()
+        result = await resolve_persona_permissions_context(pool, artifact.id)
+
+        assert result.exists is True
+        assert result.department_ids == department_ids
         assert result.active_scenario_count == 0
 
-    async def test_none_department_ids_becomes_empty_list(self):
-        """Artifact with None department_ids returns empty list."""
-        persona_id = uuid4()
-
-        artifact = _FakeArtifact(
-            department_ids=None,
-            persona_ids=None,
+    async def test_no_departments_returns_empty_list(self, pool, redis_client):
+        artifact, department_ids, _persona_resource = await _create_persona_fixture(
+            pool,
+            redis_client,
+            with_department=False,
         )
 
-        with (
-            patch(
-                f"{MODULE}.get_persona_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-        ):
-            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
+        result = await resolve_persona_permissions_context(pool, artifact.id)
 
+        assert department_ids == []
         assert result.exists is True
         assert result.department_ids == []
         assert result.active_scenario_count == 0

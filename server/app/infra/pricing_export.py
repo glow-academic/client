@@ -19,6 +19,7 @@ from datetime import datetime
 from uuid import UUID
 
 import asyncpg
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.globals import UPLOAD_FOLDER
@@ -45,6 +46,14 @@ RUN_CSV_COLUMNS = [
 ]
 
 
+class ExportPricingApiResponse(BaseModel):
+    """Response model for pricing export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
 async def export_pricing_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -54,8 +63,6 @@ async def export_pricing_client(
 ) -> dict:
     """Pricing full export using composable infra functions."""
     from fastapi import HTTPException
-
-    from app.routes.v5.api.main.pricing.types import ExportPricingApiResponse
 
     # -- Step 1: Profile context --
 

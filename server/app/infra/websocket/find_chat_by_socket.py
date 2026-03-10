@@ -15,8 +15,8 @@ async def find_chat_by_socket(socket_id: str) -> str | None:
     try:
         # Scan through all active connection keys to find the matching socket_id
         async for key in redis_client.scan_iter(match="active_connection:*"):
-            connection_sid = await redis_client.get(key)
-            if connection_sid and connection_sid.decode("utf-8") == socket_id:
+            is_member = await redis_client.sismember(key, socket_id)
+            if is_member:
                 chat_id = key.decode("utf-8").replace("active_connection:", "")
                 return chat_id  # type: ignore
         return None

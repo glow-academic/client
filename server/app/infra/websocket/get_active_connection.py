@@ -13,8 +13,10 @@ async def get_active_connection(chat_id: str) -> str | None:
         return None
 
     try:
-        connection_sid = await redis_client.get(f"active_connection:{chat_id}")
-        return connection_sid.decode("utf-8") if connection_sid else None
+        connection_sids = await redis_client.smembers(f"active_connection:{chat_id}")
+        if not connection_sids:
+            return None
+        return next(iter(connection_sids)).decode("utf-8")
     except Exception as e:
         logger.error(f"Redis error getting active connection for chat {chat_id}: {e}")
         return None

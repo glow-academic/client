@@ -1,49 +1,70 @@
-"""Tests for infra.runs_context — daily runs resolution."""
+"""Integration tests for infra.runs_context."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from app.infra.runs_context import RunsContext, resolve_runs_context
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.resources.profiles.create import create_profile
 
-MODULE = "app.infra.runs_context"
+pytestmark = pytest.mark.asyncio
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+async def test_no_runs_returns_empty(pool, redis_client):
+    async with pool.acquire() as conn:
+        profile = await create_profile(conn, redis_client)
+
+    result = await resolve_runs_context(pool, profile_id=profile.id)
+
+    assert isinstance(result, RunsContext)
+    assert result.items == []
+    assert result.total_count == 0
 
 
-def _patch(target, return_value):
-    return patch(
-        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
+async def test_returns_runs_for_profile(pool, redis_client):
+    async with pool.acquire() as conn:
+        profile = await create_profile(conn, redis_client)
+        session = await create_session(conn, profile_id=profile.id)
+        group = await create_group(conn, session_id=session.id)
+        run = await create_run(
+            conn,
+            group_id=group.id,
+            session_id=session.id,
+            profiles_id=profile.id,
+        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY runs_mv")
+
+    result = await resolve_runs_context(pool, profile_id=profile.id)
+
+    assert result.total_count >= 1
+    run_ids = [item.run_id for item in result.items]
+    assert run.id in run_ids
+
+
+async def test_filters_by_group_and_date_range(pool, redis_client):
+    async with pool.acquire() as conn:
+        profile = await create_profile(conn, redis_client)
+        session = await create_session(conn, profile_id=profile.id)
+        group = await create_group(conn, session_id=session.id)
+        run = await create_run(
+            conn,
+            group_id=group.id,
+            session_id=session.id,
+            profiles_id=profile.id,
+        )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY runs_mv")
+
+    now = datetime.now(UTC)
+    result = await resolve_runs_context(
+        pool,
+        profile_id=profile.id,
+        group_id=group.id,
+        date_from=now - timedelta(days=1),
+        date_to=now + timedelta(days=1),
     )
 
-
-def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
-    """Create a mock pool whose acquire() yields mock_conn."""
-    if mock_conn is None:
-        mock_conn = AsyncMock()
-    pool = MagicMock()
-    cm = AsyncMock()
-    cm.__aenter__.return_value = mock_conn
-    pool.acquire.return_value = cm
-    return pool
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_runs_context
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-class TestResolveRunsContextEmpty:
-    async def test_no_runs_returns_empty(self):
-        profile_id = uuid4()
-        pool = _mock_pool()
-
-        with _patch("search_runs", ([], 0)):
-            result = await resolve_runs_context(pool, profile_id=profile_id)
-
-        assert isinstance(result, RunsContext)
-        assert result.items == []
-        assert result.total_count == 0
+    assert result.total_count >= 1
+    assert [item.run_id for item in result.items] == [run.id]

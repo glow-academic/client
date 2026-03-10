@@ -1,7 +1,6 @@
 """Tests for search_operations."""
 
 import pytest
-from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.operations.create import create_operation
 from app.routes.v5.tools.resources.operations.search import search_operations
@@ -10,66 +9,50 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_finds_created_operation(conn, redis_client):
-    tag = unique_tag()
-    await create_operation(conn, f"search-op-{tag}", redis_client)
+    await create_operation(conn, "search", redis_client)
 
-    items = await search_operations(conn, redis_client, search=f"search-op-{tag}")
+    items = await search_operations(conn, redis_client, search="search")
 
-    assert len(items) >= 1
+    assert any(item.operation == "search" for item in items)
 
 
 async def test_search_is_case_insensitive(conn, redis_client):
-    tag = unique_tag()
-    await create_operation(conn, f"CaseOp-{tag}", redis_client)
+    await create_operation(conn, "create", redis_client)
 
-    items = await search_operations(conn, redis_client, search=f"caseop-{tag}")
+    items = await search_operations(conn, redis_client, search="CREATE")
 
-    assert len(items) >= 1
+    assert any(item.operation == "create" for item in items)
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_operations(
-        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
-    )
+    items = await search_operations(conn, redis_client, search="zzz-no-match-zzz")
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
-    for i in range(5):
-        await create_operation(conn, f"limit-op-{unique_tag()}", redis_client)
+    items = await search_operations(conn, redis_client, limit_count=2)
 
-    items = await search_operations(
-        conn, redis_client, search="limit-op-", limit_count=2
-    )
-
-    assert len(items) <= 2
+    assert len(items) == 2
 
 
 async def test_respects_offset(conn, redis_client):
-    tag = unique_tag()
-    for i in range(3):
-        await create_operation(conn, f"offset-op-{tag}-{i}", redis_client)
+    all_items = await search_operations(conn, redis_client, limit_count=10)
+    offset_items = await search_operations(conn, redis_client, limit_count=10, offset_count=1)
 
-    all_items = await search_operations(
-        conn, redis_client, search=f"offset-op-{tag}", limit_count=10
-    )
-    offset_items = await search_operations(
-        conn, redis_client, search=f"offset-op-{tag}", limit_count=10, offset_count=1
-    )
-
-    assert len(offset_items) == len(all_items) - 1
+    assert len(offset_items) == len(all_items)
+    assert offset_items[0].id != all_items[0].id
+    assert offset_items[0].id == all_items[1].id
 
 
 async def test_excludes_ids(conn, redis_client):
-    tag = unique_tag()
-    a = await create_operation(conn, f"exclude-a-{tag}", redis_client)
-    b = await create_operation(conn, f"exclude-b-{tag}", redis_client)
+    a = await create_operation(conn, "delete", redis_client)
+    b = await create_operation(conn, "duplicate", redis_client)
 
     items = await search_operations(
         conn,
         redis_client,
-        search="exclude-",
+        limit_count=100,
         exclude_ids=[a.id],
     )
 
@@ -85,11 +68,8 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    tag = unique_tag()
-    await create_operation(conn, f"bypass-op-{tag}", redis_client)
+    await create_operation(conn, "draft", redis_client)
 
-    items = await search_operations(
-        conn, redis_client, search=f"bypass-op-{tag}", bypass_cache=True
-    )
+    items = await search_operations(conn, redis_client, search="draft", bypass_cache=True)
 
-    assert len(items) >= 1
+    assert any(item.operation == "draft" for item in items)

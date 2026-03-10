@@ -19,7 +19,6 @@ async def cancel_active_result(chat_id: str) -> bool:
         events_iter = entry.get("events")
 
         # Best-effort: ask the Runner to cancel upstream generation
-        cancel_result = None
         if result is not None and hasattr(result, "cancel"):
             cancel_result = result.cancel()
             if asyncio.iscoroutine(cancel_result):
@@ -28,8 +27,6 @@ async def cancel_active_result(chat_id: str) -> bool:
         # Close our local stream iterator so we stop yielding tokens immediately
         if events_iter is not None and hasattr(events_iter, "aclose"):
             await events_iter.aclose()
-        if cancel_result is not None and asyncio.iscoroutine(cancel_result):
-            await cancel_result
         return True
     except Exception as e:
         logger.error(f"Failed to cancel local result for chat {chat_id}: {e}")

@@ -23,6 +23,22 @@ def _patch(target, return_value):
     )
 
 
+def _mock_pool():
+    conn = AsyncMock()
+    tx = AsyncMock()
+    tx.__aenter__.return_value = conn
+    tx.__aexit__.return_value = None
+    conn.transaction = MagicMock(return_value=tx)
+
+    acquire_ctx = AsyncMock()
+    acquire_ctx.__aenter__.return_value = conn
+    acquire_ctx.__aexit__.return_value = None
+
+    pool = MagicMock()
+    pool.acquire.return_value = acquire_ctx
+    return pool, conn
+
+
 def _name_resource(*, id=None, name="Test"):
     m = MagicMock()
     m.id = id or uuid4()
@@ -127,6 +143,7 @@ def _standard_mocks(
 class TestUpsertCreatePath:
     async def test_creates_new_profile(self):
         mocks = _standard_mocks(existing_profile_ids=[])
+        pool, _conn = _mock_pool()
 
         with (
             mocks["patches"][0],
@@ -141,7 +158,7 @@ class TestUpsertCreatePath:
             mocks["patches"][9],
         ):
             result = await resolve_profile_upsert(
-                None,
+                pool,
                 AsyncMock(),
                 name="John Doe",
                 emails=["john@example.com"],
@@ -156,6 +173,7 @@ class TestUpsertCreatePath:
 
     async def test_passes_correct_args_to_create_profile(self):
         mocks = _standard_mocks(existing_profile_ids=[])
+        pool, _conn = _mock_pool()
 
         with (
             mocks["patches"][0],
@@ -171,7 +189,7 @@ class TestUpsertCreatePath:
         ):
             dept_id = uuid4()
             await resolve_profile_upsert(
-                None,
+                pool,
                 AsyncMock(),
                 name="Jane",
                 emails=["jane@example.com"],
@@ -189,6 +207,7 @@ class TestUpsertCreatePath:
 
     async def test_creates_session_with_profiles_resource_id(self):
         mocks = _standard_mocks(existing_profile_ids=[])
+        pool, conn = _mock_pool()
 
         with (
             mocks["patches"][0],
@@ -203,7 +222,7 @@ class TestUpsertCreatePath:
             mocks["patches"][9] as mock_session,
         ):
             await resolve_profile_upsert(
-                None,
+                pool,
                 AsyncMock(),
                 name="John",
                 emails=["john@example.com"],
@@ -211,7 +230,7 @@ class TestUpsertCreatePath:
                 current_profile_id=uuid4(),
             )
 
-        mock_session.assert_called_once_with(None, mocks["profiles_resource_id"])
+        mock_session.assert_called_once_with(conn, mocks["profiles_resource_id"])
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -224,6 +243,7 @@ class TestUpsertUpdatePath:
     async def test_updates_existing_profile(self):
         existing_id = uuid4()
         mocks = _standard_mocks(existing_profile_ids=[existing_id])
+        pool, _conn = _mock_pool()
 
         with (
             mocks["patches"][0],
@@ -238,7 +258,7 @@ class TestUpsertUpdatePath:
             mocks["patches"][9],
         ):
             result = await resolve_profile_upsert(
-                None,
+                pool,
                 AsyncMock(),
                 name="Updated Name",
                 emails=["existing@example.com"],
@@ -252,6 +272,7 @@ class TestUpsertUpdatePath:
     async def test_calls_update_not_create(self):
         existing_id = uuid4()
         mocks = _standard_mocks(existing_profile_ids=[existing_id])
+        pool, _conn = _mock_pool()
 
         with (
             mocks["patches"][0],
@@ -266,7 +287,7 @@ class TestUpsertUpdatePath:
             mocks["patches"][9],
         ):
             await resolve_profile_upsert(
-                None,
+                pool,
                 AsyncMock(),
                 name="Updated",
                 emails=["existing@example.com"],
@@ -291,6 +312,7 @@ class TestUpsertRoleValidation:
             role_str="superadmin",
             requester_role="admin",
         )
+        pool, _conn = _mock_pool()
 
         with (
             mocks["patches"][0],
@@ -306,7 +328,7 @@ class TestUpsertRoleValidation:
         ):
             with pytest.raises(ValueError, match="cannot assign role"):
                 await resolve_profile_upsert(
-                    None,
+                    pool,
                     AsyncMock(),
                     name="Test",
                     emails=["test@example.com"],
@@ -316,6 +338,7 @@ class TestUpsertRoleValidation:
 
     async def test_no_current_profile_skips_validation(self):
         mocks = _standard_mocks(existing_profile_ids=[])
+        pool, _conn = _mock_pool()
 
         with (
             mocks["patches"][0],
@@ -330,7 +353,7 @@ class TestUpsertRoleValidation:
             mocks["patches"][9],
         ):
             result = await resolve_profile_upsert(
-                None,
+                pool,
                 AsyncMock(),
                 name="Test",
                 emails=["test@example.com"],
@@ -341,6 +364,7 @@ class TestUpsertRoleValidation:
         assert result.created is True
 
     async def test_role_not_found_raises(self):
+        pool, _conn = _mock_pool()
         with (
             _patch("resolve_profile_identity_context", None),
             _patch("create_name", _name_resource()),
@@ -350,7 +374,7 @@ class TestUpsertRoleValidation:
         ):
             with pytest.raises(ValueError, match="Role.*not found"):
                 await resolve_profile_upsert(
-                    None,
+                    pool,
                     AsyncMock(),
                     name="Test",
                     emails=["test@example.com"],
@@ -368,6 +392,7 @@ class TestUpsertMultipleEmails:
     async def test_creates_all_email_resources(self):
         email_ids = [uuid4(), uuid4(), uuid4()]
         call_count = 0
+        pool, _conn = _mock_pool()
 
         async def mock_create_email(conn, email, redis):
             nonlocal call_count
@@ -387,7 +412,7 @@ class TestUpsertMultipleEmails:
             _patch("create_session", _session_result()),
         ):
             await resolve_profile_upsert(
-                None,
+                pool,
                 AsyncMock(),
                 name="Multi Email",
                 emails=["a@test.com", "b@test.com", "c@test.com"],

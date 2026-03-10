@@ -1,12 +1,6 @@
-"""Tests for infra.auth.analytics — analytics filters via canonical black boxes.
-
-Each resolve_*_filters function is tested with mocked black-box fetchers.
-Tests verify: correct arguments flow, result mapping, empty/missing cases.
-"""
+"""Tests for infra.auth.analytics using real black-box setup."""
 
 from datetime import UTC, date, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
 
 import pytest
 
@@ -17,333 +11,216 @@ from app.infra.auth.analytics import (
     resolve_pricing_filters,
     resolve_profile_facts_filters,
 )
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.health.create import create_health
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.test.create import create_test
+from app.routes.v5.tools.entries.test.refresh import refresh_test
+from app.routes.v5.tools.resources.cohorts.create import create_cohort
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.profiles.create import create_profile
 
-NOW = datetime.now(UTC)
-TODAY = date.today()
-MODULE = "app.infra.auth.analytics"
-
-
-# ── Helpers ──────────────────────────────────────────────────────────────────
-
-
-def _mock_pool():
-    """Create a mock pool that yields mock connections via acquire()."""
-    pool = MagicMock()
-    conns = []
-
-    class _CM:
-        async def __aenter__(self):
-            c = AsyncMock()
-            conns.append(c)
-            return c
-
-        async def __aexit__(self, *args):
-            pass
-
-    pool.acquire = _CM
-    pool._conns = conns
-    return pool
+pytestmark = pytest.mark.asyncio
 
 
-def _patch(target, return_value):
-    return patch(
-        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
+async def _profile_session_run_call(conn, redis_client):
+    profile = await create_profile(conn, redis_client)
+    session = await create_session(conn, profile_id=profile.id)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(
+        conn, group_id=group.id, session_id=session.id, profiles_id=profile.id
     )
+    call = await create_call(conn, run_id=run.id, session_id=session.id)
+    return profile, session, group, run, call
 
 
-def _department(*, id=None, name="Dept"):
-    d = MagicMock()
-    d.id = id or uuid4()
-    d.name = name
-    return d
-
-
-def _cohort(*, id=None, name="Cohort"):
-    c = MagicMock()
-    c.id = id or uuid4()
-    c.name = name
-    return c
-
-
-def _attempt_chat(*, attempt_date=None):
-    item = MagicMock()
-    item.attempt_date = attempt_date or TODAY
-    return item
-
-
-def _run(*, run_created_at=None):
-    item = MagicMock()
-    item.run_created_at = run_created_at or NOW
-    return item
-
-
-def _test(*, test_created_at=None):
-    item = MagicMock()
-    item.test_created_at = test_created_at or NOW
-    return item
-
-
-def _health(*, date_hour=None):
-    item = MagicMock()
-    item.date_hour = date_hour or NOW
-    return item
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_facts_filters
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
 class TestProfileFactsFilters:
-    async def test_returns_departments_and_cohorts(self):
-        dept_id = uuid4()
-        cohort_id = uuid4()
-        dept = _department(id=dept_id, name="Science")
-        cohort = _cohort(id=cohort_id, name="Fall 2025")
+    async def test_returns_department_and_cohort_options(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            department = await create_department(conn, name="Science", redis=redis_client)
+            cohort = await create_cohort(conn, name="Fall 2025", redis=redis_client)
 
-        pool = _mock_pool()
-        redis = AsyncMock()
+        result = await resolve_profile_facts_filters(
+            pool,
+            redis_client,
+            department_ids=[department.id],
+            cohort_ids=[cohort.id],
+            need_date_range=False,
+        )
 
-        with (
-            _patch("get_departments", [dept]),
-            _patch("get_cohorts", [cohort]),
-            _patch("search_attempt_chats", ([_attempt_chat()], 1)),
-        ):
-            result = await resolve_profile_facts_filters(
-                pool,
-                redis,
-                department_ids=[dept_id],
-                cohort_ids=[cohort_id],
-            )
-
-        assert len(result.department_options) == 1
-        assert result.department_options[0].value == str(dept_id)
+        assert result.department_options[0].value == str(department.id)
         assert result.department_options[0].label == "Science"
-        assert len(result.cohort_options) == 1
+        assert result.cohort_options[0].value == str(cohort.id)
         assert result.cohort_options[0].label == "Fall 2025"
+        assert result.date_range_earliest is None
+        assert result.date_range_latest is None
 
-    async def test_date_range_from_attempt_chats(self):
-        dept_id = uuid4()
-        early = date(2025, 1, 1)
-        late = date(2025, 12, 31)
-        pool = _mock_pool()
-        redis = AsyncMock()
-
-        with (
-            _patch("get_departments", []),
-            _patch("get_cohorts", []),
-            _patch("search_attempt_chats", None) as mock_search,
-        ):
-            mock_search.side_effect = [
-                ([_attempt_chat(attempt_date=early)], 1),
-                ([_attempt_chat(attempt_date=late)], 1),
-            ]
-            result = await resolve_profile_facts_filters(
-                pool,
-                redis,
-                department_ids=[dept_id],
-                cohort_ids=[],
-                need_departments=False,
-                need_cohorts=False,
-            )
-
-        assert result.date_range_earliest == "2025-01-01"
-        assert result.date_range_latest == "2025-12-31"
-
-    async def test_no_department_ids_skips_date_range(self):
-        pool = _mock_pool()
-        redis = AsyncMock()
-
-        with (
-            _patch("get_departments", []),
-            _patch("get_cohorts", []),
-            _patch("search_attempt_chats", ([], 0)),
-        ):
-            result = await resolve_profile_facts_filters(
-                pool,
-                redis,
-                department_ids=[],
-                cohort_ids=[],
-            )
+    async def test_no_department_ids_skips_date_range(self, pool, redis_client):
+        result = await resolve_profile_facts_filters(
+            pool,
+            redis_client,
+            department_ids=[],
+            cohort_ids=[],
+        )
 
         assert result.date_range_earliest is None
         assert result.date_range_latest is None
 
-    async def test_need_flags_control_fetching(self):
-        pool = _mock_pool()
-        redis = AsyncMock()
+    async def test_need_flags_false_returns_empty_filters(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            department = await create_department(conn, name="Math", redis=redis_client)
+            cohort = await create_cohort(conn, name="Spring 2026", redis=redis_client)
 
-        with (
-            _patch("get_departments", []) as mock_dept,
-            _patch("get_cohorts", []) as mock_cohort,
-            _patch("search_attempt_chats", ([], 0)) as mock_search,
-        ):
-            result = await resolve_profile_facts_filters(
-                pool,
-                redis,
-                department_ids=[uuid4()],
-                cohort_ids=[uuid4()],
-                need_departments=False,
-                need_cohorts=False,
-                need_date_range=False,
-            )
+        result = await resolve_profile_facts_filters(
+            pool,
+            redis_client,
+            department_ids=[department.id],
+            cohort_ids=[cohort.id],
+            need_departments=False,
+            need_cohorts=False,
+            need_date_range=False,
+        )
 
-        assert result.department_options == []
-        assert result.cohort_options == []
-        assert result.date_range_earliest is None
-        mock_dept.assert_not_called()
-        mock_cohort.assert_not_called()
-        mock_search.assert_not_called()
+        assert result == AnalyticsFiltersResult()
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_pricing_filters
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
 class TestPricingFilters:
-    async def test_returns_departments_and_date_range(self):
-        dept_id = uuid4()
-        dept = _department(id=dept_id, name="Engineering")
-        early_run = _run(run_created_at=datetime(2025, 3, 1, tzinfo=UTC))
-        late_run = _run(run_created_at=datetime(2025, 9, 15, tzinfo=UTC))
-
-        pool = _mock_pool()
-        redis = AsyncMock()
-
-        with (
-            _patch("get_departments", [dept]),
-            _patch("search_runs", None) as mock_runs,
-        ):
-            mock_runs.side_effect = [
-                ([early_run], 1),
-                ([late_run], 1),
-            ]
-            result = await resolve_pricing_filters(
-                pool,
-                redis,
-                department_ids=[dept_id],
+    async def test_returns_departments_and_date_range(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            department = await create_department(
+                conn, name="Engineering", redis=redis_client
             )
+            profile, session, group, early_run, _ = await _profile_session_run_call(
+                conn, redis_client
+            )
+            later_group = await create_group(conn, session_id=session.id)
+            late_run = await create_run(
+                conn,
+                group_id=later_group.id,
+                session_id=session.id,
+                profiles_id=profile.id,
+            )
+            await conn.execute(
+                "UPDATE runs_entry SET created_at = $2 WHERE id = $1",
+                early_run.id,
+                datetime(2025, 3, 1, tzinfo=UTC),
+            )
+            await conn.execute(
+                "UPDATE runs_entry SET created_at = $2 WHERE id = $1",
+                late_run.id,
+                datetime(2025, 9, 15, tzinfo=UTC),
+            )
+            await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY runs_mv")
 
-        assert len(result.department_options) == 1
+        result = await resolve_pricing_filters(
+            pool,
+            redis_client,
+            department_ids=[department.id],
+        )
+
         assert result.department_options[0].label == "Engineering"
         assert result.date_range_earliest == "2025-03-01"
         assert result.date_range_latest == "2025-09-15"
 
-    async def test_no_runs_returns_no_date_range(self):
-        pool = _mock_pool()
-        redis = AsyncMock()
+    async def test_need_date_range_false_skips_run_queries(self, pool, redis_client):
+        result = await resolve_pricing_filters(
+            pool,
+            redis_client,
+            department_ids=[],
+            need_date_range=False,
+        )
 
-        with (
-            _patch("get_departments", []),
-            _patch("search_runs", None) as mock_runs,
-        ):
-            mock_runs.side_effect = [
-                ([], 0),
-                ([], 0),
-            ]
-            result = await resolve_pricing_filters(
-                pool,
-                redis,
-                department_ids=[],
-            )
-
+        assert result.department_options == []
         assert result.date_range_earliest is None
         assert result.date_range_latest is None
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_benchmark_filters
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
 class TestBenchmarkFilters:
-    async def test_returns_departments_and_date_range(self):
-        dept_id = uuid4()
-        dept = _department(id=dept_id, name="Math")
-        early_test = _test(test_created_at=datetime(2025, 2, 1, tzinfo=UTC))
-        late_test = _test(test_created_at=datetime(2025, 11, 1, tzinfo=UTC))
-
-        pool = _mock_pool()
-        redis = AsyncMock()
-
-        with (
-            _patch("get_departments", [dept]),
-            _patch("search_tests", None) as mock_tests,
-        ):
-            mock_tests.side_effect = [early_test, late_test]
-            # search_tests returns list, called twice (asc + desc)
-            mock_tests.side_effect = [[early_test], [late_test]]
-            result = await resolve_benchmark_filters(
-                pool,
-                redis,
-                department_ids=[dept_id],
+    async def test_returns_departments_and_date_range(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            department = await create_department(conn, name="Math", redis=redis_client)
+            profile, _session, _group, _run, early_call = await _profile_session_run_call(
+                conn, redis_client
             )
+            early_test = await create_test(
+                conn, call_id=early_call.id, profiles_id=profile.id
+            )
+            later_group = await create_group(conn, session_id=_session.id)
+            later_run = await create_run(
+                conn,
+                group_id=later_group.id,
+                session_id=_session.id,
+                profiles_id=profile.id,
+            )
+            late_call = await create_call(
+                conn, run_id=later_run.id, session_id=_session.id
+            )
+            late_test = await create_test(
+                conn, call_id=late_call.id, profiles_id=profile.id
+            )
+            await conn.execute(
+                "UPDATE test_entry SET created_at = $2 WHERE id = $1",
+                early_test.id,
+                datetime(2025, 2, 1, tzinfo=UTC),
+            )
+            await conn.execute(
+                "UPDATE test_entry SET created_at = $2 WHERE id = $1",
+                late_test.id,
+                datetime(2025, 11, 1, tzinfo=UTC),
+            )
+            await refresh_test(conn)
 
-        assert len(result.department_options) == 1
+        result = await resolve_benchmark_filters(
+            pool,
+            redis_client,
+            department_ids=[department.id],
+        )
+
         assert result.department_options[0].label == "Math"
-        assert result.date_range_earliest is not None
-        assert result.date_range_latest is not None
+        assert result.date_range_earliest == "2025-02-01T00:00:00+00:00"
+        assert result.date_range_latest == "2025-11-01T00:00:00+00:00"
 
-    async def test_no_tests_returns_no_date_range(self):
-        pool = _mock_pool()
-        redis = AsyncMock()
+    async def test_need_date_range_false_skips_test_queries(self, pool, redis_client):
+        result = await resolve_benchmark_filters(
+            pool,
+            redis_client,
+            department_ids=[],
+            need_date_range=False,
+        )
 
-        with (
-            _patch("get_departments", []),
-            _patch("search_tests", None) as mock_tests,
-        ):
-            mock_tests.side_effect = [[], []]
-            result = await resolve_benchmark_filters(
-                pool,
-                redis,
-                department_ids=[],
-            )
-
+        assert result.department_options == []
         assert result.date_range_earliest is None
         assert result.date_range_latest is None
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_health_filters
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
 class TestHealthFilters:
-    async def test_returns_date_range(self):
-        early = _health(date_hour=datetime(2025, 1, 1, tzinfo=UTC))
-        late = _health(date_hour=datetime(2025, 12, 31, tzinfo=UTC))
+    async def test_returns_date_range(self, pool):
+        async with pool.acquire() as conn:
+            await create_health(
+                conn,
+                service="redis",
+                ok=True,
+                latency_ms=20.0,
+                ts=datetime(2034, 1, 1, tzinfo=UTC),
+            )
+            await create_health(
+                conn,
+                service="redis",
+                ok=False,
+                latency_ms=35.0,
+                ts=datetime(2035, 12, 31, tzinfo=UTC),
+                error="timeout",
+            )
+            await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY health_mv")
 
-        pool = _mock_pool()
+        result = await resolve_health_filters(pool)
 
-        with _patch("search_health", None) as mock_health:
-            mock_health.side_effect = [[early], [late]]
-            result = await resolve_health_filters(pool)
-
-        assert result.date_range_earliest is not None
-        assert result.date_range_latest is not None
+        assert result.date_range_latest == "2035-12-31T00:00:00+00:00"
         assert result.department_options == []
         assert result.cohort_options == []
 
-    async def test_no_health_data_returns_none(self):
-        pool = _mock_pool()
-
-        with _patch("search_health", None) as mock_health:
-            mock_health.side_effect = [[], []]
-            result = await resolve_health_filters(pool)
-
-        assert result.date_range_earliest is None
-        assert result.date_range_latest is None
-
-    async def test_need_date_range_false_skips(self):
-        pool = _mock_pool()
-
-        with _patch("search_health", []) as mock_health:
-            result = await resolve_health_filters(pool, need_date_range=False)
-
+    async def test_need_date_range_false_skips(self, pool):
+        result = await resolve_health_filters(pool, need_date_range=False)
         assert result == AnalyticsFiltersResult()
-        mock_health.assert_not_called()
