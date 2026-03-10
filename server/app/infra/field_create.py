@@ -145,18 +145,19 @@ async def create_field_client(
 
     results: list[FieldResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                fields_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        fields_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_field_artifact(
                     conn,
                     id=item.id,
@@ -168,13 +169,13 @@ async def create_field_client(
                     field_ids=[fields_resource_id],
                 )
 
-                results.append(
-                    FieldResultItem(
-                        success=True,
-                        field_id=result.id,
-                        message="Field created successfully",
-                    )
-                )
+        results.append(
+            FieldResultItem(
+                success=True,
+                field_id=result.id,
+                message="Field created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

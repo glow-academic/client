@@ -9,6 +9,9 @@ from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.test.create import create_test
 from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
+from app.routes.v5.tools.entries.test_invocation_completion.create import (
+    create_test_invocation_completion,
+)
 from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
 from app.routes.v5.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
@@ -23,13 +26,17 @@ async def _setup(conn, profile_id):
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
     test = await create_test(conn, call_id=call.id, profiles_id=profile_id)
-    call2 = await create_call(conn, run_id=run.id, session_id=session.id)
-    result = await create_test_invocation(conn, test_id=test.id, call_id=call2.id)
-    return result, test
+    invocation_call = await create_call(conn, run_id=run.id, session_id=session.id)
+    result = await create_test_invocation(
+        conn,
+        test_id=test.id,
+        call_id=invocation_call.id,
+    )
+    return result, test, invocation_call
 
 
 async def test_finds_created_entry(conn, profile_id):
-    result, test = await _setup(conn, profile_id)
+    result, test, _invocation_call = await _setup(conn, profile_id)
     await refresh_test_invocation(conn)
 
     items, _total_count = await search_test_invocation_entries_internal(
@@ -52,7 +59,7 @@ async def test_filters_by_test_id(conn, profile_id):
 
 
 async def test_pagination_limit(conn, profile_id):
-    result, test = await _setup(conn, profile_id)
+    result, test, _invocation_call = await _setup(conn, profile_id)
     await refresh_test_invocation(conn)
 
     items, _total_count = await search_test_invocation_entries_internal(
@@ -72,7 +79,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 
 
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
-    result, test = await _setup(conn, profile_id)
+    result, test, _invocation_call = await _setup(conn, profile_id)
 
     items, _total_count = await search_test_invocation_entries_internal(
         conn, test_ids=[test.id], bypass_mv=True
@@ -80,3 +87,22 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
 
     ids = [item.invocation_id for item in items]
     assert result.id in ids
+
+
+async def test_completion_marks_invocation_completed(conn, profile_id):
+    result, test, invocation_call = await _setup(conn, profile_id)
+    completion = await create_test_invocation_completion(
+        conn,
+        invocation_id=result.id,
+        call_id=invocation_call.id,
+    )
+    await refresh_test_invocation(conn)
+
+    items, _total_count = await search_test_invocation_entries_internal(
+        conn,
+        test_ids=[test.id],
+    )
+
+    match = next(item for item in items if item.invocation_id == result.id)
+    assert completion.id is not None
+    assert match.invocation_completed is True

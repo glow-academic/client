@@ -35,6 +35,12 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
            FROM public.test_grade_entry g
           WHERE (g.active = true)
           ORDER BY g.invocation_id, g.created_at DESC
+        ), latest_completion AS (
+         SELECT DISTINCT ON (c.invocation_id) c.id AS completion_id,
+            c.invocation_id
+           FROM public.test_invocation_completion_entry c
+          WHERE (c.active = true)
+          ORDER BY c.invocation_id, c.created_at DESC
         ), bundle_snapshot AS (
          SELECT ir.id AS test_invocation_id,
             COALESCE(array_agg(DISTINCT ira.agents_id ORDER BY ira.agents_id) FILTER (WHERE (ira.agents_id IS NOT NULL)), ARRAY[]::uuid[]) AS agent_ids,
@@ -62,7 +68,7 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
     i.title AS invocation_title,
     i.use_custom,
     i."position",
-    (lg.invocation_id IS NOT NULL) AS invocation_completed,
+    ((lg.invocation_id IS NOT NULL) OR (lc.invocation_id IS NOT NULL)) AS invocation_completed,
     lg.grade_id,
     lg.grade_score,
     lg.grade_passed,
@@ -77,11 +83,12 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
     bs.temperature_level_id,
     bs.reasoning_level_id,
     COALESCE(bs.modality_ids, ARRAY[]::uuid[]) AS modality_ids
-   FROM (((((public.test_invocation_entry i
+   FROM ((((((public.test_invocation_entry i
      LEFT JOIN groups_agents_links gal ON ((gal.test_invocation_id = i.id)))
      LEFT JOIN runs_agents_links ral ON ((ral.test_invocation_id = i.id)))
      LEFT JOIN department_links dl ON ((dl.test_invocation_id = i.id)))
      LEFT JOIN latest_grade lg ON ((lg.invocation_id = i.id)))
+     LEFT JOIN latest_completion lc ON ((lc.invocation_id = i.id)))
      LEFT JOIN bundle_snapshot bs ON ((bs.test_invocation_id = i.id)))
   WHERE (i.active = true)
   WITH NO DATA;

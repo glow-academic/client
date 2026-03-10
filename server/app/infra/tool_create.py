@@ -147,21 +147,22 @@ async def create_tool_client(
 
     results: list[ToolResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                tools_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    operation_ids=item.operation_ids,
-                    artifact_ids=item.artifact_ids,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        tools_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+            department_ids=item.department_ids,
+            operation_ids=item.operation_ids,
+            artifact_ids=item.artifact_ids,
+        )
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_tool_artifact(
                     conn,
                     id=item.id,
@@ -177,13 +178,13 @@ async def create_tool_client(
                     tool_ids=[tools_resource_id],
                 )
 
-                results.append(
-                    ToolResultItem(
-                        success=True,
-                        tool_id=result.id,
-                        message="Tool created successfully",
-                    )
-                )
+        results.append(
+            ToolResultItem(
+                success=True,
+                tool_id=result.id,
+                message="Tool created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

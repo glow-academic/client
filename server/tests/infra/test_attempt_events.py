@@ -101,6 +101,7 @@ from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.messages.get import get_message
+from app.routes.v5.tools.entries.messages.search import search_messages
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
@@ -109,6 +110,12 @@ from app.routes.v5.tools.entries.test.refresh import refresh_test
 from app.routes.v5.tools.entries.test_grade.create import create_test_grade
 from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
 from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
+from app.routes.v5.tools.entries.test_invocation.search import (
+    search_test_invocation_entries_internal,
+)
+from app.routes.v5.tools.entries.test_invocation_completion.search import (
+    search_test_invocation_completions,
+)
 from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.routes.v5.tools.resources.profiles.create import create_profile
 
@@ -1229,15 +1236,51 @@ class TestStartImpl:
 # test_proceed_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_INV_SEARCH = "app.routes.v5.tools.entries.test_invocation.search"
-_INV_CREATE = "app.routes.v5.tools.entries.test_invocation.create"
-_INV_BRIDGE = "app.routes.v5.tools.entries.test_invocation_bridge.create"
-_INV_COMPLETION = "app.routes.v5.tools.entries.test_invocation_completion.create"
-_TEST_GET = "app.routes.v5.tools.entries.test.get"
-
-
 @pytest.mark.asyncio
 class TestProceedImpl:
+    async def _setup_test(self, conn, redis_client, *, is_dynamic=True):
+        profile = await create_profile(conn, redis_client, name="test-proceed-profile")
+        session = await create_session(conn, profile_id=profile.id)
+        group = await create_group(conn, session_id=session.id)
+        run = await create_run(conn, group_id=group.id, session_id=session.id)
+        test_call = await create_call(conn, run_id=run.id, session_id=session.id)
+        test = await create_test(
+            conn,
+            call_id=test_call.id,
+            profiles_id=profile.id,
+            is_dynamic=is_dynamic,
+        )
+        await refresh_test(conn)
+        return SimpleNamespace(
+            profile=profile,
+            session=session,
+            group=group,
+            run=run,
+            test=test,
+        )
+
+    async def _create_invocation(
+        self,
+        conn,
+        graph,
+        *,
+        group_id=None,
+        use_custom=False,
+    ):
+        invocation_call = await create_call(
+            conn,
+            run_id=graph.run.id,
+            session_id=graph.session.id,
+        )
+        invocation = await create_test_invocation(
+            conn,
+            test_id=graph.test.id,
+            call_id=invocation_call.id,
+            group_id=group_id,
+            use_custom=use_custom,
+        )
+        return invocation, invocation_call
+
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
         await _test_proceed_impl({"sid": ""}, emit=emit, pool=_mock_pool())
@@ -1252,217 +1295,204 @@ class TestProceedImpl:
         )
         assert events == []
 
-    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
-    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
-    @patch(
-        f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock
-    )
-    @patch(
-        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
-    )
-    async def test_complete_all_marks_all_and_emits_ended(
-        self, mock_search, mock_complete, mock_refresh, mock_invalidate
-    ):
-        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=False)
-        inv2 = SimpleNamespace(invocation_id="inv-2", invocation_completed=True)
-        mock_search.return_value = ([inv1, inv2], 2)
-
+    async def test_complete_all_marks_all_and_emits_ended(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            graph = await self._setup_test(conn, redis_client)
+            invocation, _invocation_call = await self._create_invocation(conn, graph)
         emit, events = recording_emit()
         await _test_proceed_impl(
             {
                 "sid": "s1",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_id": str(graph.test.id),
                 "complete_all": True,
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
-        # Only inv1 (uncompleted) should have completion created
-        assert mock_complete.call_count == 1
-        assert mock_refresh.called
+        async with pool.acquire() as conn:
+            completions = await search_test_invocation_completions(
+                conn,
+                invocation_ids=[invocation.id],
+                bypass_mv=True,
+            )
+
+        assert len(completions) == 1
         assert len(events) == 1
         assert events[0].event == "test_ended"
         assert events[0].data["success"] is True
 
-    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(
-        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
-    )
-    async def test_all_completed_emits_ended(self, mock_search, mock_get_tests):
-        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=True)
-        inv2 = SimpleNamespace(invocation_id="inv-2", invocation_completed=True)
-        mock_search.return_value = ([inv1, inv2], 2)
-        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=True)]
-
+    async def test_all_completed_emits_ended(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            graph = await self._setup_test(conn, redis_client)
+            invocation, _invocation_call = await self._create_invocation(conn, graph)
+            grade_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
+            )
+            await create_test_grade(
+                conn,
+                invocation_id=invocation.id,
+                call_id=grade_call.id,
+                run_id=graph.run.id,
+                time_taken=10,
+                passed=True,
+                score=90,
+            )
+            await refresh_test_invocation(conn)
         emit, events = recording_emit()
         await _test_proceed_impl(
             {
                 "sid": "s1",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_id": str(graph.test.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
         assert len(events) == 1
         assert events[0].event == "test_ended"
 
-    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(
-        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
-    )
-    async def test_no_invocations_emits_error(self, mock_search, mock_get_tests):
-        mock_search.return_value = ([], 0)
-        mock_get_tests.return_value = []
-
+    async def test_no_invocations_emits_error(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            graph = await self._setup_test(conn, redis_client)
         emit, events = recording_emit()
         await _test_proceed_impl(
             {
                 "sid": "s1",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_id": str(graph.test.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
         assert len(events) == 1
         assert events[0].event == "test_error"
         assert events[0].data["error_type"] == "proceed"
 
-    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(
-        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
-    )
-    async def test_use_custom_without_force_emits_started(
-        self, mock_search, mock_get_tests
-    ):
-        inv1 = SimpleNamespace(
-            invocation_id="inv-1", invocation_completed=False, use_custom=True
-        )
-        mock_search.return_value = ([inv1], 1)
-        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=True)]
-
+    async def test_use_custom_without_force_emits_started(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            graph = await self._setup_test(conn, redis_client)
+            invocation, _invocation_call = await self._create_invocation(
+                conn,
+                graph,
+                use_custom=True,
+            )
         emit, events = recording_emit()
         await _test_proceed_impl(
             {
                 "sid": "s1",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_id": str(graph.test.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
         assert len(events) == 1
         assert events[0].event == "test_started"
-        assert events[0].data["invocation_entry_id"] == "inv-1"
+        assert events[0].data["invocation_entry_id"] == str(invocation.id)
 
-    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
-    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
-    @patch(f"{_INV_BRIDGE}.create_test_invocation_bridge", new_callable=AsyncMock)
-    @patch(f"{_INV_CREATE}.create_test_invocation", new_callable=AsyncMock)
-    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(
-        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
-    )
     async def test_next_invocation_creates_and_emits_started(
         self,
-        mock_search,
-        mock_get_tests,
-        mock_create_inv,
-        mock_bridge,
-        mock_refresh,
-        mock_invalidate,
+        pool,
+        redis_client,
     ):
-        inv1 = SimpleNamespace(
-            invocation_id="inv-1", invocation_completed=False, use_custom=False
-        )
-        mock_search.return_value = ([inv1], 1)
-        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=False)]
-        mock_create_inv.return_value = SimpleNamespace(id="new-inv-id")
-
+        async with pool.acquire() as conn:
+            graph = await self._setup_test(conn, redis_client, is_dynamic=False)
+            invocation, _invocation_call = await self._create_invocation(conn, graph)
         emit, events = recording_emit()
         await _test_proceed_impl(
             {
                 "sid": "s1",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_id": str(graph.test.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
-        assert mock_create_inv.called
-        assert mock_bridge.called
-        assert mock_refresh.called
+        new_invocation_id = UUID(events[0].data["test_invocation_id"])
+        async with pool.acquire() as conn:
+            started_invocations, _ = await search_test_invocation_entries_internal(
+                conn,
+                test_ids=[graph.test.id],
+                bypass_mv=True,
+                limit=100,
+            )
+            bridge_count = await conn.fetchval(
+                """
+                SELECT COUNT(*)
+                FROM test_invocation_bridge_entry
+                WHERE test_invocation_id = $1 AND invocation_id = $2
+                """,
+                new_invocation_id,
+                invocation.id,
+            )
+
+        assert len(started_invocations) == 2
+        assert bridge_count == 1
         assert len(events) == 1
         assert events[0].event == "test_invocation_started"
         assert events[0].data["is_dynamic"] is False
-        assert events[0].data["test_invocation_id"] == "new-inv-id"
+        assert str(new_invocation_id) == events[0].data["test_invocation_id"]
 
-    @patch(
-        f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock
-    )
-    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(
-        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
-    )
-    async def test_completed_invocation_id_creates_completion(
-        self, mock_search, mock_get_tests, mock_complete
+    async def test_completed_invocation_id_creates_completion_and_ends(
+        self,
+        pool,
+        redis_client,
     ):
-        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=True)
-        mock_search.return_value = ([inv1], 1)
-        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=True)]
-
+        async with pool.acquire() as conn:
+            graph = await self._setup_test(conn, redis_client)
+            invocation, _invocation_call = await self._create_invocation(conn, graph)
         emit, events = recording_emit()
         await _test_proceed_impl(
             {
                 "sid": "s1",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "completed_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+                "test_id": str(graph.test.id),
+                "completed_invocation_id": str(invocation.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
-        assert mock_complete.called
-        # All completed → test_ended
+        async with pool.acquire() as conn:
+            completions = await search_test_invocation_completions(
+                conn,
+                invocation_ids=[invocation.id],
+                bypass_mv=True,
+            )
+
+        assert len(completions) == 1
         assert len(events) == 1
         assert events[0].event == "test_ended"
-
-    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(
-        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
-    )
-    async def test_error_emits_test_error(self, mock_search, mock_get_tests):
-        mock_search.side_effect = RuntimeError("db down")
-
-        emit, events = recording_emit()
-        await _test_proceed_impl(
-            {
-                "sid": "s1",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-            },
-            emit=emit,
-            pool=_mock_pool(),
-        )
-
-        assert len(events) == 1
-        assert events[0].event == "test_error"
-        assert events[0].data["error_type"] == "proceed"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # test_run_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_RUN_CREATE = "app.routes.v5.tools.entries.runs.create"
-_MSG_CREATE = "app.routes.v5.tools.entries.messages.create"
-_MSG_SEARCH = "app.routes.v5.tools.entries.messages.search"
-_INV_GET = "app.routes.v5.tools.entries.test_invocation.get"
-
-
 @pytest.mark.asyncio
 class TestRunImpl:
+    async def _setup_graph(self, conn, redis_client):
+        profile = await create_profile(conn, redis_client, name="test-run-profile")
+        session = await create_session(conn, profile_id=profile.id)
+        group = await create_group(conn, session_id=session.id)
+        run = await create_run(
+            conn,
+            group_id=group.id,
+            session_id=session.id,
+            profiles_id=profile.id,
+        )
+        test_call = await create_call(conn, run_id=run.id, session_id=session.id)
+        test = await create_test(conn, call_id=test_call.id, profiles_id=profile.id)
+        return SimpleNamespace(
+            profile=profile,
+            session=session,
+            group=group,
+            run=run,
+            test=test,
+        )
+
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
         await _test_run_impl({"sid": ""}, emit=emit, pool=_mock_pool())
@@ -1486,10 +1516,7 @@ class TestRunImpl:
         )
         assert events == []
 
-    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
-    async def test_no_invocation_emits_error(self, mock_get_inv):
-        mock_get_inv.return_value = []
-
+    async def test_no_invocation_emits_error(self, pool):
         emit, events = recording_emit()
         await _test_run_impl(
             {
@@ -1500,130 +1527,127 @@ class TestRunImpl:
                 "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
         assert len(events) == 1
         assert events[0].event == "test_error"
         assert events[0].data["error_type"] == "run"
 
-    @patch(f"{_MSG_CREATE}.create_message", new_callable=AsyncMock)
-    @patch(f"{_MSG_SEARCH}.search_messages", new_callable=AsyncMock)
-    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
-    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
-    async def test_no_messages_emits_error(
-        self, mock_get_inv, mock_create_run, mock_search_msg, mock_create_msg
-    ):
-        from uuid import UUID
-
-        mock_get_inv.return_value = [
-            SimpleNamespace(group_id=UUID("019b3be4-36f0-788c-9df2-481eb5917950"))
-        ]
-        mock_create_run.return_value = SimpleNamespace(
-            id=UUID("019b3be4-36f0-788c-9df2-481eb5917951")
-        )
-        mock_search_msg.return_value = ([], 0)
-
+    async def test_no_messages_emits_error(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            graph = await self._setup_graph(conn, redis_client)
+            invocation_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
+            )
+            invocation = await create_test_invocation(
+                conn,
+                test_id=graph.test.id,
+                call_id=invocation_call.id,
+                group_id=graph.group.id,
+            )
         emit, events = recording_emit()
         await _test_run_impl(
             {
                 "sid": "s1",
-                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917942",
-                "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+                "profile_id": str(graph.profile.id),
+                "profiles_id": str(graph.profile.id),
+                "session_id": str(graph.session.id),
+                "test_id": str(graph.test.id),
+                "test_invocation_id": str(invocation.id),
+                "run_id": str(graph.run.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
         assert len(events) == 1
         assert events[0].event == "test_error"
         assert "No messages" in events[0].data["message"]
 
-    @patch(f"{_MSG_CREATE}.create_message", new_callable=AsyncMock)
-    @patch(f"{_MSG_SEARCH}.search_messages", new_callable=AsyncMock)
-    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
-    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
     async def test_happy_path_emits_run_started_and_generate(
-        self, mock_get_inv, mock_create_run, mock_search_msg, mock_create_msg
+        self,
+        pool,
+        redis_client,
     ):
-        from datetime import datetime
-        from uuid import UUID
-
-        mock_get_inv.return_value = [
-            SimpleNamespace(group_id=UUID("019b3be4-36f0-788c-9df2-481eb5917950"))
-        ]
-        new_run_id = UUID("019b3be4-36f0-788c-9df2-481eb5917951")
-        assistant_msg_id = UUID("019b3be4-36f0-788c-9df2-481eb5917960")
-        mock_create_run.return_value = SimpleNamespace(id=new_run_id)
-
-        # Original messages: user, assistant (last assistant gets removed)
-        mock_search_msg.return_value = (
-            [
-                SimpleNamespace(role="user", message_id=UUID(int=1)),
-                SimpleNamespace(role="assistant", message_id=UUID(int=2)),
-            ],
-            2,
-        )
-
-        call_count = 0
-
-        async def fake_create_message(conn, *, run_id, role, **kwargs):
-            nonlocal call_count
-            call_count += 1
-            return SimpleNamespace(
-                id=assistant_msg_id
-                if role == "assistant"
-                else UUID(int=10 + call_count),
-                created_at=datetime.now(),
+        async with pool.acquire() as conn:
+            graph = await self._setup_graph(conn, redis_client)
+            await create_message(conn, run_id=graph.run.id, role="user")
+            await create_message(conn, run_id=graph.run.id, role="assistant")
+            invocation_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
             )
-
-        mock_create_msg.side_effect = fake_create_message
-
+            invocation = await create_test_invocation(
+                conn,
+                test_id=graph.test.id,
+                call_id=invocation_call.id,
+                group_id=graph.group.id,
+            )
         emit, events = recording_emit()
         await _test_run_impl(
             {
                 "sid": "s1",
-                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917942",
-                "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+                "profile_id": str(graph.profile.id),
+                "profiles_id": str(graph.profile.id),
+                "session_id": str(graph.session.id),
+                "test_id": str(graph.test.id),
+                "test_invocation_id": str(invocation.id),
+                "run_id": str(graph.run.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
-        # 1 user msg copied + 1 assistant placeholder = 2 calls
-        assert call_count == 2
+        new_run_id = UUID(events[0].data["run_id"])
+        assistant_message_id = UUID(events[0].data["message_id"])
+        async with pool.acquire() as conn:
+            copied_messages, _ = await search_messages(
+                conn,
+                run_ids=[new_run_id],
+                sort_order="asc",
+                bypass_mv=True,
+                limit=100,
+            )
+
+        roles = [message.role for message in copied_messages]
+        ids = [message.message_id for message in copied_messages]
         assert len(events) == 2
         assert events[0].event == "test_run_started"
-        assert events[0].data["run_id"] == str(new_run_id)
-        assert events[0].data["message_id"] == str(assistant_msg_id)
+        assert roles == ["user", "assistant"]
+        assert assistant_message_id in ids
         assert events[1].event == "generate_artifact"
         assert events[1].data["artifact_type"] == "test"
 
-    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
-    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
-    async def test_error_emits_test_error(self, mock_get_inv, mock_create_run):
-        from uuid import UUID
-
-        mock_get_inv.return_value = [
-            SimpleNamespace(group_id=UUID("019b3be4-36f0-788c-9df2-481eb5917950"))
-        ]
-        mock_create_run.side_effect = RuntimeError("db down")
-
+    async def test_missing_session_id_emits_test_error(self, pool, redis_client):
+        async with pool.acquire() as conn:
+            graph = await self._setup_graph(conn, redis_client)
+            await create_message(conn, run_id=graph.run.id, role="user")
+            invocation_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
+            )
+            invocation = await create_test_invocation(
+                conn,
+                test_id=graph.test.id,
+                call_id=invocation_call.id,
+                group_id=graph.group.id,
+            )
         emit, events = recording_emit()
         await _test_run_impl(
             {
                 "sid": "s1",
-                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
-                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917942",
-                "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+                "profile_id": str(graph.profile.id),
+                "test_id": str(graph.test.id),
+                "test_invocation_id": str(invocation.id),
+                "run_id": str(graph.run.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
         assert len(events) == 1

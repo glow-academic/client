@@ -146,18 +146,19 @@ async def create_rubric_client(
 
     results: list[RubricResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                rubrics_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        rubrics_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_rubric_artifact(
                     conn,
                     id=item.id,
@@ -171,13 +172,13 @@ async def create_rubric_client(
                     rubric_ids=[rubrics_resource_id],
                 )
 
-                results.append(
-                    RubricResultItem(
-                        success=True,
-                        rubric_id=result.id,
-                        message="Rubric created successfully",
-                    )
-                )
+        results.append(
+            RubricResultItem(
+                success=True,
+                rubric_id=result.id,
+                message="Rubric created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

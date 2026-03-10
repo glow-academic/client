@@ -120,17 +120,18 @@ async def update_model_client(
 
     results: list[ModelResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                models_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        models_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 await update_model_artifact(
                     conn,
                     item.model_id,
@@ -151,13 +152,13 @@ async def update_model_client(
                     voice_ids=item.voice_ids,
                 )
 
-                results.append(
-                    ModelResultItem(
-                        success=True,
-                        model_id=item.model_id,
-                        message="Model updated successfully",
-                    )
-                )
+        results.append(
+            ModelResultItem(
+                success=True,
+                model_id=item.model_id,
+                message="Model updated successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

@@ -651,6 +651,10 @@ async def test_proceed_impl(
     import uuid
 
     from app.infra.websocket.test_types import TestErrorData, TestProceedData
+    from app.routes.v5.tools.entries.calls.create import create_call
+    from app.routes.v5.tools.entries.groups.create import create_group
+    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.routes.v5.tools.entries.sessions.create import create_session
     from app.routes.v5.tools.entries.test.get import get_tests
     from app.routes.v5.tools.entries.test_invocation.create import (
         create_test_invocation,
@@ -671,6 +675,23 @@ async def test_proceed_impl(
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger(__name__)
+
+    async def _create_completion_call(
+        conn: asyncpg.Connection,
+        invocation_id: uuid.UUID,
+    ) -> uuid.UUID:
+        invocation_call_id = await conn.fetchval(
+            "SELECT call_id FROM test_invocation_entry WHERE id = $1",
+            invocation_id,
+        )
+        if invocation_call_id is not None:
+            return invocation_call_id
+
+        session = await create_session(conn)
+        group = await create_group(conn, session_id=session.id)
+        run = await create_run(conn, group_id=group.id, session_id=session.id)
+        call = await create_call(conn, run_id=run.id, session_id=session.id)
+        return call.id
 
     sid = data.get("sid", "")
     if not sid:
@@ -696,9 +717,14 @@ async def test_proceed_impl(
             # Step 1: If completed_invocation_id, mark that invocation completed
             if completed_invocation_id:
                 try:
+                    completion_call_id = await _create_completion_call(
+                        conn,
+                        completed_invocation_id,
+                    )
                     await create_test_invocation_completion(
                         conn,
                         invocation_id=completed_invocation_id,
+                        call_id=completion_call_id,
                     )
                 except Exception:
                     logger.warning(
@@ -720,9 +746,14 @@ async def test_proceed_impl(
                 for inv in all_invocations:
                     if not inv.invocation_completed:
                         try:
+                            completion_call_id = await _create_completion_call(
+                                conn,
+                                inv.invocation_id,
+                            )
                             await create_test_invocation_completion(
                                 conn,
                                 invocation_id=inv.invocation_id,
+                                call_id=completion_call_id,
                             )
                         except Exception:
                             pass

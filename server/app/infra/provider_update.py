@@ -124,17 +124,18 @@ async def update_provider_client(
 
     results: list[ProviderResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                providers_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        providers_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 await update_provider_artifact(
                     conn,
                     item.provider_id,
@@ -150,13 +151,13 @@ async def update_provider_client(
                     value_ids=item.value_ids,
                 )
 
-                results.append(
-                    ProviderResultItem(
-                        success=True,
-                        provider_id=item.provider_id,
-                        message="Provider updated successfully",
-                    )
-                )
+        results.append(
+            ProviderResultItem(
+                success=True,
+                provider_id=item.provider_id,
+                message="Provider updated successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

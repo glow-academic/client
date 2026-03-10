@@ -146,7 +146,7 @@ async def resolve_setting_values(
 
 
 async def create_denormalized_snapshot(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     id: UUID | None = None,
@@ -157,27 +157,40 @@ async def create_denormalized_snapshot(
     auth_ids: list[UUID] | None = None,
     system_ids: list[UUID] | None = None,
 ) -> UUID:
-    """Create a settings_resource snapshot by hydrating IDs to values."""
+    """Create a settings_resource snapshot by hydrating IDs to values.
 
-    async def _empty() -> list:
-        return []
+    Each parallel branch acquires its own connection from the pool.
+    """
+
+    async def _get_names() -> list:
+        if not name_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, [name_id], redis, bypass_cache=True)
+
+    async def _get_descriptions() -> list:
+        if not description_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(
+                conn, [description_id], redis, bypass_cache=True
+            )
 
     names, descriptions = await asyncio.gather(
-        get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
-        get_descriptions(conn, [description_id], redis, bypass_cache=True)
-        if description_id
-        else _empty(),
+        _get_names(),
+        _get_descriptions(),
     )
 
-    result = await create_setting_resource(
-        conn,
-        id=id,
-        name=names[0].name if names else "",
-        description=descriptions[0].description if descriptions else "",
-        department_ids=department_ids,
-        provider_key_ids=provider_key_ids,
-        auth_ids=auth_ids,
-        system_ids=system_ids,
-        redis=redis,
-    )
+    async with pool.acquire() as conn:
+        result = await create_setting_resource(
+            conn,
+            id=id,
+            name=names[0].name if names else "",
+            description=descriptions[0].description if descriptions else "",
+            department_ids=department_ids,
+            provider_key_ids=provider_key_ids,
+            auth_ids=auth_ids,
+            system_ids=system_ids,
+            redis=redis,
+        )
     return result.id

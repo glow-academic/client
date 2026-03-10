@@ -71,6 +71,7 @@ for arg in "$@"; do
 done
 
 ADMIN_CONN="postgresql://postgres@${DB_HOST}:${DB_PORT}/postgres"
+OWNER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/postgres"
 USER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 SEED_FILE=${SEED_FILE:-}
 
@@ -111,6 +112,7 @@ fi
 
 # --- HELPERS ---------------------------------------------------------
 as_admin()    { psql "$ADMIN_CONN" -qtA "$@"; }
+as_owner()    { psql "$OWNER_CONN" -qtA "$@"; }
 role_exists() { as_admin -c "SELECT 1 FROM pg_roles    WHERE rolname='$DB_USER';" | grep -q 1; }
 db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" | grep -q 1; }
 
@@ -308,12 +310,12 @@ setup_database() {
   
   if db_exists; then
     echo "🗑️  Dropping existing database..."
-    as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1
-    as_admin -c "DROP DATABASE $DB_NAME;" > /dev/null 2>&1
+    as_owner -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+    as_owner -c "DROP DATABASE $DB_NAME;" > /dev/null 2>&1
   fi
   
   echo "🗄️  Creating database '$DB_NAME'..."
-  as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+  as_owner -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
 }
 
 # Function to restore from backup
@@ -323,10 +325,10 @@ restore_from_backup() {
   
   echo "🔄 Restoring from backup: $(basename "$backup_file")"
   
-  # Drop and recreate database using admin connection (no init.sql)
-  as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
-  as_admin -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1 || true
-  as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" > /dev/null 2>&1
+  # Drop and recreate database (use owner - postgres may lack perms on some setups)
+  as_owner -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+  as_owner -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1 || true
+  as_owner -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" > /dev/null 2>&1
   
   # Restore from compressed backup (pg_restore for custom format, or gunzip + psql for plain)
   export PGPASSWORD="$DB_PASSWORD"

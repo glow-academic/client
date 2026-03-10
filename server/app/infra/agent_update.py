@@ -126,19 +126,20 @@ async def update_agent_client(
 
     results: list[AgentResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                agents_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    tool_ids=item.tool_ids,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        agents_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            name_id=item.name_id,
+            description_id=item.description_id,
+            department_ids=item.department_ids,
+            tool_ids=item.tool_ids,
+        )
 
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 await update_agent_artifact(
                     conn,
                     item.agent_id,
@@ -156,13 +157,13 @@ async def update_agent_client(
                     agent_ids=[agents_resource_id],
                 )
 
-                results.append(
-                    AgentResultItem(
-                        success=True,
-                        agent_id=item.agent_id,
-                        message="Agent updated successfully",
-                    )
-                )
+        results.append(
+            AgentResultItem(
+                success=True,
+                agent_id=item.agent_id,
+                message="Agent updated successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

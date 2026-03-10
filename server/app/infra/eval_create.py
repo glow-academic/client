@@ -146,18 +146,19 @@ async def create_eval_client(
 
     results: list[EvalResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                evals_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        evals_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_eval_artifact(
                     conn,
                     id=item.id,
@@ -172,13 +173,13 @@ async def create_eval_client(
                     eval_ids=[evals_resource_id],
                 )
 
-                results.append(
-                    EvalResultItem(
-                        success=True,
-                        eval_id=result.id,
-                        message="Eval created successfully",
-                    )
-                )
+        results.append(
+            EvalResultItem(
+                success=True,
+                eval_id=result.id,
+                message="Eval created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

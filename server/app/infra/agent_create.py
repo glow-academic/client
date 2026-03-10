@@ -152,20 +152,21 @@ async def create_agent_client(
 
     results: list[AgentResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                agents_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    tool_ids=item.tool_ids,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        agents_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+            department_ids=item.department_ids,
+            tool_ids=item.tool_ids,
+        )
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_agent_artifact(
                     conn,
                     id=item.id,
@@ -181,13 +182,13 @@ async def create_agent_client(
                     agent_ids=[agents_resource_id],
                 )
 
-                results.append(
-                    AgentResultItem(
-                        success=True,
-                        agent_id=result.id,
-                        message="Agent created successfully",
-                    )
-                )
+        results.append(
+            AgentResultItem(
+                success=True,
+                agent_id=result.id,
+                message="Agent created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

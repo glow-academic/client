@@ -122,7 +122,7 @@ async def resolve_tool_values(
 
 
 async def create_denormalized_snapshot(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     id: UUID | None = None,
@@ -132,37 +132,53 @@ async def create_denormalized_snapshot(
     operation_ids: list[UUID] | None = None,
     artifact_ids: list[UUID] | None = None,
 ) -> UUID:
-    """Create a tools_resource snapshot by hydrating IDs to values."""
+    """Create a tools_resource snapshot by hydrating IDs to values.
 
-    async def _empty() -> list:
-        return []
+    Each parallel branch acquires its own connection from the pool.
+    """
 
-    (
-        names,
-        descriptions,
-        operations,
-        artifacts,
-    ) = await asyncio.gather(
-        get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
-        get_descriptions(conn, [description_id], redis, bypass_cache=True)
-        if description_id
-        else _empty(),
-        get_operations(conn, operation_ids, redis, bypass_cache=True)
-        if operation_ids
-        else _empty(),
-        get_artifacts(conn, artifact_ids, redis, bypass_cache=True)
-        if artifact_ids
-        else _empty(),
+    async def _get_names() -> list:
+        if not name_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, [name_id], redis, bypass_cache=True)
+
+    async def _get_descriptions() -> list:
+        if not description_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(
+                conn, [description_id], redis, bypass_cache=True
+            )
+
+    async def _get_operations() -> list:
+        if not operation_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_operations(conn, operation_ids, redis, bypass_cache=True)
+
+    async def _get_artifacts() -> list:
+        if not artifact_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_artifacts(conn, artifact_ids, redis, bypass_cache=True)
+
+    names, descriptions, operations, artifacts = await asyncio.gather(
+        _get_names(),
+        _get_descriptions(),
+        _get_operations(),
+        _get_artifacts(),
     )
 
-    result = await create_tool_resource(
-        conn,
-        id=id,
-        name=names[0].name if names else "",
-        description=descriptions[0].description if descriptions else "",
-        department_ids=department_ids,
-        operation=operations[0].operation if operations else None,
-        artifacts=[item.artifact for item in artifacts],
-        redis=redis,
-    )
+    async with pool.acquire() as conn:
+        result = await create_tool_resource(
+            conn,
+            id=id,
+            name=names[0].name if names else "",
+            description=descriptions[0].description if descriptions else "",
+            department_ids=department_ids,
+            operation=operations[0].operation if operations else None,
+            artifacts=[item.artifact for item in artifacts],
+            redis=redis,
+        )
     return result.id

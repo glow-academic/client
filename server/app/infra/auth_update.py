@@ -124,18 +124,19 @@ async def update_auth_client(
 
     results: list[AuthResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                auths_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                    department_ids=item.department_ids,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        auths_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            name_id=item.name_id,
+            description_id=item.description_id,
+            department_ids=item.department_ids,
+        )
 
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 await update_auth_artifact(
                     conn,
                     item.auth_id,
@@ -153,13 +154,13 @@ async def update_auth_client(
                     else item.auth_resource_ids,
                 )
 
-                results.append(
-                    AuthResultItem(
-                        success=True,
-                        auth_id=item.auth_id,
-                        message="Auth updated successfully",
-                    )
-                )
+        results.append(
+            AuthResultItem(
+                success=True,
+                auth_id=item.auth_id,
+                message="Auth updated successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

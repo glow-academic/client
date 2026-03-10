@@ -155,18 +155,19 @@ async def create_model_client(
 
     results: list[ModelResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                models_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        models_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_model_artifact(
                     conn,
                     id=item.id,
@@ -185,13 +186,13 @@ async def create_model_client(
                     voice_ids=item.voice_ids,
                 )
 
-                results.append(
-                    ModelResultItem(
-                        success=True,
-                        model_id=result.id,
-                        message="Model created successfully",
-                    )
-                )
+        results.append(
+            ModelResultItem(
+                success=True,
+                model_id=result.id,
+                message="Model created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
