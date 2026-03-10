@@ -14,21 +14,25 @@ from app.infra.websocket.openapi_helpers import (
     register_server_endpoint,
 )
 
-pytestmark = pytest.mark.asyncio
-
-
 class ExamplePayload(BaseModel):
     value: str
 
 
+@pytest.mark.asyncio
 async def test_is_run_cancelled_uses_real_redis(redis_client):
-    assert await is_run_cancelled("run-1") is False
+    original_redis = globals_mod.redis_client
+    try:
+        globals_mod.redis_client = redis_client
+        assert await is_run_cancelled("run-1") is False
 
-    await redis_client.set("cancel_run:run-1", "1")
+        await redis_client.set("cancel_run:run-1", "1")
 
-    assert await is_run_cancelled("run-1") is True
+        assert await is_run_cancelled("run-1") is True
+    finally:
+        globals_mod.redis_client = original_redis
 
 
+@pytest.mark.asyncio
 async def test_get_db_connection_yields_connection_from_pool(pool):
     original_pool = globals_mod._db_pool
     try:
@@ -40,11 +44,12 @@ async def test_get_db_connection_yields_connection_from_pool(pool):
         globals_mod._db_pool = original_pool
 
 
+@pytest.mark.asyncio
 async def test_get_db_connection_raises_without_pool():
     original_pool = globals_mod._db_pool
     try:
         globals_mod._db_pool = None
-        with pytest.raises(RuntimeError, match="pool is not initialized"):
+        with pytest.raises(RuntimeError, match="Database connection pool not initialized"):
             async with get_db_connection():
                 pass
     finally:
@@ -72,4 +77,3 @@ def test_register_endpoint_helpers_add_routes_with_operation_ids():
     assert "/socket/v5/test/server" in paths
     assert paths["/socket/v5/test/client"].operation_id is not None
     assert paths["/socket/v5/test/server"].operation_id is not None
-

@@ -54,6 +54,7 @@ from app.routes.v5.api.main.document.types import (
     GetDocumentApiRequest,
     GetDocumentApiResponse,
 )
+from app.routes.v5.tools.entries.groups.create import create_group
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -414,6 +415,7 @@ async def get_document(
 
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -426,10 +428,7 @@ async def get_document(
         group_id = request.group_id
         if not group_id:
             async with pool.acquire() as conn:
-                group_id = await conn.fetchval(
-                    "INSERT INTO groups_entry (created_at, updated_at) "
-                    "VALUES (NOW(), NOW()) RETURNING id"
-                )
+                group_id = (await create_group(conn, session_id=session_id)).id
 
         redis = get_redis_client()
 

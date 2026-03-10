@@ -92,12 +92,12 @@ async def stream_litellm_events(
         if hasattr(chunk, "model_dump"):
             try:
                 chunk_dict_for_usage_check = chunk.model_dump()
-            except:
+            except Exception:
                 pass
         elif hasattr(chunk, "dict"):
             try:
                 chunk_dict_for_usage_check = chunk.dict()
-            except:
+            except Exception:
                 pass
         elif isinstance(chunk, dict):
             chunk_dict_for_usage_check = chunk
@@ -613,12 +613,12 @@ async def _parse_completions_chunk(
             if hasattr(delta_raw, "model_dump"):
                 try:
                     delta = delta_raw.model_dump()
-                except:
+                except Exception:
                     delta = {}
             elif hasattr(delta_raw, "dict"):
                 try:
                     delta = delta_raw.dict()
-                except:
+                except Exception:
                     delta = {}
             else:
                 delta = {}

@@ -22,8 +22,10 @@ MODULES = [
     "departments",
     "documents",
     "personas",
+    "rubrics",
     "scenarios",
     "simulations",
     "cohorts",
-    # TODO: profiles, settings
+    "profiles",
+    # TODO: settings
 ]

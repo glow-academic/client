@@ -8,6 +8,9 @@ import uuid
 
 from app.infra.globals import get_internal_sio, get_pool, sio
 from app.infra.websocket.add_guest_socket import add_guest_socket
+from app.utils.logging.db_logger import get_logger
+
+logger = get_logger(__name__)
 from app.infra.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
@@ -38,7 +41,7 @@ async def _mark_profile_inactive(profile_id: str, sid: str) -> None:
                 profile_id=uuid.UUID(profile_id),
             )
     except Exception:
-        pass
+        logger.warning("Failed to mark profile %s inactive", profile_id)
 
 
 async def _mark_profile_active(profile_id: str, session_id: str | None) -> None:
@@ -54,7 +57,7 @@ async def _mark_profile_active(profile_id: str, session_id: str | None) -> None:
                 profile_id=uuid.UUID(profile_id),
             )
     except Exception:
-        pass
+        logger.warning("Failed to mark profile %s active", profile_id)
 
 
 async def _store_session_id(sid: str, session_id: str) -> None:
@@ -66,7 +69,7 @@ async def _store_session_id(sid: str, session_id: str) -> None:
         if redis_client:
             await redis_client.setex(f"socket_session:{sid}", 86400, session_id)
     except Exception:
-        pass
+        logger.warning("Failed to store session_id in Redis for sid %s", sid)
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +122,7 @@ async def connect(
                     profile_id = str(identity.profile_id)
                     session_id = str(identity.session_id)
         except Exception:
-            pass
+            logger.warning("Failed to resolve identity from auth token for sid %s", sid)
 
     # Fallback: query string params (backward compatibility)
     if not profile_id:
@@ -130,7 +133,7 @@ async def connect(
             guest_id = params.get("guestId", [None])[0]
             session_id = params.get("sessionId", [None])[0]
         except Exception:
-            pass
+            logger.warning("Failed to parse query string params for sid %s", sid)
 
         # Validate UUIDs
         if profile_id:
@@ -168,7 +171,7 @@ async def connect(
                 await add_guest_socket(sid)
                 await increment_guest_count()
             except Exception:
-                pass
+                logger.warning("Failed to register guest socket %s", sid)
 
         await internal_sio.emit(
             "connection_progress",
@@ -205,7 +208,7 @@ async def disconnect(sid: str) -> None:
             await remove_guest_socket(sid)
             await decrement_guest_count()
         except Exception:
-            pass
+            logger.warning("Failed to clean up guest socket %s", sid)
 
     # Voice session cleanup
     try:
@@ -216,7 +219,7 @@ async def disconnect(sid: str) -> None:
         if voice_session:
             await cleanup_audio_session(voice_session)
     except Exception:
-        pass
+        logger.warning("Failed to clean up voice session for socket %s", sid)
 
     # Remove from all active chat connections
     chat_ids = await find_chats_by_socket(sid)

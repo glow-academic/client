@@ -13,6 +13,20 @@ TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
 
 
+def build_validation_payload(
+    data: dict[str, Any],
+    request_type: type[TRequest],
+) -> dict[str, Any]:
+    """Strip transport-only fields unless the request model declares them."""
+    model_fields = getattr(request_type, "model_fields", {})
+    fields_to_remove = []
+    if "sid" not in model_fields:
+        fields_to_remove.append("sid")
+    if "group_id" not in model_fields:
+        fields_to_remove.append("group_id")
+    return {k: v for k, v in data.items() if k not in fields_to_remove}
+
+
 async def handle_client_event(
     sid: str,
     data: dict[str, Any],
@@ -196,14 +210,7 @@ async def handle_internal_event(
         # Remove sid and group_id before validation (not in ApiRequest)
         # EXCEPTION: Some ApiRequest models (like GenerateErrorApiRequest) include sid as a field
         # Check if the model has 'sid' as a field - if so, keep it
-        model_fields = getattr(request_type, "model_fields", {})
-        fields_to_remove = []
-        if "sid" not in model_fields:
-            fields_to_remove.append("sid")
-        if "group_id" not in model_fields:
-            fields_to_remove.append("group_id")
-
-        payload_dict = {k: v for k, v in data.items() if k not in fields_to_remove}
+        payload_dict = build_validation_payload(data, request_type)
         validated = request_type(**payload_dict)
         await handler(sid, validated, profile_id_uuid, group_id_uuid)
         return

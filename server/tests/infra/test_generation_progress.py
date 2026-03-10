@@ -1,27 +1,25 @@
-"""Tests for generation_progress_impl — EmitFn pattern.
-
-Tracks resource/entry completions via run_tracker and emits progress.
-Uses recording_emit() to capture events — no mocks needed except trackers.
-"""
+"""Tests for generation_progress_impl using real Redis-backed trackers."""
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
-
 import pytest
 
+import app.infra.globals as globals_mod
 from app.infra.websocket.generation_progress_impl import generation_progress_impl
+from app.infra.websocket.init_run_trackers import init_run_trackers
+from app.infra.websocket.run_tracker import WorkUnit
 from app.infra.websocket.socket_event import recording_emit
 
-_P = "app.infra.websocket.generation_progress_impl"
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
 class TestGenerationProgressImpl:
     async def test_non_tool_result_skipped(self):
         emit, events = recording_emit()
         await generation_progress_impl(
-            {"event_type": "other"}, emit=emit, redis=object()
+            {"event_type": "other"},
+            emit=emit,
+            redis=object(),
         )
         assert events == []
 
@@ -52,20 +50,24 @@ class TestGenerationProgressImpl:
         )
         assert events == []
 
-    async def test_resource_progress_emitted(self):
+    async def test_resource_progress_emitted(self, redis_client):
         emit, events = recording_emit()
-        mock_redis = object()
-        with (
-            patch(
-                f"{_P}.record_unit_soft",
-                new_callable=AsyncMock,
-                return_value=(2, 5),
-            ) as mock_unit,
-            patch(
-                f"{_P}.record_resource_complete",
-                new_callable=AsyncMock,
-            ) as mock_legacy,
-        ):
+        previous = globals_mod.redis_client
+        globals_mod.redis_client = redis_client
+        try:
+            await init_run_trackers(
+                redis_client,
+                run_id="r1",
+                num_agents=1,
+                num_resources=5,
+                units=[
+                    WorkUnit(agent_id="a1", target_type="resource", target_name="prompts"),
+                    WorkUnit(agent_id="a1", target_type="resource", target_name="names"),
+                    WorkUnit(agent_id="a1", target_type="resource", target_name="images"),
+                    WorkUnit(agent_id="a1", target_type="resource", target_name="videos"),
+                    WorkUnit(agent_id="a1", target_type="resource", target_name="documents"),
+                ],
+            )
             await generation_progress_impl(
                 {
                     "event_type": "tool_result",
@@ -80,40 +82,37 @@ class TestGenerationProgressImpl:
                     },
                 },
                 emit=emit,
-                redis=mock_redis,
+                redis=redis_client,
             )
+            legacy_completed = await redis_client.hget("resource_progress:r1", "completed")
+        finally:
+            globals_mod.redis_client = previous
 
         assert len(events) == 1
-        e = events[0]
-        assert e.event == "generation_channel"
-        assert e.data["type"] == "progress"
-        assert e.data["completed_resources"] == 2
-        assert e.data["total_resources"] == 5
-        assert e.data["percentage"] == 40
-        assert e.data["last_completed_resource"] == "prompts"
+        assert events[0].event == "generation_channel"
+        assert events[0].data["type"] == "progress"
+        assert events[0].data["completed_resources"] == 1
+        assert events[0].data["total_resources"] == 5
+        assert events[0].data["percentage"] == 20
+        assert events[0].data["last_completed_resource"] == "prompts"
+        assert legacy_completed == b"1"
 
-        mock_unit.assert_called_once_with(
-            mock_redis,
-            run_id="r1",
-            agent_id="a1",
-            target_type="resource",
-            target_name="prompts",
-            result_id="res-1",
-        )
-        mock_legacy.assert_called_once_with("r1", "prompts")
-
-    async def test_entry_progress_emitted(self):
+    async def test_entry_progress_emitted_without_legacy_increment(self, redis_client):
         emit, events = recording_emit()
-        with (
-            patch(
-                f"{_P}.record_unit_soft",
-                new_callable=AsyncMock,
-                return_value=(1, 3),
-            ),
-            patch(
-                f"{_P}.record_resource_complete", new_callable=AsyncMock
-            ) as mock_legacy,
-        ):
+        previous = globals_mod.redis_client
+        globals_mod.redis_client = redis_client
+        try:
+            await init_run_trackers(
+                redis_client,
+                run_id="r1",
+                num_agents=1,
+                num_resources=3,
+                units=[
+                    WorkUnit(agent_id="a1", target_type="entry", target_name="contents"),
+                    WorkUnit(agent_id="a1", target_type="entry", target_name="messages"),
+                    WorkUnit(agent_id="a1", target_type="entry", target_name="problems"),
+                ],
+            )
             await generation_progress_impl(
                 {
                     "event_type": "tool_result",
@@ -121,31 +120,42 @@ class TestGenerationProgressImpl:
                     "run_id": "r1",
                     "artifact_type": "agent",
                     "group_id": "g1",
+                    "agent_id": "a1",
                     "result": {
                         "entry_id": "ent-1",
                         "entry_type": "contents",
                     },
                 },
                 emit=emit,
-                redis=object(),
+                redis=redis_client,
             )
+            legacy_completed = await redis_client.hget("resource_progress:r1", "completed")
+        finally:
+            globals_mod.redis_client = previous
 
         assert len(events) == 1
         assert events[0].data["percentage"] == 33
         assert events[0].data["last_completed_resource"] == "contents"
-        # Legacy tracker not called for entries
-        mock_legacy.assert_not_called()
+        assert legacy_completed == b"0"
 
-    async def test_agent_id_defaults_to_unknown(self):
+    async def test_agent_id_defaults_to_unknown(self, redis_client):
         emit, events = recording_emit()
-        with (
-            patch(
-                f"{_P}.record_unit_soft",
-                new_callable=AsyncMock,
-                return_value=(1, 1),
-            ) as mock_unit,
-            patch(f"{_P}.record_resource_complete", new_callable=AsyncMock),
-        ):
+        previous = globals_mod.redis_client
+        globals_mod.redis_client = redis_client
+        try:
+            await init_run_trackers(
+                redis_client,
+                run_id="r1",
+                num_agents=1,
+                num_resources=1,
+                units=[
+                    WorkUnit(
+                        agent_id="unknown",
+                        target_type="resource",
+                        target_name="names",
+                    )
+                ],
+            )
             await generation_progress_impl(
                 {
                     "event_type": "tool_result",
@@ -154,56 +164,69 @@ class TestGenerationProgressImpl:
                     "result": {"resource_id": "res-1", "resource_type": "names"},
                 },
                 emit=emit,
-                redis=object(),
+                redis=redis_client,
             )
+            units = await redis_client.hgetall("run:r1:units")
+        finally:
+            globals_mod.redis_client = previous
 
-        assert mock_unit.call_args.kwargs["agent_id"] == "unknown"
+        assert len(events) == 1
+        assert any(key.decode().startswith("unknown:resource:names") for key in units)
 
     async def test_tracker_error_falls_back_to_1_1(self):
         emit, events = recording_emit()
-        with (
-            patch(
-                f"{_P}.record_unit_soft",
-                new_callable=AsyncMock,
-                side_effect=RuntimeError("redis down"),
-            ),
-            patch(f"{_P}.record_resource_complete", new_callable=AsyncMock),
-        ):
+        previous = globals_mod.redis_client
+        globals_mod.redis_client = None
+        try:
             await generation_progress_impl(
                 {
                     "event_type": "tool_result",
                     "sid": "s1",
-                    "run_id": "r1",
+                    "run_id": "missing-run",
                     "result": {"resource_id": "res-1", "resource_type": "names"},
                 },
                 emit=emit,
                 redis=object(),
             )
+        finally:
+            globals_mod.redis_client = previous
 
         assert len(events) == 1
         assert events[0].data["completed_resources"] == 1
         assert events[0].data["total_resources"] == 1
         assert events[0].data["percentage"] == 100
 
-    async def test_percentage_capped_at_100(self):
+    async def test_percentage_capped_at_100(self, redis_client):
         emit, events = recording_emit()
-        with (
-            patch(
-                f"{_P}.record_unit_soft",
-                new_callable=AsyncMock,
-                return_value=(6, 5),  # over-count
-            ),
-            patch(f"{_P}.record_resource_complete", new_callable=AsyncMock),
-        ):
-            await generation_progress_impl(
-                {
-                    "event_type": "tool_result",
-                    "sid": "s1",
-                    "run_id": "r1",
-                    "result": {"resource_id": "res-1", "resource_type": "names"},
-                },
-                emit=emit,
-                redis=object(),
+        previous = globals_mod.redis_client
+        globals_mod.redis_client = redis_client
+        try:
+            await init_run_trackers(
+                redis_client,
+                run_id="r1",
+                num_agents=1,
+                num_resources=5,
+                units=[
+                    WorkUnit(agent_id="a1", target_type="resource", target_name=f"r{i}")
+                    for i in range(5)
+                ],
             )
+            for index in range(6):
+                await generation_progress_impl(
+                    {
+                        "event_type": "tool_result",
+                        "sid": "s1",
+                        "run_id": "r1",
+                        "agent_id": "a1",
+                        "result": {
+                            "resource_id": f"res-{index}",
+                            "resource_type": f"r{min(index, 4)}",
+                        },
+                    },
+                    emit=emit,
+                    redis=redis_client,
+                )
+        finally:
+            globals_mod.redis_client = previous
 
-        assert events[0].data["percentage"] == 100
+        assert events[-1].data["percentage"] == 100

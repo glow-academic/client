@@ -6,11 +6,28 @@ Uses black-box entry creation tools instead of raw SQL.
 
 import asyncio
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.resources.scenario_flags.types import GetScenarioFlagResponse
+from app.routes.v5.tools.resources.scenario_positions.types import (
+    GetScenarioPositionResponse,
+)
+from app.routes.v5.tools.resources.scenario_rubrics.types import (
+    GetScenarioRubricResponse,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.types import (
+    GetScenarioTimeLimitResponse,
+)
+from app.routes.v5.tools.resources.scenarios.types import GetScenarioResponse
+from app.routes.v5.tools.resources.simulation_availability.types import (
+    GetSimulationAvailabilityResponse,
+)
+from app.routes.v5.tools.resources.simulation_positions.types import (
+    GetSimulationPositionResponse,
+)
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -112,43 +129,43 @@ async def sync_home_practice_entries(
     # ── Pass 2a: Parallel fetch all sub-resources ──
     # Each fetch acquires its own connection from the pool to avoid
     # asyncpg "another operation is in progress" on concurrent queries.
-    async def _fetch_scenarios() -> list[Any]:
+    async def _fetch_scenarios() -> list[GetScenarioResponse]:
         async with pool.acquire() as c:
             return await get_scenarios(
                 c, all_scenario_ids, get_redis_client(), bypass_cache=True
             )
 
-    async def _fetch_scenario_rubrics() -> list[Any]:
+    async def _fetch_scenario_rubrics() -> list[GetScenarioRubricResponse]:
         async with pool.acquire() as c:
             return await get_scenario_rubrics(
                 c, all_scenario_rubric_ids, get_redis_client(), bypass_cache=True
             )
 
-    async def _fetch_scenario_flags() -> list[Any]:
+    async def _fetch_scenario_flags() -> list[GetScenarioFlagResponse]:
         async with pool.acquire() as c:
             return await get_scenario_flags(
                 c, all_scenario_flag_ids, get_redis_client(), bypass_cache=True
             )
 
-    async def _fetch_scenario_positions() -> list[Any]:
+    async def _fetch_scenario_positions() -> list[GetScenarioPositionResponse]:
         async with pool.acquire() as c:
             return await get_scenario_positions(
                 c, all_scenario_position_ids, get_redis_client(), bypass_cache=True
             )
 
-    async def _fetch_scenario_time_limits() -> list[Any]:
+    async def _fetch_scenario_time_limits() -> list[GetScenarioTimeLimitResponse]:
         async with pool.acquire() as c:
             return await get_scenario_time_limits(
                 c, all_scenario_time_limit_ids, get_redis_client(), bypass_cache=True
             )
 
-    async def _fetch_sim_positions() -> list[Any]:
+    async def _fetch_sim_positions() -> list[GetSimulationPositionResponse]:
         async with pool.acquire() as c:
             return await get_simulation_positions(
                 c, simulation_position_ids, get_redis_client(), bypass_cache=True
             )
 
-    async def _fetch_sim_availability() -> list[Any]:
+    async def _fetch_sim_availability() -> list[GetSimulationAvailabilityResponse]:
         async with pool.acquire() as c:
             return await get_simulation_availability(
                 c, simulation_availability_ids, get_redis_client(), bypass_cache=True
@@ -163,13 +180,13 @@ async def sync_home_practice_entries(
         _fetch_sim_positions(),
         _fetch_sim_availability(),
     )
-    scenarios: list[Any] = cast(list[Any], gather_results[0])
-    scenario_rubrics: list[Any] = cast(list[Any], gather_results[1])
-    scenario_flags: list[Any] = cast(list[Any], gather_results[2])
-    scenario_positions: list[Any] = cast(list[Any], gather_results[3])
-    scenario_time_limits: list[Any] = cast(list[Any], gather_results[4])
-    sim_positions: list[Any] = cast(list[Any], gather_results[5])
-    sim_availability: list[Any] = cast(list[Any], gather_results[6])
+    scenarios: list[GetScenarioResponse] = gather_results[0]
+    scenario_rubrics: list[GetScenarioRubricResponse] = gather_results[1]
+    scenario_flags: list[GetScenarioFlagResponse] = gather_results[2]
+    scenario_positions: list[GetScenarioPositionResponse] = gather_results[3]
+    scenario_time_limits: list[GetScenarioTimeLimitResponse] = gather_results[4]
+    sim_positions: list[GetSimulationPositionResponse] = gather_results[5]
+    sim_availability: list[GetSimulationAvailabilityResponse] = gather_results[6]
 
     # ── Pass 2b: Resolve rubrics → standard_group_ids → standards ──
     # Collect all resolved rubric IDs (rubrics_resource.id) from scenario_rubrics

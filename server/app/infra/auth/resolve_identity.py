@@ -545,14 +545,10 @@ async def get_system_session_id(conn: asyncpg.Connection) -> UUID:
         if exists:
             return _system_session_id
 
-    # Create a system session (no profile link needed)
-    session_id = await conn.fetchval(
-        """
-        INSERT INTO sessions_entry (active, mcp, generated)
-        VALUES (true, false, true)
-        RETURNING id
-        """
-    )
+    # Create a system session (no profile link needed).
+    from app.routes.v5.tools.entries.sessions.create import create_session
+
+    session_id = (await create_session(conn)).id
 
     _system_session_id = session_id
     logger.info(f"Created system session: {session_id}")

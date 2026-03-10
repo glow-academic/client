@@ -1,103 +1,124 @@
-"""Tests for text_complete_impl — EmitFn pattern.
-
-Saves assistant message to DB via persist_run_message.
-Uses recording_emit() to capture events.
-"""
+"""Tests for text_complete_impl using the real run-message persistence path."""
 
 from __future__ import annotations
-
-from unittest.mock import AsyncMock, patch
-from uuid import UUID
 
 import pytest
 
 from app.infra.websocket.socket_event import recording_emit
 from app.infra.websocket.text_complete_impl import text_complete_impl
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.messages.search import search_messages
+from app.routes.v5.tools.entries.uploads.get import get_upload
+from tests.helpers import nonexistent_id
 
-_P = "app.infra.websocket.text_complete_impl"
-
-_RUN_ID = "00000000-0000-0000-0000-000000000001"
-_SESSION_ID = "00000000-0000-0000-0000-000000000002"
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
+async def _run_deps(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(
+        conn,
+        group_id=group.id,
+        session_id=session.id,
+        profiles_id=profile_id,
+    )
+    return session, run
+
+
 class TestTextCompleteImpl:
-    async def test_non_text_complete_skipped(self):
+    async def test_non_text_complete_skipped(self, conn):
         emit, events = recording_emit()
-        await text_complete_impl({"event_type": "other"}, emit=emit, conn=AsyncMock())
+
+        await text_complete_impl({"event_type": "other"}, emit=emit, conn=conn)
+
         assert events == []
 
-    async def test_no_run_id_skipped(self):
+    async def test_no_run_id_skipped(self, conn):
         emit, events = recording_emit()
+
         await text_complete_impl(
-            {"event_type": "text_complete", "session_id": _SESSION_ID, "text": "hello"},
+            {"event_type": "text_complete", "session_id": str(nonexistent_id()), "text": "hello"},
             emit=emit,
-            conn=AsyncMock(),
+            conn=conn,
         )
+
         assert events == []
 
-    async def test_no_session_id_skipped(self):
+    async def test_no_session_id_skipped(self, conn):
         emit, events = recording_emit()
+
         await text_complete_impl(
-            {"event_type": "text_complete", "run_id": _RUN_ID, "text": "hello"},
+            {"event_type": "text_complete", "run_id": str(nonexistent_id()), "text": "hello"},
             emit=emit,
-            conn=AsyncMock(),
+            conn=conn,
         )
+
         assert events == []
 
-    async def test_empty_text_skipped(self):
+    async def test_empty_text_skipped(self, conn):
         emit, events = recording_emit()
+
         await text_complete_impl(
             {
                 "event_type": "text_complete",
-                "run_id": _RUN_ID,
-                "session_id": _SESSION_ID,
+                "run_id": str(nonexistent_id()),
+                "session_id": str(nonexistent_id()),
                 "text": "",
             },
             emit=emit,
-            conn=AsyncMock(),
+            conn=conn,
         )
+
         assert events == []
 
-    async def test_saves_assistant_message(self):
+    async def test_persists_assistant_message(self, conn, profile_id, tmp_path, monkeypatch):
         emit, events = recording_emit()
-        mock_conn = AsyncMock()
-        with patch(f"{_P}.persist_run_message", new_callable=AsyncMock) as mock_persist:
-            await text_complete_impl(
-                {
-                    "event_type": "text_complete",
-                    "run_id": _RUN_ID,
-                    "session_id": _SESSION_ID,
-                    "text": "Hello world",
-                },
-                emit=emit,
-                conn=mock_conn,
-            )
+        session, run = await _run_deps(conn, profile_id)
+        monkeypatch.setattr("app.infra.globals.UPLOAD_FOLDER", tmp_path)
 
-        mock_persist.assert_called_once_with(
-            mock_conn,
-            run_id=UUID(_RUN_ID),
-            session_id=UUID(_SESSION_ID),
-            role="assistant",
-            content="Hello world",
+        await text_complete_impl(
+            {
+                "event_type": "text_complete",
+                "run_id": str(run.id),
+                "session_id": str(session.id),
+                "text": "Hello world",
+            },
+            emit=emit,
+            conn=conn,
         )
 
-    async def test_persist_error_does_not_raise(self):
+        items, total_count = await search_messages(
+            conn,
+            run_ids=[run.id],
+            bypass_mv=True,
+        )
+
+        assert events == []
+        assert total_count == 1
+        assert len(items) == 1
+        assert items[0].role == "assistant"
+        assert len(items[0].text_upload_ids) == 1
+
+        upload = await get_upload(conn, items[0].text_upload_ids[0])
+        stored_path = tmp_path / upload.file_path
+        assert stored_path.exists()
+        assert stored_path.read_text() == "Hello world"
+
+    async def test_persist_error_does_not_raise(self, conn):
         emit, events = recording_emit()
-        with patch(
-            f"{_P}.persist_run_message",
-            new_callable=AsyncMock,
-            side_effect=RuntimeError("db down"),
-        ):
-            # Should not raise
-            await text_complete_impl(
-                {
-                    "event_type": "text_complete",
-                    "run_id": _RUN_ID,
-                    "session_id": _SESSION_ID,
-                    "text": "Hello world",
-                },
-                emit=emit,
-                conn=AsyncMock(),
-            )
+
+        await text_complete_impl(
+            {
+                "event_type": "text_complete",
+                "run_id": str(nonexistent_id()),
+                "session_id": str(nonexistent_id()),
+                "text": "Hello world",
+            },
+            emit=emit,
+            conn=conn,
+        )
+
         assert events == []
