@@ -1,7 +1,7 @@
 """Operation resource seeds.
 
-28 rows defining the available API operations (get, create, update, search,
-delete, duplicate, draft, export, start, end, message, grade, etc.).
+31 rows defining the available API operations (get, create, update, search,
+delete, duplicate, draft, drafts, export, start, end, message, grade, etc.).
 """
 
 from uuid import UUID
@@ -15,7 +15,7 @@ operations = [
     dict(id=UUID("019d0000-0001-7000-8000-000000000006"), operation='delete'),
     dict(id=UUID("019d0000-0001-7000-8000-000000000007"), operation='duplicate'),
     dict(id=UUID("019d0000-0001-7000-8000-000000000008"), operation='draft'),
-    dict(id=UUID("019d0000-0001-7000-8000-000000000009"), operation='drafts'),
+    dict(id=UUID("019d0000-0001-7000-8000-000000000032"), operation='drafts'),
     dict(id=UUID("019d0000-0001-7000-8000-000000000010"), operation='export'),
     dict(id=UUID("019d0000-0001-7000-8000-000000000011"), operation='refresh'),
     dict(id=UUID("019d0000-0001-7000-8000-000000000012"), operation='start'),
@@ -35,4 +35,7 @@ operations = [
     dict(id=UUID("019d0000-0001-7000-8000-000000000026"), operation='problem'),
     dict(id=UUID("019d0000-0001-7000-8000-000000000027"), operation='resolve'),
     dict(id=UUID("019d0000-0001-7000-8000-000000000028"), operation='emulate'),
+    dict(id=UUID("019d0000-0001-7000-8000-000000000029"), operation='context'),
+    dict(id=UUID("019d0000-0001-7000-8000-000000000030"), operation='decrypt'),
+    dict(id=UUID("019d0000-0001-7000-8000-000000000031"), operation='unemulate'),
 ]

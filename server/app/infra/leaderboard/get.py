@@ -135,13 +135,13 @@ async def get_leaderboard_impl_cached(
 
     resources = LeaderboardResources(
         profiles={
-            str(item.profile_id): LeaderboardProfileResource(
-                profile_id=str(item.profile_id),
+            str(item.id): LeaderboardProfileResource(
+                profile_id=str(item.id),
                 name=item.name,
                 role=None,
             )
             for item in profile_list
-            if item.profile_id is not None
+            if item.id is not None
         }
     )
 

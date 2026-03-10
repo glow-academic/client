@@ -72,7 +72,7 @@ class ChatItem(BaseModel):
     profile_id: UUID
     cohort_id: UUID | None = None
     department_id: UUID | None = None
-    simulation_id: UUID
+    simulation_id: UUID | None = None
     scenario_id: UUID | None = None
     persona_ids: list[UUID] | None = None
     rubric_id: UUID | None = None

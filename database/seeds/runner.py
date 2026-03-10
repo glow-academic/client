@@ -1125,6 +1125,74 @@ async def _run_cohort_seeds(
 
 
 # ---------------------------------------------------------------------------
+# Tool seed execution (auto-discovered from API routes)
+# ---------------------------------------------------------------------------
+
+
+async def _run_tool_module_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+) -> None:
+    """Auto-discover API routes and create tools via create_tool_impl."""
+    from app.infra.tool.create import CreateToolItem, create_tool_impl
+    from app.routes.v5.tools.resources.args.create import create_arg
+
+    from database.seeds.tools import discover_tools
+
+    tools = discover_tools()
+    print(f"  Discovered {len(tools)} tools from API routes.")
+
+    created = 0
+    errors = 0
+
+    for tool_def in tools:
+        # Step 1: Create args_resource entries for this tool
+        arg_ids: list[UUID] = []
+        async with pool.acquire() as conn:
+            for arg in tool_def["args"]:
+                arg_resp = await create_arg(
+                    conn,
+                    name=arg["name"],
+                    field_type=arg["field_type"],
+                    redis=redis,
+                    id=arg["id"],
+                    description=arg.get("description", ""),
+                    required=arg.get("required", False),
+                    default_value=arg.get("default_value", ""),
+                )
+                arg_ids.append(arg_resp.id)
+
+        # Step 2: Create tool via create_tool_impl
+        item = CreateToolItem(
+            id=tool_def["id"],
+            name=tool_def["name"],
+            description=tool_def["description"],
+            args_ids=arg_ids if arg_ids else None,
+            operation_ids=[tool_def["operation_id"]],
+            artifact_ids=[tool_def["artifact_id"]],
+        )
+
+        try:
+            result = await create_tool_impl(
+                pool,
+                redis,
+                profile_id=SEED_PROFILE_ID,
+                items=[item],
+            )
+            for r in result.results:
+                if r.success:
+                    created += 1
+                else:
+                    errors += 1
+                    print(f"  ERROR: {tool_def['name']}: {r.message}")
+        except Exception as e:
+            errors += 1
+            print(f"  ERROR: {tool_def['name']}: {e}")
+
+    print(f"  OK: {created} tools created, {errors} errors")
+
+
+# ---------------------------------------------------------------------------
 # SQL dump — pg_dump the testcontainer database
 # ---------------------------------------------------------------------------
 
@@ -1342,6 +1410,10 @@ async def main_modules() -> None:
         # Module 10: systems
         print("\nSeeding module 10 (systems)...")
         await _run_system_module_seeds(pool, redis_client)
+
+        # Module 05: tools (auto-discovered from API routes)
+        print("\nSeeding module 05 (tools)...")
+        await _run_tool_module_seeds(pool, redis_client)
 
         await redis_client.aclose()
         await pool.close()

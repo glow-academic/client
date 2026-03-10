@@ -33,7 +33,10 @@ CREATE TYPE public.operation_type AS ENUM (
     'generate',
     'problem',
     'resolve',
-    'emulate'
+    'emulate',
+    'context',
+    'decrypt',
+    'unemulate'
 );
 
 

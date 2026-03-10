@@ -133,9 +133,9 @@ async def search_leaderboard(
 
         # --- Phase 4: Build profile name map ---
         profile_name_by_id: dict[str, str | None] = {
-            str(item.profile_id): item.name
+            str(item.id): item.name
             for item in profile_list
-            if item.profile_id is not None
+            if item.id is not None
         }
 
         # --- Phase 5: Build rows ---
@@ -156,31 +156,31 @@ async def search_leaderboard(
 
         # --- Phase 6: Build resources ---
         profile_resources = {
-            str(item.profile_id): LeaderboardProfileResource(
-                profile_id=str(item.profile_id),
+            str(item.id): LeaderboardProfileResource(
+                profile_id=str(item.id),
                 name=item.name,
                 role=None,
             )
             for item in profile_list
-            if item.profile_id is not None
+            if item.id is not None
         }
         simulation_resources = {
-            str(item.simulation_id): LeaderboardSimulationResource(
-                simulation_id=str(item.simulation_id),
+            str(item.id): LeaderboardSimulationResource(
+                simulation_id=str(item.id),
                 name=item.name,
                 description=item.description,
             )
             for item in sim_list
-            if item.simulation_id is not None
+            if item.id is not None
         }
         scenario_resources = {
-            str(item.scenario_id): LeaderboardScenarioResource(
-                scenario_id=str(item.scenario_id),
+            str(item.id): LeaderboardScenarioResource(
+                scenario_id=str(item.id),
                 name=item.name,
                 description=item.description,
             )
             for item in scenario_list
-            if item.scenario_id is not None
+            if item.id is not None
         }
 
         resources = LeaderboardResources(
