@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.parameter.create import create_parameter_impl
 from app.routes.v5.api.main.parameter.types import (
@@ -37,12 +38,27 @@ async def create_parameter(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_parameter_impl(
+        async def _runner() -> CreateParameterApiResponse:
+            return await create_parameter_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                items=request.parameters,
+                session_id=session_id,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="parameter",
             profile_id=profile_id,
-            items=request.parameters,
             session_id=session_id,
+            operation="create",
+            arguments={
+                "parameters": [item.model_dump(mode="json") for item in request.parameters]
+            },
+            response_model=CreateParameterApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = "parameters"

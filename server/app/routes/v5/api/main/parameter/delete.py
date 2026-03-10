@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.parameter.delete import delete_parameter_impl
 from app.routes.v5.api.main.parameter.types import (
@@ -38,12 +39,25 @@ async def delete_parameter(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_parameter_impl(
+        async def _runner() -> DeleteParameterApiResponse:
+            return await delete_parameter_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                parameter_ids=request.parameter_ids,
+                session_id=session_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="parameter",
             profile_id=profile_id,
-            parameter_ids=request.parameter_ids,
             session_id=session_id,
+            operation="delete",
+            arguments=request.model_dump(mode="json"),
+            response_model=DeleteParameterApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

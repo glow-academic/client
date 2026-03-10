@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.model.export import export_model_impl
 from app.routes.v5.api.main.model.types import ExportModelApiResponse
@@ -30,10 +31,23 @@ async def export_models(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_model_impl(
+    async def _runner() -> ExportModelApiResponse:
+        return await export_model_impl(
+            pool,
+            redis,
+            profile_id=profile_id,
+            session_id=session_id,
+            model_id=body.model_id,
+        )
+
+    return await run_artifact_operation_with_audit(
         pool,
         redis,
+        artifact="model",
         profile_id=profile_id,
         session_id=session_id,
-        model_id=body.model_id,
+        operation="export",
+        arguments=body.model_dump(mode="json"),
+        response_model=ExportModelApiResponse,
+        runner=_runner,
     )

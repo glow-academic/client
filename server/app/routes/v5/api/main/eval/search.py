@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.eval.search import search_eval_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.eval.types import ListEvalApiResponse
@@ -50,15 +51,28 @@ async def search_eval(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_eval_impl(
+        async def _runner() -> ListEvalApiResponse:
+            return await search_eval_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                filter_department_ids=request.filter_department_ids,
+                department_search=request.department_search,
+                page_size=request.page_size or 50,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="eval",
             profile_id=profile_id,
-            search=request.search,
-            filter_department_ids=request.filter_department_ids,
-            department_search=request.department_search,
-            page_size=request.page_size or 50,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListEvalApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

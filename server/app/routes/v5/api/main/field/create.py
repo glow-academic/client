@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.field.create import create_field_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.field.types import (
@@ -37,12 +38,25 @@ async def create_field(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_field_impl(
+        async def _runner() -> CreateFieldApiResponse:
+            return await create_field_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                items=request.fields,
+                session_id=session_id,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="field",
             profile_id=profile_id,
-            items=request.fields,
             session_id=session_id,
+            operation="create",
+            arguments={"fields": [item.model_dump(mode="json") for item in request.fields]},
+            response_model=CreateFieldApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = "fields"

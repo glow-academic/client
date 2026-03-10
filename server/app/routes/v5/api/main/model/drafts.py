@@ -9,6 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.model.drafts import list_model_drafts_impl
 from app.routes.v5.api.main.model.types import GetModelDraftsApiResponse
@@ -35,17 +36,29 @@ async def get_model_drafts(
         redis = get_redis_client()
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        context = await list_model_drafts_impl(
+        async def _runner() -> GetModelDraftsApiResponse:
+            context = await list_model_drafts_impl(
+                pool,
+                redis,
+                profile_id=UUID(profile_id),
+                bypass_cache=bypass_cache,
+            )
+            return GetModelDraftsApiResponse(entries=context.entries.get("drafts"))
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="model",
             profile_id=UUID(profile_id),
+            session_id=http_request.state.session_id,
+            operation="drafts",
+            arguments={},
             bypass_cache=bypass_cache,
+            response_model=GetModelDraftsApiResponse,
+            runner=_runner,
         )
-
         response.headers["X-Cache-Tags"] = "models,drafts"
-        return GetModelDraftsApiResponse(
-            entries=context.entries.get("drafts"),
-        )
+        return result
 
     except HTTPException:
         raise

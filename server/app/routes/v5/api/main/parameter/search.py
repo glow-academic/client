@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.parameter.search import search_parameter_impl
 from app.routes.v5.api.main.parameter.types import ListParameterApiResponse
@@ -54,19 +55,32 @@ async def search_parameter(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_parameter_impl(
+        async def _runner() -> ListParameterApiResponse:
+            return await search_parameter_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                scenario_ids=request.scenario_ids,
+                field_ids=request.field_ids,
+                filter_department_ids=request.filter_department_ids,
+                scenario_search=request.scenario_search,
+                field_search=request.field_search,
+                department_search=request.department_search,
+                page_size=request.page_size or 12,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="parameter",
             profile_id=profile_id,
-            search=request.search,
-            scenario_ids=request.scenario_ids,
-            field_ids=request.field_ids,
-            filter_department_ids=request.filter_department_ids,
-            scenario_search=request.scenario_search,
-            field_search=request.field_search,
-            department_search=request.department_search,
-            page_size=request.page_size or 12,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListParameterApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

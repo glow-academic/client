@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.eval.duplicate import duplicate_eval_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.eval.types import (
@@ -41,12 +42,25 @@ async def duplicate_eval(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_eval_impl(
+        async def _runner() -> DuplicateEvalApiResponse:
+            return await duplicate_eval_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                eval_id=request.eval_id,
+                session_id=session_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="eval",
             profile_id=profile_id,
-            eval_id=request.eval_id,
             session_id=session_id,
+            operation="duplicate",
+            arguments=request.model_dump(mode="json"),
+            response_model=DuplicateEvalApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
