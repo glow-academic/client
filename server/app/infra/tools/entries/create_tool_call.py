@@ -40,7 +40,11 @@ async def create_tool_call(
     4. Creates run + message entry chain.
     """
     # 1. Execute — call tool_fn and capture both raw result + serialized output
-    raw_result = await tool_fn(conn, **arguments)
+    try:
+        raw_result = await tool_fn(conn, **arguments)
+    except Exception as exc:
+        raw_result = {"success": False, "message": str(exc)}
+
     if isinstance(raw_result, str):
         output = raw_result
     else:

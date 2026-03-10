@@ -79,7 +79,7 @@ ARTIFACT_RESOLVERS: dict[str, ArtifactResolverConfig] = {
 
 
 async def resolve_websocket_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -102,7 +102,7 @@ async def resolve_websocket_context(
     # ── Step 1: Common context ────────────────────────────────────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         bypass_cache=bypass_cache,
@@ -129,7 +129,7 @@ async def resolve_websocket_context(
             **(req.params or {}),
             "bypass_cache": bypass_cache,
         }
-        artifact_tasks.append(config.resolver(conn, redis, **resolver_kwargs))
+        artifact_tasks.append(config.resolver(pool, redis, **resolver_kwargs))
 
     artifact_contexts: list[ArtifactContext] = await asyncio.gather(*artifact_tasks)
 
@@ -138,6 +138,7 @@ async def resolve_websocket_context(
     all_scoring_resources: set[str] = set()
     for req in requests:
         config = ARTIFACT_RESOLVERS[req.artifact_type]
+        all_scoring_resources.add(req.artifact_type)
         all_scoring_resources |= config.scoring_resources
 
     scores = score_tools(common.tool_graph, all_scoring_resources)
@@ -155,7 +156,7 @@ async def resolve_websocket_context(
         system_contexts = await asyncio.gather(
             *[
                 resolve_system_context(
-                    conn,
+                    pool,
                     redis,
                     system_id=sid,
                     bypass_cache=bypass_cache,
