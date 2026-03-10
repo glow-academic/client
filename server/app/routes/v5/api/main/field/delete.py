@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.field.delete import delete_field_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.field.types import (
     DeleteFieldApiRequest,
     DeleteFieldApiResponse,
@@ -39,6 +39,7 @@ async def delete_field(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> DeleteFieldApiResponse:
             return await delete_field_impl(
                 pool,
@@ -58,6 +59,7 @@ async def delete_field(
             arguments=request.model_dump(mode="json"),
             response_model=DeleteFieldApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

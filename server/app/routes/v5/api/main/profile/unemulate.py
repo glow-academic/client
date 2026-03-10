@@ -10,8 +10,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.identity.emulate import resolve_unemulation
-from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.profile.types import UnemulateProfileApiResponse
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
@@ -64,6 +64,7 @@ async def unemulate_profile(
             arguments={"profile_id": str(profile_id)},
             response_model=UnemulateProfileApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
     except HTTPException:
         raise

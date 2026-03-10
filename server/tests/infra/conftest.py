@@ -4,10 +4,10 @@ Uses black-box tool functions to set up real test data.
 All data lives in the disposable testcontainers DB.
 """
 
-from collections.abc import AsyncGenerator
-from dataclasses import dataclass
 import importlib
 import sys
+from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from uuid import UUID
@@ -42,7 +42,9 @@ def _build_artifact_router_for_tests(
     tags: list[str],
     module_names: list[str],
 ) -> APIRouter:
-    main_dir = Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    main_dir = (
+        Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    )
     artifact_dir = main_dir / artifact_name
     _ensure_package_stub("app.routes.v5.api.main", main_dir)
     _ensure_package_stub(f"app.routes.v5.api.main.{artifact_name}", artifact_dir)
@@ -107,6 +109,14 @@ def _build_v5_artifact_test_app(
     app.dependency_overrides[require_auth] = _require_auth_override
     app.dependency_overrides[get_mcp] = _get_mcp_override
     return app
+
+
+@pytest.fixture(autouse=True)
+def _redirect_audit_upload_folder(monkeypatch, tmp_path):
+    """Keep audited route tests from writing uploads into server/uploads."""
+    import app.infra.globals as globals_mod
+
+    monkeypatch.setattr(globals_mod, "UPLOAD_FOLDER", tmp_path)
 
 
 @pytest_asyncio.fixture
@@ -180,6 +190,7 @@ async def v5_persona_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real persona v5 route stack."""
     import app.infra.globals as globals_mod
+
     persona_router = _build_artifact_router_for_tests(
         artifact_name="persona",
         prefix="/personas",
@@ -228,6 +239,7 @@ async def v5_scenario_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real scenario v5 route stack."""
     import app.infra.globals as globals_mod
+
     scenario_router = _build_artifact_router_for_tests(
         artifact_name="scenario",
         prefix="/scenarios",
@@ -276,6 +288,7 @@ async def v5_agent_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real agent v5 route stack."""
     import app.infra.globals as globals_mod
+
     agent_router = _build_artifact_router_for_tests(
         artifact_name="agent",
         prefix="/agents",
@@ -324,6 +337,7 @@ async def v5_group_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real group v5 route stack."""
     import app.infra.globals as globals_mod
+
     group_router = _build_artifact_router_for_tests(
         artifact_name="group",
         prefix="/group",
@@ -691,7 +705,15 @@ async def v5_activity_route_client(
         artifact_name="activity",
         prefix="/activity",
         tags=["activity"],
-        module_names=["get", "search", "problem", "resolve", "refresh", "export", "docs"],
+        module_names=[
+            "get",
+            "search",
+            "problem",
+            "resolve",
+            "refresh",
+            "export",
+            "docs",
+        ],
     )
 
     request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}

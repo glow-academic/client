@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.field.duplicate import duplicate_field_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.field.types import (
     DuplicateFieldApiRequest,
     DuplicateFieldApiResponse,
@@ -42,6 +42,7 @@ async def duplicate_field(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> DuplicateFieldApiResponse:
             return await duplicate_field_impl(
                 pool,
@@ -61,6 +62,7 @@ async def duplicate_field(
             arguments=request.model_dump(mode="json"),
             response_model=DuplicateFieldApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.refresh import refresh_persona_impl
 from app.infra.refresh.types import RefreshResponse
@@ -36,6 +36,7 @@ async def persona_refresh(
         arguments={},
         response_model=RefreshResponse,
         runner=_runner,
+        upload_folder=get_upload_folder(),
     )
 
     response.headers["X-Invalidate-Tags"] = ",".join(result.invalidated_tags)

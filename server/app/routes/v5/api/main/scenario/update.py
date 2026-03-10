@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.scenario.update import update_scenario_impl
 from app.routes.v5.api.main.scenario.types import (
     UpdateScenarioApiRequest,
@@ -55,10 +55,13 @@ async def update_scenario(
             session_id=session_id,
             operation="update",
             arguments={
-                "scenarios": [item.model_dump(mode="json") for item in request.scenarios]
+                "scenarios": [
+                    item.model_dump(mode="json") for item in request.scenarios
+                ]
             },
             response_model=UpdateScenarioApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = "scenarios"

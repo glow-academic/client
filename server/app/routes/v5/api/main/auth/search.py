@@ -10,9 +10,9 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.auth.search import search_auth_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.auth.types import ListAuthApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -51,6 +51,7 @@ async def search_auth(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> ListAuthApiResponse:
             return await search_auth_impl(
                 pool,
@@ -73,6 +74,7 @@ async def search_auth(
             arguments=request.model_dump(mode="json"),
             response_model=ListAuthApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

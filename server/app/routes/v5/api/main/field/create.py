@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.field.create import create_field_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.field.types import (
     CreateFieldApiRequest,
     CreateFieldApiResponse,
@@ -54,9 +54,12 @@ async def create_field(
             profile_id=profile_id,
             session_id=session_id,
             operation="create",
-            arguments={"fields": [item.model_dump(mode="json") for item in request.fields]},
+            arguments={
+                "fields": [item.model_dump(mode="json") for item in request.fields]
+            },
             response_model=CreateFieldApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = "fields"

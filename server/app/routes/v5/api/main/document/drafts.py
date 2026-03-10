@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.document.drafts import list_document_drafts_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.document.types import GetDocumentDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -56,6 +56,7 @@ async def get_document_drafts(
             bypass_cache=bypass_cache,
             response_model=GetDocumentDraftsApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
         response.headers["X-Cache-Tags"] = "documents,drafts"
         return result

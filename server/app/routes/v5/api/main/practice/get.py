@@ -32,7 +32,7 @@ from app.infra.chat.permissions import (
 )
 from app.infra.common_context import resolve_common_context
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.practice_context import resolve_practice_context
 from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.chat.types import (
@@ -527,6 +527,7 @@ async def practice_get(
             bypass_cache=bypass_cache,
             response_model=GetPracticeResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
     except HTTPException:

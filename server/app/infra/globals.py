@@ -47,6 +47,11 @@ BASE_FOLDER = Path("/app") if IN_DOCKER else PROJECT_ROOT
 UPLOAD_FOLDER = BASE_FOLDER / "uploads"
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
+
+def get_upload_folder() -> Path:
+    return UPLOAD_FOLDER
+
+
 AUDIO_FOLDER = UPLOAD_FOLDER / "audio"
 AUDIO_FOLDER.mkdir(parents=True, exist_ok=True)
 

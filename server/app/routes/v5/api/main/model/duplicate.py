@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.model.duplicate import duplicate_model_impl
 from app.routes.v5.api.main.model.types import (
     DuplicateModelApiRequest,
@@ -42,6 +42,7 @@ async def duplicate_model(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> DuplicateModelApiResponse:
             return await duplicate_model_impl(
                 pool,
@@ -61,6 +62,7 @@ async def duplicate_model(
             arguments=request.model_dump(mode="json"),
             response_model=DuplicateModelApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

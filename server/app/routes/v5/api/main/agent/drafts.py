@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.agent.drafts import list_agent_drafts_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.agent.types import GetAgentDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -58,6 +58,7 @@ async def get_agent_drafts(
             bypass_cache=bypass_cache,
             response_model=GetAgentDraftsApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
         response.headers["X-Cache-Tags"] = "agents,drafts"
         return result

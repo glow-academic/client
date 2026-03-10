@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.auth.get import get_auth_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.auth.types import GetAuthApiRequest, GetAuthApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -57,6 +57,7 @@ async def get_auth(
             bypass_cache=bypass_cache,
             response_model=GetAuthApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Cache-Tags"] = "auths"

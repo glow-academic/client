@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.eval.refresh import refresh_eval_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
@@ -38,6 +38,7 @@ async def eval_refresh(
         arguments={},
         response_model=RefreshResponse,
         runner=_runner,
+        upload_folder=get_upload_folder(),
     )
 
     response.headers["X-Invalidate-Tags"] = ",".join(result.invalidated_tags)

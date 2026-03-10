@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.infra.document.export import export_document_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.document.types import ExportDocumentApiResponse
 
 router = APIRouter()
@@ -50,4 +50,5 @@ async def export_documents(
         arguments=body.model_dump(mode="json"),
         response_model=ExportDocumentApiResponse,
         runner=_runner,
+        upload_folder=get_upload_folder(),
     )

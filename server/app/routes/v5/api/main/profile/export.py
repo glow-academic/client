@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.profile.export import export_profile_impl
 from app.routes.v5.api.main.profile.types import ExportProfileApiResponse
 
@@ -50,4 +50,5 @@ async def export_profiles(
         arguments=body.model_dump(mode="json"),
         response_model=ExportProfileApiResponse,
         runner=_runner,
+        upload_folder=get_upload_folder(),
     )

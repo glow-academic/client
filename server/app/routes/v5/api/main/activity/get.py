@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.activity.get import get_activity_impl_cached
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.activity.types import ActivityRequest, ActivityResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -23,7 +23,9 @@ async def get_activity(
         profile_id = http_request.state.profile_id
         session_id = http_request.state.session_id
         if not profile_id:
-            raise HTTPException(status_code=401, detail="Profile ID is required. Please sign in again.")
+            raise HTTPException(
+                status_code=401, detail="Profile ID is required. Please sign in again."
+            )
 
         pool = get_pool()
         redis = get_redis_client()
@@ -51,6 +53,7 @@ async def get_activity(
             bypass_cache=bypass_cache,
             response_model=ActivityResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
         response.headers["X-Cache-Tags"] = "artifacts,activity"
         response.headers.setdefault("X-Cache-Hit", "0")

@@ -25,7 +25,7 @@ from app.infra.analytics_facets import (
 )
 from app.infra.common_context import resolve_common_context
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.home_context import resolve_home_context
 from app.infra.home_permissions import (
     compute_completion_pct,
@@ -527,6 +527,7 @@ async def home_get(
             bypass_cache=bypass_cache,
             response_model=GetHomeResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
     except HTTPException:

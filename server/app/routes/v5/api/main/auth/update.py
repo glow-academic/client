@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.update import update_auth_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.auth.types import (
     UpdateAuthApiRequest,
     UpdateAuthApiResponse,
@@ -54,9 +54,12 @@ async def update_auth(
             profile_id=profile_id,
             session_id=session_id,
             operation="update",
-            arguments={"auths": [item.model_dump(mode="json") for item in request.auths]},
+            arguments={
+                "auths": [item.model_dump(mode="json") for item in request.auths]
+            },
             response_model=UpdateAuthApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = "auths"

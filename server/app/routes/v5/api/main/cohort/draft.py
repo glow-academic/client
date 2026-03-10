@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.cohort.draft import patch_cohort_draft_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.cohort.types import (
     PatchCohortDraftApiRequest,
     PatchCohortDraftApiResponse,
@@ -48,6 +48,7 @@ async def patch_cohort_draft(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> PatchCohortDraftApiResponse:
             return await patch_cohort_draft_impl(
                 pool,
@@ -68,6 +69,7 @@ async def patch_cohort_draft(
             arguments=request.model_dump(mode="json"),
             response_model=PatchCohortDraftApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

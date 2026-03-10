@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from app.infra.document.search import search_document_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.document.types import ListDocumentApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -55,6 +55,7 @@ async def search_document(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> ListDocumentApiResponse:
             return await search_document_impl(
                 pool,
@@ -81,6 +82,7 @@ async def search_document(
             arguments=request.model_dump(mode="json"),
             response_model=ListDocumentApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -11,9 +11,9 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.identity.settings import resolve_settings_theme
 from app.infra.identity.simulatable import SIMULATABLE_ROLES
-from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.route_permissions import compute_available_sections
 from app.routes.shared_types import (
@@ -105,9 +105,7 @@ async def get_profile_context(
 
             req_identity = getattr(http_request.state, "identity", None)
             is_emulation = (
-                getattr(req_identity, "is_emulation", False)
-                if req_identity
-                else False
+                getattr(req_identity, "is_emulation", False) if req_identity else False
             )
             emulation_depth = (
                 getattr(req_identity, "emulation_depth", 0) if req_identity else 0
@@ -144,6 +142,7 @@ async def get_profile_context(
             bypass_cache=bypass_cache,
             response_model=ProfileContextApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
     except HTTPException:

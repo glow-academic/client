@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.group.get import get_group_impl
 from app.routes.v5.api.main.group.types import (
     GetGroupDetailRequest,
@@ -71,6 +71,7 @@ async def get_group(
             bypass_cache=bypass_cache,
             response_model=GetGroupDetailResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         await set_cached(

@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.test.get import get_test_impl_cached
 from app.routes.v5.api.main.test.types import (
     GetTestArtifactRequest,
@@ -52,6 +52,7 @@ async def get_test_artifact(
             bypass_cache=bypass_cache,
             response_model=GetTestArtifactResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
         cache_hit = cache_hit_holder["value"]
 

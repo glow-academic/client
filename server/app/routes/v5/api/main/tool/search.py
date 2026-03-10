@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.tool.search import search_tool_impl
 from app.routes.v5.api.main.tool.types import ListToolApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -54,6 +54,7 @@ async def search_tool(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> ListToolApiResponse:
             return await search_tool_impl(
                 pool,
@@ -79,6 +80,7 @@ async def search_tool(
             arguments=request.model_dump(mode="json"),
             response_model=ListToolApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

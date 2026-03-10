@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.setting.search import search_setting_impl
 from app.routes.v5.api.main.setting.types import ListSettingApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -42,6 +42,7 @@ async def search_setting(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> ListSettingApiResponse:
             return await search_setting_impl(
                 pool,
@@ -59,6 +60,7 @@ async def search_setting(
             arguments=request.model_dump(mode="json"),
             response_model=ListSettingApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

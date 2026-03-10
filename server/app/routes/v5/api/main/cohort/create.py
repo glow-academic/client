@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.cohort.create import create_cohort_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.cohort.types import (
     CreateCohortApiRequest,
     CreateCohortApiResponse,
@@ -54,9 +54,12 @@ async def create_cohort(
             profile_id=profile_id,
             session_id=session_id,
             operation="create",
-            arguments={"cohorts": [item.model_dump(mode="json") for item in request.cohorts]},
+            arguments={
+                "cohorts": [item.model_dump(mode="json") for item in request.cohorts]
+            },
             response_model=CreateCohortApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = "cohorts"

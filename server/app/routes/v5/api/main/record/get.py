@@ -25,7 +25,7 @@ from app.infra.dashboard.permissions import (
     compute_secondary_metrics_v2,
 )
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.dashboard.types import DashboardBundleResponse
 from app.routes.v5.api.main.record.types import RecordRequest
 from app.routes.v5.api.main.types import FilterOption
@@ -103,7 +103,9 @@ async def get_record(
             )
             if request.simulation_filters and "general" in request.simulation_filters:
                 attempt_type = "general"
-            elif request.simulation_filters and "practice" in request.simulation_filters:
+            elif (
+                request.simulation_filters and "practice" in request.simulation_filters
+            ):
                 attempt_type = "practice"
             else:
                 attempt_type = None
@@ -160,13 +162,16 @@ async def get_record(
 
             # --- Phase 4: Build name maps ---
             simulation_scenario_counts = {
-                str(r["simulation_id"]): r["scenario_count"] for r in scenario_count_rows
+                str(r["simulation_id"]): r["scenario_count"]
+                for r in scenario_count_rows
             }
             persona_name_map: dict[str, str] = {
                 str(p.persona_id): p.name for p in personas if p.persona_id and p.name
             }
             cohort_name_map: dict[str, str] = {
-                str(r["id"]): r["name"] for r in cohort_name_rows if r["id"] and r["name"]
+                str(r["id"]): r["name"]
+                for r in cohort_name_rows
+                if r["id"] and r["name"]
             }
             simulation_name_map: dict[str, str] = {
                 str(s.simulation_id): s.name
@@ -430,6 +435,7 @@ async def get_record(
             bypass_cache=bypass_cache,
             response_model=DashboardBundleResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
     except HTTPException:

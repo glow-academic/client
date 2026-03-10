@@ -5,9 +5,9 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
-from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.eval.export import export_eval_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.eval.types import ExportEvalApiResponse
 
 router = APIRouter()
@@ -51,4 +51,5 @@ async def export_evals(
         arguments=body.model_dump(mode="json"),
         response_model=ExportEvalApiResponse,
         runner=_runner,
+        upload_folder=get_upload_folder(),
     )

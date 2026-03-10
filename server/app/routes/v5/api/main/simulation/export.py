@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.simulation.export import export_simulation_impl
 from app.routes.v5.api.main.simulation.types import (
     ExportSimulationApiRequest,
@@ -44,4 +44,5 @@ async def export_simulations(
         arguments=body.model_dump(mode="json"),
         response_model=ExportSimulationApiResponse,
         runner=_runner,
+        upload_folder=get_upload_folder(),
     )

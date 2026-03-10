@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.invocation.get import get_invocation_impl
 from app.routes.v5.api.main.invocation.types import GetSuiteRequest, GetSuiteResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -57,6 +57,7 @@ async def invocation_get(
             bypass_cache=bypass_cache,
             response_model=GetSuiteResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
     except HTTPException:
         raise

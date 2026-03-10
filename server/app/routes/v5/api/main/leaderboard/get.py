@@ -5,10 +5,12 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool
-from app.infra.globals import get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.leaderboard.get import get_leaderboard_impl_cached
-from app.routes.v5.api.main.leaderboard.types import LeaderboardRequest, LeaderboardResponse
+from app.routes.v5.api.main.leaderboard.types import (
+    LeaderboardRequest,
+    LeaderboardResponse,
+)
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -24,7 +26,9 @@ async def get_leaderboard(
         profile_id = http_request.state.profile_id
         session_id = http_request.state.session_id
         if not profile_id:
-            raise HTTPException(status_code=401, detail="Profile ID is required. Please sign in again.")
+            raise HTTPException(
+                status_code=401, detail="Profile ID is required. Please sign in again."
+            )
 
         pool = get_pool()
         redis = get_redis_client()
@@ -52,6 +56,7 @@ async def get_leaderboard(
             bypass_cache=bypass_cache,
             response_model=LeaderboardResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
         response.headers["X-Cache-Tags"] = "artifacts,leaderboard"
         response.headers.setdefault("X-Cache-Hit", "0")

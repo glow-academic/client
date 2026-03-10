@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.drafts import list_persona_drafts_impl
 from app.routes.v5.api.main.persona.types import GetPersonaDraftsApiResponse
@@ -55,6 +55,7 @@ async def get_persona_drafts(
             bypass_cache=bypass_cache,
             response_model=GetPersonaDraftsApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Cache-Tags"] = "personas,drafts"

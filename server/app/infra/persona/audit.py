@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from typing import Any, TypeVar
 from uuid import UUID
 
@@ -46,6 +47,7 @@ async def run_persona_operation_with_audit(
     response_model: type[T] | None = None,
     role: str = "assistant",
     mcp: bool = False,
+    upload_folder: Path | None = None,
 ) -> T:
     """Execute a persona operation and persist a tool-call audit receipt when possible.
 
@@ -66,4 +68,5 @@ async def run_persona_operation_with_audit(
         response_model=response_model,
         role=role,
         mcp=mcp,
+        upload_folder=upload_folder,
     )

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.delete import delete_persona_impl
 from app.routes.v5.api.main.persona.types import (
@@ -39,6 +39,7 @@ async def delete_persona(
 
         pool = get_pool()
         redis = get_redis_client()
+
         async def _runner() -> DeletePersonaApiResponse:
             return await delete_persona_impl(
                 pool,
@@ -57,6 +58,7 @@ async def delete_persona(
             arguments=request.model_dump(mode="json"),
             response_model=DeletePersonaApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

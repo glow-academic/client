@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.setting.get import get_setting_impl
 from app.routes.v5.api.main.setting.types import (
     GetSettingApiRequest,
@@ -61,6 +61,7 @@ async def get_setting(
             bypass_cache=bypass_cache,
             response_model=GetSettingApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Cache-Tags"] = "settings"

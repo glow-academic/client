@@ -120,7 +120,12 @@ def _filter_meta_commands(sql: str) -> str:
 
 
 def _load_pre_existing_modules() -> str:
-    """Load SQL from modules 01-resources through 10-systems (before setups)."""
+    """Load SQL from modules 01-resources through 10-systems (before setups).
+
+    Loads in order:
+      1. Module directories (01-resources, 05-tools, 07-rubrics, etc.)
+      2. Combined seed file (modules-02-10-seed.sql) for Python-generated modules
+    """
     parts: list[str] = []
     for d in sorted(MODULES_DIR.iterdir()):
         if not d.is_dir():
@@ -132,6 +137,12 @@ def _load_pre_existing_modules() -> str:
         # Recursively collect all .sql files in dependency order
         for sql_file in sorted(d.rglob("*.sql")):
             parts.append(sql_file.read_text())
+
+    # Load combined seed for modules 02-10 (Python-generated)
+    combined = MODULES_DIR / "modules-02-10-seed.sql"
+    if combined.exists():
+        parts.append(combined.read_text())
+
     return "\n".join(parts)
 
 
@@ -1174,7 +1185,9 @@ def _record_to_insert(table: str, record: asyncpg.Record) -> str:
 
     col_str = ", ".join(cols)
     val_str = ", ".join(vals)
-    return f"INSERT INTO public.{table} ({col_str}) VALUES ({val_str}) ON CONFLICT (id) DO NOTHING;"
+    # Only use ON CONFLICT (id) for tables that have an id column
+    conflict = " ON CONFLICT (id) DO NOTHING" if "id" in cols else ""
+    return f"INSERT INTO public.{table} ({col_str}) VALUES ({val_str}){conflict};"
 
 
 # Tables touched by persona creation

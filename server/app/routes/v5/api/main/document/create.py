@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.document.create import create_document_impl
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.document.types import (
     CreateDocumentApiRequest,
     CreateDocumentApiResponse,
@@ -55,10 +55,13 @@ async def create_document(
             session_id=session_id,
             operation="create",
             arguments={
-                "documents": [item.model_dump(mode="json") for item in request.documents]
+                "documents": [
+                    item.model_dump(mode="json") for item in request.documents
+                ]
             },
             response_model=CreateDocumentApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Invalidate-Tags"] = "documents"

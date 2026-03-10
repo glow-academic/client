@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from typing import Any, TypeVar
 from uuid import UUID
 
@@ -57,6 +58,7 @@ async def run_artifact_operation_with_audit(
     response_model: type[T] | None = None,
     role: str = "assistant",
     mcp: bool = False,
+    upload_folder: Path | None = None,
 ) -> T:
     """Execute an artifact operation and persist a tool-call audit receipt when possible.
 
@@ -89,6 +91,7 @@ async def run_artifact_operation_with_audit(
     effective_group_id = group_id or common.profile.group_id
 
     effective_profiles_id = common.profile.profiles_id
+    effective_upload_folder = upload_folder or UPLOAD_FOLDER
 
     if (
         tool_id is None
@@ -110,7 +113,7 @@ async def run_artifact_operation_with_audit(
             group_id=effective_group_id,
             session_id=effective_session_id,
             profile_id=effective_profiles_id,
-            upload_folder=UPLOAD_FOLDER,
+            upload_folder=effective_upload_folder,
             tool_fn=_tool_fn,
             arguments=arguments,
             tool_id=tool_id,

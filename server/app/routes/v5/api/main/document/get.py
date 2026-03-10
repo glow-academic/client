@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.document.get import get_document_impl
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.routes.v5.api.main.document.types import (
     GetDocumentApiRequest,
     GetDocumentApiResponse,
@@ -60,6 +60,7 @@ async def get_document(
             bypass_cache=bypass_cache,
             response_model=GetDocumentApiResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
 
         response.headers["X-Cache-Tags"] = "documents"

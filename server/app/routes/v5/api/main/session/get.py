@@ -5,8 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import get_pool
-from app.infra.globals import get_redis_client
+from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.session.get import get_session_detail_impl_cached
 from app.routes.v5.api.main.session.types import (
     GetSessionDetailRequest,
@@ -59,6 +58,7 @@ async def get_session(
             bypass_cache=bypass_cache,
             response_model=GetSessionDetailResponse,
             runner=_runner,
+            upload_folder=get_upload_folder(),
         )
         response.headers["X-Cache-Tags"] = "artifacts,session"
         response.headers.setdefault("X-Cache-Hit", "0")
