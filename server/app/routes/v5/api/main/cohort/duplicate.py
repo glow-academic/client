@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.cohort.duplicate import duplicate_cohort_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import (
     DuplicateCohortApiRequest,
@@ -41,12 +42,25 @@ async def duplicate_cohort(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_cohort_impl(
+        async def _runner() -> DuplicateCohortApiResponse:
+            return await duplicate_cohort_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                cohort_id=request.cohort_id,
+                session_id=session_id,
+            )
+
+        result = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="cohort",
             profile_id=profile_id,
-            cohort_id=request.cohort_id,
             session_id=session_id,
+            operation="duplicate",
+            arguments=request.model_dump(mode="json"),
+            response_model=DuplicateCohortApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
