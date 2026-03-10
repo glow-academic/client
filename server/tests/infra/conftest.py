@@ -1012,6 +1012,55 @@ async def v5_model_route_client(
 
 
 @pytest_asyncio.fixture
+async def v5_field_route_client(
+    pool,
+    redis_client,
+) -> AsyncGenerator[V5RouteClient, None]:
+    """HTTP client mounted on the real field v5 route stack."""
+    import app.infra.globals as globals_mod
+
+    field_router = _build_artifact_router_for_tests(
+        artifact_name="field",
+        prefix="/fields",
+        tags=["fields"],
+        module_names=[
+            "get",
+            "search",
+            "create",
+            "update",
+            "delete",
+            "duplicate",
+            "draft",
+            "drafts",
+            "docs",
+            "export",
+            "refresh",
+        ],
+    )
+
+    request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
+    app = _build_v5_artifact_test_app(
+        artifact_router=field_router,
+        request_state=request_state,
+    )
+
+    prior_pool = globals_mod._db_pool
+    prior_redis = globals_mod.redis_client
+    globals_mod._db_pool = pool
+    globals_mod.redis_client = redis_client
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        yield V5RouteClient(client=client, _request_state=request_state)
+
+    globals_mod._db_pool = prior_pool
+    globals_mod.redis_client = prior_redis
+
+
+@pytest_asyncio.fixture
 async def attempt_route_actor(pool, redis_client, setting_graph_factory):
     from tests.infra.route_helpers import create_admin_route_actor
 
