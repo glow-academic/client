@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.update import update_persona_impl
 from app.routes.v5.api.main.persona.types import (
     UpdatePersonaApiRequest,
@@ -37,12 +38,26 @@ async def update_persona(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_persona_impl(
+        async def _runner() -> UpdatePersonaApiResponse:
+            return await update_persona_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                items=request.personas,
+                session_id=session_id,
+            )
+
+        response_data = await run_persona_operation_with_audit(
             pool,
             redis,
             profile_id=profile_id,
-            items=request.personas,
             session_id=session_id,
+            operation="update",
+            arguments={
+                "personas": [item.model_dump(mode="json") for item in request.personas]
+            },
+            response_model=UpdatePersonaApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = "personas"

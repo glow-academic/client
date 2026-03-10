@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.search import search_persona_impl
 from app.routes.v5.api.main.persona.types import ListPersonaApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -58,23 +59,35 @@ async def search_persona(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_persona_impl(
+        async def _runner() -> ListPersonaApiResponse:
+            return await search_persona_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                search=request.search,
+                scenario_ids=request.scenario_ids,
+                field_ids=request.field_ids,
+                filter_department_ids=request.filter_department_ids,
+                scenario_search=request.scenario_search,
+                field_search=request.field_search,
+                department_search=request.department_search,
+                color_search=request.color_search,
+                icon_search=request.icon_search,
+                voice_search=request.voice_search,
+                instruction_search=request.instruction_search,
+                page_size=request.page_size or 12,
+                page_offset=request.page_offset or 0,
+            )
+
+        result = await run_persona_operation_with_audit(
             pool,
             redis,
             profile_id=profile_id,
-            search=request.search,
-            scenario_ids=request.scenario_ids,
-            field_ids=request.field_ids,
-            filter_department_ids=request.filter_department_ids,
-            scenario_search=request.scenario_search,
-            field_search=request.field_search,
-            department_search=request.department_search,
-            color_search=request.color_search,
-            icon_search=request.icon_search,
-            voice_search=request.voice_search,
-            instruction_search=request.instruction_search,
-            page_size=request.page_size or 12,
-            page_offset=request.page_offset or 0,
+            session_id=http_request.state.session_id,
+            operation="search",
+            arguments=request.model_dump(mode="json"),
+            response_model=ListPersonaApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

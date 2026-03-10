@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.delete import delete_persona_impl
 from app.routes.v5.api.main.persona.types import (
     DeletePersonaApiRequest,
@@ -38,12 +39,24 @@ async def delete_persona(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_persona_impl(
+        async def _runner() -> DeletePersonaApiResponse:
+            return await delete_persona_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                persona_ids=request.persona_ids,
+                session_id=session_id,
+            )
+
+        result = await run_persona_operation_with_audit(
             pool,
             redis,
             profile_id=profile_id,
-            persona_ids=request.persona_ids,
             session_id=session_id,
+            operation="delete",
+            arguments=request.model_dump(mode="json"),
+            response_model=DeletePersonaApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

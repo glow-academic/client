@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.draft import patch_persona_draft_impl
 from app.routes.v5.api.main.persona.types import (
     PatchPersonaDraftApiRequest,
@@ -47,12 +48,25 @@ async def patch_persona_draft(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await patch_persona_draft_impl(
+        async def _runner() -> PatchPersonaDraftApiResponse:
+            return await patch_persona_draft_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                request=request,
+            )
+
+        result = await run_persona_operation_with_audit(
             pool,
             redis,
             profile_id=profile_id,
             session_id=session_id,
-            request=request,
+            draft_id=request.draft_id,
+            operation="draft",
+            arguments=request.model_dump(mode="json"),
+            response_model=PatchPersonaDraftApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

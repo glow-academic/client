@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.get import get_persona_impl
 from app.routes.v5.api.main.persona.types import (
     GetPersonaApiRequest,
@@ -35,23 +36,40 @@ async def get_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_persona_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+        request_payload = request.model_dump(mode="json")
+
+        async def _runner() -> GetPersonaApiResponse:
+            return await get_persona_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                persona_id=request.persona_id,
+                draft_id=request.draft_id,
+                parameter_ids=[UUID(pid) for pid in request.parameter_ids]
+                if request.parameter_ids
+                else None,
+                color_search=request.color_search,
+                icon_search=request.icon_search,
+                descriptions_search=request.descriptions_search,
+                instructions_search=request.instructions_search,
+                color_show_selected=request.color_show_selected,
+                icon_show_selected=request.icon_show_selected,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_persona_operation_with_audit(
+            pool,
+            redis,
             profile_id=profile_id,
             session_id=session_id,
-            persona_id=request.persona_id,
-            draft_id=request.draft_id,
-            parameter_ids=[UUID(pid) for pid in request.parameter_ids]
-            if request.parameter_ids
-            else None,
-            color_search=request.color_search,
-            icon_search=request.icon_search,
-            descriptions_search=request.descriptions_search,
-            instructions_search=request.instructions_search,
-            color_show_selected=request.color_show_selected,
-            icon_show_selected=request.icon_show_selected,
+            operation="get",
+            arguments=request_payload,
             bypass_cache=bypass_cache,
+            response_model=GetPersonaApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "personas"

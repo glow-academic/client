@@ -31,6 +31,7 @@ async def create_tool_call(
     tool_id: UUID | None = None,
     role: str = "assistant",
     mcp: bool = False,
+    raise_on_error: bool = False,
 ) -> CreateToolSetupResponse:
     """Execute a tool and persist the full entry chain + files.
 
@@ -40,9 +41,11 @@ async def create_tool_call(
     4. Creates run + message entry chain.
     """
     # 1. Execute — call tool_fn and capture both raw result + serialized output
+    tool_error: Exception | None = None
     try:
         raw_result = await tool_fn(conn, **arguments)
     except Exception as exc:
+        tool_error = exc
         raw_result = {"success": False, "message": str(exc)}
 
     if isinstance(raw_result, str):
@@ -154,8 +157,9 @@ async def create_tool_call(
         )
         message_call_upload_junction_id = msg_call_upload.id
 
-    return CreateToolSetupResponse(
+    response = CreateToolSetupResponse(
         result_id=result_id,
+        result=raw_result,
         run_id=run.id,
         call_id=call_id,
         message_id=msg.message_id,
@@ -165,3 +169,8 @@ async def create_tool_call(
         message_text_upload_junction_id=msg.message_upload_junction_id,
         message_call_upload_junction_id=message_call_upload_junction_id,
     )
+
+    if raise_on_error and tool_error is not None:
+        raise tool_error
+
+    return response

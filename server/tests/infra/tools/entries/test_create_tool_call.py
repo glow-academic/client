@@ -58,6 +58,7 @@ async def test_with_tool_returns_all_ids(conn, profile_id, tmp_path):
     assert result.message_id is not None
     assert result.text_id is not None
     assert result.call_upload_junction_id is not None
+    assert json.loads(result.result)["success"] is True
 
 
 async def test_with_tool_writes_both_files(conn, profile_id, tmp_path):
@@ -241,3 +242,44 @@ async def test_failing_tool_still_persists(conn, profile_id, tmp_path):
     data = json.loads(txt_file.read_text())
     assert data["success"] is False
     assert "something broke" in data["message"]
+
+
+async def test_returns_raw_result_payload(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
+
+    result = await create_tool_call(
+        conn,
+        group_id=group.id,
+        session_id=session.id,
+        profile_id=profile_id,
+        upload_folder=tmp_path,
+        tool_fn=_success_tool,
+        arguments={"name": "Dr. Smith"},
+        tool_id=tool.id,
+    )
+
+    assert result.result is not None
+    assert json.loads(result.result)["message"] == "Created"
+
+
+async def test_raise_on_error_persists_then_reraises(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
+
+    with pytest.raises(ValueError, match="something broke"):
+        await create_tool_call(
+            conn,
+            group_id=group.id,
+            session_id=session.id,
+            profile_id=profile_id,
+            upload_folder=tmp_path,
+            tool_fn=_failing_tool,
+            arguments={"name": "Dr. Smith"},
+            tool_id=tool.id,
+            raise_on_error=True,
+        )
+
+    txt_file = list((tmp_path / "text").glob("*.txt"))[0]
+    data = json.loads(txt_file.read_text())
+    assert data["success"] is False

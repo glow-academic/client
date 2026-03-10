@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.export import export_persona_impl
 from app.routes.v5.api.main.persona.types import (
     ExportPersonaApiRequest,
@@ -24,10 +25,22 @@ async def export_personas(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_persona_impl(
+    async def _runner() -> ExportPersonaApiResponse:
+        return await export_persona_impl(
+            pool,
+            redis,
+            profile_id=profile_id,
+            session_id=session_id,
+            persona_id=body.persona_id,
+        )
+
+    return await run_persona_operation_with_audit(
         pool,
         redis,
         profile_id=profile_id,
         session_id=session_id,
-        persona_id=body.persona_id,
+        operation="export",
+        arguments=body.model_dump(mode="json"),
+        response_model=ExportPersonaApiResponse,
+        runner=_runner,
     )
