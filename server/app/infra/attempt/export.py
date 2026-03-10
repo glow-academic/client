@@ -112,17 +112,24 @@ async def export_attempt_impl(
 
     async def _fetch_attempts() -> list:
         async with pool.acquire() as c:
-            return await search_attempts(c, attempt_ids=[attempt_id], limit=1)
+            items, _total_count = await search_attempts(
+                c, attempt_ids=[attempt_id], limit=1
+            )
+            return items
 
     async def _fetch_chats() -> list:
         async with pool.acquire() as c:
-            return await search_attempt_chats(c, attempt_ids=[attempt_id], limit=100000)
+            items, _total_count = await search_attempt_chats(
+                c, attempt_ids=[attempt_id], limit=100000
+            )
+            return items
 
     async def _fetch_messages() -> list:
         async with pool.acquire() as c:
-            return await search_attempt_messages(
+            items, _total_count = await search_attempt_messages(
                 c, attempt_ids=[attempt_id], limit=100000
             )
+            return items
 
     attempts, chats, messages = await asyncio.gather(
         _fetch_attempts(),

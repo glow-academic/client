@@ -133,7 +133,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     #     "delete": ("app.routes.v5.api.main.field.delete", "delete_field"),
     #     "duplicate": ("app.routes.v5.api.main.field.duplicate", "duplicate_field"),
     #     "draft": ("app.routes.v5.api.main.field.draft", "patch_field_draft"),
-    #     "docs": ("app.infra.field_docs", "docs_field_client"),
+    #     "docs": ("app.infra.field.docs", "docs_field_impl"),
     # },
     "group": {
         "get": ("app.routes.v5.api.main.group.get", "get_group"),
