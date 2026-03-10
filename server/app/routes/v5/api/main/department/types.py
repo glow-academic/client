@@ -100,7 +100,6 @@ class CreateDepartmentApiRequest(BaseModel):
     """Request model for bulk create department endpoint."""
 
     departments: list[CreateDepartmentItem]
-    group_id: UUID | None = None
 
 
 class CreateDepartmentApiResponse(BaseModel):
@@ -132,7 +131,6 @@ class UpdateDepartmentApiRequest(BaseModel):
     """Request model for bulk update department endpoint."""
 
     departments: list[UpdateDepartmentItem]
-    group_id: UUID | None = None
 
 
 class UpdateDepartmentApiResponse(BaseModel):
@@ -192,7 +190,6 @@ class PatchDepartmentDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

@@ -202,7 +202,6 @@ class CreateModelApiRequest(BaseModel):
     """Request model for bulk create model endpoint."""
 
     models: list[CreateModelItem]
-    group_id: UUID | None = None
 
 
 class CreateModelApiResponse(BaseModel):
@@ -249,7 +248,6 @@ class UpdateModelApiRequest(BaseModel):
     """Request model for bulk update model endpoint."""
 
     models: list[UpdateModelItem]
-    group_id: UUID | None = None
 
 
 class UpdateModelApiResponse(BaseModel):
@@ -326,7 +324,6 @@ class PatchModelDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

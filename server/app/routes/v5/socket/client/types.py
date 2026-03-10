@@ -114,7 +114,6 @@ class TestGroupPayload(BaseModel):
 
     test_id: UUID
     test_invocation_id: UUID
-    group_id: UUID
     prev_run_id: UUID | None = None  # None = start from first run
 
 

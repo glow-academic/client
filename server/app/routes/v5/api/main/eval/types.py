@@ -168,7 +168,6 @@ class CreateEvalApiRequest(BaseModel):
     """Request model for bulk create eval endpoint."""
 
     evals: list[CreateEvalItem]
-    group_id: UUID | None = None
 
 
 class CreateEvalApiResponse(BaseModel):
@@ -206,7 +205,6 @@ class UpdateEvalApiRequest(BaseModel):
     """Request model for bulk update eval endpoint."""
 
     evals: list[UpdateEvalItem]
-    group_id: UUID | None = None
 
 
 class UpdateEvalApiResponse(BaseModel):
@@ -276,7 +274,6 @@ class PatchEvalDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

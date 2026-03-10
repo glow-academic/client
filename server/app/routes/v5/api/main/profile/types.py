@@ -193,7 +193,6 @@ class CreateProfileApiRequest(BaseModel):
     """Request model for bulk create profile endpoint."""
 
     profiles: list[CreateProfileItem]
-    group_id: UUID | None = None
 
 
 class CreateProfileApiResponse(BaseModel):
@@ -225,7 +224,6 @@ class UpdateProfileApiRequest(BaseModel):
     """Request model for bulk update profile endpoint."""
 
     profiles: list[UpdateProfileItem]
-    group_id: UUID | None = None
 
 
 class UpdateProfileApiResponse(BaseModel):
@@ -285,7 +283,6 @@ class PatchProfileDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

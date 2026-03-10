@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.infra.chat_export import export_chat_client
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.chat.types import ExportChatApiResponse
 
 router = APIRouter()
@@ -16,7 +17,6 @@ class ExportChatApiRequest(BaseModel):
     """Request model for chat export."""
 
     chat_entry_id: UUID
-    group_id: UUID
     attempt_id: UUID | None = None
     draft_id: UUID | None = None
 
@@ -31,14 +31,26 @@ async def export_chat(
     profile_id = http_request.state.profile_id
     session_id = http_request.state.session_id
     pool = get_pool()
+    redis = get_redis_client()
+    identity = await resolve_profile_identity_context(
+        pool,
+        profile_id,
+        redis,
+        session_id=session_id,
+        draft_id=body.draft_id,
+        attempt_id=body.attempt_id,
+    )
+    group_id = identity.group_id if identity else None
+    if group_id is None:
+        raise ValueError("Group ID could not be resolved for chat export")
 
     return await export_chat_client(
         pool,
-        get_redis_client(),
+        redis,
         profile_id=profile_id,
         session_id=session_id,
         chat_entry_id=body.chat_entry_id,
-        group_id=body.group_id,
+        group_id=group_id,
         attempt_id=body.attempt_id,
         draft_id=body.draft_id,
     )

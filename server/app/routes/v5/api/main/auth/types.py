@@ -127,7 +127,6 @@ class CreateAuthApiRequest(BaseModel):
     """Request model for bulk create auth endpoint."""
 
     auths: list[CreateAuthItem]
-    group_id: UUID | None = None
 
 
 class CreateAuthApiResponse(BaseModel):
@@ -164,7 +163,6 @@ class UpdateAuthApiRequest(BaseModel):
     """Request model for bulk update auth endpoint."""
 
     auths: list[UpdateAuthItem]
-    group_id: UUID | None = None
 
 
 class UpdateAuthApiResponse(BaseModel):
@@ -228,7 +226,6 @@ class PatchAuthDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

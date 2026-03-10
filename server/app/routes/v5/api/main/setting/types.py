@@ -160,7 +160,6 @@ class CreateSettingApiRequest(BaseModel):
     """Request model for bulk create setting endpoint."""
 
     settings: list[CreateSettingItem]
-    group_id: UUID | None = None
 
 
 class CreateSettingApiResponse(BaseModel):
@@ -205,7 +204,6 @@ class UpdateSettingApiRequest(BaseModel):
     """Request model for bulk update setting endpoint."""
 
     settings: list[UpdateSettingItem]
-    group_id: UUID | None = None
 
 
 class UpdateSettingApiResponse(BaseModel):
@@ -236,7 +234,6 @@ class PatchSettingDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

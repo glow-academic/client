@@ -136,7 +136,6 @@ class CreateToolApiRequest(BaseModel):
     """Request model for bulk create tool endpoint."""
 
     tools: list[CreateToolItem]
-    group_id: UUID | None = None
 
 
 class CreateToolApiResponse(BaseModel):
@@ -176,7 +175,6 @@ class UpdateToolApiRequest(BaseModel):
     """Request model for bulk update tool endpoint."""
 
     tools: list[UpdateToolItem]
-    group_id: UUID | None = None
 
 
 class UpdateToolApiResponse(BaseModel):
@@ -233,7 +231,6 @@ class PatchToolDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

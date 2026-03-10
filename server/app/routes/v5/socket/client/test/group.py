@@ -5,9 +5,12 @@ All business logic lives in v5/internal/test/group.py.
 """
 
 from typing import Any
+from uuid import UUID
 
-from app.infra.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.routes.v5.socket.client.types import TestGroupPayload
 from app.routes.v5.socket.internal.test.types import TestErrorData
 from app.utils.logging.db_logger import get_logger
@@ -35,12 +38,36 @@ async def test_group(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            await internal_sio.emit(
+                "test_error",
+                TestErrorData(
+                    sid=sid,
+                    message="Session not found. Please reconnect.",
+                    error_type="auth",
+                ).model_dump(mode="json"),
+            )
+            return
+
+        identity = await resolve_profile_identity_context(
+            get_pool(),
+            UUID(profile_id_str),
+            get_redis_client(),
+            session_id=UUID(session_id_str),
+            test_id=payload.test_id,
+        )
+        group_id = identity.group_id if identity else None
+        if group_id is None:
+            raise ValueError(f"Group not found for test {payload.test_id}")
+
         await internal_sio.emit(
             "test_group",
             {
                 "sid": sid,
                 "profile_id": profile_id_str,
                 **payload.model_dump(mode="json"),
+                "group_id": str(group_id),
             },
         )
 

@@ -142,7 +142,6 @@ class CreateProviderApiRequest(BaseModel):
     """Request model for bulk create provider endpoint."""
 
     providers: list[CreateProviderItem]
-    group_id: UUID | None = None
 
 
 class CreateProviderApiResponse(BaseModel):
@@ -178,7 +177,6 @@ class UpdateProviderApiRequest(BaseModel):
     """Request model for bulk update provider endpoint."""
 
     providers: list[UpdateProviderItem]
-    group_id: UUID | None = None
 
 
 class UpdateProviderApiResponse(BaseModel):
@@ -238,7 +236,6 @@ class PatchProviderDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

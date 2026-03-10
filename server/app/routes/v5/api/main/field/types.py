@@ -138,7 +138,6 @@ class CreateFieldApiRequest(BaseModel):
     """Request model for bulk create field endpoint."""
 
     fields: list[CreateFieldItem]
-    group_id: UUID | None = None
 
 
 class CreateFieldApiResponse(BaseModel):
@@ -175,7 +174,6 @@ class UpdateFieldApiRequest(BaseModel):
     """Request model for bulk update field endpoint."""
 
     fields: list[UpdateFieldItem]
-    group_id: UUID | None = None
 
 
 class UpdateFieldApiResponse(BaseModel):
@@ -205,7 +203,6 @@ class PatchFieldDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

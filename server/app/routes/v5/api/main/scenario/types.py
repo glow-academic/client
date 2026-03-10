@@ -501,7 +501,6 @@ class CreateScenarioApiRequest(BaseModel):
     """Request model for bulk create scenario endpoint."""
 
     scenarios: list[CreateScenarioItem]
-    group_id: UUID | None = None
 
 
 class CreateScenarioApiResponse(BaseModel):
@@ -564,7 +563,6 @@ class UpdateScenarioApiRequest(BaseModel):
     """Request model for bulk update scenario endpoint."""
 
     scenarios: list[UpdateScenarioItem]
-    group_id: UUID | None = None
 
 
 class UpdateScenarioApiResponse(BaseModel):
@@ -638,7 +636,6 @@ class DuplicateScenarioApiRequest(BaseModel):
     """Request for duplicating a scenario."""
 
     scenario_id: UUID
-    group_id: UUID | None = None
 
 
 class DuplicateScenarioApiResponse(BaseModel):
@@ -712,7 +709,6 @@ class PatchScenarioDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

@@ -81,6 +81,7 @@ async def stream_litellm_events(
     # Usage represents completion - when we find it, emit completion event
     # All text/tool deltas are progress events (already handled)
     final_usage_data: dict[str, Any] | None = None
+    usage_event_emitted = False
     response_completed_received = (
         False  # Track if response.completed was received (for Responses API)
     )
@@ -141,6 +142,7 @@ async def stream_litellm_events(
                         "finish_reason": finish_reason,
                         "usage": final_usage_data,
                     }
+                    usage_event_emitted = True
 
         # Also check chunk.usage directly (for Pydantic models)
         if not final_usage_data and hasattr(chunk, "usage"):
@@ -176,6 +178,7 @@ async def stream_litellm_events(
                         "finish_reason": finish_reason,
                         "usage": final_usage_data,
                     }
+                    usage_event_emitted = True
 
         # Detect format on first chunk
         if format_detected is None:
@@ -234,7 +237,7 @@ async def stream_litellm_events(
 
     # After streaming completes, emit final message_complete with usage if we found it in final chunk
     # This handles the case where usage chunk comes after all other chunks
-    if final_usage_data:
+    if final_usage_data and not usage_event_emitted:
         # Emit a message_complete event with usage
         # This will be merged/handled by the event processor
         yield {

@@ -463,7 +463,6 @@ class CreatePersonaApiRequest(BaseModel):
     """Request model for bulk create persona endpoint."""
 
     personas: list[CreatePersonaItem]
-    group_id: UUID | None = None
 
 
 class CreatePersonaApiResponse(BaseModel):
@@ -510,7 +509,6 @@ class UpdatePersonaApiRequest(BaseModel):
     """Request model for bulk update persona endpoint."""
 
     personas: list[UpdatePersonaItem]
-    group_id: UUID | None = None
 
 
 class UpdatePersonaApiResponse(BaseModel):
@@ -580,7 +578,6 @@ class PatchPersonaDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

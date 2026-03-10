@@ -117,7 +117,6 @@ class CreateRubricApiRequest(BaseModel):
     """Request model for bulk create rubric endpoint."""
 
     rubrics: list[CreateRubricItem]
-    group_id: UUID | None = None
 
 
 class CreateRubricApiResponse(BaseModel):
@@ -153,7 +152,6 @@ class UpdateRubricApiRequest(BaseModel):
     """Request model for bulk update rubric endpoint."""
 
     rubrics: list[UpdateRubricItem]
-    group_id: UUID | None = None
 
 
 class UpdateRubricApiResponse(BaseModel):
@@ -213,7 +211,6 @@ class PatchRubricDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

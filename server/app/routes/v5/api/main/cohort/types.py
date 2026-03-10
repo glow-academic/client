@@ -334,7 +334,6 @@ class CreateCohortApiRequest(BaseModel):
     """Request model for bulk create cohort endpoint."""
 
     cohorts: list[CreateCohortItem]
-    group_id: UUID | None = None
 
 
 class CreateCohortApiResponse(BaseModel):
@@ -377,7 +376,6 @@ class UpdateCohortApiRequest(BaseModel):
     """Request model for bulk update cohort endpoint."""
 
     cohorts: list[UpdateCohortItem]
-    group_id: UUID | None = None
 
 
 class UpdateCohortApiResponse(BaseModel):
@@ -477,7 +475,6 @@ class PatchCohortDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 
