@@ -7,6 +7,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.chat.get import get_chat_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.chat.types import (
@@ -42,13 +43,27 @@ async def chat_get(
         pool = get_pool()
         redis = get_redis_client()
 
-        return await get_chat_impl(
+        async def _runner() -> GetChatResponse:
+            return await get_chat_impl(
+                pool,
+                redis,
+                profile_id=cast(UUID, profile_id),
+                session_id=cast(UUID, session_id),
+                request=request,
+                bypass_cache=bypass_cache,
+            )
+
+        return await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="chat",
             profile_id=cast(UUID, profile_id),
             session_id=cast(UUID, session_id),
-            request=request,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetChatResponse,
+            runner=_runner,
         )
     except HTTPException:
         raise

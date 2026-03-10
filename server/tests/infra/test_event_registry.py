@@ -156,6 +156,15 @@ def test_registry_resolves_health_config() -> None:
     assert "health.viewed" in config.event_types
 
 
+def test_registry_resolves_home_config() -> None:
+    config = get_artifact_events_config("home")
+
+    assert config is not None
+    assert config.artifact == "home"
+    assert "get" in config.operations
+    assert "home.viewed" in config.event_types
+
+
 def test_registry_resolves_invocation_config() -> None:
     config = get_artifact_events_config("invocation")
 
@@ -201,6 +210,15 @@ def test_registry_resolves_pricing_config() -> None:
     assert "pricing.viewed" in config.event_types
 
 
+def test_registry_resolves_practice_config() -> None:
+    config = get_artifact_events_config("practice")
+
+    assert config is not None
+    assert config.artifact == "practice"
+    assert "get" in config.operations
+    assert "practice.viewed" in config.event_types
+
+
 def test_registry_resolves_rubric_config() -> None:
     config = get_artifact_events_config("rubric")
 
@@ -221,6 +239,24 @@ def test_registry_resolves_session_config() -> None:
     assert config.artifact == "session"
     assert "get" in config.operations
     assert "session.viewed" in config.event_types
+
+
+def test_registry_resolves_record_config() -> None:
+    config = get_artifact_events_config("record")
+
+    assert config is not None
+    assert config.artifact == "record"
+    assert "get" in config.operations
+    assert "record.viewed" in config.event_types
+
+
+def test_registry_resolves_reports_config() -> None:
+    config = get_artifact_events_config("reports")
+
+    assert config is not None
+    assert config.artifact == "reports"
+    assert "refresh" in config.operations
+    assert "reports.refreshed" in config.event_types
 
 
 def test_registry_resolves_setting_config() -> None:

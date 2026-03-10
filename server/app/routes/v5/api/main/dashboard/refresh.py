@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.dashboard.refresh import refresh_dashboard_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
@@ -17,13 +18,25 @@ async def dashboard_refresh(
     """Refresh dashboard caches (no materialized views)."""
     profile_id = http_request.state.profile_id
     pool = get_pool()
+    redis = get_redis_client()
 
-    result = await refresh_dashboard_impl(
+    async def _runner() -> RefreshResponse:
+        return await refresh_dashboard_impl(
+            pool,
+            redis,
+            profile_id=profile_id,
+        )
+
+    result = await run_artifact_operation_with_audit(
         pool,
-        get_redis_client(),
+        redis,
+        artifact="dashboard",
         profile_id=profile_id,
+        session_id=http_request.state.session_id,
+        operation="refresh",
+        arguments={},
+        response_model=RefreshResponse,
+        runner=_runner,
     )
-
     response.headers["X-Invalidate-Tags"] = ",".join(result.invalidated_tags)
-
     return result

@@ -153,7 +153,6 @@ async def test_next_impl(
     import uuid
 
     from app.infra.websocket.test_types import TestAllCompleteEvent
-    from app.routes.v5.api.main.test.get import get_test_impl
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger(__name__)
@@ -161,6 +160,8 @@ async def test_next_impl(
     sid = data.get("sid", "")
     if not sid:
         return
+
+    from app.infra.test.get import get_test_impl
 
     try:
         test_id = uuid.UUID(str(data["test_id"]))

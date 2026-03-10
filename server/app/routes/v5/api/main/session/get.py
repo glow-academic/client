@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool
+from app.infra.globals import get_redis_client
 from app.infra.session.get import get_session_detail_impl_cached
 from app.routes.v5.api.main.session.types import (
     GetSessionDetailRequest,
@@ -24,22 +26,42 @@ async def get_session(
     """Get session detail with groups and timeline."""
     try:
         profile_id = http_request.state.profile_id
+        actor_session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data, cache_hit = await get_session_detail_impl_cached(
-            get_pool(),
-            profile_id=profile_id,
-            session_id=request.session_id,
-            bypass_cache=http_request.headers.get("X-Bypass-Cache") == "1",
-            cache_key_path=http_request.url.path,
-        )
+        pool = get_pool()
+        redis = get_redis_client()
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
+        async def _runner() -> GetSessionDetailResponse:
+            response_data, cache_hit = await get_session_detail_impl_cached(
+                pool,
+                profile_id=profile_id,
+                session_id=request.session_id,
+                bypass_cache=bypass_cache,
+                cache_key_path=http_request.url.path,
+            )
+            response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"
+            return response_data
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="session",
+            profile_id=profile_id,
+            session_id=actor_session_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
+            bypass_cache=bypass_cache,
+            response_model=GetSessionDetailResponse,
+            runner=_runner,
+        )
         response.headers["X-Cache-Tags"] = "artifacts,session"
-        response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"
+        response.headers.setdefault("X-Cache-Hit", "0")
         return response_data
     except HTTPException:
         raise

@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.pricing.get import get_pricing_impl
 from app.routes.v5.api.main.pricing.types import PricingRequest, PricingResponse
@@ -46,6 +47,7 @@ async def get_pricing(
             raise RuntimeError("Database pool not initialized")
 
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -54,12 +56,26 @@ async def get_pricing(
 
         redis = get_redis_client()
 
-        api_response = await get_pricing_impl(
+        async def _runner() -> PricingResponse:
+            return await get_pricing_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                request=request,
+                bypass_cache=bypass_cache,
+            )
+
+        api_response = await run_artifact_operation_with_audit(
             pool,
             redis,
+            artifact="pricing",
             profile_id=profile_id,
-            request=request,
+            session_id=session_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=PricingResponse,
+            runner=_runner,
         )
 
         await set_cached(

@@ -24,6 +24,7 @@ from app.infra.analytics_facets import (
     resolve_analytics_facets,
 )
 from app.infra.common_context import resolve_common_context
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.home_context import resolve_home_context
 from app.infra.home_permissions import (
@@ -496,24 +497,37 @@ async def home_get(
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        api_response = await get_home_internal(
-            pool=pool,
+        async def _runner() -> GetHomeResponse:
+            api_response = await get_home_internal(
+                pool=pool,
+                profile_id=profile_id,
+                bypass_cache=bypass_cache,
+            )
+
+            profile_specific_tags = tags + [f"home:profile:{profile_id}"]
+            await set_cached(
+                cache_key_val,
+                {"data": api_response.model_dump(mode="json")},
+                ttl=300,
+                tags=profile_specific_tags,
+                redis=get_redis_client(),
+            )
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "0"
+            return api_response
+
+        return await run_artifact_operation_with_audit(
+            pool,
+            get_redis_client(),
+            artifact="home",
             profile_id=profile_id,
+            session_id=http_request.state.session_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetHomeResponse,
+            runner=_runner,
         )
-
-        profile_specific_tags = tags + [f"home:profile:{profile_id}"]
-        await set_cached(
-            cache_key_val,
-            {"data": api_response.model_dump(mode="json")},
-            ttl=300,
-            tags=profile_specific_tags,
-            redis=get_redis_client(),
-        )
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "0"
-
-        return api_response
 
     except HTTPException:
         raise

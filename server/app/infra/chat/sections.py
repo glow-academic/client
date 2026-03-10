@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from app.infra.tool_graph import ToolScores
+from app.infra.tool_graph import ArtifactToolScores
 from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.chat.types import (
     BaseChatSection,
@@ -49,7 +49,7 @@ def _build_chat_section(
     resource_key: str,
     *,
     context: ArtifactContext,
-    scores: ToolScores,
+    scores: ArtifactToolScores,
 ) -> BaseChatSection:
     cls = _SECTION_CLASSES[resource_key]
     pair = context.resources.get(resource_key)
@@ -67,7 +67,7 @@ def _build_chat_section(
 def build_chat_get_result(
     *,
     context: ArtifactContext,
-    scores: ToolScores,
+    scores: ArtifactToolScores,
     group_id: UUID,
     chat_entry_id: UUID | None,
     attempt_id: UUID | None,

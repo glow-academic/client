@@ -14,6 +14,9 @@ from app.infra.analytics_facets import (
 from app.infra.profile_identity_context import ProfileIdentityContext
 from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.tools.artifacts.cohort.create import create_cohort as create_cohort_artifact
+from app.routes.v5.tools.artifacts.profile.create import (
+    create_profile as create_profile_artifact,
+)
 from app.routes.v5.tools.entries.health.create import create_health
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
@@ -86,6 +89,11 @@ async def test_pricing_facets_resolve_departments_and_date_range(pool, redis_cli
             conn, name="Engineering", redis=redis_client
         )
         profile = await create_profile(conn, redis_client)
+        await create_profile_artifact(
+            conn,
+            department_ids=[department.id],
+            profile_ids=[profile.id],
+        )
         session = await create_session(conn, profile_id=profile.id)
         group = await create_group(conn, session_id=session.id)
         run = await create_run(

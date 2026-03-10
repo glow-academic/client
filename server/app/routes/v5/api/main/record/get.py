@@ -24,6 +24,7 @@ from app.infra.dashboard.permissions import (
     compute_primary_metrics_v2,
     compute_secondary_metrics_v2,
 )
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.dashboard.types import DashboardBundleResponse
 from app.routes.v5.api.main.record.types import RecordRequest
@@ -77,121 +78,122 @@ async def get_record(
 
         redis = get_redis_client()
 
-        # --- Phase 0: Resolve common context (profile identity) ---
-        async with pool.acquire() as c:
-            common = await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
+        async def _runner() -> DashboardBundleResponse:
+            # --- Phase 0: Resolve common context (profile identity) ---
+            async with pool.acquire() as c:
+                common = await resolve_common_context(
+                    c, redis, profile_id=profile_id, bypass_cache=bypass_cache
+                )
+            if not common:
+                raise HTTPException(status_code=401, detail="Profile not found")
+
+            # --- Phase 1: Parse filters ---
+            parsed_start_date = (
+                datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
+                if request.start_date
+                else None
             )
-        if not common:
-            raise HTTPException(status_code=401, detail="Profile not found")
+            parsed_end_date = (
+                datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
+                if request.end_date
+                else None
+            )
+            is_archived = bool(
+                request.simulation_filters and "archived" in request.simulation_filters
+            )
+            if request.simulation_filters and "general" in request.simulation_filters:
+                attempt_type = "general"
+            elif request.simulation_filters and "practice" in request.simulation_filters:
+                attempt_type = "practice"
+            else:
+                attempt_type = None
 
-        # --- Phase 1: Parse filters ---
-        parsed_start_date = (
-            datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
-            if request.start_date
-            else None
-        )
-        parsed_end_date = (
-            datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
-            if request.end_date
-            else None
-        )
-        is_archived = bool(
-            request.simulation_filters and "archived" in request.simulation_filters
-        )
-        if request.simulation_filters and "general" in request.simulation_filters:
-            attempt_type = "general"
-        elif request.simulation_filters and "practice" in request.simulation_filters:
-            attempt_type = "practice"
-        else:
-            attempt_type = None
+            # --- Phase 2: Resolve dashboard context (scoped to target profile) ---
+            ctx = await resolve_dashboard_context(
+                pool,
+                redis,
+                target_profile_id=request.target_profile_id,
+                actor_profile_id=request.actor_profile_id,
+                cohort_ids=request.cohort_ids,
+                department_ids=request.department_ids,
+                simulation_ids=request.simulation_ids,
+                attempt_type=attempt_type,
+                is_archived=is_archived,
+                date_from=parsed_start_date.date() if parsed_start_date else None,
+                date_to=parsed_end_date.date() if parsed_end_date else None,
+                bypass_cache=bypass_cache,
+            )
 
-        # --- Phase 2: Resolve dashboard context (scoped to target profile) ---
-        ctx = await resolve_dashboard_context(
-            pool,
-            redis,
-            target_profile_id=request.target_profile_id,
-            actor_profile_id=request.actor_profile_id,
-            cohort_ids=request.cohort_ids,
-            department_ids=request.department_ids,
-            simulation_ids=request.simulation_ids,
-            attempt_type=attempt_type,
-            is_archived=is_archived,
-            date_from=parsed_start_date.date() if parsed_start_date else None,
-            date_to=parsed_end_date.date() if parsed_end_date else None,
-            bypass_cache=bypass_cache,
-        )
+            # --- Phase 3: Extract data from context ---
+            chat_items = ctx.entries.get("chat_items", [])
+            rubric_items = ctx.entries.get("rubric_items", [])
+            thresholds_list = ctx.entries.get("thresholds", [])
+            scenario_count_rows = ctx.entries.get("scenario_counts", [])
+            cohort_name_rows = ctx.entries.get("cohort_names", [])
 
-        # --- Phase 3: Extract data from context ---
-        chat_items = ctx.entries.get("chat_items", [])
-        rubric_items = ctx.entries.get("rubric_items", [])
-        thresholds_list = ctx.entries.get("thresholds", [])
-        scenario_count_rows = ctx.entries.get("scenario_counts", [])
-        cohort_name_rows = ctx.entries.get("cohort_names", [])
+            simulations_rp = ctx.resources.get("simulations")
+            simulations = simulations_rp.selected if simulations_rp else []
+            scenarios_rp = ctx.resources.get("scenarios")
+            scenarios_list = scenarios_rp.selected if scenarios_rp else []
+            personas_rp = ctx.resources.get("personas")
+            personas = personas_rp.selected if personas_rp else []
+            rubrics_rp = ctx.resources.get("rubrics")
+            rubrics = rubrics_rp.selected if rubrics_rp else []
+            standard_groups_rp = ctx.resources.get("standard_groups")
+            standard_groups = standard_groups_rp.selected if standard_groups_rp else []
+            documents_rp = ctx.resources.get("documents")
+            documents = documents_rp.selected if documents_rp else []
+            pf_rp = ctx.resources.get("parameter_fields")
+            parameter_fields = pf_rp.selected if pf_rp else []
+            params_rp = ctx.resources.get("parameters")
+            parameters = params_rp.selected if params_rp else []
+            fields_rp = ctx.resources.get("fields")
+            fields_list = fields_rp.selected if fields_rp else []
+            profiles_rp = ctx.resources.get("profiles")
+            target_profiles = profiles_rp.selected if profiles_rp else []
 
-        simulations_rp = ctx.resources.get("simulations")
-        simulations = simulations_rp.selected if simulations_rp else []
-        scenarios_rp = ctx.resources.get("scenarios")
-        scenarios_list = scenarios_rp.selected if scenarios_rp else []
-        personas_rp = ctx.resources.get("personas")
-        personas = personas_rp.selected if personas_rp else []
-        rubrics_rp = ctx.resources.get("rubrics")
-        rubrics = rubrics_rp.selected if rubrics_rp else []
-        standard_groups_rp = ctx.resources.get("standard_groups")
-        standard_groups = standard_groups_rp.selected if standard_groups_rp else []
-        documents_rp = ctx.resources.get("documents")
-        documents = documents_rp.selected if documents_rp else []
-        pf_rp = ctx.resources.get("parameter_fields")
-        parameter_fields = pf_rp.selected if pf_rp else []
-        params_rp = ctx.resources.get("parameters")
-        parameters = params_rp.selected if params_rp else []
-        fields_rp = ctx.resources.get("fields")
-        fields_list = fields_rp.selected if fields_rp else []
-        profiles_rp = ctx.resources.get("profiles")
-        target_profiles = profiles_rp.selected if profiles_rp else []
+            thresholds_dict = (
+                thresholds_list[0]
+                if thresholds_list
+                else {"success": 85, "warning": 80, "danger": 70}
+            )
 
-        thresholds_dict = (
-            thresholds_list[0]
-            if thresholds_list
-            else {"success": 85, "warning": 80, "danger": 70}
-        )
+            # --- Phase 4: Build name maps ---
+            simulation_scenario_counts = {
+                str(r["simulation_id"]): r["scenario_count"] for r in scenario_count_rows
+            }
+            persona_name_map: dict[str, str] = {
+                str(p.persona_id): p.name for p in personas if p.persona_id and p.name
+            }
+            cohort_name_map: dict[str, str] = {
+                str(r["id"]): r["name"] for r in cohort_name_rows if r["id"] and r["name"]
+            }
+            simulation_name_map: dict[str, str] = {
+                str(s.simulation_id): s.name
+                for s in simulations
+                if s.simulation_id and s.name
+            }
+            scenario_name_map: dict[str, str] = {
+                str(s.scenario_id): s.name
+                for s in scenarios_list
+                if s.scenario_id and s.name
+            }
+            standard_group_name_map: dict[str, str] = {
+                str(getattr(sg, "standard_group_id", None)): getattr(sg, "name", "")
+                for sg in standard_groups
+                if getattr(sg, "standard_group_id", None) and getattr(sg, "name", None)
+            }
+            field_parameter_map: dict[UUID, UUID] = {}
+            for pf in parameter_fields:
+                if pf.field_id and pf.parameter_id:
+                    field_parameter_map[pf.field_id] = pf.parameter_id
 
-        # --- Phase 4: Build name maps ---
-        simulation_scenario_counts = {
-            str(r["simulation_id"]): r["scenario_count"] for r in scenario_count_rows
-        }
-        persona_name_map: dict[str, str] = {
-            str(p.persona_id): p.name for p in personas if p.persona_id and p.name
-        }
-        cohort_name_map: dict[str, str] = {
-            str(r["id"]): r["name"] for r in cohort_name_rows if r["id"] and r["name"]
-        }
-        simulation_name_map: dict[str, str] = {
-            str(s.simulation_id): s.name
-            for s in simulations
-            if s.simulation_id and s.name
-        }
-        scenario_name_map: dict[str, str] = {
-            str(s.scenario_id): s.name
-            for s in scenarios_list
-            if s.scenario_id and s.name
-        }
-        standard_group_name_map: dict[str, str] = {
-            str(getattr(sg, "standard_group_id", None)): getattr(sg, "name", "")
-            for sg in standard_groups
-            if getattr(sg, "standard_group_id", None) and getattr(sg, "name", None)
-        }
-        field_parameter_map: dict[UUID, UUID] = {}
-        for pf in parameter_fields:
-            if pf.field_id and pf.parameter_id:
-                field_parameter_map[pf.field_id] = pf.parameter_id
-
-        # --- Phase 5: Compute all 4 metric sections ---
-        header_metrics = compute_header_metrics_v2(
-            profile_facts_items=chat_items,
-            simulation_scenario_counts=simulation_scenario_counts,
-            thresholds=thresholds_dict,
-        )
+            # --- Phase 5: Compute all 4 metric sections ---
+            header_metrics = compute_header_metrics_v2(
+                profile_facts_items=chat_items,
+                simulation_scenario_counts=simulation_scenario_counts,
+                thresholds=thresholds_dict,
+            )
 
         primary_metrics = compute_primary_metrics_v2(
             rubric_facts=rubric_items,
@@ -404,19 +406,31 @@ async def get_record(
             )
             bundle.history = history_result
 
-        api_response = bundle
+            api_response = bundle
 
-        await set_cached(
-            cache_key_val,
-            {"data": api_response.model_dump(mode="json")},
-            ttl=300,
-            tags=tags,
-            redis=redis,
+            await set_cached(
+                cache_key_val,
+                {"data": api_response.model_dump(mode="json")},
+                ttl=300,
+                tags=tags,
+                redis=redis,
+            )
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "0"
+            return api_response
+
+        return await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="record",
+            profile_id=profile_id,
+            session_id=http_request.state.session_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
+            bypass_cache=bypass_cache,
+            response_model=DashboardBundleResponse,
+            runner=_runner,
         )
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "0"
-
-        return api_response
 
     except HTTPException:
         raise

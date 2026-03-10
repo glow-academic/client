@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool
+from app.infra.globals import get_redis_client
 from app.infra.leaderboard.get import get_leaderboard_impl_cached
 from app.routes.v5.api.main.leaderboard.types import LeaderboardRequest, LeaderboardResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -20,18 +22,39 @@ async def get_leaderboard(
 ) -> LeaderboardResponse:
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(status_code=401, detail="Profile ID is required. Please sign in again.")
 
-        response_data, cache_hit = await get_leaderboard_impl_cached(
-            get_pool(),
-            request,
+        pool = get_pool()
+        redis = get_redis_client()
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+        async def _runner() -> LeaderboardResponse:
+            response_data, cache_hit = await get_leaderboard_impl_cached(
+                pool,
+                request,
+                profile_id=profile_id,
+                bypass_cache=bypass_cache,
+                cache_key_path=http_request.url.path,
+            )
+            response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"
+            return response_data
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="leaderboard",
             profile_id=profile_id,
-            bypass_cache=http_request.headers.get("X-Bypass-Cache") == "1",
-            cache_key_path=http_request.url.path,
+            session_id=session_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
+            bypass_cache=bypass_cache,
+            response_model=LeaderboardResponse,
+            runner=_runner,
         )
         response.headers["X-Cache-Tags"] = "artifacts,leaderboard"
-        response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"
+        response.headers.setdefault("X-Cache-Hit", "0")
         return response_data
     except HTTPException:
         raise

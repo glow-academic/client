@@ -11,6 +11,9 @@ from app.infra.identity.analytics import (
     resolve_pricing_filters,
     resolve_profile_facts_filters,
 )
+from app.routes.v5.tools.artifacts.profile.create import (
+    create_profile as create_profile_artifact,
+)
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.health.create import create_health
@@ -94,6 +97,11 @@ class TestPricingFilters:
             )
             profile, session, group, early_run, _ = await _profile_session_run_call(
                 conn, redis_client
+            )
+            await create_profile_artifact(
+                conn,
+                department_ids=[department.id],
+                profile_ids=[profile.id],
             )
             later_group = await create_group(conn, session_id=session.id)
             late_run = await create_run(

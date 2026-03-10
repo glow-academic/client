@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.benchmark.get import get_benchmark_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.benchmark.types import BenchmarkRequest, BenchmarkResponse
@@ -22,18 +23,36 @@ async def get_benchmark(
 
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        result = await get_benchmark_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> BenchmarkResponse:
+            return await get_benchmark_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                request=request,
+                bypass_cache=bypass_cache,
+            )
+
+        result = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="benchmark",
             profile_id=profile_id,
-            request=request,
+            session_id=session_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=BenchmarkResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = ",".join(tags)

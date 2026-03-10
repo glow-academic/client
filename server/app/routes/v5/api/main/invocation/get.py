@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.invocation.get import get_invocation_impl
 from app.routes.v5.api.main.invocation.types import GetSuiteRequest, GetSuiteResponse
@@ -27,15 +28,35 @@ async def invocation_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        return await get_invocation_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+        async def _runner() -> GetSuiteResponse:
+            return await get_invocation_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                test_id=request.test_id,
+                draft_id=request.draft_id,
+                descriptions_search=request.descriptions_search,
+                bypass_cache=bypass_cache,
+            )
+
+        return await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="invocation",
             profile_id=profile_id,
             session_id=session_id,
-            test_id=request.test_id,
             draft_id=request.draft_id,
-            descriptions_search=request.descriptions_search,
-            bypass_cache=http_request.headers.get("X-Bypass-Cache") == "1",
+            test_id=request.test_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
+            bypass_cache=bypass_cache,
+            response_model=GetSuiteResponse,
+            runner=_runner,
         )
     except HTTPException:
         raise

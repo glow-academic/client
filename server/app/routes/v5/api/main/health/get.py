@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.health.get import get_health_impl
 from app.routes.v5.api.main.health.types import HealthRequest, HealthResponse
@@ -22,22 +23,40 @@ async def get_health(
 
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        result = await get_health_impl(
-            get_pool(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> HealthResponse:
+            return await get_health_impl(
+                pool,
+                profile_id=profile_id,
+                redis=redis,
+                service=request.service,
+                date_from=request.date_from,
+                date_to=request.date_to,
+                page_limit=request.page_limit,
+                page_offset=request.page_offset,
+                bypass_cache=bypass_cache,
+            )
+
+        result = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="health",
             profile_id=profile_id,
-            redis=get_redis_client(),
-            service=request.service,
-            date_from=request.date_from,
-            date_to=request.date_to,
-            page_limit=request.page_limit,
-            page_offset=request.page_offset,
+            session_id=session_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=HealthResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = ",".join(tags)

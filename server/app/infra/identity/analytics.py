@@ -20,6 +20,8 @@ from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.health.search import search_health
 from app.routes.v5.tools.entries.runs.search import search_runs
 from app.routes.v5.tools.entries.test.search import search_tests
+from app.routes.v5.tools.artifacts.profile.get import get_profiles as get_profile_artifacts
+from app.routes.v5.tools.artifacts.profile.search import search_profiles
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 
@@ -147,10 +149,45 @@ async def resolve_pricing_filters(
     async def _fetch_date_range() -> tuple[str | None, str | None]:
         if not need_date_range:
             return None, None
+        profile_resource_ids: list[UUID] | None = None
+        if department_ids:
+            async with pool.acquire() as c_profiles:
+                profile_artifact_ids, _ = await search_profiles(
+                    c_profiles,
+                    department_ids=department_ids,
+                    active_only=False,
+                    limit_count=100000,
+                    offset_count=0,
+                )
+                if profile_artifact_ids:
+                    artifacts = await get_profile_artifacts(
+                        c_profiles,
+                        profile_artifact_ids,
+                        active=None,
+                        profiles=True,
+                    )
+                    profile_resource_ids = [
+                        resource_id
+                        for artifact in artifacts
+                        for resource_id in (artifact.profile_ids or [])
+                    ]
+                else:
+                    profile_resource_ids = []
+
         async with pool.acquire() as c_earliest, pool.acquire() as c_latest:
             (earliest_items, _), (latest_items, _) = await asyncio.gather(
-                search_runs(conn=c_earliest, sort_order="asc", limit=1),
-                search_runs(conn=c_latest, sort_order="desc", limit=1),
+                search_runs(
+                    conn=c_earliest,
+                    profiles_ids=profile_resource_ids,
+                    sort_order="asc",
+                    limit=1,
+                ),
+                search_runs(
+                    conn=c_latest,
+                    profiles_ids=profile_resource_ids,
+                    sort_order="desc",
+                    limit=1,
+                ),
             )
         earliest = None
         latest = None
