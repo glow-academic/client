@@ -6,15 +6,11 @@ Uses recording_emit() to capture events.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
 
 from app.infra.websocket.generate_artifact_impl import generate_artifact_impl
 from app.infra.websocket.generation_types import GenerateArtifactPayload, ModelConfig
 from app.infra.websocket.socket_event import recording_emit
-
-_P = "app.infra.websocket.generate_artifact_impl"
 
 
 def _model_config(**overrides: object) -> ModelConfig:
@@ -101,29 +97,39 @@ class TestGenerateArtifactImpl:
         """AI-generated image dispatches to media adapter."""
         emit, events = recording_emit()
         payload = _payload(modality="image")  # no file_path → adapter path
-        mock_adapter = MagicMock()
-        mock_adapter.generate = AsyncMock()
+        calls: list[dict] = []
 
-        with patch(
-            "app.infra.websocket.media_lifecycle.get_media_adapter",
-            return_value=mock_adapter,
-        ):
-            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
-        mock_adapter.generate.assert_called_once()
+        class FakeMediaAdapter:
+            async def generate(self, **kwargs) -> None:
+                calls.append(kwargs)
+
+        await generate_artifact_impl(
+            payload,
+            emit=emit,
+            sid="s1",
+            profile_id=None,
+            get_media_adapter_fn=lambda: FakeMediaAdapter(),
+        )
+        assert len(calls) == 1
+        assert calls[0]["modality"] == "image"
         # Should still emit start
         assert any(e.event == "generate_image_start" for e in events)
 
     async def test_image_generation_error_emits_error(self):
         emit, events = recording_emit()
         payload = _payload(modality="image")
-        mock_adapter = MagicMock()
-        mock_adapter.generate = AsyncMock(side_effect=RuntimeError("GPU OOM"))
 
-        with patch(
-            "app.infra.websocket.media_lifecycle.get_media_adapter",
-            return_value=mock_adapter,
-        ):
-            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
+        class FakeMediaAdapter:
+            async def generate(self, **kwargs) -> None:
+                raise RuntimeError("GPU OOM")
+
+        await generate_artifact_impl(
+            payload,
+            emit=emit,
+            sid="s1",
+            profile_id=None,
+            get_media_adapter_fn=lambda: FakeMediaAdapter(),
+        )
         error_events = [e for e in events if e.event == "generate_image_error"]
         assert len(error_events) == 1
         assert "GPU OOM" in error_events[0].data["error_message"]
@@ -146,27 +152,29 @@ class TestGenerateArtifactImpl:
             modality="audio",
             llm_config=_model_config(api_key="enc-key"),
         )
-        mock_adapter = MagicMock()
-        mock_adapter.initialize_session = AsyncMock(
-            side_effect=RuntimeError("ws failed")
-        )
+        removed: list[str] = []
 
-        with (
-            patch(f"{_P}.decrypt_api_key", return_value="sk-test"),
-            patch(
-                "app.infra.websocket.audio_lifecycle.get_audio_adapter",
-                return_value=mock_adapter,
-            ),
-            patch(
-                "app.infra.websocket.session_store.create_session",
-                return_value=MagicMock(tool_output_schemas={}),
-            ),
-            patch("app.infra.websocket.session_store.remove_session"),
-        ):
-            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
+        class FakeAudioAdapter:
+            async def initialize_session(self, **kwargs) -> None:
+                raise RuntimeError("ws failed")
+
+        class FakeSession:
+            tool_output_schemas: dict[str, dict[str, str]] = {}
+
+        await generate_artifact_impl(
+            payload,
+            emit=emit,
+            sid="s1",
+            profile_id=None,
+            decrypt_api_key_fn=lambda encrypted: "sk-test",
+            get_audio_adapter_fn=lambda: FakeAudioAdapter(),
+            create_session_fn=lambda **kwargs: FakeSession(),
+            remove_session_fn=lambda group_id: removed.append(group_id),
+        )
         error_events = [e for e in events if e.event == "generate_audio_error"]
         assert len(error_events) == 1
         assert "voice service" in error_events[0].data["error_message"]
+        assert removed == ["grp-1"]
 
     async def test_audio_session_success_emits_session_start(self):
         emit, events = recording_emit()
@@ -174,23 +182,24 @@ class TestGenerateArtifactImpl:
             modality="audio",
             llm_config=_model_config(api_key="enc-key"),
         )
-        mock_adapter = MagicMock()
-        mock_adapter.initialize_session = AsyncMock()
-        mock_session = MagicMock()
-        mock_session.tool_output_schemas = {}
 
-        with (
-            patch(f"{_P}.decrypt_api_key", return_value="sk-test"),
-            patch(
-                "app.infra.websocket.audio_lifecycle.get_audio_adapter",
-                return_value=mock_adapter,
-            ),
-            patch(
-                "app.infra.websocket.session_store.create_session",
-                return_value=mock_session,
-            ),
-        ):
-            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
+        class FakeAudioAdapter:
+            async def initialize_session(self, **kwargs) -> None:
+                return None
+
+        class FakeSession:
+            tool_output_schemas: dict[str, dict[str, str]] = {}
+
+        await generate_artifact_impl(
+            payload,
+            emit=emit,
+            sid="s1",
+            profile_id=None,
+            decrypt_api_key_fn=lambda encrypted: "sk-test",
+            get_audio_adapter_fn=lambda: FakeAudioAdapter(),
+            create_session_fn=lambda **kwargs: FakeSession(),
+            remove_session_fn=lambda group_id: None,
+        )
         session_events = [
             e for e in events if e.event == "generate_audio_session_start"
         ]
@@ -238,16 +247,21 @@ class TestGenerateArtifactImpl:
             for ev in mock_events:
                 yield ev
 
-        with (
-            patch(f"{_P}.LITELLM_AVAILABLE", False),
-            patch(f"{_P}.stream_litellm_events", side_effect=fake_stream_events),
-            patch(
-                f"{_P}._call_chat_completions_api",
-                new_callable=AsyncMock,
-                return_value=object(),  # stream object
-            ),
-        ):
-            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
+        async def fake_call_chat_completions_api(**kwargs):
+            return object()
+
+        async def fake_call_responses_api(**kwargs):
+            raise RuntimeError("responses unavailable")
+
+        await generate_artifact_impl(
+            payload,
+            emit=emit,
+            sid="s1",
+            profile_id=None,
+            call_responses_api_fn=fake_call_responses_api,
+            call_chat_completions_api_fn=fake_call_chat_completions_api,
+            stream_litellm_events_fn=fake_stream_events,
+        )
 
         event_names = [e.event for e in events]
         assert "generate_call_start" in event_names
@@ -266,15 +280,20 @@ class TestGenerateArtifactImpl:
         emit, events = recording_emit()
         payload = _payload(modality="call")
 
-        with (
-            patch(f"{_P}.LITELLM_AVAILABLE", False),
-            patch(
-                f"{_P}._call_chat_completions_api",
-                new_callable=AsyncMock,
-                side_effect=RuntimeError("API timeout"),
-            ),
-        ):
-            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
+        async def fake_call_chat_completions_api(**kwargs):
+            raise RuntimeError("API timeout")
+
+        async def fake_call_responses_api(**kwargs):
+            raise RuntimeError("responses unavailable")
+
+        await generate_artifact_impl(
+            payload,
+            emit=emit,
+            sid="s1",
+            profile_id=None,
+            call_responses_api_fn=fake_call_responses_api,
+            call_chat_completions_api_fn=fake_call_chat_completions_api,
+        )
 
         error_events = [e for e in events if e.event == "generate_call_error"]
         assert len(error_events) == 1

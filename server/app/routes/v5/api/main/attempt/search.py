@@ -21,7 +21,6 @@ class SearchAttemptApiRequest(BaseModel):
     # Filters
     attempt_id: UUID | None = None
     chat_id: UUID | None = None
-    group_id: UUID | None = None
     home_id: UUID | None = None
     practice_id: UUID | None = None
     # Entry type filters — which entry types to include in results

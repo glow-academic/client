@@ -7,6 +7,7 @@ and emits a translated event. No DB writes, no inline SQL.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 import asyncpg
@@ -34,6 +35,8 @@ from app.infra.websocket.socket_event import EmitFn, internal_event
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
+
+ResolveProfileIdentityFn = Callable[..., Awaitable[Any]]
 
 
 # ---------------------------------------------------------------------------
@@ -254,15 +257,35 @@ async def attempt_next_impl(
     *,
     emit: EmitFn,
     attempt_id: str,
-    group_id: str,
     draft_id: str | None,
+    profile_id: str,
+    session_id: str,
+    pool: asyncpg.Pool,
+    redis: Redis | None = None,
+    resolve_profile_identity_fn: ResolveProfileIdentityFn | None = None,
 ) -> None:
     """Delegate attempt_next → attempt_proceed with force_proceed=True."""
+    from app.infra.profile_identity_context import resolve_profile_identity_context
+
     sid = data.get("sid", "")
     if not sid:
         return
 
     try:
+        resolve_profile_identity_fn = (
+            resolve_profile_identity_fn or resolve_profile_identity_context
+        )
+        identity = await resolve_profile_identity_fn(
+            pool,
+            uuid.UUID(profile_id),
+            redis or Redis(),
+            session_id=uuid.UUID(session_id),
+            attempt_id=uuid.UUID(attempt_id),
+        )
+        group_id = identity.group_id if identity else None
+        if group_id is None:
+            raise ValueError(f"Group not found for attempt {attempt_id}")
+
         await emit(
             [
                 internal_event(
@@ -270,7 +293,7 @@ async def attempt_next_impl(
                     AttemptProceedData(
                         sid=sid,
                         attempt_id=attempt_id,
-                        group_id=group_id,
+                        group_id=str(group_id),
                         draft_id=draft_id,
                         force_proceed=True,
                     ).model_dump(mode="json"),
@@ -695,11 +718,18 @@ async def attempt_start_impl(
     try:
         # 1. Resolve profiles_resource_id
         identity = await resolve_profile_identity_context(
-            pool, profile_id_uuid, redis or Redis(), bypass_cache=True
+            pool,
+            profile_id_uuid,
+            redis or Redis(),
+            bypass_cache=True,
+            session_id=session_id_uuid,
         )
         profiles_resource_id = identity.profiles_id if identity else None
+        group_id = identity.group_id if identity else None
         if not profiles_resource_id:
             raise ValueError(f"Profile resource not found for profile_id {profile_id}")
+        if not group_id:
+            raise ValueError("Group could not be resolved for attempt start")
 
         # 2. Get parent entry data (persona_ids, simulation_ids)
         parent_id = payload.practice_id if is_practice else payload.home_id
@@ -778,7 +808,7 @@ async def attempt_start_impl(
                 run_result = await create_run(
                     conn,
                     session_id=session_id_uuid,
-                    group_id=payload.group_id,
+                    group_id=group_id,
                     profiles_id=profiles_resource_id,
                 )
                 run_id = run_result.id
@@ -832,7 +862,7 @@ async def attempt_start_impl(
                     AttemptProceedData(
                         sid=sid,
                         attempt_id=str(attempt_id),
-                        group_id=str(payload.group_id),
+                        group_id=str(group_id),
                         force_proceed=False,
                     ).model_dump(mode="json"),
                 )

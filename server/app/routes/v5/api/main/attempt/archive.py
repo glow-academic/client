@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.entries.attempt_archive.create import create_attempt_archive
 from app.routes.v5.tools.entries.calls.create import create_call
@@ -22,7 +23,6 @@ router = APIRouter()
 
 class ArchiveAttemptsRequest(BaseModel):
     archived: bool
-    group_id: UUID
     attempt_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     start_date: str | None = None
     end_date: str | None = None
@@ -77,6 +77,18 @@ async def archive_attempts(
         date_to = datetime.fromisoformat(request.end_date) if request.end_date else None
 
         pool = get_pool()
+        redis = get_redis_client()
+        identity = await resolve_profile_identity_context(
+            pool,
+            profile_id,
+            redis,
+            session_id=session_id,
+        )
+        profiles_id = identity.profiles_id if identity else None
+        group_id = identity.group_id if identity else None
+        if group_id is None:
+            raise HTTPException(status_code=400, detail="Group ID could not be resolved")
+
         async with pool.acquire() as conn:
             attempts, _ = await search_attempts(
                 conn,
@@ -101,9 +113,9 @@ async def archive_attempts(
             # 2. Create run + call for traceability
             run = await create_run(
                 conn,
-                group_id=request.group_id,
+                group_id=group_id,
                 session_id=session_id,
-                profiles_id=profile_id,
+                profiles_id=profiles_id,
             )
             call = await create_call(
                 conn,

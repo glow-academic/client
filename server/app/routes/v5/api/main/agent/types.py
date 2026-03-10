@@ -152,7 +152,6 @@ class CreateAgentApiRequest(BaseModel):
     """Request model for bulk create agent endpoint."""
 
     agents: list[CreateAgentItem]
-    group_id: UUID | None = None
 
 
 class CreateAgentApiResponse(BaseModel):
@@ -191,7 +190,6 @@ class UpdateAgentApiRequest(BaseModel):
     """Request model for bulk update agent endpoint."""
 
     agents: list[UpdateAgentItem]
-    group_id: UUID | None = None
 
 
 class UpdateAgentApiResponse(BaseModel):

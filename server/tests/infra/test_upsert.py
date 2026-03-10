@@ -1,424 +1,311 @@
-"""Tests for infra.auth.upsert — profile upsert via canonical black boxes.
+"""Tests for infra.auth.upsert using explicit collaborator boundaries."""
 
-resolve_profile_upsert is tested with mocked black-box fetchers.
-Tests verify: create vs update path, role validation, resource resolution, session creation.
-"""
+from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from types import SimpleNamespace
+from uuid import UUID, uuid4
 
 import pytest
 
 from app.infra.auth.upsert import UpsertProfileResult, resolve_profile_upsert
 
-MODULE = "app.infra.auth.upsert"
+
+class _TransactionContext:
+    def __init__(self, conn: object) -> None:
+        self._conn = conn
+
+    async def __aenter__(self) -> object:
+        return self._conn
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        return None
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+class _Connection:
+    def transaction(self) -> _TransactionContext:
+        return _TransactionContext(self)
 
 
-def _patch(target, return_value):
-    return patch(
-        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
-    )
+class _AcquireContext:
+    def __init__(self, conn: _Connection) -> None:
+        self._conn = conn
+
+    async def __aenter__(self) -> _Connection:
+        return self._conn
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        return None
 
 
-def _mock_pool():
-    conn = AsyncMock()
-    tx = AsyncMock()
-    tx.__aenter__.return_value = conn
-    tx.__aexit__.return_value = None
-    conn.transaction = MagicMock(return_value=tx)
+class FakePool:
+    def __init__(self) -> None:
+        self.conn = _Connection()
 
-    acquire_ctx = AsyncMock()
-    acquire_ctx.__aenter__.return_value = conn
-    acquire_ctx.__aexit__.return_value = None
-
-    pool = MagicMock()
-    pool.acquire.return_value = acquire_ctx
-    return pool, conn
+    def acquire(self) -> _AcquireContext:
+        return _AcquireContext(self.conn)
 
 
-def _name_resource(*, id=None, name="Test"):
-    m = MagicMock()
-    m.id = id or uuid4()
-    m.name = name
-    return m
+def _identity(*, role: str = "superadmin") -> SimpleNamespace:
+    return SimpleNamespace(role=role, profiles_id=uuid4())
 
 
-def _email_resource(*, id=None, email="test@example.com"):
-    m = MagicMock()
-    m.id = id or uuid4()
-    m.email = email
-    return m
+def _name_resource(*, id: UUID | None = None, name: str = "Test") -> SimpleNamespace:
+    return SimpleNamespace(id=id or uuid4(), name=name)
 
 
-def _role_resource(*, id=None, role="member"):
-    m = MagicMock()
-    m.id = id or uuid4()
-    m.role = role
-    m.name = role
-    return m
+def _email_resource(
+    *, id: UUID | None = None, email: str = "test@example.com"
+) -> SimpleNamespace:
+    return SimpleNamespace(id=id or uuid4(), email=email)
 
 
-def _flag_resource(*, id=None, name="profile_active"):
-    m = MagicMock()
-    m.id = id or uuid4()
-    m.name = name
-    return m
+def _role_resource(
+    *, id: UUID | None = None, role: str = "member"
+) -> SimpleNamespace:
+    return SimpleNamespace(id=id or uuid4(), role=role, name=role)
 
 
-def _identity(*, role="superadmin"):
-    m = MagicMock()
-    m.role = role
-    m.profiles_id = uuid4()
-    return m
-
-
-def _create_result(*, id=None):
-    m = MagicMock()
-    m.id = id or uuid4()
-    return m
-
-
-def _session_result(*, id=None):
-    m = MagicMock()
-    m.id = id or uuid4()
-    return m
-
-
-# ── Standard mock context ────────────────────────────────────────────────────
-
-
-def _standard_mocks(
-    *,
-    existing_profile_ids=None,
-    role_str="member",
-    requester_role="superadmin",
-):
-    """Build standard mock set for a typical upsert flow."""
-    name_id = uuid4()
-    email_id = uuid4()
-    role_id = uuid4()
-    flag_id = uuid4()
-    profile_id = uuid4()
-    profiles_resource_id = uuid4()
-    session_id = uuid4()
-
-    return {
-        "name_id": name_id,
-        "email_id": email_id,
-        "role_id": role_id,
-        "flag_id": flag_id,
-        "profile_id": profile_id,
-        "profiles_resource_id": profiles_resource_id,
-        "session_id": session_id,
-        "patches": (
-            _patch("resolve_profile_identity_context", _identity(role=requester_role)),
-            _patch("create_name", _name_resource(id=name_id)),
-            _patch("create_email", _email_resource(id=email_id)),
-            _patch(
-                "search_roles",
-                [_role_resource(id=role_id, role=role_str)],
-            ),
-            _patch("search_flags", [_flag_resource(id=flag_id)]),
-            _patch(
-                "search_profiles",
-                (existing_profile_ids or [], len(existing_profile_ids or [])),
-            ),
-            _patch("create_denormalized_snapshot", profiles_resource_id),
-            _patch("create_profile_artifact", _create_result(id=profile_id)),
-            _patch("update_profile_artifact", _create_result(id=profile_id)),
-            _patch("create_session", _session_result(id=session_id)),
-        ),
-    }
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_upsert — create path
-# ═══════════════════════════════════════════════════════════════════════════
+def _flag_resource(
+    *, id: UUID | None = None, name: str = "profile_active"
+) -> SimpleNamespace:
+    return SimpleNamespace(id=id or uuid4(), name=name)
 
 
 @pytest.mark.asyncio
-class TestUpsertCreatePath:
-    async def test_creates_new_profile(self):
-        mocks = _standard_mocks(existing_profile_ids=[])
-        pool, _conn = _mock_pool()
+class TestResolveProfileUpsert:
+    async def test_creates_new_profile(self) -> None:
+        pool = FakePool()
+        name_id = uuid4()
+        email_id = uuid4()
+        role_id = uuid4()
+        flag_id = uuid4()
+        snapshot_id = uuid4()
+        profile_id = uuid4()
+        session_id = uuid4()
+        calls: dict[str, object] = {}
 
-        with (
-            mocks["patches"][0],
-            mocks["patches"][1],
-            mocks["patches"][2],
-            mocks["patches"][3],
-            mocks["patches"][4],
-            mocks["patches"][5],
-            mocks["patches"][6],
-            mocks["patches"][7],
-            mocks["patches"][8],
-            mocks["patches"][9],
-        ):
-            result = await resolve_profile_upsert(
-                pool,
-                AsyncMock(),
-                name="John Doe",
-                emails=["john@example.com"],
-                role="member",
-                current_profile_id=uuid4(),
-            )
+        async def fake_create_name(conn, name, redis):
+            calls["name"] = name
+            return _name_resource(id=name_id, name=name)
+
+        async def fake_create_email(conn, email, redis):
+            calls.setdefault("emails", []).append(email)
+            return _email_resource(id=email_id, email=email)
+
+        async def fake_search_roles(conn, redis, **kwargs):
+            return [_role_resource(id=role_id, role="member")]
+
+        async def fake_search_flags(conn, redis, **kwargs):
+            return [_flag_resource(id=flag_id)]
+
+        async def fake_search_profiles(conn, **kwargs):
+            calls["search_profiles"] = kwargs
+            return [], 0
+
+        async def fake_create_snapshot(conn, redis, **kwargs):
+            calls["snapshot"] = kwargs
+            return snapshot_id
+
+        async def fake_create_profile_artifact(conn, **kwargs):
+            calls["create_profile"] = kwargs
+            return SimpleNamespace(id=profile_id)
+
+        async def fake_create_session(conn, profiles_resource_id):
+            calls["session"] = profiles_resource_id
+            return SimpleNamespace(id=session_id)
+
+        result = await resolve_profile_upsert(
+            pool,
+            None,
+            name="John Doe",
+            emails=["john@example.com"],
+            role="member",
+            current_profile_id=None,
+            create_name_fn=fake_create_name,
+            create_email_fn=fake_create_email,
+            search_roles_fn=fake_search_roles,
+            search_flags_fn=fake_search_flags,
+            search_profiles_fn=fake_search_profiles,
+            create_snapshot_fn=fake_create_snapshot,
+            create_profile_artifact_fn=fake_create_profile_artifact,
+            create_session_fn=fake_create_session,
+        )
 
         assert isinstance(result, UpsertProfileResult)
         assert result.created is True
-        assert result.profile_id == mocks["profile_id"]
-        assert result.session_id == mocks["session_id"]
+        assert result.profile_id == profile_id
+        assert result.session_id == session_id
+        assert calls["search_profiles"] == {
+            "email_ids": [email_id],
+            "active_only": False,
+            "limit_count": 1,
+        }
+        assert calls["create_profile"] == {
+            "id": None,
+            "name_id": name_id,
+            "email_ids": [email_id],
+            "role_ids": [role_id],
+            "department_ids": None,
+            "flag_ids": [flag_id],
+            "profile_ids": [snapshot_id],
+        }
+        assert calls["session"] == snapshot_id
 
-    async def test_passes_correct_args_to_create_profile(self):
-        mocks = _standard_mocks(existing_profile_ids=[])
-        pool, _conn = _mock_pool()
+    async def test_passes_department_ids_to_create_path(self) -> None:
+        pool = FakePool()
+        department_id = uuid4()
+        snapshot_id = uuid4()
+        create_calls: list[dict[str, object]] = []
 
-        with (
-            mocks["patches"][0],
-            mocks["patches"][1],
-            mocks["patches"][2],
-            mocks["patches"][3],
-            mocks["patches"][4],
-            mocks["patches"][5],
-            mocks["patches"][6],
-            mocks["patches"][7] as mock_create,
-            mocks["patches"][8],
-            mocks["patches"][9],
-        ):
-            dept_id = uuid4()
-            await resolve_profile_upsert(
-                pool,
-                AsyncMock(),
-                name="Jane",
-                emails=["jane@example.com"],
-                role="member",
-                department_ids=[dept_id],
-                current_profile_id=uuid4(),
-            )
+        async def fake_create_profile_artifact(conn, **kwargs):
+            create_calls.append(kwargs)
+            return SimpleNamespace(id=uuid4())
 
-        call_kwargs = mock_create.call_args[1]
-        assert call_kwargs["name_id"] == mocks["name_id"]
-        assert call_kwargs["email_ids"] == [mocks["email_id"]]
-        assert call_kwargs["role_ids"] == [mocks["role_id"]]
-        assert call_kwargs["department_ids"] == [dept_id]
-        assert call_kwargs["profile_ids"] == [mocks["profiles_resource_id"]]
+        await resolve_profile_upsert(
+            pool,
+            None,
+            name="Jane",
+            emails=["jane@example.com"],
+            role="member",
+            department_ids=[department_id],
+            create_name_fn=lambda conn, name, redis: _await_value(_name_resource()),
+            create_email_fn=lambda conn, email, redis: _await_value(_email_resource()),
+            search_roles_fn=lambda conn, redis, **kwargs: _await_value(
+                [_role_resource()]
+            ),
+            search_flags_fn=lambda conn, redis, **kwargs: _await_value(
+                [_flag_resource()]
+            ),
+            search_profiles_fn=lambda conn, **kwargs: _await_value(([], 0)),
+            create_snapshot_fn=lambda conn, redis, **kwargs: _await_value(snapshot_id),
+            create_profile_artifact_fn=fake_create_profile_artifact,
+            create_session_fn=lambda conn, profiles_resource_id: _await_value(
+                SimpleNamespace(id=uuid4())
+            ),
+        )
 
-    async def test_creates_session_with_profiles_resource_id(self):
-        mocks = _standard_mocks(existing_profile_ids=[])
-        pool, conn = _mock_pool()
+        assert len(create_calls) == 1
+        assert create_calls[0]["department_ids"] == [department_id]
+        assert create_calls[0]["profile_ids"] == [snapshot_id]
 
-        with (
-            mocks["patches"][0],
-            mocks["patches"][1],
-            mocks["patches"][2],
-            mocks["patches"][3],
-            mocks["patches"][4],
-            mocks["patches"][5],
-            mocks["patches"][6],
-            mocks["patches"][7],
-            mocks["patches"][8],
-            mocks["patches"][9] as mock_session,
-        ):
-            await resolve_profile_upsert(
-                pool,
-                AsyncMock(),
-                name="John",
-                emails=["john@example.com"],
-                role="member",
-                current_profile_id=uuid4(),
-            )
-
-        mock_session.assert_called_once_with(conn, mocks["profiles_resource_id"])
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_upsert — update path
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-class TestUpsertUpdatePath:
-    async def test_updates_existing_profile(self):
+    async def test_updates_existing_profile(self) -> None:
+        pool = FakePool()
         existing_id = uuid4()
-        mocks = _standard_mocks(existing_profile_ids=[existing_id])
-        pool, _conn = _mock_pool()
+        snapshot_id = uuid4()
+        updates: list[tuple[UUID, dict[str, object]]] = []
 
-        with (
-            mocks["patches"][0],
-            mocks["patches"][1],
-            mocks["patches"][2],
-            mocks["patches"][3],
-            mocks["patches"][4],
-            mocks["patches"][5],
-            mocks["patches"][6],
-            mocks["patches"][7],
-            mocks["patches"][8],
-            mocks["patches"][9],
-        ):
-            result = await resolve_profile_upsert(
-                pool,
-                AsyncMock(),
-                name="Updated Name",
-                emails=["existing@example.com"],
-                role="member",
-                current_profile_id=uuid4(),
-            )
+        async def fake_update_profile_artifact(conn, profile_id_arg, **kwargs):
+            updates.append((profile_id_arg, kwargs))
+            return SimpleNamespace(id=profile_id_arg)
+
+        result = await resolve_profile_upsert(
+            pool,
+            None,
+            name="Updated Name",
+            emails=["existing@example.com"],
+            role="member",
+            create_name_fn=lambda conn, name, redis: _await_value(_name_resource()),
+            create_email_fn=lambda conn, email, redis: _await_value(_email_resource()),
+            search_roles_fn=lambda conn, redis, **kwargs: _await_value(
+                [_role_resource()]
+            ),
+            search_flags_fn=lambda conn, redis, **kwargs: _await_value(
+                [_flag_resource()]
+            ),
+            search_profiles_fn=lambda conn, **kwargs: _await_value(([existing_id], 1)),
+            create_snapshot_fn=lambda conn, redis, **kwargs: _await_value(snapshot_id),
+            update_profile_artifact_fn=fake_update_profile_artifact,
+            create_session_fn=lambda conn, profiles_resource_id: _await_value(
+                SimpleNamespace(id=uuid4())
+            ),
+        )
 
         assert result.created is False
         assert result.profile_id == existing_id
+        assert len(updates) == 1
+        updated_profile_id, kwargs = updates[0]
+        assert updated_profile_id == existing_id
+        assert kwargs["profile_ids"] == [snapshot_id]
+        assert kwargs["department_ids"] is None
+        assert len(kwargs["email_ids"]) == 1
+        assert len(kwargs["role_ids"]) == 1
 
-    async def test_calls_update_not_create(self):
-        existing_id = uuid4()
-        mocks = _standard_mocks(existing_profile_ids=[existing_id])
-        pool, _conn = _mock_pool()
+    async def test_admin_cannot_assign_superadmin(self) -> None:
+        pool = FakePool()
 
-        with (
-            mocks["patches"][0],
-            mocks["patches"][1],
-            mocks["patches"][2],
-            mocks["patches"][3],
-            mocks["patches"][4],
-            mocks["patches"][5],
-            mocks["patches"][6],
-            mocks["patches"][7] as mock_create,
-            mocks["patches"][8] as mock_update,
-            mocks["patches"][9],
-        ):
+        async def fake_identity(pool_arg, profile_id_arg, redis, *, bypass_cache=False):
+            return _identity(role="admin")
+
+        with pytest.raises(ValueError, match="cannot assign role"):
             await resolve_profile_upsert(
                 pool,
-                AsyncMock(),
-                name="Updated",
-                emails=["existing@example.com"],
-                role="member",
-                current_profile_id=uuid4(),
-            )
-
-        mock_create.assert_not_called()
-        mock_update.assert_called_once()
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_upsert — role validation
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-class TestUpsertRoleValidation:
-    async def test_admin_cannot_assign_superadmin(self):
-        mocks = _standard_mocks(
-            existing_profile_ids=[],
-            role_str="superadmin",
-            requester_role="admin",
-        )
-        pool, _conn = _mock_pool()
-
-        with (
-            mocks["patches"][0],
-            mocks["patches"][1],
-            mocks["patches"][2],
-            mocks["patches"][3],
-            mocks["patches"][4],
-            mocks["patches"][5],
-            mocks["patches"][6],
-            mocks["patches"][7],
-            mocks["patches"][8],
-            mocks["patches"][9],
-        ):
-            with pytest.raises(ValueError, match="cannot assign role"):
-                await resolve_profile_upsert(
-                    pool,
-                    AsyncMock(),
-                    name="Test",
-                    emails=["test@example.com"],
-                    role="superadmin",
-                    current_profile_id=uuid4(),
-                )
-
-    async def test_no_current_profile_skips_validation(self):
-        mocks = _standard_mocks(existing_profile_ids=[])
-        pool, _conn = _mock_pool()
-
-        with (
-            mocks["patches"][0],
-            mocks["patches"][1],
-            mocks["patches"][2],
-            mocks["patches"][3],
-            mocks["patches"][4],
-            mocks["patches"][5],
-            mocks["patches"][6],
-            mocks["patches"][7],
-            mocks["patches"][8],
-            mocks["patches"][9],
-        ):
-            result = await resolve_profile_upsert(
-                pool,
-                AsyncMock(),
+                None,
                 name="Test",
                 emails=["test@example.com"],
-                role="member",
-                current_profile_id=None,
+                role="superadmin",
+                current_profile_id=uuid4(),
+                resolve_profile_identity_fn=fake_identity,
             )
 
-        assert result.created is True
+    async def test_role_not_found_raises(self) -> None:
+        pool = FakePool()
 
-    async def test_role_not_found_raises(self):
-        pool, _conn = _mock_pool()
-        with (
-            _patch("resolve_profile_identity_context", None),
-            _patch("create_name", _name_resource()),
-            _patch("create_email", _email_resource()),
-            _patch("search_roles", []),
-            _patch("search_flags", []),
-        ):
-            with pytest.raises(ValueError, match="Role.*not found"):
-                await resolve_profile_upsert(
-                    pool,
-                    AsyncMock(),
-                    name="Test",
-                    emails=["test@example.com"],
-                    role="nonexistent",
-                )
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_upsert — multiple emails
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-class TestUpsertMultipleEmails:
-    async def test_creates_all_email_resources(self):
-        email_ids = [uuid4(), uuid4(), uuid4()]
-        call_count = 0
-        pool, _conn = _mock_pool()
-
-        async def mock_create_email(conn, email, redis):
-            nonlocal call_count
-            result = _email_resource(id=email_ids[call_count])
-            call_count += 1
-            return result
-
-        with (
-            _patch("resolve_profile_identity_context", None),
-            patch(f"{MODULE}.create_email", side_effect=mock_create_email),
-            _patch("create_name", _name_resource()),
-            _patch("search_roles", [_role_resource()]),
-            _patch("search_flags", [_flag_resource()]),
-            _patch("search_profiles", ([], 0)),
-            _patch("create_denormalized_snapshot", uuid4()),
-            _patch("create_profile_artifact", _create_result()) as mock_create,
-            _patch("create_session", _session_result()),
-        ):
+        with pytest.raises(ValueError, match="Role 'nonexistent' not found"):
             await resolve_profile_upsert(
                 pool,
-                AsyncMock(),
-                name="Multi Email",
-                emails=["a@test.com", "b@test.com", "c@test.com"],
-                role="member",
+                None,
+                name="Test",
+                emails=["test@example.com"],
+                role="nonexistent",
+                create_name_fn=lambda conn, name, redis: _await_value(_name_resource()),
+                create_email_fn=lambda conn, email, redis: _await_value(
+                    _email_resource()
+                ),
+                search_roles_fn=lambda conn, redis, **kwargs: _await_value([]),
+                search_flags_fn=lambda conn, redis, **kwargs: _await_value([]),
             )
 
-        assert call_count == 3
-        call_kwargs = mock_create.call_args[1]
-        assert call_kwargs["email_ids"] == email_ids
+    async def test_creates_all_email_resources(self) -> None:
+        pool = FakePool()
+        email_ids = [uuid4(), uuid4(), uuid4()]
+        created_email_inputs: list[str] = []
+        create_calls: list[dict[str, object]] = []
+
+        async def fake_create_email(conn, email, redis):
+            created_email_inputs.append(email)
+            idx = len(created_email_inputs) - 1
+            return _email_resource(id=email_ids[idx], email=email)
+
+        async def fake_create_profile_artifact(conn, **kwargs):
+            create_calls.append(kwargs)
+            return SimpleNamespace(id=uuid4())
+
+        await resolve_profile_upsert(
+            pool,
+            None,
+            name="Multi Email",
+            emails=["a@test.com", "b@test.com", "c@test.com"],
+            role="member",
+            create_name_fn=lambda conn, name, redis: _await_value(_name_resource()),
+            create_email_fn=fake_create_email,
+            search_roles_fn=lambda conn, redis, **kwargs: _await_value(
+                [_role_resource()]
+            ),
+            search_flags_fn=lambda conn, redis, **kwargs: _await_value(
+                [_flag_resource()]
+            ),
+            search_profiles_fn=lambda conn, **kwargs: _await_value(([], 0)),
+            create_snapshot_fn=lambda conn, redis, **kwargs: _await_value(uuid4()),
+            create_profile_artifact_fn=fake_create_profile_artifact,
+            create_session_fn=lambda conn, profiles_resource_id: _await_value(
+                SimpleNamespace(id=uuid4())
+            ),
+        )
+
+        assert created_email_inputs == ["a@test.com", "b@test.com", "c@test.com"]
+        assert len(create_calls) == 1
+        assert create_calls[0]["email_ids"] == email_ids
+
+
+async def _await_value(value):
+    return value

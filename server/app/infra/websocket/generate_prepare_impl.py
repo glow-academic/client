@@ -46,6 +46,133 @@ SetupGenerationTestFn = Callable[..., Awaitable[Any]]
 ValidatePayloadFn = Callable[..., str | None]
 
 
+def resolve_primary_artifact_type(data: dict[str, Any]) -> str:
+    """Resolve the primary artifact type name from raw request data."""
+    artifact_types_raw = data.get("artifact_types") or []
+    if artifact_types_raw and isinstance(artifact_types_raw[0], dict):
+        return artifact_types_raw[0].get("name", "unknown")
+    return "unknown"
+
+
+def parse_generation_identity(
+    data: dict[str, Any],
+) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID, uuid.UUID]:
+    """Parse the required UUID identity fields for generation preparation."""
+    return (
+        uuid.UUID(data["profile_id"]),
+        uuid.UUID(data["profiles_id"]),
+        uuid.UUID(data["session_id"]),
+        uuid.UUID(data["group_id"]),
+    )
+
+
+def build_generation_work_units(
+    agent_groups: dict[uuid.UUID, list[str]],
+    createable_resources: set[str] | list[str],
+) -> list[WorkUnit]:
+    """Build run-tracker work units from grouped agent resource assignments."""
+    createable = set(createable_resources)
+    return [
+        WorkUnit(
+            agent_id=str(aid),
+            target_type="resource" if rt in createable else "entry",
+            target_name=rt,
+        )
+        for aid, rts in agent_groups.items()
+        for rt in rts
+    ]
+
+
+def enrich_generation_metadata(
+    payload_metadata: dict[str, Any],
+    *,
+    generation_test_id: str | None,
+    generation_invocation_map: dict[uuid.UUID, uuid.UUID] | None,
+    agent_group_id: uuid.UUID,
+) -> dict[str, Any]:
+    """Add generation-test metadata for one agent dispatch when available."""
+    enriched_metadata = dict(payload_metadata)
+    if generation_test_id:
+        enriched_metadata["generation_test_id"] = generation_test_id
+        if generation_invocation_map and agent_group_id in generation_invocation_map:
+            enriched_metadata["test_invocation_id"] = str(
+                generation_invocation_map[agent_group_id]
+            )
+    return enriched_metadata
+
+
+def build_generation_started_payload(
+    *,
+    sid: str,
+    artifact_type: str,
+    group_id: str,
+    run_id: str,
+    resource_types: list[str],
+) -> dict[str, Any]:
+    """Build the generation_started internal payload."""
+    return GenerationStartedData(
+        sid=sid,
+        artifact_type=artifact_type,
+        group_id=group_id,
+        run_id=run_id,
+        resource_types=resource_types,
+    ).model_dump(mode="json")
+
+
+def build_generate_artifact_payload(
+    *,
+    sid: str,
+    artifact_type: str,
+    agent_resource_types: list[str],
+    run_id: str,
+    group_id: str,
+    modality: str,
+    all_messages: list[dict[str, Any]],
+    llm_config: Any,
+    scoped_tools: list[dict[str, Any]],
+    metadata: dict[str, Any] | None,
+    profile_id: str,
+    profiles_id: str,
+    session_id: str,
+    artifact_id: uuid.UUID | None,
+    draft_id: uuid.UUID | None,
+    developer_instruction_templates: list[str] | None,
+    agent_id: uuid.UUID,
+) -> dict[str, Any]:
+    """Build the generate_artifact internal payload for one agent dispatch."""
+    return GenerateArtifactPayload(
+        sid=sid,
+        artifact_type=artifact_type,
+        resource_type=agent_resource_types[0] if agent_resource_types else artifact_type,
+        run_id=run_id,
+        group_id=group_id,
+        modality=modality,
+        message_id=None,
+        messages=all_messages,
+        llm_config={
+            "model": llm_config.model,
+            "api_key": llm_config.api_key,
+            "base_url": llm_config.base_url,
+            "temperature": llm_config.temperature,
+            "reasoning": llm_config.reasoning,
+            "provider": llm_config.provider,
+            "voice": llm_config.voice,
+            "quality": llm_config.quality,
+            "length_seconds": None,
+            "tool_choice": "required",
+        },
+        tools=scoped_tools,
+        metadata=metadata or None,
+        profile_id=profile_id,
+        profiles_id=profiles_id,
+        session_id=session_id,
+        artifact_id=str(artifact_id) if artifact_id else None,
+        draft_id=str(draft_id) if draft_id else None,
+        developer_instruction_templates=developer_instruction_templates,
+        agent_id=str(agent_id),
+    ).model_dump(mode="json")
+
+
 async def generate_prepare_impl(
     data: dict[str, Any],
     *,
@@ -78,12 +205,7 @@ async def generate_prepare_impl(
     if not sid:
         return
 
-    artifact_types_raw = data.get("artifact_types") or []
-    artifact_type = (
-        artifact_types_raw[0]["name"]
-        if artifact_types_raw and isinstance(artifact_types_raw[0], dict)
-        else "unknown"
-    )
+    artifact_type = resolve_primary_artifact_type(data)
 
     # Identity context
     profile_id_str = data.get("profile_id")
@@ -114,10 +236,14 @@ async def generate_prepare_impl(
         return
 
     try:
-        profile_id = uuid.UUID(profile_id_str)
-        profiles_id = uuid.UUID(profiles_id_str)
-        session_id = uuid.UUID(session_id_str)
-        group_id = uuid.UUID(group_id_str)
+        profile_id, profiles_id, session_id, group_id = parse_generation_identity(
+            {
+                "profile_id": profile_id_str,
+                "profiles_id": profiles_id_str,
+                "session_id": session_id_str,
+                "group_id": group_id_str,
+            }
+        )
         payload = GeneratePayload(**data)
     except Exception as e:
         await _emit_error(emit, sid, f"Invalid request: {str(e)}", artifact_type)
@@ -261,15 +387,7 @@ async def generate_prepare_impl(
         run_id = run.id
 
         # --- Step 9: Init trackers ---
-        units = [
-            WorkUnit(
-                agent_id=str(aid),
-                target_type="resource" if rt in createable_resources else "entry",
-                target_name=rt,
-            )
-            for aid, rts in agent_groups.items()
-            for rt in rts
-        ]
+        units = build_generation_work_units(agent_groups, createable_resources)
         await init_run_trackers_fn(
             redis,
             run_id=str(run_id),
@@ -311,13 +429,13 @@ async def generate_prepare_impl(
         events.append(
             internal_event(
                 "generation_started",
-                GenerationStartedData(
+                build_generation_started_payload(
                     sid=sid,
                     artifact_type=artifact_type,
                     group_id=group_id_str,
                     run_id=str(run_id),
                     resource_types=resource_types,
-                ).model_dump(mode="json"),
+                ),
             )
         )
 
@@ -345,16 +463,12 @@ async def generate_prepare_impl(
             ]
 
             # Inject generation test metadata
-            enriched_metadata = dict(payload_metadata)
-            if generation_test_id:
-                enriched_metadata["generation_test_id"] = generation_test_id
-                if (
-                    generation_invocation_map
-                    and agent_group_id in generation_invocation_map
-                ):
-                    enriched_metadata["test_invocation_id"] = str(
-                        generation_invocation_map[agent_group_id]
-                    )
+            enriched_metadata = enrich_generation_metadata(
+                payload_metadata,
+                generation_test_id=generation_test_id,
+                generation_invocation_map=generation_invocation_map,
+                agent_group_id=agent_group_id,
+            )
 
             dispatch = build_agent_dispatch_fn(
                 agent_id=agent_group_id,
@@ -404,39 +518,25 @@ async def generate_prepare_impl(
             events.append(
                 internal_event(
                     "generate_artifact",
-                    GenerateArtifactPayload(
+                    build_generate_artifact_payload(
                         sid=sid,
                         artifact_type=artifact_type,
-                        resource_type=agent_resource_types[0]
-                        if agent_resource_types
-                        else artifact_type,
+                        agent_resource_types=agent_resource_types,
                         run_id=str(run_id),
                         group_id=group_id_str,
                         modality=payload.modality,
-                        message_id=None,
-                        messages=all_messages,
-                        llm_config={
-                            "model": llm_config.model,
-                            "api_key": llm_config.api_key,
-                            "base_url": llm_config.base_url,
-                            "temperature": llm_config.temperature,
-                            "reasoning": llm_config.reasoning,
-                            "provider": llm_config.provider,
-                            "voice": llm_config.voice,
-                            "quality": llm_config.quality,
-                            "length_seconds": None,
-                            "tool_choice": "required",
-                        },
-                        tools=dispatch.scoped_tools,
-                        metadata=dispatch.metadata or None,
+                        all_messages=all_messages,
+                        llm_config=llm_config,
+                        scoped_tools=dispatch.scoped_tools,
+                        metadata=dispatch.metadata,
                         profile_id=profile_id_str,
                         profiles_id=profiles_id_str,
                         session_id=session_id_str,
-                        artifact_id=str(artifact_id) if artifact_id else None,
-                        draft_id=str(payload.draft_id) if payload.draft_id else None,
+                        artifact_id=artifact_id,
+                        draft_id=payload.draft_id,
                         developer_instruction_templates=dispatch.developer_instruction_templates,
-                        agent_id=str(agent_group_id),
-                    ).model_dump(mode="json"),
+                        agent_id=agent_group_id,
+                    ),
                 )
             )
 

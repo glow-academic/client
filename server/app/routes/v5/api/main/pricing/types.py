@@ -52,7 +52,6 @@ class ListPricingRequest(BaseModel):
     page: int = 0
     page_size: int = 50
     sort_order: str = "desc"
-    session_id: UUID | None = None
 
     @property
     def effective_date_from(self) -> datetime | None:

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, cast
 
 from app.infra.artifacts import (
@@ -50,6 +50,15 @@ logger = logging.getLogger(__name__)
 _extract_template_var = extract_template_var
 _resolve_output_fields = resolve_output_fields
 _parse_partial_json = parse_partial_json
+
+DecryptApiKeyFn = Callable[[str], str]
+GetMediaAdapterFn = Callable[[], Any]
+GetAudioAdapterFn = Callable[[], Any]
+CreateSessionFn = Callable[..., Any]
+RemoveSessionFn = Callable[[str], None]
+CallResponsesApiFn = Callable[..., Awaitable[Any]]
+CallChatCompletionsApiFn = Callable[..., Awaitable[Any]]
+StreamLitellmEventsFn = Callable[[Any], AsyncIterator[dict[str, Any]]]
 
 
 # ---------------------------------------------------------------------------
@@ -370,9 +379,24 @@ async def generate_artifact_impl(
     emit: EmitFn,
     sid: str,
     profile_id: str | None,
+    decrypt_api_key_fn: DecryptApiKeyFn | None = None,
+    get_media_adapter_fn: GetMediaAdapterFn | None = None,
+    get_audio_adapter_fn: GetAudioAdapterFn | None = None,
+    create_session_fn: CreateSessionFn | None = None,
+    remove_session_fn: RemoveSessionFn | None = None,
+    call_responses_api_fn: CallResponsesApiFn | None = None,
+    call_chat_completions_api_fn: CallChatCompletionsApiFn | None = None,
+    stream_litellm_events_fn: StreamLitellmEventsFn | None = None,
 ) -> None:
     """Pure token factory: stream model outputs and emit progress/complete/error events."""
     try:
+        decrypt_api_key_fn = decrypt_api_key_fn or decrypt_api_key
+        call_responses_api_fn = call_responses_api_fn or _call_responses_api
+        call_chat_completions_api_fn = (
+            call_chat_completions_api_fn or _call_chat_completions_api
+        )
+        stream_litellm_events_fn = stream_litellm_events_fn or stream_litellm_events
+
         resource_type = data.resource_type
         if not resource_type and data.resource_types:
             resource_type = data.resource_types[0]
@@ -384,7 +408,7 @@ async def generate_artifact_impl(
         # Decrypt the API key if provided (keys are stored encrypted in the database)
         decrypted_api_key: str | None = None
         if model_config.api_key:
-            decrypted_api_key = decrypt_api_key(model_config.api_key)
+            decrypted_api_key = decrypt_api_key_fn(model_config.api_key)
 
         extra_body: dict[str, Any] = {}
         if model_config.voice is not None:
@@ -486,9 +510,12 @@ async def generate_artifact_impl(
                 return
 
             # AI-generated media via adapter
-            from app.infra.websocket.media_lifecycle import get_media_adapter
+            if get_media_adapter_fn is None:
+                from app.infra.websocket.media_lifecycle import get_media_adapter
 
-            adapter = get_media_adapter()
+                get_media_adapter_fn = get_media_adapter
+
+            adapter = get_media_adapter_fn()
             prompt = data.messages[-1]["content"] if data.messages else ""
             context = {
                 "sid": sid,
@@ -528,11 +555,18 @@ async def generate_artifact_impl(
             return
 
         if data.modality == "audio":
-            from app.infra.websocket.audio_lifecycle import get_audio_adapter
-            from app.infra.websocket.session_store import (
-                create_session,
-                remove_session,
-            )
+            if get_audio_adapter_fn is None:
+                from app.infra.websocket.audio_lifecycle import get_audio_adapter
+
+                get_audio_adapter_fn = get_audio_adapter
+            if create_session_fn is None or remove_session_fn is None:
+                from app.infra.websocket.session_store import (
+                    create_session,
+                    remove_session,
+                )
+
+                create_session_fn = create_session
+                remove_session_fn = remove_session
 
             if not decrypted_api_key:
                 await _emit_modality_event(
@@ -554,7 +588,7 @@ async def generate_artifact_impl(
             # Create session -- keyed by chat_id, run_id, group_id
             chat_id = data.chat_id or group_id
             metadata = data.metadata or {}
-            session = create_session(
+            session = create_session_fn(
                 sid=sid,
                 chat_id=chat_id,
                 run_id=data.run_id,
@@ -565,7 +599,7 @@ async def generate_artifact_impl(
                 metadata=metadata,
             )
             session.tool_output_schemas = tool_output_schemas
-            adapter = get_audio_adapter()
+            adapter = get_audio_adapter_fn()
 
             try:
                 await adapter.initialize_session(
@@ -577,7 +611,7 @@ async def generate_artifact_impl(
                     instructions=None,
                 )
             except Exception as e:
-                remove_session(group_id)
+                remove_session_fn(group_id)
                 await _emit_modality_event(
                     emit,
                     "audio",
@@ -650,7 +684,7 @@ async def generate_artifact_impl(
             # Call the appropriate API
             try:
                 if api_mode == "responses":
-                    stream = await _call_responses_api(
+                    stream = await call_responses_api_fn(
                         model=model_config.model,
                         responses_input=responses_input,
                         tools=responses_tools,
@@ -661,7 +695,7 @@ async def generate_artifact_impl(
                         extra_body=extra_body or None,
                     )
                 else:
-                    stream = await _call_chat_completions_api(
+                    stream = await call_chat_completions_api_fn(
                         model=model_config.model,
                         messages=chat_messages,
                         tools=openai_tools,
@@ -679,7 +713,7 @@ async def generate_artifact_impl(
                         f"Responses API failed, falling back to Chat Completions: {e}"
                     )
                     api_mode = "chat_completions"
-                    stream = await _call_chat_completions_api(
+                    stream = await call_chat_completions_api_fn(
                         model=model_config.model,
                         messages=chat_messages,
                         tools=openai_tools,
@@ -702,7 +736,7 @@ async def generate_artifact_impl(
                 dict[str, Any]
             ] = []  # Raw output items for Responses API
 
-            async for event in stream_litellm_events(stream):
+            async for event in stream_litellm_events_fn(stream):
                 event_type = event.get("type")
 
                 if event_type == "text_start":

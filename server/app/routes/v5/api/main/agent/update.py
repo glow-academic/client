@@ -41,7 +41,6 @@ async def update_agent(
             redis,
             profile_id=profile_id,
             items=request.agents,
-            group_id=request.group_id,
         )
 
         response.headers["X-Invalidate-Tags"] = "agents"

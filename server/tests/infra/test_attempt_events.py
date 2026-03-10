@@ -7,7 +7,6 @@ Uses recording_emit() to capture events.
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 import pytest
@@ -150,17 +149,6 @@ from app.routes.v5.tools.resources.simulations.create import create_simulation
 from tests.helpers import nonexistent_id
 
 _P = "app.infra.websocket.attempt_events_impl"
-
-
-def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
-    """Create a mock pool whose acquire() yields mock_conn."""
-    if mock_conn is None:
-        mock_conn = AsyncMock()
-    pool = MagicMock()
-    cm = AsyncMock()
-    cm.__aenter__.return_value = mock_conn
-    pool.acquire.return_value = cm
-    return pool
 
 
 @pytest_asyncio.fixture
@@ -474,30 +462,41 @@ class TestAttemptNextImpl:
         await attempt_next_impl(
             {"sid": ""},
             emit=emit,
-            attempt_id="a1",
-            group_id="g1",
+            attempt_id=str(nonexistent_id()),
             draft_id=None,
+            profile_id=str(nonexistent_id()),
+            session_id=str(nonexistent_id()),
+            pool=object(),
         )
         assert events == []
 
     async def test_emits_attempt_proceed(self):
         emit, events = recording_emit()
+        group_id = nonexistent_id()
+
+        async def fake_identity(*args, **kwargs):
+            return SimpleNamespace(group_id=group_id)
+
         await attempt_next_impl(
             {"sid": "s1"},
             emit=emit,
-            attempt_id="a1",
-            group_id="g1",
+            attempt_id=str(nonexistent_id()),
             draft_id="d1",
+            profile_id=str(nonexistent_id()),
+            session_id=str(nonexistent_id()),
+            pool=object(),
+            resolve_profile_identity_fn=fake_identity,
         )
         assert len(events) == 1
         assert events[0].event == "attempt_proceed"
         assert events[0].data["force_proceed"] is True
-        assert events[0].data["attempt_id"] == "a1"
+        assert events[0].data["group_id"] == str(group_id)
         assert events[0].data["draft_id"] == "d1"
 
     async def test_error_emits_attempt_error(self):
         """If emit raises during proceed, emits attempt_error instead."""
         call_count = 0
+        group_id = nonexistent_id()
 
         async def failing_emit(events_list):
             nonlocal call_count
@@ -507,13 +506,19 @@ class TestAttemptNextImpl:
             # Second call (error emit) succeeds — capture it
             captured.extend(events_list)
 
+        async def fake_identity(*args, **kwargs):
+            return SimpleNamespace(group_id=group_id)
+
         captured = []
         await attempt_next_impl(
             {"sid": "s1"},
             emit=failing_emit,
-            attempt_id="a1",
-            group_id="g1",
+            attempt_id=str(nonexistent_id()),
             draft_id=None,
+            profile_id=str(nonexistent_id()),
+            session_id=str(nonexistent_id()),
+            pool=object(),
+            resolve_profile_identity_fn=fake_identity,
         )
         assert len(captured) == 1
         assert captured[0].event == "attempt_error"
@@ -532,7 +537,7 @@ class TestUserStartImpl:
         await user_start_impl(
             {"sid": "", "chat_id": "c1", "run_id": "r1"},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -541,7 +546,7 @@ class TestUserStartImpl:
         await user_start_impl(
             {"sid": "s1", "chat_id": "", "run_id": "r1"},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -550,7 +555,7 @@ class TestUserStartImpl:
         await user_start_impl(
             {"sid": "s1", "chat_id": "c1", "run_id": ""},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -821,12 +826,12 @@ class TestNextImpl:
 
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_next_impl({"test_id": "123"}, emit=emit, pool=_mock_pool())
+        await _test_next_impl({"test_id": "123"}, emit=emit, pool=object())
         assert events == []
 
     async def test_invalid_test_id_emits_error(self):
         emit, events = recording_emit()
-        await _test_next_impl({"sid": "s1"}, emit=emit, pool=_mock_pool())
+        await _test_next_impl({"sid": "s1"}, emit=emit, pool=object())
         assert len(events) == 1
         assert events[0].bus == "client"
         assert events[0].event == "test_error"
@@ -989,7 +994,7 @@ class TestGradeCompleteImpl:
                 ],
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
             profile_id="prof-1",
         )
         assert len(events) == 1
@@ -1051,7 +1056,7 @@ class TestGradeCompleteImpl:
                 "tool_results": [],
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
             profile_id="prof-1",
         )
         # Should still emit grade progress, just no token created
@@ -1067,7 +1072,7 @@ class TestGradeCompleteImpl:
                 "tool_results": [],
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
             profile_id="prof-1",
         )
         assert "test_inv-1" in events[0].data["rooms"]
@@ -1116,12 +1121,12 @@ _RUNS_SEARCH = "app.routes.v5.tools.entries.runs.search"
 class TestGroupImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_group_impl({}, emit=emit, pool=_mock_pool())
+        await _test_group_impl({}, emit=emit, pool=object())
         assert events == []
 
     async def test_no_profile_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_group_impl({"sid": "s1"}, emit=emit, pool=_mock_pool())
+        await _test_group_impl({"sid": "s1"}, emit=emit, pool=object())
         assert events == []
 
     async def test_no_runs_emits_group_complete(self, pool):
@@ -1203,12 +1208,12 @@ _CACHE = "app.utils.cache.invalidate_tags"
 class TestStartImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_start_impl({}, emit=emit, pool=_mock_pool())
+        await _test_start_impl({}, emit=emit, pool=object())
         assert events == []
 
     async def test_no_profile_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_start_impl({"sid": "s1"}, emit=emit, pool=_mock_pool())
+        await _test_start_impl({"sid": "s1"}, emit=emit, pool=object())
         assert events == []
 
     async def test_invalid_profile_id_returns(self):
@@ -1216,7 +1221,7 @@ class TestStartImpl:
         await _test_start_impl(
             {"sid": "s1", "profile_id": "not-a-uuid"},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -1337,7 +1342,7 @@ class TestProceedImpl:
 
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_proceed_impl({"sid": ""}, emit=emit, pool=_mock_pool())
+        await _test_proceed_impl({"sid": ""}, emit=emit, pool=object())
         assert events == []
 
     async def test_invalid_payload_emits_nothing(self):
@@ -1345,7 +1350,7 @@ class TestProceedImpl:
         await _test_proceed_impl(
             {"sid": "s1"},  # missing test_id
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -1541,7 +1546,7 @@ class TestRunImpl:
 
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_run_impl({"sid": ""}, emit=emit, pool=_mock_pool())
+        await _test_run_impl({"sid": ""}, emit=emit, pool=object())
         assert events == []
 
     async def test_no_profile_id_emits_nothing(self):
@@ -1549,7 +1554,7 @@ class TestRunImpl:
         await _test_run_impl(
             {"sid": "s1", "profile_id": ""},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -1558,7 +1563,7 @@ class TestRunImpl:
         await _test_run_impl(
             {"sid": "s1", "profile_id": "p1"},  # missing test_id etc
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -1681,7 +1686,7 @@ class TestUserCompleteImpl:
         await _user_complete_impl(
             {"sid": "", "chat_id": "c1", "run_id": "r1", "content": "hi"},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -1690,7 +1695,7 @@ class TestUserCompleteImpl:
         await _user_complete_impl(
             {"sid": "s1", "chat_id": "c1", "run_id": "r1", "content": ""},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
         )
         assert events == []
 
@@ -1842,7 +1847,7 @@ _UPLOAD_CREATE = "app.routes.v5.tools.entries.uploads.create"
 class TestSpeechCompleteImpl:
     async def test_no_group_id_emits_nothing(self):
         emit, events = recording_emit()
-        await _speech_complete_impl({"group_id": ""}, emit=emit, pool=_mock_pool())
+        await _speech_complete_impl({"group_id": ""}, emit=emit, pool=object())
         assert events == []
 
     async def test_no_session_emits_nothing(self, pool):
@@ -1883,21 +1888,22 @@ class TestSpeechCompleteImpl:
         pool,
         audio_session_factory,
         tmp_path,
+        monkeypatch,
     ):
         test_session_id = "00000000-0000-0000-0000-0000000000aa"
         await audio_session_factory(session_id=test_session_id)
         emit, events = recording_emit()
-        with patch("app.infra.globals.AUDIO_FOLDER", tmp_path):
-            await _speech_complete_impl(
-                {
-                    "group_id": "g1",
-                    "transcript": "hello",
-                    "audio": b"fake-audio-bytes",
-                },
-                emit=emit,
-                pool=pool,
-                session_id=UUID(test_session_id),
-            )
+        monkeypatch.setattr("app.infra.globals.AUDIO_FOLDER", tmp_path)
+        await _speech_complete_impl(
+            {
+                "group_id": "g1",
+                "transcript": "hello",
+                "audio": b"fake-audio-bytes",
+            },
+            emit=emit,
+            pool=pool,
+            session_id=UUID(test_session_id),
+        )
 
         assert len(events) == 1
         upload_id = UUID(events[0].data["audio_upload_id"])
@@ -1936,7 +1942,7 @@ class TestAttemptStartImpl:
         await _attempt_start_impl(
             {"sid": ""},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
             profile_id="p1",
             session_id="s1",
         )
@@ -1947,7 +1953,7 @@ class TestAttemptStartImpl:
         await _attempt_start_impl(
             {"sid": "s1"},  # missing practice_id/home_id
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2226,7 +2232,7 @@ class TestAttemptProceedImpl:
         await _attempt_proceed_impl(
             {"sid": ""},
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2237,7 +2243,7 @@ class TestAttemptProceedImpl:
         await _attempt_proceed_impl(
             {"sid": "s1"},  # missing attempt_id, group_id
             emit=emit,
-            pool=_mock_pool(),
+            pool=object(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )

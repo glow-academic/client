@@ -317,6 +317,73 @@ async def _run_scenario_rubric_seeds(
     return created_ids
 
 
+async def _run_field_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    field_defs: list[dict],
+) -> list[UUID]:
+    """Run field seed definitions through create_field_client."""
+    from app.infra.field_create import CreateFieldItem, create_field_client
+
+    items = [CreateFieldItem(**f) for f in field_defs]
+
+    result = await create_field_client(
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
+    )
+
+    created_ids: list[UUID] = []
+    for r in result.results:
+        if not r.success:
+            print(f"  ERROR: {r.message}")
+            if hasattr(r, "errors") and r.errors:
+                for e in r.errors:
+                    print(f"    - {e.field}: {e.message}")
+        else:
+            if hasattr(r, "field_id") and r.field_id:
+                created_ids.append(r.field_id)
+            print(f"  OK: {r.message}")
+
+    return created_ids
+
+
+async def _run_parameter_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    parameter_defs: list[dict],
+) -> list[UUID]:
+    """Run parameter seed definitions through create_parameter_client."""
+    from app.infra.parameter_create import (
+        CreateParameterItem,
+        create_parameter_client,
+    )
+
+    items = [CreateParameterItem(**p) for p in parameter_defs]
+
+    result = await create_parameter_client(
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
+    )
+
+    created_ids: list[UUID] = []
+    for r in result.results:
+        if not r.success:
+            print(f"  ERROR: {r.message}")
+            if hasattr(r, "errors") and r.errors:
+                for e in r.errors:
+                    print(f"    - {e.field}: {e.message}")
+        else:
+            if hasattr(r, "parameter_id") and r.parameter_id:
+                created_ids.append(r.parameter_id)
+            print(f"  OK: {r.message}")
+
+    return created_ids
+
+
 async def _run_objective_seeds(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -728,6 +795,10 @@ async def main(setup: str = "university") -> None:
                 await _run_scenario_seeds(pool, redis_client, mod.scenarios)
             elif module_name == "rubrics":
                 await _run_rubric_seeds(pool, redis_client, mod.rubrics)
+            elif module_name == "fields":
+                await _run_field_seeds(pool, redis_client, mod.fields)
+            elif module_name == "parameters":
+                await _run_parameter_seeds(pool, redis_client, mod.parameters)
             elif module_name == "scenario_rubrics":
                 await _run_scenario_rubric_seeds(
                     pool, redis_client, mod.scenario_rubrics

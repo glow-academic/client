@@ -8,14 +8,18 @@ Dual cancel (in-process + Redis) → entry mutation → emit stopped.
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_pool, sio
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.cancel_active_result import cancel_active_result
 from app.infra.websocket.cancel_active_run import cancel_active_run
+from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.routes.v5.socket.client.types import AttemptStopPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
     AttemptStoppedData,
 )
+from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
 from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
 from app.routes.v5.tools.entries.attempt_message_completion.create import (
     create_attempt_message_completion,
@@ -33,6 +37,16 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
     """Handle attempt_stop_message — cancel active generation and mark complete."""
     try:
         chat_id = str(data.chat_id)
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
+            raise ValueError("Profile not found for socket")
+
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            raise ValueError("Session not found for socket")
+
+        profile_id = uuid.UUID(profile_id_str)
+        session_id = uuid.UUID(session_id_str)
 
         # Step 1: In-process cancel
         await cancel_active_result(chat_id)
@@ -44,6 +58,19 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
         # TODO: Add leaf-node filter (exclude messages with children in attempt_message_tree_entry)
         pool = get_pool()
         async with pool.acquire() as conn:
+            chat_entries = await get_attempt_chats(conn, [uuid.UUID(chat_id)])
+            if not chat_entries or not chat_entries[0].group_id:
+                raise ValueError(f"Group not found for chat {chat_id}")
+            group_id = chat_entries[0].group_id
+
+            identity = await resolve_profile_identity_context(
+                pool,
+                profile_id,
+                get_redis_client(),
+                session_id=session_id,
+            )
+            profiles_id = identity.profiles_id if identity else None
+
             messages, _ = await search_attempt_messages(
                 conn,
                 chat_ids=[uuid.UUID(chat_id)],
@@ -68,13 +95,14 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
             # Create run + call for traceability
             run = await create_run(
                 conn,
-                group_id=data.group_id,
-                session_id=data.session_id,
+                group_id=group_id,
+                session_id=session_id,
+                profiles_id=profiles_id,
             )
             call = await create_call(
                 conn,
                 run_id=run.id,
-                session_id=data.session_id,
+                session_id=session_id,
             )
 
             await create_attempt_message_completion(

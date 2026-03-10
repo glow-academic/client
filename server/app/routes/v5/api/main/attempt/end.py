@@ -29,7 +29,6 @@ router = APIRouter()
 
 class EndAttemptApiRequest(BaseModel):
     attempt_id: UUID
-    group_id: UUID
     chat_id: UUID
     grade: bool = True
     # Optional — agent can provide these, otherwise internal AI generates them

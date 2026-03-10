@@ -7,7 +7,8 @@ attempt into the current attempt, then delegate to attempt_proceed.
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_pool, sio
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.routes.v5.socket.client.types import AttemptUsePreviousPayload
@@ -26,7 +27,10 @@ internal_sio = get_internal_sio()
 
 
 async def _attempt_use_previous_impl(
-    sid: str, data: AttemptUsePreviousPayload, session_id: uuid.UUID
+    sid: str,
+    data: AttemptUsePreviousPayload,
+    session_id: uuid.UUID,
+    group_id: uuid.UUID,
 ) -> None:
     """Handle attempt_use_previous — bridge previous attempt_chats, then proceed."""
     try:
@@ -60,7 +64,7 @@ async def _attempt_use_previous_impl(
             AttemptProceedData(
                 sid=sid,
                 attempt_id=str(attempt_id),
-                group_id=str(data.group_id),
+                group_id=str(group_id),
                 force_proceed=False,
             ).model_dump(mode="json"),
         )
@@ -107,7 +111,23 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        await _attempt_use_previous_impl(sid, payload, uuid.UUID(session_id_str))
+        identity = await resolve_profile_identity_context(
+            get_pool(),
+            uuid.UUID(profile_id_str),
+            get_redis_client(),
+            session_id=uuid.UUID(session_id_str),
+            attempt_id=payload.attempt_id,
+        )
+        group_id = identity.group_id if identity else None
+        if group_id is None:
+            raise ValueError(f"Group not found for attempt {payload.attempt_id}")
+
+        await _attempt_use_previous_impl(
+            sid,
+            payload,
+            uuid.UUID(session_id_str),
+            group_id,
+        )
 
     except Exception as e:
         logger.exception(f"Invalid request in attempt_use_previous: {e}")

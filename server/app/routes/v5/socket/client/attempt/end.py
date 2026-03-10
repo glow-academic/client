@@ -138,12 +138,27 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
             )
 
         # Step 2: Delegate to attempt_proceed with completed_chat_id
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            raise ValueError("Session not found for socket")
+
+        proceed_identity = await resolve_profile_identity_context(
+            get_pool(),
+            profile_id,
+            get_redis_client(),
+            session_id=uuid.UUID(session_id_str),
+            attempt_id=uuid.UUID(attempt_id),
+        )
+        group_id = proceed_identity.group_id if proceed_identity else None
+        if group_id is None:
+            raise ValueError(f"Group not found for attempt {attempt_id}")
+
         await internal_sio.emit(
             "attempt_proceed",
             AttemptProceedData(
                 sid=sid,
                 attempt_id=attempt_id,
-                group_id=str(payload.group_id),
+                group_id=str(group_id),
                 completed_chat_id=chat_id,
             ).model_dump(mode="json"),
         )

@@ -51,6 +51,69 @@ def _table_name(target_type: str, target_name: str) -> str:
     return f"{target_name}_{suffix}"
 
 
+def build_audio_continue_payload(
+    data: dict[str, Any],
+    *,
+    sid: str,
+    artifact_type: str,
+    group_id: str,
+    profile_id: str | None,
+    profiles_id: str | None,
+    session_id: str | None,
+) -> dict[str, Any]:
+    """Build the payload used to re-enter generation for audio continuation."""
+    return {
+        "sid": sid,
+        "profile_id": profile_id,
+        "profiles_id": profiles_id,
+        "session_id": session_id,
+        "artifact_types": data.get("artifact_types")
+        or [{"name": artifact_type, "operation": "get"}],
+        "group_id": group_id,
+        "metadata": data.get("metadata", {}),
+    }
+
+
+def build_generation_resolution_context(
+    *,
+    sid: str,
+    run_id: str,
+    artifact_type: str,
+    group_id: str,
+    resource_actions: dict[str, Any],
+    entry_actions: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the minimal stored resolution context for contested runs."""
+    return {
+        "sid": sid,
+        "run_id": run_id,
+        "artifact_type": artifact_type,
+        "group_id": group_id,
+        "resource_actions": resource_actions,
+        "entry_actions": entry_actions,
+    }
+
+
+def build_run_complete_payload(
+    *,
+    sid: str,
+    artifact_type: str,
+    group_id: str,
+    run_id: str,
+    resource_actions: dict[str, Any],
+) -> dict[str, Any]:
+    """Build the final generation completion payload for run completion."""
+    return GenerationCompleteData(
+        sid=sid,
+        artifact_type=artifact_type,
+        group_id=group_id,
+        run_id=run_id,
+        success=True,
+        message=f"{artifact_type.capitalize()} generation completed",
+        resource_actions=resource_actions,
+    ).model_dump(mode="json")
+
+
 async def run_complete_impl(
     data: dict[str, Any],
     *,
@@ -90,16 +153,15 @@ async def run_complete_impl(
                 [
                     internal_event(
                         "generate",
-                        {
-                            "sid": sid,
-                            "profile_id": profile_id_str,
-                            "profiles_id": profiles_id_str,
-                            "session_id": session_id_str,
-                            "artifact_types": data.get("artifact_types")
-                            or [{"name": artifact_type, "operation": "get"}],
-                            "group_id": group_id_str,
-                            "metadata": data.get("metadata", {}),
-                        },
+                        build_audio_continue_payload(
+                            data,
+                            sid=sid,
+                            artifact_type=artifact_type,
+                            group_id=group_id_str,
+                            profile_id=profile_id_str,
+                            profiles_id=profiles_id_str,
+                            session_id=session_id_str,
+                        ),
                     )
                 ]
             )
@@ -189,14 +251,14 @@ async def run_complete_impl(
             # Store minimal resolution context in Redis so generation_ended
             # can emit generation_complete with the right fields.
             # Keyed by test_id (which test_ended carries), not run_id.
-            resolution_ctx = {
-                "sid": sid,
-                "run_id": run_id,
-                "artifact_type": artifact_type,
-                "group_id": group_id_str,
-                "resource_actions": resource_actions,
-                "entry_actions": entry_actions,
-            }
+            resolution_ctx = build_generation_resolution_context(
+                sid=sid,
+                run_id=run_id,
+                artifact_type=artifact_type,
+                group_id=group_id_str,
+                resource_actions=resource_actions,
+                entry_actions=entry_actions,
+            )
             try:
                 await redis.setex(
                     f"generation_resolution:{generation_test_id}",
@@ -259,15 +321,13 @@ async def run_complete_impl(
         [
             internal_event(
                 "generation_channel",
-                GenerationCompleteData(
+                build_run_complete_payload(
                     sid=sid,
                     artifact_type=artifact_type,
                     group_id=group_id_str,
                     run_id=run_id,
-                    success=True,
-                    message=f"{artifact_type.capitalize()} generation completed",
                     resource_actions=resource_actions,
-                ).model_dump(mode="json"),
+                ),
             )
         ]
     )

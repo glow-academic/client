@@ -55,6 +55,12 @@ async def search_pricing(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
+        session_id = http_request.state.session_id
+        if not session_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Session ID is required.",
+            )
 
         redis = get_redis_client()
 
@@ -70,7 +76,7 @@ async def search_pricing(
         ctx = await resolve_pricing_search_context(
             pool,
             redis,
-            session_ids=[request.session_id] if request.session_id else None,
+            session_ids=[session_id],
             date_from=request.effective_date_from,
             date_to=request.effective_date_to,
             sort_order=request.sort_order,

@@ -237,7 +237,6 @@ class TestErrorEvent(BaseModel):
 class AttemptStartPayload(BaseModel):
     """Client-to-server: create a new attempt."""
 
-    group_id: UUID
     home_id: UUID | None = None
     practice_id: UUID | None = None
     infinite_mode: bool = False
@@ -255,7 +254,6 @@ class AttemptNextPayload(BaseModel):
     """Client-to-server: proceed to the next scenario in an existing attempt."""
 
     attempt_id: UUID
-    group_id: UUID
     draft_id: UUID | None = None
 
 
@@ -270,7 +268,6 @@ class AttemptEndPayload(BaseModel):
     """Client-to-server: end a single chat within an attempt."""
 
     attempt_id: UUID
-    group_id: UUID
     chat_id: UUID
     grade: bool = True
 
@@ -294,7 +291,6 @@ class AttemptEndAllPayload(BaseModel):
     """Client-to-server: end all remaining chats in an attempt."""
 
     attempt_id: UUID
-    group_id: UUID
 
 
 class AttemptEndedEvent(BaseModel):
@@ -313,7 +309,6 @@ class AttemptUsePreviousPayload(BaseModel):
     """
 
     attempt_id: UUID
-    group_id: UUID
     previous_chat_map: dict[str, str]
 
 
@@ -427,8 +422,6 @@ class AttemptStopPayload(BaseModel):
     """Client-to-server: stop message generation."""
 
     chat_id: UUID
-    session_id: UUID
-    group_id: UUID
 
 
 class AttemptStoppedEvent(BaseModel):
