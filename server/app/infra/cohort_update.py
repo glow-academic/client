@@ -135,19 +135,20 @@ async def update_cohort_client(
     results: list[CohortResultItem] = []
     sync_items: list[tuple[UUID, object]] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                cohorts_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        cohorts_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
-                flag_ids = [item.flag_id] if item.flag_id else None
+        flag_ids = [item.flag_id] if item.flag_id else None
 
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 await update_cohort_artifact(
                     conn,
                     item.cohort_id,
@@ -165,14 +166,14 @@ async def update_cohort_client(
                     cohort_ids=[cohorts_resource_id],
                 )
 
-                results.append(
-                    CohortResultItem(
-                        success=True,
-                        cohort_id=item.cohort_id,
-                        message="Cohort updated successfully",
-                    )
-                )
-                sync_items.append((cohorts_resource_id, item))
+        results.append(
+            CohortResultItem(
+                success=True,
+                cohort_id=item.cohort_id,
+                message="Cohort updated successfully",
+            )
+        )
+        sync_items.append((cohorts_resource_id, item))
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

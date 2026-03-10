@@ -44,29 +44,37 @@ class GetRunListViewResponse(BaseModel):
 
 def _build_pricing_list(item: object) -> list[RunPricingItem]:
     """Build pricing list from flat columns."""
+    def _value(field: str):
+        if hasattr(item, "__getitem__"):
+            try:
+                return item[field]  # type: ignore[index]
+            except (KeyError, IndexError, TypeError):
+                pass
+        return getattr(item, field, None)
+
     pricing: list[RunPricingItem] = []
-    if getattr(item, "input_pricing_count", None) is not None:
+    if _value("input_pricing_count") is not None:
         pricing.append(
             RunPricingItem(
                 pricing_type="input",
-                count=item.input_pricing_count or 0,
-                pricing_id=item.input_pricing_pricing_id,
+                count=_value("input_pricing_count") or 0,
+                pricing_id=_value("input_pricing_pricing_id"),
             )
         )
-    if getattr(item, "output_pricing_count", None) is not None:
+    if _value("output_pricing_count") is not None:
         pricing.append(
             RunPricingItem(
                 pricing_type="output",
-                count=item.output_pricing_count or 0,
-                pricing_id=item.output_pricing_pricing_id,
+                count=_value("output_pricing_count") or 0,
+                pricing_id=_value("output_pricing_pricing_id"),
             )
         )
-    if getattr(item, "cached_pricing_count", None) is not None:
+    if _value("cached_pricing_count") is not None:
         pricing.append(
             RunPricingItem(
                 pricing_type="cached",
-                count=item.cached_pricing_count or 0,
-                pricing_id=item.cached_pricing_pricing_id,
+                count=_value("cached_pricing_count") or 0,
+                pricing_id=_value("cached_pricing_pricing_id"),
             )
         )
     return pricing

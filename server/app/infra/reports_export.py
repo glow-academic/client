@@ -21,11 +21,11 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.reports.types import ExportReportsApiResponse
 from app.routes.v5.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
@@ -86,6 +86,14 @@ BRIGHTSPACE_CSV_COLUMNS = [
     "passed",
     "time_taken",
 ]
+
+
+class ExportReportsApiResponse(BaseModel):
+    """Response model for reports export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
 
 
 async def _empty_list() -> list:  # type: ignore[type-arg]

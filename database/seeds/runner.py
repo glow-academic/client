@@ -189,6 +189,73 @@ async def _run_scenario_seeds(
     return created_ids
 
 
+async def _run_simulation_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    simulation_defs: list[dict],
+) -> list[UUID]:
+    """Run simulation seed definitions through create_simulation_client."""
+    from app.infra.simulation_create import (
+        CreateSimulationItem,
+        create_simulation_client,
+    )
+
+    items = [CreateSimulationItem(**s) for s in simulation_defs]
+
+    result = await create_simulation_client(
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
+    )
+
+    created_ids: list[UUID] = []
+    for r in result.results:
+        if not r.success:
+            print(f"  ERROR: {r.message}")
+            if hasattr(r, "errors") and r.errors:
+                for e in r.errors:
+                    print(f"    - {e.field}: {e.message}")
+        else:
+            if hasattr(r, "simulation_id") and r.simulation_id:
+                created_ids.append(r.simulation_id)
+            print(f"  OK: {r.message}")
+
+    return created_ids
+
+
+async def _run_cohort_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    cohort_defs: list[dict],
+) -> list[UUID]:
+    """Run cohort seed definitions through create_cohort_client."""
+    from app.infra.cohort_create import CreateCohortItem, create_cohort_client
+
+    items = [CreateCohortItem(**c) for c in cohort_defs]
+
+    result = await create_cohort_client(
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
+    )
+
+    created_ids: list[UUID] = []
+    for r in result.results:
+        if not r.success:
+            print(f"  ERROR: {r.message}")
+            if hasattr(r, "errors") and r.errors:
+                for e in r.errors:
+                    print(f"    - {e.field}: {e.message}")
+        else:
+            if hasattr(r, "cohort_id") and r.cohort_id:
+                created_ids.append(r.cohort_id)
+            print(f"  OK: {r.message}")
+
+    return created_ids
+
+
 # ---------------------------------------------------------------------------
 # SQL dump — extract seed-created rows
 # ---------------------------------------------------------------------------
@@ -367,6 +434,10 @@ async def main(setup: str = "university") -> None:
                 await _run_persona_seeds(pool, redis_client, mod.personas)
             elif module_name == "scenarios":
                 await _run_scenario_seeds(pool, redis_client, mod.scenarios)
+            elif module_name == "simulations":
+                await _run_simulation_seeds(pool, redis_client, mod.simulations)
+            elif module_name == "cohorts":
+                await _run_cohort_seeds(pool, redis_client, mod.cohorts)
 
         # 7. Dump new rows
         print("\nDumping seed-created rows...")

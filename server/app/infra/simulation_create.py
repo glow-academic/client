@@ -152,18 +152,19 @@ async def create_simulation_client(
 
     results: list[SimulationResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                simulations_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    id=item.id,
-                    name_id=item.name_id,
-                    description_id=item.description_id,
-                )
+    for item in items:
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        simulations_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+        )
 
+        # Artifact create inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 result = await create_simulation_artifact(
                     conn,
                     id=item.id,
@@ -179,13 +180,13 @@ async def create_simulation_client(
                     simulation_ids=[simulations_resource_id],
                 )
 
-                results.append(
-                    SimulationResultItem(
-                        success=True,
-                        simulation_id=result.id,
-                        message="Simulation created successfully",
-                    )
-                )
+        results.append(
+            SimulationResultItem(
+                success=True,
+                simulation_id=result.id,
+                message="Simulation created successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

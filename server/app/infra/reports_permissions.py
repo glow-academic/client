@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from typing import Any
 
-from app.routes.v5.api.main.reports.types import (
+from app.infra.reports_types import (
     ReportsDataPoint,
     ReportsHeaderMetrics,
     ReportsHistoryRow,

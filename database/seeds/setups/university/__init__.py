@@ -21,5 +21,7 @@ SETUP_NAME = "university"
 MODULES = [
     "personas",
     "scenarios",
-    # TODO: departments, documents, simulations, cohorts, profiles, settings
+    "simulations",
+    "cohorts",
+    # TODO: departments, documents, profiles, settings
 ]
