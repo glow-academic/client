@@ -299,12 +299,16 @@ def compute_can_create(
     """Compute permission to create a new agent.
 
     Business logic:
-    - User can create agents if they have departments
+    - Only admin/superadmin can create agents
+    - Non-superadmins cannot create general objects (no departments)
     """
-    if not user_department_ids:
+    if user_role not in ("admin", "superadmin"):
         return False
 
-    return len(user_department_ids) > 0
+    if user_role != "superadmin" and not user_department_ids:
+        return False
+
+    return True
 
 
 # ========== Draft Endpoint Permission Functions ==========
