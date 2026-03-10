@@ -25,7 +25,7 @@ async def delete_auth(
     response: Response,
 ) -> DeleteAuthApiResponse:
     """Bulk delete auths — composable infra architecture."""
-    tags = ["auth"]
+    tags = ["auths"]
 
     try:
         profile_id = http_request.state.profile_id

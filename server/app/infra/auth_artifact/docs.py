@@ -200,7 +200,7 @@ async def docs_auth_impl(
         permissions=[
             get_operation_info(
                 has_access,
-                description="View access — user shares ANY department with the auth.",
+                description="View access — any authenticated profile can view auths.",
             ),
             get_operation_info(
                 compute_can_edit,

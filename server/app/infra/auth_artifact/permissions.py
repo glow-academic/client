@@ -92,6 +92,11 @@ def compute_can_draft(user_role: str | None) -> bool:
     return user_role == "superadmin"
 
 
+def has_access(user_role: str | None) -> bool:
+    """Auth view access follows the current route contract: any signed-in profile."""
+    return user_role is not None
+
+
 def compute_show_name(names_has_tools: bool) -> bool:
     """Determine if name picker should be shown."""
     return names_has_tools
