@@ -130,12 +130,12 @@ async def _run_document_seeds(
     redis: Redis,
     document_defs: list[dict],
 ) -> list[UUID]:
-    """Run document seed definitions through create_document_client."""
-    from app.infra.document_create import CreateDocumentItem, create_document_client
+    """Run document seed definitions through create_document_impl."""
+    from app.infra.document.create import CreateDocumentItem, create_document_impl
 
     items = [CreateDocumentItem(**d) for d in document_defs]
 
-    result = await create_document_client(
+    result = await create_document_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -162,15 +162,15 @@ async def _run_department_seeds(
     redis: Redis,
     department_defs: list[dict],
 ) -> list[UUID]:
-    """Run department seed definitions through create_department_client."""
-    from app.infra.department_create import (
+    """Run department seed definitions through create_department_impl."""
+    from app.infra.department.create import (
         CreateDepartmentItem,
-        create_department_client,
+        create_department_impl,
     )
 
     items = [CreateDepartmentItem(**d) for d in department_defs]
 
-    result = await create_department_client(
+    result = await create_department_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -197,12 +197,12 @@ async def _run_persona_seeds(
     redis: Redis,
     persona_defs: list[dict],
 ) -> list[UUID]:
-    """Run persona seed definitions through create_persona_client."""
-    from app.infra.persona_create import CreatePersonaItem, create_persona_client
+    """Run persona seed definitions through create_persona_impl."""
+    from app.infra.persona.create import CreatePersonaItem, create_persona_impl
 
     items = [CreatePersonaItem(**p) for p in persona_defs]
 
-    result = await create_persona_client(
+    result = await create_persona_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -230,12 +230,12 @@ async def _run_scenario_seeds(
     redis: Redis,
     scenario_defs: list[dict],
 ) -> list[UUID]:
-    """Run scenario seed definitions through create_scenario_client."""
-    from app.infra.scenario_create import CreateScenarioItem, create_scenario_client
+    """Run scenario seed definitions through create_scenario_impl."""
+    from app.infra.scenario.create import CreateScenarioItem, create_scenario_impl
 
     items = [CreateScenarioItem(**s) for s in scenario_defs]
 
-    result = await create_scenario_client(
+    result = await create_scenario_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -262,15 +262,15 @@ async def _run_simulation_seeds(
     redis: Redis,
     simulation_defs: list[dict],
 ) -> list[UUID]:
-    """Run simulation seed definitions through create_simulation_client."""
-    from app.infra.simulation_create import (
+    """Run simulation seed definitions through create_simulation_impl."""
+    from app.infra.simulation.create import (
         CreateSimulationItem,
-        create_simulation_client,
+        create_simulation_impl,
     )
 
     items = [CreateSimulationItem(**s) for s in simulation_defs]
 
-    result = await create_simulation_client(
+    result = await create_simulation_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -323,12 +323,12 @@ async def _run_field_seeds(
     redis: Redis,
     field_defs: list[dict],
 ) -> list[UUID]:
-    """Run field seed definitions through create_field_client."""
-    from app.infra.field_create import CreateFieldItem, create_field_client
+    """Run field seed definitions through create_field_impl."""
+    from app.infra.field.create import CreateFieldItem, create_field_impl
 
     items = [CreateFieldItem(**f) for f in field_defs]
 
-    result = await create_field_client(
+    result = await create_field_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -355,15 +355,15 @@ async def _run_parameter_seeds(
     redis: Redis,
     parameter_defs: list[dict],
 ) -> list[UUID]:
-    """Run parameter seed definitions through create_parameter_client."""
-    from app.infra.parameter_create import (
+    """Run parameter seed definitions through create_parameter_impl."""
+    from app.infra.parameter.create import (
         CreateParameterItem,
-        create_parameter_client,
+        create_parameter_impl,
     )
 
     items = [CreateParameterItem(**p) for p in parameter_defs]
 
-    result = await create_parameter_client(
+    result = await create_parameter_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -462,12 +462,12 @@ async def _run_rubric_seeds(
     redis: Redis,
     rubric_defs: list[dict],
 ) -> list[UUID]:
-    """Run rubric seed definitions through create_rubric_client."""
-    from app.infra.rubric_create import CreateRubricItem, create_rubric_client
+    """Run rubric seed definitions through create_rubric_impl."""
+    from app.infra.rubric.create import CreateRubricItem, create_rubric_impl
 
     items = [CreateRubricItem(**r) for r in rubric_defs]
 
-    result = await create_rubric_client(
+    result = await create_rubric_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -494,12 +494,12 @@ async def _run_profile_seeds(
     redis: Redis,
     profile_defs: list[dict],
 ) -> list[UUID]:
-    """Run profile seed definitions through create_profile_client."""
-    from app.infra.profile_create import CreateProfileItem, create_profile_client
+    """Run profile seed definitions through create_profile_impl."""
+    from app.infra.profile.create import CreateProfileItem, create_profile_impl
 
     items = [CreateProfileItem(**p) for p in profile_defs]
 
-    result = await create_profile_client(
+    result = await create_profile_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -526,12 +526,12 @@ async def _run_setting_seeds(
     redis: Redis,
     setting_defs: list[dict],
 ) -> list[UUID]:
-    """Run setting seed definitions through create_setting_client."""
-    from app.infra.setting_create import CreateSettingItem, create_setting_client
+    """Run setting seed definitions through create_setting_impl."""
+    from app.infra.setting.create import CreateSettingItem, create_setting_impl
 
     items = [CreateSettingItem(**s) for s in setting_defs]
 
-    result = await create_setting_client(
+    result = await create_setting_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,
@@ -592,15 +592,14 @@ async def _run_text_seeds(
       3. Calls update_document to link text_ids
     """
     from app.infra.tools.entries.create_document_text import create_document_text
-    from app.routes.v5.tools.artifacts.document.update import update_document
     from app.routes.v5.tools.entries.sessions.create import create_session
 
     # Create a temp upload folder for text file writes
     upload_folder = Path(tempfile.mkdtemp(prefix="seed_uploads_"))
 
-    # Create a session for entry ownership
+    # Create a session for entry ownership (no profile link — avoids FK issues)
     async with pool.acquire() as conn:
-        session = await create_session(conn, profile_id=SEED_PROFILE_ID)
+        session = await create_session(conn)
     session_id = session.id
 
     for dt in document_text_defs:
@@ -616,11 +615,15 @@ async def _run_text_seeds(
                 upload_folder=upload_folder,
             )
 
+        # Link text to document via junction
+        # (direct INSERT — document_texts_junction lacks mcp column
+        #  so update_document's upsert_multi doesn't work here)
         async with pool.acquire() as conn:
-            await update_document(
-                conn,
+            await conn.execute(
+                "INSERT INTO document_texts_junction (document_id, texts_id) "
+                "VALUES ($1, $2) ON CONFLICT DO NOTHING",
                 dt["document_id"],
-                text_ids=[result.texts_resource_id],
+                result.texts_resource_id,
             )
 
         print(f"  OK: Text linked to document {dt['document_id']}")
@@ -705,12 +708,12 @@ async def _run_cohort_seeds(
     redis: Redis,
     cohort_defs: list[dict],
 ) -> list[UUID]:
-    """Run cohort seed definitions through create_cohort_client."""
-    from app.infra.cohort_create import CreateCohortItem, create_cohort_client
+    """Run cohort seed definitions through create_cohort_impl."""
+    from app.infra.cohort.create import CreateCohortItem, create_cohort_impl
 
     items = [CreateCohortItem(**c) for c in cohort_defs]
 
-    result = await create_cohort_client(
+    result = await create_cohort_impl(
         pool,
         redis,
         profile_id=SEED_PROFILE_ID,

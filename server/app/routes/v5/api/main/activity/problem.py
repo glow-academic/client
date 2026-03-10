@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -64,6 +65,13 @@ async def create_problem(
             )
 
         pool = get_pool()
+        redis = get_redis_client()
+        identity = await resolve_profile_identity_context(pool, profile_id, redis)
+        if identity is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile not found. Please sign in again.",
+            )
 
         # Create group → run → call → problem entry chain
         session_id = http_request.state.session_id
@@ -82,7 +90,7 @@ async def create_problem(
                 call_id=call_result.id,
                 type=request.type,
                 message=request.message,
-                profile_id=profile_id,
+                profile_id=identity.profiles_id,
             )
 
         result_data = CreateProblemResponse(
