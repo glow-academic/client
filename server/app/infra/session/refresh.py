@@ -1,4 +1,4 @@
-"""Test refresh logic — composable infra architecture.
+"""Session refresh logic — composable infra architecture.
 
 Composes black-box entry refresh tools to refresh dependent MVs,
 then invalidates cache tags for the artifact and its resources.
@@ -16,22 +16,22 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.routes.v5.tools.entries.test.refresh import refresh_test
+from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
 
 # Tags to invalidate — artifact cache + resource caches
-_TAGS = ["test", "artifacts"]
+_TAGS = ["session", "artifacts"]
 
 # Views refreshed by this endpoint
-_VIEWS = ["test_mv"]
+_VIEWS = ["sessions_mv"]
 
 
-async def refresh_test_client(
+async def refresh_session_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
 ) -> RefreshResponse:
-    """Test refresh using composable infra functions.
+    """Session refresh using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context — permission check
@@ -52,12 +52,12 @@ async def refresh_test_client(
 
     # ── Step 2: Parallel refresh of dependent entry MVs ──────────────────
 
-    async def _refresh_test() -> None:
+    async def _refresh_sessions() -> None:
         async with pool.acquire() as conn:
-            await refresh_test(conn)
+            await refresh_sessions(conn)
 
     await asyncio.gather(
-        _refresh_test(),
+        _refresh_sessions(),
     )
 
     # ── Step 3: Invalidate cache tags ────────────────────────────────────

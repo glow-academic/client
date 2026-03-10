@@ -19,7 +19,7 @@ from app.routes.v5.tools.entries.invocation_drafts.search import (
 )
 
 
-async def list_invocation_drafts_client(
+async def list_invocation_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

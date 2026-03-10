@@ -23,7 +23,7 @@ from app.infra.benchmark.context import (
 )
 from app.infra.benchmark.permissions import compute_benchmark_eval_status
 from app.infra.common_context import resolve_common_context
-from app.infra.test_permissions import compute_test_status
+from app.infra.test.permissions import compute_test_status
 from app.infra.types import ArtifactContext
 from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.benchmark.types import (

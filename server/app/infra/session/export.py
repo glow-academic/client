@@ -66,7 +66,7 @@ RUN_CSV_COLUMNS = [
 ]
 
 
-async def export_session_client(
+async def export_session_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

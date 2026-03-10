@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
-from app.infra.session_refresh import refresh_session_client
+from app.infra.session.refresh import refresh_session_impl
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ async def session_refresh(
     profile_id = http_request.state.profile_id
     pool = get_pool()
 
-    result = await refresh_session_client(
+    result = await refresh_session_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

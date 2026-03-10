@@ -69,11 +69,11 @@ async def _resolve_creatable_values(
 
 
 # ---------------------------------------------------------------------------
-# patch_invocation_draft_client — composable infra architecture
+# patch_invocation_draft_impl — composable infra architecture
 # ---------------------------------------------------------------------------
 
 
-async def patch_invocation_draft_client(
+async def patch_invocation_draft_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

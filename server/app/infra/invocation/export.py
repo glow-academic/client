@@ -19,7 +19,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.globals import UPLOAD_FOLDER
-from app.infra.invocation_context import resolve_invocation_context
+from app.infra.invocation.context import resolve_invocation_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.uploads.create import create_upload
 
@@ -45,7 +45,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_invocation_client(
+async def export_invocation_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

@@ -28,7 +28,7 @@ _TAGS = ["invocation", "artifacts"]
 _VIEWS = ["invocation_mv", "invocation_drafts_mv"]
 
 
-async def refresh_invocation_client(
+async def refresh_invocation_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

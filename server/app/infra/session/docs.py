@@ -31,7 +31,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_session_client(
+async def docs_session_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

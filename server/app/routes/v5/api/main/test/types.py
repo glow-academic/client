@@ -122,10 +122,10 @@ class GetTestArtifactResponse(BaseModel):
 
 @dataclass
 class TestInternalData:
-    """Core data container returned by get_test_internal().
+    """Core data container returned by get_test_impl().
 
     Contains all fetched and computed values. Consumer layers
-    (get_test_client, get_test_websocket) reshape this
+    (get_test_impl_cached, get_test_websocket) reshape this
     into their specific response types.
     """
 

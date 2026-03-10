@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.session_export import export_session_client
+from app.infra.session.export import export_session_impl
 from app.routes.v5.api.main.session.types import ExportSessionApiResponse
 
 router = APIRouter()
@@ -27,7 +27,7 @@ async def export_session(
     session_id = http_request.state.session_id
     pool = get_pool()
 
-    return await export_session_client(
+    return await export_session_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

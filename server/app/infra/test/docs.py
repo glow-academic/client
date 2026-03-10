@@ -32,7 +32,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_test_client(
+async def docs_test_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -69,7 +69,7 @@ async def docs_test_client(
     # -- Step 3: Assemble response ----------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.test_permissions import compute_test_status
+    from app.infra.test.permissions import compute_test_status
     from app.routes.v5.api.main.test.archive import archive_test_artifacts
     from app.routes.v5.api.main.test.export import export_test
     from app.routes.v5.api.main.test.get import get_test_artifact

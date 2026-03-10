@@ -231,7 +231,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "session": {
         "get": ("app.routes.v5.api.main.session.get", "get_session"),
-        "docs": ("app.infra.session_docs", "docs_session_client"),
+        "docs": ("app.infra.session.docs", "docs_session_impl"),
     },
     # "setting": {
     #     "get": ("app.routes.v5.api.main.setting.get", "get_setting"),
@@ -255,7 +255,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "test": {
     #     "get": ("app.routes.v5.api.main.test.get", "get_test_artifact"),
-    #     "docs": ("app.infra.test_docs", "docs_test_client"),
+    #     "docs": ("app.infra.test.docs", "docs_test_impl"),
     # },
     # "tool": {
     #     "get": ("app.routes.v5.api.main.tool.get", "get_tool"),

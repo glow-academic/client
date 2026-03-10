@@ -153,7 +153,7 @@ async def test_next_impl(
     import uuid
 
     from app.infra.websocket.test_types import TestAllCompleteEvent
-    from app.routes.v5.api.main.test.get import get_test_internal
+    from app.routes.v5.api.main.test.get import get_test_impl
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger(__name__)
@@ -181,7 +181,7 @@ async def test_next_impl(
         return
 
     try:
-        result = await get_test_internal(
+        result = await get_test_impl(
             pool=pool,
             test_id=test_id,
             bypass_cache=True,

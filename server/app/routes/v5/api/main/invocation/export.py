@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.invocation_export import export_invocation_client
+from app.infra.invocation.export import export_invocation_impl
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.invocation.types import ExportInvocationApiResponse
 
@@ -44,7 +44,7 @@ async def export_invocation(
     if group_id is None:
         raise ValueError("Group ID could not be resolved for invocation export")
 
-    return await export_invocation_client(
+    return await export_invocation_impl(
         pool,
         redis,
         profile_id=profile_id,

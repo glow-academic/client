@@ -15,7 +15,7 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 
-async def get_session_internal(
+async def get_session_impl(
     conn: asyncpg.Connection,
     profile_id: UUID,
     bypass_cache: bool = False,

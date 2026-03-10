@@ -90,7 +90,7 @@ RUN_CSV_COLUMNS = [
 ]
 
 
-async def export_test_client(
+async def export_test_impl(
     pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]
     *,

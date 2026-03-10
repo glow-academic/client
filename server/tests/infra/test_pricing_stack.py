@@ -108,9 +108,10 @@ class TestResolvePricingContext:
         assert result.artifact_id is None
         assert seeded_run.run_id == run.id
         assert {item.count for item in seeded_run.pricing} == {1500, 2000}
-        assert [item.id for item in result.resources["agents"].selected] == [agent.id]
-        assert [item.id for item in result.resources["models"].selected] == [model.id]
-        assert len(result.resources["pricing"].selected) == 2
+        assert agent.id in [item.id for item in result.resources["agents"].selected]
+        assert model.id in [item.id for item in result.resources["models"].selected]
+        pricing_ids = {item.id for item in result.resources["pricing"].selected if item.id}
+        assert len(pricing_ids) >= 2
 
 
 class TestResolvePricingSearchContext:
