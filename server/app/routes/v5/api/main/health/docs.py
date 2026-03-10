@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, Response
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.health_docs import docs_health_client
+from app.infra.health.docs import docs_health_impl
 
 router = APIRouter()
 
@@ -19,6 +19,6 @@ async def get_health_docs_endpoint(
     """Get composed documentation for the health analytics."""
     pool = get_pool()
     profile_id = http_request.state.profile_id
-    return await docs_health_client(
+    return await docs_health_impl(
         pool, get_redis_client(), profile_id=profile_id, entity_id=body.entity_id
     )

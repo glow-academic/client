@@ -8,10 +8,10 @@ from datetime import UTC, datetime
 
 import pytest
 
-from app.infra.health_context import resolve_health_context
-from app.infra.health_docs import docs_health_client
-from app.infra.health_export import export_health_client
-from app.infra.health_refresh import refresh_health_client
+from app.infra.health.context import resolve_health_context
+from app.infra.health.docs import docs_health_impl
+from app.infra.health.export import export_health_impl
+from app.infra.health.refresh import refresh_health_impl
 from app.infra.metrics_snapshot import write_health_checks, write_metrics_snapshot
 from app.routes.v5.tools.entries.health.create import create_health
 from app.routes.v5.tools.entries.metrics.create import create_metrics_entry_internal
@@ -68,7 +68,7 @@ class TestHealthDocsClient:
     async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
         profile = await profile_identity_factory()
 
-        result = await docs_health_client(
+        result = await docs_health_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -92,9 +92,9 @@ class TestExportHealthClient:
             await _seed_health_metrics(conn)
             session = await create_session(conn, profile_id=profile.profile_resource_id)
 
-        monkeypatch.setattr("app.infra.health_export.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr("app.infra.health.export.UPLOAD_FOLDER", tmp_path)
 
-        result = await export_health_client(
+        result = await export_health_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -126,7 +126,7 @@ class TestRefreshHealthClient:
     ):
         profile = await profile_identity_factory()
 
-        result = await refresh_health_client(
+        result = await refresh_health_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,

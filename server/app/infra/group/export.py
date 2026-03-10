@@ -52,7 +52,7 @@ RUN_CSV_COLUMNS = [
 ]
 
 
-async def export_group_client(
+async def export_group_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

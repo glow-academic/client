@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.health_refresh import refresh_health_client
+from app.infra.health.refresh import refresh_health_impl
 from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
@@ -18,7 +18,7 @@ async def health_refresh(
     pool = get_pool()
     profile_id = http_request.state.profile_id
 
-    result = await refresh_health_client(
+    result = await refresh_health_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

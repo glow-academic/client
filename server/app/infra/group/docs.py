@@ -32,7 +32,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_group_client(
+async def docs_group_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

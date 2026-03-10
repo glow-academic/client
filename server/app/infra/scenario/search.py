@@ -365,15 +365,14 @@ async def search_scenario_impl(
     for a in artifacts:
         count = 0
         for sr in scenarios_resource_data:
-            if sr.scenario_id in set(a.scenario_ids or []):
+            if sr.id in set(a.scenario_ids or []):
                 # This scenarios_resource is linked to this scenario
                 # Count simulations from facet data
                 count += len(
                     [
                         sf
                         for sf in simulation_facet
-                        if sr.scenario_id
-                        and sr.scenario_id in set(sf.scenario_ids or [])
+                        if sr.id and sr.id in set(sf.scenario_ids or [])
                     ]
                 )
         sim_count_map[a.id] = count
@@ -381,7 +380,7 @@ async def search_scenario_impl(
     # Build mapping arrays for the response
     api_objectives: list[ListScenarioApiObjective] = [
         ListScenarioApiObjective(
-            objective_id=str(o.objective_id) if o.objective_id else None,
+            objective_id=str(getattr(o, "objective_id", None) or o.id) if (getattr(o, "objective_id", None) or getattr(o, "id", None)) else None,
             name=getattr(o, "objective", None) or "",
             description=getattr(o, "objective", None) or "",
         )
@@ -390,7 +389,7 @@ async def search_scenario_impl(
 
     api_fields: list[ListScenarioApiField] = [
         ListScenarioApiField(
-            field_id=str(f.field_id) if f.field_id else None,
+            field_id=str(getattr(f, "field_id", None) or f.id) if (getattr(f, "field_id", None) or getattr(f, "id", None)) else None,
             name=f.name,
             description=f.description or "",
         )
@@ -405,7 +404,7 @@ async def search_scenario_impl(
 
     api_personas: list[ListScenarioApiPersona] = [
         ListScenarioApiPersona(
-            persona_id=str(p.persona_id) if p.persona_id else None,
+            persona_id=str(getattr(p, "persona_id", None) or p.id) if (getattr(p, "persona_id", None) or getattr(p, "id", None)) else None,
             name=p.name or "",
             description=p.description or "",
             color=getattr(p, "color", None) or "",
@@ -416,7 +415,7 @@ async def search_scenario_impl(
 
     api_simulations: list[ListScenarioApiSimulation] = [
         ListScenarioApiSimulation(
-            simulation_id=str(s.simulation_id) if s.simulation_id else None,
+            simulation_id=str(s.id) if s.id else None,
             name=getattr(s, "name", None) or "",
             description=s.description or "",
             department_ids=getattr(s, "department_ids", None),
@@ -426,7 +425,7 @@ async def search_scenario_impl(
 
     api_departments: list[ListScenarioApiDepartment] = [
         ListScenarioApiDepartment(
-            department_id=str(d.department_id) if d.department_id else None,
+            department_id=str(getattr(d, "department_id", None) or d.id) if (getattr(d, "department_id", None) or getattr(d, "id", None)) else None,
             name=d.name or "",
             description=d.description or "",
         )
@@ -481,7 +480,11 @@ async def search_scenario_impl(
     # -- Step 7: Build facet sections --
     persona_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(p.persona_id), name=p.name, count=0)
+            ListFilterOption(
+                id=str(getattr(p, "persona_id", None) or p.id),
+                name=p.name,
+                count=0,
+            )
             for p in persona_facet
         ],
         selected_ids=[str(pid) for pid in persona_ids] if persona_ids else None,
@@ -491,7 +494,9 @@ async def search_scenario_impl(
     simulation_filter = ListFilterSection(
         options=[
             ListFilterOption(
-                id=str(s.simulation_id), name=getattr(s, "name", None), count=0
+                id=str(getattr(s, "simulation_id", None) or s.id),
+                name=getattr(s, "name", None),
+                count=0,
             )
             for s in simulation_facet
         ],

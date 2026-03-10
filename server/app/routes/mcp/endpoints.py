@@ -137,7 +137,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "group": {
         "get": ("app.routes.v5.api.main.group.get", "get_group"),
-        "docs": ("app.infra.group_docs", "docs_group_client"),
+        "docs": ("app.infra.group.docs", "docs_group_impl"),
     },
     # "health": {
     #     "get": ("app.routes.v5.api.main.health.get", "get_health"),

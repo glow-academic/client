@@ -25,7 +25,7 @@ _TAGS = ["group", "artifacts"]
 _VIEWS = ["groups_mv"]
 
 
-async def refresh_group_client(
+async def refresh_group_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

@@ -57,7 +57,7 @@ METRICS_CSV_COLUMNS = [
 ]
 
 
-async def export_health_client(
+async def export_health_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

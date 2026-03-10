@@ -32,7 +32,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_health_client(
+async def docs_health_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

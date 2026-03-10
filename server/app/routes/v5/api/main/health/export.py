@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.health_export import export_health_client
+from app.infra.health.export import export_health_impl
 from app.routes.v5.api.main.health.types import ExportHealthApiResponse
 
 router = APIRouter()
@@ -19,7 +19,7 @@ async def export_health(
     profile_id = http_request.state.profile_id
     session_id = http_request.state.session_id
 
-    return await export_health_client(
+    return await export_health_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

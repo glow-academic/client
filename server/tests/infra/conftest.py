@@ -42,6 +42,40 @@ class V5RouteClient:
         )
 
 
+def _build_v5_artifact_test_app(
+    *,
+    artifact_router: APIRouter,
+    request_state: dict[str, str | None],
+) -> FastAPI:
+    """Mount a single v5 artifact router with test auth state overrides."""
+    from app.infra.auth.middleware import require_auth
+    from app.utils.mcp.get_mcp import get_mcp
+
+    async def _require_auth_override(request: Request) -> None:
+        profile_id = request_state["profile_id"]
+        if not profile_id:
+            raise HTTPException(status_code=401, detail="Missing test profile_id")
+        request.state.profile_id = profile_id
+        request.state.session_id = request_state["session_id"]
+
+    async def _get_mcp_override(request: Request) -> bool:
+        request.state.mcp = False
+        return False
+
+    app = FastAPI()
+    root_router = APIRouter(
+        prefix="/api/v5",
+        dependencies=[Depends(require_auth), Depends(get_mcp)],
+    )
+    artifacts_router = APIRouter(prefix="/artifacts")
+    artifacts_router.include_router(artifact_router)
+    root_router.include_router(artifacts_router)
+    app.include_router(root_router)
+    app.dependency_overrides[require_auth] = _require_auth_override
+    app.dependency_overrides[get_mcp] = _get_mcp_override
+    return app
+
+
 @pytest_asyncio.fixture
 async def name_id(pool, redis_client) -> UUID:
     """Create a fresh name resource via black-box tool."""
@@ -113,34 +147,44 @@ async def v5_persona_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real persona v5 route stack."""
     import app.infra.globals as globals_mod
-    from app.infra.auth.middleware import require_auth
     from app.routes.v5.api.main.persona import router as persona_router
-    from app.utils.mcp.get_mcp import get_mcp
 
     request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
-
-    async def _require_auth_override(request: Request) -> None:
-        profile_id = request_state["profile_id"]
-        if not profile_id:
-            raise HTTPException(status_code=401, detail="Missing test profile_id")
-        request.state.profile_id = profile_id
-        request.state.session_id = request_state["session_id"]
-
-    async def _get_mcp_override(request: Request) -> bool:
-        request.state.mcp = False
-        return False
-
-    app = FastAPI()
-    root_router = APIRouter(
-        prefix="/api/v5",
-        dependencies=[Depends(require_auth), Depends(get_mcp)],
+    app = _build_v5_artifact_test_app(
+        artifact_router=persona_router,
+        request_state=request_state,
     )
-    artifacts_router = APIRouter(prefix="/artifacts")
-    artifacts_router.include_router(persona_router)
-    root_router.include_router(artifacts_router)
-    app.include_router(root_router)
-    app.dependency_overrides[require_auth] = _require_auth_override
-    app.dependency_overrides[get_mcp] = _get_mcp_override
+
+    prior_pool = globals_mod._db_pool
+    prior_redis = globals_mod.redis_client
+    globals_mod._db_pool = pool
+    globals_mod.redis_client = redis_client
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        yield V5RouteClient(client=client, _request_state=request_state)
+
+    globals_mod._db_pool = prior_pool
+    globals_mod.redis_client = prior_redis
+
+
+@pytest_asyncio.fixture
+async def v5_scenario_route_client(
+    pool,
+    redis_client,
+) -> AsyncGenerator[V5RouteClient, None]:
+    """HTTP client mounted on the real scenario v5 route stack."""
+    import app.infra.globals as globals_mod
+    from app.routes.v5.api.main.scenario import router as scenario_router
+
+    request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
+    app = _build_v5_artifact_test_app(
+        artifact_router=scenario_router,
+        request_state=request_state,
+    )
 
     prior_pool = globals_mod._db_pool
     prior_redis = globals_mod.redis_client

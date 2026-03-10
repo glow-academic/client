@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.group_refresh import refresh_group_client
+from app.infra.group.refresh import refresh_group_impl
 from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
@@ -18,7 +18,7 @@ async def group_refresh(
     pool = get_pool()
     profile_id = http_request.state.profile_id
 
-    result = await refresh_group_client(
+    result = await refresh_group_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

@@ -25,7 +25,7 @@ _TAGS = ["health", "artifacts"]
 _VIEWS = ["health_mv"]
 
 
-async def refresh_health_client(
+async def refresh_health_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

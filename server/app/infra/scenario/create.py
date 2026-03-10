@@ -96,6 +96,18 @@ class CreateScenarioApiResponse(BaseModel):
     results: list[ScenarioResultItem]
 
 
+def _batch_department_scope(items: list[CreateScenarioItem]) -> list[str] | None:
+    """Summarize whether every item is department-scoped for create permissions."""
+    if not items:
+        return None
+
+    for item in items:
+        if not (item.department_ids or item.departments):
+            return None
+
+    return ["department-scoped"]
+
+
 def _collect_flag_ids(item: CreateScenarioItem) -> list[UUID] | None:
     """Collect all non-None flag IDs from the item into a single list."""
     flag_ids = []
@@ -151,7 +163,10 @@ async def create_scenario_impl(
 
     # ── Step 2: Permission check ───────────────────────────────────────
 
-    if not compute_can_create(user_role=profile.role, department_ids=None):
+    if not compute_can_create(
+        user_role=profile.role,
+        department_ids=_batch_department_scope(items),
+    ):
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to create scenarios.",
