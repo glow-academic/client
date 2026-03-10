@@ -16,8 +16,8 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.eval_permissions import compute_can_delete
-from app.infra.eval_permissions_context import resolve_eval_permissions_context
+from app.infra.eval.permissions import compute_can_delete
+from app.infra.eval.permissions_context import resolve_eval_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.eval.types import (
     DeleteEvalApiResponse,
@@ -29,7 +29,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def delete_eval_client(
+async def delete_eval_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

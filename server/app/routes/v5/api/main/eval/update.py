@@ -1,13 +1,13 @@
 """Eval update endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.eval_update.
+Thin route handler. Core logic lives in app.infra.eval.update.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.eval_update import update_eval_client
+from app.infra.eval.update import update_eval_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.eval.types import (
     UpdateEvalApiRequest,
@@ -37,7 +37,7 @@ async def update_eval(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_eval_client(
+        response_data = await update_eval_impl(
             pool,
             redis,
             profile_id=profile_id,

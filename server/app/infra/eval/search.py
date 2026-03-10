@@ -17,7 +17,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.eval_permissions import (
+from app.infra.eval.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
@@ -38,7 +38,7 @@ from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.names.get import get_names
 
 
-async def search_eval_client(
+async def search_eval_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

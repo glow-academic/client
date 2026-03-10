@@ -1,10 +1,10 @@
-"""Document update logic — composable infra architecture.
+"""Document create logic — composable infra architecture.
 
 Composes existing black-box tools:
   1. resolve_profile_identity_context — profile (role, departments)
-  2. resolve_document_permissions_context — per-item access + edit check
+  2. compute_can_create — permission check
   3. resolve_document_values — raw value → ID resolution
-  4. update_document_artifact — junction writes (partial update)
+  4. create_document_artifact — junction writes
   5. create_denormalized_snapshot — documents_resource snapshot
 """
 
@@ -14,24 +14,70 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.document_permissions_context import (
+from app.infra.document.permissions_context import (
     create_denormalized_snapshot,
-    resolve_document_permissions_context,
     resolve_document_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.document.update import (
-    _UNSET,
-)
-from app.routes.v5.tools.artifacts.document.update import (
-    update_document as update_document_artifact,
+from app.routes.v5.tools.artifacts.document.create import (
+    create_document as create_document_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def update_document_client(
+class CreateDocumentItem(BaseModel):
+    """Single document item for create — no document_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Flag — provide ID or boolean
+    flag_id: UUID | None = None
+    is_inactive: bool | None = None
+    # Multi-select — provide IDs or names
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # Multi-select — IDs only
+    field_ids: list[UUID] | None = None
+    upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
+
+
+class DocumentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class DocumentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    document_id: UUID | None = None
+    message: str
+    errors: list[DocumentFieldError] | None = None
+
+
+class CreateDocumentApiResponse(BaseModel):
+    """Response model for bulk create document endpoint."""
+
+    results: list[DocumentResultItem]
+
+
+async def create_document_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -41,20 +87,16 @@ async def update_document_client(
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
 ) -> dict:
-    """Document bulk update using composable infra functions.
+    """Document bulk create using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context → role, department_ids
-      2. Per-item: resolve_document_permissions_context → exists + compute_can_edit
-      3. Per-item value resolution (raw → ID, no required field enforcement)
-      4. Single transaction: update_document_artifact + denormalized snapshot per item
+      2. compute_can_create — single check (applies to all items)
+      3. Per-item value resolution (raw → ID, required field enforcement)
+      4. Single transaction: create_document_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.document_permissions import compute_can_edit
-    from app.routes.v5.api.main.document.types import (
-        DocumentResultItem,
-        UpdateDocumentApiResponse,
-    )
+    from app.infra.document.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
@@ -72,26 +114,13 @@ async def update_document_client(
             detail="Profile not found. Please sign in again.",
         )
 
-    # ── Step 2: Per-item permission check ──────────────────────────────
+    # ── Step 2: Permission check ───────────────────────────────────────
 
-    async with pool.acquire() as conn:
-        for idx, item in enumerate(items):
-            perms = await resolve_document_permissions_context(conn, item.document_id)
-            if not perms.exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Item {idx}: Document {item.document_id} not found.",
-                )
-            if not compute_can_edit(
-                user_role=profile.role,
-                document_department_ids=perms.department_ids,
-                active_scenario_count=perms.active_scenario_count,
-                user_department_ids=profile.department_ids,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to update this document.",
-                )
+    if not compute_can_create(profile.role, None):
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to create documents.",
+        )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
@@ -101,7 +130,7 @@ async def update_document_client(
     async with pool.acquire() as conn:
         for idx, item in enumerate(items):
             item_errors = await resolve_document_values(
-                conn, redis, item, is_create=False
+                conn, redis, item, is_create=True
             )
             if item_errors:
                 has_errors = True
@@ -118,7 +147,7 @@ async def update_document_client(
                 )
 
     if has_errors:
-        return UpdateDocumentApiResponse(results=error_results)
+        return CreateDocumentApiResponse(results=error_results)
 
     # ── Step 4: Single transaction ─────────────────────────────────────
 
@@ -129,22 +158,21 @@ async def update_document_client(
         documents_resource_id = await create_denormalized_snapshot(
             pool,
             redis,
+            id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
         )
 
         flag_ids = [item.flag_id] if item.flag_id else None
 
-        # Artifact update inside transaction
+        # Artifact create inside transaction
         async with pool.acquire() as conn:
             async with conn.transaction():
-                await update_document_artifact(
+                result = await create_document_artifact(
                     conn,
-                    item.document_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                     department_ids=item.department_ids,
                     flag_ids=flag_ids,
                     file_ids=item.upload_ids,
@@ -157,8 +185,8 @@ async def update_document_client(
         results.append(
             DocumentResultItem(
                 success=True,
-                document_id=item.document_id,
-                message="Document updated successfully",
+                document_id=result.id,
+                message="Document created successfully",
             )
         )
 
@@ -166,4 +194,4 @@ async def update_document_client(
 
     await invalidate_tags(["documents"], redis=redis)
 
-    return UpdateDocumentApiResponse(results=results)
+    return CreateDocumentApiResponse(results=results)

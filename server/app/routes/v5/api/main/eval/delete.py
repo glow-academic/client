@@ -1,13 +1,13 @@
 """Eval delete endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.eval_delete.
+Thin route handler. Core logic lives in app.infra.eval.delete.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.eval_delete import delete_eval_client
+from app.infra.eval.delete import delete_eval_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.eval.types import (
     DeleteEvalApiRequest,
@@ -38,7 +38,7 @@ async def delete_eval(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_eval_client(
+        result = await delete_eval_impl(
             pool,
             redis,
             profile_id=profile_id,

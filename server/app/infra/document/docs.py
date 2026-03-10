@@ -1,9 +1,9 @@
-"""Eval docs logic — composable infra architecture.
+"""Document docs logic — composable infra architecture.
 
 Composes existing black-box tool docs:
   1. resolve_profile_identity_context — profile (role, departments)
-  2. Artifact tool docs — eval_artifact table + CRUD operations
-  3. Entry tool docs — eval_drafts MV, tables, operations
+  2. Artifact tool docs — document_artifact table + CRUD operations
+  3. Entry tool docs — document_drafts MV, tables, operations
   4. Resource tool docs — all linked resources (names, descriptions, etc.)
   5. Permission functions — introspected via get_operation_info
   6. API operations — all public route handlers introspected
@@ -23,32 +23,38 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.eval.docs import get_eval_docs
-from app.routes.v5.tools.artifacts.eval.get import get_evals as get_eval_artifacts
+from app.routes.v5.tools.artifacts.document.docs import get_document_docs
+from app.routes.v5.tools.artifacts.document.get import (
+    get_documents as get_document_artifacts,
+)
 
 # Entry tool docs
-from app.routes.v5.tools.entries.eval_drafts.docs import get_eval_drafts_docs
+from app.routes.v5.tools.entries.document_drafts.docs import get_document_drafts_docs
 
 # Resource tool docs
 from app.routes.v5.tools.resources.departments.docs import get_departments_docs
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
+from app.routes.v5.tools.resources.fields.docs import get_fields_docs
+from app.routes.v5.tools.resources.files.docs import get_files_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.model_flags.docs import get_model_flags_docs
-from app.routes.v5.tools.resources.model_positions.docs import get_model_positions_docs
-from app.routes.v5.tools.resources.model_rubrics.docs import get_model_rubrics_docs
-from app.routes.v5.tools.resources.models.docs import get_models_docs
+from app.routes.v5.tools.resources.images.docs import get_images_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
 
 # Name hydration
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.parameter_fields.docs import (
+    get_parameter_fields_docs,
+)
+from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
+from app.routes.v5.tools.resources.texts.docs import get_texts_docs
 
 _PAGE_METADATA = PageMetadataConfig(
-    list_title="Evals",
-    list_description="Manage evaluation configurations for model assessment.",
-    detail_title="— Eval",
-    detail_description="View and edit eval configuration and linked resources.",
-    new_title="New Eval",
-    new_description="Create a new eval.",
+    list_title="Documents",
+    list_description="Manage structured content templates.",
+    detail_title="— Document",
+    detail_description="View and edit document configuration and linked resources.",
+    new_title="New Document",
+    new_description="Create a new document.",
 )
 
 
@@ -57,23 +63,23 @@ async def _resolve_entity_name(
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
-    """Get display name for an eval by ID using black-box tools."""
+    """Get display name for a document by ID using black-box tools."""
     async with pool.acquire() as conn:
-        artifacts = await get_eval_artifacts(conn, [entity_id], names=True)
+        artifacts = await get_document_artifacts(conn, [entity_id], names=True)
         if not artifacts or not artifacts[0].name_ids:
             return None
         names_data = await get_names(conn, artifacts[0].name_ids, redis)
-        return names_data[0].name if names_data else None
+    return names_data[0].name if names_data else None
 
 
-async def docs_eval_client(
+async def docs_document_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
     entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
-    """Eval docs using composable infra functions.
+    """Document docs using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context -> profile check
@@ -94,13 +100,13 @@ async def docs_eval_client(
 
     # -- Step 2: Parallel docs fetches -----------------------------------------
 
-    async def _get_eval_docs() -> object:
+    async def _get_document_docs() -> object:
         async with pool.acquire() as conn:
-            return await get_eval_docs(conn)
+            return await get_document_docs(conn)
 
-    async def _get_eval_drafts_docs() -> object:
+    async def _get_document_drafts_docs() -> object:
         async with pool.acquire() as conn:
-            return await get_eval_drafts_docs(conn)
+            return await get_document_drafts_docs(conn)
 
     async def _get_names_docs() -> object:
         async with pool.acquire() as conn:
@@ -114,25 +120,33 @@ async def docs_eval_client(
         async with pool.acquire() as conn:
             return await get_departments_docs(conn)
 
+    async def _get_fields_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_fields_docs(conn)
+
+    async def _get_files_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_files_docs(conn)
+
     async def _get_flags_docs() -> object:
         async with pool.acquire() as conn:
             return await get_flags_docs(conn)
 
-    async def _get_model_flags_docs() -> object:
+    async def _get_images_docs() -> object:
         async with pool.acquire() as conn:
-            return await get_model_flags_docs(conn)
+            return await get_images_docs(conn)
 
-    async def _get_model_positions_docs() -> object:
+    async def _get_parameter_fields_docs() -> object:
         async with pool.acquire() as conn:
-            return await get_model_positions_docs(conn)
+            return await get_parameter_fields_docs(conn)
 
-    async def _get_model_rubrics_docs() -> object:
+    async def _get_parameters_docs() -> object:
         async with pool.acquire() as conn:
-            return await get_model_rubrics_docs(conn)
+            return await get_parameters_docs(conn)
 
-    async def _get_models_docs() -> object:
+    async def _get_texts_docs() -> object:
         async with pool.acquire() as conn:
-            return await get_models_docs(conn)
+            return await get_texts_docs(conn)
 
     (
         artifact,
@@ -140,22 +154,26 @@ async def docs_eval_client(
         names,
         descriptions,
         departments,
+        fields,
+        files,
         flags,
-        model_flags,
-        model_positions,
-        model_rubrics,
-        models,
+        images,
+        parameter_fields,
+        parameters,
+        texts,
     ) = await asyncio.gather(
-        _get_eval_docs(),
-        _get_eval_drafts_docs(),
+        _get_document_docs(),
+        _get_document_drafts_docs(),
         _get_names_docs(),
         _get_descriptions_docs(),
         _get_departments_docs(),
+        _get_fields_docs(),
+        _get_files_docs(),
         _get_flags_docs(),
-        _get_model_flags_docs(),
-        _get_model_positions_docs(),
-        _get_model_rubrics_docs(),
-        _get_models_docs(),
+        _get_images_docs(),
+        _get_parameter_fields_docs(),
+        _get_parameters_docs(),
+        _get_texts_docs(),
     )
 
     # -- Step 3: Page metadata ───────────────────────────────────────────
@@ -167,7 +185,7 @@ async def docs_eval_client(
     # -- Step 4: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.eval_permissions import (
+    from app.infra.document.permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,
@@ -175,22 +193,22 @@ async def docs_eval_client(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.eval.create import create_eval
-    from app.routes.v5.api.main.eval.delete import delete_eval
-    from app.routes.v5.api.main.eval.draft import patch_eval_draft
-    from app.routes.v5.api.main.eval.duplicate import duplicate_eval
-    from app.routes.v5.api.main.eval.export import export_evals
-    from app.routes.v5.api.main.eval.get import get_eval
-    from app.routes.v5.api.main.eval.search import search_eval
-    from app.routes.v5.api.main.eval.update import update_eval
+    from app.routes.v5.api.main.document.create import create_document
+    from app.routes.v5.api.main.document.delete import delete_document
+    from app.routes.v5.api.main.document.draft import patch_document_draft
+    from app.routes.v5.api.main.document.duplicate import duplicate_document
+    from app.routes.v5.api.main.document.export import export_documents
+    from app.routes.v5.api.main.document.get import get_document
+    from app.routes.v5.api.main.document.search import search_document
+    from app.routes.v5.api.main.document.update import update_document
 
     return ComposedDocsResponse(
-        name="eval",
+        name="document",
         type="artifact",
         description=(
-            "Evals define evaluation configurations for model assessment. "
-            "Each eval links to resources (names, descriptions, departments, "
-            "flags, models, model_flags, model_positions, model_rubrics) "
+            "Documents define structured content templates. "
+            "Each document links to resources (names, descriptions, departments, "
+            "fields, files, flags, images, parameter_fields, parameters, texts) "
             "via junction tables."
         ),
         artifact=artifact,
@@ -199,16 +217,18 @@ async def docs_eval_client(
             names,
             descriptions,
             departments,
+            fields,
+            files,
             flags,
-            model_flags,
-            model_positions,
-            model_rubrics,
-            models,
+            images,
+            parameter_fields,
+            parameters,
+            texts,
         ],
         permissions=[
             get_operation_info(
                 has_access,
-                description="View access — user shares ANY department with the eval.",
+                description="View access — user shares ANY department with the document.",
             ),
             get_operation_info(
                 compute_can_edit,
@@ -233,36 +253,36 @@ async def docs_eval_client(
         ],
         api_operations=[
             get_operation_info(
-                get_eval,
-                description="POST /get — Get a single eval by ID with hydrated resources.",
+                get_document,
+                description="POST /get — Get a single document by ID with hydrated resources.",
             ),
             get_operation_info(
-                search_eval,
-                description="POST /search — Paginated eval search with filters.",
+                search_document,
+                description="POST /search — Paginated document search with filters.",
             ),
             get_operation_info(
-                create_eval,
-                description="POST /create — Create a new eval artifact.",
+                create_document,
+                description="POST /create — Create a new document artifact.",
             ),
             get_operation_info(
-                update_eval,
-                description="POST /update — Update an existing eval's resource links.",
+                update_document,
+                description="POST /update — Update an existing document's resource links.",
             ),
             get_operation_info(
-                duplicate_eval,
-                description="POST /duplicate — Duplicate an existing eval.",
+                duplicate_document,
+                description="POST /duplicate — Duplicate an existing document.",
             ),
             get_operation_info(
-                delete_eval,
-                description="POST /delete — Delete an eval.",
+                delete_document,
+                description="POST /delete — Delete a document.",
             ),
             get_operation_info(
-                patch_eval_draft,
-                description="PATCH /draft — Create or patch an eval draft (autosave).",
+                patch_document_draft,
+                description="PATCH /draft — Create or patch a document draft (autosave).",
             ),
             get_operation_info(
-                export_evals,
-                description="POST /export — Export evals as denormalized CSV.",
+                export_documents,
+                description="POST /export — Export documents as denormalized CSV.",
             ),
         ],
         page_metadata=page_metadata,

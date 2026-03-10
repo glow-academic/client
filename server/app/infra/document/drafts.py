@@ -1,8 +1,8 @@
-"""Eval drafts list logic — composable infra architecture.
+"""Document drafts list logic — composable infra architecture.
 
 Composes existing black-box tools:
   1. resolve_profile_identity_context — profile (profiles_id)
-  2. search_eval_drafts — declarative filter by profile ownership
+  2. search_document_drafts — declarative filter by profile ownership
 """
 
 from __future__ import annotations
@@ -14,21 +14,21 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.types import ArtifactContext
-from app.routes.v5.tools.entries.eval_drafts.search import search_eval_drafts
+from app.routes.v5.tools.entries.document_drafts.search import search_document_drafts
 
 
-async def list_eval_drafts_client(
+async def list_document_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
     bypass_cache: bool = False,
 ) -> ArtifactContext:
-    """List eval drafts owned by the current profile.
+    """List document drafts owned by the current profile.
 
     Flow:
       1. resolve_profile_identity_context → profiles_id
-      2. search_eval_drafts(profile_ids=[profiles_id]) → entries
+      2. search_document_drafts(profile_ids=[profiles_id]) → entries
       3. Return ArtifactContext(resources={}, entries={"drafts": [...]})
     """
     from fastapi import HTTPException
@@ -48,7 +48,7 @@ async def list_eval_drafts_client(
     # ── Step 2: Search drafts by ownership ─────────────────────────────
 
     async with pool.acquire() as conn:
-        drafts = await search_eval_drafts(
+        drafts = await search_document_drafts(
             conn,
             profile_ids=[profile.profiles_id],
         )

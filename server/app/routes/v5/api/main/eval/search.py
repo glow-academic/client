@@ -1,6 +1,6 @@
 """Eval search endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.eval_search.
+Thin route handler. Core logic lives in app.infra.eval.search.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.eval_search import search_eval_client
+from app.infra.eval.search import search_eval_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.eval.types import ListEvalApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -50,7 +50,7 @@ async def search_eval(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_eval_client(
+        result = await search_eval_impl(
             pool,
             redis,
             profile_id=profile_id,

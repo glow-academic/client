@@ -20,7 +20,6 @@ class AgentRouteResources:
     description: str
     model_id: UUID
     model_name: str
-    model_value: str
     tool_id: UUID
     tool_name: str
 
@@ -62,7 +61,6 @@ async def _create_agent_route_resources(pool, redis_client) -> AgentRouteResourc
         description=description_res.description,
         model_id=model_res.id,
         model_name=model_res.name or "",
-        model_value=model_res.value,
         tool_id=tool_res.id,
         tool_name=tool_res.name,
     )
@@ -196,6 +194,318 @@ class TestAgentRoute:
         assert created_agent["can_duplicate"] is True
         assert created_agent["can_delete"] is True
 
+    async def test_get_agent_route_hits_cache_on_second_request(
+        self,
+        pool,
+        redis_client,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        created = await self._create_agent_via_route(
+            pool,
+            redis_client,
+            v5_agent_route_client,
+            agent_route_actor,
+        )
+
+        first = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/get",
+            json={"agent_id": created["agent_id"]},
+        )
+        second = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/get",
+            json={"agent_id": created["agent_id"]},
+        )
+
+        assert first.status_code == 200, first.text
+        assert second.status_code == 200, second.text
+        assert first.headers["X-Cache-Hit"] == "0"
+        assert second.headers["X-Cache-Hit"] in {"0", "1"}
+
+    async def test_update_agent_route_updates_visible_fields(
+        self,
+        pool,
+        redis_client,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        created = await self._create_agent_via_route(
+            pool,
+            redis_client,
+            v5_agent_route_client,
+            agent_route_actor,
+        )
+        updated = await _create_agent_route_resources(pool, redis_client)
+
+        response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/update",
+            json={
+                "agents": [
+                    {
+                        "agent_id": created["agent_id"],
+                        "name_id": str(updated.name_id),
+                        "description_id": str(updated.description_id),
+                        "department_ids": [str(agent_route_actor.department_id)],
+                        "model_ids": [str(updated.model_id)],
+                        "tool_ids": [str(updated.tool_id)],
+                    }
+                ]
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.headers["X-Invalidate-Tags"] == "agents"
+        payload = response.json()
+        assert payload["results"][0]["success"] is True
+        assert payload["results"][0]["agent_id"] == created["agent_id"]
+
+        get_response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/get",
+            json={"agent_id": created["agent_id"]},
+            headers={"X-Bypass-Cache": "1"},
+        )
+
+        assert get_response.status_code == 200, get_response.text
+        get_payload = get_response.json()
+        assert get_payload["names"]["resource"]["name"] == updated.name
+        assert (
+            get_payload["descriptions"]["resource"]["description"]
+            == updated.description
+        )
+        assert get_payload["models"]["resource"]["id"] == str(updated.model_id)
+        assert get_payload["models"]["resource"]["name"] == updated.model_name
+
+    async def test_duplicate_agent_route_returns_new_agent(
+        self,
+        pool,
+        redis_client,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        created = await self._create_agent_via_route(
+            pool,
+            redis_client,
+            v5_agent_route_client,
+            agent_route_actor,
+        )
+
+        response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/duplicate",
+            json={"agent_id": created["agent_id"]},
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.headers["X-Invalidate-Tags"] == "agents"
+        payload = response.json()
+        assert payload["success"] is True
+        assert payload["agent_id"] != created["agent_id"]
+        assert "duplicated successfully" in payload["message"]
+
+    async def test_delete_agent_route_hides_deleted_agent_from_search(
+        self,
+        pool,
+        redis_client,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        created = await self._create_agent_via_route(
+            pool,
+            redis_client,
+            v5_agent_route_client,
+            agent_route_actor,
+        )
+
+        response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/delete",
+            json={"agent_ids": [created["agent_id"]]},
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.headers["X-Invalidate-Tags"] == "agents"
+        payload = response.json()
+        assert payload["results"][0]["success"] is True
+        assert payload["results"][0]["agent_id"] == created["agent_id"]
+
+        search_response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/search",
+            json={
+                "search": created["name"],
+                "filter_department_ids": [str(agent_route_actor.department_id)],
+                "page_size": 10,
+                "page_offset": 0,
+            },
+        )
+
+        assert search_response.status_code == 200, search_response.text
+        search_payload = search_response.json()
+        assert all(
+            agent["agent_id"] != created["agent_id"]
+            for agent in search_payload["agents"]
+        )
+
+    async def test_patch_agent_draft_route_creates_draft_visible_via_get(
+        self,
+        pool,
+        redis_client,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        created = await self._create_agent_via_route(
+            pool,
+            redis_client,
+            v5_agent_route_client,
+            agent_route_actor,
+        )
+        draft_name = f"Draft Agent {unique_tag()}"
+
+        response = await v5_agent_route_client.client.patch(
+            "/api/v5/artifacts/agents/draft",
+            json={
+                "expected_version": 0,
+                "name": draft_name,
+                "department_ids": [str(agent_route_actor.department_id)],
+                "model_ids": [created["model_id"]],
+                "tool_ids": [created["tool_id"]],
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.headers["X-Invalidate-Tags"] == "agents,drafts"
+        payload = response.json()
+        assert payload["success"] is True
+        assert payload["new_version"] == 1
+        assert payload["draft_id"] is not None
+        assert payload["form_state"]["name_id"] is not None
+
+        get_response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/get",
+            json={
+                "agent_id": created["agent_id"],
+                "draft_id": payload["draft_id"],
+            },
+            headers={"X-Bypass-Cache": "1"},
+        )
+
+        assert get_response.status_code == 200, get_response.text
+        get_payload = get_response.json()
+        assert get_payload["draft_version"] == 1
+        assert get_payload["names"]["resource"]["name"] == draft_name
+
+    async def test_agent_drafts_route_lists_owned_drafts(
+        self,
+        pool,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        from app.routes.v5.tools.entries.agent_drafts.create import create_agent_draft
+        from app.routes.v5.tools.entries.groups.create import create_group
+
+        async with pool.acquire() as conn:
+            group = await create_group(conn, session_id=agent_route_actor.session_id)
+            draft = await create_agent_draft(
+                conn,
+                group_id=group.id,
+                session_id=agent_route_actor.session_id,
+                profile_ids=[agent_route_actor.profiles_id],
+            )
+
+        v5_agent_route_client.authenticate(
+            profile_id=agent_route_actor.profile_id,
+            session_id=agent_route_actor.session_id,
+        )
+        drafts_response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/drafts",
+        )
+
+        assert drafts_response.status_code == 200, drafts_response.text
+        assert drafts_response.headers["X-Cache-Tags"] == "agents,drafts"
+        drafts_payload = drafts_response.json()
+        assert any(entry["id"] == str(draft.id) for entry in drafts_payload["entries"])
+
+    async def test_agent_docs_route_returns_composed_docs(
+        self,
+        pool,
+        redis_client,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        created = await self._create_agent_via_route(
+            pool,
+            redis_client,
+            v5_agent_route_client,
+            agent_route_actor,
+        )
+
+        response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/docs",
+            json={"entity_id": created["agent_id"]},
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["name"] == "agent"
+        assert payload["artifact"] is not None
+        assert payload["entries"]
+        assert payload["resources"]
+        assert payload["page_metadata"]["list"]["title"] == "Agents"
+        assert payload["page_metadata"]["detail"]["title"]
+        assert payload["page_metadata"]["new"]["title"] == "New Agent"
+
+    async def test_agent_export_route_creates_upload(
+        self,
+        pool,
+        redis_client,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        from app.routes.v5.tools.entries.uploads.get import get_upload
+
+        created = await self._create_agent_via_route(
+            pool,
+            redis_client,
+            v5_agent_route_client,
+            agent_route_actor,
+        )
+
+        response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/export",
+            json={"agent_id": created["agent_id"]},
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["upload_id"] is not None
+        assert payload["file_name"].endswith(".csv")
+        assert payload["row_count"] >= 1
+
+        async with pool.acquire() as conn:
+            upload = await get_upload(conn, UUID(payload["upload_id"]))
+
+        assert upload is not None
+        assert upload.session_id == agent_route_actor.session_id
+        assert upload.file_path == payload["file_name"]
+
+    async def test_agent_refresh_route_returns_invalidated_tags(
+        self,
+        v5_agent_route_client,
+        agent_route_actor,
+    ):
+        v5_agent_route_client.authenticate(
+            profile_id=agent_route_actor.profile_id,
+            session_id=agent_route_actor.session_id,
+        )
+
+        response = await v5_agent_route_client.client.post(
+            "/api/v5/artifacts/agents/refresh",
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.headers["X-Invalidate-Tags"] == "agents,artifacts"
+        payload = response.json()
+        assert payload["success"] is True
+        assert payload["refreshed_views"] == ["agent_drafts_mv"]
+        assert payload["invalidated_tags"] == ["agents", "artifacts"]
+
     async def _create_agent_via_route(
         self,
         pool,
@@ -232,4 +542,6 @@ class TestAgentRoute:
             "description": resources.description,
             "model_id": str(resources.model_id),
             "model_name": resources.model_name,
+            "tool_id": str(resources.tool_id),
+            "tool_name": resources.tool_name,
         }

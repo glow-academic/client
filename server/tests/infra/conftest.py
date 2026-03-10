@@ -280,7 +280,19 @@ async def v5_agent_route_client(
         artifact_name="agent",
         prefix="/agents",
         tags=["agents"],
-        module_names=["get", "search", "create"],
+        module_names=[
+            "get",
+            "search",
+            "create",
+            "update",
+            "delete",
+            "duplicate",
+            "draft",
+            "drafts",
+            "docs",
+            "export",
+            "refresh",
+        ],
     )
 
     request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}

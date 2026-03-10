@@ -17,12 +17,12 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.document_permissions import (
+from app.infra.document.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.infra.document_permissions_context import (
+from app.infra.document.permissions_context import (
     DocumentPermissionsContext,
     resolve_document_permissions_context,
 )
@@ -45,7 +45,7 @@ from app.routes.v5.tools.resources.scenarios.search import (
 )
 
 
-async def search_document_client(
+async def search_document_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

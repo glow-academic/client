@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import DocsApiRequest
-from app.infra.eval_docs import docs_eval_client
+from app.infra.eval.docs import docs_eval_impl
 from app.infra.globals import get_pool, get_redis_client
 
 router = APIRouter()
@@ -22,7 +22,7 @@ async def get_eval_docs_endpoint(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await docs_eval_client(
+    return await docs_eval_impl(
         pool,
         redis,
         profile_id=profile_id,

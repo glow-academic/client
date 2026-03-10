@@ -1,13 +1,13 @@
 """Document update endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.document_update.
+Thin route handler. Core logic lives in app.infra.document.update.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.document_update import update_document_client
+from app.infra.document.update import update_document_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.document.types import (
     UpdateDocumentApiRequest,
@@ -37,7 +37,7 @@ async def update_document(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_document_client(
+        response_data = await update_document_impl(
             pool,
             redis,
             profile_id=profile_id,

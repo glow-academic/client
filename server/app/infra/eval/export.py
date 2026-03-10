@@ -1,10 +1,10 @@
-"""Document export logic — composable infra architecture.
+"""Eval export logic — composable infra architecture.
 
 Composes existing black-box tools:
   1. resolve_profile_identity_context — profile (role, departments)
-  2. search_documents — full dump (all IDs, no filters, no pagination)
-  3. get_documents — hydrate junction IDs
-  4. Resource get tools — parallel hydration (names, descriptions, departments, etc.)
+  2. search_evals — full dump (all IDs, no filters, no pagination)
+  3. get_evals — hydrate junction IDs
+  4. Resource get tools — parallel hydration (names, descriptions, departments, models, etc.)
   5. CSV generation + upload entry creation
 """
 
@@ -22,47 +22,46 @@ from redis.asyncio import Redis
 
 from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.document.get import get_documents
-from app.routes.v5.tools.artifacts.document.search import search_documents
+from app.routes.v5.tools.artifacts.eval.get import get_evals
+from app.routes.v5.tools.artifacts.eval.search import search_evals
 from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.fields.get import get_fields
+from app.routes.v5.tools.resources.models.get import get_models as get_models_resource
 from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
 
 PIPE = "|"
 
 CSV_COLUMNS = [
-    "document_id",
+    "eval_id",
     "name",
     "description",
     "active",
     "departments",
-    "parameter_fields",
+    "models",
 ]
 
 
-async def export_document_client(
+async def export_eval_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
     session_id: UUID,
-    document_id: UUID | None = None,
+    eval_id: UUID | None = None,
 ) -> dict:
-    """Document full export using composable infra functions.
+    """Eval full export using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context → role, department_ids
-      2. search_documents → all IDs (full dump, no pagination)
-      3. get_documents → junction IDs per artifact
+      2. search_evals → all IDs (full dump, no pagination)
+      3. get_evals → junction IDs per artifact
       4. Parallel resource hydration → human-readable values
       5. Generate CSV + create upload entry
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.document.types import ExportDocumentApiResponse
+    from app.routes.v5.api.main.eval.types import ExportEvalApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
@@ -74,37 +73,37 @@ async def export_document_client(
             detail="Profile not found. Please sign in again.",
         )
 
-    # ── Step 2: Search all documents (full dump) ────────────────────────
+    # ── Step 2: Search all evals (full dump) ────────────────────────
 
-    if document_id:
-        document_ids = [document_id]
+    if eval_id:
+        eval_ids = [eval_id]
     else:
         async with pool.acquire() as conn:
-            document_ids, _total_count = await search_documents(
+            eval_ids, _total_count = await search_evals(
                 conn,
                 active_only=False,
                 limit_count=100000,
                 offset_count=0,
             )
 
-        if not document_ids:
-            return ExportDocumentApiResponse(
+        if not eval_ids:
+            return ExportEvalApiResponse(
                 upload_id=UUID("00000000-0000-0000-0000-000000000000"),
                 file_name="",
                 row_count=0,
             )
 
-    # ── Step 3: Get document artifacts with all junction IDs ────────────
+    # ── Step 3: Get eval artifacts with all junction IDs ────────────
 
     async with pool.acquire() as conn:
-        artifacts = await get_documents(
+        artifacts = await get_evals(
             conn,
-            document_ids,
+            eval_ids,
             names=True,
             descriptions=True,
             departments=True,
             flags=True,
-            parameter_fields=True,
+            models=True,
         )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
@@ -112,13 +111,13 @@ async def export_document_client(
     all_name_ids: list[UUID] = []
     all_description_ids: list[UUID] = []
     all_department_ids: list[UUID] = []
-    all_parameter_field_ids: list[UUID] = []
+    all_model_ids: list[UUID] = []
 
     for a in artifacts:
         all_name_ids.extend(a.name_ids or [])
         all_description_ids.extend(a.description_ids or [])
         all_department_ids.extend(a.department_ids or [])
-        all_parameter_field_ids.extend(a.parameter_field_ids or [])
+        all_model_ids.extend(a.model_ids or [])
 
     async def _fetch_names() -> list:
         if not all_name_ids:
@@ -138,42 +137,29 @@ async def export_document_client(
         async with pool.acquire() as conn:
             return await get_departments(conn, all_department_ids, redis)
 
-    async def _fetch_parameter_fields() -> list:
-        if not all_parameter_field_ids:
+    async def _fetch_models() -> list:
+        if not all_model_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_parameter_fields(conn, all_parameter_field_ids, redis)
+            return await get_models_resource(conn, all_model_ids, redis)
 
     (
         names_data,
         descriptions_data,
         departments_data,
-        parameter_fields_data,
+        models_data,
     ) = await asyncio.gather(
         _fetch_names(),
         _fetch_descriptions(),
         _fetch_departments(),
-        _fetch_parameter_fields(),
+        _fetch_models(),
     )
 
     # Build lookup maps
     name_map = {n.id: n.name for n in names_data}
     description_map = {d.id: d.description for d in descriptions_data}
     department_map = {d.id: d.name for d in departments_data}
-
-    # Parameter fields: two-hop (parameter_field → field → name)
-    pf_field_id_map = {pf.id: pf.field_id for pf in parameter_fields_data}
-    all_field_ids = list({fid for fid in pf_field_id_map.values() if fid})
-    async with pool.acquire() as conn:
-        fields_data = (
-            await get_fields(conn, all_field_ids, redis) if all_field_ids else []
-        )
-    field_name_map = {f.id: f.name for f in fields_data}
-    pf_name_map = {
-        pf_id: field_name_map.get(field_id, "")
-        for pf_id, field_id in pf_field_id_map.items()
-        if field_id
-    }
+    model_map = {m.id: m.name for m in models_data}
 
     # ── Step 5: Generate CSV + upload ──────────────────────────────────
 
@@ -190,9 +176,7 @@ async def export_document_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        pf_str = PIPE.join(
-            pf_name_map.get(pfid, "") for pfid in (a.parameter_field_ids or [])
-        )
+        models_str = PIPE.join(model_map.get(mid, "") for mid in (a.model_ids or []))
 
         writer.writerow(
             [
@@ -201,7 +185,7 @@ async def export_document_client(
                 description,
                 active,
                 departments_str,
-                pf_str,
+                models_str,
             ]
         )
 
@@ -210,7 +194,7 @@ async def export_document_client(
 
     # Write CSV to upload folder
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    file_name = f"documents_export_{timestamp}.csv"
+    file_name = f"evals_export_{timestamp}.csv"
     file_path = os.path.join(str(UPLOAD_FOLDER), file_name)
 
     os.makedirs(str(UPLOAD_FOLDER), exist_ok=True)
@@ -228,7 +212,7 @@ async def export_document_client(
             size=file_size,
         )
 
-    return ExportDocumentApiResponse(
+    return ExportEvalApiResponse(
         upload_id=upload_result.id,
         file_name=file_name,
         row_count=row_count,

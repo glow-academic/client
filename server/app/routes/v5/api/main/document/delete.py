@@ -1,13 +1,13 @@
 """Document delete endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.document_delete.
+Thin route handler. Core logic lives in app.infra.document.delete.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.document_delete import delete_document_client
+from app.infra.document.delete import delete_document_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.document.types import (
     DeleteDocumentApiRequest,
@@ -38,7 +38,7 @@ async def delete_document(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_document_client(
+        result = await delete_document_impl(
             pool,
             redis,
             profile_id=profile_id,

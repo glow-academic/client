@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.eval_context import resolve_eval_context
+from app.infra.eval.context import resolve_eval_context
 from app.routes.v5.tools.artifacts.eval.create import create_eval
 from app.routes.v5.tools.artifacts.eval.update import update_eval
 

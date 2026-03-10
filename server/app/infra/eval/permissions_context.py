@@ -1,11 +1,11 @@
-"""Document permissions context + shared save helpers.
+"""Eval permissions context + shared save helpers.
 
 Permissions context:
-  1. resolve_document_permissions_context — lightweight access + edit check
+  1. resolve_eval_permissions_context — lightweight access + edit check
 
 Shared save helpers (used by both create and update):
-  2. resolve_document_values — raw string → resource ID resolution
-  3. create_denormalized_snapshot — hydrate IDs → documents_resource snapshot
+  2. resolve_eval_values — raw string → resource ID resolution
+  3. create_denormalized_snapshot — hydrate IDs → evals_resource snapshot
 
 Composes existing black-box fetchers — no raw SQL.
 """
@@ -20,105 +20,84 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.document.get import (
-    get_documents as get_document_artifacts,
-)
-from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
+from app.routes.v5.tools.artifacts.eval.get import get_evals as get_eval_artifacts
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.documents.create import (
-    create_document as create_document_resource,
+from app.routes.v5.tools.resources.evals.create import (
+    create_eval as create_eval_resource,
 )
-from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.document_create import CreateDocumentItem, DocumentFieldError
-    from app.routes.v5.api.main.document.types import (
-        UpdateDocumentItem,
+    from app.infra.eval.create import CreateEvalItem, EvalFieldError
+    from app.routes.v5.api.main.eval.types import (
+        UpdateEvalItem,
     )
 
 
 @dataclass(frozen=True)
-class DocumentPermissionsContext:
-    """Lightweight context for document permission checks."""
+class EvalPermissionsContext:
+    """Lightweight context for eval permission checks."""
 
     exists: bool
     department_ids: list[UUID]
-    active_scenario_count: int
 
 
-async def resolve_document_permissions_context(
+async def resolve_eval_permissions_context(
     conn: asyncpg.Connection,
-    document_id: UUID,
-) -> DocumentPermissionsContext:
-    """Fetch just what's needed for document permission checks.
+    eval_id: UUID,
+) -> EvalPermissionsContext:
+    """Fetch just what's needed for eval permission checks.
 
-    Two black-box tool calls:
-      1. get_document_artifacts → department_ids + document_ids (resource IDs)
-      2. search_scenarios → any active scenarios using this document?
+    Single black-box tool call:
+      1. get_eval_artifacts → department_ids
     """
-    artifacts = await get_document_artifacts(
+    artifacts = await get_eval_artifacts(
         conn,
-        [document_id],
+        [eval_id],
         departments=True,
-        documents=True,
     )
 
     if not artifacts:
-        return DocumentPermissionsContext(
+        return EvalPermissionsContext(
             exists=False,
             department_ids=[],
-            active_scenario_count=0,
         )
 
     artifact = artifacts[0]
     department_ids = list(artifact.department_ids or [])
-    document_resource_ids = list(artifact.document_ids or [])
 
-    _, total = (
-        await search_scenarios(
-            conn,
-            document_ids=document_resource_ids,
-            active_only=True,
-            limit_count=1,
-        )
-        if document_resource_ids
-        else ([], 0)
-    )
-
-    return DocumentPermissionsContext(
+    return EvalPermissionsContext(
         exists=True,
         department_ids=department_ids,
-        active_scenario_count=total,
     )
 
 
 # ---------------------------------------------------------------------------
-# Shared save helpers — used by both document_create and document_update
+# Shared save helpers — used by both eval_create and eval_update
 # ---------------------------------------------------------------------------
 
 
-async def resolve_document_values(
+async def resolve_eval_values(
     conn: asyncpg.Connection,
     redis: Redis,
-    item: CreateDocumentItem | UpdateDocumentItem,
+    item: CreateEvalItem | UpdateEvalItem,
     is_create: bool,
-) -> list[DocumentFieldError]:
+) -> list[EvalFieldError]:
     """Resolve raw value fields to resource IDs (mutates item in place).
 
     For 'create' resources (name, description):
       Creates a new resource via the create tool.
-    For 'match' resources (departments, flags):
+    For 'match' resources (departments):
       Searches by name via the search tool, matches exact (case-insensitive).
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.infra.document_create import DocumentFieldError
+    from app.infra.eval.create import EvalFieldError
 
-    errors: list[DocumentFieldError] = []
+    errors: list[EvalFieldError] = []
 
     # --- Create resources ---
 
@@ -131,27 +110,6 @@ async def resolve_document_values(
         item.description_id = result.id
 
     # --- Match resources ---
-
-    if item.is_inactive is not None and item.flag_id is None:
-        results = await search_flags(
-            conn,
-            redis,
-            search=None,
-            flag_type="document_active",
-            limit_count=1000,
-        )
-        match = next((f for f in results if f.type == "document_active"), None)
-        if match and match.id:
-            if not item.is_inactive:
-                # Active → set the document_active flag
-                item.flag_id = match.id
-            # Inactive → leave flag_id as None (no flag)
-        elif not item.is_inactive:
-            errors.append(
-                DocumentFieldError(
-                    field="is_inactive", message="Active flag resource not found"
-                )
-            )
 
     if item.departments is not None and item.department_ids is None:
         all_depts = await search_departments(
@@ -168,7 +126,7 @@ async def resolve_document_values(
                 resolved_ids.append(dept_id)
             else:
                 errors.append(
-                    DocumentFieldError(
+                    EvalFieldError(
                         field="departments",
                         message=f'Department "{dept_name}" not found',
                     )
@@ -180,7 +138,7 @@ async def resolve_document_values(
 
     if is_create:
         if item.name_id is None:
-            errors.append(DocumentFieldError(field="name", message="Name is required"))
+            errors.append(EvalFieldError(field="name", message="Name is required"))
 
     return errors
 
@@ -193,7 +151,7 @@ async def create_denormalized_snapshot(
     name_id: UUID | None,
     description_id: UUID | None,
 ) -> UUID:
-    """Create a documents_resource snapshot by hydrating IDs to values.
+    """Create an evals_resource snapshot by hydrating IDs to values.
 
     Each parallel branch acquires its own connection from the pool.
     """
@@ -218,7 +176,7 @@ async def create_denormalized_snapshot(
     )
 
     async with pool.acquire() as conn:
-        result = await create_document_resource(
+        result = await create_eval_resource(
             conn,
             redis,
             id=id,

@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.document_context import resolve_document_context
+from app.infra.document.context import resolve_document_context
 from app.routes.v5.tools.artifacts.document.create import create_document
 from app.routes.v5.tools.artifacts.document.update import update_document
 

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
-from app.infra.document_export import export_document_client
+from app.infra.document.export import export_document_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.document.types import ExportDocumentApiResponse
 
@@ -30,7 +30,7 @@ async def export_documents(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_document_client(
+    return await export_document_impl(
         pool,
         redis,
         profile_id=profile_id,

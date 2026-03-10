@@ -1,6 +1,6 @@
 """Document search endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.document_search.
+Thin route handler. Core logic lives in app.infra.document.search.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.document_search import search_document_client
+from app.infra.document.search import search_document_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.document.types import ListDocumentApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -54,7 +54,7 @@ async def search_document(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_document_client(
+        result = await search_document_impl(
             pool,
             redis,
             profile_id=profile_id,

@@ -1,4 +1,4 @@
-"""Eval refresh logic — composable infra architecture.
+"""Document refresh logic — composable infra architecture.
 
 Composes black-box entry refresh tools to refresh dependent MVs,
 then invalidates cache tags for the artifact and its resources.
@@ -15,22 +15,24 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.routes.v5.tools.entries.eval_drafts.refresh import refresh_eval_drafts
+from app.routes.v5.tools.entries.document_drafts.refresh import (
+    refresh_document_drafts,
+)
 
 # Tags to invalidate — artifact cache + resource caches
-_TAGS = ["evals", "artifacts"]
+_TAGS = ["documents", "artifacts"]
 
 # Views refreshed by this endpoint
-_VIEWS = ["eval_drafts_mv"]
+_VIEWS = ["document_drafts_mv"]
 
 
-async def refresh_eval_client(
+async def refresh_document_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
 ) -> RefreshResponse:
-    """Eval refresh using composable infra functions.
+    """Document refresh using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context — permission check
@@ -52,7 +54,7 @@ async def refresh_eval_client(
     # ── Step 2: Refresh dependent entry MVs ──────────────────────────────
 
     async with pool.acquire() as conn:
-        await refresh_eval_drafts(conn)
+        await refresh_document_drafts(conn)
 
     # ── Step 3: Invalidate cache tags ────────────────────────────────────
 
