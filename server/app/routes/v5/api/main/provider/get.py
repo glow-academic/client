@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.provider.get import get_provider_impl
 from app.routes.v5.api.main.provider.types import (
@@ -33,14 +34,32 @@ async def get_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_provider_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetProviderApiResponse:
+            return await get_provider_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                provider_id=request.provider_id,
+                draft_id=request.draft_id,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="provider",
             profile_id=profile_id,
             session_id=session_id,
-            provider_id=request.provider_id,
             draft_id=request.draft_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetProviderApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "providers"

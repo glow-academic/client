@@ -1,0 +1,34 @@
+"""Auth event declarations for centralized delivery."""
+
+from app.events.types import (
+    ArtifactEventsConfig,
+    OperationEventConfig,
+    require_authenticated_profile,
+)
+
+AUTH_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
+    "get": OperationEventConfig(
+        operation="get",
+        domain_events=("auth.viewed",),
+        scope="entity",
+        entity_key="auth_id",
+        can_subscribe=require_authenticated_profile,
+    ),
+    "refresh": OperationEventConfig(
+        operation="refresh",
+        domain_events=("auth.refreshed",),
+        scope="collection",
+        entity_key=None,
+        can_subscribe=require_authenticated_profile,
+    ),
+}
+
+AUTH_EVENTS = ArtifactEventsConfig(
+    artifact="auth",
+    operations=AUTH_EVENT_CONFIGS,
+)
+
+
+def get_auth_event_config(operation: str) -> OperationEventConfig | None:
+    """Resolve event policy for an auth operation."""
+    return AUTH_EVENTS.get_operation(operation)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.simulation.get import get_simulation_impl
 from app.routes.v5.api.main.simulation.types import (
@@ -33,16 +34,34 @@ async def get_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_simulation_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetSimulationApiResponse:
+            return await get_simulation_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                simulation_id=request.simulation_id,
+                draft_id=request.draft_id,
+                scenario_search=request.scenario_search,
+                filter_scenario_ids=request.filter_scenario_ids,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="simulation",
             profile_id=profile_id,
             session_id=session_id,
-            simulation_id=request.simulation_id,
             draft_id=request.draft_id,
-            scenario_search=request.scenario_search,
-            filter_scenario_ids=request.filter_scenario_ids,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetSimulationApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "simulations"

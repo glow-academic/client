@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.setting.get import get_setting_impl
 from app.routes.v5.api.main.setting.types import (
@@ -33,15 +34,33 @@ async def get_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_setting_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetSettingApiResponse:
+            return await get_setting_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                setting_id=request.setting_id,
+                draft_id=request.draft_id,
+                color_search=request.color_search,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="setting",
             profile_id=profile_id,
             session_id=session_id,
-            setting_id=request.setting_id,
             draft_id=request.draft_id,
-            color_search=request.color_search,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetSettingApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "settings"

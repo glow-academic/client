@@ -33,7 +33,7 @@ from app.routes.v5.api.main.activity import router as activity_artifact_router
 # ============================================================================
 from app.routes.v5.api.main.agent import router as agents_router
 from app.routes.v5.api.main.attempt import router as attempt_artifact_router
-from app.routes.v5.api.main.auth import router as auth_artifact_router
+from app.routes.v5.api.main.auth import router as auth_router
 from app.routes.v5.api.main.benchmark import router as benchmark_artifact_router
 from app.routes.v5.api.main.chat import router as chat_artifact_router
 from app.routes.v5.api.main.cohort import router as cohorts_router
@@ -102,7 +102,7 @@ artifacts_router.include_router(providers_router)
 artifacts_router.include_router(parameters_router)
 artifacts_router.include_router(fields_router)
 artifacts_router.include_router(profile_router)
-artifacts_router.include_router(auth_artifact_router)
+artifacts_router.include_router(auth_router)
 artifacts_router.include_router(tools_router)
 artifacts_router.include_router(group_router)
 artifacts_router.include_router(session_router)
