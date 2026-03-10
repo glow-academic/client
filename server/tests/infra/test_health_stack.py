@@ -65,7 +65,9 @@ class TestResolveHealthContext:
 
 
 class TestHealthDocsClient:
-    async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
+    async def test_returns_composed_docs(
+        self, pool, redis_client, profile_identity_factory
+    ):
         profile = await profile_identity_factory()
 
         result = await docs_health_impl(
@@ -84,7 +86,7 @@ class TestHealthDocsClient:
 
 class TestExportHealthClient:
     async def test_exports_health_and_metrics_zip(
-        self, pool, redis_client, profile_identity_factory, tmp_path, monkeypatch
+        self, pool, redis_client, profile_identity_factory, tmp_path
     ):
         profile = await profile_identity_factory()
 
@@ -92,13 +94,12 @@ class TestExportHealthClient:
             await _seed_health_metrics(conn)
             session = await create_session(conn, profile_id=profile.profile_resource_id)
 
-        monkeypatch.setattr("app.infra.health.export.UPLOAD_FOLDER", tmp_path)
-
         result = await export_health_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
             session_id=session.id,
+            upload_folder=tmp_path,
         )
 
         assert result.row_count >= 2
@@ -119,6 +120,7 @@ class TestExportHealthClient:
         assert len(metrics_csv.strip().splitlines()) >= 2
         assert "redis" in health_csv
         assert "100" in metrics_csv
+
 
 class TestRefreshHealthClient:
     async def test_refreshes_views_and_invalidates_tags(

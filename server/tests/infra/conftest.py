@@ -481,7 +481,6 @@ async def v5_attempt_route_client(
             "response",
             "use_previous",
             "audio",
-            "events",
             "search",
         ],
     )

@@ -96,10 +96,12 @@ async def get_leaderboard_impl_cached(
             return LeaderboardResponse.model_validate(cached["data"]), True
 
     redis = get_redis_client()
-    async with pool.acquire() as c:
-        common = await resolve_common_context(
-            c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-        )
+    common = await resolve_common_context(
+        pool,
+        redis,
+        profile_id=profile_id,
+        bypass_cache=bypass_cache,
+    )
     if not common:
         raise HTTPException(status_code=401, detail="Profile not found")
 

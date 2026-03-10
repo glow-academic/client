@@ -9,7 +9,6 @@ Priority order:
 
 from __future__ import annotations
 
-import asyncio
 from collections.abc import Callable, Coroutine
 from datetime import UTC, datetime
 from uuid import UUID
@@ -131,10 +130,11 @@ async def _resolve_from_attempt(
     profiles_id: UUID | None,
 ) -> ResolveGroupApiResponse | None:
     """Attempt → ownership check → chat state → group_id from current chat."""
-    # Fetch attempt + chats in parallel
-    attempts, (chats, _total_count) = await asyncio.gather(
-        get_attempts(conn, [attempt_id]),
-        search_attempt_chats(conn, attempt_ids=[attempt_id], limit=1000),
+    attempts = await get_attempts(conn, [attempt_id])
+    chats, _total_count = await search_attempt_chats(
+        conn,
+        attempt_ids=[attempt_id],
+        limit=1000,
     )
 
     if not attempts:
@@ -230,13 +230,15 @@ async def _resolve_from_test(
         return None
 
     # Check if invocation has runs or groups
-    (runs, _tc_runs), (groups, _tc_groups) = await asyncio.gather(
-        search_test_invocation_runs(
-            conn, test_invocation_ids=[invocation.invocation_id], limit=1
-        ),
-        search_test_invocation_groups(
-            conn, test_invocation_ids=[invocation.invocation_id], limit=1
-        ),
+    runs, _tc_runs = await search_test_invocation_runs(
+        conn,
+        test_invocation_ids=[invocation.invocation_id],
+        limit=1,
+    )
+    groups, _tc_groups = await search_test_invocation_groups(
+        conn,
+        test_invocation_ids=[invocation.invocation_id],
+        limit=1,
     )
     has_runs_or_groups = len(runs) > 0 or len(groups) > 0
 

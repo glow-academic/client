@@ -17,13 +17,14 @@ import io
 import os
 import zipfile
 from datetime import datetime
+from pathlib import Path
 from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
+from app.infra.globals import get_upload_folder
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
@@ -85,7 +86,7 @@ async def export_attempt_impl(
     profile_id: UUID,
     session_id: UUID,
     attempt_id: UUID,
-    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
+    upload_folder: str | os.PathLike[str] | None = None,
 ) -> dict:
     """Attempt export using composable infra functions.
 
@@ -98,6 +99,10 @@ async def export_attempt_impl(
       6. Generate ZIP (attempts.csv + chats.csv + messages.csv) + create upload entry
     """
     from app.routes.v5.api.main.attempt.types import ExportAttemptApiResponse
+
+    effective_upload_folder = (
+        Path(upload_folder) if upload_folder is not None else get_upload_folder()
+    )
 
     # -- Step 1: Profile context --
 
@@ -294,9 +299,9 @@ async def export_attempt_impl(
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"attempt_export_{timestamp}.zip"
-    file_path = os.path.join(str(upload_folder), file_name)
+    file_path = os.path.join(str(effective_upload_folder), file_name)
 
-    os.makedirs(str(upload_folder), exist_ok=True)
+    os.makedirs(str(effective_upload_folder), exist_ok=True)
     with open(file_path, "wb") as f:
         f.write(zip_content)
 

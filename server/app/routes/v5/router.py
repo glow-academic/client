@@ -25,7 +25,7 @@ from app.infra.identity.middleware import require_auth
 # Docs
 # ============================================================================
 from app.routes.v5.api.docs import router as docs_router
-from app.routes.v5.api.events import router as events_router
+from app.routes.v5.api.events import get_router as get_events_router
 from app.routes.v5.api.main.activity import router as activity_artifact_router
 
 # ============================================================================
@@ -123,7 +123,7 @@ artifacts_router.include_router(benchmark_artifact_router)
 artifacts_router.include_router(test_artifact_router)
 
 router.include_router(artifacts_router)
-router.include_router(events_router)
+router.include_router(get_events_router())
 
 # ============================================================================
 # Docs

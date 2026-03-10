@@ -16,13 +16,14 @@ import io
 import os
 import zipfile
 from datetime import datetime
+from pathlib import Path
 from uuid import UUID
 
 import asyncpg
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
+from app.infra.globals import get_upload_folder
 from app.infra.pricing import compute_costs_from_runs
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.groups.get import get_groups
@@ -60,10 +61,14 @@ async def export_pricing_impl(
     *,
     profile_id: UUID,
     session_id: UUID,
-    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
+    upload_folder: str | os.PathLike[str] | None = None,
 ) -> dict:
     """Pricing full export using composable infra functions."""
     from fastapi import HTTPException
+
+    effective_upload_folder = (
+        Path(upload_folder) if upload_folder is not None else get_upload_folder()
+    )
 
     # -- Step 1: Profile context --
 
@@ -152,9 +157,9 @@ async def export_pricing_impl(
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"pricing_export_{timestamp}.zip"
-    file_path = os.path.join(str(upload_folder), file_name)
+    file_path = os.path.join(str(effective_upload_folder), file_name)
 
-    os.makedirs(str(upload_folder), exist_ok=True)
+    os.makedirs(str(effective_upload_folder), exist_ok=True)
     with open(file_path, "wb") as f:
         f.write(zip_content)
 

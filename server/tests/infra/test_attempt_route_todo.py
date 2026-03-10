@@ -6,7 +6,6 @@ from uuid import uuid4
 
 import pytest
 
-
 STUB_ATTEMPT_ROUTES = [
     ("/api/v5/artifacts/attempt/start", {"home_id": str(uuid4())}),
     ("/api/v5/artifacts/attempt/next", {"attempt_id": str(uuid4())}),
@@ -38,10 +37,9 @@ STUB_ATTEMPT_ROUTES = [
         {"chat_id": str(uuid4()), "upload_id": str(uuid4())},
     ),
     (
-        "/api/v5/artifacts/attempt/events",
-        {"chat_id": str(uuid4()), "limit": 10},
+        "/api/v5/artifacts/attempt/search",
+        {"limit": 10},
     ),
-    ("/api/v5/artifacts/attempt/search", {"limit": 10}),
 ]
 
 

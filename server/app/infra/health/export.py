@@ -15,12 +15,13 @@ import io
 import os
 import zipfile
 from datetime import datetime
+from pathlib import Path
 from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
+from app.infra.globals import get_upload_folder
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.health.search import search_health
 from app.routes.v5.tools.entries.metrics.search import search_metrics
@@ -63,7 +64,7 @@ async def export_health_impl(
     *,
     profile_id: UUID,
     session_id: UUID,
-    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
+    upload_folder: str | os.PathLike[str] | None = None,
 ) -> dict:
     """Health full export using composable infra functions.
 
@@ -76,6 +77,10 @@ async def export_health_impl(
     from fastapi import HTTPException
 
     from app.routes.v5.api.main.health.types import ExportHealthApiResponse
+
+    effective_upload_folder = (
+        Path(upload_folder) if upload_folder is not None else get_upload_folder()
+    )
 
     # -- Step 1: Profile context --
 
@@ -174,9 +179,9 @@ async def export_health_impl(
     # Write ZIP to upload folder
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"health_export_{timestamp}.zip"
-    file_path = os.path.join(str(upload_folder), file_name)
+    file_path = os.path.join(str(effective_upload_folder), file_name)
 
-    os.makedirs(str(upload_folder), exist_ok=True)
+    os.makedirs(str(effective_upload_folder), exist_ok=True)
     with open(file_path, "wb") as f:
         f.write(zip_content)
 

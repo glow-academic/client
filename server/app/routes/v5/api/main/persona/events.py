@@ -377,7 +377,6 @@ PERSONA_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
 PERSONA_EVENTS = ArtifactEventsConfig(
     artifact="persona",
     operations=PERSONA_EVENT_CONFIGS,
-    call_lifecycle_events=CALL_LIFECYCLE_EVENTS,
 )
 
 PERSONA_EVENT_TYPES: tuple[str, ...] = PERSONA_EVENTS.event_types

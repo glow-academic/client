@@ -47,14 +47,18 @@ class TestResolveBenchmarkContext:
         )
 
         assert len(result.entries["benchmarks"]) >= 1
-        assert result.resources["departments"].selected[0].name == "Benchmark Department"
+        assert (
+            result.resources["departments"].selected[0].name == "Benchmark Department"
+        )
         assert result.entries["invocations"] == []
         assert result.entries["tests"] == []
         assert result.entries["test_invocations"] == []
 
 
 class TestBenchmarkDocsClient:
-    async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
+    async def test_returns_composed_docs(
+        self, pool, redis_client, profile_identity_factory
+    ):
         profile = await profile_identity_factory()
 
         result = await docs_benchmark_impl(
@@ -78,7 +82,7 @@ class TestBenchmarkDocsClient:
 
 class TestExportBenchmarkClient:
     async def test_exports_benchmarks_zip(
-        self, pool, redis_client, profile_identity_factory, tmp_path, monkeypatch
+        self, pool, redis_client, profile_identity_factory, tmp_path
     ):
         profile = await profile_identity_factory()
 
@@ -97,13 +101,12 @@ class TestExportBenchmarkClient:
             await refresh_benchmark(conn)
             session = await create_session(conn, profile_id=profile.profile_resource_id)
 
-        monkeypatch.setattr("app.infra.benchmark.export.UPLOAD_FOLDER", tmp_path)
-
         result = await export_benchmark_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
             session_id=session.id,
+            upload_folder=tmp_path,
         )
 
         assert result.row_count >= 1
@@ -116,7 +119,10 @@ class TestExportBenchmarkClient:
         assert zip_path.exists()
 
         with zipfile.ZipFile(io.BytesIO(zip_path.read_bytes())) as archive:
-            assert sorted(archive.namelist()) == ["benchmarks.csv", "test_invocations.csv"]
+            assert sorted(archive.namelist()) == [
+                "benchmarks.csv",
+                "test_invocations.csv",
+            ]
             benchmarks_csv = archive.read("benchmarks.csv").decode("utf-8")
 
         assert "Export Department" in benchmarks_csv
