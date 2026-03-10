@@ -18,7 +18,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.profile_permissions import compute_can_draft
+from app.infra.profile.permissions import compute_can_draft
 from app.routes.v5.api.main.profile.types import (
     PatchProfileDraftApiRequest,
     PatchProfileDraftApiResponse,
@@ -69,11 +69,11 @@ async def _resolve_creatable_values(
 
 
 # ---------------------------------------------------------------------------
-# patch_profile_draft_client — composable infra architecture
+# patch_profile_draft_impl — composable infra architecture
 # ---------------------------------------------------------------------------
 
 
-async def patch_profile_draft_client(
+async def patch_profile_draft_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

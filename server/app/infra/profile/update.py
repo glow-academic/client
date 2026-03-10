@@ -17,7 +17,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.profile_permissions_context import (
+from app.infra.profile.permissions_context import (
     create_denormalized_snapshot,
     resolve_profile_permissions_context,
     resolve_profile_values,
@@ -31,7 +31,7 @@ from app.routes.v5.tools.artifacts.profile.update import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def update_profile_client(
+async def update_profile_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -50,7 +50,7 @@ async def update_profile_client(
       4. Single transaction: update_profile_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.profile_permissions import compute_can_edit
+    from app.infra.profile.permissions import compute_can_edit
     from app.routes.v5.api.main.profile.types import (
         ProfileResultItem,
         UpdateProfileApiResponse,

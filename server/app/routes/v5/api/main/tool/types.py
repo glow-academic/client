@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.tool_create import CreateToolItem
+from app.infra.tool.create import CreateToolItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.tool_drafts.types import GetToolDraftResponse
 

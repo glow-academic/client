@@ -1,6 +1,6 @@
 """Setting delete endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.setting_delete.
+Thin route handler. Core logic lives in app.infra.setting.delete.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.setting_delete import delete_setting_client
+from app.infra.setting.delete import delete_setting_impl
 from app.routes.v5.api.main.setting.types import (
     DeleteSettingApiRequest,
     DeleteSettingApiResponse,
@@ -38,7 +38,7 @@ async def delete_setting(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_setting_client(
+        result = await delete_setting_impl(
             pool,
             redis,
             profile_id=profile_id,

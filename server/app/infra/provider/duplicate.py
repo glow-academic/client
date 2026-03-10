@@ -19,7 +19,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.provider_permissions import compute_can_duplicate
+from app.infra.provider.permissions import compute_can_duplicate
 from app.routes.v5.api.main.provider.types import (
     DuplicateProviderApiResponse,
 )
@@ -33,7 +33,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def duplicate_provider_client(
+async def duplicate_provider_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

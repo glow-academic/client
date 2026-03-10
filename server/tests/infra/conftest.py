@@ -400,3 +400,40 @@ async def v5_cohort_route_client(
 
     globals_mod._db_pool = prior_pool
     globals_mod.redis_client = prior_redis
+
+
+@pytest_asyncio.fixture
+async def v5_health_route_client(
+    pool,
+    redis_client,
+) -> AsyncGenerator[V5RouteClient, None]:
+    """HTTP client mounted on the real health v5 route stack."""
+    import app.infra.globals as globals_mod
+
+    health_router = _build_artifact_router_for_tests(
+        artifact_name="health",
+        prefix="/health",
+        tags=["health"],
+        module_names=["get", "docs", "export", "refresh"],
+    )
+
+    request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
+    app = _build_v5_artifact_test_app(
+        artifact_router=health_router,
+        request_state=request_state,
+    )
+
+    prior_pool = globals_mod._db_pool
+    prior_redis = globals_mod.redis_client
+    globals_mod._db_pool = pool
+    globals_mod.redis_client = redis_client
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        yield V5RouteClient(client=client, _request_state=request_state)
+
+    globals_mod._db_pool = prior_pool
+    globals_mod.redis_client = prior_redis

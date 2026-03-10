@@ -17,7 +17,7 @@ from app.infra.types import ArtifactContext
 from app.routes.v5.tools.entries.profile_drafts.search import search_profile_drafts
 
 
-async def list_profile_drafts_client(
+async def list_profile_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

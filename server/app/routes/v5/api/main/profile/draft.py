@@ -1,6 +1,6 @@
 """Profile draft endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.profile_draft.
+Thin route handler. Core logic lives in app.infra.profile.draft.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.profile_draft import patch_profile_draft_client
+from app.infra.profile.draft import patch_profile_draft_impl
 from app.routes.v5.api.main.profile.types import (
     PatchProfileDraftApiRequest,
     PatchProfileDraftApiResponse,
@@ -47,7 +47,7 @@ async def patch_profile_draft(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await patch_profile_draft_client(
+        result = await patch_profile_draft_impl(
             pool,
             redis,
             profile_id=profile_id,

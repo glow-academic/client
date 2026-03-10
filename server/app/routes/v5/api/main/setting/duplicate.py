@@ -1,6 +1,6 @@
 """Setting duplicate endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.setting_duplicate.
+Thin route handler. Core logic lives in app.infra.setting.duplicate.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.setting_duplicate import duplicate_setting_client
+from app.infra.setting.duplicate import duplicate_setting_impl
 from app.routes.v5.api.main.setting.types import (
     DuplicateSettingApiRequest,
     DuplicateSettingApiResponse,
@@ -41,7 +41,7 @@ async def duplicate_setting(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_setting_client(
+        result = await duplicate_setting_impl(
             pool,
             redis,
             profile_id=profile_id,

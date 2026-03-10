@@ -1,6 +1,6 @@
 """Setting create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.setting_create.
+Thin route handler. Core logic lives in app.infra.setting.create.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.setting_create import create_setting_client
+from app.infra.setting.create import create_setting_impl
 from app.routes.v5.api.main.setting.types import (
     CreateSettingApiRequest,
     CreateSettingApiResponse,
@@ -37,7 +37,7 @@ async def create_setting(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_setting_client(
+        response_data = await create_setting_impl(
             pool,
             redis,
             profile_id=profile_id,

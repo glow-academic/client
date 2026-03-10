@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.provider_context import resolve_provider_context
+from app.infra.provider.context import resolve_provider_context
 from app.routes.v5.tools.artifacts.provider.create import create_provider
 from app.routes.v5.tools.artifacts.provider.update import update_provider
 

@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.simulation_context import resolve_simulation_context
+from app.infra.simulation.context import resolve_simulation_context
 from app.routes.v5.tools.artifacts.simulation.create import create_simulation
 from app.routes.v5.tools.artifacts.simulation.update import update_simulation
 

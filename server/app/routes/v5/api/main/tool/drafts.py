@@ -1,6 +1,6 @@
 """Tool drafts list endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.tool_drafts.
+Thin route handler. Core logic lives in app.infra.tool.drafts.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.tool_drafts import list_tool_drafts_client
+from app.infra.tool.drafts import list_tool_drafts_impl
 from app.routes.v5.api.main.tool.types import GetToolDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -35,7 +35,7 @@ async def get_tool_drafts(
         redis = get_redis_client()
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        context = await list_tool_drafts_client(
+        context = await list_tool_drafts_impl(
             pool,
             redis,
             profile_id=UUID(profile_id),

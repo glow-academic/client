@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.profile_create import CreateProfileItem
+from app.infra.profile.create import CreateProfileItem
 from app.routes.shared_types import QGetProfileContextV4RoleResource
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.profile_drafts.types import GetProfileDraftResponse

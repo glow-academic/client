@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.provider_create import CreateProviderItem
+from app.infra.provider.create import CreateProviderItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.provider_drafts.types import GetProviderDraftResponse
 

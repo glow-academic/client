@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.provider_permissions_context import (
+from app.infra.provider.permissions_context import (
     create_denormalized_snapshot,
     resolve_provider_values,
 )
@@ -72,7 +72,7 @@ class CreateProviderApiResponse(BaseModel):
     results: list[ProviderResultItem]
 
 
-async def create_provider_client(
+async def create_provider_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -91,7 +91,7 @@ async def create_provider_client(
       4. Single transaction: create_provider_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.provider_permissions import compute_can_create
+    from app.infra.provider.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

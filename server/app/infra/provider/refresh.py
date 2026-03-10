@@ -26,7 +26,7 @@ _TAGS = ["providers", "artifacts"]
 _VIEWS = ["provider_drafts_mv"]
 
 
-async def refresh_provider_client(
+async def refresh_provider_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

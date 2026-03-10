@@ -17,7 +17,7 @@ from app.infra.types import ArtifactContext
 from app.routes.v5.tools.entries.rubric_drafts.search import search_rubric_drafts
 
 
-async def list_rubric_drafts_client(
+async def list_rubric_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

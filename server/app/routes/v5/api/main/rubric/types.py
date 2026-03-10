@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.rubric_create import CreateRubricItem
+from app.infra.rubric.create import CreateRubricItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.rubric_drafts.types import GetRubricDraftResponse
 

@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.rubric_permissions_context import (
+from app.infra.rubric.permissions_context import (
     create_denormalized_snapshot,
     resolve_rubric_values,
 )
@@ -72,7 +72,7 @@ class CreateRubricApiResponse(BaseModel):
     results: list[RubricResultItem]
 
 
-async def create_rubric_client(
+async def create_rubric_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -91,7 +91,7 @@ async def create_rubric_client(
       4. Single transaction: create_rubric_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.rubric_permissions import compute_can_create
+    from app.infra.rubric.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

@@ -18,7 +18,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.profile_permissions import (
+from app.infra.profile.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
@@ -42,7 +42,7 @@ from app.routes.v5.tools.resources.roles.get import get_roles
 from app.routes.v5.tools.resources.roles.search import search_roles
 
 
-async def search_profile_client(
+async def search_profile_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

@@ -251,7 +251,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "duplicate_simulation",
         ),
         "draft": ("app.routes.v5.api.main.simulation.draft", "patch_simulation_draft"),
-        "docs": ("app.infra.simulation_docs", "docs_simulation_client"),
+        "docs": ("app.infra.simulation.docs", "docs_simulation_impl"),
     },
     # "test": {
     #     "get": ("app.routes.v5.api.main.test.get", "get_test_artifact"),

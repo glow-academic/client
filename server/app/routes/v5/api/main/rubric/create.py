@@ -1,6 +1,6 @@
 """Rubric create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.rubric_create.
+Thin route handler. Core logic lives in app.infra.rubric.create.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.rubric_create import create_rubric_client
+from app.infra.rubric.create import create_rubric_impl
 from app.routes.v5.api.main.rubric.types import (
     CreateRubricApiRequest,
     CreateRubricApiResponse,
@@ -37,7 +37,7 @@ async def create_rubric(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_rubric_client(
+        response_data = await create_rubric_impl(
             pool,
             redis,
             profile_id=profile_id,

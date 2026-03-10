@@ -1,4 +1,4 @@
-"""Profile GET endpoint — composable infra architecture.
+"""Canonical shared profile get operation.
 
 Uses composable infra layers:
   1. resolve_common_context — profile + tool graph + runs
@@ -13,7 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -41,7 +41,6 @@ from app.infra.profile.permissions import (
 from app.infra.profile.permissions_context import resolve_profile_permissions_context
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.profile.types import (
-    GetProfileApiRequest,
     GetProfileApiResponse,
     ProfileDepartmentSection,
     ProfileEmailSection,
@@ -54,7 +53,7 @@ from app.routes.v5.api.main.profile.types import (
 
 
 # ---------------------------------------------------------------------------
-# get_profile_client — composable infra architecture
+# get_profile_impl — composable infra architecture
 # ---------------------------------------------------------------------------
 
 

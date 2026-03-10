@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.profile_context import resolve_profile_context
+from app.infra.profile.context import resolve_profile_context
 from app.routes.v5.tools.artifacts.profile.create import create_profile
 from app.routes.v5.tools.artifacts.profile.update import update_profile
 

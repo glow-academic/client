@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.infra.simulation_create import CreateSimulationItem
+from app.infra.simulation.create import CreateSimulationItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.simulation_drafts.types import (
     GetSimulationDraftResponse,

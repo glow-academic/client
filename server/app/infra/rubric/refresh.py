@@ -26,7 +26,7 @@ _TAGS = ["rubrics", "artifacts"]
 _VIEWS = ["rubric_drafts_mv"]
 
 
-async def refresh_rubric_client(
+async def refresh_rubric_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

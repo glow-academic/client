@@ -19,7 +19,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.provider_permissions import (
+from app.infra.provider.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
@@ -43,7 +43,7 @@ from app.routes.v5.tools.resources.providers.get import (
 from app.routes.v5.tools.resources.values.get import get_values
 
 
-async def search_provider_client(
+async def search_provider_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

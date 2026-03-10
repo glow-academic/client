@@ -35,7 +35,7 @@ from app.routes.v5.tools.resources.providers.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.provider_create import CreateProviderItem, ProviderFieldError
+    from app.infra.provider.create import CreateProviderItem, ProviderFieldError
     from app.routes.v5.api.main.provider.types import (
         UpdateProviderItem,
     )
@@ -110,7 +110,7 @@ async def resolve_provider_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.infra.provider_create import ProviderFieldError
+    from app.infra.provider.create import ProviderFieldError
 
     errors: list[ProviderFieldError] = []
 

@@ -31,7 +31,7 @@ from app.routes.v5.tools.resources.profiles.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.profile_create import CreateProfileItem, ProfileFieldError
+    from app.infra.profile.create import CreateProfileItem, ProfileFieldError
     from app.routes.v5.api.main.profile.types import (
         UpdateProfileItem,
     )
@@ -115,7 +115,7 @@ async def resolve_profile_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.infra.profile_create import ProfileFieldError
+    from app.infra.profile.create import ProfileFieldError
 
     errors: list[ProfileFieldError] = []
 

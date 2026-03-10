@@ -46,7 +46,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_provider_client(
+async def export_provider_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

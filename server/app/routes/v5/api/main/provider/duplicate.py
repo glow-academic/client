@@ -1,6 +1,6 @@
 """Provider duplicate endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.provider_duplicate.
+Thin route handler. Core logic lives in app.infra.provider.duplicate.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.provider_duplicate import duplicate_provider_client
+from app.infra.provider.duplicate import duplicate_provider_impl
 from app.routes.v5.api.main.provider.types import (
     DuplicateProviderApiRequest,
     DuplicateProviderApiResponse,
@@ -41,7 +41,7 @@ async def duplicate_provider(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await duplicate_provider_client(
+        result = await duplicate_provider_impl(
             pool,
             redis,
             profile_id=profile_id,

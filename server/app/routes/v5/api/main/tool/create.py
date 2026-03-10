@@ -1,6 +1,6 @@
 """Tool create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.tool_create.
+Thin route handler. Core logic lives in app.infra.tool.create.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.tool_create import create_tool_client
+from app.infra.tool.create import create_tool_impl
 from app.routes.v5.api.main.tool.types import (
     CreateToolApiRequest,
     CreateToolApiResponse,
@@ -37,7 +37,7 @@ async def create_tool(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_tool_client(
+        response_data = await create_tool_impl(
             pool,
             redis,
             profile_id=profile_id,

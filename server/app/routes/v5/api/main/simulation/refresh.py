@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
-from app.infra.simulation_refresh import refresh_simulation_client
+from app.infra.simulation.refresh import refresh_simulation_impl
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ async def simulation_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_simulation_client(
+    result = await refresh_simulation_impl(
         pool,
         redis,
         profile_id=profile_id,

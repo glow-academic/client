@@ -1,4 +1,4 @@
-"""Provider GET endpoint — composable infra architecture.
+"""Canonical shared provider get operation.
 
 Uses composable infra layers:
   1. resolve_common_context — profile + tool graph + runs
@@ -13,7 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -40,12 +40,11 @@ from app.infra.provider.permissions import (
     compute_value_required,
     has_access,
 )
-from app.infra.provider_permissions_context import (
+from app.infra.provider.permissions_context import (
     resolve_provider_permissions_context,
 )
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.provider.types import (
-    GetProviderApiRequest,
     GetProviderApiResponse,
     ProviderDepartmentSection,
     ProviderDescriptionSection,
@@ -61,7 +60,7 @@ PROVIDER_INTEGRATIONS_RESOURCES: set[str] = {"values", "endpoints"}
 
 
 # ---------------------------------------------------------------------------
-# get_provider_client — composable infra architecture
+# get_provider_impl — composable infra architecture
 # ---------------------------------------------------------------------------
 
 

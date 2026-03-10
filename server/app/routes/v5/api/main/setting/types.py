@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.infra.setting_create import CreateSettingItem
+from app.infra.setting.create import CreateSettingItem
 from app.routes.v5.api.types import BaseResourceSection
 from app.routes.v5.tools.entries.setting_drafts.types import GetSettingDraftResponse
 

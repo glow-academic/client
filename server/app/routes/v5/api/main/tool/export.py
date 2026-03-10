@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.tool_export import export_tool_client
+from app.infra.tool.export import export_tool_impl
 from app.routes.v5.api.main.tool.types import ExportToolApiResponse
 
 router = APIRouter()
@@ -30,7 +30,7 @@ async def export_tools(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await export_tool_client(
+    return await export_tool_impl(
         pool,
         redis,
         profile_id=profile_id,

@@ -1,6 +1,6 @@
 """Provider create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.provider_create.
+Thin route handler. Core logic lives in app.infra.provider.create.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.provider_create import create_provider_client
+from app.infra.provider.create import create_provider_impl
 from app.routes.v5.api.main.provider.types import (
     CreateProviderApiRequest,
     CreateProviderApiResponse,
@@ -37,7 +37,7 @@ async def create_provider(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_provider_client(
+        response_data = await create_provider_impl(
             pool,
             redis,
             profile_id=profile_id,

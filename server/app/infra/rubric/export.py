@@ -46,7 +46,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_rubric_client(
+async def export_rubric_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

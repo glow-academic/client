@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.rubric_context import resolve_rubric_context
+from app.infra.rubric.context import resolve_rubric_context
 from app.routes.v5.tools.artifacts.rubric.create import create_rubric
 from app.routes.v5.tools.artifacts.rubric.update import update_rubric
 

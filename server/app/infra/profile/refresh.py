@@ -26,7 +26,7 @@ _TAGS = ["profiles", "artifacts"]
 _VIEWS = ["profile_drafts_mv"]
 
 
-async def refresh_profile_client(
+async def refresh_profile_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

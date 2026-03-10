@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.setting_context import resolve_setting_context
+from app.infra.setting.context import resolve_setting_context
 from app.routes.v5.tools.artifacts.setting.create import create_setting
 from app.routes.v5.tools.artifacts.setting.update import update_setting
 

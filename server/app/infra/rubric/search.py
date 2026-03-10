@@ -19,7 +19,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.rubric_permissions import (
+from app.infra.rubric.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
@@ -44,7 +44,7 @@ from app.routes.v5.tools.resources.standard_groups.get import get_standard_group
 from app.routes.v5.tools.resources.standards.get import get_standards
 
 
-async def search_rubric_client(
+async def search_rubric_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

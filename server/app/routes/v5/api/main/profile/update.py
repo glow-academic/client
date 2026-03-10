@@ -1,6 +1,6 @@
 """Profile update endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.profile_update.
+Thin route handler. Core logic lives in app.infra.profile.update.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.profile_update import update_profile_client
+from app.infra.profile.update import update_profile_impl
 from app.routes.v5.api.main.profile.types import (
     UpdateProfileApiRequest,
     UpdateProfileApiResponse,
@@ -37,7 +37,7 @@ async def update_profile(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await update_profile_client(
+        response_data = await update_profile_impl(
             pool,
             redis,
             profile_id=profile_id,

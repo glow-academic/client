@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.profile_permissions_context import (
+from app.infra.profile.permissions_context import (
     create_denormalized_snapshot,
     resolve_profile_values,
 )
@@ -68,7 +68,7 @@ class CreateProfileApiResponse(BaseModel):
     results: list[ProfileResultItem]
 
 
-async def create_profile_client(
+async def create_profile_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -87,7 +87,7 @@ async def create_profile_client(
       4. Single transaction: create_profile_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.infra.profile_permissions import compute_can_create
+    from app.infra.profile.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

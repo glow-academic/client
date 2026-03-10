@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, Response
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.tool_docs import docs_tool_client
+from app.infra.tool.docs import docs_tool_impl
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ async def get_tool_docs_endpoint(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await docs_tool_client(
+    return await docs_tool_impl(
         pool,
         redis,
         profile_id=profile_id,
