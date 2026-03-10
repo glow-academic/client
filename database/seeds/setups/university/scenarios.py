@@ -8,6 +8,11 @@ Names, descriptions, and problem_statements are CREATED as new resources.
 """
 
 from database.seeds.ids import sid
+from database.seeds.setups.university.departments import UNIVERSITY_DEPT
+from database.seeds.setups.university.documents import (
+    ACADEMIC_INTEGRITY_POLICY,
+    FERPA_POLICY,
+)
 from database.seeds.setups.university.personas import (
     AGGRESSIVE_HIGH,
     CONFUSED,
@@ -44,6 +49,7 @@ scenarios = [
         description="Practice scenario featuring a confused or uncertain student persona.",
         persona_ids=[CONFUSED],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=HAPPY_SCENARIO,
@@ -51,6 +57,7 @@ scenarios = [
         description="Practice scenario featuring a cheerful and positive student persona.",
         persona_ids=[HAPPY],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=PASSIVE_SCENARIO,
@@ -58,6 +65,7 @@ scenarios = [
         description="Practice scenario featuring a passive or hesitant student persona.",
         persona_ids=[PASSIVE],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=AGGRESSIVE_SCENARIO,
@@ -65,12 +73,14 @@ scenarios = [
         description="Practice scenario featuring an aggressive or confrontational student persona.",
         persona_ids=[AGGRESSIVE_HIGH],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
         id=GENERAL_SCENARIO,
         name="General Scenario",
         description="General purpose scenario for flexible practice across various situations.",
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
 
     # ── Training Scenarios (with problem statements and multiple personas) ─
@@ -87,7 +97,8 @@ scenarios = [
             "maintaining academic honesty."
         ),
         active_flag=True,
-        # TODO: document_ids once documents are seeded
+        department_ids=[UNIVERSITY_DEPT],
+        document_ids=[ACADEMIC_INTEGRITY_POLICY],
         # TODO: objective_ids, question_ids, option_ids
     ),
     dict(
@@ -102,7 +113,8 @@ scenarios = [
             "address the situation and explain the importance of protecting student privacy."
         ),
         active_flag=True,
-        # TODO: document_ids once documents are seeded
+        department_ids=[UNIVERSITY_DEPT],
+        document_ids=[FERPA_POLICY],
         # TODO: objective_ids, question_ids, option_ids, image_ids
     ),
     dict(
@@ -117,6 +129,7 @@ scenarios = [
             "the work together while providing constructive feedback."
         ),
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
         # TODO: objective_ids, question_ids, option_ids
     ),
 ]

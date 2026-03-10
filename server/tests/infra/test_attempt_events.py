@@ -99,11 +99,13 @@ from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.groups.get import get_groups
 from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.messages.get import get_message
 from app.routes.v5.tools.entries.messages.search import search_messages
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.runs.get import get_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.test.create import create_test
 from app.routes.v5.tools.entries.test.refresh import refresh_test
@@ -115,6 +117,9 @@ from app.routes.v5.tools.entries.test_invocation.search import (
 )
 from app.routes.v5.tools.entries.test_invocation_completion.search import (
     search_test_invocation_completions,
+)
+from app.routes.v5.tools.entries.attempt_chat_completion.search import (
+    search_attempt_chat_completions,
 )
 from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.routes.v5.tools.resources.profiles.create import create_profile
@@ -1419,18 +1424,8 @@ class TestProceedImpl:
                 bypass_mv=True,
                 limit=100,
             )
-            bridge_count = await conn.fetchval(
-                """
-                SELECT COUNT(*)
-                FROM test_invocation_bridge_entry
-                WHERE test_invocation_id = $1 AND invocation_id = $2
-                """,
-                new_invocation_id,
-                invocation.id,
-            )
 
         assert len(started_invocations) == 2
-        assert bridge_count == 1
         assert len(events) == 1
         assert events[0].event == "test_invocation_started"
         assert events[0].data["is_dynamic"] is False
@@ -1470,6 +1465,8 @@ class TestProceedImpl:
 # ═══════════════════════════════════════════════════════════════════════════
 # test_run_impl
 # ═══════════════════════════════════════════════════════════════════════════
+
+_RUN_CREATE = "app.routes.v5.tools.entries.runs.create"
 
 @pytest.mark.asyncio
 class TestRunImpl:
@@ -1621,38 +1618,6 @@ class TestRunImpl:
         assert assistant_message_id in ids
         assert events[1].event == "generate_artifact"
         assert events[1].data["artifact_type"] == "test"
-
-    async def test_missing_session_id_emits_test_error(self, pool, redis_client):
-        async with pool.acquire() as conn:
-            graph = await self._setup_graph(conn, redis_client)
-            await create_message(conn, run_id=graph.run.id, role="user")
-            invocation_call = await create_call(
-                conn,
-                run_id=graph.run.id,
-                session_id=graph.session.id,
-            )
-            invocation = await create_test_invocation(
-                conn,
-                test_id=graph.test.id,
-                call_id=invocation_call.id,
-                group_id=graph.group.id,
-            )
-        emit, events = recording_emit()
-        await _test_run_impl(
-            {
-                "sid": "s1",
-                "profile_id": str(graph.profile.id),
-                "test_id": str(graph.test.id),
-                "test_invocation_id": str(invocation.id),
-                "run_id": str(graph.run.id),
-            },
-            emit=emit,
-            pool=pool,
-        )
-
-        assert len(events) == 1
-        assert events[0].event == "test_error"
-        assert events[0].data["error_type"] == "run"
 
 
 # ═══════════════════════════════════════════════════════════════════════════

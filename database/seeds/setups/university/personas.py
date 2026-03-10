@@ -9,6 +9,7 @@ Names, descriptions, instructions, and examples are CREATED as new resources.
 """
 
 from database.seeds.ids import sid
+from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 
 # ---------------------------------------------------------------------------
 # Deterministic IDs — importable by scenarios, simulations, etc.
@@ -51,6 +52,7 @@ personas = [
             "What does that mean?",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Happy ─────────────────────────────────────────────────────────────
     dict(
@@ -74,6 +76,7 @@ personas = [
             "This is really helpful!",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Passive ───────────────────────────────────────────────────────────
     dict(
@@ -97,6 +100,7 @@ personas = [
             "I'm not sure",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Aggressive (High) ────────────────────────────────────────────────
     dict(
@@ -121,6 +125,7 @@ personas = [
             "You're wrong about this",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Aggressive (Medium) ──────────────────────────────────────────────
     dict(
@@ -144,6 +149,7 @@ personas = [
             "You're wrong about this",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Aggressive (Low) ─────────────────────────────────────────────────
     dict(
@@ -167,6 +173,7 @@ personas = [
             "You're wrong about this",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Professor ─────────────────────────────────────────────────────────
     dict(
@@ -185,6 +192,7 @@ personas = [
             "I want to ensure you understand the academic integrity expectations",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Student ───────────────────────────────────────────────────────────
     dict(
@@ -203,6 +211,7 @@ personas = [
             "What should I focus on for the exam?",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
     # ── Instructional Staff ───────────────────────────────────────────────
     dict(
@@ -221,5 +230,6 @@ personas = [
             "Here's what you need to know about office hours",
         ],
         active_flag=True,
+        department_ids=[UNIVERSITY_DEPT],
     ),
 ]

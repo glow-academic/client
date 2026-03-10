@@ -11,6 +11,13 @@ it in request.state.mcp as a boolean value.
 from fastapi import Header, Request
 
 
+def parse_mcp_header(x_mcp: str | None) -> bool:
+    """Parse the MCP header into a boolean flag."""
+    if not x_mcp:
+        return False
+    return x_mcp.lower().strip() in ("true", "1", "yes")
+
+
 async def get_mcp(
     request: Request,
     x_mcp: str | None = Header(default=None, alias="X-MCP"),
@@ -30,12 +37,7 @@ async def get_mcp(
     Returns:
         Boolean value indicating if request is from MCP server
     """
-    # Parse header value as boolean
-    # Treat "true", "1", "yes" (case-insensitive) as True, else False
-    mcp_value: bool = False
-    if x_mcp:
-        mcp_lower = x_mcp.lower().strip()
-        mcp_value = mcp_lower in ("true", "1", "yes")
+    mcp_value = parse_mcp_header(x_mcp)
 
     # Store in request.state for easy access
     request.state.mcp = mcp_value

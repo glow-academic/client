@@ -1,20 +1,27 @@
 """Remove the socket ownership for a profile from Redis."""
 
+from typing import Any
+
 from app.infra.globals import get_redis_client, get_socket_owner_dict
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
 
-async def remove_socket_owner(profile_id: str) -> None:
+async def remove_socket_owner(
+    profile_id: str,
+    *,
+    redis_client: Any | None = None,
+    socket_owner: dict[str, str] | None = None,
+) -> None:
     """Remove the socket ownership for a profile from Redis.
 
     Removes both:
     - socket_owner:{profile_id} (forward mapping)
     - socket_to_profile:{socket_id} (reverse mapping)
     """
-    redis_client = get_redis_client()
-    socket_owner = get_socket_owner_dict()
+    redis_client = redis_client if redis_client is not None else get_redis_client()
+    socket_owner = socket_owner if socket_owner is not None else get_socket_owner_dict()
     if not redis_client:
         # Fallback to in-memory storage
         socket_owner.pop(profile_id, None)

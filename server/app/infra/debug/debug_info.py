@@ -4,6 +4,15 @@ from typing import Any
 import asyncpg  # type: ignore
 
 
+def extract_debug_context(ctx: Any) -> tuple[object | None, object | None]:
+    """Extract run_id and conn from a variety of context shapes."""
+    if hasattr(ctx, "context"):
+        return ctx.context.run_id, ctx.context.conn
+    if isinstance(ctx, dict):
+        return ctx.get("run_id"), ctx.get("conn")
+    return getattr(ctx, "run_id", None), getattr(ctx, "conn", None)
+
+
 async def debug_info(ctx: Any, content: str) -> str:
     """
     Meta-prompting/debug tool for the assistant.
@@ -22,17 +31,7 @@ async def debug_info(ctx: Any, content: str) -> str:
     This tool does not reply to the user; it only logs context and returns a
     confirmation string.
     """
-    # Extract run_id and conn from context (context structure may vary)
-    if hasattr(ctx, "context"):
-        run_id = ctx.context.run_id
-        conn = ctx.context.conn
-    elif isinstance(ctx, dict):
-        run_id = ctx.get("run_id")
-        conn = ctx.get("conn")
-    else:
-        # Fallback: try to get from attributes directly
-        run_id = getattr(ctx, "run_id", None)
-        conn = getattr(ctx, "conn", None)
+    run_id, conn = extract_debug_context(ctx)
 
     if not run_id or not conn:
         return "Error: Missing run_id or conn in context"

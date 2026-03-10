@@ -1,9 +1,30 @@
 """MCP helper to get profile_id from request context."""
 
 from fastapi import HTTPException
-from fastmcp.server.dependencies import get_http_request
 
 from app.utils.logging.db_logger import profile_id_context
+
+
+def resolve_mcp_profile_id(
+    request: object | None, context_profile_id: str | None = None
+) -> str:
+    """Resolve the MCP profile ID from request state or fallback context."""
+    if not request:
+        if context_profile_id:
+            return context_profile_id
+        raise HTTPException(
+            status_code=500,
+            detail="MCP request context not available",
+        )
+
+    profile_id = getattr(getattr(request, "state", None), "profile_id", None)
+    if not profile_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile ID not found. Authentication required.",
+        )
+
+    return profile_id
 
 
 def get_mcp_profile_id() -> str:
@@ -20,24 +41,10 @@ def get_mcp_profile_id() -> str:
         HTTPException: If profile_id not available
     """
     try:
+        from fastmcp.server.dependencies import get_http_request
+
         request = get_http_request()
     except Exception:
         request = None
 
-    if not request:
-        profile_id = profile_id_context.get(None)
-        if profile_id:
-            return profile_id
-        raise HTTPException(
-            status_code=500,
-            detail="MCP request context not available",
-        )
-
-    profile_id = getattr(request.state, "profile_id", None)
-    if not profile_id:
-        raise HTTPException(
-            status_code=401,
-            detail="Profile ID not found. Authentication required.",
-        )
-
-    return profile_id
+    return resolve_mcp_profile_id(request, profile_id_context.get(None))

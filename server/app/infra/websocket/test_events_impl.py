@@ -665,9 +665,6 @@ async def test_proceed_impl(
     from app.routes.v5.tools.entries.test_invocation.search import (
         search_test_invocation_entries_internal,
     )
-    from app.routes.v5.tools.entries.test_invocation_bridge.create import (
-        create_test_invocation_bridge,
-    )
     from app.routes.v5.tools.entries.test_invocation_completion.create import (
         create_test_invocation_completion,
     )
@@ -676,21 +673,36 @@ async def test_proceed_impl(
 
     logger = get_logger(__name__)
 
-    async def _create_completion_call(
+    async def _create_run_call(
         conn: asyncpg.Connection,
-        invocation_id: uuid.UUID,
+        *,
+        invocation_id: uuid.UUID | None = None,
+        group_id: uuid.UUID | None = None,
     ) -> uuid.UUID:
-        invocation_call_id = await conn.fetchval(
-            "SELECT call_id FROM test_invocation_entry WHERE id = $1",
-            invocation_id,
-        )
-        if invocation_call_id is not None:
-            return invocation_call_id
+        if invocation_id is not None:
+            invocation_call_id = await conn.fetchval(
+                "SELECT call_id FROM test_invocation_entry WHERE id = $1",
+                invocation_id,
+            )
+            if invocation_call_id is not None:
+                return invocation_call_id
 
-        session = await create_session(conn)
-        group = await create_group(conn, session_id=session.id)
-        run = await create_run(conn, group_id=group.id, session_id=session.id)
-        call = await create_call(conn, run_id=run.id, session_id=session.id)
+        session_id = None
+        if group_id is not None:
+            session_id = await conn.fetchval(
+                "SELECT session_id FROM groups_entry WHERE id = $1",
+                group_id,
+            )
+
+        if session_id is None:
+            session = await create_session(conn)
+            group = await create_group(conn, session_id=session.id)
+            run = await create_run(conn, group_id=group.id, session_id=session.id)
+            call = await create_call(conn, run_id=run.id, session_id=session.id)
+            return call.id
+
+        run = await create_run(conn, group_id=group_id, session_id=session_id)
+        call = await create_call(conn, run_id=run.id, session_id=session_id)
         return call.id
 
     sid = data.get("sid", "")
@@ -717,9 +729,9 @@ async def test_proceed_impl(
             # Step 1: If completed_invocation_id, mark that invocation completed
             if completed_invocation_id:
                 try:
-                    completion_call_id = await _create_completion_call(
+                    completion_call_id = await _create_run_call(
                         conn,
-                        completed_invocation_id,
+                        invocation_id=completed_invocation_id,
                     )
                     await create_test_invocation_completion(
                         conn,
@@ -746,9 +758,9 @@ async def test_proceed_impl(
                 for inv in all_invocations:
                     if not inv.invocation_completed:
                         try:
-                            completion_call_id = await _create_completion_call(
+                            completion_call_id = await _create_run_call(
                                 conn,
-                                inv.invocation_id,
+                                invocation_id=inv.invocation_id,
                             )
                             await create_test_invocation_completion(
                                 conn,
@@ -847,17 +859,17 @@ async def test_proceed_impl(
 
         # Step 6: Resolve invocation — create test_invocation_entry + bridge
         async with pool.acquire() as conn:
+            invocation_call_id = await _create_run_call(
+                conn,
+                group_id=next_invocation.group_id,
+            )
             inv_result = await create_test_invocation(
                 conn,
                 test_id=test_id,
+                call_id=invocation_call_id,
+                group_id=next_invocation.group_id,
             )
             test_invocation_id = inv_result.id
-
-            await create_test_invocation_bridge(
-                conn,
-                test_invocation_id=test_invocation_id,
-                invocation_id=next_invocation.invocation_id,
-            )
 
             # Step 7: Refresh MVs + emit test_invocation_started
             await refresh_test_invocation(conn)

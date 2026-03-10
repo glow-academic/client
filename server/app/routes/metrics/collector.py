@@ -109,97 +109,77 @@ async def log_metrics_snapshot() -> None:
     if _db_pool is None:
         return
 
-    try:
-        # Read metrics from Redis or in-memory
-        requests_total = 0
-        errors_total = 0
-        avg_latency_ms = 0.0
+    # Read metrics from Redis or in-memory
+    requests_total = 0
+    errors_total = 0
+    avg_latency_ms = 0.0
 
-        if _redis_client:
-            try:
-                # Read counters from Redis
-                requests_str = await _redis_client.get("metrics:requests_total")
-                errors_str = await _redis_client.get("metrics:errors_total")
+    if _redis_client:
+        try:
+            # Read counters from Redis
+            requests_str = await _redis_client.get("metrics:requests_total")
+            errors_str = await _redis_client.get("metrics:errors_total")
 
-                requests_total = int(requests_str) if requests_str else 0
-                errors_total = int(errors_str) if errors_str else 0
+            requests_total = int(requests_str) if requests_str else 0
+            errors_total = int(errors_str) if errors_str else 0
 
-                # Read latency samples from Redis
-                now = time.time()
-                minute_timestamp = int(now // 60) * 60
-                latency_key = f"metrics:latency:{minute_timestamp}"
+            # Read latency samples from Redis
+            now = time.time()
+            minute_timestamp = int(now // 60) * 60
+            latency_key = f"metrics:latency:{minute_timestamp}"
 
-                latency_samples = await _redis_client.lrange(latency_key, 0, -1)
-                if latency_samples:
-                    latencies = [
-                        float(s.decode() if isinstance(s, bytes) else s)
-                        for s in latency_samples
-                    ]
-                    avg_latency_ms = (
-                        sum(latencies) / len(latencies) if latencies else 0.0
-                    )
-
-                # Reset counters after snapshot (or keep accumulating - depends on requirement)
-                # For cumulative: don't reset
-                # For per-minute: reset counters
-                # We'll keep cumulative for now, but could reset if needed
-            except Exception as e:
-                from app.utils.logging.db_logger import get_logger
-
-                logger = get_logger("app.infra.metrics.collector")
-                logger.warning(
-                    f"Error reading from Redis, using in-memory fallback: {e}"
+            latency_samples = await _redis_client.lrange(latency_key, 0, -1)
+            if latency_samples:
+                latencies = [
+                    float(s.decode() if isinstance(s, bytes) else s)
+                    for s in latency_samples
+                ]
+                avg_latency_ms = (
+                    sum(latencies) / len(latencies) if latencies else 0.0
                 )
-                # Fallback to in-memory
-                requests_total = _requests_count
-                errors_total = _errors_count
-                if _latency_samples:
-                    avg_latency_ms = sum(_latency_samples) / len(_latency_samples)
-        else:
-            # In-memory fallback
+        except Exception as e:
+            from app.utils.logging.db_logger import get_logger
+
+            logger = get_logger("app.infra.metrics.collector")
+            logger.warning(
+                f"Error reading from Redis, using in-memory fallback: {e}"
+            )
+            # Fallback to in-memory
             requests_total = _requests_count
             errors_total = _errors_count
             if _latency_samples:
                 avg_latency_ms = sum(_latency_samples) / len(_latency_samples)
+    else:
+        # In-memory fallback
+        requests_total = _requests_count
+        errors_total = _errors_count
+        if _latency_samples:
+            avg_latency_ms = sum(_latency_samples) / len(_latency_samples)
 
-        # Get system metrics
-        cpu_percent = psutil.cpu_percent(interval=0.1)
-        memory_info = psutil.Process().memory_info()
-        memory_bytes = memory_info.rss
+    # Get system metrics
+    cpu_percent = psutil.cpu_percent(interval=0.1)
+    memory_info = psutil.Process().memory_info()
+    memory_bytes = memory_info.rss
 
-        # Round timestamp to minute
-        now = time.time()
-        rounded_minute = int(now // 60) * 60
-        from datetime import datetime
+    # Round timestamp to minute
+    now = time.time()
+    rounded_minute = int(now // 60) * 60
+    from datetime import datetime
 
-        ts = datetime.fromtimestamp(rounded_minute, tz=UTC)
+    ts = datetime.fromtimestamp(rounded_minute, tz=UTC)
 
-        # Write to database
-        async with _db_pool.acquire() as conn:
-            async with conn.transaction():
-                from app.infra.auth.resolve_identity import get_system_session_id
-                from app.routes.v5.tools.entries.metrics.create import (
-                    create_metrics_entry_internal,
-                )
+    # Write to database
+    from app.infra.metrics_snapshot import write_metrics_snapshot
 
-                session_id = await get_system_session_id(conn)
-
-                await create_metrics_entry_internal(
-                    conn,
-                    ts=ts,
-                    requests_total=requests_total,
-                    errors_total=errors_total,
-                    avg_latency_ms=avg_latency_ms,
-                    cpu_percent=cpu_percent,
-                    memory_bytes=memory_bytes,
-                    session_id=session_id,
-                )
-    except Exception as e:
-        # Log error but don't break metrics collection
-        from app.utils.logging.db_logger import get_logger
-
-        logger = get_logger("app.infra.metrics.collector")
-        logger.error(f"Error logging metrics snapshot: {e}")
+    await write_metrics_snapshot(
+        _db_pool,
+        ts=ts,
+        requests_total=requests_total,
+        errors_total=errors_total,
+        avg_latency_ms=avg_latency_ms,
+        cpu_percent=cpu_percent,
+        memory_bytes=memory_bytes,
+    )
 
 
 async def log_health_checks() -> None:
@@ -224,23 +204,9 @@ async def log_health_checks() -> None:
         ts = datetime.fromtimestamp(rounded_minute, tz=UTC)
 
         # Write to database
-        async with _db_pool.acquire() as conn:
-            async with conn.transaction():
-                from app.infra.auth.resolve_identity import get_system_session_id
-                from app.routes.v5.tools.entries.health.create import create_health
+        from app.infra.metrics_snapshot import write_health_checks
 
-                session_id = await get_system_session_id(conn)
-
-                for service, result in checks.items():
-                    await create_health(
-                        conn,
-                        service=service,
-                        ok=result.ok,
-                        latency_ms=result.latency_ms,
-                        ts=ts,
-                        error=result.error,
-                        session_id=session_id,
-                    )
+        await write_health_checks(_db_pool, ts=ts, checks=checks)
     except Exception as e:
         # Log error but don't break health endpoint
         from app.utils.logging.db_logger import get_logger

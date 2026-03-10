@@ -1,14 +1,18 @@
 """Set the socket ID for an active chat connection in Redis."""
 
+from typing import Any
+
 from app.infra.globals import get_redis_client
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
 
 
-async def set_active_connection(chat_id: str, socket_id: str) -> None:
+async def set_active_connection(
+    chat_id: str, socket_id: str, *, redis_client: Any | None = None
+) -> None:
     """Add the socket ID to the active chat connections in Redis."""
-    redis_client = get_redis_client()
+    redis_client = redis_client if redis_client is not None else get_redis_client()
     if not redis_client:
         return
 

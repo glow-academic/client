@@ -12,6 +12,7 @@ from app.infra.health_context import resolve_health_context
 from app.infra.health_docs import docs_health_client
 from app.infra.health_export import export_health_client
 from app.infra.health_refresh import refresh_health_client
+from app.infra.metrics_snapshot import write_health_checks, write_metrics_snapshot
 from app.routes.v5.tools.entries.health.create import create_health
 from app.routes.v5.tools.entries.metrics.create import create_metrics_entry_internal
 from app.routes.v5.tools.entries.metrics.refresh import refresh_metrics_internal
@@ -132,3 +133,46 @@ class TestRefreshHealthClient:
         assert result.success is True
         assert result.refreshed_views == ["health_mv"]
         assert result.invalidated_tags == ["health", "artifacts"]
+
+
+class TestWriteMetricsSnapshot:
+    async def test_writes_metrics_entry(self, pool):
+        ts = datetime(2031, 6, 1, 12, 0, tzinfo=UTC)
+
+        result = await write_metrics_snapshot(
+            pool,
+            ts=ts,
+            requests_total=200,
+            errors_total=5,
+            avg_latency_ms=30.0,
+            cpu_percent=50.0,
+            memory_bytes=999999,
+        )
+
+        assert result.ts is not None
+
+
+class TestWriteHealthChecks:
+    async def test_writes_health_entries(self, pool):
+        from types import SimpleNamespace
+
+        ts = datetime(2031, 6, 1, 12, 0, tzinfo=UTC)
+        checks = {
+            "redis": SimpleNamespace(ok=True, latency_ms=5.0, error=""),
+            "database": SimpleNamespace(ok=False, latency_ms=100.0, error="timeout"),
+        }
+
+        await write_health_checks(pool, ts=ts, checks=checks)
+
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT service, ok, error FROM health_entry WHERE ts = $1 ORDER BY service",
+                ts,
+            )
+
+        assert len(rows) == 2
+        assert rows[0]["service"] == "database"
+        assert rows[0]["ok"] is False
+        assert rows[0]["error"] == "timeout"
+        assert rows[1]["service"] == "redis"
+        assert rows[1]["ok"] is True
