@@ -306,18 +306,15 @@ async def get_model_impl(
     )
     all_temperature_levels = dedupe_by_id(
         model_ctx.resources["temperature_levels"].selected
-        + model_ctx.resources["temperature_levels"].suggestions,
-        id_attr="temperature_level_id",
+        + model_ctx.resources["temperature_levels"].suggestions
     )
     all_pricing = dedupe_by_id(
         model_ctx.resources["pricing"].selected
-        + model_ctx.resources["pricing"].suggestions,
-        id_attr="pricing_id",
+        + model_ctx.resources["pricing"].suggestions
     )
     all_reasoning_levels = dedupe_by_id(
         model_ctx.resources["reasoning_levels"].selected
-        + model_ctx.resources["reasoning_levels"].suggestions,
-        id_attr="reasoning_level_id",
+        + model_ctx.resources["reasoning_levels"].suggestions
     )
     all_qualities = dedupe_by_id(
         model_ctx.resources["qualities"].selected
@@ -336,13 +333,11 @@ async def get_model_impl(
         "departments": [d.id for d in model_ctx.resources["departments"].suggestions],
         "modalities": [m.id for m in model_ctx.resources["modalities"].suggestions],
         "temperature_levels": [
-            t.temperature_level_id
-            for t in model_ctx.resources["temperature_levels"].suggestions
+            t.id for t in model_ctx.resources["temperature_levels"].suggestions
         ],
-        "pricing": [p.pricing_id for p in model_ctx.resources["pricing"].suggestions],
+        "pricing": [p.id for p in model_ctx.resources["pricing"].suggestions],
         "reasoning_levels": [
-            r.reasoning_level_id
-            for r in model_ctx.resources["reasoning_levels"].suggestions
+            r.id for r in model_ctx.resources["reasoning_levels"].suggestions
         ],
         "qualities": [q.id for q in model_ctx.resources["qualities"].suggestions],
         "voices": [v.id for v in model_ctx.resources["voices"].suggestions],
