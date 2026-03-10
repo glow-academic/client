@@ -108,7 +108,6 @@ async def resolve_document_context(
                 files=True,
                 images=True,
                 parameter_fields=True,
-                parameters=True,
                 texts=True,
             )
 

@@ -5,7 +5,7 @@ Tests verify: authorization, correct arguments flow, error cases.
 """
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -62,6 +62,21 @@ def _patch(target, return_value):
     )
 
 
+def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
+    """Create a mock pool whose acquire() yields mock_conn."""
+    if mock_conn is None:
+        mock_conn = AsyncMock()
+    tx = AsyncMock()
+    tx.__aenter__.return_value = None
+    tx.__aexit__.return_value = None
+    mock_conn.transaction = MagicMock(return_value=tx)
+    pool = MagicMock()
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_conn
+    pool.acquire.return_value = cm
+    return pool
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # resolve_emulation — success
 # ═══════════════════════════════════════════════════════════════════════════
@@ -80,6 +95,7 @@ class TestResolveEmulationSuccess:
             profiles_id=req_resource_id, name="Super", role="superadmin"
         )
         target = _identity(profiles_id=tgt_resource_id, name="Member", role="member")
+        pool = _mock_pool()
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -89,6 +105,7 @@ class TestResolveEmulationSuccess:
             return None
 
         with (
+            _patch("resolve_emulation_chain", []),
             patch(
                 f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
             ),
@@ -97,7 +114,7 @@ class TestResolveEmulationSuccess:
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
@@ -106,12 +123,8 @@ class TestResolveEmulationSuccess:
         assert isinstance(result, EmulationResult)
         assert result.allowed is True
         assert result.reason is None
-        assert result.actor_name == "Super"
         assert result.grant_id == grant_id
-        assert result.target_profile_id == target_id
-        assert result.redirect_url is not None
-        assert result.logout_url is not None
-        assert result.emulate_page_url is not None
+        assert result.expires_at is not None
 
     async def test_self_emulation_allowed(self):
         profile_id = uuid4()
@@ -119,15 +132,17 @@ class TestResolveEmulationSuccess:
         grant_id = uuid4()
 
         identity = _identity(profiles_id=resource_id, name="Self", role="member")
+        pool = _mock_pool()
 
         with (
+            _patch("resolve_emulation_chain", []),
             _patch("resolve_profile_identity_context", identity),
             _patch("search_sessions", [_session()]),
             _patch("create_grant", CreateGrantResponse(id=grant_id)),
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=profile_id,
                 target_profile_id=profile_id,
@@ -145,6 +160,8 @@ class TestResolveEmulationSuccess:
 
         requester = _identity(profiles_id=req_resource_id, role="superadmin")
         target = _identity(profiles_id=tgt_resource_id, role="member")
+        conn = AsyncMock()
+        pool = _mock_pool(conn)
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -161,6 +178,7 @@ class TestResolveEmulationSuccess:
             return []
 
         with (
+            _patch("resolve_emulation_chain", []),
             patch(
                 f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
             ),
@@ -169,7 +187,7 @@ class TestResolveEmulationSuccess:
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
@@ -192,6 +210,8 @@ class TestResolveEmulationSuccess:
 
         requester = _identity(profiles_id=req_resource_id, role="superadmin")
         target = _identity(profiles_id=tgt_resource_id, role="member")
+        conn = AsyncMock()
+        pool = _mock_pool(conn)
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -208,6 +228,7 @@ class TestResolveEmulationSuccess:
             return []
 
         with (
+            _patch("resolve_emulation_chain", []),
             patch(
                 f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
             ),
@@ -218,7 +239,7 @@ class TestResolveEmulationSuccess:
             ) as mock_emul,
         ):
             await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
@@ -237,6 +258,7 @@ class TestResolveEmulationSuccess:
 
         requester = _identity(role="superadmin")
         target = _identity(role="member")
+        pool = _mock_pool()
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -246,6 +268,7 @@ class TestResolveEmulationSuccess:
             return None
 
         with (
+            _patch("resolve_emulation_chain", []),
             patch(
                 f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
             ),
@@ -254,15 +277,14 @@ class TestResolveEmulationSuccess:
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
 
-        assert str(grant_id) in result.redirect_url
-        assert str(grant_id) in result.emulate_page_url
-        assert "login_hint=" in result.redirect_url
+        assert result.grant_id == grant_id
+        assert result.expires_at is not None
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -273,9 +295,13 @@ class TestResolveEmulationSuccess:
 @pytest.mark.asyncio
 class TestResolveEmulationAuth:
     async def test_requester_not_found(self):
-        with _patch("resolve_profile_identity_context", None):
+        pool = _mock_pool()
+        with (
+            _patch("resolve_emulation_chain", []),
+            _patch("resolve_profile_identity_context", None),
+        ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=uuid4(),
                 target_profile_id=uuid4(),
@@ -288,17 +314,21 @@ class TestResolveEmulationAuth:
         requester_id = uuid4()
         target_id = uuid4()
         requester = _identity(role="superadmin")
+        pool = _mock_pool()
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
                 return requester
             return None
 
-        with patch(
-            f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+        with (
+            _patch("resolve_emulation_chain", []),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
@@ -306,13 +336,13 @@ class TestResolveEmulationAuth:
 
         assert result.allowed is False
         assert result.reason == "Target profile not found"
-        assert result.actor_name == requester.name
 
     async def test_member_cannot_emulate_admin(self):
         requester_id = uuid4()
         target_id = uuid4()
         requester = _identity(role="member")
         target = _identity(role="admin")
+        pool = _mock_pool()
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -321,11 +351,14 @@ class TestResolveEmulationAuth:
                 return target
             return None
 
-        with patch(
-            f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+        with (
+            _patch("resolve_emulation_chain", []),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
@@ -339,6 +372,7 @@ class TestResolveEmulationAuth:
         target_id = uuid4()
         requester = _identity(role="admin")
         target = _identity(role="superadmin")
+        pool = _mock_pool()
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -347,11 +381,14 @@ class TestResolveEmulationAuth:
                 return target
             return None
 
-        with patch(
-            f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+        with (
+            _patch("resolve_emulation_chain", []),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
@@ -364,6 +401,7 @@ class TestResolveEmulationAuth:
         target_id = uuid4()
         requester = _identity(role="superadmin")
         target = _identity(role="member")
+        pool = _mock_pool()
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -373,13 +411,14 @@ class TestResolveEmulationAuth:
             return None
 
         with (
+            _patch("resolve_emulation_chain", []),
             patch(
                 f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
             ),
             _patch("search_sessions", []),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
@@ -395,6 +434,7 @@ class TestResolveEmulationAuth:
         tgt_resource_id = uuid4()
         requester = _identity(profiles_id=req_resource_id, role="superadmin")
         target = _identity(profiles_id=tgt_resource_id, role="member")
+        pool = _mock_pool()
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
             if pid == requester_id:
@@ -409,13 +449,14 @@ class TestResolveEmulationAuth:
             return []
 
         with (
+            _patch("resolve_emulation_chain", []),
             patch(
                 f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
             ),
             patch(f"{MODULE}.search_sessions", side_effect=_mock_sessions),
         ):
             result = await resolve_emulation(
-                None,
+                pool,
                 None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,

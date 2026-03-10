@@ -36,13 +36,13 @@ def _base_data(**overrides: object) -> dict:
 class TestGenerateNewImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await generate_new_impl({"sid": ""}, emit=emit, conn=AsyncMock())
+        await generate_new_impl({"sid": ""}, emit=emit, pool=AsyncMock())
         assert events == []
 
     async def test_no_profile_emits_error(self):
         emit, events = recording_emit()
         await generate_new_impl(
-            _base_data(profile_id=None), emit=emit, conn=AsyncMock()
+            _base_data(profile_id=None), emit=emit, pool=AsyncMock()
         )
         assert len(events) == 1
         assert events[0].event == "generate_error"
@@ -51,7 +51,7 @@ class TestGenerateNewImpl:
     async def test_no_session_emits_error(self):
         emit, events = recording_emit()
         await generate_new_impl(
-            _base_data(session_id=None), emit=emit, conn=AsyncMock()
+            _base_data(session_id=None), emit=emit, pool=AsyncMock()
         )
         assert len(events) == 1
         assert events[0].event == "generate_error"
@@ -60,7 +60,7 @@ class TestGenerateNewImpl:
     async def test_invalid_profile_id_emits_error(self):
         emit, events = recording_emit()
         await generate_new_impl(
-            _base_data(profile_id="not-a-uuid"), emit=emit, conn=AsyncMock()
+            _base_data(profile_id="not-a-uuid"), emit=emit, pool=AsyncMock()
         )
         assert len(events) == 1
         assert events[0].event == "generate_error"
@@ -71,7 +71,7 @@ class TestGenerateNewImpl:
         emit, events = recording_emit()
         data = _base_data()
         with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await generate_new_impl(data, emit=emit, conn=AsyncMock())
+            await generate_new_impl(data, emit=emit, pool=AsyncMock())
         assert len(events) == 1
         assert events[0].event == "generate_prepare"
         assert events[0].data == data
@@ -85,7 +85,7 @@ class TestGenerateNewImpl:
             return_value=runs_ctx,
         ):
             await generate_new_impl(
-                _base_data(requests_per_day=5), emit=emit, conn=AsyncMock()
+                _base_data(requests_per_day=5), emit=emit, pool=AsyncMock()
             )
         assert len(events) == 1
         assert events[0].event == "generate_error"
@@ -103,7 +103,7 @@ class TestGenerateNewImpl:
             patch(f"{_P}.get_session_by_group_id", return_value=None),
         ):
             await generate_new_impl(
-                _base_data(requests_per_day=5), emit=emit, conn=AsyncMock()
+                _base_data(requests_per_day=5), emit=emit, pool=AsyncMock()
             )
         assert len(events) == 1
         assert events[0].event == "generate_prepare"
@@ -124,7 +124,7 @@ class TestGenerateNewImpl:
             await generate_new_impl(
                 _base_data(requests_per_day=5, group_id="g1"),
                 emit=emit,
-                conn=AsyncMock(),
+                pool=AsyncMock(),
             )
         assert len(events) == 2
         assert events[0].event == "attempt_error"
@@ -141,7 +141,7 @@ class TestGenerateNewImpl:
             patch(f"{_P}.rotate_run_id") as mock_rotate,
         ):
             await generate_new_impl(
-                _base_data(group_id="g1"), emit=emit, conn=AsyncMock()
+                _base_data(group_id="g1"), emit=emit, pool=AsyncMock()
             )
         assert events == []
         mock_rotate.assert_called_once()
@@ -158,7 +158,7 @@ class TestGenerateNewImpl:
             patch(f"{_P}.get_session_by_group_id", return_value=None),
         ):
             await generate_new_impl(
-                _base_data(requests_per_day=5), emit=emit, conn=AsyncMock()
+                _base_data(requests_per_day=5), emit=emit, pool=AsyncMock()
             )
         assert len(events) == 1
         assert events[0].event == "generate_prepare"

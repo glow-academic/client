@@ -5,7 +5,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
-from app.infra.search.search_resource import search_resource_ids
 from app.routes.v5.tools.resources.operations.get import get_operations
 from app.routes.v5.tools.resources.operations.types import GetOperationResponse
 from app.utils.cache.cache_key import cache_key
@@ -54,18 +53,39 @@ async def search_operations(
                 for item in cached.get("items", [])
             ]
 
-    ids = await search_resource_ids(
-        conn,
-        table="operations_resource",
-        resource="operations",
-        search_column="operation",
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        exclude_ids=exclude_ids,
-        artifact_filters=artifact_filters,
-        junction_artifacts=JUNCTION_ARTIFACTS,
+    conditions = ["r.active = true"]
+    params: list[object] = []
+    idx = 1
+
+    if search:
+        conditions.append(f"LOWER(r.operation::text) LIKE '%' || LOWER(${idx}) || '%'")
+        params.append(search)
+        idx += 1
+
+    if exclude_ids:
+        conditions.append(f"NOT (r.id = ANY(${idx}))")
+        params.append(exclude_ids)
+        idx += 1
+
+    if tool:
+        conditions.append(
+            "EXISTS (SELECT 1 FROM tool_operations_junction j "
+            "WHERE j.operations_id = r.id AND j.active = true)"
+        )
+
+    rows = await conn.fetch(
+        f"""
+        SELECT r.id
+        FROM operations_resource r
+        WHERE {" AND ".join(conditions)}
+        ORDER BY r.operation
+        LIMIT ${idx} OFFSET ${idx + 1}
+        """,
+        *params,
+        limit_count,
+        offset_count,
     )
+    ids = [row["id"] for row in rows]
 
     if not ids:
         await set_cached(key, {"items": []}, 60, tags, redis=redis)

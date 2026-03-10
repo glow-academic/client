@@ -20,9 +20,6 @@ from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.uploads.create import create_upload
 
 
-# TODO: Migrate to profiles_id (profiles_resource.id) instead of profile_id.
-#       Callers (draft endpoints) need to resolve profiles_id from ProfileContext
-#       and pass it here. Then rename profile_id → profiles_id and update create_run call.
 async def create_tool_call(
     conn: asyncpg.Connection,
     group_id: UUID,
@@ -104,7 +101,7 @@ async def create_tool_call(
         conn,
         group_id=group_id,
         session_id=session_id,
-        profile_id=profile_id,
+        profiles_id=profile_id,
         mcp=mcp,
     )
 

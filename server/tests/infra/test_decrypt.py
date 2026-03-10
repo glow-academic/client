@@ -5,7 +5,7 @@ Tests verify: correct arguments flow, error cases, decryption result.
 """
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -60,6 +60,17 @@ def _patch(target, return_value):
     )
 
 
+def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
+    """Create a mock pool whose acquire() yields mock_conn."""
+    if mock_conn is None:
+        mock_conn = AsyncMock()
+    pool = MagicMock()
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_conn
+    pool.acquire.return_value = cm
+    return pool
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # resolve_decrypt — success
 # ═══════════════════════════════════════════════════════════════════════════
@@ -72,6 +83,7 @@ class TestResolveDecryptSuccess:
         key_id = uuid4()
         identity = _identity(name="Bob")
         key = _key_response(key_id=key_id, key="enc_secret", name="API Key")
+        pool = _mock_pool()
 
         with (
             _patch("resolve_profile_identity_context", identity),
@@ -79,7 +91,7 @@ class TestResolveDecryptSuccess:
             patch(f"{MODULE}.decrypt_api_key", return_value="decrypted_secret"),
         ):
             result = await resolve_decrypt(
-                None, None, profile_id=profile_id, key_id=key_id
+                pool, None, profile_id=profile_id, key_id=key_id
             )
 
         assert isinstance(result, DecryptResult)
@@ -92,6 +104,7 @@ class TestResolveDecryptSuccess:
         key_id = uuid4()
         identity = _identity()
         key = _key_response()
+        pool = _mock_pool()
 
         with (
             _patch("resolve_profile_identity_context", identity) as mock_identity,
@@ -99,7 +112,7 @@ class TestResolveDecryptSuccess:
             patch(f"{MODULE}.decrypt_api_key", return_value="x"),
         ):
             await resolve_decrypt(
-                "fake_conn",
+                pool,
                 "fake_redis",
                 profile_id=profile_id,
                 key_id=key_id,
@@ -107,7 +120,7 @@ class TestResolveDecryptSuccess:
             )
 
         mock_identity.assert_awaited_once_with(
-            "fake_conn", profile_id, "fake_redis", bypass_cache=True
+            pool, profile_id, "fake_redis", bypass_cache=True
         )
 
     async def test_passes_correct_args_to_get_keys(self):
@@ -115,6 +128,8 @@ class TestResolveDecryptSuccess:
         key_id = uuid4()
         identity = _identity()
         key = _key_response(key_id=key_id)
+        conn = AsyncMock()
+        pool = _mock_pool(conn)
 
         with (
             _patch("resolve_profile_identity_context", identity),
@@ -122,7 +137,7 @@ class TestResolveDecryptSuccess:
             patch(f"{MODULE}.decrypt_api_key", return_value="x"),
         ):
             await resolve_decrypt(
-                "fake_conn",
+                pool,
                 "fake_redis",
                 profile_id=profile_id,
                 key_id=key_id,
@@ -130,19 +145,20 @@ class TestResolveDecryptSuccess:
             )
 
         mock_keys.assert_awaited_once_with(
-            "fake_conn", [key_id], "fake_redis", bypass_cache=True
+            conn, [key_id], "fake_redis", bypass_cache=True
         )
 
     async def test_passes_key_value_to_decrypt(self):
         identity = _identity()
         key = _key_response(key="the_encrypted_value")
+        pool = _mock_pool()
 
         with (
             _patch("resolve_profile_identity_context", identity),
             _patch("get_keys", [key]),
             patch(f"{MODULE}.decrypt_api_key", return_value="plain") as mock_decrypt,
         ):
-            await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())
+            await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())
 
         mock_decrypt.assert_called_once_with("the_encrypted_value")
 
@@ -155,23 +171,26 @@ class TestResolveDecryptSuccess:
 @pytest.mark.asyncio
 class TestResolveDecryptErrors:
     async def test_missing_profile_raises_value_error(self):
+        pool = _mock_pool()
         with _patch("resolve_profile_identity_context", None):
             with pytest.raises(ValueError, match="Profile not found"):
-                await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())
+                await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())
 
     async def test_missing_key_raises_value_error(self):
         identity = _identity()
+        pool = _mock_pool()
 
         with (
             _patch("resolve_profile_identity_context", identity),
             _patch("get_keys", []),
         ):
             with pytest.raises(ValueError, match="Key not found"):
-                await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())
+                await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())
 
     async def test_decrypt_failure_propagates(self):
         identity = _identity()
         key = _key_response()
+        pool = _mock_pool()
 
         with (
             _patch("resolve_profile_identity_context", identity),
@@ -179,4 +198,4 @@ class TestResolveDecryptErrors:
             patch(f"{MODULE}.decrypt_api_key", side_effect=ValueError("bad key")),
         ):
             with pytest.raises(ValueError, match="bad key"):
-                await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())
+                await resolve_decrypt(pool, None, profile_id=uuid4(), key_id=uuid4())

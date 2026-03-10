@@ -117,7 +117,5 @@ class TestResolveCommonContext:
             (tool.target_type, tool.target, tool.operation)
             for tool in result.tool_graph.tools
         } == {
-            ("resource", target, fixture.operation) for target in fixture.resources
-        } | {("entry", target, fixture.operation) for target in fixture.entries} | {
             ("artifact", target, fixture.operation) for target in fixture.artifacts
         }

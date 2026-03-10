@@ -136,7 +136,7 @@ async def _resolve_tool_graph_impl(
     if not unique_tool_ids:
         return SettingsToolGraph()
 
-    # Step 4: tools → resources/entries/artifacts
+    # Step 4: tools → artifact targets
     tools_list = await get_tools(conn, unique_tool_ids, redis, bypass_cache)
     tool_by_id: dict[UUID, GetToolResponse] = {t.id: t for t in tools_list}
 
@@ -152,29 +152,7 @@ async def _resolve_tool_graph_impl(
                 tool = tool_by_id.get(tool_id)
                 if not tool:
                     continue
-                # Each tool can target multiple resources/entries/artifacts
-                for resource in tool.resources or []:
-                    resolved.append(
-                        ResolvedTool(
-                            system_id=system_id,
-                            agent_id=agent_id,
-                            tool_id=tool_id,
-                            operation=tool.operation,
-                            target_type="resource",
-                            target=resource,
-                        )
-                    )
-                for entry in tool.entries or []:
-                    resolved.append(
-                        ResolvedTool(
-                            system_id=system_id,
-                            agent_id=agent_id,
-                            tool_id=tool_id,
-                            operation=tool.operation,
-                            target_type="entry",
-                            target=entry,
-                        )
-                    )
+                # Tools currently target artifacts directly in tools_resource.
                 for artifact in tool.artifacts or []:
                     resolved.append(
                         ResolvedTool(

@@ -1,10 +1,6 @@
-"""Tests for infra.runs_context — daily runs resolution.
+"""Tests for infra.runs_context — daily runs resolution."""
 
-resolve_runs_context is tested with mocked black-box fetchers.
-Tests verify: correct arguments flow to fetchers, date defaults, filtering.
-"""
-
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -23,6 +19,17 @@ def _patch(target, return_value):
     )
 
 
+def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
+    """Create a mock pool whose acquire() yields mock_conn."""
+    if mock_conn is None:
+        mock_conn = AsyncMock()
+    pool = MagicMock()
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_conn
+    pool.acquire.return_value = cm
+    return pool
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # resolve_runs_context
 # ═══════════════════════════════════════════════════════════════════════════
@@ -32,9 +39,10 @@ def _patch(target, return_value):
 class TestResolveRunsContextEmpty:
     async def test_no_runs_returns_empty(self):
         profile_id = uuid4()
+        pool = _mock_pool()
 
         with _patch("search_runs", ([], 0)):
-            result = await resolve_runs_context(None, profile_id=profile_id)
+            result = await resolve_runs_context(pool, profile_id=profile_id)
 
         assert isinstance(result, RunsContext)
         assert result.items == []

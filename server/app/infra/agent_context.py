@@ -104,7 +104,6 @@ async def resolve_agent_context(
                 departments=True,
                 flags=True,
                 models=True,
-                prompts=True,
                 tools=True,
                 temperature_levels=True,
                 reasoning_levels=True,
@@ -193,7 +192,6 @@ async def resolve_agent_context(
                 offset_count=0,
                 exclude_ids=merged.prompt_ids,
                 bypass_cache=bypass_cache,
-                agent=True,
             )
 
     async def _get_instructions() -> list:

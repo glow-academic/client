@@ -5,7 +5,7 @@ Tests verify: correct arguments flow, chaining, error cases.
 """
 
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -69,6 +69,17 @@ def _patch(target, return_value):
     )
 
 
+def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
+    """Create a mock pool whose acquire() yields mock_conn."""
+    if mock_conn is None:
+        mock_conn = AsyncMock()
+    pool = MagicMock()
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_conn
+    pool.acquire.return_value = cm
+    return pool
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # resolve_profile_by_email — success
 # ═══════════════════════════════════════════════════════════════════════════
@@ -89,13 +100,16 @@ class TestResolveProfileByEmailSuccess:
             is_active=True,
         )
         email_res = _email_response(email="bob@example.com")
+        pool = _mock_pool()
 
         with (
             _patch("search_emails", [email_res]),
             _patch("search_profiles", ([profile_id], 1)),
             _patch("resolve_profile_identity_context", identity),
         ):
-            result = await resolve_profile_by_email(None, None, email="bob@example.com")
+            result = await resolve_profile_by_email(
+                pool, None, email="bob@example.com"
+            )
 
         assert isinstance(result, ProfileByEmailResult)
         assert result.profile_id == profile_id
@@ -111,6 +125,7 @@ class TestResolveProfileByEmailSuccess:
         email_res = _email_response(email="Alice@Example.COM")
         profile_id = uuid4()
         identity = _identity()
+        pool = _mock_pool()
 
         with (
             _patch("search_emails", [email_res]),
@@ -118,7 +133,7 @@ class TestResolveProfileByEmailSuccess:
             _patch("resolve_profile_identity_context", identity),
         ):
             result = await resolve_profile_by_email(
-                None, None, email="alice@example.com"
+                pool, None, email="alice@example.com"
             )
 
         assert result is not None
@@ -130,6 +145,7 @@ class TestResolveProfileByEmailSuccess:
         actor_id = uuid4()
         target_identity = _identity(name="Target")
         actor_identity = _identity(name="Actor")
+        pool = _mock_pool()
 
         call_count = 0
 
@@ -150,7 +166,7 @@ class TestResolveProfileByEmailSuccess:
             ),
         ):
             result = await resolve_profile_by_email(
-                None, None, email="target@example.com", actor_profile_id=actor_id
+                pool, None, email="target@example.com", actor_profile_id=actor_id
             )
 
         assert result is not None
@@ -162,6 +178,7 @@ class TestResolveProfileByEmailSuccess:
         email_res = _email_response(email="target@example.com")
         profile_id = uuid4()
         identity = _identity(name="Target")
+        pool = _mock_pool()
 
         with (
             _patch("search_emails", [email_res]),
@@ -169,25 +186,27 @@ class TestResolveProfileByEmailSuccess:
             _patch("resolve_profile_identity_context", identity),
         ):
             result = await resolve_profile_by_email(
-                None, None, email="target@example.com"
+                pool, None, email="target@example.com"
             )
 
         assert result is not None
         assert result.actor_name is None
 
     async def test_passes_correct_args_to_search_emails(self):
+        conn = AsyncMock()
+        pool = _mock_pool(conn)
         with (
             _patch("search_emails", []) as mock_search,
         ):
             await resolve_profile_by_email(
-                "fake_conn",
+                pool,
                 "fake_redis",
                 email="test@example.com",
                 bypass_cache=True,
             )
 
         mock_search.assert_awaited_once_with(
-            "fake_conn",
+            conn,
             "fake_redis",
             search="test@example.com",
             limit_count=100,
@@ -197,15 +216,17 @@ class TestResolveProfileByEmailSuccess:
     async def test_passes_email_ids_to_search_profiles(self):
         email_id = uuid4()
         email_res = _email_response(email_id=email_id, email="x@example.com")
+        conn = AsyncMock()
+        pool = _mock_pool(conn)
 
         with (
             _patch("search_emails", [email_res]),
             _patch("search_profiles", ([], 0)) as mock_search,
         ):
-            await resolve_profile_by_email(None, None, email="x@example.com")
+            await resolve_profile_by_email(pool, None, email="x@example.com")
 
         mock_search.assert_awaited_once_with(
-            None, email_ids=[email_id], active_only=False, limit_count=1
+            conn, email_ids=[email_id], active_only=False, limit_count=1
         )
 
 
@@ -217,36 +238,40 @@ class TestResolveProfileByEmailSuccess:
 @pytest.mark.asyncio
 class TestResolveProfileByEmailNotFound:
     async def test_no_email_match_returns_none(self):
+        pool = _mock_pool()
         with _patch("search_emails", []):
             result = await resolve_profile_by_email(
-                None, None, email="nobody@example.com"
+                pool, None, email="nobody@example.com"
             )
         assert result is None
 
     async def test_email_substring_match_but_no_exact_returns_none(self):
         email_res = _email_response(email="alice@example.com.au")
+        pool = _mock_pool()
 
         with _patch("search_emails", [email_res]):
             result = await resolve_profile_by_email(
-                None, None, email="alice@example.com"
+                pool, None, email="alice@example.com"
             )
         assert result is None
 
     async def test_no_profile_for_email_returns_none(self):
         email_res = _email_response(email="orphan@example.com")
+        pool = _mock_pool()
 
         with (
             _patch("search_emails", [email_res]),
             _patch("search_profiles", ([], 0)),
         ):
             result = await resolve_profile_by_email(
-                None, None, email="orphan@example.com"
+                pool, None, email="orphan@example.com"
             )
         assert result is None
 
     async def test_profile_identity_not_found_returns_none(self):
         email_res = _email_response(email="broken@example.com")
         profile_id = uuid4()
+        pool = _mock_pool()
 
         with (
             _patch("search_emails", [email_res]),
@@ -254,6 +279,6 @@ class TestResolveProfileByEmailNotFound:
             _patch("resolve_profile_identity_context", None),
         ):
             result = await resolve_profile_by_email(
-                None, None, email="broken@example.com"
+                pool, None, email="broken@example.com"
             )
         assert result is None

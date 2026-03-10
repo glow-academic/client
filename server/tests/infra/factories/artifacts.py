@@ -134,8 +134,6 @@ async def create_setting_graph_fixture(
     redis_client,
     *,
     tool_operation: str = "create",
-    tool_resources: list[str] | None = None,
-    tool_entries: list[str] | None = None,
     tool_artifacts: list[str] | None = None,
 ) -> SettingGraphFixture:
     """Create a full profile -> setting -> system -> agent -> tool graph."""
@@ -145,21 +143,17 @@ async def create_setting_graph_fixture(
     from app.routes.v5.tools.resources.agents.create import create_agent
     from app.routes.v5.tools.resources.artifacts.create import create_artifact
     from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.entries.create import create_entry
     from app.routes.v5.tools.resources.names.create import create_name
     from app.routes.v5.tools.resources.operations.create import create_operation
     from app.routes.v5.tools.resources.profiles.create import (
         create_profile as create_profile_resource,
     )
-    from app.routes.v5.tools.resources.resources.create import create_resource
     from app.routes.v5.tools.resources.settings.create import create_setting
     from app.routes.v5.tools.resources.systems.create import create_system
     from app.routes.v5.tools.resources.tools.create import create_tool
 
     tag = unique_tag()
-    resources = tool_resources or ["names"]
-    entries = tool_entries or ["messages"]
-    artifacts = tool_artifacts or ["profile"]
+    artifacts = tool_artifacts or ["profile", "persona"]
 
     async with pool.acquire() as conn:
         name_res = await create_name(conn, f"Graph User {tag}", redis_client)
@@ -171,13 +165,6 @@ async def create_setting_graph_fixture(
         )
 
         operation_res = await create_operation(conn, tool_operation, redis_client)
-        resource_rows = [
-            await create_resource(conn, resource_name, redis_client)
-            for resource_name in resources
-        ]
-        entry_rows = [
-            await create_entry(conn, entry_name, redis_client) for entry_name in entries
-        ]
         artifact_rows = [
             await create_artifact(conn, artifact_name, redis_client)
             for artifact_name in artifacts
@@ -188,8 +175,6 @@ async def create_setting_graph_fixture(
             name=f"tool-{tag}",
             description="Graph tool",
             operation=operation_res.operation,
-            resources=[row.resource for row in resource_rows],
-            entries=[row.entry for row in entry_rows],
             artifacts=[row.artifact for row in artifact_rows],
             redis=redis_client,
         )
@@ -239,8 +224,8 @@ async def create_setting_graph_fixture(
         agent_id=agent_res.id,
         tool_id=tool_res.id,
         operation=operation_res.operation,
-        resources=[row.resource for row in resource_rows],
-        entries=[row.entry for row in entry_rows],
+        resources=[],
+        entries=[],
         artifacts=[row.artifact for row in artifact_rows],
     )
 
