@@ -24,8 +24,9 @@ MODULES = [
     "personas",
     "rubrics",
     "scenarios",
+    "scenario_rubrics",
     "simulations",
-    "cohorts",
     "profiles",
+    "cohorts",
     # TODO: settings
 ]

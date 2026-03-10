@@ -11,6 +11,11 @@ from uuid import UUID
 
 from database.seeds.ids import sid
 from database.seeds.setups.university.departments import UNIVERSITY_DEPT
+from database.seeds.setups.university.scenario_rubrics import (
+    ACADEMIC_INTEGRITY_RUBRICS,
+    FERPA_RUBRICS,
+    UPSET_STUDENT_RUBRICS,
+)
 from database.seeds.setups.university.scenarios import (
     ACADEMIC_INTEGRITY_SCENARIO,
     AGGRESSIVE_SCENARIO,
@@ -96,6 +101,7 @@ simulations = [
         name="Academic Integrity Training",
         description="Training simulation for practicing responses to academic integrity violations.",
         scenario_ids=[ACADEMIC_INTEGRITY_SCENARIO],
+        scenario_rubric_ids=ACADEMIC_INTEGRITY_RUBRICS,
         department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
@@ -103,6 +109,7 @@ simulations = [
         name="FERPA Training",
         description="Training simulation for practicing FERPA compliance and student privacy protection.",
         scenario_ids=[FERPA_SCENARIO],
+        scenario_rubric_ids=FERPA_RUBRICS,
         department_ids=[UNIVERSITY_DEPT],
     ),
     dict(
@@ -110,6 +117,7 @@ simulations = [
         name="Upset Student Training",
         description="Training simulation for practicing de-escalation techniques with upset students.",
         scenario_ids=[UPSET_STUDENT_SCENARIO],
+        scenario_rubric_ids=UPSET_STUDENT_RUBRICS,
         department_ids=[UNIVERSITY_DEPT],
     ),
 ]

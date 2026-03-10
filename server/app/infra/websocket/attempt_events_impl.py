@@ -673,7 +673,9 @@ async def attempt_start_impl(
     from app.routes.v5.tools.entries.practice.get import get_practices
     from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
     from app.routes.v5.tools.entries.runs.create import create_run
-    from app.routes.v5.tools.resources.profile_personas.get import get_profile_personas
+    from app.routes.v5.tools.resources.profile_personas.search import (
+        search_profile_personas,
+    )
     from app.routes.v5.tools.resources.simulations.get import get_simulations
 
     sid = data.get("sid", "")
@@ -714,16 +716,16 @@ async def attempt_start_impl(
             raise ValueError(f"Parent entry not found: {parent_id}")
         parent_entry = entries[0]
 
-        # 3. Resolve persona_id from parent's profile_personas
-        persona_ids = parent_entry.profile_ids or []
-        if not persona_ids:
+        # 3. Resolve persona_id from the parent's linked profile resources.
+        profile_ids = parent_entry.profile_ids or []
+        if not profile_ids:
             raise ValueError("No profile personas found in parent")
 
         async with pool.acquire() as conn:
-            profile_personas = await get_profile_personas(
+            profile_personas = await search_profile_personas(
                 conn,
-                persona_ids,
                 redis=redis or Redis(),
+                profile_ids=profile_ids,
                 bypass_cache=True,
             )
 

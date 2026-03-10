@@ -291,6 +291,32 @@ async def _run_simulation_seeds(
     return created_ids
 
 
+async def _run_scenario_rubric_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    scenario_rubric_defs: list[dict],
+) -> list[UUID]:
+    """Run scenario_rubric seed definitions (resource-level create)."""
+    from app.routes.v5.tools.resources.scenario_rubrics.create import (
+        create_scenario_rubric,
+    )
+
+    created_ids: list[UUID] = []
+    for sr in scenario_rubric_defs:
+        async with pool.acquire() as conn:
+            result = await create_scenario_rubric(
+                conn,
+                scenario_id=sr["scenario_id"],
+                rubric_id=sr["rubric_id"],
+                redis=redis,
+                id=sr.get("id"),
+            )
+            created_ids.append(result.id)
+            print(f"  OK: Scenario rubric created successfully")
+
+    return created_ids
+
+
 async def _run_rubric_seeds(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -571,6 +597,10 @@ async def main(setup: str = "university") -> None:
                 await _run_scenario_seeds(pool, redis_client, mod.scenarios)
             elif module_name == "rubrics":
                 await _run_rubric_seeds(pool, redis_client, mod.rubrics)
+            elif module_name == "scenario_rubrics":
+                await _run_scenario_rubric_seeds(
+                    pool, redis_client, mod.scenario_rubrics
+                )
             elif module_name == "simulations":
                 await _run_simulation_seeds(pool, redis_client, mod.simulations)
             elif module_name == "cohorts":

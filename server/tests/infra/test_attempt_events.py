@@ -109,7 +109,9 @@ from app.routes.v5.tools.entries.messages.get import get_message
 from app.routes.v5.tools.entries.messages.search import search_messages
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.practice.create import create_practice
+from app.routes.v5.tools.entries.practice.refresh import refresh_practice
 from app.routes.v5.tools.entries.practice_chat.create import create_practice_chat
+from app.routes.v5.tools.entries.practice_chat.refresh import refresh_practice_chat
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.runs.get import get_run
 from app.routes.v5.tools.entries.sessions.create import create_session
@@ -133,8 +135,14 @@ from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
 )
 from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
 from app.routes.v5.tools.entries.uploads.get import get_upload
+from app.routes.v5.tools.entries.attempt.get import get_attempts
 from app.routes.v5.tools.resources.profiles.create import create_profile
 from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.profile_personas.create import create_profile_persona
+from app.routes.v5.tools.resources.personas.create import (
+    create_persona as create_persona_resource,
+)
+from app.routes.v5.tools.resources.simulations.create import create_simulation
 
 _P = "app.infra.websocket.attempt_events_impl"
 
@@ -1916,10 +1924,7 @@ class TestAttemptStartImpl:
         )
         assert events == []
 
-    @patch(f"{_PROFILE_CTX}.resolve_profile_identity_context", new_callable=AsyncMock)
-    async def test_no_profile_resource_emits_error(self, mock_ctx):
-        mock_ctx.return_value = None
-
+    async def test_no_profile_resource_emits_error(self, pool):
         emit, events = recording_emit()
         await _attempt_start_impl(
             {
@@ -1928,7 +1933,7 @@ class TestAttemptStartImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -1937,88 +1942,87 @@ class TestAttemptStartImpl:
         assert events[0].event == "attempt_error"
         assert events[0].data["error_type"] == "start"
 
-    @patch(f"{_ATTEMPT_CHAT_REFRESH}.refresh_attempt_chat", new_callable=AsyncMock)
-    @patch(f"{_ATTEMPT_REFRESH}.refresh_attempt", new_callable=AsyncMock)
-    @patch(f"{_ATTEMPT_PRACTICE}.create_attempt_practice", new_callable=AsyncMock)
-    @patch(f"{_ATTEMPT_CREATE}.create_attempt", new_callable=AsyncMock)
-    @patch(f"{_CALLS_CREATE}.create_call", new_callable=AsyncMock)
-    @patch(f"{_PERSONA_CREATE}.create_persona", new_callable=AsyncMock)
-    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
-    @patch(f"{_SIMULATIONS_GET}.get_simulations", new_callable=AsyncMock)
-    @patch(f"{_PRACTICE_CHAT_SEARCH}.search_practice_chats", new_callable=AsyncMock)
-    @patch(f"{_PROFILE_PERSONAS_GET}.get_profile_personas", new_callable=AsyncMock)
-    @patch(f"{_PRACTICE_GET}.get_practices", new_callable=AsyncMock)
-    @patch(f"{_PROFILE_CTX}.resolve_profile_identity_context", new_callable=AsyncMock)
     async def test_happy_path_practice_emits_proceed(
         self,
-        mock_ctx,
-        mock_practices,
-        mock_profile_personas,
-        mock_practice_chats,
-        mock_simulations,
-        mock_create_run,
-        mock_create_persona,
-        mock_create_call,
-        mock_create_attempt,
-        mock_create_practice,
-        mock_refresh_attempt,
-        mock_refresh_chat,
+        pool,
+        redis_client,
+        profile_identity_factory,
     ):
-        from uuid import UUID
+        fixture = await profile_identity_factory()
 
-        profiles_id = UUID("019b3be4-36f0-788c-9df2-481eb5917960")
-        persona_id = UUID("019b3be4-36f0-788c-9df2-481eb5917961")
-        attempt_id = UUID("019b3be4-36f0-788c-9df2-481eb5917970")
-
-        mock_ctx.return_value = SimpleNamespace(profiles_id=profiles_id)
-        mock_practices.return_value = [
-            SimpleNamespace(
-                profile_ids=[UUID(int=1)],
-                simulation_ids=[UUID(int=2)],
+        async with pool.acquire() as conn:
+            session = await create_session(conn, profile_id=fixture.profile_resource_id)
+            group = await create_group(conn, session_id=session.id)
+            persona_resource = await create_persona_resource(
+                conn,
+                redis_client,
+                name="attempt-start-persona",
             )
-        ]
-        mock_profile_personas.return_value = [
-            SimpleNamespace(profile_id=profiles_id, persona_id=persona_id)
-        ]
-        mock_practice_chats.return_value = [SimpleNamespace(), SimpleNamespace()]
-        mock_simulations.return_value = [
-            SimpleNamespace(name="Sim1", description="Desc1")
-        ]
-        mock_create_run.return_value = SimpleNamespace(id=UUID(int=10))
-        mock_create_persona.return_value = SimpleNamespace(id=UUID(int=11))
-        mock_create_call.return_value = SimpleNamespace(id=UUID(int=12))
-        mock_create_attempt.return_value = SimpleNamespace(id=attempt_id)
-
-        from contextlib import asynccontextmanager
-        from unittest.mock import MagicMock
-
-        @asynccontextmanager
-        async def fake_txn():
-            yield
+            profile_persona = await create_profile_persona(
+                conn,
+                profile_id=fixture.profile_resource_id,
+                persona_id=persona_resource.id,
+                redis=redis_client,
+            )
+            simulation = await create_simulation(
+                conn,
+                redis_client,
+                name="Attempt Start Sim",
+                description="Attempt Start Description",
+            )
+            practice = await create_practice(
+                conn,
+                session_id=session.id,
+                cohorts_ids=[],
+                departments_ids=[],
+                simulations_ids=[simulation.id],
+                profiles_ids=[fixture.profile_resource_id],
+                profile_personas_ids=[profile_persona.id],
+                simulation_availability_ids=[],
+                simulation_positions_ids=[],
+            )
+            chat_one = await create_chat(conn, session_id=session.id)
+            chat_two = await create_chat(conn, session_id=session.id)
+            await create_practice_chat(
+                conn,
+                practice_id=practice.id,
+                chat_id=chat_one.id,
+                session_id=session.id,
+            )
+            await create_practice_chat(
+                conn,
+                practice_id=practice.id,
+                chat_id=chat_two.id,
+                session_id=session.id,
+            )
+            await refresh_practice(conn)
+            await refresh_practice_chat(conn)
 
         emit, events = recording_emit()
-        mock_conn = AsyncMock()
-        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
         await _attempt_start_impl(
             {
                 "sid": "s1",
-                "practice_id": "019b3be4-36f0-788c-9df2-481eb5917950",
-                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+                "practice_id": str(practice.id),
+                "group_id": str(group.id),
             },
             emit=emit,
-            pool=_mock_pool(mock_conn),
-            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
-            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+            pool=pool,
+            redis=redis_client,
+            profile_id=str(fixture.artifact_id),
+            session_id=str(session.id),
         )
 
-        assert mock_create_run.called
-        assert mock_create_persona.called
-        assert mock_create_attempt.called
-        assert mock_create_practice.called
-        assert mock_refresh_attempt.called
         assert len(events) == 1
         assert events[0].event == "attempt_proceed"
-        assert events[0].data["attempt_id"] == str(attempt_id)
+        attempt_id = UUID(events[0].data["attempt_id"])
+
+        async with pool.acquire() as conn:
+            attempts = await get_attempts(conn, [attempt_id])
+
+        assert len(attempts) == 1
+        assert attempts[0].profile_id == fixture.profile_resource_id
+        assert attempts[0].practice is True
+        assert attempts[0].num_chats == 2
 
     @patch(f"{_PROFILE_CTX}.resolve_profile_identity_context", new_callable=AsyncMock)
     async def test_error_emits_attempt_error(self, mock_ctx):
