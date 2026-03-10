@@ -24,7 +24,7 @@ _TAGS = ["auths", "artifacts"]
 _VIEWS = ["auth_drafts_mv"]
 
 
-async def refresh_auth_client(
+async def refresh_auth_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

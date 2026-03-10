@@ -18,7 +18,7 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.auth_permissions import compute_can_duplicate
+from app.infra.auth_artifact.permissions import compute_can_duplicate
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.auth.types import (
     DuplicateAuthApiResponse,
@@ -33,7 +33,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def duplicate_auth_client(
+async def duplicate_auth_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

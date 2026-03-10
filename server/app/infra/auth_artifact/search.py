@@ -18,12 +18,12 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.auth_permissions import (
+from app.infra.auth_artifact.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.infra.auth_permissions_context import (
+from app.infra.auth_artifact.permissions_context import (
     AuthPermissionsContext,
     resolve_auth_permissions_context,
 )
@@ -42,7 +42,7 @@ from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.names.get import get_names
 
 
-async def search_auth_client(
+async def search_auth_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

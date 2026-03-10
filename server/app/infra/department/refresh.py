@@ -26,7 +26,7 @@ _TAGS = ["departments", "artifacts"]
 _VIEWS = ["department_drafts_mv"]
 
 
-async def refresh_department_client(
+async def refresh_department_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

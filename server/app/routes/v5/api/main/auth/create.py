@@ -1,13 +1,13 @@
 """Auth create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.auth_create.
+Thin route handler. Core logic lives in app.infra.auth_artifact.create.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth_create import create_auth_client
+from app.infra.auth_artifact.create import create_auth_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import (
     CreateAuthApiRequest,
@@ -37,7 +37,7 @@ async def create_auth(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_auth_client(
+        response_data = await create_auth_impl(
             pool,
             redis,
             profile_id=profile_id,

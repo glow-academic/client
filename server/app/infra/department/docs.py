@@ -66,7 +66,7 @@ async def _resolve_entity_name(
         return names_data[0].name if names_data else None
 
 
-async def docs_department_client(
+async def docs_department_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -143,7 +143,7 @@ async def docs_department_client(
     # ── Step 4: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.department_permissions import (
+    from app.infra.department.permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

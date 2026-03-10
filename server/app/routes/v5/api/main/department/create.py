@@ -1,13 +1,13 @@
 """Department create endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.department_create.
+Thin route handler. Core logic lives in app.infra.department.create.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.department_create import create_department_client
+from app.infra.department.create import create_department_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import (
     CreateDepartmentApiRequest,
@@ -37,7 +37,7 @@ async def create_department(
         pool = get_pool()
         redis = get_redis_client()
 
-        response_data = await create_department_client(
+        response_data = await create_department_impl(
             pool,
             redis,
             profile_id=profile_id,

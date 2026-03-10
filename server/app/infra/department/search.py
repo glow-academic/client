@@ -18,12 +18,12 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.department_permissions import (
+from app.infra.department.permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.infra.department_permissions_context import (
+from app.infra.department.permissions_context import (
     DepartmentPermissionsContext,
     resolve_department_permissions_context,
 )
@@ -43,7 +43,7 @@ from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.names.get import get_names
 
 
-async def search_department_client(
+async def search_department_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

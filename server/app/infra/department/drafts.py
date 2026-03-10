@@ -19,7 +19,7 @@ from app.routes.v5.tools.entries.department_drafts.search import (
 )
 
 
-async def list_department_drafts_client(
+async def list_department_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

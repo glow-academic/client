@@ -17,7 +17,7 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.department_permissions_context import (
+from app.infra.department.permissions_context import (
     create_denormalized_snapshot,
     resolve_department_permissions_context,
     resolve_department_values,
@@ -32,7 +32,7 @@ from app.routes.v5.tools.artifacts.department.update import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def update_department_client(
+async def update_department_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -52,7 +52,7 @@ async def update_department_client(
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.infra.department_permissions import compute_can_edit
+    from app.infra.department.permissions import compute_can_edit
     from app.routes.v5.api.main.department.types import (
         DepartmentResultItem,
         UpdateDepartmentApiResponse,

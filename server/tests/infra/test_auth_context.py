@@ -4,7 +4,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.auth_context import resolve_auth_context
+from app.infra.auth_artifact.context import resolve_auth_context
 from app.routes.v5.tools.artifacts.auth.create import create_auth
 from app.routes.v5.tools.artifacts.auth.update import update_auth
 

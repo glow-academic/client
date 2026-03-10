@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.auth_docs import docs_auth_client
+from app.infra.auth_artifact.docs import docs_auth_impl
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_pool, get_redis_client
@@ -21,7 +21,7 @@ async def get_auth_docs_endpoint(
     pool = get_pool()
     redis = get_redis_client()
 
-    return await docs_auth_client(
+    return await docs_auth_impl(
         pool,
         redis,
         profile_id=profile_id,

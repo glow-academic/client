@@ -17,7 +17,7 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.department_permissions import compute_can_draft
+from app.infra.department.permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.department.types import (
     DepartmentDraftFormState,
@@ -65,11 +65,11 @@ async def _resolve_creatable_values(
 
 
 # ---------------------------------------------------------------------------
-# patch_department_draft_client — composable infra architecture
+# patch_department_draft_impl — composable infra architecture
 # ---------------------------------------------------------------------------
 
 
-async def patch_department_draft_client(
+async def patch_department_draft_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

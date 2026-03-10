@@ -18,7 +18,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.department_permissions_context import (
+from app.infra.department.permissions_context import (
     create_denormalized_snapshot,
     resolve_department_values,
 )
@@ -72,7 +72,7 @@ class CreateDepartmentApiResponse(BaseModel):
     results: list[DepartmentResultItem]
 
 
-async def create_department_client(
+async def create_department_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -92,7 +92,7 @@ async def create_department_client(
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.infra.department_permissions import compute_can_create
+    from app.infra.department.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.auth_refresh import refresh_auth_client
+from app.infra.auth_artifact.refresh import refresh_auth_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -19,7 +19,7 @@ async def auth_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_auth_client(
+    result = await refresh_auth_impl(
         pool,
         redis,
         profile_id=profile_id,

@@ -1,13 +1,13 @@
 """Auth delete endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.auth_delete.
+Thin route handler. Core logic lives in app.infra.auth_artifact.delete.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.auth_delete import delete_auth_client
+from app.infra.auth_artifact.delete import delete_auth_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import (
     DeleteAuthApiRequest,
@@ -38,7 +38,7 @@ async def delete_auth(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await delete_auth_client(
+        result = await delete_auth_impl(
             pool,
             redis,
             profile_id=profile_id,

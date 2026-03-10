@@ -1,6 +1,6 @@
 """Department search endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.department_search.
+Thin route handler. Core logic lives in app.infra.department.search.
 """
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.department_search import search_department_client
+from app.infra.department.search import search_department_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import ListDepartmentApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -45,7 +45,7 @@ async def search_department(
 
         pool = get_pool()
         redis = get_redis_client()
-        result = await search_department_client(
+        result = await search_department_impl(
             pool,
             redis,
             profile_id=profile_id,

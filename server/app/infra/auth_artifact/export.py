@@ -46,7 +46,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_auth_client(
+async def export_auth_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

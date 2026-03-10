@@ -36,7 +36,7 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.auth_create import AuthFieldError, CreateAuthItem
+    from app.infra.auth_artifact.create import AuthFieldError, CreateAuthItem
     from app.routes.v5.api.main.auth.types import (
         UpdateAuthItem,
     )
@@ -117,7 +117,7 @@ async def resolve_auth_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.infra.auth_create import AuthFieldError
+    from app.infra.auth_artifact.create import AuthFieldError
 
     errors: list[AuthFieldError] = []
 

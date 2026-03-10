@@ -14,6 +14,7 @@ import asyncio
 import csv
 import io
 import os
+from os import PathLike
 from datetime import datetime
 from uuid import UUID
 
@@ -60,6 +61,7 @@ async def export_persona_impl(
     profile_id: UUID,
     session_id: UUID,
     persona_id: UUID | None = None,
+    upload_folder: str | PathLike[str] = UPLOAD_FOLDER,
 ) -> dict:
     """Persona full export using composable infra functions.
 
@@ -304,9 +306,9 @@ async def export_persona_impl(
     # Write CSV to upload folder
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"personas_export_{timestamp}.csv"
-    file_path = os.path.join(str(UPLOAD_FOLDER), file_name)
+    file_path = os.path.join(str(upload_folder), file_name)
 
-    os.makedirs(str(UPLOAD_FOLDER), exist_ok=True)
+    os.makedirs(str(upload_folder), exist_ok=True)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(csv_content)
 

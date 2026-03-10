@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.auth_create import CreateAuthItem
+from app.infra.auth_artifact.create import CreateAuthItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.auth_drafts.types import GetAuthDraftResponse
 

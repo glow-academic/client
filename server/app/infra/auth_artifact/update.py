@@ -18,7 +18,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.auth.keycloak_sync import perform_keycloak_sync
-from app.infra.auth_permissions_context import (
+from app.infra.auth_artifact.permissions_context import (
     create_denormalized_snapshot,
     resolve_auth_permissions_context,
     resolve_auth_values,
@@ -36,7 +36,7 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 
-async def update_auth_client(
+async def update_auth_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -56,7 +56,7 @@ async def update_auth_client(
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.infra.auth_permissions import compute_can_edit
+    from app.infra.auth_artifact.permissions import compute_can_edit
     from app.routes.v5.api.main.auth.types import (
         AuthResultItem,
         UpdateAuthApiResponse,

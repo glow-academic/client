@@ -19,7 +19,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.auth.keycloak_sync import perform_keycloak_sync
-from app.infra.auth_permissions_context import (
+from app.infra.auth_artifact.permissions_context import (
     create_denormalized_snapshot,
     resolve_auth_values,
 )
@@ -81,7 +81,7 @@ class CreateAuthApiResponse(BaseModel):
     results: list[AuthResultItem]
 
 
-async def create_auth_client(
+async def create_auth_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -101,7 +101,7 @@ async def create_auth_client(
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.infra.auth_permissions import compute_can_create
+    from app.infra.auth_artifact.permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

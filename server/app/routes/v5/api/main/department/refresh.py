@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.department_refresh import refresh_department_client
+from app.infra.department.refresh import refresh_department_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -19,7 +19,7 @@ async def department_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_department_client(
+    result = await refresh_department_impl(
         pool,
         redis,
         profile_id=profile_id,
