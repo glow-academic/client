@@ -9,14 +9,14 @@ from app.events.types import (
 DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("department.viewed",),
+        domain_events=("artifacts.department.viewed",),
         scope="entity",
         entity_key="department_id",
         can_subscribe=require_authenticated_profile,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("department.refreshed",),
+        domain_events=("artifacts.department.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

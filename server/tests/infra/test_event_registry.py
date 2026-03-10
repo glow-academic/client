@@ -9,7 +9,7 @@ def test_registry_resolves_persona_config() -> None:
     assert config is not None
     assert config.artifact == "persona"
     assert "get" in config.operations
-    assert "persona.viewed" in config.event_types
+    assert "artifacts.persona.viewed" in config.event_types
 
 
 def test_registry_resolves_activity_config() -> None:
@@ -18,7 +18,7 @@ def test_registry_resolves_activity_config() -> None:
     assert config is not None
     assert config.artifact == "activity"
     assert "get" in config.operations
-    assert "activity.viewed" in config.event_types
+    assert "artifacts.activity.viewed" in config.event_types
 
 
 def test_registry_resolves_attempt_config() -> None:
@@ -27,7 +27,7 @@ def test_registry_resolves_attempt_config() -> None:
     assert config is not None
     assert config.artifact == "attempt"
     assert "message" in config.operations
-    assert "attempt.assistant.progress" in config.event_types
+    assert "artifacts.attempt.assistant.progress" in config.event_types
 
 
 def test_registry_resolves_auth_config() -> None:
@@ -36,7 +36,7 @@ def test_registry_resolves_auth_config() -> None:
     assert config is not None
     assert config.artifact == "auth"
     assert "get" in config.operations
-    assert "auth.viewed" in config.event_types
+    assert "artifacts.auth.viewed" in config.event_types
 
 
 def test_registry_resolves_benchmark_config() -> None:
@@ -45,7 +45,7 @@ def test_registry_resolves_benchmark_config() -> None:
     assert config is not None
     assert config.artifact == "benchmark"
     assert "get" in config.operations
-    assert "benchmark.viewed" in config.event_types
+    assert "artifacts.benchmark.viewed" in config.event_types
 
 
 def test_registry_resolves_chat_config() -> None:
@@ -54,7 +54,7 @@ def test_registry_resolves_chat_config() -> None:
     assert config is not None
     assert config.artifact == "chat"
     assert "get" in config.operations
-    assert "chat.viewed" in config.event_types
+    assert "artifacts.chat.viewed" in config.event_types
 
 
 def test_registry_resolves_scenario_config() -> None:
@@ -63,7 +63,7 @@ def test_registry_resolves_scenario_config() -> None:
     assert config is not None
     assert config.artifact == "scenario"
     assert "get" in config.operations
-    assert "scenario.viewed" in config.event_types
+    assert "artifacts.scenario.viewed" in config.event_types
 
 
 def test_registry_resolves_agent_config() -> None:
@@ -72,7 +72,7 @@ def test_registry_resolves_agent_config() -> None:
     assert config is not None
     assert config.artifact == "agent"
     assert "get" in config.operations
-    assert "agent.viewed" in config.event_types
+    assert "artifacts.agent.viewed" in config.event_types
 
 
 def test_registry_resolves_cohort_config() -> None:
@@ -81,7 +81,7 @@ def test_registry_resolves_cohort_config() -> None:
     assert config is not None
     assert config.artifact == "cohort"
     assert "get" in config.operations
-    assert "cohort.viewed" in config.event_types
+    assert "artifacts.cohort.viewed" in config.event_types
 
 
 def test_registry_resolves_dashboard_config() -> None:
@@ -90,7 +90,7 @@ def test_registry_resolves_dashboard_config() -> None:
     assert config is not None
     assert config.artifact == "dashboard"
     assert "get" in config.operations
-    assert "dashboard.viewed" in config.event_types
+    assert "artifacts.dashboard.viewed" in config.event_types
 
 
 def test_registry_resolves_department_config() -> None:
@@ -99,7 +99,7 @@ def test_registry_resolves_department_config() -> None:
     assert config is not None
     assert config.artifact == "department"
     assert "get" in config.operations
-    assert "department.viewed" in config.event_types
+    assert "artifacts.department.viewed" in config.event_types
 
 
 def test_registry_resolves_document_config() -> None:
@@ -108,7 +108,7 @@ def test_registry_resolves_document_config() -> None:
     assert config is not None
     assert config.artifact == "document"
     assert "get" in config.operations
-    assert "document.viewed" in config.event_types
+    assert "artifacts.document.viewed" in config.event_types
 
 
 def test_registry_resolves_eval_config() -> None:
@@ -117,7 +117,7 @@ def test_registry_resolves_eval_config() -> None:
     assert config is not None
     assert config.artifact == "eval"
     assert "get" in config.operations
-    assert "eval.viewed" in config.event_types
+    assert "artifacts.eval.viewed" in config.event_types
 
 
 def test_registry_resolves_field_config() -> None:
@@ -126,7 +126,7 @@ def test_registry_resolves_field_config() -> None:
     assert config is not None
     assert config.artifact == "field"
     assert "get" in config.operations
-    assert "field.viewed" in config.event_types
+    assert "artifacts.field.viewed" in config.event_types
 
 
 def test_registry_resolves_model_config() -> None:
@@ -135,7 +135,7 @@ def test_registry_resolves_model_config() -> None:
     assert config is not None
     assert config.artifact == "model"
     assert "get" in config.operations
-    assert "model.viewed" in config.event_types
+    assert "artifacts.model.viewed" in config.event_types
 
 
 def test_registry_resolves_parameter_config() -> None:
@@ -144,7 +144,7 @@ def test_registry_resolves_parameter_config() -> None:
     assert config is not None
     assert config.artifact == "parameter"
     assert "get" in config.operations
-    assert "parameter.viewed" in config.event_types
+    assert "artifacts.parameter.viewed" in config.event_types
 
 
 def test_registry_resolves_health_config() -> None:
@@ -153,7 +153,7 @@ def test_registry_resolves_health_config() -> None:
     assert config is not None
     assert config.artifact == "health"
     assert "get" in config.operations
-    assert "health.viewed" in config.event_types
+    assert "artifacts.health.viewed" in config.event_types
 
 
 def test_registry_resolves_home_config() -> None:
@@ -162,7 +162,7 @@ def test_registry_resolves_home_config() -> None:
     assert config is not None
     assert config.artifact == "home"
     assert "get" in config.operations
-    assert "home.viewed" in config.event_types
+    assert "artifacts.home.viewed" in config.event_types
 
 
 def test_registry_resolves_invocation_config() -> None:
@@ -171,7 +171,7 @@ def test_registry_resolves_invocation_config() -> None:
     assert config is not None
     assert config.artifact == "invocation"
     assert "get" in config.operations
-    assert "invocation.viewed" in config.event_types
+    assert "artifacts.invocation.viewed" in config.event_types
 
 
 def test_registry_resolves_leaderboard_config() -> None:
@@ -180,7 +180,7 @@ def test_registry_resolves_leaderboard_config() -> None:
     assert config is not None
     assert config.artifact == "leaderboard"
     assert "get" in config.operations
-    assert "leaderboard.viewed" in config.event_types
+    assert "artifacts.leaderboard.viewed" in config.event_types
 
 
 def test_registry_resolves_profile_config() -> None:
@@ -189,7 +189,7 @@ def test_registry_resolves_profile_config() -> None:
     assert config is not None
     assert config.artifact == "profile"
     assert "get" in config.operations
-    assert "profile.viewed" in config.event_types
+    assert "artifacts.profile.viewed" in config.event_types
 
 
 def test_registry_resolves_provider_config() -> None:
@@ -198,7 +198,7 @@ def test_registry_resolves_provider_config() -> None:
     assert config is not None
     assert config.artifact == "provider"
     assert "get" in config.operations
-    assert "provider.viewed" in config.event_types
+    assert "artifacts.provider.viewed" in config.event_types
 
 
 def test_registry_resolves_pricing_config() -> None:
@@ -207,7 +207,7 @@ def test_registry_resolves_pricing_config() -> None:
     assert config is not None
     assert config.artifact == "pricing"
     assert "get" in config.operations
-    assert "pricing.viewed" in config.event_types
+    assert "artifacts.pricing.viewed" in config.event_types
 
 
 def test_registry_resolves_practice_config() -> None:
@@ -216,7 +216,7 @@ def test_registry_resolves_practice_config() -> None:
     assert config is not None
     assert config.artifact == "practice"
     assert "get" in config.operations
-    assert "practice.viewed" in config.event_types
+    assert "artifacts.practice.viewed" in config.event_types
 
 
 def test_registry_resolves_rubric_config() -> None:
@@ -225,7 +225,7 @@ def test_registry_resolves_rubric_config() -> None:
     assert config is not None
     assert config.artifact == "rubric"
     assert "get" in config.operations
-    assert "rubric.viewed" in config.event_types
+    assert "artifacts.rubric.viewed" in config.event_types
 
 
 def test_registry_returns_none_for_unknown_artifact() -> None:
@@ -238,7 +238,7 @@ def test_registry_resolves_session_config() -> None:
     assert config is not None
     assert config.artifact == "session"
     assert "get" in config.operations
-    assert "session.viewed" in config.event_types
+    assert "artifacts.session.viewed" in config.event_types
 
 
 def test_registry_resolves_record_config() -> None:
@@ -247,7 +247,7 @@ def test_registry_resolves_record_config() -> None:
     assert config is not None
     assert config.artifact == "record"
     assert "get" in config.operations
-    assert "record.viewed" in config.event_types
+    assert "artifacts.record.viewed" in config.event_types
 
 
 def test_registry_resolves_reports_config() -> None:
@@ -256,7 +256,7 @@ def test_registry_resolves_reports_config() -> None:
     assert config is not None
     assert config.artifact == "reports"
     assert "refresh" in config.operations
-    assert "reports.refreshed" in config.event_types
+    assert "artifacts.reports.refreshed" in config.event_types
 
 
 def test_registry_resolves_setting_config() -> None:
@@ -265,7 +265,7 @@ def test_registry_resolves_setting_config() -> None:
     assert config is not None
     assert config.artifact == "setting"
     assert "get" in config.operations
-    assert "setting.viewed" in config.event_types
+    assert "artifacts.setting.viewed" in config.event_types
 
 
 def test_registry_resolves_simulation_config() -> None:
@@ -274,7 +274,7 @@ def test_registry_resolves_simulation_config() -> None:
     assert config is not None
     assert config.artifact == "simulation"
     assert "get" in config.operations
-    assert "simulation.viewed" in config.event_types
+    assert "artifacts.simulation.viewed" in config.event_types
 
 
 def test_registry_resolves_tool_config() -> None:
@@ -283,4 +283,4 @@ def test_registry_resolves_tool_config() -> None:
     assert config is not None
     assert config.artifact == "tool"
     assert "get" in config.operations
-    assert "tool.viewed" in config.event_types
+    assert "artifacts.tool.viewed" in config.event_types

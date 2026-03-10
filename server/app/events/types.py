@@ -12,9 +12,33 @@ from redis.asyncio import Redis
 
 EventScope = Literal["entity", "collection"]
 EventRecord = dict[str, Any]
+EventPayload = dict[str, Any]
+LifecyclePhase = Literal["started", "completed", "failed"]
 
 CanSubscribe = Callable[..., Awaitable[bool]]
 FilterEvents = Callable[[UUID, list[EventRecord]], Awaitable[list[EventRecord]]]
+ResolveEntityIds = Callable[[EventPayload, EventPayload], list[UUID]]
+
+
+def build_lifecycle_event_type(
+    artifact: str,
+    operation: str,
+    phase: LifecyclePhase,
+) -> str:
+    """Build the canonical public lifecycle event name."""
+    return f"artifacts.{artifact}.{operation}.{phase}"
+
+
+def build_default_lifecycle_event_types(
+    artifact: str,
+    operation: str,
+) -> tuple[str, str, str]:
+    """Build the canonical lifecycle event names for an operation."""
+    return (
+        build_lifecycle_event_type(artifact, operation, "started"),
+        build_lifecycle_event_type(artifact, operation, "completed"),
+        build_lifecycle_event_type(artifact, operation, "failed"),
+    )
 
 
 @dataclass(frozen=True)
@@ -28,6 +52,7 @@ class OperationEventConfig:
     can_subscribe: CanSubscribe
     filter_events: FilterEvents | None = None
     include_call_lifecycle: bool = True
+    resolve_entity_ids: ResolveEntityIds | None = None
 
 
 @dataclass(frozen=True)
@@ -36,12 +61,6 @@ class ArtifactEventsConfig:
 
     artifact: str
     operations: dict[str, OperationEventConfig]
-    call_lifecycle_events: tuple[str, ...] = (
-        "call.started",
-        "call.completed",
-        "call.failed",
-    )
-
     @property
     def event_types(self) -> tuple[str, ...]:
         """Flatten domain and lifecycle event types for the artifact."""
@@ -52,7 +71,10 @@ class ArtifactEventsConfig:
                 for event_type in (
                     *operation.domain_events,
                     *(
-                        self.call_lifecycle_events
+                        build_default_lifecycle_event_types(
+                            self.artifact,
+                            operation.operation,
+                        )
                         if operation.include_call_lifecycle
                         else ()
                     ),

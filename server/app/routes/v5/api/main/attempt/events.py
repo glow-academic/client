@@ -10,14 +10,14 @@ from app.events.types import (
 ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("attempt.viewed",),
+        domain_events=("artifacts.attempt.viewed",),
         scope="entity",
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
     ),
     "start": OperationEventConfig(
         operation="start",
-        domain_events=("attempt.started",),
+        domain_events=("artifacts.attempt.started",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -25,9 +25,9 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "message": OperationEventConfig(
         operation="message",
         domain_events=(
-            "attempt.assistant.start",
-            "attempt.assistant.progress",
-            "attempt.assistant.complete",
+            "artifacts.attempt.assistant.start",
+            "artifacts.attempt.assistant.progress",
+            "artifacts.attempt.assistant.complete",
         ),
         scope="entity",
         entity_key="chat_id",
@@ -37,9 +37,9 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "grade": OperationEventConfig(
         operation="grade",
         domain_events=(
-            "attempt.grade.start",
-            "attempt.grade.progress",
-            "attempt.grade.complete",
+            "artifacts.attempt.grade.start",
+            "artifacts.attempt.grade.progress",
+            "artifacts.attempt.grade.complete",
         ),
         scope="entity",
         entity_key="attempt_id",
@@ -48,14 +48,14 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "end": OperationEventConfig(
         operation="end",
-        domain_events=("attempt.ended",),
+        domain_events=("artifacts.attempt.ended",),
         scope="entity",
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
     ),
     "response": OperationEventConfig(
         operation="response",
-        domain_events=("attempt.response.saved",),
+        domain_events=("artifacts.attempt.response.saved",),
         scope="entity",
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
@@ -63,9 +63,9 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "audio": OperationEventConfig(
         operation="audio",
         domain_events=(
-            "attempt.audio.start",
-            "attempt.audio.progress",
-            "attempt.audio.complete",
+            "artifacts.attempt.audio.start",
+            "artifacts.attempt.audio.progress",
+            "artifacts.attempt.audio.complete",
         ),
         scope="entity",
         entity_key="attempt_id",
@@ -74,7 +74,7 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("attempt.refreshed",),
+        domain_events=("artifacts.attempt.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

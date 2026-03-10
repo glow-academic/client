@@ -9,14 +9,14 @@ from app.events.types import (
 CHAT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("chat.viewed",),
+        domain_events=("artifacts.chat.viewed",),
         scope="entity",
         entity_key="chat_id",
         can_subscribe=require_authenticated_profile,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("chat.refreshed",),
+        domain_events=("artifacts.chat.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

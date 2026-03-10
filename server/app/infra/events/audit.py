@@ -88,7 +88,14 @@ async def run_artifact_operation_with_audit(
     effective_session_id = session_id or common.profile.session_id
     effective_group_id = group_id or common.profile.group_id
 
-    if tool_id is None or effective_session_id is None or effective_group_id is None:
+    effective_profiles_id = common.profile.profiles_id
+
+    if (
+        tool_id is None
+        or effective_session_id is None
+        or effective_group_id is None
+        or effective_profiles_id is None
+    ):
         return await runner()
 
     async def _tool_fn(_conn: asyncpg.Connection, **_arguments: Any) -> Any:
@@ -102,7 +109,7 @@ async def run_artifact_operation_with_audit(
             conn,
             group_id=effective_group_id,
             session_id=effective_session_id,
-            profile_id=profile_id,
+            profile_id=effective_profiles_id,
             upload_folder=UPLOAD_FOLDER,
             tool_fn=_tool_fn,
             arguments=arguments,

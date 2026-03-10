@@ -62,7 +62,7 @@ async def patch_persona_draft(
             redis,
             profile_id=profile_id,
             session_id=session_id,
-            draft_id=request.draft_id,
+            draft_id=request.input_draft_id,
             operation="draft",
             arguments=request.model_dump(mode="json"),
             response_model=PatchPersonaDraftApiResponse,

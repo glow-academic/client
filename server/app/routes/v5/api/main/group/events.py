@@ -10,7 +10,7 @@ from app.events.types import (
 GROUP_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("group.viewed",),
+        domain_events=("artifacts.group.viewed",),
         scope="entity",
         entity_key="group_id",
         can_subscribe=require_authenticated_profile,
@@ -18,9 +18,9 @@ GROUP_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "generate": OperationEventConfig(
         operation="generate",
         domain_events=(
-            "group.generation.started",
-            "group.generation.progress",
-            "group.generation.completed",
+            "artifacts.group.generation.started",
+            "artifacts.group.generation.progress",
+            "artifacts.group.generation.completed",
         ),
         scope="entity",
         entity_key="group_id",
@@ -29,7 +29,7 @@ GROUP_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("group.refreshed",),
+        domain_events=("artifacts.group.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

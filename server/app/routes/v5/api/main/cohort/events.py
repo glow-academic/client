@@ -9,14 +9,14 @@ from app.events.types import (
 COHORT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("cohort.viewed",),
+        domain_events=("artifacts.cohort.viewed",),
         scope="entity",
         entity_key="cohort_id",
         can_subscribe=require_authenticated_profile,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("cohort.refreshed",),
+        domain_events=("artifacts.cohort.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

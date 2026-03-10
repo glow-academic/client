@@ -9,6 +9,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
+from app.events.types import build_lifecycle_event_type
 from app.infra.tools.call_args import resolve_tool
 from app.routes.v5.api.events.registry import get_artifact_events_config
 from app.routes.v5.api.events.types import EventEnvelope
@@ -72,12 +73,27 @@ def _project_call_receipt(
 
     success = not (isinstance(output, dict) and output.get("success") is False)
     events: list[EventEnvelope] = []
+    domain_entity_ids: list[UUID]
+
+    if operation_config.resolve_entity_ids is not None:
+        try:
+            domain_entity_ids = operation_config.resolve_entity_ids(
+                receipt.get("arguments") or {},
+                output if isinstance(output, dict) else {},
+            )
+        except (TypeError, ValueError):
+            domain_entity_ids = []
+    elif entity_id is not None:
+        domain_entity_ids = [entity_id]
+    else:
+        domain_entity_ids = []
 
     if operation_config.include_call_lifecycle:
+        started_event_type = build_lifecycle_event_type(artifact, operation, "started")
         events.append(
             EventEnvelope(
-                id=f"{call_id}:call.started",
-                event_type="call.started",
+                id=f"{call_id}:{started_event_type}",
+                event_type=started_event_type,
                 artifact=artifact,
                 operation=operation,
                 created_at=created_at,
@@ -87,7 +103,11 @@ def _project_call_receipt(
                 payload={"arguments": receipt.get("arguments", {})},
             )
         )
-        lifecycle_type = "call.completed" if success else "call.failed"
+        lifecycle_type = build_lifecycle_event_type(
+            artifact,
+            operation,
+            "completed" if success else "failed",
+        )
         events.append(
             EventEnvelope(
                 id=f"{call_id}:{lifecycle_type}",
@@ -104,19 +124,24 @@ def _project_call_receipt(
 
     if success:
         for event_type in operation_config.domain_events:
-            events.append(
-                EventEnvelope(
-                    id=f"{call_id}:{event_type}",
-                    event_type=event_type,
-                    artifact=artifact,
-                    operation=operation,
-                    created_at=created_at,
-                    entity_id=entity_id,
-                    call_id=call_id,
-                    tool_id=tool_id,
-                    payload={"arguments": receipt.get("arguments", {}), "output": output},
+            target_entity_ids = domain_entity_ids or [entity_id]
+            for target_entity_id in target_entity_ids:
+                events.append(
+                    EventEnvelope(
+                        id=f"{call_id}:{event_type}:{target_entity_id or 'collection'}",
+                        event_type=event_type,
+                        artifact=artifact,
+                        operation=operation,
+                        created_at=created_at,
+                        entity_id=target_entity_id,
+                        call_id=call_id,
+                        tool_id=tool_id,
+                        payload={
+                            "arguments": receipt.get("arguments", {}),
+                            "output": output,
+                        },
+                    )
                 )
-            )
 
     return events
 

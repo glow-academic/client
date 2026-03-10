@@ -9,14 +9,14 @@ from app.events.types import (
 RUBRIC_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("rubric.viewed",),
+        domain_events=("artifacts.rubric.viewed",),
         scope="entity",
         entity_key="rubric_id",
         can_subscribe=require_authenticated_profile,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("rubric.refreshed",),
+        domain_events=("artifacts.rubric.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

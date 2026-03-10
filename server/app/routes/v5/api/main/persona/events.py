@@ -27,11 +27,60 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 EventRecord = dict[str, Any]
 
-CALL_LIFECYCLE_EVENTS: tuple[str, ...] = (
-    "call.started",
-    "call.completed",
-    "call.failed",
-)
+
+def _uuid_list(values: list[Any] | None) -> list[UUID]:
+    """Normalize a list of UUID-like values."""
+    return [UUID(str(value)) for value in values or [] if value]
+
+
+def _persona_result_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+) -> list[UUID]:
+    """Resolve persona IDs from bulk create/update/delete style outputs."""
+    del arguments
+    return _uuid_list(
+        [
+            item.get("persona_id")
+            for item in output.get("results", [])
+            if isinstance(item, dict) and item.get("persona_id")
+        ]
+    )
+
+
+def _persona_duplicate_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+) -> list[UUID]:
+    """Resolve duplicated persona ID from the operation output."""
+    del arguments
+    return _uuid_list([output.get("persona_id")])
+
+
+def _persona_request_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+    key: str,
+) -> list[UUID]:
+    """Resolve a single entity ID from request arguments first, then output."""
+    del output
+    return _uuid_list([arguments.get(key)])
+
+
+def _persona_export_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+) -> list[UUID]:
+    """Resolve exported persona target when export is entity-scoped."""
+    return _persona_request_entity_ids(arguments, output, "persona_id")
+
+
+def _persona_draft_entity_ids(
+    arguments: dict[str, Any],
+    output: dict[str, Any],
+) -> list[UUID]:
+    """Resolve draft ID from output first, then request input_draft_id."""
+    return _uuid_list([output.get("draft_id"), arguments.get("input_draft_id")])
 
 
 async def _resolve_profile(
@@ -236,7 +285,7 @@ async def _passthrough_filter(
 PERSONA_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("persona.viewed",),
+        domain_events=("artifacts.persona.viewed",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_read,
@@ -244,42 +293,47 @@ PERSONA_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events=("persona.created",),
+        domain_events=("artifacts.persona.created",),
         scope="collection",
         entity_key=None,
         can_subscribe=_can_subscribe_persona_create,
+        resolve_entity_ids=_persona_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events=("persona.updated",),
+        domain_events=("artifacts.persona.updated",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_edit,
+        resolve_entity_ids=_persona_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events=("persona.deleted",),
+        domain_events=("artifacts.persona.deleted",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_delete,
+        resolve_entity_ids=_persona_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events=("persona.duplicated",),
+        domain_events=("artifacts.persona.duplicated",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_duplicate,
+        resolve_entity_ids=_persona_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events=("persona.draft.saved",),
+        domain_events=("artifacts.persona.draft.saved",),
         scope="entity",
         entity_key="draft_id",
         can_subscribe=_can_subscribe_persona_draft,
+        resolve_entity_ids=_persona_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events=("persona.drafts.viewed",),
+        domain_events=("artifacts.persona.drafts.viewed",),
         scope="collection",
         entity_key=None,
         can_subscribe=_can_subscribe_persona_draft,
@@ -287,7 +341,7 @@ PERSONA_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events=("persona.search.performed",),
+        domain_events=("artifacts.persona.search.performed",),
         scope="collection",
         entity_key=None,
         can_subscribe=_can_subscribe_persona_read,
@@ -295,21 +349,25 @@ PERSONA_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events=("persona.docs.viewed",),
+        domain_events=("artifacts.persona.docs.viewed",),
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=lambda arguments, output: _persona_request_entity_ids(
+            arguments, output, "entity_id"
+        ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events=("persona.exported",),
+        domain_events=("artifacts.persona.exported",),
         scope="collection",
         entity_key="persona_id",
         can_subscribe=require_authenticated_profile,
+        resolve_entity_ids=_persona_export_entity_ids,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("persona.refreshed",),
+        domain_events=("artifacts.persona.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
