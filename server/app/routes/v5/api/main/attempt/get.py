@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.attempt.get import get_attempt_impl
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.attempt.types import (
     GetAttemptDetailRequest,
@@ -33,14 +34,37 @@ async def attempt_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data, cache_hit = await get_attempt_impl(
-            get_pool(),
-            get_redis_client(),
-            profile_id=UUID(profile_id_str),
+        pool = get_pool()
+        redis = get_redis_client()
+        profile_id = UUID(profile_id_str)
+        cache_hit_holder = {"value": False}
+
+        async def _runner() -> GetAttemptDetailResponse:
+            response_data, cache_hit = await get_attempt_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                attempt_id=request.attempt_id,
+                bypass_cache=bypass_cache,
+                cache_key_path=http_request.url.path,
+            )
+            cache_hit_holder["value"] = cache_hit
+            return response_data
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="attempt",
+            profile_id=profile_id,
+            session_id=http_request.state.session_id,
             attempt_id=request.attempt_id,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
-            cache_key_path=http_request.url.path,
+            response_model=GetAttemptDetailResponse,
+            runner=_runner,
         )
+        cache_hit = cache_hit_holder["value"]
 
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"

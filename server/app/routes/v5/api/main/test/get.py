@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import get_pool
+from app.infra.events.audit import run_artifact_operation_with_audit
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.test.get import get_test_impl_cached
 from app.routes.v5.api.main.test.types import (
     GetTestArtifactRequest,
@@ -23,12 +24,36 @@ async def get_test_artifact(
 ) -> GetTestArtifactResponse:
     """Get benchmark test artifact details with tests/invocations in parallel."""
     try:
-        response_data, cache_hit = await get_test_impl_cached(
-            pool=get_pool(),
+        pool = get_pool()
+        redis = get_redis_client()
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+        cache_hit_holder = {"value": False}
+
+        async def _runner() -> GetTestArtifactResponse:
+            response_data, cache_hit = await get_test_impl_cached(
+                pool=pool,
+                test_id=request.test_id,
+                bypass_cache=bypass_cache,
+                cache_key_path=http_request.url.path,
+            )
+            cache_hit_holder["value"] = cache_hit
+            return response_data
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="test",
+            profile_id=http_request.state.profile_id,
+            session_id=http_request.state.session_id,
             test_id=request.test_id,
-            bypass_cache=http_request.headers.get("X-Bypass-Cache") == "1",
-            cache_key_path=http_request.url.path,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
+            bypass_cache=bypass_cache,
+            response_model=GetTestArtifactResponse,
+            runner=_runner,
         )
+        cache_hit = cache_hit_holder["value"]
 
         response.headers["X-Cache-Tags"] = "artifacts,test"
         response.headers["X-Cache-Hit"] = "1" if cache_hit else "0"

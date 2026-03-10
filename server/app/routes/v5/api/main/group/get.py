@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.group.get import get_group_impl
 from app.routes.v5.api.main.group.types import (
@@ -44,14 +45,32 @@ async def get_group(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        api_response = await get_group_impl(
-            get_pool(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetGroupDetailResponse:
+            return await get_group_impl(
+                pool,
+                profile_id=profile_id,
+                group_id=request.group_id,
+                redis=redis,
+                bypass_cache=bypass_cache,
+                message_limit=request.message_limit,
+                message_offset=request.message_offset,
+            )
+
+        api_response = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="group",
             profile_id=profile_id,
+            session_id=http_request.state.session_id,
             group_id=request.group_id,
-            redis=get_redis_client(),
+            operation="get",
+            arguments=body_dict,
             bypass_cache=bypass_cache,
-            message_limit=request.message_limit,
-            message_offset=request.message_offset,
+            response_model=GetGroupDetailResponse,
+            runner=_runner,
         )
 
         await set_cached(

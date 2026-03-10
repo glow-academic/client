@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.scenario.get import get_scenario_impl
 from app.routes.v5.api.main.scenario.types import (
@@ -35,29 +36,47 @@ async def get_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        response_data = await get_scenario_impl(
-            get_pool(),
-            get_redis_client(),
+        pool = get_pool()
+        redis = get_redis_client()
+
+        async def _runner() -> GetScenarioApiResponse:
+            return await get_scenario_impl(
+                pool,
+                redis,
+                profile_id=profile_id,
+                session_id=session_id,
+                scenario_id=request.scenario_id,
+                draft_id=request.draft_id,
+                parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
+                if request.parameter_ids
+                else None,
+                description_search=request.description_search,
+                persona_search=request.persona_search,
+                document_search=request.document_search,
+                parameter_search=request.parameter_search,
+                problem_statement_search=request.problem_statement_search,
+                image_search=request.image_search,
+                video_search=request.video_search,
+                question_search=request.question_search,
+                option_search=request.option_search,
+                persona_show_selected=request.persona_show_selected,
+                document_show_selected=request.document_show_selected,
+                parameter_show_selected=request.parameter_show_selected,
+                bypass_cache=bypass_cache,
+            )
+
+        response_data = await run_artifact_operation_with_audit(
+            pool,
+            redis,
+            artifact="scenario",
             profile_id=profile_id,
             session_id=session_id,
-            scenario_id=request.scenario_id,
             draft_id=request.draft_id,
-            parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
-            if request.parameter_ids
-            else None,
-            description_search=request.description_search,
-            persona_search=request.persona_search,
-            document_search=request.document_search,
-            parameter_search=request.parameter_search,
-            problem_statement_search=request.problem_statement_search,
-            image_search=request.image_search,
-            video_search=request.video_search,
-            question_search=request.question_search,
-            option_search=request.option_search,
-            persona_show_selected=request.persona_show_selected,
-            document_show_selected=request.document_show_selected,
-            parameter_show_selected=request.parameter_show_selected,
+            operation="get",
+            arguments=request.model_dump(mode="json"),
             bypass_cache=bypass_cache,
+            response_model=GetScenarioApiResponse,
+            runner=_runner,
         )
 
         response.headers["X-Cache-Tags"] = "scenarios"

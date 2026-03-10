@@ -8,6 +8,13 @@ from app.events.types import (
 )
 
 ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
+    "get": OperationEventConfig(
+        operation="get",
+        domain_events=("attempt.viewed",),
+        scope="entity",
+        entity_key="attempt_id",
+        can_subscribe=require_authenticated_profile,
+    ),
     "start": OperationEventConfig(
         operation="start",
         domain_events=("attempt.started",),
@@ -64,6 +71,13 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
         filter_events=default_filter_events,
+    ),
+    "refresh": OperationEventConfig(
+        operation="refresh",
+        domain_events=("attempt.refreshed",),
+        scope="collection",
+        entity_key=None,
+        can_subscribe=require_authenticated_profile,
     ),
 }
 
