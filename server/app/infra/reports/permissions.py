@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from typing import Any
 
-from app.infra.reports_types import (
+from app.infra.reports.types import (
     ReportsDataPoint,
     ReportsHeaderMetrics,
     ReportsHistoryRow,

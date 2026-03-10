@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.chat_refresh import refresh_chat_client
+from app.infra.chat.refresh import refresh_chat_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -18,7 +18,7 @@ async def chat_refresh(
     profile_id = http_request.state.profile_id
     pool = get_pool()
 
-    result = await refresh_chat_client(
+    result = await refresh_chat_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

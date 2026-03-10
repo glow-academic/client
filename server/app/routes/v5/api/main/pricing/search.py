@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.pricing_context import resolve_pricing_search_context
+from app.infra.pricing.context import resolve_pricing_search_context
 from app.routes.v5.api.main.pricing.types import (
     ListPricingRequest,
     ListPricingResponse,

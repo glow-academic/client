@@ -7,10 +7,10 @@ import zipfile
 
 import pytest
 
-from app.infra.benchmark_context import resolve_benchmark_context
-from app.infra.benchmark_docs import docs_benchmark_client
-from app.infra.benchmark_export import export_benchmark_client
-from app.infra.benchmark_refresh import refresh_benchmark_client
+from app.infra.benchmark.context import resolve_benchmark_context
+from app.infra.benchmark.docs import docs_benchmark_impl
+from app.infra.benchmark.export import export_benchmark_impl
+from app.infra.benchmark.refresh import refresh_benchmark_impl
 from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.benchmark.refresh import refresh_benchmark
 from app.routes.v5.tools.entries.sessions.create import create_session
@@ -57,7 +57,7 @@ class TestBenchmarkDocsClient:
     async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
         profile = await profile_identity_factory()
 
-        result = await docs_benchmark_client(
+        result = await docs_benchmark_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -97,9 +97,9 @@ class TestExportBenchmarkClient:
             await refresh_benchmark(conn)
             session = await create_session(conn, profile_id=profile.profile_resource_id)
 
-        monkeypatch.setattr("app.infra.benchmark_export.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr("app.infra.benchmark.export.UPLOAD_FOLDER", tmp_path)
 
-        result = await export_benchmark_client(
+        result = await export_benchmark_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -128,7 +128,7 @@ class TestRefreshBenchmarkClient:
     ):
         profile = await profile_identity_factory()
 
-        result = await refresh_benchmark_client(
+        result = await refresh_benchmark_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,

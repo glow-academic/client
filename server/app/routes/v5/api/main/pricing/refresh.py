@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.pricing_refresh import refresh_pricing_client
+from app.infra.pricing.refresh import refresh_pricing_impl
 from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
@@ -19,7 +19,7 @@ async def pricing_refresh(
     redis = get_redis_client()
     profile_id = http_request.state.profile_id
 
-    result = await refresh_pricing_client(
+    result = await refresh_pricing_impl(
         pool,
         redis,
         profile_id=profile_id,

@@ -54,7 +54,7 @@ class ExportPricingApiResponse(BaseModel):
     row_count: int
 
 
-async def export_pricing_client(
+async def export_pricing_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

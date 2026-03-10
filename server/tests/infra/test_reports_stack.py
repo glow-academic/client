@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from app.infra.reports_context import resolve_reports_context
-from app.infra.reports_docs import docs_reports_client
-from app.infra.reports_export import export_reports_client
-from app.infra.reports_refresh import refresh_reports_client
+from app.infra.reports.context import resolve_reports_context
+from app.infra.reports.docs import docs_reports_impl
+from app.infra.reports.export import export_reports_impl
+from app.infra.reports.refresh import refresh_reports_impl
 from app.routes.v5.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
@@ -37,7 +37,7 @@ class TestReportsDocsClient:
     async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
         profile = await profile_identity_factory()
 
-        result = await docs_reports_client(
+        result = await docs_reports_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -59,7 +59,7 @@ class TestExportReportsClient:
         async with pool.acquire() as conn:
             session = await create_session(conn, profile_id=profile.profile_resource_id)
 
-        result = await export_reports_client(
+        result = await export_reports_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -80,7 +80,7 @@ class TestRefreshReportsClient:
     async def test_refresh_invalidates_tags(self, pool, redis_client, profile_identity_factory):
         profile = await profile_identity_factory()
 
-        result = await refresh_reports_client(
+        result = await refresh_reports_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,

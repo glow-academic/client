@@ -23,7 +23,7 @@ from app.infra.analytics_facets import (
     AnalyticsFacetsConfig,
     resolve_analytics_facets,
 )
-from app.infra.chat_permissions import (
+from app.infra.chat.permissions import (
     compute_completion_pct,
     compute_pass_pct,
     compute_status,

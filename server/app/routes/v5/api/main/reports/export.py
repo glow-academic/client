@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.reports_export import export_reports_client
+from app.infra.reports.export import export_reports_impl
 from app.routes.v5.api.main.reports.types import ExportReportsApiResponse
 
 router = APIRouter(tags=["reports"])
@@ -20,7 +20,7 @@ async def export_reports(
     profile_id = http_request.state.profile_id
     session_id = http_request.state.session_id
 
-    return await export_reports_client(
+    return await export_reports_impl(
         pool,
         redis,
         profile_id=profile_id,

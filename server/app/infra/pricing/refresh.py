@@ -27,7 +27,7 @@ _TAGS = ["pricing", "artifacts"]
 _VIEWS = ["run_pricing_mv"]
 
 
-async def refresh_pricing_client(
+async def refresh_pricing_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

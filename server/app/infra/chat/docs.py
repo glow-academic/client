@@ -31,7 +31,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_chat_client(
+async def docs_chat_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -74,7 +74,7 @@ async def docs_chat_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.chat_permissions import (
+    from app.infra.chat.permissions import (
         compute_bundle_section_show,
         compute_completion_pct,
         compute_mode,

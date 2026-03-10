@@ -28,7 +28,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_reports_client(
+async def docs_reports_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -59,7 +59,7 @@ async def docs_reports_client(
     # -- Step 2: Assemble response ----------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.reports_permissions import (
+    from app.infra.reports.permissions import (
         build_reports_sections,
         compute_history_section,
         compute_leaderboard_section,

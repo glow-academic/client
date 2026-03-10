@@ -31,7 +31,7 @@ def get_operation_info(func: Callable[..., Any], description: str) -> OperationI
                 name=name,
                 type=type_str,
                 required=not has_default,
-                default=param.default if has_default else None,
+                default=_serialize_default(param.default) if has_default else None,
             )
         )
 
@@ -90,3 +90,14 @@ def _return_schema(hint: Any) -> dict[str, Any]:
             }
 
     return {"type": _type_to_str(hint)}
+
+
+def _serialize_default(value: Any) -> Any:
+    """Convert Python defaults to JSON-serializable docs values."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, (list, tuple)):
+        return [_serialize_default(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _serialize_default(item) for key, item in value.items()}
+    return repr(value)

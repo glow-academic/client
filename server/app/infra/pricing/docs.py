@@ -32,7 +32,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_pricing_client(
+async def docs_pricing_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime
 from types import SimpleNamespace
 from uuid import uuid4
 
-from app.infra.reports_permissions import (
+from app.infra.reports.permissions import (
     build_reports_sections,
     build_reports_sections_v2,
     compute_history_section,

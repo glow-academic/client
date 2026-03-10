@@ -18,7 +18,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.chat_context import resolve_chat_context
+from app.infra.chat.context import resolve_chat_context
 from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.uploads.create import create_upload
@@ -47,7 +47,7 @@ CSV_COLUMNS = [
 ]
 
 
-async def export_chat_client(
+async def export_chat_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

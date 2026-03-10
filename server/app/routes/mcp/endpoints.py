@@ -69,9 +69,9 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     #     "docs": ("app.infra.auth_docs", "docs_auth_client"),
     # },
     "benchmark": {
-        "get": ("app.routes.v5.api.main.benchmark.get", "benchmark_bundle_get"),
+        "get": ("app.routes.v5.api.main.benchmark.get", "get_benchmark"),
         "refresh": ("app.routes.v5.api.main.benchmark.refresh", "benchmark_refresh"),
-        "docs": ("app.infra.benchmark_docs", "docs_benchmark_client"),
+        "docs": ("app.infra.benchmark.docs", "docs_benchmark_impl"),
     },
     "cohort": {
         "get": ("app.routes.v5.api.main.cohort.get", "get_cohort"),
@@ -184,7 +184,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "pricing": {
         "get": ("app.routes.v5.api.main.pricing.get", "get_pricing"),
         "refresh": ("app.routes.v5.api.main.pricing.refresh", "pricing_refresh"),
-        "docs": ("app.infra.pricing_docs", "docs_pricing_client"),
+        "docs": ("app.infra.pricing.docs", "docs_pricing_impl"),
     },
     # "profile": {
     #     "get": ("app.routes.v5.api.main.profile.get", "get_profile"),
@@ -207,7 +207,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "reports": {
         "get": ("app.routes.v5.api.main.reports.search", "get_reports"),
         "refresh": ("app.routes.v5.api.main.reports.refresh", "reports_refresh"),
-        "docs": ("app.infra.reports_docs", "docs_reports_client"),
+        "docs": ("app.infra.reports.docs", "docs_reports_impl"),
     },
     # "rubric": {
     #     "get": ("app.routes.v5.api.main.rubric.get", "get_rubric"),
@@ -271,7 +271,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "list": ("app.routes.v5.api.main.chat.list", "chat_get"),
         "draft": ("app.routes.v5.api.main.chat.draft", "patch_chat_draft"),
         "refresh": ("app.routes.v5.api.main.chat.refresh", "chat_refresh"),
-        "docs": ("app.infra.chat_docs", "docs_chat_client"),
+        "docs": ("app.infra.chat.docs", "docs_chat_impl"),
     },
 }
 

@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 
-from app.infra.chat_export import export_chat_client
+from app.infra.chat.export import export_chat_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.chat.types import ExportChatApiResponse
@@ -44,7 +44,7 @@ async def export_chat(
     if group_id is None:
         raise ValueError("Group ID could not be resolved for chat export")
 
-    return await export_chat_client(
+    return await export_chat_impl(
         pool,
         redis,
         profile_id=profile_id,

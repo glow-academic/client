@@ -85,7 +85,7 @@ async def _empty_list() -> list:  # type: ignore[type-arg]
     return []
 
 
-async def export_benchmark_client(
+async def export_benchmark_impl(
     pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]
     *,

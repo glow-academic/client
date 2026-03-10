@@ -1,6 +1,6 @@
 """Chat drafts list endpoint — composable infra architecture.
 
-Thin route handler. Core logic lives in app.infra.chat_drafts.
+Thin route handler. Core logic lives in app.infra.chat.drafts.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.chat_drafts import list_chat_drafts_client
+from app.infra.chat.drafts import list_chat_drafts_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.chat.types import GetChatDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -35,7 +35,7 @@ async def get_chat_drafts(
         redis = get_redis_client()
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        context = await list_chat_drafts_client(
+        context = await list_chat_drafts_impl(
             pool,
             redis,
             profile_id=UUID(profile_id),

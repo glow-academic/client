@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, Response
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.pricing_docs import docs_pricing_client
+from app.infra.pricing.docs import docs_pricing_impl
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ async def get_pricing_docs_endpoint(
     redis = get_redis_client()
     profile_id = http_request.state.profile_id
 
-    return await docs_pricing_client(
+    return await docs_pricing_impl(
         pool,
         redis,
         profile_id=profile_id,

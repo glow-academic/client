@@ -1,6 +1,6 @@
 """Tests for reports type defaults and isolation."""
 
-from app.infra.reports_types import (
+from app.infra.reports.types import (
     ReportsLeaderboardRow,
     ReportsHistorySection,
     ReportsMetric,

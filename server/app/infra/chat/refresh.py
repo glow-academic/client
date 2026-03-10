@@ -26,7 +26,7 @@ _TAGS = ["chat", "artifacts"]
 _VIEWS = ["chat_mv", "chat_drafts_mv"]
 
 
-async def refresh_chat_client(
+async def refresh_chat_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

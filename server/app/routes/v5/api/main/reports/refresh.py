@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
-from app.infra.reports_refresh import refresh_reports_client
+from app.infra.reports.refresh import refresh_reports_impl
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ async def reports_refresh(
     redis = get_redis_client()
     profile_id = http_request.state.profile_id
 
-    result = await refresh_reports_client(
+    result = await refresh_reports_impl(
         pool,
         redis,
         profile_id=profile_id,

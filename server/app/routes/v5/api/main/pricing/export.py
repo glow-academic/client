@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.infra.pricing_export import export_pricing_client
+from app.infra.pricing.export import export_pricing_impl
 from app.routes.v5.api.main.pricing.types import ExportPricingApiResponse
 
 router = APIRouter()
@@ -20,7 +20,7 @@ async def export_pricing(
     profile_id = http_request.state.profile_id
     session_id = http_request.state.session_id
 
-    return await export_pricing_client(
+    return await export_pricing_impl(
         pool,
         redis,
         profile_id=profile_id,

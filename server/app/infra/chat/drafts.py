@@ -17,7 +17,7 @@ from app.infra.types import ArtifactContext
 from app.routes.v5.tools.entries.chat_drafts.search import search_chat_drafts
 
 
-async def list_chat_drafts_client(
+async def list_chat_drafts_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,

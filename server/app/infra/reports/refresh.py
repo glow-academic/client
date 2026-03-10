@@ -20,7 +20,7 @@ _TAGS = ["reports", "artifacts"]
 _VIEWS: list[str] = []
 
 
-async def refresh_reports_client(
+async def refresh_reports_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

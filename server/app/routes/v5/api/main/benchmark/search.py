@@ -6,7 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.benchmark_context import resolve_benchmark_search_context
+from app.infra.benchmark.context import resolve_benchmark_search_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.test_permissions import compute_test_status
 from app.routes.v5.api.main.benchmark.types import (

@@ -79,6 +79,10 @@ async def _create_group_route_graph(
             external_call_id=f"call-{tag}",
             tool_id=tool.id,
         )
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY groups_mv")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY runs_mv")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY messages_mv")
+        await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY calls_mv")
 
     return GroupRouteGraph(
         group_id=group.id,
@@ -118,7 +122,7 @@ class TestGroupRoute:
         )
 
         response = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/groups/get",
+            "/api/v5/artifacts/group/get",
             json={"group_id": str(graph.group_id)},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -148,11 +152,11 @@ class TestGroupRoute:
         )
 
         first = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/groups/get",
+            "/api/v5/artifacts/group/get",
             json={"group_id": str(graph.group_id)},
         )
         second = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/groups/get",
+            "/api/v5/artifacts/group/get",
             json={"group_id": str(graph.group_id)},
         )
 
@@ -177,7 +181,7 @@ class TestGroupRoute:
         )
 
         response = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/groups/export",
+            "/api/v5/artifacts/group/export",
             json={"group_id": str(graph.group_id)},
         )
 

@@ -7,13 +7,13 @@ import zipfile
 
 import pytest
 
-from app.infra.pricing_context import (
+from app.infra.pricing.context import (
     resolve_pricing_context,
     resolve_pricing_search_context,
 )
-from app.infra.pricing_docs import docs_pricing_client
-from app.infra.pricing_export import export_pricing_client
-from app.infra.pricing_refresh import refresh_pricing_client
+from app.infra.pricing.docs import docs_pricing_impl
+from app.infra.pricing.export import export_pricing_impl
+from app.infra.pricing.refresh import refresh_pricing_impl
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.run_pricing.create import (
     create_run_pricing_entry_internal,
@@ -142,7 +142,7 @@ class TestPricingDocsClient:
     async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
         profile = await profile_identity_factory()
 
-        result = await docs_pricing_client(
+        result = await docs_pricing_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -167,9 +167,9 @@ class TestExportPricingClient:
                 conn, redis_client, profile.profile_resource_id
             )
 
-        monkeypatch.setattr("app.infra.pricing_export.UPLOAD_FOLDER", tmp_path)
+        monkeypatch.setattr("app.infra.pricing.export.UPLOAD_FOLDER", tmp_path)
 
-        result = await export_pricing_client(
+        result = await export_pricing_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
@@ -199,7 +199,7 @@ class TestRefreshPricingClient:
     ):
         profile = await profile_identity_factory()
 
-        result = await refresh_pricing_client(
+        result = await refresh_pricing_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,

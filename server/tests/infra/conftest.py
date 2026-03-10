@@ -6,6 +6,10 @@ All data lives in the disposable testcontainers DB.
 
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
+import importlib
+import sys
+from pathlib import Path
+from types import ModuleType
 from uuid import UUID
 
 import pytest
@@ -21,6 +25,35 @@ from .factories import (
 )
 
 pytestmark = pytest.mark.asyncio
+
+
+def _ensure_package_stub(package_name: str, package_path: Path) -> None:
+    if package_name in sys.modules:
+        return
+    package = ModuleType(package_name)
+    package.__path__ = [str(package_path)]  # type: ignore[attr-defined]
+    sys.modules[package_name] = package
+
+
+def _build_artifact_router_for_tests(
+    *,
+    artifact_name: str,
+    prefix: str,
+    tags: list[str],
+    module_names: list[str],
+) -> APIRouter:
+    main_dir = Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    artifact_dir = main_dir / artifact_name
+    _ensure_package_stub("app.routes.v5.api.main", main_dir)
+    _ensure_package_stub(f"app.routes.v5.api.main.{artifact_name}", artifact_dir)
+
+    router = APIRouter(prefix=prefix, tags=tags)
+    for module_name in module_names:
+        module = importlib.import_module(
+            f"app.routes.v5.api.main.{artifact_name}.{module_name}"
+        )
+        router.include_router(module.router)
+    return router
 
 
 @dataclass
@@ -147,7 +180,24 @@ async def v5_persona_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real persona v5 route stack."""
     import app.infra.globals as globals_mod
-    from app.routes.v5.api.main.persona import router as persona_router
+    persona_router = _build_artifact_router_for_tests(
+        artifact_name="persona",
+        prefix="/personas",
+        tags=["personas"],
+        module_names=[
+            "get",
+            "search",
+            "create",
+            "update",
+            "delete",
+            "duplicate",
+            "draft",
+            "drafts",
+            "docs",
+            "export",
+            "refresh",
+        ],
+    )
 
     request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
     app = _build_v5_artifact_test_app(
@@ -178,7 +228,12 @@ async def v5_scenario_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real scenario v5 route stack."""
     import app.infra.globals as globals_mod
-    from app.routes.v5.api.main.scenario import router as scenario_router
+    scenario_router = _build_artifact_router_for_tests(
+        artifact_name="scenario",
+        prefix="/scenarios",
+        tags=["scenarios"],
+        module_names=["get", "search", "create"],
+    )
 
     request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
     app = _build_v5_artifact_test_app(
@@ -209,7 +264,12 @@ async def v5_agent_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real agent v5 route stack."""
     import app.infra.globals as globals_mod
-    from app.routes.v5.api.main.agent import router as agent_router
+    agent_router = _build_artifact_router_for_tests(
+        artifact_name="agent",
+        prefix="/agents",
+        tags=["agents"],
+        module_names=["get", "search", "create"],
+    )
 
     request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
     app = _build_v5_artifact_test_app(
@@ -240,7 +300,12 @@ async def v5_group_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real group v5 route stack."""
     import app.infra.globals as globals_mod
-    from app.routes.v5.api.main.group import router as group_router
+    group_router = _build_artifact_router_for_tests(
+        artifact_name="group",
+        prefix="/group",
+        tags=["artifacts", "group"],
+        module_names=["get", "export"],
+    )
 
     request_state: dict[str, str | None] = {"profile_id": None, "session_id": None}
     app = _build_v5_artifact_test_app(

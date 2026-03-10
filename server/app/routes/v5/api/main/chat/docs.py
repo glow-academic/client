@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.chat_docs import docs_chat_client
+from app.infra.chat.docs import docs_chat_impl
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_pool, get_redis_client
@@ -20,7 +20,7 @@ async def get_chat_docs_endpoint(
     profile_id = http_request.state.profile_id
     pool = get_pool()
 
-    return await docs_chat_client(
+    return await docs_chat_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,

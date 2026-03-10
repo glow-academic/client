@@ -25,7 +25,7 @@ _TAGS = ["benchmark", "artifacts"]
 _VIEWS = ["benchmark_mv"]
 
 
-async def refresh_benchmark_client(
+async def refresh_benchmark_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,
