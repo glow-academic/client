@@ -20,6 +20,7 @@ import importlib
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 from uuid import UUID
 
@@ -577,6 +578,54 @@ async def _run_color_seeds(
     return created_ids
 
 
+async def _run_text_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    document_text_defs: list[dict],
+    assets_dir: Path,
+) -> None:
+    """Run text seed definitions using create_document_text + update_document.
+
+    Creates a session, then for each document-text mapping:
+      1. Reads source text file from assets_dir
+      2. Calls create_document_text (full entry chain)
+      3. Calls update_document to link text_ids
+    """
+    from app.infra.tools.entries.create_document_text import create_document_text
+    from app.routes.v5.tools.artifacts.document.update import update_document
+    from app.routes.v5.tools.entries.sessions.create import create_session
+
+    # Create a temp upload folder for text file writes
+    upload_folder = Path(tempfile.mkdtemp(prefix="seed_uploads_"))
+
+    # Create a session for entry ownership
+    async with pool.acquire() as conn:
+        session = await create_session(conn, profile_id=SEED_PROFILE_ID)
+    session_id = session.id
+
+    for dt in document_text_defs:
+        source_path = assets_dir / dt["source_file"]
+        content = source_path.read_text(encoding="utf-8")
+
+        async with pool.acquire() as conn:
+            result = await create_document_text(
+                conn,
+                redis,
+                content=content,
+                session_id=session_id,
+                upload_folder=upload_folder,
+            )
+
+        async with pool.acquire() as conn:
+            await update_document(
+                conn,
+                dt["document_id"],
+                text_ids=[result.texts_resource_id],
+            )
+
+        print(f"  OK: Text linked to document {dt['document_id']}")
+
+
 async def _run_post_links(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -889,6 +938,13 @@ async def main(setup: str = "university") -> None:
                 await _run_setting_seeds(pool, redis_client, mod.settings)
             elif module_name == "colors":
                 await _run_color_seeds(pool, redis_client, mod.colors)
+            elif module_name == "texts":
+                assets_dir = (
+                    MODULES_DIR / "11-setups" / setup / "uploads" / "files"
+                )
+                await _run_text_seeds(
+                    pool, redis_client, mod.document_texts, assets_dir
+                )
             elif module_name == "post_links":
                 await _run_post_links(pool, redis_client, mod)
 
