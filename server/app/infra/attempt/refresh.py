@@ -25,7 +25,7 @@ _TAGS = ["attempt", "artifacts"]
 _VIEWS = ["attempt_mv"]
 
 
-async def refresh_attempt_client(
+async def refresh_attempt_impl(
     pool: asyncpg.Pool,
     redis: Redis | None,
     *,

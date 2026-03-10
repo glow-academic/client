@@ -8,19 +8,8 @@ from uuid import UUID
 import pytest
 import pytest_asyncio
 
-from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.sessions.create import create_session
+from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 from tests.helpers import unique_tag
-
-
-@dataclass(frozen=True)
-class ScenarioRouteActor:
-    profile_id: UUID
-    profiles_id: UUID
-    session_id: UUID
-    department_id: UUID
-    name: str
 
 
 @dataclass(frozen=True)
@@ -32,51 +21,6 @@ class ScenarioRouteResources:
     problem_statement_id: UUID
     problem_statement_name: str
     problem_statement: str
-
-
-async def _create_scenario_route_actor(
-    pool,
-    redis_client,
-    setting_graph_factory,
-) -> ScenarioRouteActor:
-    from app.routes.v5.tools.artifacts.profile.update import update_profile
-    from app.routes.v5.tools.resources.roles.create import create_role
-
-    graph = await setting_graph_factory(tool_artifacts=["scenario", "persona"])
-
-    async with pool.acquire() as conn:
-        admin_role = await create_role(
-            conn,
-            role="admin",
-            name=f"Scenario Route Admin {unique_tag()}",
-            description="Scenario route test admin role",
-            redis=redis_client,
-        )
-        await update_profile(
-            conn,
-            graph.profile_artifact_id,
-            role_ids=[admin_role.id],
-            redis=redis_client,
-        )
-        session = await create_session(conn, profile_id=graph.profile_resource_id)
-        await create_group(conn, session_id=session.id, name="scenario-route")
-
-    identity = await resolve_profile_identity_context(
-        pool,
-        graph.profile_artifact_id,
-        redis_client,
-        session_id=session.id,
-    )
-    if identity is None:
-        raise AssertionError("Expected route test actor identity to exist")
-
-    return ScenarioRouteActor(
-        profile_id=graph.profile_artifact_id,
-        profiles_id=graph.profile_resource_id,
-        session_id=session.id,
-        department_id=graph.department_id,
-        name=identity.name,
-    )
 
 
 async def _create_scenario_route_resources(pool, redis_client) -> ScenarioRouteResources:
@@ -115,10 +59,13 @@ async def _create_scenario_route_resources(pool, redis_client) -> ScenarioRouteR
 
 @pytest_asyncio.fixture
 async def scenario_route_actor(pool, redis_client, setting_graph_factory):
-    return await _create_scenario_route_actor(
+    return await create_admin_route_actor(
         pool,
         redis_client,
         setting_graph_factory,
+        tool_artifacts=["scenario", "persona"],
+        group_name="scenario-route",
+        role_name_prefix="Scenario Route Admin",
     )
 
 
@@ -249,7 +196,7 @@ class TestScenarioRoute:
         pool,
         redis_client,
         v5_scenario_route_client,
-        scenario_route_actor: ScenarioRouteActor,
+        scenario_route_actor: RouteActor,
     ) -> dict[str, str]:
         resources = await _create_scenario_route_resources(pool, redis_client)
         v5_scenario_route_client.authenticate(

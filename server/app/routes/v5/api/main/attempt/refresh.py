@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Request, Response
 
-from app.infra.attempt_refresh import refresh_attempt_client
+from app.infra.attempt.refresh import refresh_attempt_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -19,7 +19,7 @@ async def attempt_refresh(
     pool = get_pool()
     redis = get_redis_client()
 
-    result = await refresh_attempt_client(
+    result = await refresh_attempt_impl(
         pool,
         redis,
         profile_id=profile_id,

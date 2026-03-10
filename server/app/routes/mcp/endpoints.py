@@ -57,7 +57,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "attempt": {
         "get": ("app.routes.v5.api.main.attempt.get", "attempt_get"),
-        "docs": ("app.infra.attempt_docs", "docs_attempt_client"),
+        "docs": ("app.infra.attempt.docs", "docs_attempt_impl"),
     },
     # "auth": {
     #     "get": ("app.routes.v5.api.main.auth.get", "get_auth"),

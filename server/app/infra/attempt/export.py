@@ -78,7 +78,7 @@ async def _empty() -> list:  # type: ignore[type-arg]
     return []
 
 
-async def export_attempt_client(
+async def export_attempt_impl(
     pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]
     *,

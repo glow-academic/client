@@ -31,7 +31,7 @@ _PAGE_METADATA = PageMetadataConfig(
 )
 
 
-async def docs_attempt_client(
+async def docs_attempt_impl(
     pool: asyncpg.Pool,
     redis: Redis,
     *,
@@ -74,7 +74,7 @@ async def docs_attempt_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.infra.attempt_permissions import (
+    from app.infra.attempt.permissions import (
         check_attempt_access,
         compute_achieved_standards,
         compute_attempt_aggregates,
