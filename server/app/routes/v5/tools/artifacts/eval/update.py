@@ -39,7 +39,6 @@ MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
         "model_rubrics_id",
         "eval_model_rubrics_junction_pkey",
     ),
-    ("eval_rubrics_junction", "rubrics_id", "eval_rubrics_junction_pkey"),
     ("eval_evals_junction", "evals_id", "eval_evals_junction_pkey"),
 ]
 
