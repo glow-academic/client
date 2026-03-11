@@ -1,10 +1,4 @@
-"""Attempt next endpoint — proceed to next scenario in an attempt.
-
-Synchronous equivalent of socket event: attempt_next.
-Reuses: socket/client/attempt/next.py infra.
-
-TODO: Wire to actual infra (find next scenario, create chat, return IDs).
-"""
+"""Attempt next endpoint — thin HTTP adapter over internal orchestration."""
 
 from __future__ import annotations
 
@@ -12,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.routes.v5.socket.client.types import AttemptNextPayload
+from app.routes.v5.socket.internal.attempt.next import attempt_next_internal_impl
 
 router = APIRouter()
 
@@ -27,4 +22,32 @@ async def next_attempt(
     http_request: Request,
 ) -> NextAttemptApiResponse:
     """Proceed to the next scenario in an existing attempt."""
-    raise HTTPException(status_code=501, detail="Not implemented")
+    profile_id = getattr(http_request.state, "profile_id", None)
+    session_id = getattr(http_request.state, "session_id", None)
+
+    if not profile_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile ID is required. Please sign in again.",
+        )
+    if not session_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Session ID is required. Please sign in again.",
+        )
+
+    try:
+        result = await attempt_next_internal_impl(
+            {
+                "profile_id": str(profile_id),
+                "session_id": str(session_id),
+                **request.model_dump(mode="json"),
+            }
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return NextAttemptApiResponse(
+        attempt_id=result.attempt_id,
+        chat_id=result.attempt_chat_id or result.chat_entry_id or "",
+    )

@@ -1,36 +1,99 @@
-"""Internal handler: attempt_start — thin wrapper."""
+"""Internal handler: attempt_start — canonical orchestration entry."""
 
 from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel
 
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.attempt_events_impl import attempt_start_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.socket_event import make_emit
+from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
+from app.routes.v5.socket.internal.attempt.proceed import attempt_proceed_internal_impl
 
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("attempt_start")  # type: ignore
-async def attempt_start_handler(data: dict[str, Any]) -> None:
+class AttemptStartInternalResult(BaseModel):
+    """Structured result for the shared attempt start orchestration."""
+
+    attempt_id: str
+    chat_entry_id: str | None = None
+    attempt_chat_id: str | None = None
+
+
+async def attempt_start_internal_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn | None = None,
+) -> AttemptStartInternalResult:
+    """Run canonical attempt start orchestration for any surface."""
     sid = data.get("sid", "")
-    if not sid:
-        return
 
-    profile_id = data.get("profile_id") or await find_profile_by_socket(sid)
+    profile_id = data.get("profile_id") or (
+        await find_profile_by_socket(sid) if sid else None
+    )
     if not profile_id:
-        return
+        raise ValueError("Missing profile_id for attempt_start")
 
-    session_id = await find_session_by_socket(sid)
+    session_id = data.get("session_id") or (
+        await find_session_by_socket(sid) if sid else None
+    )
     if not session_id:
-        return
+        raise ValueError("Missing session_id for attempt_start")
 
     pool = get_pool()
+    downstream_emit = emit or make_emit()
+    recorded: list[SocketEvent] = []
+
+    async def _emit(events: list[SocketEvent]) -> None:
+        recorded.extend(events)
+        await downstream_emit(events)
+
     await attempt_start_impl(
         data,
-        emit=make_emit(),
+        emit=_emit,
         pool=pool,
         redis=get_redis_client(),
         profile_id=profile_id,
         session_id=session_id,
     )
+
+    proceed_events = [
+        event
+        for event in recorded
+        if event.bus == "internal" and event.event == "attempt_proceed"
+    ]
+    for event in proceed_events:
+        await attempt_proceed_internal_impl(
+            {
+                **event.data,
+                "profile_id": profile_id,
+                "session_id": session_id,
+            },
+            emit=_emit,
+        )
+
+    for event in recorded:
+        if event.bus != "internal":
+            continue
+        if event.event == "attempt_started":
+            return AttemptStartInternalResult(
+                attempt_id=event.data.get("attempt_id", ""),
+                chat_entry_id=event.data.get("chat_entry_id"),
+            )
+        if event.event == "attempt_chat_started":
+            return AttemptStartInternalResult(
+                attempt_id=event.data.get("attempt_id", ""),
+                attempt_chat_id=event.data.get("chat_id"),
+            )
+        if event.event == "attempt_error":
+            raise ValueError(event.data.get("message", "Failed to start attempt"))
+
+    raise ValueError("Attempt start completed without a terminal start event")
+
+
+@internal_sio.on("attempt_start")  # type: ignore
+async def attempt_start_handler(data: dict[str, Any]) -> None:
+    await attempt_start_internal_impl(data)

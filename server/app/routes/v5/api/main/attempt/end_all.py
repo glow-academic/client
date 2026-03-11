@@ -1,10 +1,4 @@
-"""Attempt end-all endpoint — end all remaining chats in an attempt.
-
-Synchronous equivalent of socket event: attempt_end_all.
-Reuses: socket/client/attempt/end_all.py infra.
-
-TODO: Wire to actual infra (end all chats, return summary).
-"""
+"""Attempt end-all endpoint — thin HTTP adapter over internal orchestration."""
 
 from __future__ import annotations
 
@@ -12,6 +6,9 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.routes.v5.socket.client.types import AttemptEndAllPayload
+from app.routes.v5.socket.internal.attempt.end_all import (
+    attempt_end_all_internal_impl,
+)
 
 router = APIRouter()
 
@@ -29,4 +26,20 @@ async def end_all_attempt(
     http_request: Request,
 ) -> EndAllAttemptApiResponse:
     """End all remaining chats in an attempt."""
-    raise HTTPException(status_code=501, detail="Not implemented")
+    profile_id = getattr(http_request.state, "profile_id", None)
+    session_id = getattr(http_request.state, "session_id", None)
+    if not profile_id or not session_id:
+        raise HTTPException(status_code=401, detail="Missing profile or session")
+
+    try:
+        result = await attempt_end_all_internal_impl(
+            {
+                "profile_id": str(profile_id),
+                "session_id": str(session_id),
+                **request.model_dump(mode="json"),
+            }
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return EndAllAttemptApiResponse.model_validate(result.model_dump(mode="json"))
