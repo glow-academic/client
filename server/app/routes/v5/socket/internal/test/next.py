@@ -1,10 +1,15 @@
-"""Internal handler: test_next — thin wrapper."""
+"""Internal handler: test_next — canonical orchestration entry."""
 
 from typing import Any
 
+from pydantic import BaseModel
+
 from app.infra.globals import get_internal_sio, get_pool
-from app.infra.websocket.socket_event import make_emit
+from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
+from app.infra.websocket.test_types import TestErrorData
 from app.infra.websocket.test_events_impl import test_next_impl
+from app.routes.v5.socket.client.types import TestNextPayload
+from app.routes.v5.socket.internal.test.run import test_run_internal_impl
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -12,11 +17,63 @@ logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("test_next")  # type: ignore
-async def test_next_handler(data: dict[str, Any]) -> None:
+class TestNextInternalResult(BaseModel):
+    invocation_id: str
+    run_id: str
+    current_run: int = 1
+    total_runs: int = 1
+
+
+async def test_next_internal_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn | None = None,
+) -> TestNextInternalResult:
+    """Run canonical test next orchestration for any surface."""
+    payload = TestNextPayload(**data)
+    del payload
+
     pool = get_pool()
     if not pool:
-        logger.error("Database pool not initialized")
-        return
+        raise ValueError("Database pool not initialized")
 
-    await test_next_impl(data, emit=make_emit(), pool=pool)
+    downstream_emit = emit or make_emit()
+    recorded: list[SocketEvent] = []
+
+    async def _emit(events: list[SocketEvent]) -> None:
+        recorded.extend(events)
+        await downstream_emit(events)
+
+    await test_next_impl(data, emit=_emit, pool=pool)
+
+    run_events = [
+        event for event in recorded if event.bus == "internal" and event.event == "test_run"
+    ]
+    for event in run_events:
+        result = await test_run_internal_impl(
+            {
+                **event.data,
+                "session_id": data.get("session_id"),
+            },
+            emit=_emit,
+        )
+        return TestNextInternalResult(
+            invocation_id=result.invocation_id,
+            run_id=result.run_id,
+            current_run=1,
+            total_runs=1,
+        )
+
+    for event in recorded:
+        if event.bus != "internal":
+            continue
+        if event.event == "test_error":
+            error = TestErrorData(**event.data)
+            raise ValueError(error.message)
+
+    raise ValueError("No pending test run found")
+
+
+@internal_sio.on("test_next")  # type: ignore
+async def test_next_handler(data: dict[str, Any]) -> None:
+    await test_next_internal_impl(data)

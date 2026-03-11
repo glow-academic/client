@@ -1,10 +1,4 @@
-"""Test next endpoint — find next pending run in an existing test.
-
-Synchronous equivalent of socket event: test_next.
-Reuses: socket/client/test/next.py infra.
-
-TODO: Wire to actual infra (find next pending run, return invocation + run info).
-"""
+"""Test next endpoint — thin HTTP adapter over internal orchestration."""
 
 from __future__ import annotations
 
@@ -12,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.routes.v5.socket.client.types import TestNextPayload
+from app.routes.v5.socket.internal.test.next import test_next_internal_impl
 
 router = APIRouter()
 
@@ -29,4 +24,20 @@ async def next_test(
     http_request: Request,
 ) -> NextTestApiResponse:
     """Find next pending run in an existing test."""
-    raise HTTPException(status_code=501, detail="Not implemented")
+    profile_id = getattr(http_request.state, "profile_id", None)
+    session_id = getattr(http_request.state, "session_id", None)
+    if not profile_id or not session_id:
+        raise HTTPException(status_code=401, detail="Missing profile or session")
+
+    try:
+        result = await test_next_internal_impl(
+            {
+                "profile_id": str(profile_id),
+                "session_id": str(session_id),
+                **request.model_dump(mode="json"),
+            }
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return NextTestApiResponse.model_validate(result.model_dump(mode="json"))

@@ -5,10 +5,7 @@ All business logic lives in v5/internal/test/start.py.
 """
 
 from typing import Any
-from uuid import UUID
-
-from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
-from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.routes.v5.socket.client.types import TestStartPayload
 from app.routes.v5.socket.internal.test.types import TestErrorData
@@ -37,30 +34,11 @@ async def test_start(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        # Resolve profiles_id (resource) from profile_id (artifact)
-        redis = get_redis_client()
-        pool = get_pool()
-        ctx = await resolve_profile_identity_context(
-            pool, UUID(profile_id_str), redis=redis
-        )
-
-        if not ctx:
-            await internal_sio.emit(
-                "test_error",
-                TestErrorData(
-                    sid=sid,
-                    message="Profile context not found. Please reconnect.",
-                    error_type="auth",
-                ).model_dump(mode="json"),
-            )
-            return
-
         await internal_sio.emit(
             "test_start",
             {
                 "sid": sid,
                 "profile_id": profile_id_str,
-                "profiles_id": str(ctx.profiles_id),
                 **payload.model_dump(mode="json"),
             },
         )

@@ -1,10 +1,4 @@
-"""Test run endpoint — run one auto-regressive replay.
-
-Fire-and-return equivalent of socket event: test_run.
-Returns run_id immediately; progress streams via socket if connected.
-
-TODO: Wire to actual infra (kick off replay, return job reference).
-"""
+"""Test run endpoint — thin HTTP adapter over internal orchestration."""
 
 from __future__ import annotations
 
@@ -12,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.routes.v5.socket.client.types import TestRunPayload
+from app.routes.v5.socket.internal.test.run import test_run_internal_impl
 
 router = APIRouter()
 
@@ -28,4 +23,20 @@ async def run_test(
     http_request: Request,
 ) -> RunTestApiResponse:
     """Run one auto-regressive replay. Returns immediately; progress via socket."""
-    raise HTTPException(status_code=501, detail="Not implemented")
+    profile_id = getattr(http_request.state, "profile_id", None)
+    session_id = getattr(http_request.state, "session_id", None)
+    if not profile_id or not session_id:
+        raise HTTPException(status_code=401, detail="Missing profile or session")
+
+    try:
+        result = await test_run_internal_impl(
+            {
+                "profile_id": str(profile_id),
+                "session_id": str(session_id),
+                **request.model_dump(mode="json"),
+            }
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return RunTestApiResponse.model_validate(result.model_dump(mode="json"))
