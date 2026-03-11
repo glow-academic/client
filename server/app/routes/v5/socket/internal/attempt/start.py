@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.attempt_events_impl import attempt_start_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
@@ -27,6 +28,7 @@ async def attempt_start_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> AttemptStartInternalResult:
     """Run canonical attempt start orchestration for any surface."""
     sid = data.get("sid", "")
@@ -43,55 +45,72 @@ async def attempt_start_internal_impl(
     if not session_id:
         raise ValueError("Missing session_id for attempt_start")
 
-    pool = get_pool()
-    downstream_emit = emit or make_emit()
-    recorded: list[SocketEvent] = []
+    async def _run() -> AttemptStartInternalResult:
+        pool = get_pool()
+        downstream_emit = emit or make_emit()
+        recorded: list[SocketEvent] = []
 
-    async def _emit(events: list[SocketEvent]) -> None:
-        recorded.extend(events)
-        await downstream_emit(events)
+        async def _emit(events: list[SocketEvent]) -> None:
+            recorded.extend(events)
+            await downstream_emit(events)
 
-    await attempt_start_impl(
-        data,
-        emit=_emit,
-        pool=pool,
-        redis=get_redis_client(),
-        profile_id=profile_id,
-        session_id=session_id,
-    )
-
-    proceed_events = [
-        event
-        for event in recorded
-        if event.bus == "internal" and event.event == "attempt_proceed"
-    ]
-    for event in proceed_events:
-        await attempt_proceed_internal_impl(
-            {
-                **event.data,
-                "profile_id": profile_id,
-                "session_id": session_id,
-            },
+        await attempt_start_impl(
+            data,
             emit=_emit,
+            pool=pool,
+            redis=get_redis_client(),
+            profile_id=profile_id,
+            session_id=session_id,
         )
 
-    for event in recorded:
-        if event.bus != "internal":
-            continue
-        if event.event == "attempt_started":
-            return AttemptStartInternalResult(
-                attempt_id=event.data.get("attempt_id", ""),
-                chat_entry_id=event.data.get("chat_entry_id"),
+        proceed_events = [
+            event
+            for event in recorded
+            if event.bus == "internal" and event.event == "attempt_proceed"
+        ]
+        for event in proceed_events:
+            await attempt_proceed_internal_impl(
+                {
+                    **event.data,
+                    "profile_id": profile_id,
+                    "session_id": session_id,
+                },
+                emit=_emit,
+                audit=False,
             )
-        if event.event == "attempt_chat_started":
-            return AttemptStartInternalResult(
-                attempt_id=event.data.get("attempt_id", ""),
-                attempt_chat_id=event.data.get("chat_id"),
-            )
-        if event.event == "attempt_error":
-            raise ValueError(event.data.get("message", "Failed to start attempt"))
 
-    raise ValueError("Attempt start completed without a terminal start event")
+        for event in recorded:
+            if event.bus != "internal":
+                continue
+            if event.event == "attempt_started":
+                return AttemptStartInternalResult(
+                    attempt_id=event.data.get("attempt_id", ""),
+                    chat_entry_id=event.data.get("chat_entry_id"),
+                )
+            if event.event == "attempt_chat_started":
+                return AttemptStartInternalResult(
+                    attempt_id=event.data.get("attempt_id", ""),
+                    attempt_chat_id=event.data.get("chat_id"),
+                )
+            if event.event == "attempt_error":
+                raise ValueError(event.data.get("message", "Failed to start attempt"))
+
+        raise ValueError("Attempt start completed without a terminal start event")
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="attempt",
+        profile_id=UUID(str(profile_id)),
+        operation="start",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(str(session_id)),
+        response_model=AttemptStartInternalResult,
+    )
 
 
 @internal_sio.on("attempt_start")  # type: ignore

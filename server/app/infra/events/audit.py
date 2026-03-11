@@ -125,3 +125,12 @@ async def run_artifact_operation_with_audit(
     if response_model is not None:
         return response_model.model_validate(result.result)
     return result.result
+
+
+def build_audit_arguments(data: dict[str, Any]) -> dict[str, Any]:
+    """Strip transport-only keys from an audited operation payload."""
+    return {
+        key: value
+        for key, value in data.items()
+        if key not in {"sid", "profile_id", "session_id"}
+    }

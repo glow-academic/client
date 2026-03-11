@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.globals import get_redis_client
@@ -26,6 +27,7 @@ async def test_run_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> TestRunInternalResult:
     """Run canonical test run orchestration for any surface."""
     payload = TestRunPayload(**data)
@@ -45,37 +47,54 @@ async def test_run_internal_impl(
         session_id=UUID(session_id),
     )
 
-    downstream_emit = emit or make_emit()
-    recorded: list[SocketEvent] = []
+    async def _run() -> TestRunInternalResult:
+        downstream_emit = emit or make_emit()
+        recorded: list[SocketEvent] = []
 
-    async def _emit(events: list[SocketEvent]) -> None:
-        recorded.extend(events)
-        await downstream_emit(events)
+        async def _emit(events: list[SocketEvent]) -> None:
+            recorded.extend(events)
+            await downstream_emit(events)
 
-    await test_run_impl(
-        {
-            **data,
-            "profiles_id": str(identity.profiles_id) if identity else None,
-            "session_id": session_id,
-        },
-        emit=_emit,
-        pool=get_pool(),
+        await test_run_impl(
+            {
+                **data,
+                "profiles_id": str(identity.profiles_id) if identity else None,
+                "session_id": session_id,
+            },
+            emit=_emit,
+            pool=get_pool(),
+        )
+
+        for event in recorded:
+            if event.bus != "internal":
+                continue
+            if event.event == "test_run_started":
+                return TestRunInternalResult(
+                    test_id=event.data.get("test_id", ""),
+                    invocation_id=event.data.get("test_invocation_id", ""),
+                    run_id=event.data.get("run_id", ""),
+                )
+            if event.event == "test_error":
+                error = TestErrorData(**event.data)
+                raise ValueError(error.message)
+
+        raise ValueError("Test run completed without a terminal event")
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="test",
+        profile_id=UUID(profile_id),
+        operation="run",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(session_id),
+        test_id=payload.test_id,
+        response_model=TestRunInternalResult,
     )
-
-    for event in recorded:
-        if event.bus != "internal":
-            continue
-        if event.event == "test_run_started":
-            return TestRunInternalResult(
-                test_id=event.data.get("test_id", ""),
-                invocation_id=event.data.get("test_invocation_id", ""),
-                run_id=event.data.get("run_id", ""),
-            )
-        if event.event == "test_error":
-            error = TestErrorData(**event.data)
-            raise ValueError(error.message)
-
-    raise ValueError("Test run completed without a terminal event")
 
 
 @internal_sio.on("test_run")  # type: ignore

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.cancel_active_result import cancel_active_result
@@ -37,6 +38,7 @@ async def attempt_stop_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> AttemptStopInternalResult:
     """Run canonical attempt stop orchestration for any surface."""
     sid = data.get("sid", "")
@@ -54,80 +56,96 @@ async def attempt_stop_internal_impl(
     if not session_id:
         raise ValueError("Missing session_id for attempt_stop_message")
 
-    chat_id = str(payload.chat_id)
-    profile_id_uuid = UUID(profile_id)
-    session_id_uuid = UUID(session_id)
+    async def _run() -> AttemptStopInternalResult:
+        chat_id = str(payload.chat_id)
+        profile_id_uuid = UUID(profile_id)
+        session_id_uuid = UUID(session_id)
 
-    await cancel_active_result(chat_id)
-    await cancel_active_run(chat_id)
+        await cancel_active_result(chat_id)
+        await cancel_active_run(chat_id)
 
-    pool = get_pool()
-    redis = get_redis_client()
-    async with pool.acquire() as conn:
-        chat_entries = await get_attempt_chats(conn, [payload.chat_id])
-        if not chat_entries or not chat_entries[0].group_id:
-            raise ValueError(f"Group not found for chat {chat_id}")
-        group_id = chat_entries[0].group_id
+        pool = get_pool()
+        redis = get_redis_client()
+        async with pool.acquire() as conn:
+            chat_entries = await get_attempt_chats(conn, [payload.chat_id])
+            if not chat_entries or not chat_entries[0].group_id:
+                raise ValueError(f"Group not found for chat {chat_id}")
+            group_id = chat_entries[0].group_id
 
-        identity = await resolve_profile_identity_context(
-            pool,
-            profile_id_uuid,
-            redis,
-            session_id=session_id_uuid,
-        )
-        profiles_id = identity.profiles_id if identity else None
-
-        messages, _ = await search_attempt_messages(
-            conn,
-            chat_ids=[payload.chat_id],
-            limit=1,
-            bypass_mv=True,
-        )
-
-        if not messages:
-            result = AttemptStopInternalResult(
-                chat_id=chat_id,
-                success=False,
-                message="No active message found for this chat",
-            )
-        else:
-            latest_message = messages[0]
-            run = await create_run(
-                conn,
-                group_id=group_id,
-                session_id=session_id_uuid,
-                profiles_id=profiles_id,
-            )
-            call = await create_call(
-                conn,
-                run_id=run.id,
+            identity = await resolve_profile_identity_context(
+                pool,
+                profile_id_uuid,
+                redis,
                 session_id=session_id_uuid,
             )
-            await create_attempt_message_completion(
-                conn,
-                attempt_message_id=latest_message.message_id,
-                call_id=call.id,
-                stop=True,
-            )
-            result = AttemptStopInternalResult(chat_id=chat_id, success=True)
+            profiles_id = identity.profiles_id if identity else None
 
-    downstream_emit = emit or make_emit()
-    await downstream_emit(
-        [
-            SocketEvent(
-                bus="internal",
-                event="attempt_stopped",
-                data=AttemptStoppedData(
-                    sid=sid,
-                    rooms=[sid, f"attempt_{chat_id}"] if sid else None,
+            messages, _ = await search_attempt_messages(
+                conn,
+                chat_ids=[payload.chat_id],
+                limit=1,
+                bypass_mv=True,
+            )
+
+            if not messages:
+                result = AttemptStopInternalResult(
                     chat_id=chat_id,
-                    success=result.success,
-                    message=result.message,
-                ).model_dump(mode="json"),
-            )
-        ]
+                    success=False,
+                    message="No active message found for this chat",
+                )
+            else:
+                latest_message = messages[0]
+                run = await create_run(
+                    conn,
+                    group_id=group_id,
+                    session_id=session_id_uuid,
+                    profiles_id=profiles_id,
+                )
+                call = await create_call(
+                    conn,
+                    run_id=run.id,
+                    session_id=session_id_uuid,
+                )
+                await create_attempt_message_completion(
+                    conn,
+                    attempt_message_id=latest_message.message_id,
+                    call_id=call.id,
+                    stop=True,
+                )
+                result = AttemptStopInternalResult(chat_id=chat_id, success=True)
+
+        downstream_emit = emit or make_emit()
+        await downstream_emit(
+            [
+                SocketEvent(
+                    bus="internal",
+                    event="attempt_stopped",
+                    data=AttemptStoppedData(
+                        sid=sid,
+                        rooms=[sid, f"attempt_{chat_id}"] if sid else None,
+                        chat_id=chat_id,
+                        success=result.success,
+                        message=result.message,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+        return result
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="attempt",
+        profile_id=UUID(str(profile_id)),
+        operation="stop",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(str(session_id)),
+        response_model=AttemptStopInternalResult,
     )
-    return result
 
 
 @internal_sio.on("attempt_stop_message")  # type: ignore

@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.attempt_events_impl import attempt_message_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
@@ -27,6 +28,7 @@ async def attempt_message_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> AttemptMessageInternalResult:
     """Run canonical attempt message orchestration for any surface."""
     payload = AttemptMessagePayload(**data)
@@ -44,46 +46,65 @@ async def attempt_message_internal_impl(
     if not session_id:
         raise ValueError("Missing session_id for attempt_message")
 
-    downstream_emit = emit or make_emit()
-    recorded: list[SocketEvent] = []
+    async def _run() -> AttemptMessageInternalResult:
+        downstream_emit = emit or make_emit()
+        recorded: list[SocketEvent] = []
 
-    async def _emit(events: list[SocketEvent]) -> None:
-        recorded.extend(events)
-        await downstream_emit(events)
+        async def _emit(events: list[SocketEvent]) -> None:
+            recorded.extend(events)
+            await downstream_emit(events)
 
-    await attempt_message_impl(
-        {
-            **data,
-            "chat_id": str(payload.chat_id),
-            "attempt_id": str(payload.attempt_id),
-        },
-        emit=_emit,
-        pool=get_pool(),
-        redis=get_redis_client(),
-        profile_id=str(profile_id),
-        session_id=str(session_id),
+        await attempt_message_impl(
+            {
+                **data,
+                "chat_id": str(payload.chat_id),
+                "attempt_id": str(payload.attempt_id),
+            },
+            emit=_emit,
+            pool=get_pool(),
+            redis=get_redis_client(),
+            profile_id=str(profile_id),
+            session_id=str(session_id),
+        )
+
+        result = AttemptMessageInternalResult(chat_id=str(payload.chat_id))
+        for event in recorded:
+            if event.bus != "internal":
+                continue
+            if event.event == "attempt_user_complete":
+                result.user_message_id = event.data.get("message_id")
+            elif event.event == "attempt_assistant_start":
+                result.assistant_message_id = event.data.get("message_id")
+            elif event.event == "attempt_assistant_complete":
+                result.assistant_message_id = (
+                    event.data.get("message_id") or result.assistant_message_id
+                )
+                result.assistant_content = event.data.get("content")
+            elif event.event == "attempt_error":
+                raise ValueError(
+                    event.data.get("message", "Failed to send attempt message")
+                )
+
+        if result.user_message_id or result.assistant_message_id:
+            return result
+
+        raise ValueError("Attempt message completed without a terminal event")
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="attempt",
+        profile_id=UUID(str(profile_id)),
+        operation="message",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(str(session_id)),
+        attempt_id=payload.attempt_id,
+        response_model=AttemptMessageInternalResult,
     )
-
-    result = AttemptMessageInternalResult(chat_id=str(payload.chat_id))
-    for event in recorded:
-        if event.bus != "internal":
-            continue
-        if event.event == "attempt_user_complete":
-            result.user_message_id = event.data.get("message_id")
-        elif event.event == "attempt_assistant_start":
-            result.assistant_message_id = event.data.get("message_id")
-        elif event.event == "attempt_assistant_complete":
-            result.assistant_message_id = (
-                event.data.get("message_id") or result.assistant_message_id
-            )
-            result.assistant_content = event.data.get("content")
-        elif event.event == "attempt_error":
-            raise ValueError(event.data.get("message", "Failed to send attempt message"))
-
-    if result.user_message_id or result.assistant_message_id:
-        return result
-
-    raise ValueError("Attempt message completed without a terminal event")
 
 
 @internal_sio.on("attempt_message")  # type: ignore

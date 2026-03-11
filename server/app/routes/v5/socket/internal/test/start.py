@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
@@ -26,6 +27,7 @@ async def test_start_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> TestStartInternalResult:
     """Run canonical test start orchestration for any surface."""
     payload = TestStartPayload(**data)
@@ -47,54 +49,70 @@ async def test_start_internal_impl(
     if not identity or not identity.profiles_id:
         raise ValueError("Profile context not found for test_start")
 
-    downstream_emit = emit or make_emit()
-    recorded: list[SocketEvent] = []
+    async def _run() -> TestStartInternalResult:
+        downstream_emit = emit or make_emit()
+        recorded: list[SocketEvent] = []
 
-    async def _emit(events: list[SocketEvent]) -> None:
-        recorded.extend(events)
-        await downstream_emit(events)
+        async def _emit(events: list[SocketEvent]) -> None:
+            recorded.extend(events)
+            await downstream_emit(events)
 
-    await test_start_impl(
-        {
-            **data,
-            "profiles_id": str(identity.profiles_id),
-        },
-        emit=_emit,
-        pool=get_pool(),
-        redis=get_redis_client(),
+        await test_start_impl(
+            {
+                **data,
+                "profiles_id": str(identity.profiles_id),
+            },
+            emit=_emit,
+            pool=get_pool(),
+            redis=get_redis_client(),
+        )
+
+        proceed_events = [
+            event
+            for event in recorded
+            if event.bus == "internal" and event.event == "test_proceed"
+        ]
+        for event in proceed_events:
+            await test_proceed_internal_impl(event.data, emit=_emit)
+
+        for event in recorded:
+            if event.bus != "internal":
+                continue
+            if event.event == "test_started":
+                return TestStartInternalResult(
+                    test_id=event.data.get("test_id", ""),
+                    invocation_id=event.data.get("invocation_entry_id"),
+                )
+            if event.event == "test_invocation_started":
+                return TestStartInternalResult(
+                    test_id=event.data.get("test_id", ""),
+                    invocation_id=event.data.get("test_invocation_id"),
+                )
+            if event.event == "test_ended":
+                return TestStartInternalResult(
+                    test_id=event.data.get("test_id", ""),
+                    success=bool(event.data.get("success", True)),
+                )
+            if event.event == "test_error":
+                error = TestErrorData(**event.data)
+                raise ValueError(error.message)
+
+        raise ValueError("Test start completed without a terminal event")
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="test",
+        profile_id=UUID(profile_id),
+        operation="start",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(session_id),
+        response_model=TestStartInternalResult,
     )
-
-    proceed_events = [
-        event
-        for event in recorded
-        if event.bus == "internal" and event.event == "test_proceed"
-    ]
-    for event in proceed_events:
-        await test_proceed_internal_impl(event.data, emit=_emit)
-
-    for event in recorded:
-        if event.bus != "internal":
-            continue
-        if event.event == "test_started":
-            return TestStartInternalResult(
-                test_id=event.data.get("test_id", ""),
-                invocation_id=event.data.get("invocation_entry_id"),
-            )
-        if event.event == "test_invocation_started":
-            return TestStartInternalResult(
-                test_id=event.data.get("test_id", ""),
-                invocation_id=event.data.get("test_invocation_id"),
-            )
-        if event.event == "test_ended":
-            return TestStartInternalResult(
-                test_id=event.data.get("test_id", ""),
-                success=bool(event.data.get("success", True)),
-            )
-        if event.event == "test_error":
-            error = TestErrorData(**event.data)
-            raise ValueError(error.message)
-
-    raise ValueError("Test start completed without a terminal event")
 
 
 @internal_sio.on("test_start")  # type: ignore

@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
@@ -35,6 +36,7 @@ async def attempt_use_previous_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> AttemptUsePreviousInternalResult:
     """Run canonical attempt use-previous orchestration for any surface."""
     sid = data.get("sid", "")
@@ -80,54 +82,73 @@ async def attempt_use_previous_internal_impl(
                     f"Failed to bridge attempt_chat {attempt_chat_id_str}: {exc}"
                 )
 
-    downstream_emit = emit or make_emit()
-    recorded: list[SocketEvent] = []
+    async def _run() -> AttemptUsePreviousInternalResult:
+        downstream_emit = emit or make_emit()
+        recorded: list[SocketEvent] = []
 
-    async def _emit(events: list[SocketEvent]) -> None:
-        recorded.extend(events)
-        await downstream_emit(events)
+        async def _emit(events: list[SocketEvent]) -> None:
+            recorded.extend(events)
+            await downstream_emit(events)
 
-    await attempt_proceed_internal_impl(
-        {
-            "sid": sid,
-            "profile_id": profile_id,
-            "session_id": session_id,
-            "attempt_id": str(payload.attempt_id),
-            "group_id": str(group_id),
-            "force_proceed": False,
-        },
-        emit=_emit,
-    )
+        await attempt_proceed_internal_impl(
+            {
+                "sid": sid,
+                "profile_id": profile_id,
+                "session_id": session_id,
+                "attempt_id": str(payload.attempt_id),
+                "group_id": str(group_id),
+                "force_proceed": False,
+            },
+            emit=_emit,
+            audit=False,
+        )
 
-    for event in recorded:
-        if event.bus != "internal":
-            continue
-        if event.event == "attempt_started":
-            return AttemptUsePreviousInternalResult(
-                success=True,
-                attempt_id=event.data.get("attempt_id"),
-                chat_id=event.data.get("chat_entry_id"),
-            )
-        if event.event == "attempt_chat_started":
-            return AttemptUsePreviousInternalResult(
-                success=True,
-                attempt_id=event.data.get("attempt_id"),
-                chat_id=event.data.get("chat_id"),
-            )
-        if event.event == "attempt_ended":
-            return AttemptUsePreviousInternalResult(
-                success=True,
-                attempt_id=event.data.get("attempt_id"),
-                message=event.data.get("message"),
-            )
-        if event.event == "attempt_error":
-            raise ValueError(
-                event.data.get("message", "Failed to use previous attempt data")
-            )
+        for event in recorded:
+            if event.bus != "internal":
+                continue
+            if event.event == "attempt_started":
+                return AttemptUsePreviousInternalResult(
+                    success=True,
+                    attempt_id=event.data.get("attempt_id"),
+                    chat_id=event.data.get("chat_entry_id"),
+                )
+            if event.event == "attempt_chat_started":
+                return AttemptUsePreviousInternalResult(
+                    success=True,
+                    attempt_id=event.data.get("attempt_id"),
+                    chat_id=event.data.get("chat_id"),
+                )
+            if event.event == "attempt_ended":
+                return AttemptUsePreviousInternalResult(
+                    success=True,
+                    attempt_id=event.data.get("attempt_id"),
+                    message=event.data.get("message"),
+                )
+            if event.event == "attempt_error":
+                raise ValueError(
+                    event.data.get("message", "Failed to use previous attempt data")
+                )
 
-    return AttemptUsePreviousInternalResult(
-        success=True,
-        attempt_id=str(payload.attempt_id),
+        return AttemptUsePreviousInternalResult(
+            success=True,
+            attempt_id=str(payload.attempt_id),
+        )
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="attempt",
+        profile_id=UUID(str(profile_id)),
+        operation="use_previous",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(str(session_id)),
+        attempt_id=payload.attempt_id,
+        group_id=group_id,
+        response_model=AttemptUsePreviousInternalResult,
     )
 
 

@@ -3,6 +3,7 @@
 from typing import Any
 
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.websocket.attempt_events_impl import attempt_next_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
@@ -21,6 +22,7 @@ async def attempt_next_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> AttemptStartInternalResult:
     """Run canonical attempt next orchestration for any surface."""
     sid = data.get("sid", "")
@@ -41,60 +43,79 @@ async def attempt_next_internal_impl(
     if not session_id:
         raise ValueError("Missing session_id for attempt_next")
 
-    downstream_emit = emit or make_emit()
-    recorded: list[SocketEvent] = []
+    async def _run() -> AttemptStartInternalResult:
+        downstream_emit = emit or make_emit()
+        recorded: list[SocketEvent] = []
 
-    async def _emit(events: list[SocketEvent]) -> None:
-        recorded.extend(events)
-        await downstream_emit(events)
+        async def _emit(events: list[SocketEvent]) -> None:
+            recorded.extend(events)
+            await downstream_emit(events)
 
-    await attempt_next_impl(
-        data,
-        emit=_emit,
-        attempt_id=str(payload.attempt_id),
-        draft_id=str(payload.draft_id) if payload.draft_id else None,
-        profile_id=profile_id,
-        session_id=session_id,
-        pool=get_pool(),
-        redis=get_redis_client(),
-    )
-
-    proceed_events = [
-        event
-        for event in recorded
-        if event.bus == "internal" and event.event == "attempt_proceed"
-    ]
-    for event in proceed_events:
-        await attempt_proceed_internal_impl(
-            {
-                **event.data,
-                "profile_id": profile_id,
-                "session_id": session_id,
-            },
+        await attempt_next_impl(
+            data,
             emit=_emit,
+            attempt_id=str(payload.attempt_id),
+            draft_id=str(payload.draft_id) if payload.draft_id else None,
+            profile_id=profile_id,
+            session_id=session_id,
+            pool=get_pool(),
+            redis=get_redis_client(),
         )
 
-    for event in recorded:
-        if event.bus != "internal":
-            continue
-        if event.event == "attempt_started":
-            return AttemptStartInternalResult(
-                attempt_id=event.data.get("attempt_id", ""),
-                chat_entry_id=event.data.get("chat_entry_id"),
+        proceed_events = [
+            event
+            for event in recorded
+            if event.bus == "internal" and event.event == "attempt_proceed"
+        ]
+        for event in proceed_events:
+            await attempt_proceed_internal_impl(
+                {
+                    **event.data,
+                    "profile_id": profile_id,
+                    "session_id": session_id,
+                },
+                emit=_emit,
+                audit=False,
             )
-        if event.event == "attempt_chat_started":
-            return AttemptStartInternalResult(
-                attempt_id=event.data.get("attempt_id", ""),
-                attempt_chat_id=event.data.get("chat_id"),
-            )
-        if event.event == "attempt_ended":
-            return AttemptStartInternalResult(
-                attempt_id=event.data.get("attempt_id", ""),
-            )
-        if event.event == "attempt_error":
-            raise ValueError(event.data.get("message", "Failed to continue attempt"))
 
-    raise ValueError("Attempt next completed without a terminal event")
+        for event in recorded:
+            if event.bus != "internal":
+                continue
+            if event.event == "attempt_started":
+                return AttemptStartInternalResult(
+                    attempt_id=event.data.get("attempt_id", ""),
+                    chat_entry_id=event.data.get("chat_entry_id"),
+                )
+            if event.event == "attempt_chat_started":
+                return AttemptStartInternalResult(
+                    attempt_id=event.data.get("attempt_id", ""),
+                    attempt_chat_id=event.data.get("chat_id"),
+                )
+            if event.event == "attempt_ended":
+                return AttemptStartInternalResult(
+                    attempt_id=event.data.get("attempt_id", ""),
+                )
+            if event.event == "attempt_error":
+                raise ValueError(event.data.get("message", "Failed to continue attempt"))
+
+        raise ValueError("Attempt next completed without a terminal event")
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="attempt",
+        profile_id=UUID(str(profile_id)),
+        operation="next",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(str(session_id)),
+        attempt_id=payload.attempt_id,
+        draft_id=payload.draft_id,
+        response_model=AttemptStartInternalResult,
+    )
 
 
 @internal_sio.on("attempt_next")  # type: ignore

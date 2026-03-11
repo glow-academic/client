@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
@@ -29,6 +30,7 @@ async def attempt_end_all_internal_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn | None = None,
+    audit: bool = True,
 ) -> AttemptEndAllInternalResult:
     """Run canonical attempt end-all orchestration for any surface."""
     sid = data.get("sid", "")
@@ -57,41 +59,60 @@ async def attempt_end_all_internal_impl(
     if group_id is None:
         raise ValueError(f"Group not found for attempt {payload.attempt_id}")
 
-    downstream_emit = emit or make_emit()
-    recorded: list[SocketEvent] = []
+    async def _run() -> AttemptEndAllInternalResult:
+        downstream_emit = emit or make_emit()
+        recorded: list[SocketEvent] = []
 
-    async def _emit(events: list[SocketEvent]) -> None:
-        recorded.extend(events)
-        await downstream_emit(events)
+        async def _emit(events: list[SocketEvent]) -> None:
+            recorded.extend(events)
+            await downstream_emit(events)
 
-    await attempt_proceed_internal_impl(
-        {
-            "sid": sid,
-            "profile_id": profile_id,
-            "session_id": session_id,
-            "attempt_id": str(payload.attempt_id),
-            "group_id": str(group_id),
-            "complete_all": True,
-        },
-        emit=_emit,
+        await attempt_proceed_internal_impl(
+            {
+                "sid": sid,
+                "profile_id": profile_id,
+                "session_id": session_id,
+                "attempt_id": str(payload.attempt_id),
+                "group_id": str(group_id),
+                "complete_all": True,
+            },
+            emit=_emit,
+            audit=False,
+        )
+
+        for event in recorded:
+            if event.bus != "internal":
+                continue
+            if event.event == "attempt_ended":
+                return AttemptEndAllInternalResult(
+                    attempt_id=event.data.get("attempt_id", ""),
+                    success=bool(event.data.get("success", False)),
+                    all_scenarios_complete=bool(
+                        event.data.get("all_scenarios_complete", False)
+                    ),
+                    message=event.data.get("message"),
+                )
+            if event.event == "attempt_error":
+                raise ValueError(event.data.get("message", "Failed to end attempt"))
+
+        raise ValueError("Attempt end-all completed without a terminal event")
+
+    if not audit:
+        return await _run()
+
+    return await run_artifact_operation_with_audit(
+        get_pool(),
+        get_redis_client(),
+        artifact="attempt",
+        profile_id=UUID(str(profile_id)),
+        operation="end_all",
+        runner=_run,
+        arguments=build_audit_arguments(data),
+        session_id=UUID(str(session_id)),
+        attempt_id=payload.attempt_id,
+        group_id=group_id,
+        response_model=AttemptEndAllInternalResult,
     )
-
-    for event in recorded:
-        if event.bus != "internal":
-            continue
-        if event.event == "attempt_ended":
-            return AttemptEndAllInternalResult(
-                attempt_id=event.data.get("attempt_id", ""),
-                success=bool(event.data.get("success", False)),
-                all_scenarios_complete=bool(
-                    event.data.get("all_scenarios_complete", False)
-                ),
-                message=event.data.get("message"),
-            )
-        if event.event == "attempt_error":
-            raise ValueError(event.data.get("message", "Failed to end attempt"))
-
-    raise ValueError("Attempt end-all completed without a terminal event")
 
 
 @internal_sio.on("attempt_end_all")  # type: ignore
