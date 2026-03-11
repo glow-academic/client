@@ -450,6 +450,7 @@ class AttemptResponseResultEvent(BaseModel):
     success: bool
     message: str | None = None
     is_correct: bool | None = None
+    response_id: str | None = None
 
 
 # ---------------------------------------------------------------------------

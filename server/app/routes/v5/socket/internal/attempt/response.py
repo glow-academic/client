@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
+import asyncpg
 from pydantic import BaseModel
 
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
@@ -23,6 +25,7 @@ class AttemptResponseInternalResult(BaseModel):
     success: bool
     message: str | None = None
     is_correct: bool | None = None
+    response_id: str | None = None
 
 
 async def attempt_response_internal_impl(
@@ -31,14 +34,13 @@ async def attempt_response_internal_impl(
     emit: EmitFn | None = None,
     audit: bool = True,
 ) -> AttemptResponseInternalResult:
-    """Run canonical attempt response placeholder orchestration for any surface."""
+    """Run canonical attempt response orchestration for any surface."""
     payload = AttemptResponsePayload(**data)
-    del payload
 
     sid = data.get("sid", "")
-    chat_id = str(data.get("chat_id", ""))
-    question_id = str(data.get("question_id", ""))
-    option_ids = [str(option_id) for option_id in data.get("option_ids", [])]
+    chat_id = payload.chat_id
+    question_id = payload.question_id
+    option_ids = payload.option_ids
 
     profile_id = data.get("profile_id")
     if not profile_id:
@@ -48,6 +50,17 @@ async def attempt_response_internal_impl(
         raise ValueError("Missing session_id for attempt_response_submit")
 
     async def _run() -> AttemptResponseInternalResult:
+        from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
+        from app.routes.v5.tools.entries.attempt_responses.create import (
+            create_attempt_responses,
+        )
+        from app.routes.v5.tools.entries.attempt_responses.refresh import (
+            refresh_attempt_responses,
+        )
+        from app.routes.v5.tools.entries.calls.create import create_call
+        from app.routes.v5.tools.entries.groups.get import get_groups
+        from app.routes.v5.tools.entries.runs.create import create_run
+
         downstream_emit = emit or make_emit()
         recorded: list[SocketEvent] = []
 
@@ -55,36 +68,118 @@ async def attempt_response_internal_impl(
             recorded.extend(events)
             await downstream_emit(events)
 
-        if not chat_id or not question_id or not option_ids:
-            await _emit(
-                [
-                    SocketEvent(
-                        bus="internal",
-                        event="attempt_error",
-                        data=AttemptErrorData(
-                            sid=sid,
-                            error_type="quiz",
-                            message="Missing required fields",
-                            chat_id=chat_id or None,
-                        ).model_dump(mode="json"),
-                    )
-                ]
+        async with get_pool().acquire() as conn:
+            attempt_chats, _ = await search_attempt_chats(
+                conn,
+                attempt_chat_ids=[chat_id],
+                bypass_mv=True,
+                limit=1,
             )
-        else:
-            await _emit(
-                [
-                    SocketEvent(
-                        bus="internal",
-                        event="attempt_response_result",
-                        data=AttemptResponseResultData(
-                            sid=sid,
-                            success=True,
-                            message="Response submitted",
-                            is_correct=None,
-                        ).model_dump(mode="json"),
+            if not attempt_chats:
+                await _emit(
+                    [
+                        SocketEvent(
+                            bus="internal",
+                            event="attempt_error",
+                            data=AttemptErrorData(
+                                sid=sid,
+                                error_type="quiz",
+                                message="Attempt chat not found",
+                                chat_id=str(chat_id),
+                            ).model_dump(mode="json"),
+                        )
+                    ]
+                )
+            else:
+                attempt_chat = attempt_chats[0]
+                if not attempt_chat.group_id:
+                    await _emit(
+                        [
+                            SocketEvent(
+                                bus="internal",
+                                event="attempt_error",
+                                data=AttemptErrorData(
+                                    sid=sid,
+                                    error_type="quiz",
+                                    message="Attempt chat group not found",
+                                    chat_id=str(chat_id),
+                                ).model_dump(mode="json"),
+                            )
+                        ]
                     )
-                ]
-            )
+                else:
+                    groups = await get_groups(
+                        conn,
+                        ids=[attempt_chat.group_id],
+                        bypass_mv=True,
+                    )
+                    if not groups:
+                        await _emit(
+                            [
+                                SocketEvent(
+                                    bus="internal",
+                                    event="attempt_error",
+                                    data=AttemptErrorData(
+                                        sid=sid,
+                                        error_type="quiz",
+                                        message="Attempt chat session not found",
+                                        chat_id=str(chat_id),
+                                    ).model_dump(mode="json"),
+                                )
+                            ]
+                        )
+                    else:
+                        group = groups[0]
+                        try:
+                            run = await create_run(
+                                conn,
+                                group_id=attempt_chat.group_id,
+                                session_id=group.session_id,
+                            )
+                            call = await create_call(
+                                conn,
+                                run_id=run.id,
+                                session_id=group.session_id,
+                            )
+                            response = await create_attempt_responses(
+                                conn,
+                                chat_id=chat_id,
+                                call_id=call.id,
+                                question_ids=[question_id],
+                                option_ids=option_ids,
+                            )
+                            await refresh_attempt_responses(conn)
+                        except asyncpg.ForeignKeyViolationError:
+                            await _emit(
+                                [
+                                    SocketEvent(
+                                        bus="internal",
+                                        event="attempt_error",
+                                        data=AttemptErrorData(
+                                            sid=sid,
+                                            error_type="quiz",
+                                            message="Invalid question or option selection",
+                                            chat_id=str(chat_id),
+                                        ).model_dump(mode="json"),
+                                    )
+                                ]
+                            )
+                        else:
+                            await _emit(
+                                [
+                                    SocketEvent(
+                                        bus="internal",
+                                        event="attempt_response_result",
+                                        data=AttemptResponseResultData(
+                                            sid=sid,
+                                            success=True,
+                                            message="Response submitted",
+                                            is_correct=None,
+                                            response_id=str(response.id),
+                                        ).model_dump(mode="json"),
+                                    )
+                                ]
+                            )
 
         for event in recorded:
             if event.bus != "internal":
@@ -94,6 +189,7 @@ async def attempt_response_internal_impl(
                     success=bool(event.data.get("success", False)),
                     message=event.data.get("message"),
                     is_correct=event.data.get("is_correct"),
+                    response_id=event.data.get("response_id"),
                 )
             if event.event == "attempt_error":
                 error = AttemptErrorData(**event.data)

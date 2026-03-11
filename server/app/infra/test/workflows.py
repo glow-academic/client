@@ -336,12 +336,17 @@ async def test_next_impl(
     pool: asyncpg.Pool,
 ) -> None:
     """Find next invocation with pending runs and emit test_run or test_all_complete."""
-    from app.infra.test.get import get_test_impl
+    sid = data.get("sid", "")
+    if not sid:
+        return
+
     from app.infra.websocket.test_types import TestAllCompleteEvent
+    from app.routes.v5.tools.entries.test_invocation.search import (
+        search_test_invocation_entries_internal,
+    )
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger(__name__)
-    sid = data.get("sid", "")
 
     try:
         test_id = uuid.UUID(str(data["test_id"]))
@@ -362,7 +367,13 @@ async def test_next_impl(
         return
 
     try:
-        result = await get_test_impl(pool=pool, test_id=test_id, bypass_cache=True)
+        async with pool.acquire() as conn:
+            invocations, _total_count = await search_test_invocation_entries_internal(
+                conn,
+                test_ids=[test_id],
+                limit=1000,
+                bypass_mv=True,
+            )
     except Exception as e:
         logger.exception(f"Error in test_next: {e}")
         await emit(
@@ -379,7 +390,7 @@ async def test_next_impl(
         )
         return
 
-    if not result.invocations:
+    if not invocations:
         logger.warning(f"No invocations found for test {test_id}")
         await emit(
             [
@@ -396,24 +407,40 @@ async def test_next_impl(
         )
         return
 
-    for invocation in result.invocations:
+    for invocation in invocations:
         if not invocation.invocation_completed:
+            if not invocation.group_id:
+                await emit(
+                    [
+                        client_event(
+                            "test_error",
+                            {
+                                "message": "Failed to find group for next test invocation",
+                                "error_type": "internal",
+                            },
+                            room=sid,
+                        )
+                    ]
+                )
+                return
             await emit(
                 [
                     internal_event(
-                        "test_run",
+                        "test_group",
                         {
                             "sid": sid,
-                            "invocation_id": str(invocation.invocation_id),
+                            "profile_id": data.get("profile_id"),
+                            "test_invocation_id": str(invocation.invocation_id),
                             "test_id": str(test_id),
+                            "group_id": str(invocation.group_id),
                         },
                     )
                 ]
             )
             return
 
-    last_invocation = result.invocations[-1]
-    total = len(result.invocations)
+    last_invocation = invocations[-1]
+    total = len(invocations)
     await emit(
         [
             client_event(

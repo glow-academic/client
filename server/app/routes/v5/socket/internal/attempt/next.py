@@ -1,6 +1,7 @@
 """Internal handler: attempt_next — canonical orchestration entry."""
 
 from typing import Any
+from uuid import UUID
 
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
@@ -46,13 +47,17 @@ async def attempt_next_internal_impl(
     async def _run() -> AttemptStartInternalResult:
         downstream_emit = emit or make_emit()
         recorded: list[SocketEvent] = []
+        workflow_sid = sid or f"http-attempt-next:{session_id}"
 
         async def _emit(events: list[SocketEvent]) -> None:
             recorded.extend(events)
             await downstream_emit(events)
 
         await attempt_next_impl(
-            data,
+            {
+                **data,
+                "sid": workflow_sid,
+            },
             emit=_emit,
             attempt_id=str(payload.attempt_id),
             draft_id=str(payload.draft_id) if payload.draft_id else None,
@@ -67,6 +72,9 @@ async def attempt_next_internal_impl(
             for event in recorded
             if event.bus == "internal" and event.event == "attempt_proceed"
         ]
+        proceeded_attempt_id = (
+            proceed_events[0].data.get("attempt_id", "") if proceed_events else ""
+        )
         for event in proceed_events:
             await attempt_proceed_internal_impl(
                 {
@@ -75,7 +83,6 @@ async def attempt_next_internal_impl(
                     "session_id": session_id,
                 },
                 emit=_emit,
-                audit=False,
             )
 
         for event in recorded:
@@ -97,6 +104,9 @@ async def attempt_next_internal_impl(
                 )
             if event.event == "attempt_error":
                 raise ValueError(event.data.get("message", "Failed to continue attempt"))
+
+        if proceeded_attempt_id:
+            return AttemptStartInternalResult(attempt_id=proceeded_attempt_id)
 
         raise ValueError("Attempt next completed without a terminal event")
 

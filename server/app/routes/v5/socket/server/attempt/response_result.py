@@ -19,6 +19,7 @@ async def attempt_response_result_server_handler(data: dict[str, Any]) -> None:
         success=data.get("success", False),
         message=data.get("message"),
         is_correct=data.get("is_correct"),
+        response_id=data.get("response_id"),
     )
     for room in rooms:
         await sio.emit(

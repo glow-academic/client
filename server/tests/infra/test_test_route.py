@@ -38,6 +38,12 @@ class TestTestWorkflowRoutes:
         from app.routes.v5.tools.entries.test_invocation.refresh import (
             refresh_test_invocation,
         )
+        from app.routes.v5.tools.entries.test_invocation_runs.create import (
+            create_test_invocation_runs,
+        )
+        from app.routes.v5.tools.entries.test_invocation_runs.refresh import (
+            refresh_test_invocation_runs,
+        )
 
         async with pool.acquire() as conn:
             source_group = await create_group(
@@ -65,6 +71,8 @@ class TestTestWorkflowRoutes:
                 session_id=actor.session_id,
                 profiles_id=actor.profiles_id,
             )
+            await create_message(conn, run_id=test_run.id, role="user")
+            await create_message(conn, run_id=test_run.id, role="assistant")
             test_call = await create_call(
                 conn,
                 run_id=test_run.id,
@@ -86,11 +94,16 @@ class TestTestWorkflowRoutes:
                 conn,
                 test_id=test.id,
                 call_id=invocation_call.id,
-                group_id=test_group.id,
+                group_id=source_group.id,
                 use_custom=False,
             )
             await refresh_test(conn)
             await refresh_test_invocation(conn)
+            await create_test_invocation_runs(
+                conn,
+                test_invocation_id=invocation.id,
+            )
+            await refresh_test_invocation_runs(conn)
 
         return {
             "test_id": str(test.id),
@@ -151,6 +164,38 @@ class TestTestWorkflowRoutes:
         assert payload["test_id"] == graph["test_id"]
         assert payload["invocation_id"] == graph["test_invocation_id"]
         assert payload["run_id"]
+
+        async with pool.acquire() as conn:
+            stored_run_id = await conn.fetchval(
+                "SELECT id FROM runs_entry WHERE id = $1",
+                UUID(payload["run_id"]),
+            )
+
+        assert stored_run_id == UUID(payload["run_id"])
+
+    async def test_next_test_route_uses_real_http_stack(
+        self,
+        pool,
+        v5_test_route_client,
+        test_route_actor,
+    ):
+        graph = await self._create_test_run_graph(pool, test_route_actor)
+
+        v5_test_route_client.authenticate(
+            profile_id=test_route_actor.profile_id,
+            session_id=test_route_actor.session_id,
+        )
+        response = await v5_test_route_client.client.post(
+            "/api/v5/artifacts/test/next",
+            json={"test_id": graph["test_id"]},
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["invocation_id"] == graph["test_invocation_id"]
+        assert payload["run_id"]
+        assert payload["current_run"] == 1
+        assert payload["total_runs"] == 1
 
         async with pool.acquire() as conn:
             stored_run_id = await conn.fetchval(

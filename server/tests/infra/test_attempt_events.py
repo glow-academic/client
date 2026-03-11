@@ -858,7 +858,7 @@ class TestNextImpl:
         assert events[0].data["success"] is True
         assert events[0].room == "s1"
 
-    async def test_pending_invocation_emits_test_run(self, pool, redis_client):
+    async def test_pending_invocation_emits_test_group(self, pool, redis_client):
         async with pool.acquire() as conn:
             test, run, session, group = await self._setup_test(conn, redis_client)
             invocation_call = await create_call(
@@ -880,9 +880,10 @@ class TestNextImpl:
         )
         assert len(events) == 1
         assert events[0].bus == "internal"
-        assert events[0].event == "test_run"
+        assert events[0].event == "test_group"
         assert events[0].data["sid"] == "s1"
-        assert events[0].data["invocation_id"] == str(invocation.id)
+        assert events[0].data["test_invocation_id"] == str(invocation.id)
+        assert events[0].data["group_id"] == str(group.id)
 
     async def test_all_completed_emits_all_complete(self, pool, redis_client):
         async with pool.acquire() as conn:

@@ -1,15 +1,17 @@
 """Internal handler: test_next — canonical orchestration entry."""
 
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
-from app.infra.globals import get_internal_sio, get_pool
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.test.workflows import test_next_impl
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.infra.websocket.test_types import TestErrorData
 from app.routes.v5.socket.client.types import TestNextPayload
+from app.routes.v5.socket.internal.test.group import test_group_internal_impl
 from app.routes.v5.socket.internal.test.run import test_run_internal_impl
 from app.utils.logging.db_logger import get_logger
 
@@ -33,7 +35,6 @@ async def test_next_internal_impl(
 ) -> TestNextInternalResult:
     """Run canonical test next orchestration for any surface."""
     payload = TestNextPayload(**data)
-    del payload
 
     pool = get_pool()
     if not pool:
@@ -42,12 +43,28 @@ async def test_next_internal_impl(
     async def _run() -> TestNextInternalResult:
         downstream_emit = emit or make_emit()
         recorded: list[SocketEvent] = []
+        workflow_sid = data.get("sid") or f"http-test-next:{data.get('session_id')}"
 
         async def _emit(events: list[SocketEvent]) -> None:
             recorded.extend(events)
             await downstream_emit(events)
 
-        await test_next_impl(data, emit=_emit, pool=pool)
+        await test_next_impl(
+            {
+                **data,
+                "sid": workflow_sid,
+            },
+            emit=_emit,
+            pool=pool,
+        )
+
+        group_events = [
+            event
+            for event in recorded
+            if event.bus == "internal" and event.event == "test_group"
+        ]
+        for event in group_events:
+            await test_group_internal_impl(event.data, emit=_emit)
 
         run_events = [
             event
@@ -59,6 +76,7 @@ async def test_next_internal_impl(
                 {
                     **event.data,
                     "session_id": data.get("session_id"),
+                    "profile_id": data.get("profile_id"),
                 },
                 emit=_emit,
                 audit=False,

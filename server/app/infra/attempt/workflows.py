@@ -256,6 +256,8 @@ async def attempt_next_impl(
     from app.infra.profile_identity_context import resolve_profile_identity_context
 
     sid = data.get("sid", "")
+    if not sid:
+        return
 
     try:
         resolve_profile_identity_fn = (
@@ -570,6 +572,7 @@ async def attempt_message_impl(
     - otherwise stop after the persisted user message
     """
     from app.infra.profile_identity_context import resolve_profile_identity_context
+    from app.routes.v5.tools.entries.runs.create import create_run
     from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 
     sid = data.get("sid", "")
@@ -584,11 +587,34 @@ async def attempt_message_impl(
     attempt_chat_id = uuid.UUID(str(chat_id))
     attempt_id_uuid = uuid.UUID(str(attempt_id))
 
+    identity = await resolve_profile_identity_context(
+        pool,
+        profile_id_uuid,
+        redis or Redis(),
+        session_id=session_id_uuid,
+        attempt_id=attempt_id_uuid,
+    )
+    profiles_id = identity.profiles_id if identity else None
+    group_id = identity.group_id if identity else None
+
+    run_id = data.get("run_id")
+    if run_id is None:
+        if group_id is None:
+            raise ValueError(f"Group not found for attempt {attempt_id}")
+        async with pool.acquire() as conn:
+            run = await create_run(
+                conn,
+                group_id=group_id,
+                session_id=session_id_uuid,
+                profiles_id=profiles_id,
+            )
+        run_id = str(run.id)
+
     await user_start_impl(
         {
             "sid": sid,
             "chat_id": str(attempt_chat_id),
-            "run_id": data.get("run_id", str(uuid.uuid4())),
+            "run_id": run_id,
             "session_id": str(session_id_uuid),
             "item_id": data.get("item_id"),
             "rooms": data.get("rooms")
@@ -601,7 +627,7 @@ async def attempt_message_impl(
         {
             "sid": sid,
             "chat_id": str(attempt_chat_id),
-            "run_id": data.get("run_id", str(uuid.uuid4())),
+            "run_id": run_id,
             "session_id": str(session_id_uuid),
             "item_id": data.get("item_id"),
             "rooms": data.get("rooms")
@@ -611,14 +637,6 @@ async def attempt_message_impl(
         emit=emit,
         pool=pool,
     )
-
-    identity = await resolve_profile_identity_context(
-        pool,
-        profile_id_uuid,
-        redis or Redis(),
-        session_id=session_id_uuid,
-    )
-    profiles_id = identity.profiles_id if identity else None
 
     async with pool.acquire() as conn:
         attempt_chats, _ = await search_attempt_chats(

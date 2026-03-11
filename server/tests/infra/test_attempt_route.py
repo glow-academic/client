@@ -5,11 +5,12 @@ from __future__ import annotations
 import io
 import zipfile
 from uuid import UUID
+from uuid import uuid4
 
 import pytest
 
 
-async def _create_attempt_route_graph(pool, actor):
+async def _create_attempt_route_graph(pool, actor, redis_client=None):
     from app.infra.globals import UPLOAD_FOLDER
     from app.routes.v5.tools.entries.attempt.create import create_attempt
     from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
@@ -33,6 +34,8 @@ async def _create_attempt_route_graph(pool, actor):
     from app.routes.v5.tools.entries.home_chat.create import create_home_chat
     from app.routes.v5.tools.entries.messages.create import create_message
     from app.routes.v5.tools.entries.persona.create import create_persona
+    from app.routes.v5.tools.resources.options.create import create_option
+    from app.routes.v5.tools.resources.questions.create import create_question
     from app.routes.v5.tools.entries.runs.create import create_run
     from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
 
@@ -102,6 +105,21 @@ async def _create_attempt_route_graph(pool, actor):
             message_id=message.id,
             call_id=message_call.id,
         )
+        question = None
+        option = None
+        if redis_client is not None:
+            question = await create_question(
+                conn,
+                "Route question",
+                30,
+                redis_client,
+            )
+            option = await create_option(
+                conn,
+                "Route option",
+                redis_client,
+                question_id=question.id,
+            )
         await refresh_attempt_chat_bridge(conn)
         await refresh_attempt_chat(conn)
         await refresh_attempt_message(conn)
@@ -111,6 +129,8 @@ async def _create_attempt_route_graph(pool, actor):
         "attempt_id": str(attempt.id),
         "attempt_chat_id": str(attempt_chat.id),
         "message_id": str(message.id),
+        "question_id": str(question.id) if question else None,
+        "option_id": str(option.id) if option else None,
         "upload_folder": UPLOAD_FOLDER,
         "search_attempt_archives": search_attempt_archives,
     }
@@ -199,6 +219,28 @@ class TestAttemptRoute:
             )
 
         assert stored_attempt_id == UUID(payload["attempt_id"])
+
+    async def test_next_attempt_route_uses_real_http_stack(
+        self,
+        pool,
+        v5_attempt_route_client,
+        attempt_route_actor,
+    ):
+        graph = await _create_attempt_route_graph(pool, attempt_route_actor)
+        v5_attempt_route_client.authenticate(
+            profile_id=attempt_route_actor.profile_id,
+            session_id=attempt_route_actor.session_id,
+        )
+
+        response = await v5_attempt_route_client.client.post(
+            "/api/v5/artifacts/attempt/next",
+            json={"attempt_id": graph["attempt_id"]},
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["attempt_id"] == graph["attempt_id"]
+        assert "chat_id" in payload
 
     async def test_get_attempt_route_returns_attempt_bundle(
         self,
@@ -411,3 +453,83 @@ class TestAttemptRoute:
             )
 
         assert stored_grade_id == UUID(payload["grade_id"])
+
+    async def test_attempt_message_route_persists_user_message_via_real_http_stack(
+        self,
+        pool,
+        v5_attempt_route_client,
+        attempt_route_actor,
+    ):
+        from app.routes.v5.tools.entries.attempt_message.search import (
+            search_attempt_messages,
+        )
+
+        graph = await _create_attempt_route_graph(pool, attempt_route_actor)
+        v5_attempt_route_client.authenticate(
+            profile_id=attempt_route_actor.profile_id,
+            session_id=attempt_route_actor.session_id,
+        )
+
+        response = await v5_attempt_route_client.client.post(
+            "/api/v5/artifacts/attempt/message",
+            json={
+                "attempt_id": graph["attempt_id"],
+                "chat_id": graph["attempt_chat_id"],
+                "message": "Route test message",
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["chat_id"] == graph["attempt_chat_id"]
+        assert payload["user_message_id"]
+
+        async with pool.acquire() as conn:
+            messages, _ = await search_attempt_messages(
+                conn,
+                chat_ids=[UUID(graph["attempt_chat_id"])],
+                bypass_mv=True,
+                limit=1000,
+            )
+
+        message_ids = {str(item.message_id) for item in messages}
+        assert payload["user_message_id"] in message_ids
+
+    async def test_attempt_response_route_persists_response_via_real_http_stack(
+        self,
+        pool,
+        redis_client,
+        v5_attempt_route_client,
+        attempt_route_actor,
+    ):
+        graph = await _create_attempt_route_graph(
+            pool, attempt_route_actor, redis_client=redis_client
+        )
+        v5_attempt_route_client.authenticate(
+            profile_id=attempt_route_actor.profile_id,
+            session_id=attempt_route_actor.session_id,
+        )
+
+        response = await v5_attempt_route_client.client.post(
+            "/api/v5/artifacts/attempt/response",
+            json={
+                "chat_id": graph["attempt_chat_id"],
+                "question_id": graph["question_id"],
+                "option_ids": [graph["option_id"]],
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["success"] is True
+        assert payload["message"] == "Response submitted"
+        assert payload["is_correct"] is None
+        assert payload["response_id"]
+
+        async with pool.acquire() as conn:
+            stored_response_id = await conn.fetchval(
+                "SELECT id FROM attempt_responses_entry WHERE id = $1",
+                UUID(payload["response_id"]),
+            )
+
+        assert stored_response_id == UUID(payload["response_id"])

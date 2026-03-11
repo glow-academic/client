@@ -6,6 +6,10 @@ is cleaned up.
 """
 
 from app.infra.test.workflows import (  # noqa: F401
+    _extract_grade_feedback,
+    _extract_grade_passed,
+    _extract_grade_score,
+    _find_next_run_id,
     test_error_impl,
     test_grade_complete_impl,
     test_group_impl,
