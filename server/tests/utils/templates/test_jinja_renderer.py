@@ -74,4 +74,3 @@ def test_render_template_renders_context_and_escapes_html():
 def test_render_template_raises_for_invalid_template():
     with pytest.raises(TemplateError):
         render_template("{{ bad", {}, _theme())
-

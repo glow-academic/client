@@ -5,11 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from uuid import UUID
 
+from tests.helpers import unique_tag
+
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
-from tests.helpers import unique_tag
 
 
 @dataclass(frozen=True)

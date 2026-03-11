@@ -42,9 +42,7 @@ class TestBuildScenarioMeta:
         scenario_id = uuid4()
         assert build_scenario_meta(
             [SimpleNamespace(scenario_id=scenario_id, name="Scenario", description="D")]
-        ) == [
-            {"scenario_id": str(scenario_id), "name": "Scenario", "description": "D"}
-        ]
+        ) == [{"scenario_id": str(scenario_id), "name": "Scenario", "description": "D"}]
 
 
 class TestBuildRubricMeta:

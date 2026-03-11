@@ -13,7 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -50,10 +50,8 @@ from app.routes.v5.api.main.document.types import (
     DocumentParameterSection,
     DocumentTextSection,
     DocumentUploadSection,
-    GetDocumentApiRequest,
     GetDocumentApiResponse,
 )
-
 
 # ---------------------------------------------------------------------------
 # get_document_client — composable infra architecture
@@ -365,7 +363,8 @@ async def get_document_impl(
         ),
         departments=DocumentDepartmentSection(
             **_section("departments"),
-            current=_serialize_models(document.resources["departments"].selected) or None,
+            current=_serialize_models(document.resources["departments"].selected)
+            or None,
             resources=_serialize_models(all_departments),
         ),
         fields=DocumentFieldSection(
@@ -400,4 +399,3 @@ async def get_document_impl(
 # ---------------------------------------------------------------------------
 # get_document_websocket — stub (to be rewritten with infra functions)
 # ---------------------------------------------------------------------------
-

@@ -3,15 +3,15 @@
 from __future__ import annotations
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.infra.websocket.socket_event import recording_emit
 from app.infra.websocket.text_complete_impl import text_complete_impl
 from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.messages.search import search_messages
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.messages.search import search_messages
 from app.routes.v5.tools.entries.uploads.get import get_upload
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -40,7 +40,11 @@ class TestTextCompleteImpl:
         emit, events = recording_emit()
 
         await text_complete_impl(
-            {"event_type": "text_complete", "session_id": str(nonexistent_id()), "text": "hello"},
+            {
+                "event_type": "text_complete",
+                "session_id": str(nonexistent_id()),
+                "text": "hello",
+            },
             emit=emit,
             conn=conn,
         )
@@ -51,7 +55,11 @@ class TestTextCompleteImpl:
         emit, events = recording_emit()
 
         await text_complete_impl(
-            {"event_type": "text_complete", "run_id": str(nonexistent_id()), "text": "hello"},
+            {
+                "event_type": "text_complete",
+                "run_id": str(nonexistent_id()),
+                "text": "hello",
+            },
             emit=emit,
             conn=conn,
         )

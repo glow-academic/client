@@ -51,7 +51,6 @@ from app.routes.v5.api.main.profile.types import (
     ProfileRoleSection,
 )
 
-
 # ---------------------------------------------------------------------------
 # get_profile_impl — composable infra architecture
 # ---------------------------------------------------------------------------
@@ -348,7 +347,9 @@ async def get_profile_impl(
         ),
         request_limits=ProfileRequestLimitSection(
             **_section("request_limits"),
-            resource=_serialize_model(profile_ctx.resources["request_limits"].selected[0])
+            resource=_serialize_model(
+                profile_ctx.resources["request_limits"].selected[0]
+            )
             if profile_ctx.resources["request_limits"].selected
             else None,
             resources=_serialize_models(all_request_limits),

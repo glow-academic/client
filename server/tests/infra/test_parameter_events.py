@@ -36,7 +36,9 @@ def test_parameter_event_types_include_domain_and_lifecycle_events() -> None:
             for event_type in (
                 *operation.domain_events,
                 *(
-                    build_default_lifecycle_event_types("parameter", operation.operation)
+                    build_default_lifecycle_event_types(
+                        "parameter", operation.operation
+                    )
                     if operation.include_call_lifecycle
                     else ()
                 ),

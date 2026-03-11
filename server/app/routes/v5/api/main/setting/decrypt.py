@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.identity.decrypt import resolve_decrypt
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.identity.decrypt import resolve_decrypt
 from app.routes.v5.api.main.setting.types import (
     DecryptSettingKeyApiRequest,
     DecryptSettingKeyApiResponse,
@@ -50,9 +50,7 @@ async def decrypt_setting_key(
             )
 
         if not settings:
-            raise HTTPException(
-                status_code=404, detail="Setting not found"
-            )
+            raise HTTPException(status_code=404, detail="Setting not found")
 
         setting = settings[0]
         all_key_ids = list(setting.provider_key_ids or []) + list(

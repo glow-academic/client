@@ -33,4 +33,3 @@ async def test_wait_for_tool_result_returns_none_on_timeout():
     result = await wait_for_tool_result("call-timeout", timeout_seconds=0.01)
 
     assert result is None
-

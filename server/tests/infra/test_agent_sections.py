@@ -1,10 +1,9 @@
 """Tests for canonical agent section assembly."""
 
-from pathlib import Path
-from types import SimpleNamespace
-from types import ModuleType
-from uuid import uuid4
 import sys
+from pathlib import Path
+from types import ModuleType, SimpleNamespace
+from uuid import uuid4
 
 from app.infra.common_context import CommonContext
 from app.infra.profile_identity_context import ProfileIdentityContext
@@ -14,7 +13,9 @@ from app.infra.types import ArtifactContext, ResourcePair
 
 
 def _ensure_agent_type_packages() -> None:
-    main_dir = Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    main_dir = (
+        Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    )
     artifact_dir = main_dir / "agent"
     if "app.routes.v5.api.main" not in sys.modules:
         package = ModuleType("app.routes.v5.api.main")

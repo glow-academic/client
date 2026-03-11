@@ -20,7 +20,6 @@ from redis.asyncio import Redis
 from app.infra.common_context import resolve_common_context
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool.context import resolve_tool_artifact_context
-from app.infra.tool_graph import score_tools
 from app.infra.tool.permissions import (
     TOOL_RESOURCES,
     compute_args_outputs_required,
@@ -45,6 +44,7 @@ from app.infra.tool.permissions import (
 from app.infra.tool.permissions_context import (
     resolve_tool_permissions_context,
 )
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.tool.types import (
     GetToolApiResponse,
     ToolArgOutputSection,
@@ -57,7 +57,6 @@ from app.routes.v5.api.main.tool.types import (
     ToolNameSection,
     ToolOperationSection,
 )
-
 
 # ---------------------------------------------------------------------------
 # get_tool_impl — composable infra architecture

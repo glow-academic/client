@@ -1,11 +1,10 @@
 """Tests for small websocket helper utilities."""
 
+import pytest
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 import app.infra.globals as globals_mod
-import pytest
-
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.is_run_cancelled import is_run_cancelled
 from app.infra.websocket.openapi_helpers import (
@@ -13,6 +12,7 @@ from app.infra.websocket.openapi_helpers import (
     register_client_endpoint,
     register_server_endpoint,
 )
+
 
 class ExamplePayload(BaseModel):
     value: str
@@ -49,7 +49,9 @@ async def test_get_db_connection_raises_without_pool():
     original_pool = globals_mod._db_pool
     try:
         globals_mod._db_pool = None
-        with pytest.raises(RuntimeError, match="Database connection pool not initialized"):
+        with pytest.raises(
+            RuntimeError, match="Database connection pool not initialized"
+        ):
             async with get_db_connection():
                 pass
     finally:

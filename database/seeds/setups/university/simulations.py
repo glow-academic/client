@@ -52,7 +52,6 @@ PRACTICE_FLAG = UUID("019b995a-86ef-78e3-8811-f5d0cfd31e3c")
 
 simulations = [
     # ── Practice Simulations (single scenario, practice flag) ──────────────
-
     dict(
         id=CONFUSED_PRACTICE,
         name="Confused Practice",
@@ -93,9 +92,7 @@ simulations = [
         flag_ids=[PRACTICE_FLAG],
         department_ids=[UNIVERSITY_DEPT],
     ),
-
     # ── Training Simulations (multiple scenarios, structured) ──────────────
-
     dict(
         id=ACADEMIC_INTEGRITY_TRAINING,
         name="Academic Integrity Training",

@@ -61,6 +61,7 @@ class ArtifactEventsConfig:
 
     artifact: str
     operations: dict[str, OperationEventConfig]
+
     @property
     def event_types(self) -> tuple[str, ...]:
         """Flatten domain and lifecycle event types for the artifact."""

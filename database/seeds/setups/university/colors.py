@@ -22,8 +22,16 @@ C_CHART_4 = sid("uni/color/chart4")
 C_CHART_5 = sid("uni/color/chart5")
 
 ALL_COLOR_IDS = [
-    C_PRIMARY, C_ACCENT, C_SUCCESS, C_WARNING, C_ERROR,
-    C_SIDEBAR_BG, C_SIDEBAR_PRIMARY, C_CHART_2, C_CHART_4, C_CHART_5,
+    C_PRIMARY,
+    C_ACCENT,
+    C_SUCCESS,
+    C_WARNING,
+    C_ERROR,
+    C_SIDEBAR_BG,
+    C_SIDEBAR_PRIMARY,
+    C_CHART_2,
+    C_CHART_4,
+    C_CHART_5,
 ]
 
 # ---------------------------------------------------------------------------
@@ -36,8 +44,15 @@ colors = [
     dict(id=C_SUCCESS, name="Custom", description="Custom color", hex_code="#009e34"),
     dict(id=C_WARNING, name="Custom", description="Custom color", hex_code="#ea8100"),
     dict(id=C_ERROR, name="Custom", description="Custom color", hex_code="#e7000b"),
-    dict(id=C_SIDEBAR_BG, name="Custom", description="Custom color", hex_code="#fafafa"),
-    dict(id=C_SIDEBAR_PRIMARY, name="Custom", description="Custom color", hex_code="#171717"),
+    dict(
+        id=C_SIDEBAR_BG, name="Custom", description="Custom color", hex_code="#fafafa"
+    ),
+    dict(
+        id=C_SIDEBAR_PRIMARY,
+        name="Custom",
+        description="Custom color",
+        hex_code="#171717",
+    ),
     dict(id=C_CHART_2, name="Custom", description="Custom color", hex_code="#404040"),
     dict(id=C_CHART_4, name="Custom", description="Custom color", hex_code="#b0b0b0"),
     dict(id=C_CHART_5, name="Custom", description="Custom color", hex_code="#e0e0e0"),

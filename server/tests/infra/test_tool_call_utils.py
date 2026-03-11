@@ -28,9 +28,14 @@ class TestResolveOutputFields:
         ) == {"body": "Hello", "heading": "Greeting"}
 
     def test_returns_none_for_missing_tool_or_args(self):
-        assert resolve_output_fields(None, "tool", {"tool": {"body": "content"}}) is None
+        assert (
+            resolve_output_fields(None, "tool", {"tool": {"body": "content"}}) is None
+        )
         assert resolve_output_fields({}, "tool", {"tool": {"body": "content"}}) is None
-        assert resolve_output_fields({"content": "x"}, None, {"tool": {"body": "content"}}) is None
+        assert (
+            resolve_output_fields({"content": "x"}, None, {"tool": {"body": "content"}})
+            is None
+        )
 
 
 class TestParsePartialJson:
@@ -41,7 +46,9 @@ class TestParsePartialJson:
         assert parse_partial_json('{"name":"Ali') == {"name": "Ali"}
 
     def test_closes_nested_array_and_object(self):
-        assert parse_partial_json('{"items":[{"name":"A"}') == {"items": [{"name": "A"}]}
+        assert parse_partial_json('{"items":[{"name":"A"}') == {
+            "items": [{"name": "A"}]
+        }
 
     def test_returns_none_for_invalid_or_empty_json(self):
         assert parse_partial_json("") is None
@@ -66,11 +73,16 @@ class TestBuildToolOutputSchemas:
         assert result == {"write_message": {"body": "content", "heading": "title"}}
 
     def test_skips_invalid_tool_shapes(self):
-        assert build_tool_output_schemas(
-            [
-                "not-a-dict",
-                {"name": "bad", "_args_outputs": "wrong"},
-                {"name": "empty", "_args_outputs": [{"name": "x", "template": "plain"}]},
-            ]
-        ) == {}
-
+        assert (
+            build_tool_output_schemas(
+                [
+                    "not-a-dict",
+                    {"name": "bad", "_args_outputs": "wrong"},
+                    {
+                        "name": "empty",
+                        "_args_outputs": [{"name": "x", "template": "plain"}],
+                    },
+                ]
+            )
+            == {}
+        )

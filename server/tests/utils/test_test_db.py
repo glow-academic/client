@@ -46,4 +46,3 @@ def test_get_test_db_url_returns_none_without_container_or_explicit_url():
     finally:
         globals_mod._test_container = original_container
         globals_mod._test_db_url = original_url
-

@@ -80,7 +80,7 @@ async def resolve_benchmark_context(
         if not eval_ids_set:
             return []
         async with pool.acquire() as c:
-            return await search_tests(
+            items, _total = await search_tests(
                 c,
                 eval_ids=list(eval_ids_set),
                 department_ids=department_ids,
@@ -88,6 +88,7 @@ async def resolve_benchmark_context(
                 date_to=date_to,
                 limit=10000,
             )
+            return items
 
     invocations, tests = await asyncio.gather(
         _fetch_invocations(),
@@ -212,7 +213,7 @@ async def resolve_benchmark_search_context(
 
     # ── Phase 1: Fetch paginated tests ────────────────────────────────
     async with pool.acquire() as c:
-        tests = await search_tests(
+        tests, _total_count = await search_tests(
             c,
             eval_ids=eval_ids,
             department_ids=department_ids,

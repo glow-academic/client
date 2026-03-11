@@ -9,7 +9,7 @@ Provider keys and auth item keys are deployment-specific and not seeded here.
 
 from uuid import UUID
 
-from database.seeds.auths import GOOGLE_AUTH, MICROSOFT_AUTH
+from database.seeds.auths import MICROSOFT_AUTH
 from database.seeds.ids import sid
 from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 
@@ -19,7 +19,7 @@ from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 
 THRESHOLD_SUCCESS = UUID("019b995b-5308-7a8e-9d31-b08127742439")  # 85
 THRESHOLD_WARNING = UUID("019b995b-5309-714f-a5f6-5614613257b1")  # 80
-THRESHOLD_DANGER = UUID("019b995b-5309-74df-991a-c28980b294f2")   # 70
+THRESHOLD_DANGER = UUID("019b995b-5309-74df-991a-c28980b294f2")  # 70
 
 # ---------------------------------------------------------------------------
 # Pre-existing system resource IDs (from 10-systems/)

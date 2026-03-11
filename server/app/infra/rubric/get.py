@@ -55,7 +55,6 @@ from app.routes.v5.api.main.rubric.types import (
     RubricStandardsSection,
 )
 
-
 # ---------------------------------------------------------------------------
 # get_rubric_impl — composable infra architecture
 # ---------------------------------------------------------------------------

@@ -46,4 +46,3 @@ def test_reads_pdf_pages_without_crashing(tmp_path):
     )
 
     assert result == ""
-

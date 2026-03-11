@@ -49,19 +49,84 @@ JOB_POSITION_FIELDS = [F_ENGINEER, F_DESIGNER, F_ANALYST, F_MANAGER_POS]
 
 fields = [
     # Employee Level
-    dict(id=F_JUNIOR, name="Junior", description="Junior employee level", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_MID_LEVEL, name="Mid-Level", description="Mid-level employee level", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_SENIOR, name="Senior", description="Senior employee level", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_EXECUTIVE, name="Executive", description="Executive employee level", department_ids=[ORGANIZATION_DEPT]),
+    dict(
+        id=F_JUNIOR,
+        name="Junior",
+        description="Junior employee level",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_MID_LEVEL,
+        name="Mid-Level",
+        description="Mid-level employee level",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_SENIOR,
+        name="Senior",
+        description="Senior employee level",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_EXECUTIVE,
+        name="Executive",
+        description="Executive employee level",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
     # Years with Company
-    dict(id=F_LESS_THAN_1, name="Less than 1 year", description="Less than 1 year tenure", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_1_3_YEARS, name="1-3 years", description="1-3 years tenure", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_3_5_YEARS, name="3-5 years", description="3-5 years tenure", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_5_10_YEARS, name="5-10 years", description="5-10 years tenure", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_10_PLUS, name="10+ years", description="10+ years tenure", department_ids=[ORGANIZATION_DEPT]),
+    dict(
+        id=F_LESS_THAN_1,
+        name="Less than 1 year",
+        description="Less than 1 year tenure",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_1_3_YEARS,
+        name="1-3 years",
+        description="1-3 years tenure",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_3_5_YEARS,
+        name="3-5 years",
+        description="3-5 years tenure",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_5_10_YEARS,
+        name="5-10 years",
+        description="5-10 years tenure",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_10_PLUS,
+        name="10+ years",
+        description="10+ years tenure",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
     # Job Position
-    dict(id=F_ENGINEER, name="Engineer", description="Engineer position", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_DESIGNER, name="Designer", description="Designer position", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_ANALYST, name="Analyst", description="Analyst position", department_ids=[ORGANIZATION_DEPT]),
-    dict(id=F_MANAGER_POS, name="Manager", description="Manager position", department_ids=[ORGANIZATION_DEPT]),
+    dict(
+        id=F_ENGINEER,
+        name="Engineer",
+        description="Engineer position",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_DESIGNER,
+        name="Designer",
+        description="Designer position",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_ANALYST,
+        name="Analyst",
+        description="Analyst position",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
+    dict(
+        id=F_MANAGER_POS,
+        name="Manager",
+        description="Manager position",
+        department_ids=[ORGANIZATION_DEPT],
+    ),
 ]

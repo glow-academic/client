@@ -7,10 +7,10 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
-from app.utils.auth.encrypt_api_key import encrypt_api_key
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
+
+from app.utils.auth.encrypt_api_key import encrypt_api_key
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,9 @@ class ProviderRouteResources:
     value_id: UUID
 
 
-async def _create_provider_route_resources(pool, redis_client) -> ProviderRouteResources:
+async def _create_provider_route_resources(
+    pool, redis_client
+) -> ProviderRouteResources:
     from app.routes.v5.tools.resources.departments.create import create_department
     from app.routes.v5.tools.resources.descriptions.create import create_description
     from app.routes.v5.tools.resources.endpoints.create import create_endpoint
@@ -150,9 +152,9 @@ class TestProviderRoute:
         assert payload["provider_exists"] is True
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created[
-            "description"
-        ]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
 
     async def test_search_provider_route_returns_created_provider(
         self,

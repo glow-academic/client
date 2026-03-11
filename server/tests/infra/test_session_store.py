@@ -73,4 +73,3 @@ class TestSessionStore:
         result = get_stale_sessions(timeout=300)
 
         assert result == [stale]
-

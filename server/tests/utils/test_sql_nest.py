@@ -57,4 +57,3 @@ def test_nest_handles_scalar_fields_under_prefix_when_no_collection_exists():
     result = nest([{"theme__primary": "#000000", "theme__secondary": "#ffffff"}])
 
     assert result == {"theme": {"primary": "#000000", "secondary": "#ffffff"}}
-

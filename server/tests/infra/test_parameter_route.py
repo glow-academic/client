@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -22,7 +21,9 @@ class ParameterRouteResources:
     field_id: UUID
 
 
-async def _create_parameter_route_resources(pool, redis_client) -> ParameterRouteResources:
+async def _create_parameter_route_resources(
+    pool, redis_client
+) -> ParameterRouteResources:
     from app.routes.v5.tools.resources.departments.create import create_department
     from app.routes.v5.tools.resources.descriptions.create import create_description
     from app.routes.v5.tools.resources.fields.create import create_field
@@ -126,9 +127,9 @@ class TestParameterRoute:
         assert payload["parameter_exists"] is True
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created[
-            "description"
-        ]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
 
     async def test_search_parameter_route_returns_created_parameter(
         self,

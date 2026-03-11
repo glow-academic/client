@@ -331,8 +331,7 @@ async def search_simulation_impl(
     # -- Step 7: Build facet sections --
     scenario_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(s.id), name=s.name, count=0)
-            for s in scenario_facet
+            ListFilterOption(id=str(s.id), name=s.name, count=0) for s in scenario_facet
         ],
         selected_ids=[str(sid) for sid in filter_scenario_ids]
         if filter_scenario_ids
@@ -342,8 +341,7 @@ async def search_simulation_impl(
 
     cohort_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(c.id), name=c.name, count=0)
-            for c in cohort_facet
+            ListFilterOption(id=str(c.id), name=c.name, count=0) for c in cohort_facet
         ],
         selected_ids=[str(cid) for cid in filter_cohort_ids]
         if filter_cohort_ids

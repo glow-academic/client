@@ -11,6 +11,7 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
+from tests.helpers import nonexistent_id
 
 import app.infra.globals as globals_mod
 import app.infra.websocket.audio_lifecycle as audio_lifecycle
@@ -83,12 +84,18 @@ from app.infra.websocket.test_events_impl import (
     test_start_impl as _test_start_impl,
 )
 from app.routes.v5.tools.entries.attempt.create import create_attempt
-from app.routes.v5.tools.entries.attempt_practice.create import (
-    create_attempt_practice,
-)
+from app.routes.v5.tools.entries.attempt.get import get_attempts
+from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
+from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
+)
+from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
+    search_attempt_chat_bridges,
+)
+from app.routes.v5.tools.entries.attempt_chat_completion.search import (
+    search_attempt_chat_completions,
 )
 from app.routes.v5.tools.entries.attempt_content.search import search_attempt_contents
 from app.routes.v5.tools.entries.attempt_message.create import create_attempt_message
@@ -98,6 +105,9 @@ from app.routes.v5.tools.entries.attempt_message_completion.create import (
 )
 from app.routes.v5.tools.entries.attempt_message_completion.search import (
     search_attempt_message_completions,
+)
+from app.routes.v5.tools.entries.attempt_practice.create import (
+    create_attempt_practice,
 )
 from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.calls.create import create_call
@@ -129,24 +139,14 @@ from app.routes.v5.tools.entries.test_invocation_completion.search import (
 )
 from app.routes.v5.tools.entries.tokens.refresh import refresh_tokens
 from app.routes.v5.tools.entries.tokens.search import search_tokens
-from app.routes.v5.tools.entries.attempt_chat_completion.search import (
-    search_attempt_chat_completions,
-)
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
-    search_attempt_chat_bridges,
-)
-from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
 from app.routes.v5.tools.entries.uploads.get import get_upload
-from app.routes.v5.tools.entries.attempt.get import get_attempts
-from app.routes.v5.tools.resources.profiles.create import create_profile
 from app.routes.v5.tools.resources.departments.create import create_department
-from app.routes.v5.tools.resources.profile_personas.create import create_profile_persona
 from app.routes.v5.tools.resources.personas.create import (
     create_persona as create_persona_resource,
 )
+from app.routes.v5.tools.resources.profile_personas.create import create_profile_persona
+from app.routes.v5.tools.resources.profiles.create import create_profile
 from app.routes.v5.tools.resources.simulations.create import create_simulation
-from tests.helpers import nonexistent_id
 
 _P = "app.infra.websocket.attempt_events_impl"
 
@@ -633,9 +633,11 @@ class TestAudioStopImpl:
         await audio_stop_impl(
             {"sid": "s1", "group_id": "g1"},
             emit=emit,
-            cleanup_audio_session_fn=lambda session: audio_lifecycle.cleanup_audio_session(
-                session,
-                adapter=adapter,
+            cleanup_audio_session_fn=lambda session: (
+                audio_lifecycle.cleanup_audio_session(
+                    session,
+                    adapter=adapter,
+                )
             ),
         )
 
@@ -985,6 +987,7 @@ class TestExtractGradeHelpers:
 # test_grade_complete_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @pytest.mark.asyncio
 class TestGradeCompleteImpl:
     async def test_emits_test_grade_progress(self):
@@ -1257,9 +1260,7 @@ class TestStartImpl:
         assert events[0].event == "test_proceed"
         assert created_profiles_id == profile.id
 
-    async def test_creates_benchmark_bridge_when_requested(
-        self, pool, redis_client
-    ):
+    async def test_creates_benchmark_bridge_when_requested(self, pool, redis_client):
         async with pool.acquire() as conn:
             profile = await create_profile(conn, redis_client)
             session = await create_session(conn, profile_id=profile.id)
@@ -1299,6 +1300,7 @@ class TestStartImpl:
 # ═══════════════════════════════════════════════════════════════════════════
 # test_proceed_impl
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 @pytest.mark.asyncio
 class TestProceedImpl:
@@ -1526,6 +1528,7 @@ class TestProceedImpl:
 # ═══════════════════════════════════════════════════════════════════════════
 
 _RUN_CREATE = "app.routes.v5.tools.entries.runs.create"
+
 
 @pytest.mark.asyncio
 class TestRunImpl:

@@ -11,11 +11,11 @@ from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.infra.websocket.generate_prepare_impl import generate_prepare_impl
 from app.infra.websocket.prepare_types import AgentDispatch, LLMConfig, MessageSpec
 from app.infra.websocket.socket_event import recording_emit
-from tests.helpers import nonexistent_id
 
 _PROFILE_ID = "00000000-0000-0000-0000-000000000001"
 _PROFILES_ID = "00000000-0000-0000-0000-000000000002"

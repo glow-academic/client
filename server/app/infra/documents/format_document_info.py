@@ -123,7 +123,9 @@ def build_document_content_items(
                     }
                 )
 
-            page_text = loaded_text_pages[page_num] if page_num < len(loaded_text_pages) else ""
+            page_text = (
+                loaded_text_pages[page_num] if page_num < len(loaded_text_pages) else ""
+            )
             header = (
                 f"--- doc{doc_index}-text-page{page_num + 1} ---\n"
                 f"Name: {document['name']}\n"
@@ -134,7 +136,9 @@ def build_document_content_items(
             content_items.append(
                 {
                     "type": "input_text",
-                    "text": header + (template_notice if page_num == 0 else "") + page_text,
+                    "text": header
+                    + (template_notice if page_num == 0 else "")
+                    + page_text,
                 }
             )
         return content_items

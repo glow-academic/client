@@ -7,7 +7,6 @@ from datetime import datetime
 from uuid import UUID
 
 import asyncpg
-from fastapi import HTTPException
 
 from app.infra.analytics_facets import (
     HIDDEN,
@@ -104,9 +103,15 @@ async def get_health_internal(
             for target, tool in scores.best.items()
         }
 
-        all_system_ids = list(dict.fromkeys(tool.system_id for tool in common.tool_graph.tools))
-        all_agent_ids = list(dict.fromkeys(tool.agent_id for tool in common.tool_graph.tools))
-        all_tool_ids = list(dict.fromkeys(tool.tool_id for tool in common.tool_graph.tools))
+        all_system_ids = list(
+            dict.fromkeys(tool.system_id for tool in common.tool_graph.tools)
+        )
+        all_agent_ids = list(
+            dict.fromkeys(tool.agent_id for tool in common.tool_graph.tools)
+        )
+        all_tool_ids = list(
+            dict.fromkeys(tool.tool_id for tool in common.tool_graph.tools)
+        )
 
         async def _fetch_systems() -> list:
             if not all_system_ids:
@@ -132,17 +137,23 @@ async def get_health_internal(
             _fetch_tools_config(),
         )
 
-        model_ids = list(dict.fromkeys(agent.model_id for agent in config_agents if agent.model_id))
+        model_ids = list(
+            dict.fromkeys(agent.model_id for agent in config_agents if agent.model_id)
+        )
         if model_ids:
             async with pool.acquire() as conn:
                 config_models = await get_models(conn, model_ids, redis, bypass_cache)
 
         provider_ids = list(
-            dict.fromkeys(model.provider_id for model in config_models if model.provider_id)
+            dict.fromkeys(
+                model.provider_id for model in config_models if model.provider_id
+            )
         )
         if provider_ids:
             async with pool.acquire() as conn:
-                config_providers = await get_providers(conn, provider_ids, redis, bypass_cache)
+                config_providers = await get_providers(
+                    conn, provider_ids, redis, bypass_cache
+                )
 
         if common.profile:
             from app.routes.v5.tools.resources.profiles.get import get_profiles

@@ -13,7 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -56,7 +56,6 @@ from app.infra.model.permissions import (
 from app.infra.model.permissions_context import resolve_model_permissions_context
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.model.types import (
-    GetModelApiRequest,
     GetModelApiResponse,
     ModelDepartmentSection,
     ModelDescriptionSection,
@@ -72,7 +71,6 @@ from app.routes.v5.api.main.model.types import (
     ModelValueSection,
     ModelVoiceSection,
 )
-
 
 # ---------------------------------------------------------------------------
 # get_model_client — composable infra architecture

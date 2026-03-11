@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 
@@ -132,11 +131,13 @@ class TestCohortRoute:
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
         assert (
-            payload["descriptions"]["resource"]["description"]
-            == created["description"]
+            payload["descriptions"]["resource"]["description"] == created["description"]
         )
         assert payload["simulations"]["current"]
-        assert payload["simulations"]["current"][0]["simulation_id"] == created["simulation_id"]
+        assert (
+            payload["simulations"]["current"][0]["simulation_id"]
+            == created["simulation_id"]
+        )
         assert payload["profiles"]["current"]
         assert payload["profiles"]["current"][0]["profile_id"] == created["profile_id"]
 
@@ -176,10 +177,14 @@ class TestCohortRoute:
         )
 
         created_cohort = next(
-            cohort for cohort in payload["cohorts"] if cohort["cohort_id"] == created["cohort_id"]
+            cohort
+            for cohort in payload["cohorts"]
+            if cohort["cohort_id"] == created["cohort_id"]
         )
         assert created_cohort["name"] == created["name"]
-        assert created_cohort["department_ids"] == [str(cohort_route_actor.department_id)]
+        assert created_cohort["department_ids"] == [
+            str(cohort_route_actor.department_id)
+        ]
         assert created_cohort["profile_ids"] == [created["profile_id"]]
         assert created_cohort["simulation_ids"] == [created["simulation_id"]]
 
@@ -261,9 +266,8 @@ class TestCohortRoute:
             get_payload["descriptions"]["resource"]["description"]
             == updated.description
         )
-        assert (
-            get_payload["simulations"]["current"][0]["simulation_id"]
-            == str(updated.simulation_id)
+        assert get_payload["simulations"]["current"][0]["simulation_id"] == str(
+            updated.simulation_id
         )
 
     async def test_duplicate_cohort_route_returns_new_cohort(

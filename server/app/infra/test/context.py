@@ -70,7 +70,8 @@ async def resolve_test_context(
     # ── Phase 1: Parallel fetch test + invocations ────────────────────
     async def _fetch_tests() -> list:
         async with pool.acquire() as c:
-            return await search_tests(c, test_ids=[test_id], limit=1)
+            items, _total = await search_tests(c, test_ids=[test_id], limit=1)
+            return items
 
     async def _fetch_invocations() -> list:
         async with pool.acquire() as c:

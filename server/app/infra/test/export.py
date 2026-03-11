@@ -120,7 +120,7 @@ async def export_test_impl(
 
     # -- Step 2: Search test metadata --
     async with pool.acquire() as conn:
-        tests = await search_tests(conn, test_ids=[test_id], limit=1)
+        tests, _total = await search_tests(conn, test_ids=[test_id], limit=1)
 
     # -- Step 3: Search invocations for this test --
     async with pool.acquire() as conn:

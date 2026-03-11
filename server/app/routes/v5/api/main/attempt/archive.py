@@ -87,7 +87,9 @@ async def archive_attempts(
         profiles_id = identity.profiles_id if identity else None
         group_id = identity.group_id if identity else None
         if group_id is None:
-            raise HTTPException(status_code=400, detail="Group ID could not be resolved")
+            raise HTTPException(
+                status_code=400, detail="Group ID could not be resolved"
+            )
 
         async with pool.acquire() as conn:
             attempts, _ = await search_attempts(

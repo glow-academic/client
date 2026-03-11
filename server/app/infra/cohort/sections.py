@@ -72,7 +72,9 @@ def build_cohort_get_result(
     }
 
     cohort_department_ids = [
-        department.id for department in cohort.resources["departments"].selected if department.id
+        department.id
+        for department in cohort.resources["departments"].selected
+        if department.id
     ]
     can_edit = compute_can_edit(
         user_role=profile.role,
@@ -86,10 +88,12 @@ def build_cohort_get_result(
     )
 
     all_departments = dedupe_by_id(
-        cohort.resources["departments"].selected + cohort.resources["departments"].suggestions
+        cohort.resources["departments"].selected
+        + cohort.resources["departments"].suggestions
     )
     all_simulations = dedupe_by_id(
-        cohort.resources["simulations"].selected + cohort.resources["simulations"].suggestions
+        cohort.resources["simulations"].selected
+        + cohort.resources["simulations"].suggestions
     )
     all_profiles = dedupe_by_id(
         cohort.resources["profiles"].selected + cohort.resources["profiles"].suggestions
@@ -137,7 +141,11 @@ def build_cohort_get_result(
     )
     simulations_step_show_ai_generate = any(
         show_ai_generate_map.get(resource, False)
-        for resource in ("simulations", "simulation_positions", "simulation_availability")
+        for resource in (
+            "simulations",
+            "simulation_positions",
+            "simulation_availability",
+        )
     )
     profiles_step_show_ai_generate = any(
         show_ai_generate_map.get(resource, False)
@@ -146,10 +154,18 @@ def build_cohort_get_result(
 
     suggestions_map: dict[str, list[UUID]] = {
         "names": [item.id for item in cohort.resources["names"].suggestions],
-        "descriptions": [item.id for item in cohort.resources["descriptions"].suggestions],
-        "departments": [item.id for item in cohort.resources["departments"].suggestions],
-        "simulations": [item.id for item in cohort.resources["simulations"].suggestions if item.id],
-        "profiles": [item.id for item in cohort.resources["profiles"].suggestions if item.id],
+        "descriptions": [
+            item.id for item in cohort.resources["descriptions"].suggestions
+        ],
+        "departments": [
+            item.id for item in cohort.resources["departments"].suggestions
+        ],
+        "simulations": [
+            item.id for item in cohort.resources["simulations"].suggestions if item.id
+        ],
+        "profiles": [
+            item.id for item in cohort.resources["profiles"].suggestions if item.id
+        ],
     }
 
     def _section(resource_key: str) -> dict:
@@ -224,7 +240,9 @@ def build_cohort_get_result(
             generated=item.generated,
         )
 
-    all_flags = cohort.resources["flags"].selected + cohort.resources["flags"].suggestions
+    all_flags = (
+        cohort.resources["flags"].selected + cohort.resources["flags"].suggestions
+    )
     flag_configs = [
         CohortFlagConfig(
             key=flag.name,
@@ -243,20 +261,33 @@ def build_cohort_get_result(
         cohort.resources["names"].selected + cohort.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
-        cohort.resources["descriptions"].selected + cohort.resources["descriptions"].suggestions
+        cohort.resources["descriptions"].selected
+        + cohort.resources["descriptions"].suggestions
     )
     all_names_conv = [_to_name(item) for item in all_names]
     all_descriptions_conv = [_to_description(item) for item in all_descriptions]
     all_departments_conv = [_to_department(item) for item in all_departments]
     all_simulations_conv = [_to_simulation(item) for item in all_simulations]
     all_profiles_conv = [_to_profile(item) for item in all_profiles]
-    all_sim_positions_conv = [_to_simulation_position(item) for item in all_simulation_positions]
-    all_sim_availability_conv = [_to_simulation_availability(item) for item in all_simulation_availability]
-    all_profile_personas_conv = [_to_profile_persona(item) for item in all_profile_personas]
+    all_sim_positions_conv = [
+        _to_simulation_position(item) for item in all_simulation_positions
+    ]
+    all_sim_availability_conv = [
+        _to_simulation_availability(item) for item in all_simulation_availability
+    ]
+    all_profile_personas_conv = [
+        _to_profile_persona(item) for item in all_profile_personas
+    ]
 
-    current_departments = [_to_department(item) for item in cohort.resources["departments"].selected]
-    current_simulations = [_to_simulation(item) for item in cohort.resources["simulations"].selected]
-    current_profiles = [_to_profile(item) for item in cohort.resources["profiles"].selected]
+    current_departments = [
+        _to_department(item) for item in cohort.resources["departments"].selected
+    ]
+    current_simulations = [
+        _to_simulation(item) for item in cohort.resources["simulations"].selected
+    ]
+    current_profiles = [
+        _to_profile(item) for item in cohort.resources["profiles"].selected
+    ]
 
     return GetCohortApiResponse(
         actor_name=profile.name,
@@ -284,7 +315,10 @@ def build_cohort_get_result(
         ),
         flags=CohortFlagSection(
             **_section("flags"),
-            resource=next((flag for flag in flag_configs if flag.flag_option_id in flag_ids_set), None),
+            resource=next(
+                (flag for flag in flag_configs if flag.flag_option_id in flag_ids_set),
+                None,
+            ),
             resources=flag_configs,
         ),
         departments=CohortDepartmentSection(

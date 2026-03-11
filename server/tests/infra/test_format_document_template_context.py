@@ -54,8 +54,13 @@ def test_build_template_fields_content_joins_multiple_rows():
     )
 
     assert content.startswith("The following is the parameter item information:\n")
-    assert "This is the company (employer name) for this chat: Company Context." in content
-    assert "This is the start_date () for this chat: Offer Dates. Description: ." in content
+    assert (
+        "This is the company (employer name) for this chat: Company Context." in content
+    )
+    assert (
+        "This is the start_date () for this chat: Offer Dates. Description: ."
+        in content
+    )
 
 
 def test_format_document_template_context_returns_context_and_fields_messages():

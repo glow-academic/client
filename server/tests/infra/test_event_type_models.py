@@ -1,5 +1,6 @@
 """Tests for websocket event/data models."""
 
+from app.infra.websocket import test_types as websocket_test_types
 from app.infra.websocket.attempt_types import (
     AttemptEndedData,
     GenerateRequestData,
@@ -9,7 +10,6 @@ from app.infra.websocket.generation_types import (
     GenerateErrorApiRequest,
     GenerationErrorData,
 )
-from app.infra.websocket import test_types as websocket_test_types
 
 
 def test_generate_request_data_defaults_save_and_modality():

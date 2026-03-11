@@ -17,4 +17,3 @@ def resolve_upload_path(
 ) -> Path:
     """Resolve a stored relative upload path against the configured upload root."""
     return upload_folder / relative_path
-

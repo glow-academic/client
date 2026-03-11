@@ -34,7 +34,9 @@ class TestResolveReportsContext:
 
 
 class TestReportsDocsClient:
-    async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
+    async def test_returns_composed_docs(
+        self, pool, redis_client, profile_identity_factory
+    ):
         profile = await profile_identity_factory()
 
         result = await docs_reports_impl(
@@ -77,7 +79,9 @@ class TestExportReportsClient:
 
 
 class TestRefreshReportsClient:
-    async def test_refresh_invalidates_tags(self, pool, redis_client, profile_identity_factory):
+    async def test_refresh_invalidates_tags(
+        self, pool, redis_client, profile_identity_factory
+    ):
         profile = await profile_identity_factory()
 
         result = await refresh_reports_impl(

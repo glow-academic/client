@@ -38,4 +38,3 @@ def test_dedupe_by_id_skips_missing_or_none_ids():
 
     assert len(result) == 1
     assert result[0].label == "keep"
-

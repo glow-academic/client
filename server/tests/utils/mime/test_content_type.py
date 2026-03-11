@@ -17,5 +17,7 @@ def test_get_content_type_trusts_specific_stored_mime():
 
 
 def test_get_content_type_replaces_generic_mime_with_inferred_value():
-    assert get_content_type("script.tsx", "application/octet-stream") == "text/typescript; charset=utf-8"
-
+    assert (
+        get_content_type("script.tsx", "application/octet-stream")
+        == "text/typescript; charset=utf-8"
+    )

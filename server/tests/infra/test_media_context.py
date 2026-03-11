@@ -50,8 +50,12 @@ class TestWrapMediaEntries:
 
         result = wrap_media_entries(context)
 
-        assert isinstance(result["artifacts"]["agent"]["generate"]["entries"]["images"][0], MediaItem)
-        assert result["artifacts"]["agent"]["generate"]["entries"]["messages"] == [{"id": "msg-1"}]
+        assert isinstance(
+            result["artifacts"]["agent"]["generate"]["entries"]["images"][0], MediaItem
+        )
+        assert result["artifacts"]["agent"]["generate"]["entries"]["messages"] == [
+            {"id": "msg-1"}
+        ]
 
     def test_ignores_missing_or_invalid_artifact_shapes(self):
         assert wrap_media_entries({}) == {}
@@ -60,7 +64,9 @@ class TestWrapMediaEntries:
 
 class TestPostProcessMediaSentinels:
     def test_returns_single_text_block_without_sentinels(self):
-        assert post_process_media_sentinels("hello") == [{"type": "text", "text": "hello"}]
+        assert post_process_media_sentinels("hello") == [
+            {"type": "text", "text": "hello"}
+        ]
 
     def test_returns_empty_for_blank_text_without_sentinels(self):
         assert post_process_media_sentinels("   ") == []
@@ -89,4 +95,3 @@ class TestPostProcessMediaSentinels:
     def test_detects_media_sentinels(self):
         assert has_media_sentinels("A [[file:file-1]] B") is True
         assert has_media_sentinels("A plain string") is False
-

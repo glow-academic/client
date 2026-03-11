@@ -38,7 +38,9 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     all_items = await search_operations(conn, redis_client, limit_count=10)
-    offset_items = await search_operations(conn, redis_client, limit_count=10, offset_count=1)
+    offset_items = await search_operations(
+        conn, redis_client, limit_count=10, offset_count=1
+    )
 
     assert len(offset_items) == len(all_items)
     assert offset_items[0].id != all_items[0].id
@@ -70,6 +72,8 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     await create_operation(conn, "draft", redis_client)
 
-    items = await search_operations(conn, redis_client, search="draft", bypass_cache=True)
+    items = await search_operations(
+        conn, redis_client, search="draft", bypass_cache=True
+    )
 
     assert any(item.operation == "draft" for item in items)

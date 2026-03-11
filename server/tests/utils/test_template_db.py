@@ -1,7 +1,5 @@
 """Tests for template DB utility helpers."""
 
-from pathlib import Path
-
 import pytest
 
 from app.utils import template_db
@@ -103,7 +101,10 @@ async def test_clone_from_template_drops_existing_target_before_create():
 
     executed_sql = [sql for sql, _args in conn.executed]
     assert any("DROP DATABASE IF EXISTS" in sql for sql in executed_sql)
-    assert any('CREATE DATABASE "test_glow_xyz" TEMPLATE "template_glow_abc"' in sql for sql in executed_sql)
+    assert any(
+        'CREATE DATABASE "test_glow_xyz" TEMPLATE "template_glow_abc"' in sql
+        for sql in executed_sql
+    )
 
 
 @pytest.mark.asyncio
@@ -128,10 +129,19 @@ async def test_save_as_template_replaces_existing_template():
     await template_db.save_as_template(conn, "build_glow_abc", "template_glow_abc")
 
     executed_sql = [sql for sql, _args in conn.executed]
-    assert any('ALTER DATABASE "template_glow_abc" IS_TEMPLATE false' in sql for sql in executed_sql)
+    assert any(
+        'ALTER DATABASE "template_glow_abc" IS_TEMPLATE false' in sql
+        for sql in executed_sql
+    )
     assert any('DROP DATABASE "template_glow_abc"' in sql for sql in executed_sql)
-    assert any('CREATE DATABASE "template_glow_abc" TEMPLATE "build_glow_abc"' in sql for sql in executed_sql)
-    assert any('ALTER DATABASE "template_glow_abc" IS_TEMPLATE true' in sql for sql in executed_sql)
+    assert any(
+        'CREATE DATABASE "template_glow_abc" TEMPLATE "build_glow_abc"' in sql
+        for sql in executed_sql
+    )
+    assert any(
+        'ALTER DATABASE "template_glow_abc" IS_TEMPLATE true' in sql
+        for sql in executed_sql
+    )
 
 
 @pytest.mark.asyncio

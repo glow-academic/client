@@ -7,12 +7,20 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
+from app.infra.events.audit import (
+    build_audit_arguments,
+    run_artifact_operation_with_audit,
+)
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.socket_event import EmitFn, SocketEvent, internal_event, make_emit
+from app.infra.websocket.socket_event import (
+    EmitFn,
+    SocketEvent,
+    internal_event,
+    make_emit,
+)
 from app.routes.v5.socket.client.types import TestEndPayload
 from app.routes.v5.socket.internal.test.proceed import test_proceed_internal_impl
 from app.routes.v5.socket.internal.test.types import TestErrorData, TestProceedData

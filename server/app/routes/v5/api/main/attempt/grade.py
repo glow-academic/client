@@ -14,18 +14,10 @@ TODO: Wire to actual infra (trigger or skip grading pipeline).
 
 from __future__ import annotations
 
-from uuid import UUID
-
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.infra.attempt.grade_types import (
-    AttemptGradeAnalysisEntry,
-    AttemptGradeFeedbackEntry,
-    AttemptGradeHighlightEntry,
-    AttemptGradeImprovementEntry,
-    AttemptGradeReplacementEntry,
-    AttemptGradeStrengthEntry,
     GradeAttemptRequest,
 )
 from app.routes.v5.socket.internal.attempt.grade import attempt_grade_internal_impl

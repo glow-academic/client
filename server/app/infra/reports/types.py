@@ -11,8 +11,8 @@ class ReportsMetric(BaseModel):
     current_value: float | int | None = None
     has_data: bool = False
     method: str | None = None
-    data_points: list["ReportsDataPoint"] = Field(default_factory=list)
-    hover: "ReportsMetricHover | None" = None
+    data_points: list[ReportsDataPoint] = Field(default_factory=list)
+    hover: ReportsMetricHover | None = None
     status: str = "neutral"
 
 

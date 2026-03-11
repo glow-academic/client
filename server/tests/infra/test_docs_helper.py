@@ -132,7 +132,10 @@ class TestStaticBuilders:
 
         assert docs["name"] == "profiles"
         assert docs["database"]["table"] == "profile_artifact"
-        assert docs["business_logic"]["sample"]["rules"] == ["first rule", "second rule"]
+        assert docs["business_logic"]["sample"]["rules"] == [
+            "first rule",
+            "second rule",
+        ]
         assert docs["api_routing"] == {"route": "/profiles"}
         assert docs["resources"] == {"available": [{"name": "emails"}]}
         assert docs["notes"] == ["one"]

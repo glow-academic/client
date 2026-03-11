@@ -24,7 +24,12 @@ class FakeNamedTuple:
 
 class DictLikeTool:
     def dict(self):
-        return {"id": "tool-2", "name": "dict-tool", "description": "desc", "active": True}
+        return {
+            "id": "tool-2",
+            "name": "dict-tool",
+            "description": "desc",
+            "active": True,
+        }
 
 
 class TestRenderDeveloperInstructions:
@@ -99,7 +104,12 @@ class TestConvertToolsToDict:
         result = convert_tools_to_dict(
             [
                 None,
-                {"id": "tool-6", "name": "inactive", "description": "desc", "active": False},
+                {
+                    "id": "tool-6",
+                    "name": "inactive",
+                    "description": "desc",
+                    "active": False,
+                },
                 SimpleNamespace(name="unsupported"),
             ]
         )

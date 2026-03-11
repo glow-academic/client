@@ -76,5 +76,7 @@ def test_project_call_receipt_emits_bulk_persona_events_per_result_id() -> None:
         },
     )
 
-    domain_events = [event for event in events if event.event_type == "artifacts.persona.created"]
+    domain_events = [
+        event for event in events if event.event_type == "artifacts.persona.created"
+    ]
     assert [event.entity_id for event in domain_events] == [first_id, second_id]

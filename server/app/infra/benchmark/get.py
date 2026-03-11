@@ -58,9 +58,15 @@ async def get_benchmark_impl(
     bypass_cache: bool = False,
 ) -> BenchmarkResponse:
     """Resolve the canonical benchmark response for any surface."""
-    department_uuids = [UUID(d) for d in request.department_ids] if request.department_ids else None
-    date_from: datetime | None = datetime.fromisoformat(request.start_date) if request.start_date else None
-    date_to: datetime | None = datetime.fromisoformat(request.end_date) if request.end_date else None
+    department_uuids = (
+        [UUID(d) for d in request.department_ids] if request.department_ids else None
+    )
+    date_from: datetime | None = (
+        datetime.fromisoformat(request.start_date) if request.start_date else None
+    )
+    date_to: datetime | None = (
+        datetime.fromisoformat(request.end_date) if request.end_date else None
+    )
 
     common = await resolve_common_context(
         pool, redis, profile_id=profile_id, bypass_cache=bypass_cache
@@ -91,8 +97,14 @@ async def get_benchmark_impl(
     invocations = cards_ctx.entries.get("invocations", [])
     tests = cards_ctx.entries.get("tests", [])
     test_invocations = cards_ctx.entries.get("test_invocations", [])
-    evals_list = cards_ctx.resources["evals"].selected if "evals" in cards_ctx.resources else []
-    depts_list = cards_ctx.resources["departments"].selected if "departments" in cards_ctx.resources else []
+    evals_list = (
+        cards_ctx.resources["evals"].selected if "evals" in cards_ctx.resources else []
+    )
+    depts_list = (
+        cards_ctx.resources["departments"].selected
+        if "departments" in cards_ctx.resources
+        else []
+    )
 
     eval_cards = _build_eval_cards(
         benchmarks, invocations, tests, test_invocations, evals_list
@@ -141,7 +153,11 @@ async def _resolve_both(
     bypass_cache: bool,
 ) -> tuple[ArtifactContext, ArtifactContext]:
     """Resolve cards + history contexts in parallel."""
-    eval_uuids = [UUID(e) for e in request.history_eval_ids] if request.history_eval_ids else None
+    eval_uuids = (
+        [UUID(e) for e in request.history_eval_ids]
+        if request.history_eval_ids
+        else None
+    )
     return await asyncio.gather(
         resolve_benchmark_context(
             pool,
@@ -250,7 +266,9 @@ def _build_eval_cards(
                 eval_id=str(eval_id),
                 eval_name=eval_item.name,
                 eval_description=eval_item.description,
-                model_ids=sorted(str(model_id) for model_id in model_ids_per_eval.get(eval_id, set())),
+                model_ids=sorted(
+                    str(model_id) for model_id in model_ids_per_eval.get(eval_id, set())
+                ),
                 total_tests=tests_per_eval.get(eval_id, 0),
                 archived_tests=archived_per_eval.get(eval_id, 0),
                 total_invocations=total_invocations,
@@ -262,7 +280,9 @@ def _build_eval_cards(
                 ),
                 infinite_mode=infinite_per_eval.get(eval_id, False),
                 department_ids=sorted(dept_ids_per_eval.get(eval_id, set())),
-                rubric_ids=sorted(str(rubric_id) for rubric_id in stats.get("rubric_ids", set())),
+                rubric_ids=sorted(
+                    str(rubric_id) for rubric_id in stats.get("rubric_ids", set())
+                ),
             )
         )
     return cards
@@ -289,7 +309,9 @@ def _build_history(
     for test in tests:
         test_items = ti_by_test.get(test.test_id, [])
         total_invocations = len(test_items)
-        completed_invocations = sum(1 for item in test_items if item.invocation_completed)
+        completed_invocations = sum(
+            1 for item in test_items if item.invocation_completed
+        )
         pending_invocations = total_invocations - completed_invocations
         best_score: float | None = None
         has_passed = False
@@ -314,7 +336,9 @@ def _build_history(
                 eval_id=str(test.eval_id) if test.eval_id else None,
                 eval_name=eval_name,
                 eval_description=eval_desc,
-                created_at=test.test_created_at.isoformat() if test.test_created_at else None,
+                created_at=test.test_created_at.isoformat()
+                if test.test_created_at
+                else None,
                 archived=test.archived,
                 infinite_mode=test.infinite_mode,
                 total_invocations=total_invocations,

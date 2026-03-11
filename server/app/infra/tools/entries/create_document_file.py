@@ -18,7 +18,9 @@ from redis.asyncio import Redis
 from app.routes.v5.tools.entries.file_uploads.create import create_file_upload
 from app.routes.v5.tools.entries.files.create import create_file as create_file_entry
 from app.routes.v5.tools.entries.uploads.create import create_upload
-from app.routes.v5.tools.resources.files.create import create_file as create_file_resource
+from app.routes.v5.tools.resources.files.create import (
+    create_file as create_file_resource,
+)
 
 
 @dataclass(frozen=True)

@@ -93,8 +93,12 @@ async def get_pricing_impl(
     )
 
     runs = ctx.entries.get("runs", [])
-    agent_list = ctx.resources.get("agents").selected if ctx.resources.get("agents") else []
-    model_list = ctx.resources.get("models").selected if ctx.resources.get("models") else []
+    agent_list = (
+        ctx.resources.get("agents").selected if ctx.resources.get("agents") else []
+    )
+    model_list = (
+        ctx.resources.get("models").selected if ctx.resources.get("models") else []
+    )
     pricing_list = (
         ctx.resources.get("pricing").selected if ctx.resources.get("pricing") else []
     )
@@ -113,12 +117,16 @@ async def get_pricing_impl(
 
     daily_buckets: dict[tuple[str, str | None], dict] = {}
     for run in runs:
-        date_key = run.run_created_at.strftime("%Y-%m-%d") if run.run_created_at else "unknown"
+        date_key = (
+            run.run_created_at.strftime("%Y-%m-%d") if run.run_created_at else "unknown"
+        )
         model_id = str(run.model_ids[0]) if run.model_ids else None
         bucket_key = (date_key, model_id)
         if bucket_key not in daily_buckets:
             daily_buckets[bucket_key] = {"total_cost": Decimal("0"), "run_count": 0}
-        daily_buckets[bucket_key]["total_cost"] += run_costs.get(run.run_id, Decimal("0"))
+        daily_buckets[bucket_key]["total_cost"] += run_costs.get(
+            run.run_id, Decimal("0")
+        )
         daily_buckets[bucket_key]["run_count"] += 1
 
     daily_items = [
@@ -133,8 +141,12 @@ async def get_pricing_impl(
         )
     ]
 
-    agent_map = {str(agent.id): {"name": agent.name} for agent in agent_list if agent.id}
-    model_map = {str(model.id): {"name": model.name} for model in model_list if model.id}
+    agent_map = {
+        str(agent.id): {"name": agent.name} for agent in agent_list if agent.id
+    }
+    model_map = {
+        str(model.id): {"name": model.name} for model in model_list if model.id
+    }
     model_options = [
         FilterOption(value=str(model.id), label=model.name)
         for model in model_list

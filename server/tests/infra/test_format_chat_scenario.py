@@ -19,4 +19,3 @@ def test_format_chat_scenario_handles_none_as_empty_string():
         "role": "developer",
         "content": "The following is the scenario for the chat: ",
     }
-

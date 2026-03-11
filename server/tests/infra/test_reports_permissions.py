@@ -10,14 +10,14 @@ from app.infra.reports.permissions import (
     build_reports_sections,
     build_reports_sections_v2,
     compute_history_section,
-    compute_leaderboard_section,
-    compute_overview_section,
-    compute_reports_header_metrics,
-    compute_trends_section,
     compute_history_section_v2,
+    compute_leaderboard_section,
     compute_leaderboard_section_v2,
+    compute_overview_section,
     compute_overview_section_v2,
+    compute_reports_header_metrics,
     compute_reports_header_metrics_v2,
+    compute_trends_section,
     compute_trends_section_v2,
 )
 from app.routes.v5.tools.entries.attempt_chat.types import ChatItem
@@ -335,7 +335,10 @@ def test_build_reports_sections_v2_returns_empty_sections_for_no_data():
 
 def test_compute_reports_header_metrics_v1_uses_daily_and_profile_rows():
     profile_id = uuid4()
-    attempts = [SimpleNamespace(score_percent=70.0), SimpleNamespace(score_percent=80.0)]
+    attempts = [
+        SimpleNamespace(score_percent=70.0),
+        SimpleNamespace(score_percent=80.0),
+    ]
     chat_rows = [SimpleNamespace(completed=True), SimpleNamespace(completed=False)]
     daily_rows = [
         SimpleNamespace(

@@ -101,7 +101,9 @@ async def get_auth_impl(
 
     scores = score_tools(common.tool_graph, AUTH_RESOURCES)
     agent_ids: dict[str, UUID | None] = {
-        resource: (scores.best[resource].agent_id if scores.best.get(resource) else None)
+        resource: (
+            scores.best[resource].agent_id if scores.best.get(resource) else None
+        )
         for resource in AUTH_RESOURCES
     }
     tool_ids_map: dict[str, UUID | None] = {
@@ -117,7 +119,8 @@ async def get_auth_impl(
     slugs_has_tools = scores.has_any.get("slugs", False)
 
     all_protocols = dedupe_by_id(
-        auth_ctx.resources["protocols"].selected + auth_ctx.resources["protocols"].suggestions
+        auth_ctx.resources["protocols"].selected
+        + auth_ctx.resources["protocols"].suggestions
     )
     all_slugs = dedupe_by_id(
         auth_ctx.resources["slugs"].selected + auth_ctx.resources["slugs"].suggestions
@@ -188,7 +191,9 @@ async def get_auth_impl(
 
     suggestions_map = {
         "names": [item.id for item in auth_ctx.resources["names"].suggestions],
-        "descriptions": [item.id for item in auth_ctx.resources["descriptions"].suggestions],
+        "descriptions": [
+            item.id for item in auth_ctx.resources["descriptions"].suggestions
+        ],
         "protocols": [item.id for item in auth_ctx.resources["protocols"].suggestions],
         "slugs": [item.id for item in auth_ctx.resources["slugs"].suggestions],
         "items": [],
@@ -227,7 +232,9 @@ async def get_auth_impl(
         group_id=group_id,
         basic_show_ai_generate=basic_show_ai_generate,
         names=AuthNameSection(
-            resource=auth_ctx.resources["names"].selected[0] if auth_ctx.resources["names"].selected else None,
+            resource=auth_ctx.resources["names"].selected[0]
+            if auth_ctx.resources["names"].selected
+            else None,
             resources=all_names,
             **_section("names"),
         ),

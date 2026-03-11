@@ -369,7 +369,6 @@ def gen_view_resources() -> list[tuple[str, str]]:
     return [("view_resources.py", content)]
 
 
-
 def gen_artifact_entries() -> list[tuple[str, str]]:
     """Generate artifact_entries.py (computed from ARTIFACT_VIEWS × VIEW_ENTRIES)."""
     content = "\n".join(

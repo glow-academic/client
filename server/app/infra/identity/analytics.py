@@ -16,12 +16,14 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
+from app.routes.v5.tools.artifacts.profile.get import (
+    get_profiles as get_profile_artifacts,
+)
+from app.routes.v5.tools.artifacts.profile.search import search_profiles
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.health.search import search_health
 from app.routes.v5.tools.entries.runs.search import search_runs
 from app.routes.v5.tools.entries.test.search import search_tests
-from app.routes.v5.tools.artifacts.profile.get import get_profiles as get_profile_artifacts
-from app.routes.v5.tools.artifacts.profile.search import search_profiles
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 
@@ -237,8 +239,8 @@ async def resolve_benchmark_filters(
             return None, None
         async with pool.acquire() as c:
             # Fetch earliest and latest in parallel
-            earliest_items = await search_tests(c, sort_order="asc", limit=1)
-            latest_items = await search_tests(c, sort_order="desc", limit=1)
+            earliest_items, _ = await search_tests(c, sort_order="asc", limit=1)
+            latest_items, _ = await search_tests(c, sort_order="desc", limit=1)
         earliest = (
             earliest_items[0].test_created_at.isoformat() if earliest_items else None
         )

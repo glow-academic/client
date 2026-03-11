@@ -8,7 +8,9 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 
-async def get_active_run(chat_id: str, *, redis_client: Any | None = None) -> str | None:
+async def get_active_run(
+    chat_id: str, *, redis_client: Any | None = None
+) -> str | None:
     """Get the active run ID for a chat from Redis."""
     redis_client = redis_client if redis_client is not None else get_redis_client()
     if not redis_client:

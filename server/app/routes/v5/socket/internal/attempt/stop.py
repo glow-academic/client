@@ -7,7 +7,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
+from app.infra.events.audit import (
+    build_audit_arguments,
+    run_artifact_operation_with_audit,
+)
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.cancel_active_result import cancel_active_result

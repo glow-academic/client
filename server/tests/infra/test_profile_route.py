@@ -7,11 +7,11 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
+from tests.helpers import unique_tag
+from tests.infra.route_helpers import create_admin_route_actor
 
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
-from tests.helpers import unique_tag
-from tests.infra.route_helpers import create_admin_route_actor
 
 
 @dataclass(frozen=True)

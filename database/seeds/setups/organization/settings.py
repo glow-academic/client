@@ -16,7 +16,7 @@ from database.seeds.setups.organization.departments import ORGANIZATION_DEPT
 
 THRESHOLD_SUCCESS = UUID("019b995b-5308-7a8e-9d31-b08127742439")  # 85
 THRESHOLD_WARNING = UUID("019b995b-5309-714f-a5f6-5614613257b1")  # 80
-THRESHOLD_DANGER = UUID("019b995b-5309-74df-991a-c28980b294f2")   # 70
+THRESHOLD_DANGER = UUID("019b995b-5309-74df-991a-c28980b294f2")  # 70
 
 # ---------------------------------------------------------------------------
 # Pre-existing flag IDs (from 01-resources/)

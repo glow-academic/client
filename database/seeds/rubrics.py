@@ -62,25 +62,109 @@ def _rubric(id: str, name: str, description: str) -> dict:
 
 
 rubrics = [
-    _rubric("019c4e7a-47a2-7889-858c-14ec6323b7ab", "Agent Rubric", "Rubric for evaluating agent agent performance"),
-    _rubric("019c4e7a-479e-7b34-ba0e-58eab09e1f44", "Auth Rubric", "Rubric for evaluating auth agent performance"),
-    _rubric("cc000002-0000-0000-0000-000000000002", "Benchmark Rubric", "Rubric for evaluating benchmark performance"),
-    _rubric("019c4e7a-47a6-7948-affd-c0cea22aa769", "Chat Agent Rubric", "Rubric for evaluating chat agent agent performance"),
-    _rubric("019c4e7a-47a1-7181-91be-42dc22179f81", "Cohort Rubric", "Rubric for evaluating cohort agent performance"),
-    _rubric("019c4e7a-47a0-75eb-bdef-04fc7d4ce874", "Department Rubric", "Rubric for evaluating department agent performance"),
-    _rubric("019c4e7a-479b-7d95-900b-3d38c946f3e5", "Document Rubric", "Rubric for evaluating document agent performance"),
-    _rubric("019c4e7a-47a7-7545-862f-550706edd07c", "Eval Rubric", "Rubric for evaluating eval agent performance"),
-    _rubric("019c4e7a-47a8-7e79-8bb9-743b68c9ee34", "Field Rubric", "Rubric for evaluating field agent performance"),
-    _rubric("019c4e7a-47a8-7268-b6f9-97e720452517", "Grade Agent Rubric", "Rubric for evaluating grade agent agent performance"),
-    _rubric("019c4e7a-47a3-76d0-802d-a581b9796d16", "Model Rubric", "Rubric for evaluating model agent performance"),
-    _rubric("019c4e7a-479d-7a1c-b18b-0ba094f7c69f", "Parameter Rubric", "Rubric for evaluating parameter agent performance"),
-    _rubric("019c4e7a-47a5-715d-baa4-84a8098ef9c6", "Persona Rubric", "Rubric for evaluating persona agent performance"),
-    _rubric("019c4e7a-479f-7ab3-a251-dd33cd6d1328", "Profile Rubric", "Rubric for evaluating profile agent performance"),
-    _rubric("019c4e7a-4794-733c-a828-56101d490e0c", "Provider Rubric", "Rubric for evaluating provider agent performance"),
-    _rubric("019c4e7a-479c-7c30-a6da-b82b7dea8201", "Rubric Rubric", "Rubric for evaluating rubric agent performance"),
-    _rubric("019c4e7a-479a-7a07-8165-81965e3f9c16", "Scenario Rubric", "Rubric for evaluating scenario agent performance"),
-    _rubric("019c4e7a-47a1-7cc7-be5e-21b245e26939", "Setting Rubric", "Rubric for evaluating setting agent performance"),
-    _rubric("019c4e7a-47a5-7d8e-8097-ae8bf9f8d2ad", "Simulation Rubric", "Rubric for evaluating simulation agent performance"),
-    _rubric("019c4e7a-47a4-7540-aecd-d7a1d243643d", "Tool Rubric", "Rubric for evaluating tool agent performance"),
-    _rubric("cc000001-0000-0000-0000-000000000001", "Training Rubric", "Rubric for evaluating training performance"),
+    _rubric(
+        "019c4e7a-47a2-7889-858c-14ec6323b7ab",
+        "Agent Rubric",
+        "Rubric for evaluating agent agent performance",
+    ),
+    _rubric(
+        "019c4e7a-479e-7b34-ba0e-58eab09e1f44",
+        "Auth Rubric",
+        "Rubric for evaluating auth agent performance",
+    ),
+    _rubric(
+        "cc000002-0000-0000-0000-000000000002",
+        "Benchmark Rubric",
+        "Rubric for evaluating benchmark performance",
+    ),
+    _rubric(
+        "019c4e7a-47a6-7948-affd-c0cea22aa769",
+        "Chat Agent Rubric",
+        "Rubric for evaluating chat agent agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a1-7181-91be-42dc22179f81",
+        "Cohort Rubric",
+        "Rubric for evaluating cohort agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a0-75eb-bdef-04fc7d4ce874",
+        "Department Rubric",
+        "Rubric for evaluating department agent performance",
+    ),
+    _rubric(
+        "019c4e7a-479b-7d95-900b-3d38c946f3e5",
+        "Document Rubric",
+        "Rubric for evaluating document agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a7-7545-862f-550706edd07c",
+        "Eval Rubric",
+        "Rubric for evaluating eval agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a8-7e79-8bb9-743b68c9ee34",
+        "Field Rubric",
+        "Rubric for evaluating field agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a8-7268-b6f9-97e720452517",
+        "Grade Agent Rubric",
+        "Rubric for evaluating grade agent agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a3-76d0-802d-a581b9796d16",
+        "Model Rubric",
+        "Rubric for evaluating model agent performance",
+    ),
+    _rubric(
+        "019c4e7a-479d-7a1c-b18b-0ba094f7c69f",
+        "Parameter Rubric",
+        "Rubric for evaluating parameter agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a5-715d-baa4-84a8098ef9c6",
+        "Persona Rubric",
+        "Rubric for evaluating persona agent performance",
+    ),
+    _rubric(
+        "019c4e7a-479f-7ab3-a251-dd33cd6d1328",
+        "Profile Rubric",
+        "Rubric for evaluating profile agent performance",
+    ),
+    _rubric(
+        "019c4e7a-4794-733c-a828-56101d490e0c",
+        "Provider Rubric",
+        "Rubric for evaluating provider agent performance",
+    ),
+    _rubric(
+        "019c4e7a-479c-7c30-a6da-b82b7dea8201",
+        "Rubric Rubric",
+        "Rubric for evaluating rubric agent performance",
+    ),
+    _rubric(
+        "019c4e7a-479a-7a07-8165-81965e3f9c16",
+        "Scenario Rubric",
+        "Rubric for evaluating scenario agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a1-7cc7-be5e-21b245e26939",
+        "Setting Rubric",
+        "Rubric for evaluating setting agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a5-7d8e-8097-ae8bf9f8d2ad",
+        "Simulation Rubric",
+        "Rubric for evaluating simulation agent performance",
+    ),
+    _rubric(
+        "019c4e7a-47a4-7540-aecd-d7a1d243643d",
+        "Tool Rubric",
+        "Rubric for evaluating tool agent performance",
+    ),
+    _rubric(
+        "cc000001-0000-0000-0000-000000000001",
+        "Training Rubric",
+        "Rubric for evaluating training performance",
+    ),
 ]

@@ -11,17 +11,16 @@ from redis.asyncio import Redis
 
 from app.infra.websocket.attempt_types import (
     AttemptAssistantProgressData,
-    AttemptAssistantStartData,
     AttemptAudioEndedData,
     AttemptAudioReadyData,
     AttemptErrorData,
     AttemptProceedData,
     AttemptStoppedData,
+    AttemptUserCompleteData,
     AttemptUserProgressData,
     AttemptUserReceivedCompleteData,
     AttemptUserReceivedProgressData,
     AttemptUserReceivedStartData,
-    AttemptUserCompleteData,
     AttemptUserStartData,
     GenerateRequestData,
 )
@@ -453,10 +452,10 @@ async def user_complete_impl(
     pool: asyncpg.Pool,
 ) -> None:
     """Write content to open user message and emit attempt_user_complete."""
+    from app.routes.v5.tools.entries.attempt.search import search_attempts
     from app.routes.v5.tools.entries.attempt_content.create import (
         create_attempt_content as create_attempt_content_entry_internal,
     )
-    from app.routes.v5.tools.entries.attempt.search import search_attempts
     from app.routes.v5.tools.entries.attempt_message.search import (
         search_attempt_messages,
     )
@@ -572,8 +571,8 @@ async def attempt_message_impl(
     - otherwise stop after the persisted user message
     """
     from app.infra.profile_identity_context import resolve_profile_identity_context
-    from app.routes.v5.tools.entries.runs.create import create_run
     from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
+    from app.routes.v5.tools.entries.runs.create import create_run
 
     sid = data.get("sid", "")
     attempt_id = data.get("attempt_id")
@@ -1016,7 +1015,6 @@ async def attempt_proceed_impl(
 ) -> None:
     """Shared core: resolve context → check done → resolve chat → emit."""
     from app.infra.websocket.attempt_types import (
-        AttemptChatStartedData,
         AttemptEndedData,
         AttemptStartedData,
     )

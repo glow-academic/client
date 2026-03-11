@@ -101,4 +101,3 @@ class TestSocketOwnerHelpers:
         finally:
             globals_mod.redis_client = original_redis
             globals_mod.socket_owner.clear()
-

@@ -17,4 +17,3 @@ def test_set_profile_id_updates_contextvar():
         assert profile_id_context.get() == "profile-123"
     finally:
         profile_id_context.reset(token)
-

@@ -37,4 +37,3 @@ class TestResolveResourceType:
 
     def test_returns_none_when_no_resource_type_present(self):
         assert resolve_resource_type({"result": {}}) is None
-

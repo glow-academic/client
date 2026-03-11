@@ -76,7 +76,12 @@ class TestConvertToolsToOpenaiFormat:
             [
                 {"name": "", "active": True},
                 {"name": "inactive", "active": False},
-                SimpleNamespace(name="object-tool", active=True, arguments={}, argument_descriptions={}),
+                SimpleNamespace(
+                    name="object-tool",
+                    active=True,
+                    arguments={},
+                    argument_descriptions={},
+                ),
             ]
         )
 
@@ -139,4 +144,3 @@ class TestConvertToolsToResponsesFormat:
                 "strict": True,
             }
         ]
-

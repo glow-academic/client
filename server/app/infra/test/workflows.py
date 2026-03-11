@@ -594,7 +594,9 @@ async def test_proceed_impl(
     from app.routes.v5.tools.entries.runs.create import create_run
     from app.routes.v5.tools.entries.sessions.create import create_session
     from app.routes.v5.tools.entries.test.get import get_tests
-    from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
+    from app.routes.v5.tools.entries.test_invocation.create import (
+        create_test_invocation,
+    )
     from app.routes.v5.tools.entries.test_invocation.refresh import (
         refresh_test_invocation,
     )
@@ -678,13 +680,14 @@ async def test_proceed_impl(
                     )
 
             if complete_all:
-                all_invocations, _total_count = (
-                    await search_test_invocation_entries_internal(
-                        conn,
-                        test_ids=[test_id],
-                        limit=1000,
-                        bypass_mv=True,
-                    )
+                (
+                    all_invocations,
+                    _total_count,
+                ) = await search_test_invocation_entries_internal(
+                    conn,
+                    test_ids=[test_id],
+                    limit=1000,
+                    bypass_mv=True,
                 )
                 for inv in all_invocations:
                     if not inv.invocation_completed:
@@ -719,13 +722,14 @@ async def test_proceed_impl(
                 )
                 return
 
-            all_invocations, _total_count = (
-                await search_test_invocation_entries_internal(
-                    conn,
-                    test_ids=[test_id],
-                    limit=1000,
-                    bypass_mv=True,
-                )
+            (
+                all_invocations,
+                _total_count,
+            ) = await search_test_invocation_entries_internal(
+                conn,
+                test_ids=[test_id],
+                limit=1000,
+                bypass_mv=True,
             )
             tests = await get_tests(conn, ids=[test_id])
 

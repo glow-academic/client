@@ -49,7 +49,6 @@ documents = [
         description="FERPA compliance and student privacy guidelines",
         department_ids=[UNIVERSITY_DEPT],
     ),
-
     # ── Template documents ────────────────────────────────────────────────
     dict(
         id=SYLLABUS_TEMPLATE,

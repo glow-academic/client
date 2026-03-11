@@ -7,7 +7,6 @@ from typing import Any
 from uuid import UUID
 
 import asyncpg
-from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.attempt.context import resolve_attempt_context
@@ -266,8 +265,12 @@ async def get_attempt_internal(
         "standards": {},
     }
 
-    image_entry_map = {image.images_id: image for image in ctx.entries.get("images", [])}
-    video_entry_map = {video.videos_id: video for video in ctx.entries.get("videos", [])}
+    image_entry_map = {
+        image.images_id: image for image in ctx.entries.get("images", [])
+    }
+    video_entry_map = {
+        video.videos_id: video for video in ctx.entries.get("videos", [])
+    }
     file_entry_map = {file.files_id: file for file in ctx.entries.get("files", [])}
 
     for item in _res("images"):
@@ -359,22 +362,45 @@ async def get_attempt_internal(
 
     resources_payload = AttemptResources(
         images={
-            str(k): ImageEntry(image_id=k, upload_id=v.get("upload_id"), name=v.get("name"), description=v.get("description"))
+            str(k): ImageEntry(
+                image_id=k,
+                upload_id=v.get("upload_id"),
+                name=v.get("name"),
+                description=v.get("description"),
+            )
             for k, v in resource_meta["images"].items()
         }
         or None,
         videos={
-            str(k): VideoEntry(video_id=k, upload_id=v.get("upload_id"), name=v.get("name"), description=v.get("description"))
+            str(k): VideoEntry(
+                video_id=k,
+                upload_id=v.get("upload_id"),
+                name=v.get("name"),
+                description=v.get("description"),
+            )
             for k, v in resource_meta["videos"].items()
         }
         or None,
         documents={
-            str(k): DocumentEntry(document_id=k, upload_id=v.get("upload_id"), name=v.get("name"), description=v.get("description"), template=v.get("template"))
+            str(k): DocumentEntry(
+                document_id=k,
+                upload_id=v.get("upload_id"),
+                name=v.get("name"),
+                description=v.get("description"),
+                template=v.get("template"),
+            )
             for k, v in resource_meta["documents"].items()
         }
         or None,
         personas={
-            str(k): PersonaEntry(id=k, name=v.get("name"), icon=v.get("icon"), color=v.get("color"), instructions=v.get("instructions"), examples=v.get("examples"))
+            str(k): PersonaEntry(
+                id=k,
+                name=v.get("name"),
+                icon=v.get("icon"),
+                color=v.get("color"),
+                instructions=v.get("instructions"),
+                examples=v.get("examples"),
+            )
             for k, v in resource_meta["personas"].items()
         }
         or None,
@@ -384,37 +410,69 @@ async def get_attempt_internal(
         }
         or None,
         questions={
-            str(k): QuestionEntry(question_id=k, question_text=v.get("question_text"), allow_multiple=v.get("allow_multiple"), times=([v.get("time")] if v.get("time") is not None else None))
+            str(k): QuestionEntry(
+                question_id=k,
+                question_text=v.get("question_text"),
+                allow_multiple=v.get("allow_multiple"),
+                times=([v.get("time")] if v.get("time") is not None else None),
+            )
             for k, v in resource_meta["questions"].items()
         }
         or None,
         options={
-            str(k): OptionEntry(option_id=k, question_id=v.get("question_id"), option_text=v.get("option_text"), is_correct=v.get("is_correct"))
+            str(k): OptionEntry(
+                option_id=k,
+                question_id=v.get("question_id"),
+                option_text=v.get("option_text"),
+                is_correct=v.get("is_correct"),
+            )
             for k, v in resource_meta["options"].items()
         }
         or None,
         problem_statements={
-            str(k): ProblemStatementEntry(problem_statement_id=k, problem_statement=v.get("problem_statement"))
+            str(k): ProblemStatementEntry(
+                problem_statement_id=k, problem_statement=v.get("problem_statement")
+            )
             for k, v in resource_meta["problem_statements"].items()
         }
         or None,
         scenarios={
-            str(k): ScenarioEntry(scenario_id=k, name=v.get("name"), description=v.get("description"))
+            str(k): ScenarioEntry(
+                scenario_id=k, name=v.get("name"), description=v.get("description")
+            )
             for k, v in resource_meta["scenarios"].items()
         }
         or None,
         rubrics={
-            str(k): RubricEntry(rubric_id=k, name=v.get("name"), description=v.get("description"), total_points=v.get("total_points"), pass_points=v.get("pass_points"))
+            str(k): RubricEntry(
+                rubric_id=k,
+                name=v.get("name"),
+                description=v.get("description"),
+                total_points=v.get("total_points"),
+                pass_points=v.get("pass_points"),
+            )
             for k, v in resource_meta["rubrics"].items()
         }
         or None,
         standard_groups={
-            str(k): StandardGroupEntry(standard_group_id=k, name=v.get("name"), description=v.get("description"), points=v.get("points"), pass_points=v.get("pass_points"))
+            str(k): StandardGroupEntry(
+                standard_group_id=k,
+                name=v.get("name"),
+                description=v.get("description"),
+                points=v.get("points"),
+                pass_points=v.get("pass_points"),
+            )
             for k, v in resource_meta["standard_groups"].items()
         }
         or None,
         standards={
-            str(k): StandardEntry(standard_id=k, standard_group_id=v.get("standard_group_id"), name=v.get("name"), description=v.get("description"), points=v.get("points"))
+            str(k): StandardEntry(
+                standard_id=k,
+                standard_group_id=v.get("standard_group_id"),
+                name=v.get("name"),
+                description=v.get("description"),
+                points=v.get("points"),
+            )
             for k, v in resource_meta["standards"].items()
         }
         or None,
@@ -439,10 +497,18 @@ async def get_attempt_internal(
                     replaces=None,
                 )
             )
-        for idx, improvement in enumerate(improvements_by_message.get(msg.message_id, [])):
+        for idx, improvement in enumerate(
+            improvements_by_message.get(msg.message_id, [])
+        ):
             replaces = [
-                ReplacementEntry(section=replacement.section, replace=replacement.replace_text, idx=replacement.idx)
-                for replacement in replacements_by_improvement.get(improvement.improvement_id, [])
+                ReplacementEntry(
+                    section=replacement.section,
+                    replace=replacement.replace_text,
+                    idx=replacement.idx,
+                )
+                for replacement in replacements_by_improvement.get(
+                    improvement.improvement_id, []
+                )
             ]
             msg_feedbacks.append(
                 MessageFeedbackEntry(
@@ -484,7 +550,9 @@ async def get_attempt_internal(
                         name=name,
                         color=color,
                         icon=icon,
-                        created_at=content.created_at.isoformat() if content.created_at else None,
+                        created_at=content.created_at.isoformat()
+                        if content.created_at
+                        else None,
                     )
                 )
         messages_payload.append(
@@ -507,7 +575,11 @@ async def get_attempt_internal(
     for chat_item in chats_result:
         grade = None
         if chat_item.grade_score is not None or chat_item.grade_passed is not None:
-            rubric_meta = resource_meta["rubrics"].get(chat_item.rubric_id, {}) if chat_item.rubric_id else {}
+            rubric_meta = (
+                resource_meta["rubrics"].get(chat_item.rubric_id, {})
+                if chat_item.rubric_id
+                else {}
+            )
             grade = GradeData(
                 score=chat_item.grade_score,
                 passed=chat_item.grade_passed,
@@ -518,7 +590,9 @@ async def get_attempt_internal(
         chat_grade_obj = grades_by_chat.get(chat_item.chat_id)
         chat_grade_id = chat_grade_obj.grade_id if chat_grade_obj else None
         feedbacks: list[FeedbackEntry] = []
-        chat_feedbacks = feedbacks_by_grade.get(chat_grade_id, []) if chat_grade_id else []
+        chat_feedbacks = (
+            feedbacks_by_grade.get(chat_grade_id, []) if chat_grade_id else []
+        )
         for feedback in chat_feedbacks:
             std_group_id = None
             if feedback.standard_id:
@@ -534,9 +608,13 @@ async def get_attempt_internal(
                 )
             )
         analyses_entries: list[AnalysisEntry] | None = None
-        chat_analyses = analyses_by_grade.get(chat_grade_id, []) if chat_grade_id else []
+        chat_analyses = (
+            analyses_by_grade.get(chat_grade_id, []) if chat_grade_id else []
+        )
         if chat_analyses:
-            analyses_entries = [AnalysisEntry(content=analysis.content) for analysis in chat_analyses]
+            analyses_entries = [
+                AnalysisEntry(content=analysis.content) for analysis in chat_analyses
+            ]
         grading_state_data: GradingStateData | None = None
         if grade or chat_feedbacks:
             achieved_dict: dict[str, bool] = {}
@@ -574,7 +652,9 @@ async def get_attempt_internal(
         chats.append(
             ChatData(
                 id=chat_item.chat_id,
-                created_at=chat_item.chat_created_at.isoformat() if chat_item.chat_created_at else None,
+                created_at=chat_item.chat_created_at.isoformat()
+                if chat_item.chat_created_at
+                else None,
                 completed=chat_item.completed,
                 grade=grade,
                 feedbacks=feedbacks,
@@ -614,7 +694,9 @@ async def get_attempt_internal(
 
     attempt = AttemptData(
         id=attempt_item.attempt_id,
-        created_at=attempt_item.attempt_created_at.isoformat() if attempt_item.attempt_created_at else None,
+        created_at=attempt_item.attempt_created_at.isoformat()
+        if attempt_item.attempt_created_at
+        else None,
         infinite_mode=attempt_item.infinite_mode,
         profile_id=attempt_item.profile_id,
         profile_name=profile_name,
@@ -630,7 +712,9 @@ async def get_attempt_internal(
         hints_enabled=first_chat_item.hints_enabled if first_chat_item else None,
         objectives_enabled=first_chat_item.show_objectives if first_chat_item else None,
         image_input_active=first_chat_item.show_images if first_chat_item else None,
-        copy_paste_allowed=first_chat_item.copy_paste_allowed if first_chat_item else None,
+        copy_paste_allowed=first_chat_item.copy_paste_allowed
+        if first_chat_item
+        else None,
         practice_simulation=practice,
         rubric_id=first_chat_item.rubric_id if first_chat_item else None,
     )
@@ -668,7 +752,9 @@ async def get_attempt_internal(
         for standard_group_id in (chat.standard_group_ids or [])
     ]
     all_standard_ids = [
-        standard_id for chat in chats_result for standard_id in (chat.standard_ids or [])
+        standard_id
+        for chat in chats_result
+        for standard_id in (chat.standard_ids or [])
     ]
 
     rubric_structure: RubricStructureData | None = None
@@ -699,8 +785,12 @@ async def get_attempt_internal(
             )
         rubric_structure = RubricStructureData(
             standard_groups=standard_groups_dict if standard_groups_dict else None,
-            standard_groups_mapping=standard_groups_mapping_dict if standard_groups_mapping_dict else None,
-            standards_mapping=standards_mapping_dict if standards_mapping_dict else None,
+            standard_groups_mapping=standard_groups_mapping_dict
+            if standard_groups_mapping_dict
+            else None,
+            standards_mapping=standards_mapping_dict
+            if standards_mapping_dict
+            else None,
         )
 
     all_chats_completed = all(chat.completed for chat in chats) if chats else False
@@ -711,14 +801,21 @@ async def get_attempt_internal(
     if should_show_controls and chats and current_chat_index is not None:
         current_chat = chats[current_chat_index]
         current_chat_id = str(current_chat.id)
-        has_messages = any(message.chat_id == current_chat.id for message in messages_result)
+        has_messages = any(
+            message.chat_id == current_chat.id for message in messages_result
+        )
 
     has_remaining = (
         expected_chat_count is not None
         and expected_chat_count > 0
         and completed_chats < expected_chat_count
     )
-    is_lobby = all_chats_completed and bool(has_remaining) and is_active and bool(chat_entry_id)
+    is_lobby = (
+        all_chats_completed
+        and bool(has_remaining)
+        and is_active
+        and bool(chat_entry_id)
+    )
 
     continuation_options = None
     previous_chats = ctx.entries.get("previous_chats", [])

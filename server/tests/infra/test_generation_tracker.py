@@ -55,4 +55,3 @@ async def test_generation_tracker_falls_back_without_redis():
         await cleanup_generation("run-fallback")
     finally:
         globals_mod.redis_client = original_redis
-

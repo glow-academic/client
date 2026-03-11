@@ -42,4 +42,3 @@ def test_reports_read_errors(tmp_path):
 
     assert result["valid"] is False
     assert "Failed to validate CSV file" in result["error"]
-

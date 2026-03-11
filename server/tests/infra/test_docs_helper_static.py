@@ -77,4 +77,3 @@ def test_build_resource_docs_static_omits_empty_optional_sections():
         "description": "Human names",
         "database": {"table": "names_resource"},
     }
-

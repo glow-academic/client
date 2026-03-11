@@ -6,7 +6,6 @@ which can't be set at create time due to dependency ordering.
 
 from uuid import UUID
 
-from database.seeds.ids import sid
 from database.seeds.setups.university.colors import ALL_COLOR_IDS
 from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 from database.seeds.setups.university.settings import UNIVERSITY_SETTING

@@ -18,9 +18,9 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.run_pricing.create import (
     create_run_pricing_entry_internal,
 )
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.uploads.get import get_upload
-from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.resources.agents.create import create_agent
 from app.routes.v5.tools.resources.models.create import create_model
 from app.routes.v5.tools.resources.pricing.create import create_pricing
@@ -103,14 +103,18 @@ class TestResolvePricingContext:
 
         result = await resolve_pricing_context(pool, redis_client)
 
-        seeded_run = next(item for item in result.entries["runs"] if item.run_id == run.id)
+        seeded_run = next(
+            item for item in result.entries["runs"] if item.run_id == run.id
+        )
 
         assert result.artifact_id is None
         assert seeded_run.run_id == run.id
         assert {item.count for item in seeded_run.pricing} == {1500, 2000}
         assert agent.id in [item.id for item in result.resources["agents"].selected]
         assert model.id in [item.id for item in result.resources["models"].selected]
-        pricing_ids = {item.id for item in result.resources["pricing"].selected if item.id}
+        pricing_ids = {
+            item.id for item in result.resources["pricing"].selected if item.id
+        }
         assert len(pricing_ids) >= 2
 
 
@@ -140,7 +144,9 @@ class TestResolvePricingSearchContext:
 
 
 class TestPricingDocsClient:
-    async def test_returns_composed_docs(self, pool, redis_client, profile_identity_factory):
+    async def test_returns_composed_docs(
+        self, pool, redis_client, profile_identity_factory
+    ):
         profile = await profile_identity_factory()
 
         result = await docs_pricing_impl(
@@ -154,7 +160,12 @@ class TestPricingDocsClient:
         assert result.page_metadata.list.title == "Pricing"
         assert result.entries[0].name == "run_pricing"
         op_names = {operation.name for operation in result.api_operations}
-        assert {"get_pricing", "search_pricing", "pricing_refresh", "export_pricing"} <= op_names
+        assert {
+            "get_pricing",
+            "search_pricing",
+            "pricing_refresh",
+            "export_pricing",
+        } <= op_names
 
 
 class TestExportPricingClient:

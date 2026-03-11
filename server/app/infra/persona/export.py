@@ -14,8 +14,8 @@ import asyncio
 import csv
 import io
 import os
-from os import PathLike
 from datetime import datetime
+from os import PathLike
 from uuid import UUID
 
 import asyncpg

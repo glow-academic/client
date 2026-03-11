@@ -7,9 +7,8 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
-from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 from tests.helpers import unique_tag
+from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 
 
 @dataclass(frozen=True)

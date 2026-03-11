@@ -7,7 +7,6 @@ import zipfile
 
 import pytest
 import pytest_asyncio
-
 from tests.infra.route_helpers import create_admin_route_actor
 
 
@@ -25,7 +24,9 @@ async def _seed_pricing_route_graph(pool, redis_client, actor):
 
     async with pool.acquire() as conn:
         session = await create_session(conn, profile_id=actor.profiles_id)
-        group = await create_group(conn, session_id=session.id, name="Pricing Route Group")
+        group = await create_group(
+            conn, session_id=session.id, name="Pricing Route Group"
+        )
         model = await create_model(
             conn,
             value="gpt-pricing-route",
@@ -143,7 +144,9 @@ class TestPricingRoute:
         v5_pricing_route_client,
         pricing_route_actor,
     ):
-        seeded = await _seed_pricing_route_graph(pool, redis_client, pricing_route_actor)
+        seeded = await _seed_pricing_route_graph(
+            pool, redis_client, pricing_route_actor
+        )
         v5_pricing_route_client.authenticate(
             profile_id=pricing_route_actor.profile_id,
             session_id=seeded["session_id"],
@@ -204,7 +207,9 @@ class TestPricingRoute:
     ):
         from app.routes.v5.tools.entries.uploads.get import get_upload
 
-        seeded = await _seed_pricing_route_graph(pool, redis_client, pricing_route_actor)
+        seeded = await _seed_pricing_route_graph(
+            pool, redis_client, pricing_route_actor
+        )
         v5_pricing_route_client.authenticate(
             profile_id=pricing_route_actor.profile_id,
             session_id=seeded["session_id"],

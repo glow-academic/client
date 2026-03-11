@@ -44,4 +44,3 @@ def test_build_validation_payload_preserves_declared_group_id():
     )
 
     assert payload == {"group_id": "group-1", "value": "ok"}
-

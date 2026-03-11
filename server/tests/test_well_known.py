@@ -18,7 +18,9 @@ def test_oauth_authorization_server_metadata_uses_environment_defaults(monkeypat
     assert "mcp-resource" in payload["scopes_supported"]
 
 
-def test_oauth_authorization_server_metadata_route_returns_current_contract(monkeypatch):
+def test_oauth_authorization_server_metadata_route_returns_current_contract(
+    monkeypatch,
+):
     monkeypatch.setenv("ORIGIN", "https://glow.example.com")
     monkeypatch.setenv("APP_PREFIX", "/api")
     monkeypatch.setenv("KEYCLOAK_REALM", "glow")

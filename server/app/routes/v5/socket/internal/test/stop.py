@@ -7,9 +7,11 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
-from app.infra.globals import get_internal_sio
-from app.infra.globals import get_pool, get_redis_client
+from app.infra.events.audit import (
+    build_audit_arguments,
+    run_artifact_operation_with_audit,
+)
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.routes.v5.socket.client.types import TestStopPayload
 

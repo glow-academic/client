@@ -25,7 +25,9 @@ from app.server import (
 
 def test_fastapi_app_mounts_expected_top_level_routes_and_middleware():
     route_paths = {getattr(route, "path", None) for route in fastapi_app.routes}
-    middleware_names = {middleware.cls.__name__ for middleware in fastapi_app.user_middleware}
+    middleware_names = {
+        middleware.cls.__name__ for middleware in fastapi_app.user_middleware
+    }
 
     assert fastapi_app.title == "GLOW API"
     assert "/.well-known/oauth-authorization-server" in route_paths

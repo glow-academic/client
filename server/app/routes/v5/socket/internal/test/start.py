@@ -5,7 +5,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
+from app.infra.events.audit import (
+    build_audit_arguments,
+    run_artifact_operation_with_audit,
+)
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.test.workflows import test_start_impl
@@ -72,7 +75,9 @@ async def test_start_internal_impl(
             for event in recorded
             if event.bus == "internal" and event.event == "test_proceed"
         ]
-        created_test_id = proceed_events[0].data.get("test_id", "") if proceed_events else ""
+        created_test_id = (
+            proceed_events[0].data.get("test_id", "") if proceed_events else ""
+        )
         if created_test_id and not data.get("sid"):
             return TestStartInternalResult(test_id=created_test_id)
         for event in proceed_events:

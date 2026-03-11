@@ -6,7 +6,7 @@ String fields (name, description) are resolved by the _impl function.
 
 from uuid import UUID
 
-from database.seeds.providers import OPENAI, GEMINI
+from database.seeds.providers import GEMINI, OPENAI
 
 # ---------------------------------------------------------------------------
 # Provider resource IDs from existing SQL (mapped to seed constants)

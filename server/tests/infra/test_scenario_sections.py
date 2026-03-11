@@ -45,9 +45,7 @@ def test_build_scenario_get_result_builds_canonical_response():
         draft_version=3,
         resources={
             "names": ResourcePair(
-                selected=[
-                    SimpleNamespace(id=uuid4(), name="Triage", generated=False)
-                ],
+                selected=[SimpleNamespace(id=uuid4(), name="Triage", generated=False)],
                 suggestions=[],
             ),
             "descriptions": ResourcePair(

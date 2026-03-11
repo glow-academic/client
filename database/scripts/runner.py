@@ -112,7 +112,6 @@ def _filter_meta_commands(sql: str) -> str:
     return re.sub(r"^\\.*$", "", sql, flags=re.MULTILINE)
 
 
-
 # ---------------------------------------------------------------------------
 # Resource seed execution (tool-level create_* functions)
 # ---------------------------------------------------------------------------
@@ -167,7 +166,9 @@ async def _run_resource_seeds(
                 await _seed_standards(conn, redis, items)
 
 
-async def _seed_colors(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_colors(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.colors.create import create_color
 
     for item in items:
@@ -176,7 +177,9 @@ async def _seed_colors(conn: asyncpg.Connection, redis: Redis, items: list[dict]
     print(f"  OK: {len(items)} colors created")
 
 
-async def _seed_icons(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_icons(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.icons.create import create_icon
 
     for item in items:
@@ -184,7 +187,9 @@ async def _seed_icons(conn: asyncpg.Connection, redis: Redis, items: list[dict])
     print(f"  OK: {len(items)} icons created")
 
 
-async def _seed_flags(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_flags(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.flags.create import create_flag
 
     for item in items:
@@ -193,7 +198,9 @@ async def _seed_flags(conn: asyncpg.Connection, redis: Redis, items: list[dict])
     print(f"  OK: {len(items)} flags created")
 
 
-async def _seed_roles(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_roles(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.roles.create import create_role
 
     for item in items:
@@ -201,7 +208,9 @@ async def _seed_roles(conn: asyncpg.Connection, redis: Redis, items: list[dict])
     print(f"  OK: {len(items)} roles created")
 
 
-async def _seed_modalities(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_modalities(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.modalities.create import create_modality
 
     for item in items:
@@ -209,7 +218,9 @@ async def _seed_modalities(conn: asyncpg.Connection, redis: Redis, items: list[d
     print(f"  OK: {len(items)} modalities created")
 
 
-async def _seed_qualities(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_qualities(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.qualities.create import create_quality
 
     for item in items:
@@ -217,7 +228,9 @@ async def _seed_qualities(conn: asyncpg.Connection, redis: Redis, items: list[di
     print(f"  OK: {len(items)} qualities created")
 
 
-async def _seed_thresholds(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_thresholds(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.thresholds.create import create_threshold
 
     for item in items:
@@ -226,7 +239,9 @@ async def _seed_thresholds(conn: asyncpg.Connection, redis: Redis, items: list[d
     print(f"  OK: {len(items)} thresholds created")
 
 
-async def _seed_points(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_points(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.points.create import create_point
 
     for item in items:
@@ -235,7 +250,9 @@ async def _seed_points(conn: asyncpg.Connection, redis: Redis, items: list[dict]
     print(f"  OK: {len(items)} points created")
 
 
-async def _seed_request_limits(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_request_limits(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.request_limits.create import create_request_limit
 
     for item in items:
@@ -243,7 +260,9 @@ async def _seed_request_limits(conn: asyncpg.Connection, redis: Redis, items: li
     print(f"  OK: {len(items)} request_limits created")
 
 
-async def _seed_voices(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_voices(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.voices.create import create_voice
 
     for item in items:
@@ -251,7 +270,9 @@ async def _seed_voices(conn: asyncpg.Connection, redis: Redis, items: list[dict]
     print(f"  OK: {len(items)} voices created")
 
 
-async def _seed_pricing(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_pricing(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.pricing.create import create_pricing
 
     for item in items:
@@ -259,23 +280,33 @@ async def _seed_pricing(conn: asyncpg.Connection, redis: Redis, items: list[dict
     print(f"  OK: {len(items)} pricing entries created")
 
 
-async def _seed_reasoning_levels(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
-    from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
+async def _seed_reasoning_levels(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
+    from app.routes.v5.tools.resources.reasoning_levels.create import (
+        create_reasoning_level,
+    )
 
     for item in items:
         await create_reasoning_level(conn, redis=redis, **item)
     print(f"  OK: {len(items)} reasoning_levels created")
 
 
-async def _seed_temperature_levels(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
-    from app.routes.v5.tools.resources.temperature_levels.create import create_temperature_level
+async def _seed_temperature_levels(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
+    from app.routes.v5.tools.resources.temperature_levels.create import (
+        create_temperature_level,
+    )
 
     for item in items:
         await create_temperature_level(conn, redis=redis, **item)
     print(f"  OK: {len(items)} temperature_levels created")
 
 
-async def _seed_operations(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_operations(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.operations.create import create_operation
 
     for item in items:
@@ -283,7 +314,9 @@ async def _seed_operations(conn: asyncpg.Connection, redis: Redis, items: list[d
     print(f"  OK: {len(items)} operations created")
 
 
-async def _seed_artifacts(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_artifacts(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.artifacts.create import create_artifact
 
     for item in items:
@@ -291,15 +324,21 @@ async def _seed_artifacts(conn: asyncpg.Connection, redis: Redis, items: list[di
     print(f"  OK: {len(items)} artifacts created")
 
 
-async def _seed_standard_groups(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
-    from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
+async def _seed_standard_groups(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
+    from app.routes.v5.tools.resources.standard_groups.create import (
+        create_standard_group,
+    )
 
     for item in items:
         await create_standard_group(conn, redis=redis, **item)
     print(f"  OK: {len(items)} standard_groups created")
 
 
-async def _seed_standards(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
+async def _seed_standards(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
     from app.routes.v5.tools.resources.standards.create import create_standard
 
     for item in items:
@@ -322,15 +361,14 @@ async def _run_profile_bootstrap(
     profile_id, but no profiles exist yet. This creates the Default Superadmin
     first, then remaining profiles.
     """
-    from database.seeds.profiles import profiles
-
+    from app.routes.v5.tools.artifacts.profile.create import (
+        create_profile as create_profile_artifact,
+    )
     from app.routes.v5.tools.resources.names.create import create_name
     from app.routes.v5.tools.resources.profiles.create import (
         create_profile as create_profile_resource,
     )
-    from app.routes.v5.tools.artifacts.profile.create import (
-        create_profile as create_profile_artifact,
-    )
+    from database.seeds.profiles import profiles
 
     async with pool.acquire() as conn:
         for p in profiles:
@@ -341,7 +379,10 @@ async def _run_profile_bootstrap(
 
                 # Step 2: create profiles_resource (denormalized snapshot)
                 profile_resource = await create_profile_resource(
-                    conn, redis, id=p["id"], name=p["name"],
+                    conn,
+                    redis,
+                    id=p["id"],
+                    name=p["name"],
                 )
                 profiles_resource_id = profile_resource.id
 
@@ -365,12 +406,15 @@ async def _run_provider_module_seeds(
     redis: Redis,
 ) -> None:
     """Module 02 — Create providers via _impl."""
-    from database.seeds.providers import providers
     from app.infra.provider.create import CreateProviderItem, create_provider_impl
+    from database.seeds.providers import providers
 
     items = [CreateProviderItem(**d) for d in providers]
     await create_provider_impl(
-        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
     )
     print(f"  OK: {len(providers)} providers created")
 
@@ -380,12 +424,15 @@ async def _run_model_module_seeds(
     redis: Redis,
 ) -> None:
     """Module 03 — Create models via _impl."""
-    from database.seeds.models import models
     from app.infra.model.create import CreateModelItem, create_model_impl
+    from database.seeds.models import models
 
     items = [CreateModelItem(**d) for d in models]
     await create_model_impl(
-        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
     )
     print(f"  OK: {len(models)} models created")
 
@@ -395,12 +442,15 @@ async def _run_agent_module_seeds(
     redis: Redis,
 ) -> None:
     """Module 04 — Create agents via _impl."""
-    from database.seeds.agents import agents
     from app.infra.agent.create import CreateAgentItem, create_agent_impl
+    from database.seeds.agents import agents
 
     items = [CreateAgentItem(**d) for d in agents]
     await create_agent_impl(
-        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
     )
     print(f"  OK: {len(agents)} agents created")
 
@@ -410,12 +460,15 @@ async def _run_auth_module_seeds(
     redis: Redis,
 ) -> None:
     """Module 06 — Create auths via _impl."""
-    from database.seeds.auths import auths
     from app.infra.auth.create import CreateAuthItem, create_auth_impl
+    from database.seeds.auths import auths
 
     items = [CreateAuthItem(**d) for d in auths]
     await create_auth_impl(
-        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
     )
     print(f"  OK: {len(auths)} auths created")
 
@@ -425,12 +478,15 @@ async def _run_eval_module_seeds(
     redis: Redis,
 ) -> None:
     """Module 08 — Create evals via _impl."""
-    from database.seeds.evals import evals
     from app.infra.eval.create import CreateEvalItem, create_eval_impl
+    from database.seeds.evals import evals
 
     items = [CreateEvalItem(**d) for d in evals]
     await create_eval_impl(
-        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
     )
     print(f"  OK: {len(evals)} evals created")
 
@@ -440,8 +496,8 @@ async def _run_system_module_seeds(
     redis: Redis,
 ) -> None:
     """Module 10 — Create systems via tool-level create."""
-    from database.seeds.systems import systems
     from app.routes.v5.tools.resources.systems.create import create_system
+    from database.seeds.systems import systems
 
     async with pool.acquire() as conn:
         for s in systems:
@@ -455,12 +511,15 @@ async def _run_rubric_module_seeds(
     redis: Redis,
 ) -> None:
     """Module 07 — Create rubrics via _impl."""
-    from database.seeds.rubrics import rubrics
     from app.infra.rubric.create import CreateRubricItem, create_rubric_impl
+    from database.seeds.rubrics import rubrics
 
     items = [CreateRubricItem(**d) for d in rubrics]
     result = await create_rubric_impl(
-        pool, redis, profile_id=SEED_PROFILE_ID, items=items,
+        pool,
+        redis,
+        profile_id=SEED_PROFILE_ID,
+        items=items,
     )
     ok = sum(1 for r in result.results if r.success)
     errors = sum(1 for r in result.results if not r.success)
@@ -663,7 +722,7 @@ async def _run_scenario_rubric_seeds(
                 id=sr.get("id"),
             )
             created_ids.append(result.id)
-            print(f"  OK: Scenario rubric created successfully")
+            print("  OK: Scenario rubric created successfully")
 
     return created_ids
 
@@ -753,7 +812,7 @@ async def _run_objective_seeds(
                 id=o.get("id"),
             )
             created_ids.append(result.id)
-            print(f"  OK: Objective created successfully")
+            print("  OK: Objective created successfully")
 
     return created_ids
 
@@ -778,7 +837,7 @@ async def _run_question_seeds(
                 allow_multiple=q.get("allow_multiple", False),
             )
             created_ids.append(result.id)
-            print(f"  OK: Question created successfully")
+            print("  OK: Question created successfully")
 
     return created_ids
 
@@ -802,7 +861,7 @@ async def _run_option_seeds(
                 question_id=o.get("question_id"),
             )
             created_ids.append(result.id)
-            print(f"  OK: Option created successfully")
+            print("  OK: Option created successfully")
 
     return created_ids
 
@@ -923,7 +982,7 @@ async def _run_color_seeds(
                 id=c.get("id"),
             )
             created_ids.append(result.id)
-            print(f"  OK: Color created successfully")
+            print("  OK: Color created successfully")
 
     return created_ids
 
@@ -1082,7 +1141,9 @@ async def _run_post_links(
             if "email" in p:
                 async with pool.acquire() as conn:
                     email_result = await create_email(
-                        conn, email=p["email"], redis=redis,
+                        conn,
+                        email=p["email"],
+                        redis=redis,
                     )
                     email_id = email_result.id
 
@@ -1142,7 +1203,6 @@ async def _run_tool_module_seeds(
     """Create tools from static definitions in tools_data.py."""
     from app.infra.tool.create import CreateToolItem, create_tool_impl
     from app.routes.v5.tools.resources.args.create import create_arg
-
     from database.seeds.tools import tools
 
     print(f"  Loading {len(tools)} tool definitions.")
@@ -1223,7 +1283,8 @@ def _psql_load_file(pg: PostgresContainer, sql_file: Path) -> None:
         f"--username={pg_user}",
         f"--dbname={pg_dbname}",
         "--quiet",
-        "-v", "ON_ERROR_STOP=0",
+        "-v",
+        "ON_ERROR_STOP=0",
     ]
 
     sql = (
@@ -1297,7 +1358,6 @@ def _pg_dump_data(
     copy_count = result.stdout.count("\nCOPY ")
     line_count = result.stdout.count("\n")
     print(f"  Wrote {output_file} ({copy_count} tables, {line_count} lines)")
-
 
 
 # ---------------------------------------------------------------------------
@@ -1503,16 +1563,12 @@ async def main_setup(setup: str = "university") -> None:
             elif module_name == "colors":
                 await _run_color_seeds(pool, redis_client, mod.colors)
             elif module_name == "texts":
-                assets_dir = (
-                    MODULES_DIR / "setups" / setup / "uploads" / "files"
-                )
+                assets_dir = MODULES_DIR / "setups" / setup / "uploads" / "files"
                 await _run_text_seeds(
                     pool, redis_client, mod.document_texts, assets_dir
                 )
             elif module_name == "files":
-                assets_dir = (
-                    MODULES_DIR / "setups" / setup / "uploads" / "files"
-                )
+                assets_dir = MODULES_DIR / "setups" / setup / "uploads" / "files"
                 await _run_file_seeds(
                     pool, redis_client, mod.document_files, assets_dir
                 )
@@ -1537,8 +1593,12 @@ async def main_setup(setup: str = "university") -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run seed definitions")
-    parser.add_argument("--setup", default=None, help="Setup name (university, organization)")
-    parser.add_argument("--modules", action="store_true", help="Seed all modules → base-seed.sql")
+    parser.add_argument(
+        "--setup", default=None, help="Setup name (university, organization)"
+    )
+    parser.add_argument(
+        "--modules", action="store_true", help="Seed all modules → base-seed.sql"
+    )
     args = parser.parse_args()
 
     if args.modules:

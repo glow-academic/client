@@ -6,21 +6,23 @@ from uuid import uuid4
 import pytest
 
 from app.infra.analytics_facets import (
-    AnalyticsFacetsConfig,
     HIDDEN,
     VISIBLE,
+    AnalyticsFacetsConfig,
     resolve_analytics_facets,
 )
 from app.infra.profile_identity_context import ProfileIdentityContext
 from app.routes.auth.types import AnalyticsFilterFields
-from app.routes.v5.tools.artifacts.cohort.create import create_cohort as create_cohort_artifact
+from app.routes.v5.tools.artifacts.cohort.create import (
+    create_cohort as create_cohort_artifact,
+)
 from app.routes.v5.tools.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
+from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.health.create import create_health
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.resources.cohorts.create import create_cohort
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.profiles.create import create_profile
@@ -28,7 +30,9 @@ from app.routes.v5.tools.resources.profiles.create import create_profile
 pytestmark = pytest.mark.asyncio
 
 
-def _profile_context(*, profiles_id, department_ids, role="superadmin") -> ProfileIdentityContext:
+def _profile_context(
+    *, profiles_id, department_ids, role="superadmin"
+) -> ProfileIdentityContext:
     return ProfileIdentityContext(
         profiles_id=profiles_id,
         name="Test User",
@@ -46,10 +50,14 @@ def _profile_context(*, profiles_id, department_ids, role="superadmin") -> Profi
     )
 
 
-async def test_profile_facts_facets_resolve_department_cohort_and_roles(pool, redis_client):
+async def test_profile_facts_facets_resolve_department_cohort_and_roles(
+    pool, redis_client
+):
     async with pool.acquire() as conn:
         department = await create_department(conn, name="Science", redis=redis_client)
-        cohort_resource = await create_cohort(conn, name="Fall 2025", redis=redis_client)
+        cohort_resource = await create_cohort(
+            conn, name="Fall 2025", redis=redis_client
+        )
         profile = await create_profile(conn, redis_client)
         await create_cohort_artifact(
             conn,

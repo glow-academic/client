@@ -96,7 +96,9 @@ def build_persona_get_result(
     )
 
     agent_ids: dict[str, UUID | None] = {
-        resource: (scores.best[resource].agent_id if scores.best.get(resource) else None)
+        resource: (
+            scores.best[resource].agent_id if scores.best.get(resource) else None
+        )
         for resource in PERSONA_RESOURCES
     }
     tool_ids_map: dict[str, UUID | None] = {
@@ -303,7 +305,9 @@ def build_persona_get_result(
         ),
         colors=PersonaColorSection(
             **_section("colors"),
-            resource=_model(persona.resources["colors"].selected[0], PersonaColorResource)
+            resource=_model(
+                persona.resources["colors"].selected[0], PersonaColorResource
+            )
             if persona.resources["colors"].selected
             else None,
             resources=_model_many(all_colors, PersonaColorResource),
@@ -332,7 +336,10 @@ def build_persona_get_result(
         ),
         departments=PersonaDepartmentSection(
             **_section("departments"),
-            current=[_department_model(item) for item in persona.resources["departments"].selected],
+            current=[
+                _department_model(item)
+                for item in persona.resources["departments"].selected
+            ],
             resources=[_department_model(item) for item in all_departments],
         ),
         parameter_fields=PersonaParameterFieldSection(
@@ -348,7 +355,9 @@ def build_persona_get_result(
         ),
         examples=PersonaExampleSection(
             **_section("examples"),
-            current=_model_many(persona.resources["examples"].selected, PersonaExampleResource),
+            current=_model_many(
+                persona.resources["examples"].selected, PersonaExampleResource
+            ),
             resources=_model_many(all_examples, PersonaExampleResource),
         ),
         parameters=PersonaParameterSection(
@@ -358,7 +367,9 @@ def build_persona_get_result(
         ),
         voices=PersonaVoiceSection(
             **_section("voices"),
-            current=_model_many(persona.resources["voices"].selected, PersonaVoiceResource),
+            current=_model_many(
+                persona.resources["voices"].selected, PersonaVoiceResource
+            ),
             resources=_model_many(all_voices, PersonaVoiceResource),
         ),
         fields=persona.resources["fields"].suggestions,

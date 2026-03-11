@@ -119,9 +119,7 @@ async def create_simulation_impl(
     # ── Step 2: Permission check ───────────────────────────────────────
 
     requested_department_ids = [
-        department_id
-        for item in items
-        for department_id in (item.department_ids or [])
+        department_id for item in items for department_id in (item.department_ids or [])
     ]
 
     if not compute_can_create(

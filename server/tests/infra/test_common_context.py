@@ -116,6 +116,4 @@ class TestResolveCommonContext:
         assert {
             (tool.target_type, tool.target, tool.operation)
             for tool in result.tool_graph.tools
-        } == {
-            ("artifact", target, fixture.operation) for target in fixture.artifacts
-        }
+        } == {("artifact", target, fixture.operation) for target in fixture.artifacts}

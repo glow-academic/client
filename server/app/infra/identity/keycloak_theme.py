@@ -7,13 +7,13 @@ This enables dynamic IdP visibility filtering based on department selection via 
 from datetime import datetime
 from typing import Any
 
+from app.infra.globals import UPLOAD_FOLDER, get_redis_client
 from app.infra.identity.keycloak_resolvers import (
     resolve_auths_for_department,
     resolve_auths_for_realm,
     resolve_departments_for_sync,
     resolve_setting_profiles_for_idp,
 )
-from app.infra.globals import UPLOAD_FOLDER, get_redis_client
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

@@ -7,10 +7,11 @@ import pytest
 from app.infra.websocket.generate_new_impl import generate_new_impl
 from app.infra.websocket.session_store import (
     _session_store,
-    create_session as create_audio_session,
     get_session_by_group_id,
     get_session_by_run_id,
-    remove_session,
+)
+from app.infra.websocket.session_store import (
+    create_session as create_audio_session,
 )
 from app.infra.websocket.socket_event import recording_emit
 from app.routes.v5.tools.entries.groups.create import create_group

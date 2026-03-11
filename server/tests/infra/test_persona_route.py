@@ -7,9 +7,8 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
-from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 from tests.helpers import unique_tag
+from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 
 
 @dataclass(frozen=True)
@@ -167,7 +166,9 @@ class TestPersonaRoute:
         assert payload["can_edit"] is True
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created["description"]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
         assert payload["colors"]["resource"]["name"] == created["color_name"]
         assert payload["icons"]["resource"]["name"] == created["icon_name"]
         assert (
@@ -175,7 +176,8 @@ class TestPersonaRoute:
             == created["instruction_template"]
         )
         assert {
-            department["department_id"] for department in payload["departments"]["current"]
+            department["department_id"]
+            for department in payload["departments"]["current"]
         } == {str(persona_route_actor.department_id)}
 
     async def test_search_persona_route_returns_created_persona(
@@ -210,7 +212,8 @@ class TestPersonaRoute:
         assert payload["total_count"] >= 1
         assert payload["import_fields"]
         assert any(
-            persona["persona_id"] == created["persona_id"] for persona in payload["personas"]
+            persona["persona_id"] == created["persona_id"]
+            for persona in payload["personas"]
         )
 
         created_persona = next(
@@ -433,7 +436,9 @@ class TestPersonaRoute:
         persona_route_actor,
     ):
         from app.routes.v5.tools.entries.groups.create import create_group
-        from app.routes.v5.tools.entries.persona_drafts.create import create_persona_draft
+        from app.routes.v5.tools.entries.persona_drafts.create import (
+            create_persona_draft,
+        )
 
         async with pool.acquire() as conn:
             group = await create_group(conn, session_id=persona_route_actor.session_id)

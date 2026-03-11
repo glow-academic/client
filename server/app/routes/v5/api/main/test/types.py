@@ -12,6 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.v5.api.types import ListFilterSection
 from app.routes.v5.tools.entries.messages.types import SearchMessageResponse
 from app.routes.v5.tools.entries.test.types import GetTestResponse
 from app.routes.v5.tools.entries.test_feedback.types import GetTestFeedbackResponse
@@ -222,6 +223,38 @@ class ArchiveTestsResponse(BaseModel):
     """Response for archiving/unarchiving benchmark tests."""
 
     updated_count: int = 0
+
+
+# =============================================================================
+# Search endpoint types
+# =============================================================================
+
+
+class SearchTestItem(BaseModel):
+    """Single test row in search results."""
+
+    test_id: UUID
+    eval_id: UUID | None = None
+    eval_name: str | None = None
+    eval_description: str | None = None
+    department_ids: list[UUID] | None = None
+    test_name: str | None = None
+    test_description: str | None = None
+    num_invocations: int | None = None
+    infinite_mode: bool | None = None
+    is_dynamic: bool | None = None
+    archived: bool | None = None
+    created_at: str | None = None
+
+
+class SearchTestApiResponse(BaseModel):
+    """Response for test search endpoint."""
+
+    actor_name: str | None = None
+    tests: list[SearchTestItem] | None = None
+    eval_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
+    total_count: int | None = None
 
 
 # =============================================================================

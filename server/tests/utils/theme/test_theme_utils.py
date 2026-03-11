@@ -4,7 +4,13 @@ import pytest
 
 from app.utils.settings.theme import ThemePrimitives, derive_theme_tokens
 from app.utils.theme.color_utils import ensure_contrast, parse_oklch, shade, tint
-from app.utils.theme.oklch_to_hex import hex_to_oklch, oklch_to_hex, parse_oklch as parse_triplet
+from app.utils.theme.oklch_to_hex import (
+    hex_to_oklch,
+    oklch_to_hex,
+)
+from app.utils.theme.oklch_to_hex import (
+    parse_oklch as parse_triplet,
+)
 
 
 def test_parse_oklch_with_alpha_percentage():

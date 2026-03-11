@@ -331,8 +331,7 @@ async def search_cohort_impl(
     # -- Step 7: Build facet sections --
     profile_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(p.id), name=p.name, count=0)
-            for p in profile_facet
+            ListFilterOption(id=str(p.id), name=p.name, count=0) for p in profile_facet
         ],
         selected_ids=[str(pid) for pid in filter_profile_ids]
         if filter_profile_ids
@@ -342,9 +341,7 @@ async def search_cohort_impl(
 
     simulation_filter = ListFilterSection(
         options=[
-            ListFilterOption(
-                id=str(s.id), name=getattr(s, "name", None), count=0
-            )
+            ListFilterOption(id=str(s.id), name=getattr(s, "name", None), count=0)
             for s in simulation_facet
         ],
         selected_ids=[str(sid) for sid in filter_simulation_ids]

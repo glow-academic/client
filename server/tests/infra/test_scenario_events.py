@@ -1,12 +1,12 @@
 """Tests for scenario event declarations."""
 
+from app.events.types import build_default_lifecycle_event_types
 from app.routes.v5.api.main.scenario.events import (
     SCENARIO_EVENT_CONFIGS,
     _scenario_draft_entity_ids,
     _scenario_result_entity_ids,
     get_scenario_event_config,
 )
-from app.events.types import build_default_lifecycle_event_types
 
 
 def test_get_scenario_event_config_maps_domain_event_and_entity_scope() -> None:

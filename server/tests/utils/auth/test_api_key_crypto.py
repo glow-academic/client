@@ -37,4 +37,3 @@ def test_encrypt_requires_secret_key(monkeypatch):
 
     with pytest.raises(ValueError, match="SECRET_KEY"):
         encrypt_api_key("sk-test")
-

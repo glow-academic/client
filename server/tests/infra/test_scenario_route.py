@@ -7,9 +7,8 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
-from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 from tests.helpers import unique_tag
+from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 
 
 @dataclass(frozen=True)
@@ -23,7 +22,9 @@ class ScenarioRouteResources:
     problem_statement: str
 
 
-async def _create_scenario_route_resources(pool, redis_client) -> ScenarioRouteResources:
+async def _create_scenario_route_resources(
+    pool, redis_client
+) -> ScenarioRouteResources:
     from app.routes.v5.tools.resources.descriptions.create import create_description
     from app.routes.v5.tools.resources.names.create import create_name
     from app.routes.v5.tools.resources.problem_statements.create import (
@@ -186,7 +187,9 @@ class TestScenarioRoute:
             if scenario["scenario_id"] == created["scenario_id"]
         )
         assert created_scenario["name"] == created["name"]
-        assert created_scenario["department_ids"] == [str(scenario_route_actor.department_id)]
+        assert created_scenario["department_ids"] == [
+            str(scenario_route_actor.department_id)
+        ]
         assert created_scenario["can_edit"] is True
         assert created_scenario["can_duplicate"] is True
         assert created_scenario["can_delete"] is True
@@ -394,7 +397,9 @@ class TestScenarioRoute:
         scenario_route_actor,
     ):
         from app.routes.v5.tools.entries.groups.create import create_group
-        from app.routes.v5.tools.entries.scenario_drafts.create import create_scenario_draft
+        from app.routes.v5.tools.entries.scenario_drafts.create import (
+            create_scenario_draft,
+        )
 
         async with pool.acquire() as conn:
             group = await create_group(conn, session_id=scenario_route_actor.session_id)

@@ -3,15 +3,18 @@
 from typing import Any
 from uuid import UUID
 
-from app.infra.globals import get_internal_sio, get_pool, get_redis_client
-from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.attempt.workflows import attempt_next_impl
+from app.infra.events.audit import (
+    build_audit_arguments,
+    run_artifact_operation_with_audit,
+)
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.routes.v5.socket.client.types import AttemptNextPayload
-from app.routes.v5.socket.internal.attempt.start import AttemptStartInternalResult
 from app.routes.v5.socket.internal.attempt.proceed import attempt_proceed_internal_impl
+from app.routes.v5.socket.internal.attempt.start import AttemptStartInternalResult
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -103,7 +106,9 @@ async def attempt_next_internal_impl(
                     attempt_id=event.data.get("attempt_id", ""),
                 )
             if event.event == "attempt_error":
-                raise ValueError(event.data.get("message", "Failed to continue attempt"))
+                raise ValueError(
+                    event.data.get("message", "Failed to continue attempt")
+                )
 
         if proceeded_attempt_id:
             return AttemptStartInternalResult(attempt_id=proceeded_attempt_id)

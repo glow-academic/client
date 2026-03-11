@@ -1,7 +1,5 @@
 """Tests for active websocket run/result/connection helpers."""
 
-from collections.abc import AsyncIterator
-
 import pytest
 
 import app.infra.globals as globals_mod
@@ -104,7 +102,9 @@ class TestActiveResultHelpers:
         assert globals_mod.active_results == {}
 
     @pytest.mark.asyncio
-    async def test_cancel_active_result_returns_false_when_missing(self, websocket_runtime):
+    async def test_cancel_active_result_returns_false_when_missing(
+        self, websocket_runtime
+    ):
         assert await cancel_active_result("missing-chat") is False
 
     @pytest.mark.asyncio
@@ -136,7 +136,9 @@ class TestActiveConnectionHelpers:
         assert sorted(await find_chats_by_socket("sid-b")) == ["chat-6", "chat-7"]
 
         await remove_active_connection("chat-6", "sid-a")
-        assert await websocket_runtime.smembers("active_connection:chat-6") == {b"sid-b"}
+        assert await websocket_runtime.smembers("active_connection:chat-6") == {
+            b"sid-b"
+        }
 
         await remove_active_connection("chat-6", "sid-b")
         assert await websocket_runtime.exists("active_connection:chat-6") == 0

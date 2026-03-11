@@ -105,9 +105,15 @@ async def get_group_internal(
             for target, tool in scores.best.items()
         }
 
-        all_system_ids = list(dict.fromkeys(tool.system_id for tool in common.tool_graph.tools))
-        all_agent_ids = list(dict.fromkeys(tool.agent_id for tool in common.tool_graph.tools))
-        all_tool_ids = list(dict.fromkeys(tool.tool_id for tool in common.tool_graph.tools))
+        all_system_ids = list(
+            dict.fromkeys(tool.system_id for tool in common.tool_graph.tools)
+        )
+        all_agent_ids = list(
+            dict.fromkeys(tool.agent_id for tool in common.tool_graph.tools)
+        )
+        all_tool_ids = list(
+            dict.fromkeys(tool.tool_id for tool in common.tool_graph.tools)
+        )
 
         async def _fetch_systems() -> list:
             if not all_system_ids:
@@ -133,17 +139,23 @@ async def get_group_internal(
             _fetch_tools_config(),
         )
 
-        model_ids = list(dict.fromkeys(agent.model_id for agent in config_agents if agent.model_id))
+        model_ids = list(
+            dict.fromkeys(agent.model_id for agent in config_agents if agent.model_id)
+        )
         if model_ids:
             async with pool.acquire() as conn:
                 config_models = await get_models(conn, model_ids, redis, bypass_cache)
 
         provider_ids = list(
-            dict.fromkeys(model.provider_id for model in config_models if model.provider_id)
+            dict.fromkeys(
+                model.provider_id for model in config_models if model.provider_id
+            )
         )
         if provider_ids:
             async with pool.acquire() as conn:
-                config_providers = await get_providers(conn, provider_ids, redis, bypass_cache)
+                config_providers = await get_providers(
+                    conn, provider_ids, redis, bypass_cache
+                )
 
         if common.profile:
             from app.routes.v5.tools.resources.profiles.get import get_profiles
@@ -177,7 +189,9 @@ async def get_group_internal(
         group_name=group_name,
         total_message_count=total_message_count,
         name_map={item.id: item.name for item in names_list if item.id and item.name},
-        tool_name_map={item.id: item.name for item in tools_list if item.id and item.name},
+        tool_name_map={
+            item.id: item.name for item in tools_list if item.id and item.name
+        },
     )
 
 
@@ -295,7 +309,9 @@ async def get_group_impl(
         for agent_id in all_agent_ids
     ]
     profiles_list = [
-        GroupDetailResourceItem(profile_id=profile_id_item, name=data.name_map.get(profile_id_item))
+        GroupDetailResourceItem(
+            profile_id=profile_id_item, name=data.name_map.get(profile_id_item)
+        )
         for profile_id_item in all_profile_ids
     ]
 

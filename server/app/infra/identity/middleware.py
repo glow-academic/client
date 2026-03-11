@@ -12,6 +12,7 @@ import logging
 
 from fastapi import Header, HTTPException, Request
 
+from app.infra.globals import get_pool
 from app.infra.identity.license_key import validate_license_key
 from app.infra.identity.resolve_identity import (
     Identity,
@@ -19,7 +20,6 @@ from app.infra.identity.resolve_identity import (
     extract_bearer_token,
     resolve_identity,
 )
-from app.infra.globals import get_pool
 
 logger = logging.getLogger(__name__)
 

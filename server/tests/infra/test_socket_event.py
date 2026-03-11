@@ -19,6 +19,7 @@ class RecorderEmitter:
     async def emit(self, event: str, data, **kwargs) -> None:
         self.calls.append((event, data, kwargs))
 
+
 # ═══════════════════════════════════════════════════════════════════════════
 # SocketEvent construction — pure unit tests
 # ═══════════════════════════════════════════════════════════════════════════

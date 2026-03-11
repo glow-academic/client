@@ -133,9 +133,7 @@ async def search_leaderboard(
 
         # --- Phase 4: Build profile name map ---
         profile_name_by_id: dict[str, str | None] = {
-            str(item.id): item.name
-            for item in profile_list
-            if item.id is not None
+            str(item.id): item.name for item in profile_list if item.id is not None
         }
 
         # --- Phase 5: Build rows ---

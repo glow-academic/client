@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -137,9 +136,9 @@ class TestFieldRoute:
         assert payload["field_exists"] is True
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created[
-            "description"
-        ]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
 
     async def test_search_field_route_returns_created_field(
         self,
@@ -170,7 +169,9 @@ class TestFieldRoute:
         payload = response.json()
         assert payload["actor_name"] == field_route_actor.name
         assert payload["total_count"] >= 1
-        assert any(field["field_id"] == created["field_id"] for field in payload["fields"])
+        assert any(
+            field["field_id"] == created["field_id"] for field in payload["fields"]
+        )
 
     async def test_update_field_route_updates_visible_fields(
         self,

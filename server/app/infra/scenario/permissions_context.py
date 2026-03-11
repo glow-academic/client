@@ -161,8 +161,6 @@ async def resolve_scenario_values(
                 search=None,
                 flag_type="scenario_active",
                 limit_count=100,
-
-
             )
             match = next((r for r in results if r.type == "scenario_active"), None)
             if match and match.id:
@@ -181,8 +179,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
             resolved_ids = []
@@ -206,8 +202,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             persona_name_map = {
                 p.name.lower(): p.id for p in all_personas if p.name and p.id
@@ -233,8 +227,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             doc_name_map = {d.name.lower(): d.id for d in all_docs if d.name and d.id}
             resolved_ids = []
@@ -285,8 +277,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             obj_name_map = {
                 o.objective.lower(): o.id
@@ -314,8 +304,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             img_name_map = {i.name.lower(): i.id for i in all_images if i.name and i.id}
             resolved_ids = []
@@ -339,8 +327,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             vid_name_map = {v.name.lower(): v.id for v in all_videos if v.name and v.id}
             resolved_ids = []
@@ -364,8 +350,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             q_name_map = {
                 q.question_text.lower(): q.question_id
@@ -393,8 +377,6 @@ async def resolve_scenario_values(
                 redis,
                 search=None,
                 limit_count=1000,
-
-
             )
             opt_name_map = {
                 o.option_text.lower(): o.id

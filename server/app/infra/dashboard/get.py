@@ -34,7 +34,10 @@ from app.infra.dashboard.permissions import (
 from app.infra.globals import get_redis_client
 from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.dashboard.search import _build_history_response
-from app.routes.v5.api.main.dashboard.types import DashboardBundleResponse, DashboardRequest
+from app.routes.v5.api.main.dashboard.types import (
+    DashboardBundleResponse,
+    DashboardRequest,
+)
 from app.routes.v5.api.main.types import FilterOption
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -126,16 +129,48 @@ async def get_dashboard_impl_cached(
     scenario_count_rows = ctx.entries.get("scenario_counts", [])
     cohort_name_rows = ctx.entries.get("cohort_names", [])
 
-    simulations = (ctx.resources.get("simulations").selected if ctx.resources.get("simulations") else [])
-    scenarios_list = (ctx.resources.get("scenarios").selected if ctx.resources.get("scenarios") else [])
-    personas = (ctx.resources.get("personas").selected if ctx.resources.get("personas") else [])
-    rubrics = (ctx.resources.get("rubrics").selected if ctx.resources.get("rubrics") else [])
-    standard_groups = (ctx.resources.get("standard_groups").selected if ctx.resources.get("standard_groups") else [])
-    documents = (ctx.resources.get("documents").selected if ctx.resources.get("documents") else [])
-    parameter_fields = (ctx.resources.get("parameter_fields").selected if ctx.resources.get("parameter_fields") else [])
-    parameters = (ctx.resources.get("parameters").selected if ctx.resources.get("parameters") else [])
-    fields_list = (ctx.resources.get("fields").selected if ctx.resources.get("fields") else [])
-    target_profiles = (ctx.resources.get("profiles").selected if ctx.resources.get("profiles") else [])
+    simulations = (
+        ctx.resources.get("simulations").selected
+        if ctx.resources.get("simulations")
+        else []
+    )
+    scenarios_list = (
+        ctx.resources.get("scenarios").selected
+        if ctx.resources.get("scenarios")
+        else []
+    )
+    personas = (
+        ctx.resources.get("personas").selected if ctx.resources.get("personas") else []
+    )
+    rubrics = (
+        ctx.resources.get("rubrics").selected if ctx.resources.get("rubrics") else []
+    )
+    standard_groups = (
+        ctx.resources.get("standard_groups").selected
+        if ctx.resources.get("standard_groups")
+        else []
+    )
+    documents = (
+        ctx.resources.get("documents").selected
+        if ctx.resources.get("documents")
+        else []
+    )
+    parameter_fields = (
+        ctx.resources.get("parameter_fields").selected
+        if ctx.resources.get("parameter_fields")
+        else []
+    )
+    parameters = (
+        ctx.resources.get("parameters").selected
+        if ctx.resources.get("parameters")
+        else []
+    )
+    fields_list = (
+        ctx.resources.get("fields").selected if ctx.resources.get("fields") else []
+    )
+    target_profiles = (
+        ctx.resources.get("profiles").selected if ctx.resources.get("profiles") else []
+    )
 
     thresholds_dict = (
         thresholds_list[0]
@@ -200,10 +235,14 @@ async def get_dashboard_impl_cached(
     if request.rubric_ids:
         filter_set = {str(rid) for rid in request.rubric_ids}
         primary_metrics.rubric_heatmap.matrices = [
-            m for m in primary_metrics.rubric_heatmap.matrices if m.rubric_id in filter_set
+            m
+            for m in primary_metrics.rubric_heatmap.matrices
+            if m.rubric_id in filter_set
         ]
         primary_metrics.skill_performance.packages = [
-            p for p in primary_metrics.skill_performance.packages if p.rubric_id in filter_set
+            p
+            for p in primary_metrics.skill_performance.packages
+            if p.rubric_id in filter_set
         ]
 
     if request.simulation_picker_ids:
@@ -214,40 +253,60 @@ async def get_dashboard_impl_cached(
             if any(sid in filter_set for sid in (row.simulation_ids or []))
         ]
         secondary_metrics.cohort_performance.simulation_facts = [
-            f for f in secondary_metrics.cohort_performance.simulation_facts if f.simulation_id in filter_set
+            f
+            for f in secondary_metrics.cohort_performance.simulation_facts
+            if f.simulation_id in filter_set
         ]
         secondary_metrics.cohort_performance.daily_facts = [
-            f for f in secondary_metrics.cohort_performance.daily_facts if f.simulation_id in filter_set
+            f
+            for f in secondary_metrics.cohort_performance.daily_facts
+            if f.simulation_id in filter_set
         ]
         secondary_metrics.attempt_improvement.facts = [
-            f for f in secondary_metrics.attempt_improvement.facts if f.simulation_id in filter_set
+            f
+            for f in secondary_metrics.attempt_improvement.facts
+            if f.simulation_id in filter_set
         ]
 
     if request.parameter_ids:
         filter_set = {str(pid) for pid in request.parameter_ids}
         footer_metrics.scenario_performance.attribute_attempt_facts = [
-            f for f in footer_metrics.scenario_performance.attribute_attempt_facts if f.parameter_id in filter_set
+            f
+            for f in footer_metrics.scenario_performance.attribute_attempt_facts
+            if f.parameter_id in filter_set
         ]
         footer_metrics.scenario_performance.attribute_scenario_facts = [
-            f for f in footer_metrics.scenario_performance.attribute_scenario_facts if f.parameter_id in filter_set
+            f
+            for f in footer_metrics.scenario_performance.attribute_scenario_facts
+            if f.parameter_id in filter_set
         ]
         footer_metrics.scenario_stats.numeric_attempt_facts = [
-            f for f in footer_metrics.scenario_stats.numeric_attempt_facts if f.parameter_id in filter_set
+            f
+            for f in footer_metrics.scenario_stats.numeric_attempt_facts
+            if f.parameter_id in filter_set
         ]
         footer_metrics.scenario_stats.numeric_scenario_facts = [
-            f for f in footer_metrics.scenario_stats.numeric_scenario_facts if f.parameter_id in filter_set
+            f
+            for f in footer_metrics.scenario_stats.numeric_scenario_facts
+            if f.parameter_id in filter_set
         ]
 
     if request.scenario_ids:
         filter_set = {str(sid) for sid in request.scenario_ids}
         footer_metrics.scenario_simulation_performance.simulation_facts = [
-            f for f in footer_metrics.scenario_simulation_performance.simulation_facts if f.scenario_id in filter_set
+            f
+            for f in footer_metrics.scenario_simulation_performance.simulation_facts
+            if f.scenario_id in filter_set
         ]
         footer_metrics.scenario_composition.scenario_summaries = [
-            f for f in footer_metrics.scenario_composition.scenario_summaries if f.scenario_id in filter_set
+            f
+            for f in footer_metrics.scenario_composition.scenario_summaries
+            if f.scenario_id in filter_set
         ]
         footer_metrics.scenario_composition.chat_parameter_facts = [
-            f for f in footer_metrics.scenario_composition.chat_parameter_facts if f.scenario_id in filter_set
+            f
+            for f in footer_metrics.scenario_composition.chat_parameter_facts
+            if f.scenario_id in filter_set
         ]
 
     simulations_meta = build_simulation_meta(simulations)
@@ -261,13 +320,19 @@ async def get_dashboard_impl_cached(
         rubrics_meta = [r for r in rubrics_meta if q in (r.get("name") or "").lower()]
     if request.simulation_picker_search:
         q = request.simulation_picker_search.lower()
-        simulations_meta = [s for s in simulations_meta if q in (s.get("name") or "").lower()]
+        simulations_meta = [
+            s for s in simulations_meta if q in (s.get("name") or "").lower()
+        ]
     if request.parameter_search:
         q = request.parameter_search.lower()
-        parameters_meta = [p for p in parameters_meta if q in (p.get("name") or "").lower()]
+        parameters_meta = [
+            p for p in parameters_meta if q in (p.get("name") or "").lower()
+        ]
     if request.scenario_search:
         q = request.scenario_search.lower()
-        scenarios_meta = [s for s in scenarios_meta if q in (s.get("name") or "").lower()]
+        scenarios_meta = [
+            s for s in scenarios_meta if q in (s.get("name") or "").lower()
+        ]
 
     simulation_options = [
         FilterOption(value=str(s.simulation_id), label=s.name)

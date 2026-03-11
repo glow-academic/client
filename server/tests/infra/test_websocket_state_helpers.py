@@ -60,4 +60,3 @@ async def test_active_connection_adds_and_removes_members(redis_client):
 
     await remove_active_connection("chat-2", "sid-b", redis_client=redis_client)
     assert await redis_client.exists("active_connection:chat-2") == 0
-

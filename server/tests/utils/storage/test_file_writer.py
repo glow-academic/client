@@ -4,7 +4,11 @@ from uuid import UUID
 
 import pytest
 
-from app.utils.storage.file_writer import read_text_file, write_json_file, write_text_file
+from app.utils.storage.file_writer import (
+    read_text_file,
+    write_json_file,
+    write_text_file,
+)
 
 pytestmark = pytest.mark.asyncio
 

@@ -16,8 +16,7 @@ async def test_grade_start_server_handler(data: dict[str, Any]) -> None:
     if not rooms:
         return
     event = TestProgressEvent(
-        invocation_id=data.get("invocation_id")
-        or data.get("test_invocation_id", ""),
+        invocation_id=data.get("invocation_id") or data.get("test_invocation_id", ""),
         type=data.get("progress_type", "progress"),
         run_id=data.get("run_id"),
         current_run=data.get("current_run"),

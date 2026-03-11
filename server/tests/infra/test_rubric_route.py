@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -114,9 +113,9 @@ class TestRubricRoute:
         assert payload["rubric_exists"] is True
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created[
-            "description"
-        ]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
 
     async def test_search_rubric_route_returns_created_rubric(
         self,
@@ -148,8 +147,7 @@ class TestRubricRoute:
         assert payload["actor_name"] == rubric_route_actor.name
         assert payload["total_count"] >= 1
         assert any(
-            rubric["rubric_id"] == created["rubric_id"]
-            for rubric in payload["rubrics"]
+            rubric["rubric_id"] == created["rubric_id"] for rubric in payload["rubrics"]
         )
 
     async def test_update_rubric_route_updates_visible_fields(

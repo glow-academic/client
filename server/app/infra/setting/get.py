@@ -64,7 +64,6 @@ from app.routes.v5.api.main.setting.types import (
     SettingSystemSection,
 )
 
-
 # ---------------------------------------------------------------------------
 # get_setting_impl — composable infra architecture
 # ---------------------------------------------------------------------------

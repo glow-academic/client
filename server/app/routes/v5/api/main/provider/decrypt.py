@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.identity.decrypt import resolve_decrypt
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.identity.decrypt import resolve_decrypt
 from app.routes.v5.api.main.provider.types import (
     DecryptProviderKeyApiRequest,
     DecryptProviderKeyApiResponse,
@@ -45,9 +45,7 @@ async def decrypt_provider_key(
             )
 
         if not providers:
-            raise HTTPException(
-                status_code=404, detail="Provider not found"
-            )
+            raise HTTPException(status_code=404, detail="Provider not found")
 
         provider = providers[0]
         if request.key_id not in (provider.key_ids or []):

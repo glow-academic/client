@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -21,7 +20,9 @@ class DepartmentRouteResources:
     setting_id: UUID
 
 
-async def _create_department_route_resources(pool, redis_client) -> DepartmentRouteResources:
+async def _create_department_route_resources(
+    pool, redis_client
+) -> DepartmentRouteResources:
     from app.routes.v5.tools.resources.descriptions.create import create_description
     from app.routes.v5.tools.resources.names.create import create_name
     from app.routes.v5.tools.resources.settings.create import create_setting
@@ -121,8 +122,7 @@ class TestDepartmentRoute:
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
         assert (
-            payload["descriptions"]["resource"]["description"]
-            == created["description"]
+            payload["descriptions"]["resource"]["description"] == created["description"]
         )
 
     async def test_search_department_route_returns_created_department(
@@ -306,7 +306,8 @@ class TestDepartmentRoute:
         payload = response.json()
         assert payload["entries"]
         assert any(
-            entry["id"] == draft_response.json()["draft_id"] for entry in payload["entries"]
+            entry["id"] == draft_response.json()["draft_id"]
+            for entry in payload["entries"]
         )
 
     async def test_department_docs_route_returns_composed_docs(

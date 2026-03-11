@@ -13,7 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -42,7 +42,6 @@ from app.infra.parameter.permissions_context import (
 )
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.parameter.types import (
-    GetParameterApiRequest,
     GetParameterApiResponse,
     ParameterDepartmentSection,
     ParameterDescriptionSection,
@@ -51,7 +50,6 @@ from app.routes.v5.api.main.parameter.types import (
     ParameterFlagSection,
     ParameterNameSection,
 )
-
 
 # ---------------------------------------------------------------------------
 # get_parameter_client — composable infra architecture
@@ -328,7 +326,8 @@ async def get_parameter_impl(
         ),
         departments=ParameterDepartmentSection(
             **_section("departments"),
-            current=_serialize_models(param_ctx.resources["departments"].selected) or None,
+            current=_serialize_models(param_ctx.resources["departments"].selected)
+            or None,
             resources=_serialize_models(all_departments),
         ),
         fields=ParameterFieldSection(

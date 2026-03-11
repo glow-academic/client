@@ -52,7 +52,9 @@ class TestFindProfileBySocket:
         assert await find_profile_by_socket("sid-4") == "profile-4"
 
     @pytest.mark.asyncio
-    async def test_falls_back_to_scan_iter_legacy_keys(self, websocket_identity_runtime):
+    async def test_falls_back_to_scan_iter_legacy_keys(
+        self, websocket_identity_runtime
+    ):
         await websocket_identity_runtime.set("socket_owner:profile-5", "sid-5")
         assert await find_profile_by_socket("sid-5") == "profile-5"
 
@@ -84,4 +86,3 @@ class TestFindSessionBySocket:
             assert await find_session_by_socket("sid-8") is None
         finally:
             globals_mod.redis_client = original_redis
-

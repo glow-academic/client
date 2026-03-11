@@ -12,7 +12,10 @@ from app.infra.websocket.prepare_types import (
     MessageSpec,
     PreparedGeneration,
 )
-from app.infra.websocket.store_active_run import generate_active_run_id, store_active_run
+from app.infra.websocket.store_active_run import (
+    generate_active_run_id,
+    store_active_run,
+)
 
 
 def test_agent_dispatch_formats_messages_for_llm():
@@ -108,4 +111,3 @@ def test_store_active_run_uses_injected_id_factory_and_setter():
 
     assert calls == [("chat-1", "run-fixed")]
     assert len(generate_active_run_id()) == 36
-

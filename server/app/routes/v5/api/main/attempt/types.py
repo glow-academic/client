@@ -12,6 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.v5.api.types import ListFilterSection
 from app.routes.v5.tools.entries.attempt.types import GetAttemptResponse
 from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
@@ -821,6 +822,39 @@ class GetAttemptListResponse(BaseModel):
     simulation_options: list[AttemptListFilterOption] | None = None
     scenario_options: list[AttemptListFilterOption] | None = None
     profile_options: list[AttemptListFilterOption] | None = None
+
+
+# =============================================================================
+# Search endpoint types
+# =============================================================================
+
+
+class SearchAttemptItem(BaseModel):
+    """Single attempt row in search results."""
+
+    attempt_id: UUID
+    date: str | None = None
+    profile_id: UUID | None = None
+    profile_name: str | None = None
+    simulation_id: UUID | None = None
+    simulation_name: str | None = None
+    department_id: UUID | None = None
+    cohort_id: UUID | None = None
+    practice: bool | None = None
+    infinite_mode: bool | None = None
+    num_chats: int | None = None
+    is_archived: bool | None = None
+    scenario_ids: list[UUID] | None = None
+
+
+class SearchAttemptApiResponse(BaseModel):
+    """Response for attempt search endpoint."""
+
+    actor_name: str | None = None
+    attempts: list[SearchAttemptItem] | None = None
+    simulation_filter: ListFilterSection | None = None
+    department_filter: ListFilterSection | None = None
+    total_count: int | None = None
 
 
 # =============================================================================

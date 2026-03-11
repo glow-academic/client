@@ -53,7 +53,6 @@ UPSET_STUDENT_SCENARIO = sid("uni/scenario/upset-student")
 
 scenarios = [
     # ── Practice Scenarios (simple persona-linked) ────────────────────────
-
     dict(
         id=CONFUSED_SCENARIO,
         name="Confused Scenario",
@@ -93,9 +92,7 @@ scenarios = [
         active_flag=True,
         department_ids=[UNIVERSITY_DEPT],
     ),
-
     # ── Training Scenarios (with problem statements and multiple personas) ─
-
     dict(
         id=ACADEMIC_INTEGRITY_SCENARIO,
         name="Academic Integrity Training Scenario",

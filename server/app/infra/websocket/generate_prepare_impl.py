@@ -7,7 +7,8 @@ and emits generate_artifact events.
 from __future__ import annotations
 
 import uuid
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import asyncpg
 
@@ -143,7 +144,9 @@ def build_generate_artifact_payload(
     return GenerateArtifactPayload(
         sid=sid,
         artifact_type=artifact_type,
-        resource_type=agent_resource_types[0] if agent_resource_types else artifact_type,
+        resource_type=agent_resource_types[0]
+        if agent_resource_types
+        else artifact_type,
         run_id=run_id,
         group_id=group_id,
         modality=modality,

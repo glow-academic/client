@@ -18,11 +18,11 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.identity.keycloak_sync import perform_keycloak_sync
 from app.infra.auth.permissions_context import (
     create_denormalized_snapshot,
     resolve_auth_values,
 )
+from app.infra.identity.keycloak_sync import perform_keycloak_sync
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.artifacts.auth.create import (
     create_auth as create_auth_artifact,

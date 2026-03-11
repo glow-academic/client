@@ -18,7 +18,9 @@ from app.infra.tools.entries.save_text_upload import save_text_upload
 from app.routes.v5.tools.entries.text_uploads.create import create_text_upload
 from app.routes.v5.tools.entries.texts.create import create_text as create_text_entry
 from app.routes.v5.tools.entries.uploads.create import create_upload
-from app.routes.v5.tools.resources.texts.create import create_text as create_text_resource
+from app.routes.v5.tools.resources.texts.create import (
+    create_text as create_text_resource,
+)
 
 
 @dataclass(frozen=True)

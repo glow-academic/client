@@ -6,12 +6,12 @@ import pytest
 from fastapi import HTTPException
 from starlette.requests import Request
 
+from app.utils.logging.db_logger import profile_id_context
 from app.utils.mcp.get_mcp import get_mcp, parse_mcp_header
 from app.utils.mcp.get_mcp_profile_id import (
     get_mcp_profile_id,
     resolve_mcp_profile_id,
 )
-from app.utils.logging.db_logger import profile_id_context
 
 
 @pytest.mark.parametrize(
@@ -76,10 +76,7 @@ async def test_get_mcp_sets_request_state_and_returns_boolean():
 def test_get_mcp_profile_id_uses_injected_request_getter():
     request = SimpleNamespace(state=SimpleNamespace(profile_id="profile-123"))
 
-    assert (
-        get_mcp_profile_id(request_getter=lambda: request)
-        == "profile-123"
-    )
+    assert get_mcp_profile_id(request_getter=lambda: request) == "profile-123"
 
 
 def test_get_mcp_profile_id_falls_back_to_context_when_request_getter_fails():
@@ -87,9 +84,7 @@ def test_get_mcp_profile_id_falls_back_to_context_when_request_getter_fails():
     try:
         assert (
             get_mcp_profile_id(
-                request_getter=lambda: (_ for _ in ()).throw(
-                    RuntimeError("no request")
-                )
+                request_getter=lambda: (_ for _ in ()).throw(RuntimeError("no request"))
             )
             == "context-profile-456"
         )

@@ -53,4 +53,3 @@ def test_returns_error_when_required_headers_are_missing(tmp_path):
     assert result["success"] is False
     assert "Missing required headers" in result["error"]
     assert result["users"] == []
-

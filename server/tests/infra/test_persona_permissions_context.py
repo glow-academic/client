@@ -102,9 +102,7 @@ class TestResolvePersonaPermissionsContext:
         assert result.department_ids == department_ids
         assert result.active_scenario_count == 1
 
-    async def test_no_personas_resource_skips_scenario_search(
-        self, pool, redis_client
-    ):
+    async def test_no_personas_resource_skips_scenario_search(self, pool, redis_client):
         artifact, department_ids, persona_resource = await _create_persona_fixture(
             pool,
             redis_client,

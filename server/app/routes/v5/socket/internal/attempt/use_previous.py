@@ -7,7 +7,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
+from app.infra.events.audit import (
+    build_audit_arguments,
+    run_artifact_operation_with_audit,
+)
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
@@ -67,7 +70,10 @@ async def attempt_use_previous_internal_impl(
 
     pool = get_pool()
     async with pool.acquire() as conn:
-        for _chat_entry_id_str, attempt_chat_id_str in payload.previous_chat_map.items():
+        for (
+            _chat_entry_id_str,
+            attempt_chat_id_str,
+        ) in payload.previous_chat_map.items():
             if not attempt_chat_id_str:
                 continue
             try:

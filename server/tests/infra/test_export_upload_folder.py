@@ -2,20 +2,21 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from types import ModuleType
-import sys
 
 import pytest
-
-from tests.infra.route_helpers import create_admin_route_actor
 from tests.helpers import unique_tag
+from tests.infra.route_helpers import create_admin_route_actor
 
 pytestmark = pytest.mark.asyncio
 
 
 def _ensure_export_type_packages(artifact_name: str) -> None:
-    main_dir = Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    main_dir = (
+        Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
+    )
     artifact_dir = main_dir / artifact_name
     if "app.routes.v5.api.main" not in sys.modules:
         package = ModuleType("app.routes.v5.api.main")
@@ -150,7 +151,9 @@ async def test_export_profile_impl_writes_to_injected_upload_folder(
     tag = unique_tag()
     async with pool.acquire() as conn:
         name = await create_name(conn, f"profile-export-{tag}", redis_client)
-        email = await create_email(conn, f"profile-export-{tag}@example.com", redis_client)
+        email = await create_email(
+            conn, f"profile-export-{tag}@example.com", redis_client
+        )
         request_limit = await create_request_limit(conn, 42, redis_client)
         role = await create_role(
             conn,

@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.identity.decrypt import resolve_decrypt
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.identity.decrypt import resolve_decrypt
 from app.routes.v5.api.main.invocation.types import (
     DecryptInvocationKeyApiRequest,
     DecryptInvocationKeyApiResponse,
@@ -43,9 +43,7 @@ async def decrypt_invocation_key(
             invocations = await get_invocations(conn, [request.invocation_id])
 
         if not invocations:
-            raise HTTPException(
-                status_code=404, detail="Invocation not found"
-            )
+            raise HTTPException(status_code=404, detail="Invocation not found")
 
         invocation = invocations[0]
         if request.key_id not in (invocation.key_ids or []):

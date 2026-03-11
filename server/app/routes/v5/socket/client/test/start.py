@@ -5,6 +5,7 @@ All business logic lives in v5/internal/test/start.py.
 """
 
 from typing import Any
+
 from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.routes.v5.socket.client.types import TestStartPayload

@@ -315,16 +315,12 @@ async def sync_home_practice_entries(
         sim_pos_resource_ids = [
             p.id
             for p in sim_positions
-            if p.simulation_id
-            and p.simulation_id == sim.id
-            and p.id
+            if p.simulation_id and p.simulation_id == sim.id and p.id
         ]
         sim_avail_resource_ids = [
             a.id
             for a in sim_availability
-            if a.simulation_id
-            and a.simulation_id == sim.id
-            and a.id
+            if a.simulation_id and a.simulation_id == sim.id and a.id
         ]
 
         # Build chat data for this simulation

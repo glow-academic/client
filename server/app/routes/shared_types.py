@@ -265,5 +265,3 @@ class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
 
 class GetProfileContextApiRequest(BaseModel):
     department_id: str | None = None
-
-

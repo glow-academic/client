@@ -44,6 +44,7 @@ class GetRunListViewResponse(BaseModel):
 
 def _build_pricing_list(item: object) -> list[RunPricingItem]:
     """Build pricing list from flat columns."""
+
     def _value(field: str):
         if hasattr(item, "__getitem__"):
             try:

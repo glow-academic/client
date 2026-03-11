@@ -61,11 +61,21 @@ class TestGenerationProgressImpl:
                 num_agents=1,
                 num_resources=5,
                 units=[
-                    WorkUnit(agent_id="a1", target_type="resource", target_name="prompts"),
-                    WorkUnit(agent_id="a1", target_type="resource", target_name="names"),
-                    WorkUnit(agent_id="a1", target_type="resource", target_name="images"),
-                    WorkUnit(agent_id="a1", target_type="resource", target_name="videos"),
-                    WorkUnit(agent_id="a1", target_type="resource", target_name="documents"),
+                    WorkUnit(
+                        agent_id="a1", target_type="resource", target_name="prompts"
+                    ),
+                    WorkUnit(
+                        agent_id="a1", target_type="resource", target_name="names"
+                    ),
+                    WorkUnit(
+                        agent_id="a1", target_type="resource", target_name="images"
+                    ),
+                    WorkUnit(
+                        agent_id="a1", target_type="resource", target_name="videos"
+                    ),
+                    WorkUnit(
+                        agent_id="a1", target_type="resource", target_name="documents"
+                    ),
                 ],
             )
             await generation_progress_impl(
@@ -84,7 +94,9 @@ class TestGenerationProgressImpl:
                 emit=emit,
                 redis=redis_client,
             )
-            legacy_completed = await redis_client.hget("resource_progress:r1", "completed")
+            legacy_completed = await redis_client.hget(
+                "resource_progress:r1", "completed"
+            )
         finally:
             globals_mod.redis_client = previous
 
@@ -108,9 +120,15 @@ class TestGenerationProgressImpl:
                 num_agents=1,
                 num_resources=3,
                 units=[
-                    WorkUnit(agent_id="a1", target_type="entry", target_name="contents"),
-                    WorkUnit(agent_id="a1", target_type="entry", target_name="messages"),
-                    WorkUnit(agent_id="a1", target_type="entry", target_name="problems"),
+                    WorkUnit(
+                        agent_id="a1", target_type="entry", target_name="contents"
+                    ),
+                    WorkUnit(
+                        agent_id="a1", target_type="entry", target_name="messages"
+                    ),
+                    WorkUnit(
+                        agent_id="a1", target_type="entry", target_name="problems"
+                    ),
                 ],
             )
             await generation_progress_impl(
@@ -129,7 +147,9 @@ class TestGenerationProgressImpl:
                 emit=emit,
                 redis=redis_client,
             )
-            legacy_completed = await redis_client.hget("resource_progress:r1", "completed")
+            legacy_completed = await redis_client.hget(
+                "resource_progress:r1", "completed"
+            )
         finally:
             globals_mod.redis_client = previous
 

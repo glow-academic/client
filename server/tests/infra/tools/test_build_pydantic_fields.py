@@ -65,4 +65,3 @@ def test_build_function_signature_string_builds_expected_annotations():
         "scores: list[float] | None = Field(default=None, description='Score values')"
         in signature
     )
-

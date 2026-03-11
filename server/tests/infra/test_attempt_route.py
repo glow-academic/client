@@ -5,7 +5,6 @@ from __future__ import annotations
 import io
 import zipfile
 from uuid import UUID
-from uuid import uuid4
 
 import pytest
 
@@ -14,7 +13,9 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
     from app.infra.globals import UPLOAD_FOLDER
     from app.routes.v5.tools.entries.attempt.create import create_attempt
     from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
-    from app.routes.v5.tools.entries.attempt_archive.search import search_attempt_archives
+    from app.routes.v5.tools.entries.attempt_archive.search import (
+        search_attempt_archives,
+    )
     from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
     from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
     from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
@@ -23,7 +24,10 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
     from app.routes.v5.tools.entries.attempt_chat_bridge.refresh import (
         refresh_attempt_chat_bridge,
     )
-    from app.routes.v5.tools.entries.attempt_message.create import create_attempt_message
+    from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
+    from app.routes.v5.tools.entries.attempt_message.create import (
+        create_attempt_message,
+    )
     from app.routes.v5.tools.entries.attempt_message.refresh import (
         refresh_attempt_message,
     )
@@ -34,13 +38,14 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
     from app.routes.v5.tools.entries.home_chat.create import create_home_chat
     from app.routes.v5.tools.entries.messages.create import create_message
     from app.routes.v5.tools.entries.persona.create import create_persona
+    from app.routes.v5.tools.entries.runs.create import create_run
     from app.routes.v5.tools.resources.options.create import create_option
     from app.routes.v5.tools.resources.questions.create import create_question
-    from app.routes.v5.tools.entries.runs.create import create_run
-    from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
 
     async with pool.acquire() as conn:
-        group = await create_group(conn, session_id=actor.session_id, name="attempt-route")
+        group = await create_group(
+            conn, session_id=actor.session_id, name="attempt-route"
+        )
         run = await create_run(
             conn,
             group_id=group.id,
@@ -98,7 +103,9 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
             session_id=actor.session_id,
         )
         message = await create_message(conn, run_id=run.id, role="user")
-        message_call = await create_call(conn, run_id=run.id, session_id=actor.session_id)
+        message_call = await create_call(
+            conn, run_id=run.id, session_id=actor.session_id
+        )
         await create_attempt_message(
             conn,
             chat_id=attempt_chat.id,
@@ -139,13 +146,13 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
 async def _create_attempt_start_home(pool, redis_client, actor) -> dict[str, str]:
     from app.routes.v5.tools.entries.chat.create import create_chat
     from app.routes.v5.tools.entries.home.create import create_home
-    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
     from app.routes.v5.tools.entries.home.refresh import refresh_home
+    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
     from app.routes.v5.tools.entries.home_chat.refresh import refresh_home_chat
+    from app.routes.v5.tools.resources.personas.create import create_persona
     from app.routes.v5.tools.resources.profile_personas.create import (
         create_profile_persona,
     )
-    from app.routes.v5.tools.resources.personas.create import create_persona
 
     async with pool.acquire() as conn:
         persona = await create_persona(
@@ -197,7 +204,9 @@ class TestAttemptRoute:
         v5_attempt_route_client,
         attempt_route_actor,
     ):
-        graph = await _create_attempt_start_home(pool, redis_client, attempt_route_actor)
+        graph = await _create_attempt_start_home(
+            pool, redis_client, attempt_route_actor
+        )
         v5_attempt_route_client.authenticate(
             profile_id=attempt_route_actor.profile_id,
             session_id=attempt_route_actor.session_id,
@@ -329,7 +338,11 @@ class TestAttemptRoute:
 
         zip_path = graph["upload_folder"] / upload.file_path
         with zipfile.ZipFile(io.BytesIO(zip_path.read_bytes())) as archive:
-            assert sorted(archive.namelist()) == ["attempts.csv", "chats.csv", "messages.csv"]
+            assert sorted(archive.namelist()) == [
+                "attempts.csv",
+                "chats.csv",
+                "messages.csv",
+            ]
 
     async def test_attempt_refresh_route_returns_invalidated_tags(
         self,

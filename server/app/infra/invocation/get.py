@@ -175,4 +175,3 @@ async def get_invocation_impl(
         qualities=_section("qualities"),
         voices=_section("voices"),
     )
-

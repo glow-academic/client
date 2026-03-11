@@ -54,6 +54,7 @@ async def clone_from_template(
     admin_conn: asyncpg.Connection, template_name: str, target_db: str
 ) -> None:
     """``CREATE DATABASE target TEMPLATE template_name``."""
+
     async def _drop_target_if_exists() -> None:
         existing = await admin_conn.fetchval(
             "SELECT 1 FROM pg_database WHERE datname = $1", target_db

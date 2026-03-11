@@ -12,7 +12,6 @@ To regenerate tools_data.py after adding/removing API routes:
 
 from __future__ import annotations
 
-import ast
 import importlib
 import inspect
 import sys
@@ -222,7 +221,10 @@ def _find_request_type(handler_module: Any) -> type[BaseModel] | None:
             if endpoint:
                 sig = inspect.signature(endpoint)
                 for param_name, param in sig.parameters.items():
-                    if param_name == "request" and param.annotation is not inspect.Parameter.empty:
+                    if (
+                        param_name == "request"
+                        and param.annotation is not inspect.Parameter.empty
+                    ):
                         ann = param.annotation
                         if isinstance(ann, type) and issubclass(ann, BaseModel):
                             return ann
@@ -276,7 +278,15 @@ def _extract_args_from_model(
 # Main discovery
 # ---------------------------------------------------------------------------
 
-ROUTES_DIR = Path(__file__).parent.parent.parent / "server" / "app" / "routes" / "v5" / "api" / "main"
+ROUTES_DIR = (
+    Path(__file__).parent.parent.parent
+    / "server"
+    / "app"
+    / "routes"
+    / "v5"
+    / "api"
+    / "main"
+)
 
 
 def discover_tools() -> list[dict]:
@@ -396,7 +406,7 @@ def generate_static_file() -> None:
                 lines.append(
                     f'            dict(id=UUID("{a["id"]}"), name="{a["name"]}", '
                     f'field_type="{a["field_type"]}", description="{desc}", '
-                    f"required={a['required']}, default_value=\"{default}\"),"
+                    f'required={a["required"]}, default_value="{default}"),'
                 )
             lines.append("        ],")
         else:
@@ -407,7 +417,9 @@ def generate_static_file() -> None:
     lines.append("")
 
     output.write_text("\n".join(lines))
-    print(f"Wrote {output} ({len(tools)} tools, {sum(len(t['args']) for t in tools)} args)")
+    print(
+        f"Wrote {output} ({len(tools)} tools, {sum(len(t['args']) for t in tools)} args)"
+    )
 
 
 if __name__ == "__main__":

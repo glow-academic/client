@@ -24,20 +24,32 @@ from database.seeds.setups.university.scenarios import (
 # Deterministic IDs — importable by simulations, etc.
 # ---------------------------------------------------------------------------
 
-ACADEMIC_INTEGRITY_POLICY_KNOWLEDGE = sid("uni/scenario-rubric/academic-integrity+policy-knowledge")
-ACADEMIC_INTEGRITY_COMMUNICATION_SKILLS = sid("uni/scenario-rubric/academic-integrity+communication-skills")
+ACADEMIC_INTEGRITY_POLICY_KNOWLEDGE = sid(
+    "uni/scenario-rubric/academic-integrity+policy-knowledge"
+)
+ACADEMIC_INTEGRITY_COMMUNICATION_SKILLS = sid(
+    "uni/scenario-rubric/academic-integrity+communication-skills"
+)
 FERPA_POLICY_KNOWLEDGE = sid("uni/scenario-rubric/ferpa+policy-knowledge")
 FERPA_COMMUNICATION_SKILLS = sid("uni/scenario-rubric/ferpa+communication-skills")
 UPSET_STUDENT_DE_ESCALATION = sid("uni/scenario-rubric/upset-student+de-escalation")
-UPSET_STUDENT_COMMUNICATION_SKILLS = sid("uni/scenario-rubric/upset-student+communication-skills")
+UPSET_STUDENT_COMMUNICATION_SKILLS = sid(
+    "uni/scenario-rubric/upset-student+communication-skills"
+)
 
 # ---------------------------------------------------------------------------
 # Grouped IDs — convenient for simulations.py imports
 # ---------------------------------------------------------------------------
 
-ACADEMIC_INTEGRITY_RUBRICS = [ACADEMIC_INTEGRITY_POLICY_KNOWLEDGE, ACADEMIC_INTEGRITY_COMMUNICATION_SKILLS]
+ACADEMIC_INTEGRITY_RUBRICS = [
+    ACADEMIC_INTEGRITY_POLICY_KNOWLEDGE,
+    ACADEMIC_INTEGRITY_COMMUNICATION_SKILLS,
+]
 FERPA_RUBRICS = [FERPA_POLICY_KNOWLEDGE, FERPA_COMMUNICATION_SKILLS]
-UPSET_STUDENT_RUBRICS = [UPSET_STUDENT_DE_ESCALATION, UPSET_STUDENT_COMMUNICATION_SKILLS]
+UPSET_STUDENT_RUBRICS = [
+    UPSET_STUDENT_DE_ESCALATION,
+    UPSET_STUDENT_COMMUNICATION_SKILLS,
+]
 
 # ---------------------------------------------------------------------------
 # Scenario-rubric definitions

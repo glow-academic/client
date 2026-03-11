@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -22,7 +21,9 @@ class DocumentRouteResources:
     department_name: str | None
 
 
-async def _create_document_route_resources(pool, redis_client) -> DocumentRouteResources:
+async def _create_document_route_resources(
+    pool, redis_client
+) -> DocumentRouteResources:
     from app.routes.v5.tools.resources.departments.create import create_department
     from app.routes.v5.tools.resources.descriptions.create import create_description
     from app.routes.v5.tools.resources.names.create import create_name
@@ -129,8 +130,7 @@ class TestDocumentRoute:
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
         assert (
-            payload["descriptions"]["resource"]["description"]
-            == created["description"]
+            payload["descriptions"]["resource"]["description"] == created["description"]
         )
         assert {
             department["id"] for department in payload["departments"]["current"]
@@ -331,7 +331,8 @@ class TestDocumentRoute:
         payload = response.json()
         assert payload["entries"]
         assert any(
-            entry["id"] == draft_response.json()["draft_id"] for entry in payload["entries"]
+            entry["id"] == draft_response.json()["draft_id"]
+            for entry in payload["entries"]
         )
 
     async def test_document_docs_route_returns_composed_docs(

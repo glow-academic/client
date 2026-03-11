@@ -3,8 +3,8 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.problems.create import (

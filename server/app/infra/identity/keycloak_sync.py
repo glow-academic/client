@@ -6,6 +6,7 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.identity.keycloak_resolvers import (
     resolve_auth_items,
     resolve_auths_for_department,
@@ -13,7 +14,6 @@ from app.infra.identity.keycloak_resolvers import (
     resolve_departments_for_sync,
     resolve_setting_profiles_for_idp,
 )
-from app.infra.globals import get_pool, get_redis_client
 from app.routes.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger

@@ -64,7 +64,6 @@ from app.routes.v5.api.main.simulation.types import (
     SimulationScenarioTimeLimitSection,
 )
 
-
 # ---------------------------------------------------------------------------
 # get_simulation_impl — composable infra architecture
 # ---------------------------------------------------------------------------
@@ -365,9 +364,7 @@ async def get_simulation_impl(
         ),
         descriptions=SimulationDescriptionSection(
             **_section("descriptions"),
-            resource=_serialize_model(
-                simulation.resources["descriptions"].selected[0]
-            )
+            resource=_serialize_model(simulation.resources["descriptions"].selected[0])
             if simulation.resources["descriptions"].selected
             else None,
             resources=_serialize_models(all_descriptions),

@@ -7,7 +7,6 @@ import zipfile
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -183,7 +182,10 @@ class TestBenchmarkRoute:
 
         zip_path = seeded["upload_folder"] / upload.file_path
         with zipfile.ZipFile(io.BytesIO(zip_path.read_bytes())) as archive:
-            assert sorted(archive.namelist()) == ["benchmarks.csv", "test_invocations.csv"]
+            assert sorted(archive.namelist()) == [
+                "benchmarks.csv",
+                "test_invocations.csv",
+            ]
 
     async def test_benchmark_refresh_route_returns_invalidated_tags(
         self,

@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -130,9 +129,9 @@ class TestSimulationRoute:
         assert payload["simulation_exists"] is True
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created[
-            "description"
-        ]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
         assert any(
             scenario["scenario_id"] == created["scenario_id"]
             for scenario in payload["scenarios"]["current"]

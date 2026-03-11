@@ -59,9 +59,7 @@ def _email_resource(
     return SimpleNamespace(id=id or uuid4(), email=email)
 
 
-def _role_resource(
-    *, id: UUID | None = None, role: str = "member"
-) -> SimpleNamespace:
+def _role_resource(*, id: UUID | None = None, role: str = "member") -> SimpleNamespace:
     return SimpleNamespace(id=id or uuid4(), role=role, name=role)
 
 

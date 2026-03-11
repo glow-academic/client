@@ -11,11 +11,12 @@ from app.routes.v5.socket.server.test.grade_start import (
     test_grade_start_server_handler as handle_test_grade_start,
 )
 
-
 pytestmark = pytest.mark.asyncio
 
 
-async def test_attempt_started_server_handler_uses_rooms_without_sid(monkeypatch) -> None:
+async def test_attempt_started_server_handler_uses_rooms_without_sid(
+    monkeypatch,
+) -> None:
     emitted: list[tuple[str, dict, str | None]] = []
 
     async def _emit(event: str, payload: dict, room: str | None = None) -> None:

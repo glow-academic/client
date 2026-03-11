@@ -13,7 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -45,10 +45,8 @@ from app.routes.v5.api.main.field.types import (
     FieldFlagConfig,
     FieldFlagSection,
     FieldNameSection,
-    GetFieldApiRequest,
     GetFieldApiResponse,
 )
-
 
 # ---------------------------------------------------------------------------
 # get_field_client — composable infra architecture

@@ -20,7 +20,10 @@ def test_extract_debug_context_supports_multiple_shapes():
     conn = object()
 
     assert extract_debug_context({"run_id": "r1", "conn": conn}) == ("r1", conn)
-    assert extract_debug_context(SimpleNamespace(run_id="r2", conn=conn)) == ("r2", conn)
+    assert extract_debug_context(SimpleNamespace(run_id="r2", conn=conn)) == (
+        "r2",
+        conn,
+    )
     nested = SimpleNamespace(context=SimpleNamespace(run_id="r3", conn=conn))
     assert extract_debug_context(nested) == ("r3", conn)
 

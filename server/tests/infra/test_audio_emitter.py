@@ -18,7 +18,7 @@ def _create_audio_session(
     run_id: str = "run1",
     metadata: dict | None = None,
     tool_output_schemas: dict | None = None,
-) :
+):
     session = create_session(
         sid=sid,
         chat_id="chat1",
@@ -43,6 +43,8 @@ def cleanup_audio_session_store():
     remove_session("run1")
     remove_session("chat1")
     remove_session("r1")
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Session context
 # ═══════════════════════════════════════════════════════════════════════════

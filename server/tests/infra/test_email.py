@@ -11,7 +11,9 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestResolveProfileByEmail:
-    async def test_returns_full_result(self, pool, redis_client, profile_identity_factory):
+    async def test_returns_full_result(
+        self, pool, redis_client, profile_identity_factory
+    ):
         fixture = await profile_identity_factory(
             name="Bob",
             role=("member", "Member", "Member role"),

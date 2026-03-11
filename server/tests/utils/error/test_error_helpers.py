@@ -60,4 +60,3 @@ def test_handle_route_error_raises_http_exception():
 
     assert exc_info.value.status_code == 500
     assert exc_info.value.detail == "failure"
-

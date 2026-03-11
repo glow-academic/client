@@ -16,8 +16,8 @@ from app.infra.websocket.run_tracker import (
 )
 from app.infra.websocket.socket_event import recording_emit
 from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.profiles.create import create_profile
 
@@ -37,7 +37,9 @@ async def _run_graph(conn, redis_client):
     return profile, session, group, run
 
 
-def _base_data(*, profile_id: str, profiles_id: str, session_id: str, run_id: str, **overrides):
+def _base_data(
+    *, profile_id: str, profiles_id: str, session_id: str, run_id: str, **overrides
+):
     data = {
         "sid": "sid-1",
         "run_id": run_id,
@@ -63,9 +65,7 @@ class TestRunCompleteImpl:
         await run_complete_impl({"sid": ""}, emit=emit, conn=conn, redis=redis_client)
         assert events == []
 
-    async def test_audio_modality_emits_generate_and_returns(
-        self, conn, redis_client
-    ):
+    async def test_audio_modality_emits_generate_and_returns(self, conn, redis_client):
         emit, events = recording_emit()
         data = {
             "sid": "sid-1",
@@ -92,8 +92,12 @@ class TestRunCompleteImpl:
             redis_client,
             run_id=run_id,
             units=[
-                WorkUnit(agent_id="agent-a", target_type="resource", target_name="names"),
-                WorkUnit(agent_id="agent-b", target_type="resource", target_name="names"),
+                WorkUnit(
+                    agent_id="agent-a", target_type="resource", target_name="names"
+                ),
+                WorkUnit(
+                    agent_id="agent-b", target_type="resource", target_name="names"
+                ),
             ],
             num_agents=2,
         )
@@ -118,14 +122,18 @@ class TestRunCompleteImpl:
         self, conn, redis_client, tmp_path
     ):
         profile, session, _group, run = await _run_graph(conn, redis_client)
-        soft_name = await create_name(conn, "run-complete-name", redis_client, soft=True)
+        soft_name = await create_name(
+            conn, "run-complete-name", redis_client, soft=True
+        )
         run_id = str(run.id)
 
         await init_run(
             redis_client,
             run_id=run_id,
             units=[
-                WorkUnit(agent_id="agent-a", target_type="resource", target_name="names"),
+                WorkUnit(
+                    agent_id="agent-a", target_type="resource", target_name="names"
+                ),
             ],
             num_agents=1,
         )
@@ -187,8 +195,12 @@ class TestRunCompleteImpl:
             redis_client,
             run_id=run_id,
             units=[
-                WorkUnit(agent_id="agent-a", target_type="resource", target_name="names"),
-                WorkUnit(agent_id="agent-b", target_type="resource", target_name="names"),
+                WorkUnit(
+                    agent_id="agent-a", target_type="resource", target_name="names"
+                ),
+                WorkUnit(
+                    agent_id="agent-b", target_type="resource", target_name="names"
+                ),
             ],
             num_agents=2,
         )
@@ -234,18 +246,20 @@ class TestRunCompleteImpl:
 
         await cleanup_run(redis_client, run_id=run_id)
 
-    async def test_chat_artifact_emits_attempt_chat_started(
-        self, conn, redis_client
-    ):
+    async def test_chat_artifact_emits_attempt_chat_started(self, conn, redis_client):
         profile, session, _group, run = await _run_graph(conn, redis_client)
-        soft_name = await create_name(conn, "chat-complete-name", redis_client, soft=True)
+        soft_name = await create_name(
+            conn, "chat-complete-name", redis_client, soft=True
+        )
         run_id = str(run.id)
 
         await init_run(
             redis_client,
             run_id=run_id,
             units=[
-                WorkUnit(agent_id="agent-a", target_type="resource", target_name="names"),
+                WorkUnit(
+                    agent_id="agent-a", target_type="resource", target_name="names"
+                ),
             ],
             num_agents=1,
         )

@@ -48,7 +48,11 @@ async def poll_events(
         )
 
     if request.types:
-        invalid = [event_type for event_type in request.types if event_type not in config.event_types]
+        invalid = [
+            event_type
+            for event_type in request.types
+            if event_type not in config.event_types
+        ]
         if invalid:
             raise HTTPException(
                 status_code=400,

@@ -13,6 +13,7 @@ logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
+
 @sio.event  # type: ignore
 async def test_end(sid: str, data: dict[str, Any]) -> None:
     """Handle test_end event — validate transport data and dispatch internal."""

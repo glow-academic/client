@@ -380,7 +380,9 @@ async def search_scenario_impl(
     # Build mapping arrays for the response
     api_objectives: list[ListScenarioApiObjective] = [
         ListScenarioApiObjective(
-            objective_id=str(getattr(o, "objective_id", None) or o.id) if (getattr(o, "objective_id", None) or getattr(o, "id", None)) else None,
+            objective_id=str(getattr(o, "objective_id", None) or o.id)
+            if (getattr(o, "objective_id", None) or getattr(o, "id", None))
+            else None,
             name=getattr(o, "objective", None) or "",
             description=getattr(o, "objective", None) or "",
         )
@@ -389,7 +391,9 @@ async def search_scenario_impl(
 
     api_fields: list[ListScenarioApiField] = [
         ListScenarioApiField(
-            field_id=str(getattr(f, "field_id", None) or f.id) if (getattr(f, "field_id", None) or getattr(f, "id", None)) else None,
+            field_id=str(getattr(f, "field_id", None) or f.id)
+            if (getattr(f, "field_id", None) or getattr(f, "id", None))
+            else None,
             name=f.name,
             description=f.description or "",
         )
@@ -404,7 +408,9 @@ async def search_scenario_impl(
 
     api_personas: list[ListScenarioApiPersona] = [
         ListScenarioApiPersona(
-            persona_id=str(getattr(p, "persona_id", None) or p.id) if (getattr(p, "persona_id", None) or getattr(p, "id", None)) else None,
+            persona_id=str(getattr(p, "persona_id", None) or p.id)
+            if (getattr(p, "persona_id", None) or getattr(p, "id", None))
+            else None,
             name=p.name or "",
             description=p.description or "",
             color=getattr(p, "color", None) or "",
@@ -425,7 +431,9 @@ async def search_scenario_impl(
 
     api_departments: list[ListScenarioApiDepartment] = [
         ListScenarioApiDepartment(
-            department_id=str(getattr(d, "department_id", None) or d.id) if (getattr(d, "department_id", None) or getattr(d, "id", None)) else None,
+            department_id=str(getattr(d, "department_id", None) or d.id)
+            if (getattr(d, "department_id", None) or getattr(d, "id", None))
+            else None,
             name=d.name or "",
             description=d.description or "",
         )

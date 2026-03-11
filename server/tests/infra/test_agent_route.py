@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import RouteActor, create_admin_route_actor
 
@@ -147,7 +146,9 @@ class TestAgentRoute:
         assert payload["disabled_reason"]
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created["description"]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
         assert payload["models"]["resource"]["id"] == created["model_id"]
         assert payload["models"]["resource"]["name"] == created["model_name"]
 
@@ -181,10 +182,14 @@ class TestAgentRoute:
         payload = response.json()
         assert payload["actor_name"] == agent_route_actor.name
         assert payload["total_count"] >= 1
-        assert any(agent["agent_id"] == created["agent_id"] for agent in payload["agents"])
+        assert any(
+            agent["agent_id"] == created["agent_id"] for agent in payload["agents"]
+        )
 
         created_agent = next(
-            agent for agent in payload["agents"] if agent["agent_id"] == created["agent_id"]
+            agent
+            for agent in payload["agents"]
+            if agent["agent_id"] == created["agent_id"]
         )
         assert created_agent["name"] == created["name"]
         assert created_agent["model_id"] == created["model_id"]

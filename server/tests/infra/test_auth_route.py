@@ -7,7 +7,6 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
@@ -37,7 +36,9 @@ async def _create_auth_route_resources(pool, redis_client) -> AuthRouteResources
     async with pool.acquire() as conn:
         name_res = await create_name(conn, name, redis_client)
         description_res = await create_description(conn, description, redis_client)
-        protocol_res = await create_protocol(conn, f"route-protocol-{tag}", redis_client)
+        protocol_res = await create_protocol(
+            conn, f"route-protocol-{tag}", redis_client
+        )
         slug_res = await create_slug(conn, f"route-auth-{tag}", redis_client)
         item_res = await create_item(
             conn,
@@ -134,9 +135,9 @@ class TestAuthRoute:
         assert payload["auth_exists"] is True
         assert payload["group_id"] is not None
         assert payload["names"]["resource"]["name"] == created["name"]
-        assert payload["descriptions"]["resource"]["description"] == created[
-            "description"
-        ]
+        assert (
+            payload["descriptions"]["resource"]["description"] == created["description"]
+        )
 
     async def test_search_auth_route_returns_created_auth(
         self,

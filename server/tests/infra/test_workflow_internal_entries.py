@@ -15,7 +15,6 @@ from app.routes.v5.socket.internal.test.start import (
     test_start_internal_impl as run_test_start_internal,
 )
 
-
 pytestmark = pytest.mark.asyncio
 
 

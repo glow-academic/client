@@ -20,8 +20,8 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.identity.simulatable import SIMULATABLE_ROLES
-from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.profile.permissions_context import create_denormalized_snapshot
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
@@ -93,12 +93,8 @@ async def resolve_profile_upsert(
     search_flags_fn = search_flags_fn or search_flags
     search_profiles_fn = search_profiles_fn or search_profiles
     create_snapshot_fn = create_snapshot_fn or create_denormalized_snapshot
-    create_profile_artifact_fn = (
-        create_profile_artifact_fn or create_profile_artifact
-    )
-    update_profile_artifact_fn = (
-        update_profile_artifact_fn or update_profile_artifact
-    )
+    create_profile_artifact_fn = create_profile_artifact_fn or create_profile_artifact
+    update_profile_artifact_fn = update_profile_artifact_fn or update_profile_artifact
     create_session_fn = create_session_fn or create_session
 
     # ── Step 1: Role hierarchy validation ───────────────────────────────

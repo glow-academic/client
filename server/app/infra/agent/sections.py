@@ -84,7 +84,9 @@ def build_agent_get_result(
     profile = common.profile
 
     agent_ids: dict[str, UUID | None] = {
-        resource: (scores.best[resource].agent_id if scores.best.get(resource) else None)
+        resource: (
+            scores.best[resource].agent_id if scores.best.get(resource) else None
+        )
         for resource in AGENT_RESOURCES
     }
     tool_ids_map: dict[str, UUID | None] = {
@@ -175,8 +177,7 @@ def build_agent_get_result(
         resource: agent_ids.get(resource) is not None for resource in AGENT_RESOURCES
     }
     basic_show_ai_generate = any(
-        show_ai_generate_map.get(resource, False)
-        for resource in AGENT_BASIC_RESOURCES
+        show_ai_generate_map.get(resource, False) for resource in AGENT_BASIC_RESOURCES
     )
     general_show_ai_generate = any(show_ai_generate_map.values())
 
@@ -220,10 +221,12 @@ def build_agent_get_result(
         + agent_ctx.resources["descriptions"].suggestions
     )
     all_models = dedupe_by_id(
-        agent_ctx.resources["models"].selected + agent_ctx.resources["models"].suggestions
+        agent_ctx.resources["models"].selected
+        + agent_ctx.resources["models"].suggestions
     )
     all_prompts = dedupe_by_id(
-        agent_ctx.resources["prompts"].selected + agent_ctx.resources["prompts"].suggestions
+        agent_ctx.resources["prompts"].selected
+        + agent_ctx.resources["prompts"].suggestions
     )
     all_instructions = dedupe_by_id(
         agent_ctx.resources["instructions"].selected
@@ -238,14 +241,16 @@ def build_agent_get_result(
         + agent_ctx.resources["reasoning_levels"].suggestions
     )
     all_voices = dedupe_by_id(
-        agent_ctx.resources["voices"].selected + agent_ctx.resources["voices"].suggestions
+        agent_ctx.resources["voices"].selected
+        + agent_ctx.resources["voices"].suggestions
     )
     all_qualities = dedupe_by_id(
         agent_ctx.resources["qualities"].selected
         + agent_ctx.resources["qualities"].suggestions
     )
     all_rubrics = dedupe_by_id(
-        agent_ctx.resources["rubrics"].selected + agent_ctx.resources["rubrics"].suggestions
+        agent_ctx.resources["rubrics"].selected
+        + agent_ctx.resources["rubrics"].suggestions
     )
 
     suggestions_map = {

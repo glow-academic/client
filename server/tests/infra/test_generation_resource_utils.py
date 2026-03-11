@@ -37,4 +37,3 @@ def test_normalize_resources_for_sql_filters_invalid_ids_and_empty_entries():
 def test_normalize_resources_for_sql_returns_none_for_empty_input():
     assert normalize_resources_for_sql(None) is None
     assert normalize_resources_for_sql([]) is None
-

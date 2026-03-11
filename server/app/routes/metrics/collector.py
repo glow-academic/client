@@ -134,16 +134,12 @@ async def log_metrics_snapshot() -> None:
                     float(s.decode() if isinstance(s, bytes) else s)
                     for s in latency_samples
                 ]
-                avg_latency_ms = (
-                    sum(latencies) / len(latencies) if latencies else 0.0
-                )
+                avg_latency_ms = sum(latencies) / len(latencies) if latencies else 0.0
         except Exception as e:
             from app.utils.logging.db_logger import get_logger
 
             logger = get_logger("app.infra.metrics.collector")
-            logger.warning(
-                f"Error reading from Redis, using in-memory fallback: {e}"
-            )
+            logger.warning(f"Error reading from Redis, using in-memory fallback: {e}")
             # Fallback to in-memory
             requests_total = _requests_count
             errors_total = _errors_count

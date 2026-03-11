@@ -57,4 +57,3 @@ class TestAggregateToolResults:
         assert entry_actions == {
             "messages": [{"entry_id": "entry-1"}, {"entry_id": "entry-2"}]
         }
-

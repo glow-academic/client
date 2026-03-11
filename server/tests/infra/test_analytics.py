@@ -1,6 +1,6 @@
 """Tests for infra.auth.analytics using real black-box setup."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -42,7 +42,9 @@ async def _profile_session_run_call(conn, redis_client):
 class TestProfileFactsFilters:
     async def test_returns_department_and_cohort_options(self, pool, redis_client):
         async with pool.acquire() as conn:
-            department = await create_department(conn, name="Science", redis=redis_client)
+            department = await create_department(
+                conn, name="Science", redis=redis_client
+            )
             cohort = await create_cohort(conn, name="Fall 2025", redis=redis_client)
 
         result = await resolve_profile_facts_filters(
@@ -149,9 +151,13 @@ class TestBenchmarkFilters:
     async def test_returns_departments_and_date_range(self, pool, redis_client):
         async with pool.acquire() as conn:
             department = await create_department(conn, name="Math", redis=redis_client)
-            profile, _session, _group, _run, early_call = await _profile_session_run_call(
-                conn, redis_client
-            )
+            (
+                profile,
+                _session,
+                _group,
+                _run,
+                early_call,
+            ) = await _profile_session_run_call(conn, redis_client)
             early_test = await create_test(
                 conn, call_id=early_call.id, profiles_id=profile.id
             )

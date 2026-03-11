@@ -79,7 +79,9 @@ def build_chat_get_result(
         group_id=group_id,
         draft_version=context.draft_version,
         names=_build_chat_section("names", context=context, scores=scores),
-        descriptions=_build_chat_section("descriptions", context=context, scores=scores),
+        descriptions=_build_chat_section(
+            "descriptions", context=context, scores=scores
+        ),
         flags=_build_chat_section("flags", context=context, scores=scores),
         departments=_build_chat_section("departments", context=context, scores=scores),
         personas=_build_chat_section("personas", context=context, scores=scores),

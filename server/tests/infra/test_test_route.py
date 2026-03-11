@@ -6,9 +6,9 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
-from app.routes.v5.tools.entries.benchmark.create import create_benchmark
-
 from tests.infra.route_helpers import create_admin_route_actor
+
+from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 
 
 @pytest_asyncio.fixture

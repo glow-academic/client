@@ -1,8 +1,8 @@
 """Tests for guest count helper."""
 
-import app.infra.globals as globals_mod
 import pytest
 
+import app.infra.globals as globals_mod
 from app.infra.websocket.get_guest_count import get_guest_count
 
 pytestmark = pytest.mark.asyncio
@@ -28,4 +28,3 @@ async def test_get_guest_count_returns_zero_without_redis():
         assert await get_guest_count() == 0
     finally:
         globals_mod.redis_client = original_redis
-

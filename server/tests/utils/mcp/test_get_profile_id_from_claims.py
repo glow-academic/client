@@ -30,4 +30,3 @@ async def test_returns_none_when_email_missing_or_unknown(conn, redis_client):
         )
         is None
     )
-

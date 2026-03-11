@@ -15,4 +15,3 @@ def test_resolve_upload_path_uses_supplied_upload_root(tmp_path):
     path = resolve_upload_path("text/example.txt", upload_folder=tmp_path)
 
     assert path == tmp_path / "text/example.txt"
-

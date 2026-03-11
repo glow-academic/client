@@ -106,7 +106,9 @@ async def get_department_impl(
 
     scores = score_tools(common.tool_graph, DEPARTMENT_RESOURCES)
     agent_ids: dict[str, UUID | None] = {
-        resource: (scores.best[resource].agent_id if scores.best.get(resource) else None)
+        resource: (
+            scores.best[resource].agent_id if scores.best.get(resource) else None
+        )
         for resource in DEPARTMENT_RESOURCES
     }
     tool_ids_map: dict[str, UUID | None] = {
@@ -123,7 +125,8 @@ async def get_department_impl(
 
     names_has_tools = scores.has_any.get("names", False)
     all_settings = dedupe_by_id(
-        dept_ctx.resources["settings"].selected + dept_ctx.resources["settings"].suggestions,
+        dept_ctx.resources["settings"].selected
+        + dept_ctx.resources["settings"].suggestions,
         id_attr="id",
     )
 
@@ -140,7 +143,8 @@ async def get_department_impl(
         "settings": compute_settings_required(),
     }
     show_ai_generate_map = {
-        resource: (agent_ids.get(resource) is not None) for resource in DEPARTMENT_RESOURCES
+        resource: (agent_ids.get(resource) is not None)
+        for resource in DEPARTMENT_RESOURCES
     }
     basic_show_ai_generate = any(
         show_ai_generate_map.get(resource, False)
@@ -189,7 +193,9 @@ async def get_department_impl(
 
     suggestions_map = {
         "names": [item.id for item in dept_ctx.resources["names"].suggestions],
-        "descriptions": [item.id for item in dept_ctx.resources["descriptions"].suggestions],
+        "descriptions": [
+            item.id for item in dept_ctx.resources["descriptions"].suggestions
+        ],
         "settings": [],
     }
 
@@ -220,7 +226,9 @@ async def get_department_impl(
         group_id=group_id,
         basic_show_ai_generate=basic_show_ai_generate,
         names=DepartmentNameSection(
-            resource=dept_ctx.resources["names"].selected[0] if dept_ctx.resources["names"].selected else None,
+            resource=dept_ctx.resources["names"].selected[0]
+            if dept_ctx.resources["names"].selected
+            else None,
             resources=all_names,
             **_section("names"),
         ),

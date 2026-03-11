@@ -24,8 +24,11 @@ async def search_tests(
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
-) -> list[GetTestResponse]:
-    """Search test entries from test_mv with declarative filters."""
+) -> tuple[list[GetTestResponse], int]:
+    """Search test entries from test_mv with declarative filters.
+
+    Returns (items, total_count).
+    """
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
     order = "ASC" if sort_order.lower() == "asc" else "DESC"
@@ -34,7 +37,8 @@ async def search_tests(
         f"""
         SELECT test_id, eval_id, profile_id, department_ids,
                test_name, test_description,
-               num_invocations, infinite_mode, is_dynamic, archived, test_created_at
+               num_invocations, infinite_mode, is_dynamic, archived, test_created_at,
+               COUNT(*) OVER() AS total_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR test_id = ANY($1))
           AND ($2::uuid[] IS NULL OR eval_id = ANY($2))
@@ -57,4 +61,9 @@ async def search_tests(
         offset,
     )
 
-    return [GetTestResponse(**dict(r)) for r in rows]
+    total_count = rows[0]["total_count"] if rows else 0
+    items = [
+        GetTestResponse(**{k: v for k, v in dict(r).items() if k != "total_count"})
+        for r in rows
+    ]
+    return (items, total_count)

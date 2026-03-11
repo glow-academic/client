@@ -87,7 +87,9 @@ def build_scenario_get_result(
     profile = common.profile
 
     agent_ids: dict[str, UUID | None] = {
-        resource: (scores.best[resource].agent_id if scores.best.get(resource) else None)
+        resource: (
+            scores.best[resource].agent_id if scores.best.get(resource) else None
+        )
         for resource in SCENARIO_RESOURCES
     }
     tool_ids_map: dict[str, UUID | None] = {
@@ -181,7 +183,9 @@ def build_scenario_get_result(
         "options": False,
     }
 
-    show_ai_generate_map = {resource: agent_ids.get(resource) is not None for resource in SCENARIO_RESOURCES}
+    show_ai_generate_map = {
+        resource: agent_ids.get(resource) is not None for resource in SCENARIO_RESOURCES
+    }
     basic_show_ai_generate = any(
         show_ai_generate_map.get(resource, False)
         for resource in SCENARIO_BASIC_RESOURCES
@@ -217,7 +221,9 @@ def build_scenario_get_result(
             "tool_id": tool_ids_map.get(resource_key),
         }
 
-    video_param_ids = {parameter.id for parameter in all_parameters if parameter.video_parameter}
+    video_param_ids = {
+        parameter.id for parameter in all_parameters if parameter.video_parameter
+    }
     field_to_param = {
         parameter_field.id: parameter_field.parameter_id
         for parameter_field in all_parameter_fields
@@ -241,7 +247,9 @@ def build_scenario_get_result(
     video_entry_map = {video.videos_id: video for video in scenario.entries["videos"]}
 
     def _to_name(name) -> ScenarioNameResource:
-        return ScenarioNameResource(id=name.id, name=name.name, generated=name.generated)
+        return ScenarioNameResource(
+            id=name.id, name=name.name, generated=name.generated
+        )
 
     def _to_description(description) -> ScenarioDescriptionResource:
         return ScenarioDescriptionResource(
@@ -411,7 +419,9 @@ def build_scenario_get_result(
             + scenario.resources["problem_statements"].suggestions
         )
     ]
-    all_departments_conv = [_to_department(department) for department in all_departments]
+    all_departments_conv = [
+        _to_department(department) for department in all_departments
+    ]
     all_personas_conv = [_to_persona(persona) for persona in all_personas]
     all_documents_conv = [_to_document(document) for document in all_documents]
     all_parameters_conv = [_to_parameter(parameter) for parameter in all_parameters]
@@ -426,25 +436,35 @@ def build_scenario_get_result(
         _to_department(department)
         for department in scenario.resources["departments"].selected
     ]
-    current_personas = [_to_persona(persona) for persona in scenario.resources["personas"].selected]
+    current_personas = [
+        _to_persona(persona) for persona in scenario.resources["personas"].selected
+    ]
     current_documents = [
         _to_document(document) for document in scenario.resources["documents"].selected
     ]
     current_parameters = [
-        _to_parameter(parameter) for parameter in scenario.resources["parameters"].selected
+        _to_parameter(parameter)
+        for parameter in scenario.resources["parameters"].selected
     ]
     current_fields = [
         _to_field(field) for field in scenario.resources["parameter_fields"].selected
     ]
     current_objectives = [
-        _to_objective(objective) for objective in scenario.resources["objectives"].selected
+        _to_objective(objective)
+        for objective in scenario.resources["objectives"].selected
     ]
-    current_images = [_to_image(image) for image in scenario.resources["images"].selected]
-    current_videos = [_to_video(video) for video in scenario.resources["videos"].selected]
+    current_images = [
+        _to_image(image) for image in scenario.resources["images"].selected
+    ]
+    current_videos = [
+        _to_video(video) for video in scenario.resources["videos"].selected
+    ]
     current_questions = [
         _to_question(question) for question in scenario.resources["questions"].selected
     ]
-    current_options = [_to_option(option) for option in scenario.resources["options"].selected]
+    current_options = [
+        _to_option(option) for option in scenario.resources["options"].selected
+    ]
 
     resolved_parameter_ids = list(
         {
@@ -489,7 +509,11 @@ def build_scenario_get_result(
         ),
         flags=ScenarioFlagSection(
             **_section("flags"),
-            current=[flag for flag in scenario_flags if flag.flag_option_id in current_flag_ids],
+            current=[
+                flag
+                for flag in scenario_flags
+                if flag.flag_option_id in current_flag_ids
+            ],
             resources=scenario_flags,
         ),
         departments=ScenarioDepartmentSection(

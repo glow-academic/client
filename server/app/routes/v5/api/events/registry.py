@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from app.events.types import ArtifactEventsConfig
-from app.routes.v5.api.main.agent.events import AGENT_EVENTS
 from app.routes.v5.api.main.activity.events import ACTIVITY_EVENTS
+from app.routes.v5.api.main.agent.events import AGENT_EVENTS
 from app.routes.v5.api.main.attempt.events import ATTEMPT_EVENTS
 from app.routes.v5.api.main.auth.events import AUTH_EVENTS
 from app.routes.v5.api.main.benchmark.events import BENCHMARK_EVENTS
@@ -23,8 +23,8 @@ from app.routes.v5.api.main.leaderboard.events import LEADERBOARD_EVENTS
 from app.routes.v5.api.main.model.events import MODEL_EVENTS
 from app.routes.v5.api.main.parameter.events import PARAMETER_EVENTS
 from app.routes.v5.api.main.persona.events import PERSONA_EVENTS
-from app.routes.v5.api.main.pricing.events import PRICING_EVENTS
 from app.routes.v5.api.main.practice.events import PRACTICE_EVENTS
+from app.routes.v5.api.main.pricing.events import PRICING_EVENTS
 from app.routes.v5.api.main.profile.events import PROFILE_EVENTS
 from app.routes.v5.api.main.provider.events import PROVIDER_EVENTS
 from app.routes.v5.api.main.record.events import RECORD_EVENTS

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 import pytest_asyncio
-
 from tests.infra.route_helpers import create_admin_route_actor
 
 

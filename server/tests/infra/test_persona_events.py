@@ -1,5 +1,6 @@
 """Tests for persona event declarations."""
 
+from app.events.types import build_default_lifecycle_event_types
 from app.routes.v5.api.main.persona.events import (
     PERSONA_EVENT_CONFIGS,
     PERSONA_EVENT_TYPES,
@@ -7,7 +8,6 @@ from app.routes.v5.api.main.persona.events import (
     _persona_result_entity_ids,
     get_persona_event_config,
 )
-from app.events.types import build_default_lifecycle_event_types
 
 
 def test_get_persona_event_config_maps_domain_event_and_entity_scope() -> None:

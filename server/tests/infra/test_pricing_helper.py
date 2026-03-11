@@ -37,8 +37,12 @@ async def test_compute_costs_from_runs_batches_pricing(conn, redis_client):
         RunViewItem(
             run_id=run_id,
             pricing=[
-                RunPricingItem(pricing_type="input", count=1500, pricing_id=input_pricing.id),
-                RunPricingItem(pricing_type="output", count=2000, pricing_id=output_pricing.id),
+                RunPricingItem(
+                    pricing_type="input", count=1500, pricing_id=input_pricing.id
+                ),
+                RunPricingItem(
+                    pricing_type="output", count=2000, pricing_id=output_pricing.id
+                ),
             ],
         )
     ]
