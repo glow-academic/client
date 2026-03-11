@@ -5,9 +5,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.attempt.workflows import attempt_start_impl
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
-from app.infra.websocket.attempt_events_impl import attempt_start_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
@@ -68,6 +68,11 @@ async def attempt_start_internal_impl(
             for event in recorded
             if event.bus == "internal" and event.event == "attempt_proceed"
         ]
+        created_attempt_id = (
+            proceed_events[0].data.get("attempt_id", "") if proceed_events else ""
+        )
+        if created_attempt_id and not data.get("sid"):
+            return AttemptStartInternalResult(attempt_id=created_attempt_id)
         for event in proceed_events:
             await attempt_proceed_internal_impl(
                 {
@@ -76,7 +81,6 @@ async def attempt_start_internal_impl(
                     "session_id": session_id,
                 },
                 emit=_emit,
-                audit=False,
             )
 
         for event in recorded:
@@ -94,6 +98,9 @@ async def attempt_start_internal_impl(
                 )
             if event.event == "attempt_error":
                 raise ValueError(event.data.get("message", "Failed to start attempt"))
+
+        if created_attempt_id:
+            return AttemptStartInternalResult(attempt_id=created_attempt_id)
 
         raise ValueError("Attempt start completed without a terminal start event")
 

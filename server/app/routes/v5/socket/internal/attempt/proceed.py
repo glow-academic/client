@@ -3,9 +3,9 @@
 from typing import Any
 from uuid import UUID
 
+from app.infra.attempt.workflows import attempt_proceed_impl
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.websocket.attempt_events_impl import attempt_proceed_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, make_emit

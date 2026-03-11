@@ -7,11 +7,11 @@ from pydantic import BaseModel
 
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool
+from app.infra.test.workflows import test_run_impl
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.globals import get_redis_client
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.infra.websocket.test_types import TestErrorData
-from app.infra.websocket.test_events_impl import test_run_impl
 from app.routes.v5.socket.client.types import TestRunPayload
 
 internal_sio = get_internal_sio()
@@ -31,7 +31,6 @@ async def test_run_internal_impl(
 ) -> TestRunInternalResult:
     """Run canonical test run orchestration for any surface."""
     payload = TestRunPayload(**data)
-    del payload
 
     profile_id = data.get("profile_id")
     if not profile_id:

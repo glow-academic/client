@@ -6,9 +6,9 @@ from pydantic import BaseModel
 
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool
+from app.infra.test.workflows import test_next_impl
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.infra.websocket.test_types import TestErrorData
-from app.infra.websocket.test_events_impl import test_next_impl
 from app.routes.v5.socket.client.types import TestNextPayload
 from app.routes.v5.socket.internal.test.run import test_run_internal_impl
 from app.utils.logging.db_logger import get_logger

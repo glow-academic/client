@@ -7,31 +7,6 @@ from uuid import uuid4
 import pytest
 
 STUB_ATTEMPT_ROUTES = [
-    ("/api/v5/artifacts/attempt/start", {"home_id": str(uuid4())}),
-    ("/api/v5/artifacts/attempt/next", {"attempt_id": str(uuid4())}),
-    (
-        "/api/v5/artifacts/attempt/end",
-        {"attempt_id": str(uuid4()), "chat_id": str(uuid4())},
-    ),
-    ("/api/v5/artifacts/attempt/end-all", {"attempt_id": str(uuid4())}),
-    (
-        "/api/v5/artifacts/attempt/message",
-        {"attempt_id": str(uuid4()), "chat_id": str(uuid4()), "message": "hello"},
-    ),
-    ("/api/v5/artifacts/attempt/grade", {"attempt_id": str(uuid4())}),
-    ("/api/v5/artifacts/attempt/stop", {"chat_id": str(uuid4())}),
-    (
-        "/api/v5/artifacts/attempt/response",
-        {
-            "chat_id": str(uuid4()),
-            "question_id": str(uuid4()),
-            "option_ids": [str(uuid4())],
-        },
-    ),
-    (
-        "/api/v5/artifacts/attempt/use-previous",
-        {"attempt_id": str(uuid4()), "previous_chat_map": {str(uuid4()): str(uuid4())}},
-    ),
     (
         "/api/v5/artifacts/attempt/audio",
         {"chat_id": str(uuid4()), "upload_id": str(uuid4())},

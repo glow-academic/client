@@ -8,7 +8,7 @@ from app.routes.v5.socket.server.attempt.started import (
     attempt_started_server_handler,
 )
 from app.routes.v5.socket.server.test.grade_start import (
-    test_grade_start_server_handler,
+    test_grade_start_server_handler as handle_test_grade_start,
 )
 
 
@@ -56,7 +56,7 @@ async def test_test_grade_start_server_handler_accepts_test_invocation_id(
         _emit,
     )
 
-    await test_grade_start_server_handler(
+    await handle_test_grade_start(
         {
             "test_invocation_id": "inv-1",
             "grade_id": "grade-1",

@@ -15,13 +15,13 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.attempt.grade import (
-    AnalysisEntry,
-    FeedbackEntry,
-    HighlightEntry,
-    ImprovementEntry,
-    ReplacementEntry,
-    StrengthEntry,
+from app.infra.attempt.grade_types import (
+    AttemptGradeAnalysisEntry,
+    AttemptGradeFeedbackEntry,
+    AttemptGradeHighlightEntry,
+    AttemptGradeImprovementEntry,
+    AttemptGradeReplacementEntry,
+    AttemptGradeStrengthEntry,
 )
 from app.routes.v5.socket.internal.attempt.end import attempt_end_internal_impl
 
@@ -37,12 +37,12 @@ class EndAttemptApiRequest(BaseModel):
     score: int | None = None
     passed: bool | None = None
     time_taken: int | None = None
-    feedbacks: list[FeedbackEntry] | None = None
-    strengths: list[StrengthEntry] | None = None
-    improvements: list[ImprovementEntry] | None = None
-    analyses: list[AnalysisEntry] | None = None
-    highlights: list[HighlightEntry] | None = None
-    replacements: list[ReplacementEntry] | None = None
+    feedbacks: list[AttemptGradeFeedbackEntry] | None = None
+    strengths: list[AttemptGradeStrengthEntry] | None = None
+    improvements: list[AttemptGradeImprovementEntry] | None = None
+    analyses: list[AttemptGradeAnalysisEntry] | None = None
+    highlights: list[AttemptGradeHighlightEntry] | None = None
+    replacements: list[AttemptGradeReplacementEntry] | None = None
 
 
 class EndAttemptApiResponse(BaseModel):

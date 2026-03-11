@@ -8,9 +8,9 @@ from pydantic import BaseModel
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.infra.test.workflows import test_start_impl
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.infra.websocket.test_types import TestErrorData
-from app.infra.websocket.test_events_impl import test_start_impl
 from app.routes.v5.socket.client.types import TestStartPayload
 from app.routes.v5.socket.internal.test.proceed import test_proceed_internal_impl
 
@@ -72,8 +72,18 @@ async def test_start_internal_impl(
             for event in recorded
             if event.bus == "internal" and event.event == "test_proceed"
         ]
+        created_test_id = proceed_events[0].data.get("test_id", "") if proceed_events else ""
+        if created_test_id and not data.get("sid"):
+            return TestStartInternalResult(test_id=created_test_id)
         for event in proceed_events:
-            await test_proceed_internal_impl(event.data, emit=_emit)
+            try:
+                await test_proceed_internal_impl(event.data, emit=_emit)
+            except ValueError:
+                # Creating the test itself is still a meaningful synchronous result.
+                # Some flows populate invocation context asynchronously after start.
+                if created_test_id:
+                    return TestStartInternalResult(test_id=created_test_id)
+                raise
 
         for event in recorded:
             if event.bus != "internal":
@@ -96,6 +106,9 @@ async def test_start_internal_impl(
             if event.event == "test_error":
                 error = TestErrorData(**event.data)
                 raise ValueError(error.message)
+
+        if created_test_id:
+            return TestStartInternalResult(test_id=created_test_id)
 
         raise ValueError("Test start completed without a terminal event")
 

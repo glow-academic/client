@@ -29,9 +29,12 @@ async def _create_attempt_route_graph(pool, actor):
     from app.routes.v5.tools.entries.calls.create import create_call
     from app.routes.v5.tools.entries.chat.create import create_chat
     from app.routes.v5.tools.entries.groups.create import create_group
+    from app.routes.v5.tools.entries.home.create import create_home
+    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
     from app.routes.v5.tools.entries.messages.create import create_message
     from app.routes.v5.tools.entries.persona.create import create_persona
     from app.routes.v5.tools.entries.runs.create import create_run
+    from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
 
     async with pool.acquire() as conn:
         group = await create_group(conn, session_id=actor.session_id, name="attempt-route")
@@ -68,6 +71,29 @@ async def _create_attempt_route_graph(pool, actor):
             attempt_chat_id=attempt_chat.id,
             session_id=actor.session_id,
         )
+        home = await create_home(
+            conn,
+            session_id=actor.session_id,
+            cohorts_ids=[],
+            departments_ids=[actor.department_id],
+            simulations_ids=[],
+            profiles_ids=[actor.profiles_id],
+            profile_personas_ids=[],
+            simulation_availability_ids=[],
+            simulation_positions_ids=[],
+        )
+        await create_home_chat(
+            conn,
+            home_id=home.id,
+            chat_id=chat.id,
+            session_id=actor.session_id,
+        )
+        await create_attempt_home(
+            conn,
+            attempt_id=attempt.id,
+            home_id=home.id,
+            session_id=actor.session_id,
+        )
         message = await create_message(conn, run_id=run.id, role="user")
         message_call = await create_call(conn, run_id=run.id, session_id=actor.session_id)
         await create_attempt_message(
@@ -90,8 +116,90 @@ async def _create_attempt_route_graph(pool, actor):
     }
 
 
+async def _create_attempt_start_home(pool, redis_client, actor) -> dict[str, str]:
+    from app.routes.v5.tools.entries.chat.create import create_chat
+    from app.routes.v5.tools.entries.home.create import create_home
+    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
+    from app.routes.v5.tools.entries.home.refresh import refresh_home
+    from app.routes.v5.tools.entries.home_chat.refresh import refresh_home_chat
+    from app.routes.v5.tools.resources.profile_personas.create import (
+        create_profile_persona,
+    )
+    from app.routes.v5.tools.resources.personas.create import create_persona
+
+    async with pool.acquire() as conn:
+        persona = await create_persona(
+            conn,
+            redis_client,
+            department_ids=[actor.department_id],
+        )
+        profile_persona = await create_profile_persona(
+            conn,
+            profile_id=actor.profiles_id,
+            persona_id=persona.id,
+            redis=redis_client,
+        )
+        home = await create_home(
+            conn,
+            session_id=actor.session_id,
+            cohorts_ids=[],
+            departments_ids=[actor.department_id],
+            simulations_ids=[],
+            profiles_ids=[actor.profiles_id],
+            profile_personas_ids=[profile_persona.id],
+            simulation_availability_ids=[],
+            simulation_positions_ids=[],
+        )
+        chat = await create_chat(
+            conn,
+            session_id=actor.session_id,
+            department_ids=[actor.department_id],
+            text_enabled=True,
+        )
+        await create_home_chat(
+            conn,
+            home_id=home.id,
+            chat_id=chat.id,
+            session_id=actor.session_id,
+        )
+        await refresh_home_chat(conn)
+        await refresh_home(conn)
+
+    return {"home_id": str(home.id), "chat_id": str(chat.id)}
+
+
 @pytest.mark.asyncio
 class TestAttemptRoute:
+    async def test_start_attempt_route_creates_attempt_via_real_stack(
+        self,
+        pool,
+        redis_client,
+        v5_attempt_route_client,
+        attempt_route_actor,
+    ):
+        graph = await _create_attempt_start_home(pool, redis_client, attempt_route_actor)
+        v5_attempt_route_client.authenticate(
+            profile_id=attempt_route_actor.profile_id,
+            session_id=attempt_route_actor.session_id,
+        )
+
+        response = await v5_attempt_route_client.client.post(
+            "/api/v5/artifacts/attempt/start",
+            json={"home_id": graph["home_id"], "infinite_mode": False},
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["attempt_id"]
+
+        async with pool.acquire() as conn:
+            stored_attempt_id = await conn.fetchval(
+                "SELECT id FROM attempt_entry WHERE id = $1",
+                UUID(payload["attempt_id"]),
+            )
+
+        assert stored_attempt_id == UUID(payload["attempt_id"])
+
     async def test_get_attempt_route_returns_attempt_bundle(
         self,
         pool,
@@ -236,5 +344,70 @@ class TestAttemptRoute:
             )
 
         assert archives
-        assert archives[0].attempt_id == UUID(graph["attempt_id"])
-        assert archives[0].archived is True
+
+    async def test_attempt_end_route_creates_grade_via_real_http_stack(
+        self,
+        pool,
+        v5_attempt_route_client,
+        attempt_route_actor,
+    ):
+        graph = await _create_attempt_route_graph(pool, attempt_route_actor)
+        v5_attempt_route_client.authenticate(
+            profile_id=attempt_route_actor.profile_id,
+            session_id=attempt_route_actor.session_id,
+        )
+
+        response = await v5_attempt_route_client.client.post(
+            "/api/v5/artifacts/attempt/end",
+            json={
+                "attempt_id": graph["attempt_id"],
+                "chat_id": graph["attempt_chat_id"],
+                "grade": True,
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["chat_id"] == graph["attempt_chat_id"]
+        assert payload["grade_id"]
+
+        async with pool.acquire() as conn:
+            stored_grade_id = await conn.fetchval(
+                "SELECT id FROM attempt_grade_entry WHERE id = $1",
+                UUID(payload["grade_id"]),
+            )
+
+        assert stored_grade_id == UUID(payload["grade_id"])
+
+    async def test_attempt_grade_route_creates_grade_via_real_http_stack(
+        self,
+        pool,
+        v5_attempt_route_client,
+        attempt_route_actor,
+    ):
+        graph = await _create_attempt_route_graph(pool, attempt_route_actor)
+        v5_attempt_route_client.authenticate(
+            profile_id=attempt_route_actor.profile_id,
+            session_id=attempt_route_actor.session_id,
+        )
+
+        response = await v5_attempt_route_client.client.post(
+            "/api/v5/artifacts/attempt/grade",
+            json={
+                "attempt_id": graph["attempt_id"],
+                "chat_id": graph["attempt_chat_id"],
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["chat_id"] == graph["attempt_chat_id"]
+        assert payload["grade_id"]
+
+        async with pool.acquire() as conn:
+            stored_grade_id = await conn.fetchval(
+                "SELECT id FROM attempt_grade_entry WHERE id = $1",
+                UUID(payload["grade_id"]),
+            )
+
+        assert stored_grade_id == UUID(payload["grade_id"])

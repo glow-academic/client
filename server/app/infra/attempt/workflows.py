@@ -256,8 +256,6 @@ async def attempt_next_impl(
     from app.infra.profile_identity_context import resolve_profile_identity_context
 
     sid = data.get("sid", "")
-    if not sid:
-        return
 
     try:
         resolve_profile_identity_fn = (
@@ -315,7 +313,7 @@ async def user_start_impl(
     chat_id = data.get("chat_id", "")
     run_id = data.get("run_id", "")
     session_id_str = data.get("session_id", "")
-    if not sid or not chat_id or not run_id:
+    if not chat_id or not run_id:
         return
 
     try:
@@ -469,7 +467,7 @@ async def user_complete_impl(
     run_id = data.get("run_id", "")
     session_id_str = data.get("session_id", "")
     content = data.get("content", "")
-    if not sid or not chat_id or not run_id or not content:
+    if not chat_id or not run_id or not content:
         return
 
     try:
@@ -555,6 +553,103 @@ async def user_complete_impl(
         logger.exception(f"Error in user_received_complete: {e}")
 
 
+async def attempt_message_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    pool: asyncpg.Pool,
+    redis: Redis | None = None,
+    profile_id: str,
+    session_id: str,
+) -> None:
+    """Persist a user attempt message and kick off generation when possible.
+
+    This is intentionally simple for now:
+    - always create/finalize the user-side message
+    - if a socket-backed chat context exists, kick the generate pipeline
+    - otherwise stop after the persisted user message
+    """
+    from app.infra.profile_identity_context import resolve_profile_identity_context
+    from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
+
+    sid = data.get("sid", "")
+    attempt_id = data.get("attempt_id")
+    chat_id = data.get("chat_id")
+    message = (data.get("message") or "").strip()
+    if not attempt_id or not chat_id or not message:
+        return
+
+    profile_id_uuid = uuid.UUID(profile_id)
+    session_id_uuid = uuid.UUID(session_id)
+    attempt_chat_id = uuid.UUID(str(chat_id))
+    attempt_id_uuid = uuid.UUID(str(attempt_id))
+
+    await user_start_impl(
+        {
+            "sid": sid,
+            "chat_id": str(attempt_chat_id),
+            "run_id": data.get("run_id", str(uuid.uuid4())),
+            "session_id": str(session_id_uuid),
+            "item_id": data.get("item_id"),
+            "rooms": data.get("rooms")
+            or ([sid, f"attempt_{attempt_chat_id}"] if sid else []),
+        },
+        emit=emit,
+        pool=pool,
+    )
+    await user_complete_impl(
+        {
+            "sid": sid,
+            "chat_id": str(attempt_chat_id),
+            "run_id": data.get("run_id", str(uuid.uuid4())),
+            "session_id": str(session_id_uuid),
+            "item_id": data.get("item_id"),
+            "rooms": data.get("rooms")
+            or ([sid, f"attempt_{attempt_chat_id}"] if sid else []),
+            "content": message,
+        },
+        emit=emit,
+        pool=pool,
+    )
+
+    identity = await resolve_profile_identity_context(
+        pool,
+        profile_id_uuid,
+        redis or Redis(),
+        session_id=session_id_uuid,
+    )
+    profiles_id = identity.profiles_id if identity else None
+
+    async with pool.acquire() as conn:
+        attempt_chats, _ = await search_attempt_chats(
+            conn,
+            attempt_chat_ids=[attempt_chat_id],
+            bypass_mv=True,
+            limit=1,
+        )
+
+    if not attempt_chats:
+        return
+
+    attempt_chat = attempt_chats[0]
+    if not attempt_chat.chat_entry_id or not attempt_chat.department_id:
+        return
+
+    await emit_chat_generate_impl(
+        emit=emit,
+        pool=pool,
+        sid=sid,
+        profile_id=profile_id_uuid,
+        profiles_id=profiles_id,
+        session_id=session_id_uuid,
+        attempt_id=attempt_id_uuid,
+        chat_entry_id=attempt_chat.chat_entry_id,
+        department_id=attempt_chat.department_id,
+        attempt_chat_id=attempt_chat.chat_id,
+        user_instructions=[message],
+    )
+
+
 async def speech_complete_impl(
     data: dict[str, Any],
     *,
@@ -618,3 +713,718 @@ async def speech_complete_impl(
             )
         ]
     )
+
+
+async def attempt_start_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    pool: asyncpg.Pool,
+    redis: Redis | None = None,
+    profile_id: str,
+    session_id: str,
+) -> None:
+    """Create attempt via black boxes, then delegate to attempt_proceed."""
+    from app.infra.profile_identity_context import resolve_profile_identity_context
+    from app.routes.v5.socket.client.types import AttemptStartPayload
+    from app.routes.v5.tools.entries.attempt.create import create_attempt
+    from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
+    from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
+    from app.routes.v5.tools.entries.attempt_practice.create import (
+        create_attempt_practice,
+    )
+    from app.routes.v5.tools.entries.calls.create import create_call
+    from app.routes.v5.tools.entries.home.get import get_homes
+    from app.routes.v5.tools.entries.home_chat.search import search_home_chats
+    from app.routes.v5.tools.entries.persona.create import create_persona
+    from app.routes.v5.tools.entries.practice.get import get_practices
+    from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
+    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.routes.v5.tools.resources.profile_personas.search import (
+        search_profile_personas,
+    )
+    from app.routes.v5.tools.resources.simulations.get import get_simulations
+
+    sid = data.get("sid", "")
+
+    try:
+        profile_id_uuid = uuid.UUID(profile_id)
+        session_id_uuid = uuid.UUID(session_id)
+        payload = AttemptStartPayload(**data)
+    except Exception as e:
+        logger.exception(f"Invalid attempt_start payload: {e}")
+        return
+
+    is_practice = payload.practice_id is not None
+
+    try:
+        identity = await resolve_profile_identity_context(
+            pool,
+            profile_id_uuid,
+            redis or Redis(),
+            bypass_cache=True,
+            session_id=session_id_uuid,
+        )
+        profiles_resource_id = identity.profiles_id if identity else None
+        group_id = identity.group_id if identity else None
+        if not profiles_resource_id:
+            raise ValueError(f"Profile resource not found for profile_id {profile_id}")
+        if not group_id:
+            raise ValueError("Group could not be resolved for attempt start")
+
+        parent_id = payload.practice_id if is_practice else payload.home_id
+        if not parent_id:
+            raise ValueError("Either practice_id or home_id is required")
+
+        async with pool.acquire() as conn:
+            if is_practice:
+                entries = await get_practices(conn, [parent_id])
+            else:
+                entries = await get_homes(conn, [parent_id])
+
+        if not entries:
+            raise ValueError(f"Parent entry not found: {parent_id}")
+        parent_entry = entries[0]
+
+        profile_ids = parent_entry.profile_ids or []
+        if not profile_ids:
+            raise ValueError("No profile personas found in parent")
+
+        async with pool.acquire() as conn:
+            profile_personas = await search_profile_personas(
+                conn,
+                redis=redis or Redis(),
+                profile_ids=profile_ids,
+                bypass_cache=True,
+            )
+
+        persona_id = None
+        for pp in profile_personas:
+            if pp.profile_id == profiles_resource_id:
+                persona_id = pp.persona_id
+                break
+
+        if not persona_id:
+            raise ValueError("No profile persona found matching this profile")
+
+        async with pool.acquire() as conn:
+            if is_practice:
+                chat_entries = await search_practice_chats(
+                    conn,
+                    practice_ids=[payload.practice_id],
+                    limit=1000,
+                    bypass_mv=True,
+                )
+            else:
+                chat_entries = await search_home_chats(
+                    conn,
+                    home_ids=[payload.home_id],
+                    limit=1000,
+                    bypass_mv=True,
+                )
+        num_chats = max(len(chat_entries), 1)
+
+        simulation_ids = parent_entry.simulation_ids or []
+        sim_name = None
+        sim_desc = None
+        if simulation_ids:
+            async with pool.acquire() as conn:
+                simulations = await get_simulations(
+                    conn,
+                    simulation_ids[:1],
+                    redis or Redis(),
+                    bypass_cache=True,
+                )
+            if simulations:
+                sim_name = simulations[0].name
+                sim_desc = simulations[0].description
+
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                run_result = await create_run(
+                    conn,
+                    session_id=session_id_uuid,
+                    group_id=group_id,
+                    profiles_id=profiles_resource_id,
+                )
+                run_id = run_result.id
+
+                persona_result = await create_persona(conn, personas_id=persona_id)
+
+                call = await create_call(
+                    conn,
+                    run_id=run_id,
+                    session_id=session_id_uuid,
+                )
+                attempt_result = await create_attempt(
+                    conn,
+                    call_id=call.id,
+                    user_persona_id=persona_result.id,
+                    profiles_id=profiles_resource_id,
+                    name=sim_name or "",
+                    description=sim_desc or "",
+                    infinite_mode=payload.infinite_mode,
+                    num_chats=num_chats,
+                    practice=is_practice,
+                )
+                attempt_id = attempt_result.id
+
+                if is_practice:
+                    await create_attempt_practice(
+                        conn,
+                        attempt_id=attempt_id,
+                        practice_id=payload.practice_id,
+                        session_id=session_id_uuid,
+                    )
+                else:
+                    await create_attempt_home(
+                        conn,
+                        attempt_id=attempt_id,
+                        home_id=payload.home_id,
+                        session_id=session_id_uuid,
+                    )
+
+        async with pool.acquire() as conn:
+            await refresh_attempt(conn)
+            await refresh_attempt_chat(conn)
+
+        await emit(
+            [
+                internal_event(
+                    "attempt_proceed",
+                    AttemptProceedData(
+                        sid=sid,
+                        attempt_id=str(attempt_id),
+                        group_id=str(group_id),
+                        force_proceed=False,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+
+    except Exception as e:
+        logger.exception(f"Error in attempt_start: {e}")
+        await emit(
+            [
+                internal_event(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="start",
+                        message=f"Failed to start attempt: {e}",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
+
+
+async def emit_chat_generate_impl(
+    *,
+    emit: EmitFn,
+    pool: asyncpg.Pool,
+    sid: str,
+    profile_id: uuid.UUID,
+    profiles_id: uuid.UUID | None,
+    session_id: uuid.UUID,
+    attempt_id: uuid.UUID,
+    chat_entry_id: uuid.UUID,
+    department_id: uuid.UUID,
+    attempt_chat_id: uuid.UUID | None,
+    draft_id: uuid.UUID | None = None,
+    resource_types: list[str] | None = None,
+    user_instructions: list[str] | None = None,
+    save: bool = True,
+) -> None:
+    """Create group + run, then emit to generate pipeline."""
+    from app.routes.v5.tools.entries.groups.create import create_group
+    from app.routes.v5.tools.entries.runs.create import create_run
+
+    resolved_resource_types = resource_types or [
+        "personas",
+        "scenarios",
+        "parameters",
+        "fields",
+    ]
+
+    async with pool.acquire() as conn:
+        group_result = await create_group(conn, session_id=session_id)
+        group_id = group_result.id
+
+        run_result = await create_run(
+            conn,
+            session_id=session_id,
+            group_id=group_id,
+            profiles_id=profiles_id,
+        )
+        run_id = run_result.id
+
+    await emit(
+        [
+            internal_event(
+                "generate",
+                GenerateRequestData(
+                    sid=sid,
+                    profile_id=str(profile_id),
+                    artifact_types=[{"name": "chat", "operation": "get"}],
+                    artifact_id=str(chat_entry_id),
+                    draft_id=str(draft_id) if draft_id else None,
+                    resource_types=resolved_resource_types,
+                    user_instructions=user_instructions,
+                    save=save,
+                    run_id=str(run_id),
+                    group_id=str(group_id),
+                    metadata={
+                        "attempt_id": str(attempt_id),
+                        "attempt_chat_id": str(attempt_chat_id)
+                        if attempt_chat_id
+                        else None,
+                    },
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
+
+
+async def attempt_proceed_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    pool: asyncpg.Pool,
+    redis: Redis | None = None,
+    profile_id: str,
+    session_id: str,
+    profiles_id: uuid.UUID | None = None,
+) -> None:
+    """Shared core: resolve context → check done → resolve chat → emit."""
+    from app.infra.websocket.attempt_types import (
+        AttemptChatStartedData,
+        AttemptEndedData,
+        AttemptStartedData,
+    )
+    from app.routes.v5.tools.entries.attempt.get import get_attempts
+    from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
+    from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
+    from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
+    from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+        create_attempt_chat_bridge,
+    )
+    from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
+        search_attempt_chat_bridges,
+    )
+    from app.routes.v5.tools.entries.attempt_chat_completion.create import (
+        create_attempt_chat_completion,
+    )
+    from app.routes.v5.tools.entries.attempt_home.search import search_attempt_homes
+    from app.routes.v5.tools.entries.attempt_practice.search import (
+        search_attempt_practice_entries,
+    )
+    from app.routes.v5.tools.entries.calls.create import create_call
+    from app.routes.v5.tools.entries.chat.get import get_chat_entries_internal
+    from app.routes.v5.tools.entries.home_chat.search import search_home_chats
+    from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
+    from app.routes.v5.tools.entries.runs.create import create_run
+
+    sid = data.get("sid", "")
+
+    try:
+        payload = AttemptProceedData(**data)
+    except Exception as e:
+        logger.exception(f"Invalid attempt_proceed payload: {e}")
+        return
+
+    try:
+        profile_id_uuid = uuid.UUID(profile_id)
+        attempt_id = uuid.UUID(payload.attempt_id)
+        session_id_uuid = uuid.UUID(session_id)
+        force_proceed = payload.force_proceed
+        draft_id = uuid.UUID(payload.draft_id) if payload.draft_id else None
+        completed_chat_id = (
+            uuid.UUID(payload.completed_chat_id) if payload.completed_chat_id else None
+        )
+        complete_all = payload.complete_all
+
+        async with pool.acquire() as conn:
+            run_result = await create_run(
+                conn,
+                group_id=uuid.UUID(payload.group_id),
+                session_id=session_id_uuid,
+                profiles_id=profiles_id,
+            )
+            run_id = run_result.id
+
+            call_result = await create_call(
+                conn,
+                run_id=run_id,
+                session_id=session_id_uuid,
+            )
+            call_id = call_result.id
+
+            if completed_chat_id:
+                try:
+                    await create_attempt_chat_completion(
+                        conn,
+                        chat_id=completed_chat_id,
+                        call_id=call_id,
+                    )
+                except Exception:
+                    logger.debug(f"Chat {completed_chat_id} already completed")
+
+            if complete_all:
+                bridges = await search_attempt_chat_bridges(
+                    conn,
+                    attempt_ids=[attempt_id],
+                    limit=1000,
+                    bypass_mv=True,
+                )
+
+                for bridge in bridges:
+                    bridge_chat_id = bridge.attempt_chat_id
+                    if bridge_chat_id:
+                        try:
+                            await create_attempt_chat_completion(
+                                conn,
+                                chat_id=bridge_chat_id,
+                                call_id=call_id,
+                            )
+                        except Exception:
+                            pass
+
+                await refresh_attempt(conn)
+                await refresh_attempt_chat(conn)
+
+                await emit(
+                    [
+                        internal_event(
+                            "attempt_ended",
+                            AttemptEndedData(
+                                sid=sid,
+                                attempt_id=str(attempt_id),
+                                success=True,
+                                all_scenarios_complete=True,
+                                message="All scenarios completed",
+                            ).model_dump(mode="json"),
+                        )
+                    ]
+                )
+                return
+
+        async with pool.acquire() as conn:
+            attempt_entries = await get_attempts(conn, [attempt_id])
+            if not attempt_entries:
+                raise ValueError(f"Attempt not found: {attempt_id}")
+            attempt_data = attempt_entries[0]
+
+            num_chats = attempt_data.num_chats
+            is_practice = attempt_data.practice
+            attempt_department_id = attempt_data.department_id
+
+            bridges = await search_attempt_chat_bridges(
+                conn,
+                attempt_ids=[attempt_id],
+                limit=1000,
+                bypass_mv=True,
+            )
+            completed_count = len(bridges)
+
+            bridge_attempt_chat_ids = [b.attempt_chat_id for b in bridges]
+            if bridge_attempt_chat_ids:
+                attempt_chats, _ = await search_attempt_chats(
+                    conn,
+                    attempt_chat_ids=bridge_attempt_chat_ids,
+                    bypass_mv=True,
+                    limit=1000,
+                )
+                resolved_chat_ids = {ac.chat_entry_id for ac in attempt_chats}
+            else:
+                resolved_chat_ids = set()
+
+            if is_practice:
+                practice_entries = await search_attempt_practice_entries(
+                    conn, attempt_ids=[attempt_id], bypass_mv=True
+                )
+                if not practice_entries:
+                    raise ValueError("No practice link for this attempt")
+                practice_id = practice_entries[0].practice_id
+                parent_chat_links = await search_practice_chats(
+                    conn, practice_ids=[practice_id], limit=1000, bypass_mv=True
+                )
+            else:
+                home_entries = await search_attempt_homes(
+                    conn, attempt_ids=[attempt_id], bypass_mv=True
+                )
+                if not home_entries:
+                    raise ValueError("No home link for this attempt")
+                home_id = home_entries[0].home_id
+                parent_chat_links = await search_home_chats(
+                    conn, home_ids=[home_id], limit=1000, bypass_mv=True
+                )
+
+            all_parent_chat_ids = [
+                link.chat_id for link in parent_chat_links if link.chat_id
+            ]
+
+            all_chat_entries = await get_chat_entries_internal(
+                conn,
+                all_parent_chat_ids,
+                bypass_cache=True,
+            )
+
+        remaining = [
+            ce
+            for ce in all_chat_entries
+            if str(ce.get("chat_entry_id"))
+            not in {str(rid) for rid in resolved_chat_ids}
+        ]
+        remaining.sort(
+            key=lambda ce: (
+                ce.get("position", 0) or 0,
+                str(ce.get("created_at", "")),
+            )
+        )
+
+        if not remaining or completed_count >= num_chats:
+            await emit(
+                [
+                    internal_event(
+                        "attempt_ended",
+                        AttemptEndedData(
+                            sid=sid,
+                            attempt_id=str(attempt_id),
+                            success=True,
+                            all_scenarios_complete=True,
+                            message="All scenarios completed",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
+            return
+
+        next_chat = remaining[0]
+        chat_entry_id = uuid.UUID(str(next_chat.get("chat_entry_id")))
+
+        chat_department_ids = next_chat.get("department_ids") or []
+        if len(chat_department_ids) == 1:
+            department_id = uuid.UUID(str(chat_department_ids[0]))
+        elif attempt_department_id:
+            department_id = uuid.UUID(str(attempt_department_id))
+        else:
+            await emit(
+                [
+                    internal_event(
+                        "attempt_error",
+                        AttemptErrorData(
+                            sid=sid,
+                            error_type="proceed",
+                            message="No department could be resolved for this chat",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
+            return
+
+        resource_types_to_generate: list[str] = []
+        for flag_name, resource_type in GENERATE_FLAG_TO_RESOURCE.items():
+            if next_chat.get(flag_name, False):
+                resource_types_to_generate.append(resource_type)
+
+        needs_generation = len(resource_types_to_generate) > 0
+        has_user_choice = bool(next_chat.get("use_custom")) or bool(
+            next_chat.get("use_previous")
+        )
+
+        if has_user_choice and not force_proceed:
+            await emit(
+                [
+                    internal_event(
+                        "attempt_started",
+                        AttemptStartedData(
+                            sid=sid,
+                            attempt_id=str(attempt_id),
+                            chat_entry_id=str(chat_entry_id),
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
+            return
+
+        request_dict: dict[str, Any] = {
+            "chat_id": str(chat_entry_id),
+            "title": next_chat.get("name") or "",
+            "position": next_chat.get("position", 0),
+            "time_limit": next_chat.get("time_limit"),
+            "negative_time": next_chat.get("negative_time", False),
+            "audio_enabled": next_chat.get("audio_enabled", True),
+            "text_enabled": next_chat.get("text_enabled", True),
+            "hints_enabled": next_chat.get("hints_enabled", False),
+            "copy_paste_allowed": next_chat.get("copy_paste_allowed", True),
+            "show_images": next_chat.get("show_images", True),
+            "show_objectives": next_chat.get("show_objectives", True),
+            "show_problem_statement": next_chat.get("show_problem_statement", True),
+            "analyses_enabled": next_chat.get("analyses_enabled", True),
+            "improvements_enabled": next_chat.get("improvements_enabled", True),
+            "replacements_enabled": next_chat.get("replacements_enabled", True),
+            "strengths_enabled": next_chat.get("strengths_enabled", True),
+            "use_custom": next_chat.get("use_custom", False),
+            "use_previous": next_chat.get("use_previous", False),
+            "problem_statement_enabled": next_chat.get(
+                "problem_statement_enabled", True
+            ),
+            "objectives_enabled": next_chat.get("objectives_enabled", True),
+            "video_enabled": next_chat.get("video_enabled", False),
+            "images_enabled": next_chat.get("images_enabled", False),
+            "questions_enabled": next_chat.get("questions_enabled", False),
+        }
+
+        rubric_ids = next_chat.get("rubric_ids") or []
+        if rubric_ids:
+            request_dict["rubrics_ids"] = [str(rid) for rid in rubric_ids]
+
+        standard_ids = next_chat.get("standard_ids") or []
+        if standard_ids:
+            request_dict["standards_ids"] = [str(sid_val) for sid_val in standard_ids]
+
+        standard_group_ids = next_chat.get("standard_group_ids") or []
+        if standard_group_ids:
+            request_dict["standard_groups_ids"] = [
+                str(sgid) for sgid in standard_group_ids
+            ]
+
+        department_ids_list = next_chat.get("department_ids") or []
+        if department_ids_list:
+            request_dict["departments_ids"] = [str(did) for did in department_ids_list]
+
+        for gen_flag, conn_param in GENERATE_FLAG_TO_CONNECTION.items():
+            if not next_chat.get(gen_flag, False):
+                chat_mv_key = {
+                    "personas_ids": "persona_ids",
+                    "problem_statements_ids": "problem_statement_ids",
+                    "objectives_ids": "objective_ids",
+                    "questions_ids": "question_ids",
+                    "options_ids": "option_ids",
+                    "videos_ids": "video_ids",
+                    "images_ids": "image_ids",
+                    "documents_ids": "document_ids",
+                    "parameter_fields_ids": "parameter_field_ids",
+                }.get(conn_param, conn_param)
+
+                ids_from_chat = next_chat.get(chat_mv_key) or []
+                if ids_from_chat:
+                    request_dict[conn_param] = [str(cid) for cid in ids_from_chat]
+
+        group_id = uuid.UUID(payload.group_id)
+
+        def _uuids(key: str) -> list[uuid.UUID] | None:
+            vals = request_dict.get(key)
+            return [uuid.UUID(v) for v in vals] if vals else None
+
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                call = await create_call(
+                    conn,
+                    run_id=run_id,
+                    session_id=session_id_uuid,
+                )
+                chat_result = await create_attempt_chat(
+                    conn,
+                    call_id=call.id,
+                    group_id=group_id,
+                    chat_id=chat_entry_id,
+                    title=request_dict.get("title", ""),
+                    position=request_dict.get("position", 0),
+                    time_limit=request_dict.get("time_limit"),
+                    negative_time=request_dict.get("negative_time", False),
+                    audio_enabled=request_dict.get("audio_enabled", True),
+                    text_enabled=request_dict.get("text_enabled", True),
+                    hints_enabled=request_dict.get("hints_enabled", False),
+                    copy_paste_allowed=request_dict.get("copy_paste_allowed", True),
+                    show_images=request_dict.get("show_images", True),
+                    show_objectives=request_dict.get("show_objectives", True),
+                    show_problem_statement=request_dict.get(
+                        "show_problem_statement", True
+                    ),
+                    analyses_enabled=request_dict.get("analyses_enabled", True),
+                    improvements_enabled=request_dict.get("improvements_enabled", True),
+                    replacements_enabled=request_dict.get("replacements_enabled", True),
+                    strengths_enabled=request_dict.get("strengths_enabled", True),
+                    use_custom=request_dict.get("use_custom", False),
+                    use_previous=request_dict.get("use_previous", False),
+                    problem_statement_enabled=request_dict.get(
+                        "problem_statement_enabled", True
+                    ),
+                    objectives_enabled=request_dict.get("objectives_enabled", True),
+                    video_enabled=request_dict.get("video_enabled", False),
+                    images_enabled=request_dict.get("images_enabled", False),
+                    questions_enabled=request_dict.get("questions_enabled", False),
+                    rubrics_ids=_uuids("rubrics_ids"),
+                    standards_ids=_uuids("standards_ids"),
+                    standard_groups_ids=_uuids("standard_groups_ids"),
+                    departments_ids=_uuids("departments_ids"),
+                    personas_ids=_uuids("personas_ids"),
+                    problem_statements_ids=_uuids("problem_statements_ids"),
+                    objectives_ids=_uuids("objectives_ids"),
+                    questions_ids=_uuids("questions_ids"),
+                    options_ids=_uuids("options_ids"),
+                    videos_ids=_uuids("videos_ids"),
+                    images_ids=_uuids("images_ids"),
+                    documents_ids=_uuids("documents_ids"),
+                    parameter_fields_ids=_uuids("parameter_fields_ids"),
+                )
+                attempt_chat_id = chat_result.id
+
+                await create_attempt_chat_bridge(
+                    conn,
+                    attempt_id=attempt_id,
+                    attempt_chat_id=attempt_chat_id,
+                    session_id=session_id_uuid,
+                )
+
+        if needs_generation:
+            await emit_chat_generate_impl(
+                emit=emit,
+                pool=pool,
+                sid=sid,
+                profile_id=profile_id_uuid,
+                profiles_id=profiles_id,
+                session_id=session_id_uuid,
+                attempt_id=attempt_id,
+                chat_entry_id=chat_entry_id,
+                department_id=department_id,
+                attempt_chat_id=attempt_chat_id,
+                draft_id=draft_id,
+                resource_types=resource_types_to_generate,
+            )
+        else:
+            async with pool.acquire() as conn:
+                await refresh_attempt(conn)
+                await refresh_attempt_chat(conn)
+
+            await emit(
+                [
+                    internal_event(
+                        "attempt_chat_started",
+                        {
+                            "sid": sid,
+                            "attempt_id": str(attempt_id),
+                            "chat_id": str(attempt_chat_id),
+                            "rooms": [sid, f"attempt_{attempt_chat_id}"],
+                        },
+                    )
+                ]
+            )
+
+    except Exception as e:
+        logger.exception(f"Error in attempt_proceed: {e}")
+        await emit(
+            [
+                internal_event(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="proceed",
+                        message=f"Failed to proceed: {e}",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )

@@ -3,8 +3,8 @@
 from typing import Any
 
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.test.workflows import test_proceed_impl
 from app.infra.websocket.socket_event import EmitFn, make_emit
-from app.infra.websocket.test_events_impl import test_proceed_impl
 
 internal_sio = get_internal_sio()
 

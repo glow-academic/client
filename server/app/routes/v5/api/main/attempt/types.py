@@ -238,6 +238,75 @@ class RubricStructureData(BaseModel):
 
 
 # -----------------------------------------------------------------------------
+# Attempt grading request types
+# -----------------------------------------------------------------------------
+
+
+class AttemptGradeFeedbackEntry(BaseModel):
+    """Agent-provided feedback for an attempt grade."""
+
+    feedback: str
+    total: int | None = None
+
+
+class AttemptGradeStrengthEntry(BaseModel):
+    """Agent-provided strength for an attempt grade."""
+
+    name: str
+    description: str
+    message_id: UUID | None = None
+
+
+class AttemptGradeImprovementEntry(BaseModel):
+    """Agent-provided improvement for an attempt grade."""
+
+    name: str
+    description: str
+    message_id: UUID | None = None
+
+
+class AttemptGradeAnalysisEntry(BaseModel):
+    """Agent-provided analysis for an attempt grade."""
+
+    content: str
+
+
+class AttemptGradeHighlightEntry(BaseModel):
+    """Agent-provided highlight for a strength."""
+
+    strength_id: UUID | None = None
+    section: str
+    idx: int | None = None
+
+
+class AttemptGradeReplacementEntry(BaseModel):
+    """Agent-provided replacement for an improvement."""
+
+    improvement_id: UUID | None = None
+    section: str
+    replace: str
+    idx: int | None = None
+
+
+class GradeAttemptRequest(BaseModel):
+    """Canonical request shape for attempt grade workflows."""
+
+    attempt_id: UUID
+    chat_id: UUID | None = None
+    resource_types: list[str] | None = None
+    user_instructions: list[str] | None = None
+    score: int | None = None
+    passed: bool | None = None
+    time_taken: int | None = None
+    feedbacks: list[AttemptGradeFeedbackEntry] | None = None
+    strengths: list[AttemptGradeStrengthEntry] | None = None
+    improvements: list[AttemptGradeImprovementEntry] | None = None
+    analyses: list[AttemptGradeAnalysisEntry] | None = None
+    highlights: list[AttemptGradeHighlightEntry] | None = None
+    replacements: list[AttemptGradeReplacementEntry] | None = None
+
+
+# -----------------------------------------------------------------------------
 # Persona types
 # -----------------------------------------------------------------------------
 

@@ -154,7 +154,7 @@ async def attempt_end_internal_impl(
         if group_id is None:
             raise ValueError(f"Group not found for attempt {payload.attempt_id}")
 
-        proceed_result = await attempt_proceed_internal_impl(
+        await attempt_proceed_internal_impl(
             {
                 "sid": sid,
                 "profile_id": str(profile_id),
@@ -164,14 +164,16 @@ async def attempt_end_internal_impl(
                 "completed_chat_id": str(payload.chat_id),
             },
             emit=_emit,
-            audit=False,
+        )
+
+        is_attempt_finished = any(
+            event.bus == "internal" and event.event == "attempt_ended"
+            for event in recorded
         )
 
         return AttemptEndInternalResult(
             chat_id=str(payload.chat_id),
-            is_attempt_finished=proceed_result.message is not None
-            if proceed_result.success and proceed_result.chat_id is None
-            else False,
+            is_attempt_finished=is_attempt_finished,
             grade_id=grade_id,
         )
 
