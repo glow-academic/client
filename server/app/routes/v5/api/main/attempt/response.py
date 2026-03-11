@@ -12,6 +12,9 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.routes.v5.socket.client.types import AttemptResponsePayload
+from app.routes.v5.socket.internal.attempt.response import (
+    attempt_response_internal_impl,
+)
 
 router = APIRouter()
 
@@ -28,4 +31,20 @@ async def attempt_response(
     http_request: Request,
 ) -> ResponseAttemptApiResponse:
     """Submit a video question response."""
-    raise HTTPException(status_code=501, detail="Not implemented")
+    profile_id = getattr(http_request.state, "profile_id", None)
+    session_id = getattr(http_request.state, "session_id", None)
+    if not profile_id or not session_id:
+        raise HTTPException(status_code=401, detail="Missing profile or session")
+
+    try:
+        result = await attempt_response_internal_impl(
+            {
+                "profile_id": str(profile_id),
+                "session_id": str(session_id),
+                **request.model_dump(mode="json"),
+            }
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return ResponseAttemptApiResponse.model_validate(result.model_dump(mode="json"))

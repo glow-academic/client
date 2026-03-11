@@ -15,6 +15,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from app.routes.v5.socket.internal.test.end import test_end_internal_impl
+
 router = APIRouter()
 
 
@@ -47,4 +49,20 @@ async def end_test(
     Browser client: sends grade=True, internal AI generates grade + feedback.
     Agent: can optionally provide score, passed, feedback to skip AI.
     """
-    raise HTTPException(status_code=501, detail="Not implemented")
+    profile_id = getattr(http_request.state, "profile_id", None)
+    session_id = getattr(http_request.state, "session_id", None)
+    if not profile_id or not session_id:
+        raise HTTPException(status_code=401, detail="Missing profile or session")
+
+    try:
+        result = await test_end_internal_impl(
+            {
+                "profile_id": str(profile_id),
+                "session_id": str(session_id),
+                **request.model_dump(mode="json"),
+            }
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return EndTestApiResponse.model_validate(result.model_dump(mode="json"))

@@ -8,6 +8,7 @@ Importing this module registers:
 
 from . import (
     complete,  # noqa: F401 — registers generate_call_complete handler
+    end,  # noqa: F401 — registers test_end handler
     error,  # noqa: F401 — registers test_error_event handler
     group,  # noqa: F401 — registers test_group handler
     next,  # noqa: F401 — registers test_next handler
@@ -15,4 +16,5 @@ from . import (
     progress,  # noqa: F401 — registers test_progress_update handler
     run,  # noqa: F401 — registers test_run handler
     start,  # noqa: F401 — registers test_start handler
+    stop,  # noqa: F401 — registers test_stop handler
 )

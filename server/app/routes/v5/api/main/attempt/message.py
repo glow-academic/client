@@ -23,6 +23,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from app.routes.v5.socket.internal.attempt.message import attempt_message_internal_impl
+
 router = APIRouter()
 
 
@@ -63,9 +65,9 @@ class MessageAttemptApiRequest(BaseModel):
 
 class MessageAttemptApiResponse(BaseModel):
     chat_id: str
-    user_message_id: str
-    assistant_message_id: str
-    assistant_content: str
+    user_message_id: str | None = None
+    assistant_message_id: str | None = None
+    assistant_content: str | None = None
     hints: list[dict[str, Any]] | None = None
 
 
@@ -79,4 +81,20 @@ async def attempt_message(
     Browser client: sends message only, internal AI generates response + hints.
     Agent: can optionally provide assistant_content, hints, contents to skip AI.
     """
-    raise HTTPException(status_code=501, detail="Not implemented")
+    profile_id = getattr(http_request.state, "profile_id", None)
+    session_id = getattr(http_request.state, "session_id", None)
+    if not profile_id or not session_id:
+        raise HTTPException(status_code=401, detail="Missing profile or session")
+
+    try:
+        result = await attempt_message_internal_impl(
+            {
+                "profile_id": str(profile_id),
+                "session_id": str(session_id),
+                **request.model_dump(mode="json"),
+            }
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return MessageAttemptApiResponse.model_validate(result.model_dump(mode="json"))
