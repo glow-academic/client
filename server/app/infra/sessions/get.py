@@ -8,6 +8,7 @@ from __future__ import annotations
 from uuid import UUID
 
 import asyncpg
+from redis.asyncio import Redis
 
 from app.routes.v5.tools.entries.sessions.search import search_sessions
 from app.utils.cache.cache_key import cache_key
@@ -18,13 +19,15 @@ from app.utils.cache.set_cached import set_cached
 async def get_session_impl(
     conn: asyncpg.Connection,
     profile_id: UUID,
+    *,
+    redis: Redis | None = None,
     bypass_cache: bool = False,
 ) -> UUID | None:
     """Fetch the most recent active session for a profile.
 
     Composes search_sessions black box — no inline SQL.
     """
-    redis = _get_redis()
+    cache_redis = redis or _get_redis()
     tags = ["infra", "sessions"]
     cache_key_val = cache_key(
         "infra/sessions/get",
@@ -32,7 +35,7 @@ async def get_session_impl(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=redis)
+        cached = await get_cached(cache_key_val, redis=cache_redis)
         if cached is not None:
             sid = cached.get("session_id")
             return UUID(sid) if sid else None
@@ -51,7 +54,7 @@ async def get_session_impl(
         {"session_id": str(session_id) if session_id else None},
         ttl=60,
         tags=tags,
-        redis=redis,
+        redis=cache_redis,
     )
 
     return session_id

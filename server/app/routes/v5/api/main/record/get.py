@@ -80,10 +80,12 @@ async def get_record(
 
         async def _runner() -> DashboardBundleResponse:
             # --- Phase 0: Resolve common context (profile identity) ---
-            async with pool.acquire() as c:
-                common = await resolve_common_context(
-                    c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-                )
+            common = await resolve_common_context(
+                pool,
+                redis,
+                profile_id=profile_id,
+                bypass_cache=bypass_cache,
+            )
             if not common:
                 raise HTTPException(status_code=401, detail="Profile not found")
 
@@ -200,216 +202,218 @@ async def get_record(
                 thresholds=thresholds_dict,
             )
 
-        primary_metrics = compute_primary_metrics_v2(
-            rubric_facts=rubric_items,
-            standard_group_name_map=standard_group_name_map,
-            thresholds=thresholds_dict,
-        )
-
-        secondary_metrics = compute_secondary_metrics_v2(
-            simulation_facts=chat_items,
-            persona_name_map=persona_name_map,
-            cohort_name_map=cohort_name_map,
-            thresholds=thresholds_dict,
-        )
-
-        footer_metrics = compute_footer_metrics_v2(
-            scenario_facts_items=chat_items,
-            scenarios=scenarios_list,
-            personas=personas,
-            documents=documents,
-            parameter_fields=parameter_fields,
-            parameters=parameters,
-            fields=fields_list,
-            simulation_name_map=simulation_name_map,
-            scenario_name_map=scenario_name_map,
-            thresholds=thresholds_dict,
-        )
-
-        # --- Phase 5b: Apply picker filters ---
-        if request.rubric_ids:
-            filter_set = {str(rid) for rid in request.rubric_ids}
-            primary_metrics.rubric_heatmap.matrices = [
-                m
-                for m in primary_metrics.rubric_heatmap.matrices
-                if m.rubric_id in filter_set
-            ]
-            primary_metrics.skill_performance.packages = [
-                p
-                for p in primary_metrics.skill_performance.packages
-                if p.rubric_id in filter_set
-            ]
-
-        if request.simulation_picker_ids:
-            filter_set = {str(sid) for sid in request.simulation_picker_ids}
-            secondary_metrics.persona_performance.chart_data = [
-                row
-                for row in secondary_metrics.persona_performance.chart_data
-                if any(sid in filter_set for sid in (row.simulation_ids or []))
-            ]
-            secondary_metrics.cohort_performance.simulation_facts = [
-                f
-                for f in secondary_metrics.cohort_performance.simulation_facts
-                if f.simulation_id in filter_set
-            ]
-            secondary_metrics.cohort_performance.daily_facts = [
-                f
-                for f in secondary_metrics.cohort_performance.daily_facts
-                if f.simulation_id in filter_set
-            ]
-            secondary_metrics.attempt_improvement.facts = [
-                f
-                for f in secondary_metrics.attempt_improvement.facts
-                if f.simulation_id in filter_set
-            ]
-
-        if request.parameter_ids:
-            filter_set = {str(pid) for pid in request.parameter_ids}
-            footer_metrics.scenario_performance.attribute_attempt_facts = [
-                f
-                for f in footer_metrics.scenario_performance.attribute_attempt_facts
-                if f.parameter_id in filter_set
-            ]
-            footer_metrics.scenario_performance.attribute_scenario_facts = [
-                f
-                for f in footer_metrics.scenario_performance.attribute_scenario_facts
-                if f.parameter_id in filter_set
-            ]
-            footer_metrics.scenario_stats.numeric_attempt_facts = [
-                f
-                for f in footer_metrics.scenario_stats.numeric_attempt_facts
-                if f.parameter_id in filter_set
-            ]
-            footer_metrics.scenario_stats.numeric_scenario_facts = [
-                f
-                for f in footer_metrics.scenario_stats.numeric_scenario_facts
-                if f.parameter_id in filter_set
-            ]
-
-        if request.scenario_ids:
-            filter_set = {str(sid) for sid in request.scenario_ids}
-            footer_metrics.scenario_simulation_performance.simulation_facts = [
-                f
-                for f in footer_metrics.scenario_simulation_performance.simulation_facts
-                if f.scenario_id in filter_set
-            ]
-            footer_metrics.scenario_composition.scenario_summaries = [
-                f
-                for f in footer_metrics.scenario_composition.scenario_summaries
-                if f.scenario_id in filter_set
-            ]
-            footer_metrics.scenario_composition.chat_parameter_facts = [
-                f
-                for f in footer_metrics.scenario_composition.chat_parameter_facts
-                if f.scenario_id in filter_set
-            ]
-
-        # --- Phase 6: Build metadata lists ---
-        simulations_meta = build_simulation_meta(simulations)
-        scenarios_meta = build_scenario_meta(scenarios_list)
-        rubrics_meta = build_rubric_meta(rubrics)
-        parameters_meta = build_parameter_meta(parameters)
-        fields_meta = build_field_meta(fields_list, field_parameter_map, parameters)
-
-        # Apply search filters to metadata lists
-        if request.rubric_search:
-            q = request.rubric_search.lower()
-            rubrics_meta = [
-                r for r in rubrics_meta if q in (r.get("name") or "").lower()
-            ]
-        if request.simulation_picker_search:
-            q = request.simulation_picker_search.lower()
-            simulations_meta = [
-                s for s in simulations_meta if q in (s.get("name") or "").lower()
-            ]
-        if request.parameter_search:
-            q = request.parameter_search.lower()
-            parameters_meta = [
-                p for p in parameters_meta if q in (p.get("name") or "").lower()
-            ]
-        if request.scenario_search:
-            q = request.scenario_search.lower()
-            scenarios_meta = [
-                s for s in scenarios_meta if q in (s.get("name") or "").lower()
-            ]
-
-        simulation_options = [
-            FilterOption(
-                value=str(item.simulation_id) if item.simulation_id else "",
-                label=item.name,
+            primary_metrics = compute_primary_metrics_v2(
+                rubric_facts=rubric_items,
+                standard_group_name_map=standard_group_name_map,
+                thresholds=thresholds_dict,
             )
-            for item in simulations
-            if item.simulation_id
-        ]
 
-        bundle = DashboardBundleResponse(
-            header_metrics=header_metrics,
-            primary_metrics=primary_metrics,
-            secondary_metrics=secondary_metrics,
-            footer_metrics=footer_metrics,
-            simulations=simulations_meta,
-            scenarios=scenarios_meta,
-            rubrics=rubrics_meta,
-            parameters=parameters_meta,
-            fields=fields_meta,
-            thresholds=thresholds_dict,
-            simulation_options=simulation_options,
-        )
+            secondary_metrics = compute_secondary_metrics_v2(
+                simulation_facts=chat_items,
+                persona_name_map=persona_name_map,
+                cohort_name_map=cohort_name_map,
+                thresholds=thresholds_dict,
+            )
 
-        # Attach profile metadata
-        if target_profiles:
-            tp = target_profiles[0]
-            bundle.profile_name = tp.name
-            bundle.profile_emails = tp.emails
-            bundle.profile_primary_email = tp.primary_email
+            footer_metrics = compute_footer_metrics_v2(
+                scenario_facts_items=chat_items,
+                scenarios=scenarios_list,
+                personas=personas,
+                documents=documents,
+                parameter_fields=parameter_fields,
+                parameters=parameters,
+                fields=fields_list,
+                simulation_name_map=simulation_name_map,
+                scenario_name_map=scenario_name_map,
+                thresholds=thresholds_dict,
+            )
 
-        # Inline history
-        if request.history_page_size and request.history_page_size > 0:
-            from app.infra.dashboard.context import resolve_dashboard_search_context
-            from app.routes.v5.api.main.dashboard.search import _build_history_response
+            # --- Phase 5b: Apply picker filters ---
+            if request.rubric_ids:
+                filter_set = {str(rid) for rid in request.rubric_ids}
+                primary_metrics.rubric_heatmap.matrices = [
+                    m
+                    for m in primary_metrics.rubric_heatmap.matrices
+                    if m.rubric_id in filter_set
+                ]
+                primary_metrics.skill_performance.packages = [
+                    p
+                    for p in primary_metrics.skill_performance.packages
+                    if p.rubric_id in filter_set
+                ]
 
-            async with pool.acquire() as c:
-                profile_resource_id: UUID | None = await c.fetchval(
-                    """
-                    SELECT profiles_id FROM profile_profiles_junction
-                    WHERE profile_id = $1 AND active = true
-                    LIMIT 1
-                    """,
-                    profile_id,
+            if request.simulation_picker_ids:
+                filter_set = {str(sid) for sid in request.simulation_picker_ids}
+                secondary_metrics.persona_performance.chart_data = [
+                    row
+                    for row in secondary_metrics.persona_performance.chart_data
+                    if any(sid in filter_set for sid in (row.simulation_ids or []))
+                ]
+                secondary_metrics.cohort_performance.simulation_facts = [
+                    f
+                    for f in secondary_metrics.cohort_performance.simulation_facts
+                    if f.simulation_id in filter_set
+                ]
+                secondary_metrics.cohort_performance.daily_facts = [
+                    f
+                    for f in secondary_metrics.cohort_performance.daily_facts
+                    if f.simulation_id in filter_set
+                ]
+                secondary_metrics.attempt_improvement.facts = [
+                    f
+                    for f in secondary_metrics.attempt_improvement.facts
+                    if f.simulation_id in filter_set
+                ]
+
+            if request.parameter_ids:
+                filter_set = {str(pid) for pid in request.parameter_ids}
+                footer_metrics.scenario_performance.attribute_attempt_facts = [
+                    f
+                    for f in footer_metrics.scenario_performance.attribute_attempt_facts
+                    if f.parameter_id in filter_set
+                ]
+                footer_metrics.scenario_performance.attribute_scenario_facts = [
+                    f
+                    for f in footer_metrics.scenario_performance.attribute_scenario_facts
+                    if f.parameter_id in filter_set
+                ]
+                footer_metrics.scenario_stats.numeric_attempt_facts = [
+                    f
+                    for f in footer_metrics.scenario_stats.numeric_attempt_facts
+                    if f.parameter_id in filter_set
+                ]
+                footer_metrics.scenario_stats.numeric_scenario_facts = [
+                    f
+                    for f in footer_metrics.scenario_stats.numeric_scenario_facts
+                    if f.parameter_id in filter_set
+                ]
+
+            if request.scenario_ids:
+                filter_set = {str(sid) for sid in request.scenario_ids}
+                footer_metrics.scenario_simulation_performance.simulation_facts = [
+                    f
+                    for f in footer_metrics.scenario_simulation_performance.simulation_facts
+                    if f.scenario_id in filter_set
+                ]
+                footer_metrics.scenario_composition.scenario_summaries = [
+                    f
+                    for f in footer_metrics.scenario_composition.scenario_summaries
+                    if f.scenario_id in filter_set
+                ]
+                footer_metrics.scenario_composition.chat_parameter_facts = [
+                    f
+                    for f in footer_metrics.scenario_composition.chat_parameter_facts
+                    if f.scenario_id in filter_set
+                ]
+
+            # --- Phase 6: Build metadata lists ---
+            simulations_meta = build_simulation_meta(simulations)
+            scenarios_meta = build_scenario_meta(scenarios_list)
+            rubrics_meta = build_rubric_meta(rubrics)
+            parameters_meta = build_parameter_meta(parameters)
+            fields_meta = build_field_meta(fields_list, field_parameter_map, parameters)
+
+            # Apply search filters to metadata lists
+            if request.rubric_search:
+                q = request.rubric_search.lower()
+                rubrics_meta = [
+                    r for r in rubrics_meta if q in (r.get("name") or "").lower()
+                ]
+            if request.simulation_picker_search:
+                q = request.simulation_picker_search.lower()
+                simulations_meta = [
+                    s for s in simulations_meta if q in (s.get("name") or "").lower()
+                ]
+            if request.parameter_search:
+                q = request.parameter_search.lower()
+                parameters_meta = [
+                    p for p in parameters_meta if q in (p.get("name") or "").lower()
+                ]
+            if request.scenario_search:
+                q = request.scenario_search.lower()
+                scenarios_meta = [
+                    s for s in scenarios_meta if q in (s.get("name") or "").lower()
+                ]
+
+            simulation_options = [
+                FilterOption(
+                    value=str(item.simulation_id) if item.simulation_id else "",
+                    label=item.name,
+                )
+                for item in simulations
+                if item.simulation_id
+            ]
+
+            bundle = DashboardBundleResponse(
+                header_metrics=header_metrics,
+                primary_metrics=primary_metrics,
+                secondary_metrics=secondary_metrics,
+                footer_metrics=footer_metrics,
+                simulations=simulations_meta,
+                scenarios=scenarios_meta,
+                rubrics=rubrics_meta,
+                parameters=parameters_meta,
+                fields=fields_meta,
+                thresholds=thresholds_dict,
+                simulation_options=simulation_options,
+            )
+
+            # Attach profile metadata
+            if target_profiles:
+                tp = target_profiles[0]
+                bundle.profile_name = tp.name
+                bundle.profile_emails = tp.emails
+                bundle.profile_primary_email = tp.primary_email
+
+            # Inline history
+            if request.history_page_size and request.history_page_size > 0:
+                from app.infra.dashboard.context import resolve_dashboard_search_context
+                from app.routes.v5.api.main.dashboard.search import (
+                    _build_history_response,
                 )
 
-            date_from = parsed_start_date.date() if parsed_start_date else None
-            date_to = parsed_end_date.date() if parsed_end_date else None
+                async with pool.acquire() as c:
+                    profile_resource_id: UUID | None = await c.fetchval(
+                        """
+                        SELECT profiles_id FROM profile_profiles_junction
+                        WHERE profile_id = $1 AND active = true
+                        LIMIT 1
+                        """,
+                        profile_id,
+                    )
 
-            search_ctx = await resolve_dashboard_search_context(
-                pool,
-                redis,
-                profile_resource_id=profile_resource_id,
-                target_profile_id=request.target_profile_id,
-                cohort_ids=request.cohort_ids,
-                department_ids=request.department_ids,
-                practice=request.history_practice,
-                scenario_ids=request.history_scenario_ids,
-                infinite_mode=request.history_infinite_mode,
-                show_archived=request.history_show_archived,
-                sort_by=request.history_sort_by or "date",
-                sort_order=request.history_sort_order or "desc",
-                page=request.history_page,
-                page_size=request.history_page_size,
-                date_from=date_from,
-                date_to=date_to,
-                bypass_cache=bypass_cache,
-            )
+                date_from = parsed_start_date.date() if parsed_start_date else None
+                date_to = parsed_end_date.date() if parsed_end_date else None
 
-            history_result = _build_history_response(
-                search_ctx,
-                practice=request.history_practice,
-                simulation_search=request.history_simulation_search,
-                scenario_search=request.history_scenario_search,
-                page=request.history_page,
-                page_size=request.history_page_size,
-            )
-            bundle.history = history_result
+                search_ctx = await resolve_dashboard_search_context(
+                    pool,
+                    redis,
+                    profile_resource_id=profile_resource_id,
+                    target_profile_id=request.target_profile_id,
+                    cohort_ids=request.cohort_ids,
+                    department_ids=request.department_ids,
+                    practice=request.history_practice,
+                    scenario_ids=request.history_scenario_ids,
+                    infinite_mode=request.history_infinite_mode,
+                    show_archived=request.history_show_archived,
+                    sort_by=request.history_sort_by or "date",
+                    sort_order=request.history_sort_order or "desc",
+                    page=request.history_page,
+                    page_size=request.history_page_size,
+                    date_from=date_from,
+                    date_to=date_to,
+                    bypass_cache=bypass_cache,
+                )
+
+                history_result = _build_history_response(
+                    search_ctx,
+                    practice=request.history_practice,
+                    simulation_search=request.history_simulation_search,
+                    scenario_search=request.history_scenario_search,
+                    page=request.history_page,
+                    page_size=request.history_page_size,
+                )
+                bundle.history = history_result
 
             api_response = bundle
 

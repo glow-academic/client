@@ -106,15 +106,17 @@ async def export_record_client(
 
     async def _fetch_attempts() -> list:
         async with pool.acquire() as conn:
-            return await search_attempts(
+            attempts, _total_count = await search_attempts(
                 conn, profile_ids=[target_profile_id], limit=100000, offset=0
             )
+            return attempts
 
     async def _fetch_chats() -> list:
         async with pool.acquire() as conn:
-            return await search_attempt_chats(
+            chats, _total_count = await search_attempt_chats(
                 conn, profile_ids=[target_profile_id], limit=100000, offset=0
             )
+            return chats
 
     attempts, chats = await asyncio.gather(
         _fetch_attempts(),

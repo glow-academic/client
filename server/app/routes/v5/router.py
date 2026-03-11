@@ -39,7 +39,9 @@ from app.routes.v5.api.main.chat import router as chat_artifact_router
 from app.routes.v5.api.main.cohort import router as cohorts_router
 
 # View-based artifact handlers (aggregated data for UI sections)
-from app.routes.v5.api.main.dashboard import router as dashboard_artifact_router
+from app.routes.v5.api.main.dashboard.router import (
+    router as dashboard_artifact_router,
+)
 from app.routes.v5.api.main.department import router as departments_router
 from app.routes.v5.api.main.document import router as documents_router
 from app.routes.v5.api.main.eval import router as evals_router

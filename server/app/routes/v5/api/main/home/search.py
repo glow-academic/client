@@ -212,10 +212,12 @@ async def list_home_internal(
     redis = get_redis_client()
 
     # --- Phase 0: Resolve common context (profile identity) ---
-    async with pool.acquire() as c:
-        common = await resolve_common_context(
-            c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-        )
+    common = await resolve_common_context(
+        pool,
+        redis,
+        profile_id=profile_id,
+        bypass_cache=bypass_cache,
+    )
     if not common:
         raise HTTPException(status_code=401, detail="Profile not found")
 
