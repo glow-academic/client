@@ -12982,27 +12982,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Health Services */
+        /**
+         * Health Services
+         * @description Lightweight health check — no DB/Redis/Keycloak connections.
+         */
         get: operations["health_services_health_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Metrics Snapshot */
-        post: operations["metrics_snapshot_metrics_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13040,23 +13026,6 @@ export interface paths {
         get: operations["root_info__get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/init": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Init System */
-        post: operations["init_system_init_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -16695,6 +16664,8 @@ export interface components {
             description?: string | null;
             /** Slug Id */
             slug_id?: string | null;
+            /** Slug */
+            slug?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
             /** Active Flag */
@@ -16705,6 +16676,8 @@ export interface components {
             departments?: string[] | null;
             /** Protocol Ids */
             protocol_ids?: string[] | null;
+            /** Protocol */
+            protocol?: string | null;
             /** Item Ids */
             item_ids?: string[] | null;
             /** Auth Resource Ids */
@@ -37128,6 +37101,8 @@ export interface components {
             description?: string | null;
             /** Slug Id */
             slug_id?: string | null;
+            /** Slug */
+            slug?: string | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
             /** Active Flag */
@@ -37138,6 +37113,8 @@ export interface components {
             departments?: string[] | null;
             /** Protocol Ids */
             protocol_ids?: string[] | null;
+            /** Protocol */
+            protocol?: string | null;
             /** Item Ids */
             item_ids?: string[] | null;
             /** Auth Resource Ids */
@@ -62905,26 +62882,6 @@ export interface operations {
             };
         };
     };
-    metrics_snapshot_metrics_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
     oauth_authorization_server_metadata__well_known_oauth_authorization_server_get: {
         parameters: {
             query?: never;
@@ -62946,26 +62903,6 @@ export interface operations {
         };
     };
     root_info__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    init_system_init_post: {
         parameters: {
             query?: never;
             header?: never;

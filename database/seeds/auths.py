@@ -1,10 +1,8 @@
 """Module 06 — Auth seed definitions.
 
 Each dict maps directly to CreateAuthItem fields.
-String fields (name, description, active_flag) are resolved by the _impl function.
-
-Note: slug_id, protocol_ids, and item_ids are ID-only fields and not included
-here. These can be added via update after initial creation if needed.
+String fields (name, description, slug, protocol, active_flag) are resolved
+by the _impl function via resolve_auth_values.
 """
 
 from uuid import UUID
@@ -25,12 +23,16 @@ auths = [
         id=GOOGLE_AUTH,
         name="Google",
         description="Google Workspace",
+        slug="google",
+        protocol="google",
         active_flag=True,
     ),
     dict(
         id=MICROSOFT_AUTH,
         name="Microsoft",
         description="Microsoft Entra ID OAuth configuration",
+        slug="microsoft",
+        protocol="oidc",
         active_flag=True,
     ),
 ]

@@ -1,9 +1,11 @@
 <#-- GENERATED FILE: do not edit manually -->
-<#-- Generated at: 2026-03-09T07:36:11.784366 -->
+<#-- Generated at: 2026-03-11T19:17:26.161029 -->
 <#--
   Provider mapping: department_id -> allowed IdP aliases
 
   Enumerated departments:
+    - f558f882-9630-5b77-a3c8-c09eb940b871: Organization
+    - a2b369c1-a81e-5e02-98d5-dd42af15ae4a: University
 
   Enumerated IdP aliases:
     - google
@@ -14,14 +16,18 @@
 
 <#-- Departments to show in the picker -->
 <#assign departments = [
+  {"id": "f558f882-9630-5b77-a3c8-c09eb940b871", "title": "Organization"},
+  {"id": "a2b369c1-a81e-5e02-98d5-dd42af15ae4a", "title": "University"}
 ] />
 
 <#-- Map department_id -> allowed IdP aliases -->
 <#assign allowedProvidersByDept = {
+  "a2b369c1-a81e-5e02-98d5-dd42af15ae4a": [],
+  "f558f882-9630-5b77-a3c8-c09eb940b871": []
 } />
 
 <#-- Platform providers (only used when no departments exist) -->
-<#assign platformProviders = ["google", "microsoft"] />
+<#assign platformProviders = ["microsoft", "google"] />
 
 <#function getAllowedProvidersForDepartment deptId>
   <#-- If departments exist, always use department-specific providers -->

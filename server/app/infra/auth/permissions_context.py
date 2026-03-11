@@ -34,6 +34,10 @@ from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.protocols.create import create_protocol
+from app.routes.v5.tools.resources.protocols.get import get_protocols
+from app.routes.v5.tools.resources.slugs.create import create_slug
+from app.routes.v5.tools.resources.slugs.get import get_slugs
 
 if TYPE_CHECKING:
     from app.infra.auth.create import AuthFieldError, CreateAuthItem
@@ -131,6 +135,18 @@ async def resolve_auth_values(
         result = await create_description(conn, item.description, redis)
         item.description_id = result.id
 
+    if hasattr(item, "slug") and item.slug is not None and item.slug_id is None:
+        result = await create_slug(conn, item.slug, redis)
+        item.slug_id = result.id
+
+    if (
+        hasattr(item, "protocol")
+        and item.protocol is not None
+        and item.protocol_ids is None
+    ):
+        result = await create_protocol(conn, item.protocol, redis)
+        item.protocol_ids = [result.id]
+
     # --- Match resources ---
 
     if item.departments is not None and item.department_ids is None:
@@ -173,6 +189,8 @@ async def create_denormalized_snapshot(
     name_id: UUID | None,
     description_id: UUID | None,
     department_ids: list[UUID] | None,
+    slug_id: UUID | None = None,
+    protocol_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create an auths_resource snapshot by hydrating IDs to values.
 
@@ -193,9 +211,23 @@ async def create_denormalized_snapshot(
                 conn, [description_id], redis, bypass_cache=True
             )
 
-    names, descriptions = await asyncio.gather(
+    async def _get_slug() -> list:
+        if not slug_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_slugs(conn, [slug_id], redis, bypass_cache=True)
+
+    async def _get_protocols() -> list:
+        if not protocol_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_protocols(conn, protocol_ids, redis, bypass_cache=True)
+
+    names, descriptions, slugs, protocols = await asyncio.gather(
         _get_names(),
         _get_descriptions(),
+        _get_slug(),
+        _get_protocols(),
     )
 
     async with pool.acquire() as conn:
@@ -206,5 +238,7 @@ async def create_denormalized_snapshot(
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
             department_ids=department_ids,
+            slug=slugs[0].value if slugs else None,
+            protocol=protocols[0].value if protocols else None,
         )
     return result.id

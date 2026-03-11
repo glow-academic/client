@@ -48686,23 +48686,8 @@
     "/health": {
       "get": {
         "summary": "Health Services",
+        "description": "Lightweight health check \u2014 no DB/Redis/Keycloak connections.",
         "operationId": "health_services_health_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/metrics": {
-      "post": {
-        "summary": "Metrics Snapshot",
-        "operationId": "metrics_snapshot_metrics_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -48736,22 +48721,6 @@
       "get": {
         "summary": "Root Info",
         "operationId": "root_info__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/init": {
-      "post": {
-        "summary": "Init System",
-        "operationId": "init_system_init_post",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -59760,6 +59729,17 @@
             ],
             "title": "Slug Id"
           },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
           "active_flag_id": {
             "anyOf": [
               {
@@ -59826,6 +59806,17 @@
               }
             ],
             "title": "Protocol Ids"
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol"
           },
           "item_ids": {
             "anyOf": [
@@ -129107,6 +129098,17 @@
             ],
             "title": "Slug Id"
           },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
           "active_flag_id": {
             "anyOf": [
               {
@@ -129173,6 +129175,17 @@
               }
             ],
             "title": "Protocol Ids"
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol"
           },
           "item_ids": {
             "anyOf": [

@@ -48,6 +48,7 @@ class CreateAuthItem(BaseModel):
     description_id: UUID | None = None
     description: str | None = None
     slug_id: UUID | None = None
+    slug: str | None = None
     # Optional flag
     active_flag_id: UUID | None = None
     active_flag: bool | None = None
@@ -55,6 +56,7 @@ class CreateAuthItem(BaseModel):
     department_ids: list[UUID] | None = None
     departments: list[str] | None = None
     protocol_ids: list[UUID] | None = None
+    protocol: str | None = None
     item_ids: list[UUID] | None = None
     auth_resource_ids: list[UUID] | None = None
 
@@ -163,6 +165,8 @@ async def create_auth_impl(
             name_id=item.name_id,
             description_id=item.description_id,
             department_ids=item.department_ids,
+            slug_id=item.slug_id,
+            protocol_ids=item.protocol_ids,
         )
 
         # Artifact create inside transaction

@@ -1,6 +1,5 @@
 """Health check utilities for system services (DHH-style plain functions)."""
 
-import asyncio
 import os
 import time
 from dataclasses import dataclass
@@ -272,25 +271,5 @@ async def run_service_checks() -> dict[str, ServiceCheckResult]:
 
 @router.get("/health")
 async def health_services() -> JSONResponse:
-    from app.routes.metrics.collector import log_health_checks
-
-    checks = await run_service_checks()
-
-    try:
-        asyncio.create_task(log_health_checks())
-    except Exception:
-        pass
-
-    services = {
-        service: {
-            "ok": result.ok,
-            "latency_ms": result.latency_ms,
-            "error": result.error,
-        }
-        for service, result in checks.items()
-    }
-
-    overall_ok = all(result.ok for result in checks.values())
-    status_val = "ok" if overall_ok else "degraded"
-
-    return JSONResponse(content={"status": status_val, "services": services})
+    """Lightweight health check — no DB/Redis/Keycloak connections."""
+    return JSONResponse(content={"status": "ok"})

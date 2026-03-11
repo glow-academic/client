@@ -55,21 +55,15 @@ async def wait_for_keycloak(
     origin_check = os.getenv("ORIGIN", "http://localhost:3000")
     is_local_dev = "localhost" in origin_check.lower()
 
-    last_error: Exception | None = None
-
     for attempt in range(1, max_retries + 1):
         try:
             logger.info(
                 f"Attempting to connect to Keycloak (attempt {attempt}/{max_retries})..."
             )
 
-            # Disable SSL verification for non-production environments
-            is_prod = not is_local_dev
-            verify_ssl = is_prod  # Only verify SSL in production
+            # Disable SSL verification for local development
+            verify_ssl = not is_local_dev
 
-            # In local dev, never try HTTPS even if Keycloak says HTTPS required
-            # The database update sets SSL requirement to NONE, but Keycloak needs time to pick it up
-            # Trying HTTPS will fail with SSL errors in local dev, so just wait and retry with HTTP
             connection_url = url
 
             kc_admin = KeycloakAdmin(
@@ -107,31 +101,12 @@ async def wait_for_keycloak(
 
             return kc_admin
         except Exception as e:
-            last_error = e
-            error_str = str(e).lower()
-            is_https_required = "https required" in error_str
-
             if attempt < max_retries:
-                if is_https_required and is_local_dev:
-                    # In local dev, HTTPS required means Keycloak hasn't picked up database change yet
-                    # Keycloak caches realm settings in memory, cache refresh can take 15-30+ seconds
-                    # Wait longer and retry with HTTP (don't try HTTPS - it will fail)
-                    wait_time = min(
-                        retry_delay * 3, MAX_RETRY_DELAY
-                    )  # Wait even longer (3x delay)
-                    logger.info(
-                        f"Keycloak requires HTTPS (attempt {attempt}/{max_retries}), "
-                        f"waiting {wait_time:.1f}s for cache refresh, retrying with HTTP..."
-                    )
-                    # Wait longer when HTTPS is required (Keycloak needs time to pick up DB change)
-                    await asyncio.sleep(wait_time)
-                else:
-                    logger.warning(
-                        f"Keycloak not ready yet (attempt {attempt}/{max_retries}): {e}. "
-                        f"Retrying in {retry_delay:.1f}s..."
-                    )
-                    await asyncio.sleep(retry_delay)
-                # Exponential backoff with cap
+                logger.warning(
+                    f"Keycloak not ready yet (attempt {attempt}/{max_retries}): {e}. "
+                    f"Retrying in {retry_delay:.1f}s..."
+                )
+                await asyncio.sleep(retry_delay)
                 retry_delay = min(retry_delay * 1.5, MAX_RETRY_DELAY)
             else:
                 logger.error(
@@ -1802,11 +1777,16 @@ async def sync_identity_providers(
                 )
                 continue
 
-            if provider.slug:
-                realm_level_aliases_to_keep.add(provider.slug)
+            if not provider.slug:
+                logger.warning(
+                    f"Skipping realm-level IdP with empty slug (auth_id: {auth_id}, name: {provider.name})"
+                )
+                continue
+
+            realm_level_aliases_to_keep.add(provider.slug)
             await sync_identity_provider_for_realm_level(
                 auth_id=auth_id,
-                slug=provider.slug or "",
+                slug=provider.slug,
                 provider_id=provider.provider_id or "",
                 display_name=provider.name or "",
                 kc_admin=kc_admin,
@@ -2015,35 +1995,6 @@ async def sync_keycloak(department_id: str | None = None) -> None:
         keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
         keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
 
-        # Check if we're in local dev mode
-        origin_check = os.getenv("ORIGIN", "http://localhost:3000")
-        is_local_dev = "localhost" in origin_check.lower()
-
-        # For local dev, ensure master realm SSL requirement is set to NONE
-        # We need to update both the database AND use Admin API to force Keycloak to reload
-        if is_local_dev and pool:
-            try:
-                # First, update database
-                async with pool.acquire() as conn:
-                    await conn.execute(
-                        "UPDATE keycloak.realm SET ssl_required = 'NONE' WHERE name = 'master'"
-                    )
-                    logger.info("Master realm SSL requirement set to NONE")
-
-                # Note: Keycloak caches realm settings in memory, so database updates take time to take effect
-                # The Admin API also requires HTTPS when realm requires HTTPS, so we can't use it to force a reload
-                # We need to wait for Keycloak's cache to expire and pick up the database change
-                # Keycloak's cache typically refreshes every 5-10 seconds, so we wait a bit longer
-                logger.info(
-                    "Waiting for Keycloak to pick up database change (cache refresh ~5-10s)..."
-                )
-                await asyncio.sleep(10)
-            except Exception as e:
-                logger.warning(f"Could not update master realm SSL in database: {e}")
-                logger.warning(
-                    "Note: If Keycloak still requires HTTPS, you may need to restart Keycloak"
-                )
-
         # Connect to Keycloak Admin API with retry logic
         kc_admin = await wait_for_keycloak(
             keycloak_url, keycloak_admin, keycloak_admin_password
@@ -2054,24 +2005,6 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                 "The server will continue to run, but authentication may not work until Keycloak is ready."
             )
             return
-
-        # Update master realm SSL setting for local development
-        try:
-            if is_local_dev:
-                master_realm = kc_admin.get_realm("master")
-                current_ssl_required = master_realm.get("sslRequired", "EXTERNAL")
-                if current_ssl_required != "NONE":
-                    kc_admin.update_realm(
-                        realm_name="master",
-                        payload={"sslRequired": "NONE"},
-                    )
-                    logger.info(
-                        f"✅ Master realm SSL requirement disabled for local development (was: {current_ssl_required})"
-                    )
-        except Exception as e:
-            logger.warning(
-                f"Could not update master realm SSL setting: {e}. Continuing..."
-            )
 
         # Ensure glow-client exists in master realm before syncing
         await ensure_glow_client_in_master_realm(kc_admin)

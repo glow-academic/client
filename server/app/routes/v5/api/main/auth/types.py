@@ -148,6 +148,7 @@ class UpdateAuthItem(BaseModel):
     description_id: UUID | None = None
     description: str | None = None
     slug_id: UUID | None = None
+    slug: str | None = None
     # Optional flag
     active_flag_id: UUID | None = None
     active_flag: bool | None = None
@@ -155,6 +156,7 @@ class UpdateAuthItem(BaseModel):
     department_ids: list[UUID] | None = None
     departments: list[str] | None = None
     protocol_ids: list[UUID] | None = None
+    protocol: str | None = None
     item_ids: list[UUID] | None = None
     auth_resource_ids: list[UUID] | None = None
 

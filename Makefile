@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -170,11 +170,10 @@ run: check-venv
 	@echo "  Client:   http://localhost:$(CLIENT_PORT)"
 	@echo "  Database: localhost:$(DATABASE_PORT)"
 	@echo "  Keycloak: http://localhost:$(KEYCLOAK_PORT)"
-	@echo "  Notify:   (periodic tasks)"
 	@echo ""
 	@echo "Press Ctrl+C to stop all services"
 	@echo "----------------------------------------"
-	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "chokidar.*sql" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; pkill -f "notify.sh" 2>/dev/null || true; pkill -f "docker logs.*glow-keycloak" 2>/dev/null || true; echo "✅ All services stopped (Keycloak remains running)"; exit 0' INT; \
+	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "chokidar.*sql" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; pkill -f "docker logs.*glow-keycloak" 2>/dev/null || true; docker stop glow-keycloak 2>/dev/null; docker rm glow-keycloak 2>/dev/null; echo "✅ All services stopped"; exit 0' INT; \
 	exec 2>/dev/null; \
 	if docker ps --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
 		echo "✅ Keycloak already running, attaching to logs..."; \
@@ -185,7 +184,7 @@ run: check-venv
 		sleep 1; \
 		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
 	else \
-		echo "🚀 Creating new Keycloak container (persistent, use 'make stop-keycloak' to stop)..."; \
+		echo "🚀 Creating new Keycloak container..."; \
 		DB_USER=$${DB_USER:-myuser}; \
 		DB_PASSWORD=$${DB_PASSWORD:-mypassword}; \
 		CLIENT_PORT=$${CLIENT_PORT:-3000}; \
@@ -209,19 +208,26 @@ run: check-venv
 		sleep 1; \
 		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
 	fi; \
+	echo "⏳ Waiting for Keycloak to be ready..."; \
+	for i in $$(seq 1 60); do \
+		if docker exec glow-keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin 2>/dev/null; then \
+			echo "✅ Keycloak is ready"; \
+			docker exec glow-keycloak /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE 2>/dev/null && echo "✅ Keycloak SSL requirement disabled" || echo "⚠️  Keycloak SSL already configured"; \
+			break; \
+		fi; \
+		sleep 2; \
+	done; \
 	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
 	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json --reload-exclude 'app/sql/types.py' --reload-exclude 'tests/sql/types.py') 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:sql-types 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[SQL-TYPES]\033[0m %s' "$$line")"; done) & \
 	(cd client && APP_PREFIX=$${APP_PREFIX:-}; KEYCLOAK_PUBLIC_URL=http://localhost:8080/auth NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/auth NODE_OPTIONS='--dns-result-order=ipv4first' yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
-	sleep 3; \
-	(SERVER_URL=http://localhost:$(SERVER_PORT) APP_PREFIX=$${APP_PREFIX:-} $(PWD)/notify/notify.sh 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;37m%s\033[0m' "$$line")"; done) & \
 	wait
 
 # Stop all services (for cleanup)
 stop:
-	@echo "🛑 Stopping all GLOW services (Keycloak will remain running)..."
+	@echo "🛑 Stopping all GLOW services..."
 	@echo "Stopping Redis on port $(REDIS_PORT)..."
 	@if lsof -ti:$(REDIS_PORT) >/dev/null 2>&1; then \
 		kill -9 $$(lsof -ti:$(REDIS_PORT)) 2>/dev/null && echo "✅ Redis stopped" || echo "⚠️  Redis process not found"; \
@@ -242,14 +248,8 @@ stop:
 	fi
 	@echo "Stopping Database logs..."
 	@pkill -f "stream-logs.js" 2>/dev/null && echo "✅ Database logs stopped" || echo "⚠️  Database logs process not found"
-	@echo "Stopping Notify service..."
-	@pkill -f "notify.sh" 2>/dev/null && echo "✅ Notify service stopped" || echo "⚠️  Notify service process not found"
 	@echo "Stopping SQL types watcher..."
 	@pkill -f "chokidar.*sql" 2>/dev/null && echo "✅ SQL types watcher stopped" || echo "⚠️  SQL types watcher process not found"
-	@echo "✅ All services stopped (Keycloak remains running)"
-
-# Stop Keycloak container
-stop-keycloak:
 	@echo "Stopping Keycloak..."
 	@if docker ps -a --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
 		docker stop glow-keycloak >/dev/null 2>&1 && echo "✅ Keycloak stopped" || echo "⚠️  Failed to stop Keycloak"; \
@@ -257,6 +257,7 @@ stop-keycloak:
 	else \
 		echo "⚠️  Keycloak container not found"; \
 	fi
+	@echo "✅ All services stopped"
 
 # Clean up generated files and cache
 cleanup:
@@ -405,8 +406,7 @@ help:
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"
-	@echo "  stop         - Stop all services except Keycloak (cleanup)"
-	@echo "  stop-keycloak - Stop Keycloak container"
+	@echo "  stop         - Stop all services including Keycloak"
 	@echo ""
 	@echo "Code quality:"
 	@echo "  format       - Format code with Ruff"

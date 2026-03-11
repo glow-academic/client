@@ -132,6 +132,8 @@ async def update_auth_impl(
             name_id=item.name_id,
             description_id=item.description_id,
             department_ids=item.department_ids,
+            slug_id=item.slug_id,
+            protocol_ids=item.protocol_ids,
         )
 
         # Artifact update inside transaction

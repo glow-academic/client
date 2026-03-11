@@ -199,9 +199,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         if pool:
             await initialize_metrics(pool, _globals.redis_client)
             logger.info("Metrics collector initialized")
-            logger.info(
-                "Metrics snapshot and health logging now handled by notify service"
-            )
+
+        # Perform Keycloak sync (runs during startup)
+        try:
+            from app.infra.identity.keycloak_sync import perform_keycloak_sync
+
+            result = await perform_keycloak_sync(department_id=None)
+            if result.success:
+                logger.info(f"Keycloak sync: {result.message}")
+            else:
+                logger.warning(f"Keycloak sync failed: {result.message}")
+        except Exception as e:
+            logger.warning(f"Keycloak sync error (non-blocking): {e}")
 
         # Import MCP server for lifespan management
         from app.routes.mcp import mcp_server as artifacts_resources_mcp_server
@@ -225,12 +234,33 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             )()
         )
 
+        # Start periodic monitor (health checks + metrics snapshot every 60s)
+        async def _periodic_monitor() -> None:
+            while True:
+                try:
+                    await asyncio.sleep(60)
+                    from app.routes.metrics.collector import (
+                        log_health_checks,
+                        log_metrics_snapshot,
+                    )
+
+                    await log_metrics_snapshot()
+                    await log_health_checks()
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    logger.error(f"Periodic monitor error: {e}")
+
+        monitor_task = asyncio.create_task(_periodic_monitor())
+
         yield
 
-        # Stop reaper
+        # Stop background tasks
         reaper_task.cancel()
+        monitor_task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await reaper_task
+            await monitor_task
 
         await close_db_pool()
 
@@ -374,10 +404,6 @@ from app.routes.health import router as health_router  # noqa: E402
 
 fastapi_app.include_router(health_router)
 
-from app.routes.metrics import router as metrics_router  # noqa: E402
-
-fastapi_app.include_router(metrics_router)
-
 from app.routes.well_known import router as well_known_router  # noqa: E402
 
 fastapi_app.include_router(well_known_router)
@@ -385,11 +411,6 @@ fastapi_app.include_router(well_known_router)
 from app.routes.root_info import router as root_info_router  # noqa: E402
 
 fastapi_app.include_router(root_info_router)
-
-
-from app.routes.init import router as init_router  # noqa: E402
-
-fastapi_app.include_router(init_router)
 
 
 # ---------------------------------------------------------------------------

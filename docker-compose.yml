@@ -65,19 +65,15 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
     restart: unless-stopped
-    # Override entrypoint to copy themes from Docker volume before starting Keycloak
+    # Copy themes from Docker volume before starting Keycloak
     entrypoint: >
       /bin/sh -c "
-        # Copy themes from Docker volume to Keycloak's themes directory
-        # This ensures Keycloak can find themes; restart Keycloak after theme updates
         if [ -d /opt/keycloak/data/uploads/themes ]; then
           cp -r /opt/keycloak/data/uploads/themes/* /opt/keycloak/themes/ 2>/dev/null || true
         fi &&
-        # Execute original Keycloak entrypoint
         exec /opt/keycloak/bin/kc.sh start-dev
       "
     volumes:
-      # Mount the same Docker volume that server uses
       - uploads:/opt/keycloak/data/uploads:ro
     environment:
       # Admin bootstrap (Keycloak 26.0 uses KC_BOOTSTRAP_* instead of KEYCLOAK_*)
@@ -240,32 +236,6 @@ services:
     networks:
       - internal
       - public_net
-  # --------------------
-  # Notify Service - triggers Keycloak sync and periodic health/metrics logging
-  # --------------------
-  notify:
-    build:
-      context: ./notify
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      - SERVER_URL=http://server:8000
-      - APP_PREFIX=${APP_PREFIX}
-      - INTERVAL=60
-      - SYNC_RETRIES=15
-      - SYNC_INITIAL_DELAY=15
-      - HEALTH_RETRIES=3
-      - METRICS_RETRIES=3
-      - WAIT_MAX_RETRIES=30
-      - WAIT_DELAY=2
-    depends_on:
-      server:
-        condition: service_healthy
-    networks:
-      - internal
-
   # --------------------
   # Next.js Client
   # --------------------
