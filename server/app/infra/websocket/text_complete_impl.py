@@ -5,6 +5,7 @@ Saves assistant message to DB on text_complete using persist_run_message.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -18,7 +19,11 @@ logger = get_logger(__name__)
 
 
 async def text_complete_impl(
-    data: dict[str, Any], *, emit: EmitFn, conn: asyncpg.Connection
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    conn: asyncpg.Connection,
+    upload_folder: Path | None = None,
 ) -> None:
     """Save assistant message on text_complete."""
     event_type = data.get("event_type")
@@ -38,6 +43,7 @@ async def text_complete_impl(
             session_id=UUID(session_id),
             role="assistant",
             content=final_content,
+            upload_folder=upload_folder,
         )
     except Exception as e:
         logger.exception(f"Failed to save text_complete message: {e}")

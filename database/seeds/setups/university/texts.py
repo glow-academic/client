@@ -5,7 +5,7 @@ The runner reads each source file, creates the full text entry chain
 via create_document_text, then links the result to the document via
 update_document(text_ids=[...]).
 
-Source files live in database/modules/11-setups/university/uploads/files/text/.
+Source files live in database/output/setups/university/uploads/files/text/.
 """
 
 from database.seeds.setups.university.documents import (

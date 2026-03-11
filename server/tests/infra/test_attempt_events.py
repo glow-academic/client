@@ -617,9 +617,7 @@ class TestAudioStopImpl:
         assert events[0].event == "attempt_audio_ended"
         assert events[0].data["chat_id"] == "g1"
 
-    async def test_with_session_cleans_up_and_emits(
-        self, audio_session_factory, monkeypatch
-    ):
+    async def test_with_session_cleans_up_and_emits(self, audio_session_factory):
         emit, events = recording_emit()
         await audio_session_factory()
 
@@ -631,9 +629,15 @@ class TestAudioStopImpl:
                 self.stopped_sessions.append(session.group_id)
 
         adapter = FakeAudioAdapter()
-        monkeypatch.setattr(audio_lifecycle, "_audio_adapter", adapter)
 
-        await audio_stop_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
+        await audio_stop_impl(
+            {"sid": "s1", "group_id": "g1"},
+            emit=emit,
+            cleanup_audio_session_fn=lambda session: audio_lifecycle.cleanup_audio_session(
+                session,
+                adapter=adapter,
+            ),
+        )
 
         assert adapter.stopped_sessions == ["g1"]
         assert get_session_by_group_id("g1") is None
@@ -1888,12 +1892,10 @@ class TestSpeechCompleteImpl:
         pool,
         audio_session_factory,
         tmp_path,
-        monkeypatch,
     ):
         test_session_id = "00000000-0000-0000-0000-0000000000aa"
         await audio_session_factory(session_id=test_session_id)
         emit, events = recording_emit()
-        monkeypatch.setattr("app.infra.globals.AUDIO_FOLDER", tmp_path)
         await _speech_complete_impl(
             {
                 "group_id": "g1",
@@ -1903,6 +1905,7 @@ class TestSpeechCompleteImpl:
             emit=emit,
             pool=pool,
             session_id=UUID(test_session_id),
+            audio_folder=str(tmp_path),
         )
 
         assert len(events) == 1

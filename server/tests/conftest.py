@@ -131,20 +131,12 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     global _test_db_url
 
     database_dir = Path(__file__).parent.parent.parent / "database"
-    sql_dir = server_dir / "app" / "sql"
     schema_dir = database_dir / "schema"
-    seed_file = database_dir / "test-seed.sql"
 
     if not schema_dir.exists():
         raise FileNotFoundError(
             f"Schema directory not found: {schema_dir}\n"
             "Please run 'make split-schema' to generate it."
-        )
-
-    if not seed_file.exists():
-        raise FileNotFoundError(
-            f"Test seed file not found: {seed_file}\n"
-            "Please run 'make build-test-seed' to generate it."
         )
 
     # 1. Start / reuse the test container and create a pool to the default DB
@@ -165,7 +157,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     )
 
     # 2. Compute content hash
-    db_hash = compute_db_hash(database_dir, sql_dir)
+    db_hash = compute_db_hash(database_dir)
     template_name = f"template_glow_{db_hash}"
     clone_name = f"test_glow_{db_hash}"
     admin_url = get_admin_url(base_url)
@@ -195,7 +187,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             )
             globals_mod._test_db_url = clone_url
             _test_db_url = clone_url
-            print("✅ Cloned database ready (schema + seed + SQL skipped)")
+            print("✅ Cloned database ready (schema skipped)")
         else:
             # --- COLD PATH: build from scratch, then save as template ---
             print("🏗️  No template found — building from scratch")
@@ -235,12 +227,6 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             async with pool.acquire() as conn:
                 await conn.execute(schema_sql)
             print("🗄️  Test schema applied (from split files)")
-
-            # Apply seed data
-            seed_sql = _filter_meta_commands(seed_file.read_text())
-            async with pool.acquire() as conn:
-                await conn.execute(seed_sql)
-            print("🗄️  Test seed data applied")
 
             # Refresh all unpopulated materialized views
             # (MVs are created WITH NO DATA by schema load, need initial refresh)

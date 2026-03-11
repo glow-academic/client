@@ -1,9 +1,9 @@
 """Template database management for fast integration tests.
 
-Instead of rebuilding schema + seed + SQL functions every run,
-we save a fully-bootstrapped database as a Postgres template and
-clone it on subsequent runs. A content hash of all input files
-invalidates the template when anything changes.
+Instead of rebuilding schema every run, we save a fully-bootstrapped
+database as a Postgres template and clone it on subsequent runs.
+A content hash of schema files invalidates the template when anything
+changes.
 """
 
 import hashlib
@@ -13,8 +13,8 @@ from urllib.parse import urlparse, urlunparse
 import asyncpg  # type: ignore[import]
 
 
-def compute_db_hash(database_dir: Path, sql_dir: Path) -> str:
-    """SHA-256 of database/schema/ + test-seed.sql + all SQL files (sorted by path).
+def compute_db_hash(database_dir: Path) -> str:
+    """SHA-256 of database/schema/ files (sorted by path).
 
     Returns the first 16 hex chars — enough for uniqueness while keeping
     template names readable.
@@ -27,18 +27,6 @@ def compute_db_hash(database_dir: Path, sql_dir: Path) -> str:
         for f in sorted(schema_dir.rglob("*.sql")):
             h.update(str(f.relative_to(schema_dir)).encode())
             h.update(f.read_bytes())
-
-    # Hash the test seed
-    seed = database_dir / "test-seed.sql"
-    if seed.exists():
-        h.update(seed.read_bytes())
-
-    # Hash every SQL file under the sql directory (deterministic order)
-    sql_files = sorted(sql_dir.rglob("*.sql"))
-    for f in sql_files:
-        # Include relative path so renames invalidate the hash
-        h.update(str(f.relative_to(sql_dir)).encode())
-        h.update(f.read_bytes())
 
     return h.hexdigest()[:16]
 

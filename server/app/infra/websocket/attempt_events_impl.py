@@ -394,6 +394,7 @@ async def audio_stop_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
+    cleanup_audio_session_fn: Callable[[Any], Awaitable[None]] | None = None,
 ) -> None:
     """Clean up audio session and emit attempt_audio_ended."""
     from app.infra.websocket.audio_lifecycle import cleanup_audio_session
@@ -406,7 +407,7 @@ async def audio_stop_impl(
     session = get_session_by_group_id(group_id) if group_id else None
     chat_id = session.chat_id if session else (group_id or "")
     if session:
-        await cleanup_audio_session(session)
+        await (cleanup_audio_session_fn or cleanup_audio_session)(session)
 
     await emit(
         [
@@ -604,6 +605,7 @@ async def speech_complete_impl(
     emit: EmitFn,
     pool: asyncpg.Pool,
     session_id: uuid.UUID | None = None,
+    audio_folder: str | None = None,
 ) -> None:
     """Save audio, create upload record, emit attempt_user_received_complete."""
     from pathlib import Path
@@ -630,7 +632,7 @@ async def speech_complete_impl(
         try:
             file_uuid = uuid.uuid4()
             filename = f"{file_uuid}.pcm16"
-            file_path = Path(AUDIO_FOLDER) / filename
+            file_path = Path(audio_folder or AUDIO_FOLDER) / filename
             file_path.write_bytes(audio)
 
             relative_path = f"audio/{filename}"

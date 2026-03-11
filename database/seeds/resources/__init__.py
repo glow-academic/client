@@ -19,4 +19,7 @@ MODULES = [
     "reasoning_levels",
     "temperature_levels",
     "operations",
+    "artifacts",
+    "standard_groups",
+    "standards",
 ]

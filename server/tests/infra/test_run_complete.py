@@ -115,9 +115,8 @@ class TestRunCompleteImpl:
         await cleanup_run(redis_client, run_id=run_id)
 
     async def test_uncontested_run_promotes_and_persists_outputs(
-        self, conn, redis_client, tmp_path, monkeypatch
+        self, conn, redis_client, tmp_path
     ):
-        monkeypatch.setattr("app.infra.globals.UPLOAD_FOLDER", tmp_path)
         profile, session, _group, run = await _run_graph(conn, redis_client)
         soft_name = await create_name(conn, "run-complete-name", redis_client, soft=True)
         run_id = str(run.id)
@@ -153,6 +152,7 @@ class TestRunCompleteImpl:
             emit=emit,
             conn=conn,
             redis=redis_client,
+            upload_folder=tmp_path,
         )
 
         message_role = await conn.fetchval(

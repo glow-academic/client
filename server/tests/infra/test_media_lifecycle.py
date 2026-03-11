@@ -15,18 +15,14 @@ class TestMediaLifecycle:
     def teardown_method(self):
         media_lifecycle._media_adapter = None
 
-    def test_get_media_adapter_creates_singleton(self, monkeypatch):
+    def test_get_media_adapter_creates_singleton(self):
         emitter = object()
 
-        monkeypatch.setattr(media_lifecycle, "LitellmMediaAdapter", FakeMediaAdapter)
-        monkeypatch.setattr(
-            "app.routes.v5.socket.internal.media_events.get_media_emitter",
-            lambda: emitter,
+        first = media_lifecycle.get_media_adapter(
+            adapter_factory=FakeMediaAdapter,
+            emitter=emitter,
         )
-
-        first = media_lifecycle.get_media_adapter()
         second = media_lifecycle.get_media_adapter()
 
         assert first is second
         assert first.emitter is emitter
-

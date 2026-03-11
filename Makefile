@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-typesconfigure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -27,9 +27,9 @@ check-python:
 		exit 1; \
 	fi
 
-# Interactive setup wizard — writes config.yaml and generates .env
+# Setup: copy .env.example to .env
 setup:
-	@python3 scripts/setup.py
+	@if [ ! -f .env ]; then cp .env.example .env && echo "Created .env from .env.example — edit it with your values"; else echo ".env already exists"; fi
 
 # Create virtual environment
 setup-venv: check-python
@@ -38,33 +38,21 @@ setup-venv: check-python
 	@echo "✅ Virtual environment created at $(VENV)"
 	@echo "To activate: source $(VENV_BIN)/activate"
 
-# Generate .env from config.yaml (or interactively)
-#   make configure                          — reads config.yaml → .env
-#   make configure INTERACTIVE=1            — prompts for values interactively
-#   make configure CONFIG=my-config.yaml    — reads specified YAML file
-configure:
-	@if [ "$(INTERACTIVE)" = "1" ]; then \
-		python3 scripts/generate-env.py --interactive; \
-	elif [ -n "$(CONFIG)" ]; then \
-		python3 scripts/generate-env.py --config "$(CONFIG)"; \
-	else \
-		python3 scripts/generate-env.py; \
-	fi
+# Alias for setup
+configure: setup
 
-# Deploy: generate .env, build seed SQL, start services
+# Deploy: build seed SQL, start services
 deploy:
 	@echo "🚀 Deploying Glow..."
-	@python3 scripts/generate-env.py
-	@bash database/scripts/load-modules.sh config.yaml --output database/seeds/seed_modules.sql
+	@bash database/scripts/load-modules.sh --output database/seeds/seed_modules.sql
 	@bash database/scripts/bootstrap-keys.sh --append database/seeds/seed_modules.sql || echo "⚠️  Key bootstrap skipped"
 	@docker compose up -d --build
 	@echo "✅ Deploy complete"
 
-# Deploy clean: wipe volumes, generate .env, build seed SQL, start fresh
+# Deploy clean: wipe volumes, build seed SQL, start fresh
 deploy-clean:
 	@echo "🚀 Deploying Glow (clean)..."
-	@python3 scripts/generate-env.py
-	@bash database/scripts/load-modules.sh config.yaml --output database/seeds/seed_modules.sql
+	@bash database/scripts/load-modules.sh --output database/seeds/seed_modules.sql
 	@bash database/scripts/bootstrap-keys.sh --append database/seeds/seed_modules.sql || echo "⚠️  Key bootstrap skipped"
 	@docker compose down -v
 	@docker compose up -d --build
@@ -176,7 +164,6 @@ gen-client-types:
 
 # Start all services in foreground with combined logs
 run: check-venv
-	@python3 scripts/generate-env.py 2>/dev/null || true
 	@echo "🚀 Starting all GLOW services..."
 	@echo "  Redis:    localhost:$(REDIS_PORT)"
 	@echo "  Server:   http://localhost:$(SERVER_PORT)"
@@ -360,38 +347,18 @@ connect-db:
 	@cd database && yarn connect
 	@echo "✅ Connected to database"
 
-# Build test seed from modules
-build-test-seed:
-	@echo "Building test seed from modules..."
-	@bash database/scripts/load-modules.sh database/configs/test.yaml --output database/test-seed.sql
-	@echo "✅ Test seed built at database/test-seed.sql"
-
-# Load seed data from modular YAML config
-seed-from-yaml:
-	@if [ -z "$(CONFIG)" ]; then \
-		echo "Loading seed data from default config..."; \
-		cd database/scripts && bash load-modules.sh; \
-	else \
-		echo "Loading seed data from $(CONFIG)..."; \
-		cd database/scripts && bash load-modules.sh $(CONFIG); \
-	fi
-
-# Generate seed SQL file from modular YAML config (without loading)
-seed-file-from-yaml:
-	@if [ -z "$(CONFIG)" ]; then \
-		cd database/scripts && bash load-modules.sh --output; \
-	else \
-		cd database/scripts && bash load-modules.sh $(CONFIG) --output; \
-	fi
+# Load seed data into local database
+load-seeds:
+	@echo "Loading seed data..."
+	@bash database/scripts/load-modules.sh
 
 # Build fresh database from schema + modules + bootstrap keys
 fresh-db:
-	@python3 scripts/generate-env.py 2>/dev/null || true
 	@cd database && bash scripts/start.sh --clean-modules
 	@echo ""
 	@echo "To start services, run: make run"
 
-# Bootstrap API keys from config.yaml into the database
+# Bootstrap API keys from .env into the database
 bootstrap-keys:
 	@bash database/scripts/bootstrap-keys.sh
 
@@ -415,12 +382,11 @@ help:
 	@echo "GLOW - Graduate Learning Orientation Workshop"
 	@echo ""
 	@echo "Getting started:"
-	@echo "  setup          - Interactive setup wizard (writes config.yaml + .env)"
-	@echo "  deploy         - Generate .env, build seed SQL, start all Docker services"
+	@echo "  setup          - Copy .env.example to .env"
+	@echo "  deploy         - Build seed SQL, start all Docker services"
 	@echo "  deploy-clean   - Same as deploy but wipes volumes first (fresh start)"
 	@echo ""
 	@echo "Environment setup:"
-	@echo "  configure    - Generate .env from config.yaml (or INTERACTIVE=1)"
 	@echo "  setup-venv   - Create virtual environment at .venv"
 	@echo "  install      - Install all dependencies in venv"
 	@echo "  clean        - Remove virtual environment"
@@ -434,8 +400,8 @@ help:
 	@echo "  migrate-db-all   - Run all database migrations"
 	@echo "  connect-db       - Connect to database"
 	@echo "  fresh-db         - Build fresh DB from schema + modules + keys"
-	@echo "  bootstrap-keys   - Encrypt and inject API keys from config.yaml"
-	@echo "  build-test-seed  - Build test seed SQL from modules"
+	@echo "  bootstrap-keys   - Encrypt and inject API keys from .env"
+	@echo "  load-seeds       - Load seed data into local database"
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"

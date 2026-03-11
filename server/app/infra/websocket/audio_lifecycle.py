@@ -18,23 +18,35 @@ logger = logging.getLogger(__name__)
 _audio_adapter: RealtimeAudioAdapter | None = None
 
 
-def get_audio_adapter() -> RealtimeAudioAdapter:
+def get_audio_adapter(
+    *,
+    adapter_factory: type[RealtimeAudioAdapter] | None = None,
+    emitter: object | None = None,
+) -> RealtimeAudioAdapter:
     """Get or create the audio adapter singleton."""
     global _audio_adapter
     if _audio_adapter is None:
-        from app.routes.v5.socket.internal.attempt.audio.events import get_audio_emitter
+        if emitter is None:
+            from app.routes.v5.socket.internal.attempt.audio.events import (
+                get_audio_emitter,
+            )
 
-        _audio_adapter = RealtimeAudioAdapter(emitter=get_audio_emitter())
+            emitter = get_audio_emitter()
+        _audio_adapter = (adapter_factory or RealtimeAudioAdapter)(emitter=emitter)
     return _audio_adapter
 
 
-async def cleanup_audio_session(session: AudioSession) -> None:
+async def cleanup_audio_session(
+    session: AudioSession,
+    *,
+    adapter: RealtimeAudioAdapter | None = None,
+) -> None:
     """Stop adapter tasks + remove session from store. Idempotent."""
     group_id = session.group_id
     try:
-        adapter = get_audio_adapter()
+        active_adapter = adapter or get_audio_adapter()
         try:
-            await adapter.stop_session(session)
+            await active_adapter.stop_session(session)
         except Exception as e:
             logger.warning(f"Error stopping audio adapter during cleanup: {e}")
 

@@ -74,10 +74,9 @@ class TestTextCompleteImpl:
 
         assert events == []
 
-    async def test_persists_assistant_message(self, conn, profile_id, tmp_path, monkeypatch):
+    async def test_persists_assistant_message(self, conn, profile_id, tmp_path):
         emit, events = recording_emit()
         session, run = await _run_deps(conn, profile_id)
-        monkeypatch.setattr("app.infra.globals.UPLOAD_FOLDER", tmp_path)
 
         await text_complete_impl(
             {
@@ -88,6 +87,7 @@ class TestTextCompleteImpl:
             },
             emit=emit,
             conn=conn,
+            upload_folder=tmp_path,
         )
 
         items, total_count = await search_messages(

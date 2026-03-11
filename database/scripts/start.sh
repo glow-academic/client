@@ -619,7 +619,7 @@ if [[ "$CLEAN_MODULES" == true ]]; then
 
   # Load seed modules
   echo "🌱 Loading seed modules..."
-  bash "$script_dir/load-modules.sh" "$project_root/config.yaml"
+  bash "$script_dir/load-modules.sh"
 
   # Bootstrap keys
   echo "🔑 Bootstrapping API keys..."

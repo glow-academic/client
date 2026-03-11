@@ -73,5 +73,5 @@ alwaysApply: false
 ## Testing
 - **No Cypress E2E tests**: Database integrity tested via server unit/integration tests
 - **Test isolation**: Use transactions in tests for isolation
-- **Seed data**: Scripts in `database/seed/` for development
-- **Test schema**: Generated via `make generate-test-schema` from `database/app/` files
+- **Seed data**: Definitions in `database/seeds/`, generated output in `database/output/`
+- **Schema**: Structured SQL files in `database/schema/`

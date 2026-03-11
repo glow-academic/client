@@ -13,6 +13,8 @@ async def emit_to_client(
     event_name: str,
     payload: T,
     room: str | None = None,
+    *,
+    sio_client: Any | None = None,
 ) -> None:
     """Emit typed event to client.
 
@@ -23,7 +25,8 @@ async def emit_to_client(
         payload: Typed payload (e.g., RubricGenerationCompleteSqlRow)
         room: Socket ID or room name (defaults to empty string for broadcast)
     """
-    await sio.emit(
+    active_sio = sio_client or sio
+    await active_sio.emit(
         event_name,
         payload.model_dump(mode="json"),  # Serialize UUIDs to strings
         room=room or "",
@@ -35,6 +38,8 @@ async def emit_to_internal(
     payload: T,
     sid: str | None = None,
     group_id: str | None = None,
+    *,
+    internal_bus: Any | None = None,
 ) -> None:
     """Emit typed event to internal bus (server-to-server).
 
@@ -48,7 +53,7 @@ async def emit_to_internal(
     """
     from app.infra.globals import get_internal_sio
 
-    internal_sio = get_internal_sio()
+    active_internal_bus = internal_bus or get_internal_sio()
     emit_data: dict[str, Any] = {
         **payload.model_dump(mode="json"),
     }
@@ -57,4 +62,4 @@ async def emit_to_internal(
     if group_id:
         emit_data["group_id"] = group_id
 
-    await internal_sio.emit(event_name, emit_data)
+    await active_internal_bus.emit(event_name, emit_data)

@@ -3,7 +3,6 @@
 import pytest
 from pydantic import BaseModel
 
-import app.infra.globals as globals_mod
 import app.infra.websocket.typed_emit as typed_emit_mod
 
 
@@ -30,14 +29,14 @@ class RecordingInternalBus:
 
 class TestEmitToClient:
     @pytest.mark.asyncio
-    async def test_emits_model_dump_json_payload(self, monkeypatch):
+    async def test_emits_model_dump_json_payload(self):
         sio = RecordingClientSio()
-        monkeypatch.setattr(typed_emit_mod, "sio", sio)
 
         await typed_emit_mod.emit_to_client(
             "generation_complete",
             DemoPayload(id="abc", count=3),
             room="sid-1",
+            sio_client=sio,
         )
 
         assert sio.calls == [
@@ -45,26 +44,29 @@ class TestEmitToClient:
         ]
 
     @pytest.mark.asyncio
-    async def test_defaults_room_to_empty_string(self, monkeypatch):
+    async def test_defaults_room_to_empty_string(self):
         sio = RecordingClientSio()
-        monkeypatch.setattr(typed_emit_mod, "sio", sio)
 
-        await typed_emit_mod.emit_to_client("generation_complete", DemoPayload(id="a", count=1))
+        await typed_emit_mod.emit_to_client(
+            "generation_complete",
+            DemoPayload(id="a", count=1),
+            sio_client=sio,
+        )
 
         assert sio.calls == [("generation_complete", {"id": "a", "count": 1}, "")]
 
 
 class TestEmitToInternal:
     @pytest.mark.asyncio
-    async def test_emits_payload_with_sid_and_group_id(self, monkeypatch):
+    async def test_emits_payload_with_sid_and_group_id(self):
         bus = RecordingInternalBus()
-        monkeypatch.setattr(globals_mod, "get_internal_sio", lambda: bus)
 
         await typed_emit_mod.emit_to_internal(
             "generation_complete",
             DemoPayload(id="abc", count=3),
             sid="sid-1",
             group_id="group-1",
+            internal_bus=bus,
         )
 
         assert bus.calls == [
@@ -80,13 +82,13 @@ class TestEmitToInternal:
         ]
 
     @pytest.mark.asyncio
-    async def test_omits_optional_fields_when_not_provided(self, monkeypatch):
+    async def test_omits_optional_fields_when_not_provided(self):
         bus = RecordingInternalBus()
-        monkeypatch.setattr(globals_mod, "get_internal_sio", lambda: bus)
 
         await typed_emit_mod.emit_to_internal(
             "generation_complete",
             DemoPayload(id="abc", count=3),
+            internal_bus=bus,
         )
 
         assert bus.calls == [("generation_complete", {"id": "abc", "count": 3})]

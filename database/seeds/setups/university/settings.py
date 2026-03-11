@@ -9,15 +9,9 @@ Provider keys and auth item keys are deployment-specific and not seeded here.
 
 from uuid import UUID
 
+from database.seeds.auths import GOOGLE_AUTH, MICROSOFT_AUTH
 from database.seeds.ids import sid
 from database.seeds.setups.university.departments import UNIVERSITY_DEPT
-
-# ---------------------------------------------------------------------------
-# Pre-existing auth resource IDs (from 06-auth/)
-# ---------------------------------------------------------------------------
-
-AUTH_MICROSOFT = UUID("019bb25e-e5e2-74c2-aaf3-42c5403f26f9")
-AUTH_GOOGLE = UUID("019bb25e-e5e2-73eb-9313-57d774b30875")
 
 # ---------------------------------------------------------------------------
 # Pre-existing threshold resource IDs (from 01-resources/06-thresholds.sql)
@@ -87,7 +81,7 @@ settings = [
         description="Department-specific settings for the University, linking authentication, AI systems, and grading thresholds.",
         active_flag=True,
         department_ids=[UNIVERSITY_DEPT],
-        auth_ids=[AUTH_MICROSOFT],
+        auth_ids=[MICROSOFT_AUTH],
         system_ids=SYSTEMS,
         threshold_ids=[THRESHOLD_SUCCESS, THRESHOLD_WARNING, THRESHOLD_DANGER],
     ),

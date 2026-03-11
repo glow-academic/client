@@ -6,14 +6,9 @@ Provider keys and auth item keys are deployment-specific and not seeded here.
 
 from uuid import UUID
 
+from database.seeds.auths import GOOGLE_AUTH
 from database.seeds.ids import sid
 from database.seeds.setups.organization.departments import ORGANIZATION_DEPT
-
-# ---------------------------------------------------------------------------
-# Pre-existing auth resource IDs (from 06-auth/)
-# ---------------------------------------------------------------------------
-
-AUTH_GOOGLE = UUID("019bb25e-e5e2-73eb-9313-57d774b30875")
 
 # ---------------------------------------------------------------------------
 # Pre-existing threshold resource IDs (from 01-resources/06-thresholds.sql)
@@ -91,7 +86,7 @@ settings = [
         description="Settings for the Organization department",
         active_flag=True,
         department_ids=[ORGANIZATION_DEPT],
-        auth_ids=[AUTH_GOOGLE],
+        auth_ids=[GOOGLE_AUTH],
         system_ids=SYSTEMS,
         threshold_ids=[THRESHOLD_SUCCESS, THRESHOLD_WARNING, THRESHOLD_DANGER],
     ),

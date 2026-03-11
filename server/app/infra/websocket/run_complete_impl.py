@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from pathlib import Path
 from typing import Any
 
 import asyncpg
@@ -120,6 +121,7 @@ async def run_complete_impl(
     emit: EmitFn,
     conn: asyncpg.Connection,
     redis: Any,
+    upload_folder: Path | None = None,
 ) -> None:
     """Handle run_complete — triage contested vs uncontested, promote or grade.
 
@@ -185,6 +187,7 @@ async def run_complete_impl(
                 session_id=session_id,
                 role="assistant",
                 content=assistant_output,
+                upload_folder=upload_folder,
             )
 
         if input_tokens or output_tokens:

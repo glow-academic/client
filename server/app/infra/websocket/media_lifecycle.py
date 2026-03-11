@@ -12,11 +12,17 @@ logger = logging.getLogger(__name__)
 _media_adapter: LitellmMediaAdapter | None = None
 
 
-def get_media_adapter() -> LitellmMediaAdapter:
+def get_media_adapter(
+    *,
+    adapter_factory: type[LitellmMediaAdapter] | None = None,
+    emitter: object | None = None,
+) -> LitellmMediaAdapter:
     """Get or create the media adapter singleton."""
     global _media_adapter
     if _media_adapter is None:
-        from app.routes.v5.socket.internal.media_events import get_media_emitter
+        if emitter is None:
+            from app.routes.v5.socket.internal.media_events import get_media_emitter
 
-        _media_adapter = LitellmMediaAdapter(emitter=get_media_emitter())
+            emitter = get_media_emitter()
+        _media_adapter = (adapter_factory or LitellmMediaAdapter)(emitter=emitter)
     return _media_adapter

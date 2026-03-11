@@ -5,7 +5,7 @@ The runner reads each source file, creates the full file entry chain
 via create_document_file, then links the result to the document via
 document_files_junction.
 
-Source files live in database/modules/11-setups/university/uploads/files/.
+Source files live in database/output/setups/university/uploads/files/.
 """
 
 from database.seeds.setups.university.documents import (

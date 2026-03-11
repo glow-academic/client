@@ -14,7 +14,7 @@ from database.seeds.ids import sid
 from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 
 # ---------------------------------------------------------------------------
-# Pre-existing role resource IDs (from database/modules/01-resources/03-roles-routes.sql)
+# Pre-existing role resource IDs (from database/seeds/resources/roles.py)
 # ---------------------------------------------------------------------------
 
 ROLE_ADMIN = UUID("019bbabc-5a36-76d3-8fc3-8415fe308cd3")

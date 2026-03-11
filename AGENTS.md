@@ -99,15 +99,13 @@ make migrate-db  # Apply pending migrations from migrate/ folder
 ```
 
 ### Migration Workflow
-1. Make schema changes in `database/app` and `database/seed` folders
-2. Find the next migration number: `ls database/migrate/ | sort -n | tail -1` and increment
-3. Create migration file: `database/migrate/{next_number}_{desc}.sql`
-4. Write migration SQL: Use `DO $$ BEGIN ... END $$` blocks for conditional DDL
-5. Apply migration: `make migrate-db` (auto-updates schema.sql + test-schema.sql)
-6. If seed data changed, update the relevant module file in `database/modules/`
-7. Restart services: `make stop && make run`
+1. Find the next migration number: `ls database/migrate/ | sort -n | tail -1` and increment
+2. Create migration file: `database/migrate/{next_number}_{desc}.sql`
+3. Write migration SQL: Use `DO $$ BEGIN ... END $$` blocks for conditional DDL
+4. Apply migration: `make migrate-db`
+5. Restart services: `make stop && make run`
 
-**Note**: Migrations are manual SQL files in `database/migrate/` folder. Server uses asyncpg for all database operations. Schema.sql is auto-generated after migrations. Seed data lives in `database/modules/` as static SQL files.
+**Note**: Migrations are manual SQL files in `database/migrate/` folder. Server uses asyncpg for all database operations. Schema lives in `database/schema/` as structured SQL files. Seed data definitions live in `database/seeds/`, generated output in `database/output/`.
 
 ## Code Quality
 

@@ -4,8 +4,8 @@ This directory contains all database-related operations for the Glow project.
 
 ## Source of Truth
 
-- **Schema**: `schema.sql` — auto-updated by `make migrate-db` (pg_dump after each migration)
-- **Seed data**: `modules/` — static SQL files, hand-maintained (see `modules/README.md`)
+- **Schema**: `schema/` — structured SQL files (extensions, functions, enums, tables, indexes, views, etc.)
+- **Seed data**: `seeds/` — static Python data definitions, `output/` — generated SQL from runner
 - **Migrations**: `migrate/` — incremental DDL changes
 
 ## Workflow
@@ -17,27 +17,21 @@ make restore-db
 - Finds the latest backup from `history/` folder
 - Restores the backup to a fresh database
 
-### 2. Fresh Start (Interactive Setup)
+### 2. Fresh Start
 ```bash
 make fresh-db
 ```
+Builds a fresh database from schema + seed modules + bootstrap keys.
 
-This runs an interactive setup that:
-1. Prompts for configuration (NODE_ENV, PORT, ORIGIN, APP_PREFIX)
-2. Asks for institution type (organization or university)
-3. Configures color scheme, auth providers, AI providers
-4. Generates a timestamped seed file in `database/seeds/`
-
-### 3. Seed from Modules (YAML Config)
+### 3. Load Seeds
 ```bash
-make build-test-seed              # Build test-seed.sql from modules
-make seed-from-yaml               # Load seed data directly into database
-make seed-from-yaml CONFIG=my.yaml  # Use custom YAML config
+make load-seeds
 ```
+Loads seed data into the local database using `load-modules.sh`.
 
 ### 4. Migration Mode
 ```bash
-make migrate-db       # Apply + regenerate schema.sql + test-schema.sql
+make migrate-db       # Apply + regenerate schema
 make migrate-db-only  # Apply only, no regeneration
 ```
 
@@ -50,18 +44,30 @@ make connect-db
 
 ```
 database/
-├── schema.sql              # DDL schema (auto-generated from live DB)
-├── test-seed.sql           # Test seed (generated from modules via YAML)
-├── scripts/
-│   ├── load-modules.sh     # YAML config → assembled seed SQL
-│   ├── start.sh            # Database management (start/migrate/backup)
-│   ├── setup-fresh-db.sh   # Interactive fresh database setup
-│   ├── generate-test-schema.sh
-│   └── encrypt-keys.js     # API key encryption utility
-├── modules/                # Static seed data modules (see modules/README.md)
-├── configs/                # YAML configs for module selection
+├── schema/                 # Structured DDL schema files
+│   ├── extensions.sql
+│   ├── functions.sql
+│   ├── enums/
+│   ├── tables/
+│   ├── indexes/
+│   ├── foreign_keys/
+│   └── views/
+├── seeds/                  # Static seed data (Python)
+│   ├── tools.py            # Tool definitions (regenerate with scripts/generate_tools.py)
+│   ├── auths.py            # Auth provider definitions
+│   └── setups/             # Setup-specific seed data
+│       ├── organization/
+│       └── university/
+├── scripts/                # Runtime utilities
+│   ├── runner.py           # Seed runner orchestrator
+│   ├── generate_tools.py   # Tool definition generator
+│   ├── load-modules.sh     # Assembled seed SQL loader
+│   ├── bootstrap-keys.sh   # API key encryption and injection
+│   └── start.sh            # Database management (start/migrate/backup)
+├── output/                 # Generated pg_dump seed files
+│   ├── base-seed.sql
+│   └── setups/
 ├── migrate/                # Migration SQL files
-├── seeds/                  # Timestamped seed files (from fresh-db)
 ├── history/                # Database backups (auto-created)
 └── package.json
 ```
@@ -70,11 +76,11 @@ database/
 
 1. Find next migration number: `ls database/migrate/ | sort -n | tail -1`
 2. Create migration file: `database/migrate/{next_number}_{desc}.sql`
-3. Apply: `make migrate-db` (auto-updates schema.sql + test-schema.sql)
-4. If seed data changed, update the relevant module file in `modules/`
-5. Run `make build-test-seed` to rebuild test seed
+3. Apply: `make migrate-db`
 
 ## Environment Variables
+
+All configuration is via `.env` (copy from `.env.example`):
 
 - `DB_USER` — Database user (default: myuser)
 - `DB_PASSWORD` — Database password (default: mypassword)
@@ -82,3 +88,4 @@ database/
 - `DB_HOST` — Database host (default: localhost)
 - `DB_PORT` — Database port (default: 5432)
 - `SECRET_KEY` — Required for encrypting API keys and secrets
+- `SEED_SETUP` — Setup to load: "university" (default) or "organization"

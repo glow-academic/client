@@ -34,16 +34,13 @@ class TestAudioLifecycle:
         _session_store.clear()
         globals_mod._voice_message_ids.clear()
 
-    def test_get_audio_adapter_creates_singleton(self, monkeypatch):
+    def test_get_audio_adapter_creates_singleton(self):
         emitter = object()
 
-        monkeypatch.setattr(audio_lifecycle, "RealtimeAudioAdapter", FakeAudioAdapter)
-        monkeypatch.setattr(
-            "app.routes.v5.socket.internal.attempt.audio.events.get_audio_emitter",
-            lambda: emitter,
+        first = audio_lifecycle.get_audio_adapter(
+            adapter_factory=FakeAudioAdapter,
+            emitter=emitter,
         )
-
-        first = audio_lifecycle.get_audio_adapter()
         second = audio_lifecycle.get_audio_adapter()
 
         assert first is second
@@ -54,9 +51,8 @@ class TestAudioLifecycle:
         session = create_session("sid-1", "chat-1", "run-1", "group-1")
         globals_mod._voice_message_ids["group-1"] = ["msg-1"]
         adapter = FakeAudioAdapter()
-        audio_lifecycle._audio_adapter = adapter
 
-        await audio_lifecycle.cleanup_audio_session(session)
+        await audio_lifecycle.cleanup_audio_session(session, adapter=adapter)
 
         assert adapter.stopped_sessions == ["group-1"]
         assert get_session_by_group_id("group-1") is None
@@ -67,8 +63,7 @@ class TestAudioLifecycle:
         session = create_session("sid-2", "chat-2", "run-2", "group-2")
         adapter = FakeAudioAdapter()
         adapter.raise_on_stop = True
-        audio_lifecycle._audio_adapter = adapter
 
-        await audio_lifecycle.cleanup_audio_session(session)
+        await audio_lifecycle.cleanup_audio_session(session, adapter=adapter)
 
         assert get_session_by_group_id("group-2") is None

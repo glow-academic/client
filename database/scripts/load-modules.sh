@@ -4,23 +4,22 @@ set -euo pipefail
 # =============================================================================
 # Load Modular Seed Data
 # =============================================================================
-# Reads a YAML config file and assembles seed SQL from module files.
-# Can either output a combined SQL file or pipe directly to psql.
+# Loads base-seed.sql and setup-specific seed files into the database.
 #
 # Usage:
-#   ./load-modules.sh                              # Use default config.yaml
-#   ./load-modules.sh config.yaml                  # Use specific config
-#   ./load-modules.sh config.yaml --output         # Write to timestamped file
-#   ./load-modules.sh config.yaml --output out.sql # Write to specific file
-#   ./load-modules.sh --output                     # Default config, timestamped file
+#   ./load-modules.sh                  # Load seeds directly to psql
+#   ./load-modules.sh --output         # Write to timestamped file
+#   ./load-modules.sh --output out.sql # Write to specific file
+#
+# Environment:
+#   SEED_SETUP  - "university" (default) or "organization"
 # =============================================================================
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_root="$(cd "$script_dir/../.." && pwd)"
-modules_dir="$script_dir/../modules"
+modules_dir="$script_dir/../output"
 
 # --- Parse args ---------------------------------------------------------------
-config_file=""
 output_mode=false
 output_file=""
 
@@ -28,31 +27,15 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --output)
       output_mode=true
-      # Check if next arg is a file path (not another flag)
       if [[ -n "${2:-}" && "${2:0:1}" != "-" ]]; then
         output_file="$2"
         shift
       fi
       ;;
-    *) config_file="$1" ;;
+    *) echo "Unknown argument: $1"; exit 1 ;;
   esac
   shift
 done
-
-if [[ -z "$config_file" ]]; then
-  config_file="$project_root/config.yaml"
-  if [[ ! -f "$config_file" ]]; then
-    config_file="$project_root/config.example.yaml"
-  fi
-fi
-
-if [[ ! -f "$config_file" ]]; then
-  echo "ERROR: Config file not found: $config_file"
-  echo "Usage: $0 [config.yaml] [--output [file.sql]]"
-  exit 1
-fi
-
-echo "Using config: $config_file"
 
 # --- Load .env ----------------------------------------------------------------
 if [[ -f "$script_dir/../.env" ]]; then
@@ -68,242 +51,63 @@ DB_HOST=${DB_HOST:-localhost}
 DB_PORT=${DB_PORT:-5432}
 DB_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 
-# --- Detect yq or use Python fallback ----------------------------------------
-read_yaml() {
-  local file=$1
-  local path=$2
-  # Try yq first, fall back to Python
-  if command -v yq &>/dev/null; then
-    yq -r "$path // empty" "$file" 2>/dev/null || true
-  else
-    python3 -c "
-import yaml, sys
-with open('$file') as f:
-    data = yaml.safe_load(f)
-path = '$path'.lstrip('.')
-parts = [p for p in path.split('.') if p]
-val = data
-for p in parts:
-    if val is None: sys.exit(0)
-    val = val.get(p) if isinstance(val, dict) else None
-if val is None:
-    sys.exit(0)
-if isinstance(val, list):
-    for item in val:
-        print(item)
-elif isinstance(val, dict):
-    for key in val:
-        print(key)
-elif val == 'all':
-    print('all')
-else:
-    print(val)
-" 2>/dev/null || true
-  fi
-}
-
-# Read a YAML list or "all" keyword
-read_yaml_list() {
-  local file=$1
-  local path=$2
-  read_yaml "$file" "$path"
-}
-
-# Read YAML map keys (for models grouped by provider)
-read_yaml_map_keys() {
-  local file=$1
-  local path=$2
-  read_yaml "$file" "$path"
-}
-
-# Read YAML list under a map key
-read_yaml_map_list() {
-  local file=$1
-  local path=$2
-  local key=$3
-  read_yaml "$file" "${path}.${key}"
-}
+SEED_SETUP=${SEED_SETUP:-university}
 
 # --- Assemble SQL -------------------------------------------------------------
 sql_parts=()
-total_files=0
 
 add_file() {
   local filepath=$1
   if [[ -f "$filepath" ]]; then
     sql_parts+=("$filepath")
-    total_files=$((total_files + 1))
   else
-    echo "  WARNING: Module file not found: $filepath"
+    echo "  WARNING: File not found: $filepath"
   fi
 }
 
-add_dir_sorted() {
-  local dir=$1
-  if [[ -d "$dir" ]]; then
-    while IFS= read -r f; do
-      add_file "$f"
-    done < <(find "$dir" -name "*.sql" -maxdepth 1 | sort)
-  fi
-}
-
-# Helper: load a root-level per-artifact module (06-rubrics, 07-evals, etc.)
-load_root_module() {
-  local yaml_key=$1     # e.g., "rubrics"
-  local folder=$2       # e.g., "06-rubrics"
-
-  local items
-  items=$(read_yaml_list "$config_file" ".modules.${yaml_key}")
-  if [[ -z "$items" || "$items" == "null" ]]; then
+load_setup() {
+  local setup_name=$1
+  local seed_file="$modules_dir/setups/$setup_name/seed.sql"
+  if [[ ! -f "$seed_file" ]]; then
+    echo "  WARNING: seed.sql not found for setup '$setup_name'. Run: python -m database.scripts.runner --setup $setup_name"
     return
   fi
-
-  echo "Loading ${folder}/ ..."
-  local mod_dir="$modules_dir/$folder"
-  if [[ "$items" == "all" ]]; then
-    add_dir_sorted "$mod_dir"
-  else
-    while IFS= read -r name; do
-      [[ -z "$name" ]] && continue
-      add_file "$mod_dir/${name}.sql"
-    done <<< "$items"
-  fi
-}
-
-# Helper: load categories for a setup type (organization or university)
-load_setup_categories() {
-  local setup_name=$1  # "organization" or "university"
-  local setup_dir="$modules_dir/11-setups/$setup_name"
-
-  # Check if this section exists in the YAML at all
-  local section_check
-  section_check=$(read_yaml "$config_file" ".modules.${setup_name}")
-  if [[ -z "$section_check" || "$section_check" == "null" ]]; then
-    return
-  fi
-
-  if [[ ! -d "$setup_dir" ]]; then
-    echo "  WARNING: Setup directory not found: $setup_dir"
-    return
-  fi
-
-  echo "Loading 11-setups/$setup_name/ ..."
-
-  # Institution auth (if present)
-  if [[ -d "$setup_dir/00-auth" ]]; then
-    echo "  Loading 00-auth/ ..."
-    add_dir_sorted "$setup_dir/00-auth"
-  fi
-
-  # Load each category using the YAML key → directory mapping
-  local category subfolder
-  local categories=(
-    "departments:01-departments"
-    "settings:10-settings"
-    "parameters:05-parameters"
-    "fields:04-fields"
-    "personas:02-personas"
-    "documents:03-documents"
-    "uploads:uploads"
-    "texts:texts"
-    "rubrics:05-rubrics"
-    "simulations:06-simulations"
-    "scenarios:07-scenarios"
-    "cohorts:08-cohorts"
-    "profiles:09-profiles"
-    "themes:themes"
-  )
-
-  for pair in "${categories[@]}"; do
-    category="${pair%%:*}"
-    subfolder="${pair##*:}"
-
-    local cat_dir="$setup_dir/$subfolder"
-    [[ ! -d "$cat_dir" ]] && continue
-
-    local items
-    items=$(read_yaml_list "$config_file" ".modules.${setup_name}.${category}")
-    if [[ -z "$items" || "$items" == "null" ]]; then
-      continue
-    fi
-
-    echo "  Loading $subfolder/ ..."
-    if [[ "$items" == "all" ]]; then
-      add_dir_sorted "$cat_dir"
-    else
-      while IFS= read -r name; do
-        [[ -z "$name" ]] && continue
-        # Try exact name first, then all.sql
-        if [[ -f "$cat_dir/${name}.sql" ]]; then
-          add_file "$cat_dir/${name}.sql"
-        elif [[ -f "$cat_dir/all.sql" ]]; then
-          # Category uses all.sql, just add it once
-          if ! printf '%s\n' "${sql_parts[@]}" | grep -q "$cat_dir/all.sql"; then
-            add_file "$cat_dir/all.sql"
-          fi
-        fi
-      done <<< "$items"
-    fi
-  done
+  echo "Loading setups/$setup_name/seed.sql ..."
+  add_file "$seed_file"
 }
 
 echo ""
-echo "=== Assembling seed SQL from modules ==="
+echo "=== Assembling seed SQL (setup: $SEED_SETUP) ==="
 echo ""
 
-# --- Modules 01-10 (resources, profiles, providers, models, agents, auth, evals, systems)
-# Generated by: python -m database.seeds.runner --modules (pg_dump of full DB state)
-combined_seed="$modules_dir/modules-01-10-seed.sql"
-if [[ -f "$combined_seed" ]]; then
-  echo "Loading modules-01-10-seed.sql (resources through systems) ..."
-  add_file "$combined_seed"
+# Base seed (resources, profiles, providers, models, agents, etc.)
+base_seed="$modules_dir/base-seed.sql"
+if [[ -f "$base_seed" ]]; then
+  echo "Loading base-seed.sql ..."
+  add_file "$base_seed"
 else
-  # Fallback: load 01-resources separately + old modules-02-10-seed.sql
-  echo "Loading 01-resources/ (always included) ..."
-  add_dir_sorted "$modules_dir/01-resources"
-
-  old_seed="$modules_dir/modules-02-10-seed.sql"
-  if [[ -f "$old_seed" ]]; then
-    echo "Loading modules-02-10-seed.sql ..."
-    add_file "$old_seed"
-  fi
+  echo "ERROR: base-seed.sql not found. Run: python -m database.scripts.runner --modules"
+  exit 1
 fi
 
-# --- 05-tools (loaded separately — not yet part of Python seed system)
-tools=$(read_yaml_list "$config_file" ".modules.tools")
-if [[ -n "$tools" ]]; then
-  echo "Loading 05-tools/ ..."
-  if [[ "$tools" == "all" ]]; then
-    add_dir_sorted "$modules_dir/05-tools"
-  else
-    while IFS= read -r name; do
-      [[ -z "$name" ]] && continue
-      add_file "$modules_dir/05-tools/${name}.sql"
-    done <<< "$tools"
-  fi
+# Organization setup is always loaded
+load_setup "organization"
+
+# University setup is loaded only when SEED_SETUP=university
+if [[ "$SEED_SETUP" == "university" ]]; then
+  load_setup "university"
 fi
-
-# --- 07-rubrics (loaded separately — not yet part of Python seed system)
-load_root_module "rubrics" "07-rubrics"
-
-# --- 11-setups: Organization --------------------------------------------------
-load_setup_categories "organization"
-
-# --- 11-setups: University ----------------------------------------------------
-# Only load university if the config declares it
-load_setup_categories "university"
 
 echo ""
-echo "Assembled $total_files module files"
+echo "Assembled ${#sql_parts[@]} module files"
 
 if [[ ${#sql_parts[@]} -eq 0 ]]; then
-  echo "WARNING: No module files found. Check your config."
+  echo "WARNING: No module files found."
   exit 1
 fi
 
 # --- Output or execute --------------------------------------------------------
 if $output_mode; then
-  # Determine output file path
   if [[ -z "$output_file" ]]; then
     timestamp=$(date +%Y%m%d_%H%M%S)
     output_file="$script_dir/../seeds/seed_modules_${timestamp}.sql"
@@ -312,9 +116,9 @@ if $output_mode; then
 
   {
     echo "-- Generated seed file from modular modules"
-    echo "-- Config: $config_file"
+    echo "-- Setup: $SEED_SETUP"
     echo "-- Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-    echo "-- Files: $total_files"
+    echo "-- Files: ${#sql_parts[@]}"
     echo ""
     echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = replica'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
     echo ""
@@ -332,7 +136,6 @@ if $output_mode; then
   echo ""
   echo "Written to: $output_file"
 else
-  # Pipe directly to psql
   echo "Loading into database: $DB_NAME ..."
   {
     echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = replica'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
@@ -343,14 +146,13 @@ else
     echo "DO \$\$ BEGIN EXECUTE 'SET session_replication_role = DEFAULT'; EXCEPTION WHEN insufficient_privilege THEN NULL; END \$\$;"
   } | psql "$DB_URL" -v ON_ERROR_STOP=0 --quiet 2>&1 | grep -v "^$" || true
 
-  # Copy upload files to the project uploads directory (handles subdirectories)
+  # Copy upload files to the project uploads directory
   uploads_dir="$project_root/uploads"
   for setup_name in organization university; do
-    uploads_files_dir="$modules_dir/11-setups/$setup_name/uploads/files"
+    uploads_files_dir="$modules_dir/setups/$setup_name/uploads/files"
     if [[ -d "$uploads_files_dir" ]]; then
       mkdir -p "$uploads_dir"
       echo "Copying upload files from $setup_name/uploads/files/ ..."
-      # Use cp -Rn to handle subdirectories (e.g., image/ for page PNGs)
       cp -Rn "$uploads_files_dir"/ "$uploads_dir/" 2>/dev/null || true
     fi
   done

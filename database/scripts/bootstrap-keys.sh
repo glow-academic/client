@@ -4,13 +4,13 @@ set -euo pipefail
 # =============================================================================
 # Bootstrap API Keys
 # =============================================================================
-# Reads config.yaml, encrypts API keys with SECRET_KEY, and either:
+# Reads API keys from env vars (sourced from .env), encrypts them with
+# SECRET_KEY, and either:
 #   - Updates the live database (default)
 #   - Appends SQL UPDATE statements to a file (--append mode, for Docker)
 #
 # Usage:
 #   ./bootstrap-keys.sh                              # Update live DB
-#   ./bootstrap-keys.sh --config path.yaml           # Specific config
 #   ./bootstrap-keys.sh --append seed_modules.sql    # Append SQL to file
 #   ./bootstrap-keys.sh --dry-run                    # Show what would be updated
 # =============================================================================
@@ -20,16 +20,11 @@ project_root="$(cd "$script_dir/../.." && pwd)"
 encrypt_script="$script_dir/encrypt-keys.js"
 
 # --- Parse args ---------------------------------------------------------------
-config_file=""
 append_file=""
 dry_run=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --config)
-      config_file="$2"
-      shift 2
-      ;;
     --append)
       append_file="$2"
       shift 2
@@ -39,24 +34,11 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     *)
-      echo "Usage: $0 [--config path.yaml] [--append file.sql] [--dry-run]"
+      echo "Usage: $0 [--append file.sql] [--dry-run]"
       exit 1
       ;;
   esac
 done
-
-# --- Resolve config file ------------------------------------------------------
-if [[ -z "$config_file" ]]; then
-  config_file="$project_root/config.yaml"
-  if [[ ! -f "$config_file" ]]; then
-    config_file="$project_root/config.example.yaml"
-  fi
-fi
-
-if [[ ! -f "$config_file" ]]; then
-  echo "WARNING: Config file not found: $config_file - skipping key bootstrap"
-  exit 0
-fi
 
 # --- Load .env ----------------------------------------------------------------
 if [[ -f "$project_root/.env" ]]; then
@@ -89,40 +71,16 @@ if [[ ! -f "$encrypt_script" ]]; then
   exit 0
 fi
 
-# --- YAML reader (same approach as load-modules.sh) ---------------------------
-read_yaml() {
-  local file=$1
-  local path=$2
-  if command -v yq &>/dev/null; then
-    yq -r "$path // empty" "$file" 2>/dev/null || true
-  else
-    python3 -c "
-import yaml, sys
-with open('$file') as f:
-    data = yaml.safe_load(f)
-path = '$path'.lstrip('.')
-parts = [p for p in path.split('.') if p]
-val = data
-for p in parts:
-    if val is None: sys.exit(0)
-    val = val.get(p) if isinstance(val, dict) else None
-if val is None:
-    sys.exit(0)
-print(val)
-" 2>/dev/null || true
-  fi
-}
-
 # --- Key mapping --------------------------------------------------------------
-# Format: yaml_path|keys_resource_id|provider_keys_resource_id|display_name
+# Format: env_var|keys_resource_id|provider_keys_resource_id|display_name
 # provider_keys_resource_id is empty for auth keys (they only live in keys_resource)
 KEYS=(
-  "providers.openai_api_key|019bbdcb-6d52-7889-8484-ed84e9180139|019c441a-0eb9-7665-a01c-a6fec156d716|OpenAI API Key"
-  "providers.gemini_api_key|019bbdcb-6d52-7d32-803f-3f5c8c2a9af7|019c441a-0eb9-7938-8d65-ccfc25d92856|Gemini API Key"
-  "auth.google.client_id|019b3be4-3321-7f30-989b-3076ba1aa712||Google Client ID"
-  "auth.google.client_secret|019b3be4-3321-7f34-b17e-9daa65547748||Google Client Secret"
-  "auth.microsoft.client_id|019b3be4-3321-7f18-847d-823bd6a5c5f6||Microsoft Client ID"
-  "auth.microsoft.client_secret|019b3be4-3321-7f09-81ff-ed052c711127||Microsoft Client Secret"
+  "OPENAI_API_KEY|019bbdcb-6d52-7889-8484-ed84e9180139|019c441a-0eb9-7665-a01c-a6fec156d716|OpenAI API Key"
+  "GEMINI_API_KEY|019bbdcb-6d52-7d32-803f-3f5c8c2a9af7|019c441a-0eb9-7938-8d65-ccfc25d92856|Gemini API Key"
+  "GOOGLE_CLIENT_ID|019b3be4-3321-7f30-989b-3076ba1aa712||Google Client ID"
+  "GOOGLE_CLIENT_SECRET|019b3be4-3321-7f34-b17e-9daa65547748||Google Client Secret"
+  "MICROSOFT_CLIENT_ID|019b3be4-3321-7f18-847d-823bd6a5c5f6||Microsoft Client ID"
+  "MICROSOFT_CLIENT_SECRET|019b3be4-3321-7f09-81ff-ed052c711127||Microsoft Client Secret"
 )
 
 # --- Encrypt and generate SQL -------------------------------------------------
@@ -131,12 +89,12 @@ updated_count=0
 updated_names=()
 
 for entry in "${KEYS[@]}"; do
-  IFS='|' read -r yaml_path key_res_id prov_key_id display_name <<< "$entry"
+  IFS='|' read -r env_var key_res_id prov_key_id display_name <<< "$entry"
 
-  # Read raw key from config
-  raw_key=$(read_yaml "$config_file" ".$yaml_path")
+  # Read raw key from env var
+  raw_key="${!env_var:-}"
 
-  if [[ -z "$raw_key" || "$raw_key" == "null" || "$raw_key" == "None" ]]; then
+  if [[ -z "$raw_key" ]]; then
     echo "  Skipping $display_name - not configured"
     continue
   fi
