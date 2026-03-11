@@ -4,7 +4,7 @@ from typing import Any
 
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.events.audit import build_audit_arguments, run_artifact_operation_with_audit
-from app.infra.websocket.attempt_events_impl import attempt_next_impl
+from app.infra.attempt.workflows import attempt_next_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit

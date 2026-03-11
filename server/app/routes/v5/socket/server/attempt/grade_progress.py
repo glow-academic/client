@@ -12,7 +12,8 @@ internal_sio = get_internal_sio()
 async def attempt_grade_progress_server_handler(data: dict[str, Any]) -> None:
     """Emit attempt_grade_progress to client rooms."""
     sid = data.get("sid", "")
-    if not sid:
+    rooms = data.get("rooms") or ([sid] if sid else [])
+    if not rooms:
         return
     event = AttemptGradeProgressEvent(
         chat_id=data.get("chat_id", ""),
@@ -20,7 +21,7 @@ async def attempt_grade_progress_server_handler(data: dict[str, Any]) -> None:
         resource_type=data.get("resource_type"),
         entry=data.get("entry"),
     )
-    for room in data.get("rooms") or [sid]:
+    for room in rooms:
         await sio.emit(
             "attempt_grade_progress", event.model_dump(mode="json"), room=room
         )

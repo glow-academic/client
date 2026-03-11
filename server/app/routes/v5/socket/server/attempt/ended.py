@@ -12,7 +12,8 @@ internal_sio = get_internal_sio()
 async def attempt_ended_server_handler(data: dict[str, Any]) -> None:
     """Emit attempt_ended to client rooms."""
     sid = data.get("sid", "")
-    if not sid:
+    rooms = data.get("rooms") or ([sid] if sid else [])
+    if not rooms:
         return
     event = AttemptEndedEvent(
         attempt_id=data.get("attempt_id", ""),
@@ -20,5 +21,5 @@ async def attempt_ended_server_handler(data: dict[str, Any]) -> None:
         all_scenarios_complete=data.get("all_scenarios_complete", False),
         message=data.get("message"),
     )
-    for room in data.get("rooms") or [sid]:
+    for room in rooms:
         await sio.emit("attempt_ended", event.model_dump(mode="json"), room=room)

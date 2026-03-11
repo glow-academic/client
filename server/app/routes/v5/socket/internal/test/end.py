@@ -103,8 +103,12 @@ async def test_end_internal_impl(
                         {
                             "sid": sid,
                             "test_id": str(payload.test_id),
+                            "invocation_id": str(payload.test_invocation_id),
                             "test_invocation_id": str(payload.test_invocation_id),
                             "grade_id": grade_id,
+                            "rooms": [sid, f"test_{payload.test_invocation_id}"]
+                            if sid
+                            else [f"test_{payload.test_invocation_id}"],
                         },
                     )
                 ]

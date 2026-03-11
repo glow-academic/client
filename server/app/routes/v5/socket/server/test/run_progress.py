@@ -12,12 +12,13 @@ internal_sio = get_internal_sio()
 async def test_run_delta_server_handler(data: dict[str, Any]) -> None:
     """Emit test_run_delta to client rooms."""
     sid = data.get("sid", "")
-    if not sid:
+    rooms = data.get("rooms") or ([sid] if sid else [])
+    if not rooms:
         return
     event = TestRunDeltaEvent(
         invocation_id=data.get("invocation_id", ""),
         run_id=data.get("run_id", ""),
         content=data.get("content", ""),
     )
-    for room in data.get("rooms") or [sid]:
+    for room in rooms:
         await sio.emit("test_run_delta", event.model_dump(mode="json"), room=room)

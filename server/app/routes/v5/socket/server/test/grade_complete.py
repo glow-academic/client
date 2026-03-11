@@ -12,12 +12,13 @@ internal_sio = get_internal_sio()
 async def test_grade_complete_server_handler(data: dict[str, Any]) -> None:
     """Emit test_all_complete to client rooms."""
     sid = data.get("sid", "")
-    if not sid:
+    rooms = data.get("rooms") or ([sid] if sid else [])
+    if not rooms:
         return
     event = TestAllCompleteEvent(
         invocation_id=data.get("invocation_id", ""),
         total_runs=data.get("total_runs", 0),
         success=data.get("success", True),
     )
-    for room in data.get("rooms") or [sid]:
+    for room in rooms:
         await sio.emit("test_all_complete", event.model_dump(mode="json"), room=room)

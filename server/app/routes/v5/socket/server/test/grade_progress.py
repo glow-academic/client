@@ -12,7 +12,8 @@ internal_sio = get_internal_sio()
 async def test_graded_server_handler(data: dict[str, Any]) -> None:
     """Emit test_graded to client rooms."""
     sid = data.get("sid", "")
-    if not sid:
+    rooms = data.get("rooms") or ([sid] if sid else [])
+    if not rooms:
         return
     event = TestGradedEvent(
         invocation_id=data.get("invocation_id", ""),
@@ -21,5 +22,5 @@ async def test_graded_server_handler(data: dict[str, Any]) -> None:
         passed=data.get("passed"),
         feedback=data.get("feedback"),
     )
-    for room in data.get("rooms") or [sid]:
+    for room in rooms:
         await sio.emit("test_graded", event.model_dump(mode="json"), room=room)

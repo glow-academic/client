@@ -1516,7 +1516,7 @@ async def attempt_message_impl(
     attempt_id_str = data.get("attempt_id", "")
     parent_message_id_raw = data.get("parent_message_id")
 
-    if not sid or not chat_id_str:
+    if not chat_id_str:
         return
 
     if not message_text or not message_text.strip():
@@ -1547,7 +1547,7 @@ async def attempt_message_impl(
         logger.exception(f"Invalid attempt_message payload: {e}")
         return
 
-    rooms = [sid, f"attempt_{chat_id}"]
+    rooms = ([sid] if sid else []) + [f"attempt_{chat_id}"]
 
     try:
         # Step 1: Resolve group_id from attempt_chat_entry

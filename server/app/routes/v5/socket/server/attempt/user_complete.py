@@ -12,7 +12,8 @@ internal_sio = get_internal_sio()
 async def attempt_user_complete_server_handler(data: dict[str, Any]) -> None:
     """Emit attempt_user_complete to client rooms."""
     sid = data.get("sid", "")
-    if not sid:
+    rooms = data.get("rooms") or ([sid] if sid else [])
+    if not rooms:
         return
     event = AttemptUserCompleteEvent(
         chat_id=data.get("chat_id", ""),
@@ -21,7 +22,7 @@ async def attempt_user_complete_server_handler(data: dict[str, Any]) -> None:
         created_at=data.get("created_at", ""),
         item_id=data.get("item_id"),
     )
-    for room in data.get("rooms") or [sid]:
+    for room in rooms:
         await sio.emit(
             "attempt_user_complete", event.model_dump(mode="json"), room=room
         )
