@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Get Persona
-         * @description Get persona information using composable infra architecture.
+         * @description Get persona information using the canonical shared persona operation.
          */
         post: operations["get_persona_api_v5_artifacts_personas_get_post"];
         delete?: never;
@@ -235,7 +235,7 @@ export interface paths {
         put?: never;
         /**
          * Get Scenario
-         * @description Get scenario information using composable infra architecture.
+         * @description Get scenario information using the canonical shared scenario operation.
          */
         post: operations["get_scenario_api_v5_artifacts_scenarios_get_post"];
         delete?: never;
@@ -455,7 +455,7 @@ export interface paths {
         put?: never;
         /**
          * Get Simulation
-         * @description Get simulation information using composable infra architecture.
+         * @description Get simulation information using the canonical shared simulation operation.
          */
         post: operations["get_simulation_api_v5_artifacts_simulations_get_post"];
         delete?: never;
@@ -695,7 +695,7 @@ export interface paths {
         put?: never;
         /**
          * Get Document
-         * @description Get document information using composable infra architecture.
+         * @description Get document information using the canonical shared document operation.
          */
         post: operations["get_document_api_v5_artifacts_documents_get_post"];
         delete?: never;
@@ -895,7 +895,7 @@ export interface paths {
         put?: never;
         /**
          * Get Department
-         * @description Get department information using composable infra architecture.
+         * @description Get department information using the canonical shared department operation.
          */
         post: operations["get_department_api_v5_artifacts_departments_get_post"];
         delete?: never;
@@ -1135,7 +1135,7 @@ export interface paths {
         put?: never;
         /**
          * Get Cohort
-         * @description Get cohort information using composable infra architecture.
+         * @description Get cohort information using the canonical shared cohort operation.
          */
         post: operations["get_cohort_api_v5_artifacts_cohorts_get_post"];
         delete?: never;
@@ -1355,7 +1355,7 @@ export interface paths {
         put?: never;
         /**
          * Get Eval
-         * @description Get eval information using composable infra architecture.
+         * @description Get eval information using the canonical shared eval operation.
          */
         post: operations["get_eval_api_v5_artifacts_evals_get_post"];
         delete?: never;
@@ -1555,7 +1555,7 @@ export interface paths {
         put?: never;
         /**
          * Get Rubric
-         * @description Get rubric information using composable infra architecture.
+         * @description Get rubric information using the canonical shared rubric operation.
          */
         post: operations["get_rubric_api_v5_artifacts_rubrics_get_post"];
         delete?: never;
@@ -1795,7 +1795,7 @@ export interface paths {
         put?: never;
         /**
          * Get Setting
-         * @description Get setting information using composable infra architecture.
+         * @description Get setting information using the canonical shared setting operation.
          */
         post: operations["get_setting_api_v5_artifacts_settings_get_post"];
         delete?: never;
@@ -2015,7 +2015,7 @@ export interface paths {
         put?: never;
         /**
          * Get Agent
-         * @description Get agent information using composable infra architecture.
+         * @description Get agent information using the canonical shared agent operation.
          */
         post: operations["get_agent_api_v5_artifacts_agents_get_post"];
         delete?: never;
@@ -2235,7 +2235,7 @@ export interface paths {
         put?: never;
         /**
          * Get Model
-         * @description Get model information using composable infra architecture.
+         * @description Get model information using the canonical shared model operation.
          */
         post: operations["get_model_api_v5_artifacts_models_get_post"];
         delete?: never;
@@ -2475,7 +2475,7 @@ export interface paths {
         put?: never;
         /**
          * Get Provider
-         * @description Get provider information using composable infra architecture.
+         * @description Get provider information using the canonical shared provider operation.
          */
         post: operations["get_provider_api_v5_artifacts_providers_get_post"];
         delete?: never;
@@ -2695,7 +2695,7 @@ export interface paths {
         put?: never;
         /**
          * Get Parameter
-         * @description Get parameter information using composable infra architecture.
+         * @description Get parameter information using the canonical shared parameter operation.
          */
         post: operations["get_parameter_api_v5_artifacts_parameters_get_post"];
         delete?: never;
@@ -2915,7 +2915,7 @@ export interface paths {
         put?: never;
         /**
          * Get Field
-         * @description Get field information using composable infra architecture.
+         * @description Get field information using the canonical shared field operation.
          */
         post: operations["get_field_api_v5_artifacts_fields_get_post"];
         delete?: never;
@@ -3155,7 +3155,7 @@ export interface paths {
         put?: never;
         /**
          * Get Profile
-         * @description Get profile information using composable infra architecture.
+         * @description Get profile information using the canonical shared profile operation.
          */
         post: operations["get_profile_api_v5_artifacts_profiles_get_post"];
         delete?: never;
@@ -3415,7 +3415,7 @@ export interface paths {
         put?: never;
         /**
          * Get Auth
-         * @description Get auth information using composable infra architecture.
+         * @description Get auth information using the canonical shared auth operation.
          */
         post: operations["get_auth_api_v5_artifacts_auths_get_post"];
         delete?: never;
@@ -3655,7 +3655,7 @@ export interface paths {
         put?: never;
         /**
          * Get Tool
-         * @description Get tool information using composable infra architecture.
+         * @description Get tool information using the canonical shared tool operation.
          */
         post: operations["get_tool_api_v5_artifacts_tools_get_post"];
         delete?: never;
@@ -3935,29 +3935,9 @@ export interface paths {
         put?: never;
         /**
          * Generate
-         * @description Trigger artifact generation. Returns immediately; progress via socket.
+         * @description Trigger artifact generation. Returns immediately; progress via events.
          */
         post: operations["generate_api_v5_artifacts_group_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/group/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Group Events
-         * @description Poll for generation events. Returns events since cursor, with pagination URLs.
-         */
-        post: operations["group_events_api_v5_artifacts_group_events_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4375,7 +4355,7 @@ export interface paths {
         put?: never;
         /**
          * Attempt Get
-         * @description Get attempt detail with parallel MV fetching.
+         * @description Get attempt detail with the canonical shared attempt bundle.
          */
         post: operations["attempt_get_api_v5_artifacts_attempt_get_post"];
         delete?: never;
@@ -4475,7 +4455,7 @@ export interface paths {
         put?: never;
         /**
          * Start Attempt
-         * @description Create a new attempt. Returns attempt_id + first chat_entry_id.
+         * @description Create a new attempt using the canonical internal attempt orchestration.
          */
         post: operations["start_attempt_api_v5_artifacts_attempt_start_post"];
         delete?: never;
@@ -4653,7 +4633,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/attempt/audio": {
+    "/api/v5/artifacts/attempt/audio/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -4663,17 +4643,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Audio
-         * @description Submit audio for an attempt via upload_id. Returns transcription and assistant response.
+         * Attempt Audio Start
+         * @description Start an audio session for an attempt chat.
          */
-        post: operations["attempt_audio_api_v5_artifacts_attempt_audio_post"];
+        post: operations["attempt_audio_start_api_v5_artifacts_attempt_audio_start_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/attempt/events": {
+    "/api/v5/artifacts/attempt/audio/frame": {
         parameters: {
             query?: never;
             header?: never;
@@ -4683,10 +4663,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Events
-         * @description Poll for chat events. Returns events since cursor, with pagination URLs.
+         * Attempt Audio Frame
+         * @description Push audio bytes from an uploaded file into the session queue.
          */
-        post: operations["attempt_events_api_v5_artifacts_attempt_events_post"];
+        post: operations["attempt_audio_frame_api_v5_artifacts_attempt_audio_frame_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/attempt/audio/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Audio Stop
+         * @description Stop an audio session for an attempt chat.
+         */
+        post: operations["attempt_audio_stop_api_v5_artifacts_attempt_audio_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4704,10 +4704,7 @@ export interface paths {
         put?: never;
         /**
          * Search Attempt
-         * @description Search attempt state — chats, messages, grades, entries.
-         *
-         *     Use include_entries to control which entry types are returned.
-         *     Supports cursor-based pagination via next_page_url.
+         * @description Search attempts — composable infra architecture.
          */
         post: operations["search_attempt_api_v5_artifacts_attempt_search_post"];
         delete?: never;
@@ -4825,10 +4822,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get Dashboard
-         * @description Get full dashboard bundle with all 4 sections in a single call.
-         */
+        /** Get Dashboard */
         post: operations["get_dashboard_api_v5_artifacts_dashboard_get_post"];
         delete?: never;
         options?: never;
@@ -5005,10 +4999,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get Leaderboard
-         * @description Get leaderboard top sections (header metrics + accolades).
-         */
+        /** Get Leaderboard */
         post: operations["get_leaderboard_api_v5_artifacts_leaderboard_get_post"];
         delete?: never;
         options?: never;
@@ -5205,10 +5196,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Get Activity
-         * @description Get activity top cards — header metrics + profile summary.
-         */
+        /** Get Activity */
         post: operations["get_activity_api_v5_artifacts_activity_get_post"];
         delete?: never;
         options?: never;
@@ -5427,7 +5415,7 @@ export interface paths {
         put?: never;
         /**
          * Get Benchmark
-         * @description Get benchmark artifact data with full resource hydration.
+         * @description Get benchmark artifact data with the canonical shared benchmark operation.
          */
         post: operations["get_benchmark_api_v5_artifacts_benchmark_get_post"];
         delete?: never;
@@ -5719,26 +5707,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/test/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Events
-         * @description Poll for test invocation events. Returns events since cursor, with pagination URLs.
-         */
-        post: operations["test_events_api_v5_artifacts_test_events_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/test/search": {
         parameters: {
             query?: never;
@@ -5750,12 +5718,71 @@ export interface paths {
         put?: never;
         /**
          * Search Test
-         * @description Search test state — invocations, runs, grades, entries.
-         *
-         *     Use include_entries to control which entry types are returned.
-         *     Supports cursor-based pagination via next_page_url.
+         * @description Search tests — composable infra architecture.
          */
         post: operations["search_test_api_v5_artifacts_test_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/events/poll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Poll Events
+         * @description Validate an artifact event subscription and reserve the delivery shape.
+         *
+         *     TODO: Read persisted call/domain events from the canonical store once wired.
+         */
+        post: operations["poll_events_api_v5_events_poll_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/events/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream Events
+         * @description Stream artifact events via SSE using the centralized declaration registry.
+         */
+        get: operations["stream_events_api_v5_events_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/events/webhooks/dispatch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dispatch Webhook Events
+         * @description Dispatch artifact events to a webhook target resolved from a license key.
+         */
+        post: operations["dispatch_webhook_events_api_v5_events_webhooks_dispatch_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13658,17 +13685,9 @@ export interface components {
         };
         /**
          * AnalysisEntry
-         * @description Agent-provided analysis for a grade.
-         */
-        "AnalysisEntry-Input": {
-            /** Content */
-            content: string;
-        };
-        /**
-         * AnalysisEntry
          * @description Analysis entry for chat-level analysis content.
          */
-        "AnalysisEntry-Output": {
+        AnalysisEntry: {
             /** Content */
             content?: string | null;
         };
@@ -13778,11 +13797,6 @@ export interface components {
         ArchiveAttemptsRequest: {
             /** Archived */
             archived: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Attempt Ids */
             attempt_ids?: string[] | null;
             /** Start Date */
@@ -14199,11 +14213,6 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
         };
         /**
          * AttemptEndPayload
@@ -14215,11 +14224,6 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /**
              * Chat Id
              * Format: uuid
@@ -14273,44 +14277,10 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** AttemptEvent */
-        AttemptEvent: {
-            /** Id */
-            id: string;
-            /** Type */
-            type: string;
-            /** Created */
-            created: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
-        };
-        /** AttemptEventsApiResponse */
-        AttemptEventsApiResponse: {
-            /** Events */
-            events: components["schemas"]["AttemptEvent"][];
-            /** Next Page Url */
-            next_page_url?: string | null;
-            /** Previous Page Url */
-            previous_page_url?: string | null;
-        };
-        /** AttemptEventsPayload */
-        AttemptEventsPayload: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /** Cursor */
-            cursor?: string | null;
-            /** Types */
-            types?: string[] | null;
-            /**
-             * Limit
-             * @default 50
-             */
-            limit: number;
+        /** AttemptGradeAnalysisEntry */
+        AttemptGradeAnalysisEntry: {
+            /** Content */
+            content: string;
         };
         /**
          * AttemptGradeCompleteEvent
@@ -14321,6 +14291,31 @@ export interface components {
             chat_id: string;
             /** Grade Id */
             grade_id?: string | null;
+        };
+        /** AttemptGradeFeedbackEntry */
+        AttemptGradeFeedbackEntry: {
+            /** Feedback */
+            feedback: string;
+            /** Total */
+            total?: number | null;
+        };
+        /** AttemptGradeHighlightEntry */
+        AttemptGradeHighlightEntry: {
+            /** Strength Id */
+            strength_id?: string | null;
+            /** Section */
+            section: string;
+            /** Idx */
+            idx?: number | null;
+        };
+        /** AttemptGradeImprovementEntry */
+        AttemptGradeImprovementEntry: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Message Id */
+            message_id?: string | null;
         };
         /**
          * AttemptGradePayload
@@ -14354,6 +14349,26 @@ export interface components {
             entry?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** AttemptGradeReplacementEntry */
+        AttemptGradeReplacementEntry: {
+            /** Improvement Id */
+            improvement_id?: string | null;
+            /** Section */
+            section: string;
+            /** Replace */
+            replace: string;
+            /** Idx */
+            idx?: number | null;
+        };
+        /** AttemptGradeStrengthEntry */
+        AttemptGradeStrengthEntry: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Message Id */
+            message_id?: string | null;
         };
         /**
          * AttemptJoinPayload
@@ -14417,11 +14432,6 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Draft Id */
             draft_id?: string | null;
         };
@@ -14508,6 +14518,8 @@ export interface components {
             message?: string | null;
             /** Is Correct */
             is_correct?: boolean | null;
+            /** Response Id */
+            response_id?: string | null;
         };
         /** AttemptResponsesGenerationEvent */
         AttemptResponsesGenerationEvent: {
@@ -14555,11 +14567,6 @@ export interface components {
          * @description Client-to-server: create a new attempt.
          */
         AttemptStartPayload: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Home Id */
             home_id?: string | null;
             /** Practice Id */
@@ -14590,16 +14597,6 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-            /**
-             * Session Id
-             * Format: uuid
-             */
-            session_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
         };
         /**
          * AttemptStoppedEvent
@@ -14625,11 +14622,6 @@ export interface components {
              * Format: uuid
              */
             attempt_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Previous Chat Map */
             previous_chat_map: {
                 [key: string]: string;
@@ -14677,17 +14669,8 @@ export interface components {
             /** Item Id */
             item_id?: string | null;
         };
-        /** AudioApiResponse */
-        AudioApiResponse: {
-            /** Transcription */
-            transcription: string;
-            /** Assistant Message Id */
-            assistant_message_id?: string | null;
-            /** Assistant Content */
-            assistant_content?: string | null;
-        };
-        /** AudioPayload */
-        AudioPayload: {
+        /** AudioFramePayload */
+        AudioFramePayload: {
             /**
              * Chat Id
              * Format: uuid
@@ -14698,6 +14681,54 @@ export interface components {
              * Format: uuid
              */
             upload_id: string;
+        };
+        /** AudioFrameResponse */
+        AudioFrameResponse: {
+            /** Accepted */
+            accepted: boolean;
+        };
+        /**
+         * AudioStartInternalResult
+         * @description Structured result for audio start orchestration.
+         */
+        AudioStartInternalResult: {
+            /** Chat Id */
+            chat_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Group Id */
+            group_id: string;
+            /** Attempt Id */
+            attempt_id: string;
+        };
+        /** AudioStartPayload */
+        AudioStartPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /**
+         * AudioStopInternalResult
+         * @description Structured result for audio stop orchestration.
+         */
+        AudioStopInternalResult: {
+            /** Chat Id */
+            chat_id: string;
+            /**
+             * Stopped
+             * @default true
+             */
+            stopped: boolean;
+        };
+        /** AudioStopPayload */
+        AudioStopPayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
         };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
@@ -15306,9 +15337,9 @@ export interface components {
             position?: number | null;
             grade?: components["schemas"]["GradeData"] | null;
             /** Feedbacks */
-            feedbacks?: components["schemas"]["FeedbackEntry-Output"][] | null;
+            feedbacks?: components["schemas"]["FeedbackEntry"][] | null;
             /** Analyses */
-            analyses?: components["schemas"]["AnalysisEntry-Output"][] | null;
+            analyses?: components["schemas"]["AnalysisEntry"][] | null;
             /** Show Problem Statement */
             show_problem_statement?: boolean | null;
             /** Show Objectives */
@@ -16584,8 +16615,6 @@ export interface components {
         CreateAgentApiRequest: {
             /** Agents */
             agents: components["schemas"]["CreateAgentItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateAgentApiResponse
@@ -16638,8 +16667,6 @@ export interface components {
         CreateAuthApiRequest: {
             /** Auths */
             auths: components["schemas"]["CreateAuthItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateAuthApiResponse
@@ -16690,8 +16717,6 @@ export interface components {
         CreateCohortApiRequest: {
             /** Cohorts */
             cohorts: components["schemas"]["CreateCohortItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateCohortApiResponse
@@ -16748,8 +16773,6 @@ export interface components {
         CreateDepartmentApiRequest: {
             /** Departments */
             departments: components["schemas"]["CreateDepartmentItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateDepartmentApiResponse
@@ -16792,8 +16815,6 @@ export interface components {
         CreateDocumentApiRequest: {
             /** Documents */
             documents: components["schemas"]["CreateDocumentItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateDocumentApiResponse
@@ -16844,8 +16865,6 @@ export interface components {
         CreateEvalApiRequest: {
             /** Evals */
             evals: components["schemas"]["CreateEvalItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateEvalApiResponse
@@ -16894,8 +16913,6 @@ export interface components {
         CreateFieldApiRequest: {
             /** Fields */
             fields: components["schemas"]["CreateFieldItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateFieldApiResponse
@@ -16940,8 +16957,6 @@ export interface components {
         CreateModelApiRequest: {
             /** Models */
             models: components["schemas"]["CreateModelItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateModelApiResponse
@@ -17000,8 +17015,6 @@ export interface components {
         CreateParameterApiRequest: {
             /** Parameters */
             parameters: components["schemas"]["CreateParameterItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateParameterApiResponse
@@ -17042,8 +17055,6 @@ export interface components {
         CreatePersonaApiRequest: {
             /** Personas */
             personas: components["schemas"]["CreatePersonaItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreatePersonaApiResponse
@@ -17126,8 +17137,6 @@ export interface components {
         CreateProfileApiRequest: {
             /** Profiles */
             profiles: components["schemas"]["CreateProfileItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateProfileApiResponse
@@ -17168,8 +17177,6 @@ export interface components {
         CreateProviderApiRequest: {
             /** Providers */
             providers: components["schemas"]["CreateProviderItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateProviderApiResponse
@@ -17216,8 +17223,6 @@ export interface components {
         CreateRubricApiRequest: {
             /** Rubrics */
             rubrics: components["schemas"]["CreateRubricItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateRubricApiResponse
@@ -17264,8 +17269,6 @@ export interface components {
         CreateScenarioApiRequest: {
             /** Scenarios */
             scenarios: components["schemas"]["CreateScenarioItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateScenarioApiResponse
@@ -17356,8 +17359,6 @@ export interface components {
         CreateSettingApiRequest: {
             /** Settings */
             settings: components["schemas"]["CreateSettingItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateSettingApiResponse
@@ -17418,8 +17419,6 @@ export interface components {
         CreateSimulationApiRequest: {
             /** Simulations */
             simulations: components["schemas"]["CreateSimulationItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateSimulationApiResponse
@@ -17476,8 +17475,6 @@ export interface components {
         CreateToolApiRequest: {
             /** Tools */
             tools: components["schemas"]["CreateToolItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * CreateToolApiResponse
@@ -18655,6 +18652,43 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /**
+         * DispatchWebhookApiRequest
+         * @description Generic webhook dispatch request for any artifact stream.
+         */
+        DispatchWebhookApiRequest: {
+            /** Artifact */
+            artifact: string;
+            /** Operation */
+            operation: string;
+            /** License Key */
+            license_key: string;
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Cursor */
+            cursor?: string | null;
+            /** Types */
+            types?: string[] | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
+        /**
+         * DispatchWebhookApiResponse
+         * @description Webhook dispatch result.
+         */
+        DispatchWebhookApiResponse: {
+            /** Success */
+            success: boolean;
+            /** Delivered Count */
+            delivered_count: number;
+            /** Target Url */
+            target_url: string;
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
         /** DocsApiRequest */
         DocsApiRequest: {
             /** Entity Id */
@@ -19686,8 +19720,6 @@ export interface components {
              * Format: uuid
              */
             scenario_id: string;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * DuplicateScenarioApiResponse
@@ -19885,11 +19917,6 @@ export interface components {
              */
             attempt_id: string;
             /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
              * Chat Id
              * Format: uuid
              */
@@ -19906,17 +19933,17 @@ export interface components {
             /** Time Taken */
             time_taken?: number | null;
             /** Feedbacks */
-            feedbacks?: components["schemas"]["FeedbackEntry-Input"][] | null;
+            feedbacks?: components["schemas"]["AttemptGradeFeedbackEntry"][] | null;
             /** Strengths */
-            strengths?: components["schemas"]["StrengthEntry"][] | null;
+            strengths?: components["schemas"]["AttemptGradeStrengthEntry"][] | null;
             /** Improvements */
-            improvements?: components["schemas"]["ImprovementEntry"][] | null;
+            improvements?: components["schemas"]["AttemptGradeImprovementEntry"][] | null;
             /** Analyses */
-            analyses?: components["schemas"]["AnalysisEntry-Input"][] | null;
+            analyses?: components["schemas"]["AttemptGradeAnalysisEntry"][] | null;
             /** Highlights */
-            highlights?: components["schemas"]["HighlightEntry-Input"][] | null;
+            highlights?: components["schemas"]["AttemptGradeHighlightEntry"][] | null;
             /** Replacements */
-            replacements?: components["schemas"]["ReplacementEntry-Input"][] | null;
+            replacements?: components["schemas"]["AttemptGradeReplacementEntry"][] | null;
         };
         /** EndAttemptApiResponse */
         EndAttemptApiResponse: {
@@ -20394,6 +20421,35 @@ export interface components {
             /** Department Ids */
             department_ids?: unknown[] | null;
         };
+        /**
+         * EventEnvelope
+         * @description Transport-level event shape exposed by generic delivery endpoints.
+         */
+        EventEnvelope: {
+            /** Id */
+            id: string;
+            /** Event Type */
+            event_type: string;
+            /** Artifact */
+            artifact: string;
+            /** Operation */
+            operation: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Call Id */
+            call_id?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+        };
         /** ExamplesGenerationEvent */
         ExamplesGenerationEvent: {
             /**
@@ -20540,11 +20596,6 @@ export interface components {
              * Format: uuid
              */
             chat_entry_id: string;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
             /** Attempt Id */
             attempt_id?: string | null;
             /** Draft Id */
@@ -21133,21 +21184,11 @@ export interface components {
         };
         /**
          * FeedbackEntry
-         * @description Agent-provided feedback for a grade.
-         */
-        "FeedbackEntry-Input": {
-            /** Feedback */
-            feedback: string;
-            /** Total */
-            total?: number | null;
-        };
-        /**
-         * FeedbackEntry
          * @description Feedback by standard for grading state.
          *
          *     standard_group_id is derived from standards metadata lookup.
          */
-        "FeedbackEntry-Output": {
+        FeedbackEntry: {
             /** Id */
             id?: string | null;
             /** Standard Id */
@@ -21680,8 +21721,6 @@ export interface components {
         GenerateApiResponse: {
             /** Group Id */
             group_id: string;
-            /** Run Id */
-            run_id: string;
         };
         /**
          * GeneratePayload
@@ -21815,8 +21854,6 @@ export interface components {
             agent_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetAgentApiResponse
@@ -22026,8 +22063,6 @@ export interface components {
             auth_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetAuthApiResponse
@@ -22197,8 +22232,6 @@ export interface components {
             attempt_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /** Description Search */
             description_search?: string | null;
             /** Persona Search */
@@ -22274,8 +22307,6 @@ export interface components {
             profile_show_selected?: boolean | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetCohortApiResponse
@@ -22375,8 +22406,6 @@ export interface components {
             department_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /** GetDepartmentApiResponse */
         GetDepartmentApiResponse: {
@@ -22457,8 +22486,6 @@ export interface components {
             document_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetDocumentApiResponse
@@ -22559,8 +22586,6 @@ export interface components {
             eval_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetEvalApiResponse
@@ -22656,8 +22681,6 @@ export interface components {
             field_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /** Descriptions Search */
             descriptions_search?: string | null;
             /** Conditional Parameter Search */
@@ -22907,8 +22930,6 @@ export interface components {
             model_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetModelApiResponse
@@ -23020,8 +23041,6 @@ export interface components {
             parameter_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetParameterApiResponse
@@ -23165,8 +23184,6 @@ export interface components {
             icon_show_selected?: boolean | null;
             /** Parameter Field Show Selected */
             parameter_field_show_selected?: boolean | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetPersonaApiResponse
@@ -23334,8 +23351,6 @@ export interface components {
             target_profile_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /** GetProfileApiResponse */
         GetProfileApiResponse: {
@@ -23435,8 +23450,6 @@ export interface components {
             provider_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * GetProviderApiResponse
@@ -23528,8 +23541,6 @@ export interface components {
             rubric_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /** GetRubricApiResponse */
         GetRubricApiResponse: {
@@ -23678,8 +23689,6 @@ export interface components {
             field_show_selected_by_param?: components["schemas"]["ScenarioFieldParamFilter"][] | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /**
              * Mcp
              * @default false
@@ -23845,8 +23854,6 @@ export interface components {
             color_search?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /**
              * Mcp
              * @default false
@@ -23953,8 +23960,6 @@ export interface components {
             simulation_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
             /** Scenario Search */
             scenario_search?: string | null;
             /** Filter Scenario Ids */
@@ -24421,8 +24426,6 @@ export interface components {
             tool_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
         };
         /** GetToolApiResponse */
         GetToolApiResponse: {
@@ -24514,8 +24517,19 @@ export interface components {
             /** Entries */
             entries?: components["schemas"]["GetToolDraftResponse"][] | null;
         };
-        /** GradeAttemptApiRequest */
-        GradeAttemptApiRequest: {
+        /** GradeAttemptApiResponse */
+        GradeAttemptApiResponse: {
+            /** Chat Id */
+            chat_id: string;
+            /** Grade Id */
+            grade_id?: string | null;
+            /** Score */
+            score?: number | null;
+            /** Passed */
+            passed?: boolean | null;
+        };
+        /** GradeAttemptRequest */
+        GradeAttemptRequest: {
             /**
              * Attempt Id
              * Format: uuid
@@ -24534,28 +24548,17 @@ export interface components {
             /** Time Taken */
             time_taken?: number | null;
             /** Feedbacks */
-            feedbacks?: components["schemas"]["FeedbackEntry-Input"][] | null;
+            feedbacks?: components["schemas"]["AttemptGradeFeedbackEntry"][] | null;
             /** Strengths */
-            strengths?: components["schemas"]["StrengthEntry"][] | null;
+            strengths?: components["schemas"]["AttemptGradeStrengthEntry"][] | null;
             /** Improvements */
-            improvements?: components["schemas"]["ImprovementEntry"][] | null;
+            improvements?: components["schemas"]["AttemptGradeImprovementEntry"][] | null;
             /** Analyses */
-            analyses?: components["schemas"]["AnalysisEntry-Input"][] | null;
+            analyses?: components["schemas"]["AttemptGradeAnalysisEntry"][] | null;
             /** Highlights */
-            highlights?: components["schemas"]["HighlightEntry-Input"][] | null;
+            highlights?: components["schemas"]["AttemptGradeHighlightEntry"][] | null;
             /** Replacements */
-            replacements?: components["schemas"]["ReplacementEntry-Input"][] | null;
-        };
-        /** GradeAttemptApiResponse */
-        GradeAttemptApiResponse: {
-            /** Chat Id */
-            chat_id: string;
-            /** Grade Id */
-            grade_id?: string | null;
-            /** Score */
-            score?: number | null;
-            /** Passed */
-            passed?: boolean | null;
+            replacements?: components["schemas"]["AttemptGradeReplacementEntry"][] | null;
         };
         /**
          * GradeData
@@ -24752,50 +24755,6 @@ export interface components {
             /** Previous Context Start Index */
             previous_context_start_index?: number | null;
         };
-        /** GroupEvent */
-        GroupEvent: {
-            /** Id */
-            id: string;
-            /** Type */
-            type: string;
-            /** Created */
-            created: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
-        };
-        /** GroupEventsApiResponse */
-        GroupEventsApiResponse: {
-            /** Events */
-            events: components["schemas"]["GroupEvent"][];
-            /** Next Page Url */
-            next_page_url?: string | null;
-            /** Previous Page Url */
-            previous_page_url?: string | null;
-        };
-        /** GroupEventsPayload */
-        GroupEventsPayload: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Cursor */
-            cursor?: string | null;
-            /** Types */
-            types?: string[] | null;
-            /**
-             * Limit
-             * @default 50
-             */
-            limit: number;
-        };
         /** GroupPositionsGenerationEvent */
         GroupPositionsGenerationEvent: {
             /**
@@ -24930,21 +24889,9 @@ export interface components {
         };
         /**
          * HighlightEntry
-         * @description Agent-provided highlight for a strength.
-         */
-        "HighlightEntry-Input": {
-            /** Strength Id */
-            strength_id?: string | null;
-            /** Section */
-            section: string;
-            /** Idx */
-            idx?: number | null;
-        };
-        /**
-         * HighlightEntry
          * @description Highlight entry within a strength.
          */
-        "HighlightEntry-Output": {
+        HighlightEntry: {
             /** Section */
             section?: string | null;
             /** Idx */
@@ -25267,18 +25214,6 @@ export interface components {
             example?: string | null;
             /** Description */
             description?: string | null;
-        };
-        /**
-         * ImprovementEntry
-         * @description Agent-provided improvement for a grade.
-         */
-        ImprovementEntry: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Message Id */
-            message_id?: string | null;
         };
         /** ImprovementsGenerationEvent */
         ImprovementsGenerationEvent: {
@@ -26527,8 +26462,6 @@ export interface components {
              * @default desc
              */
             sort_order: string;
-            /** Session Id */
-            session_id?: string | null;
         };
         /**
          * ListPricingResponse
@@ -27120,11 +27053,11 @@ export interface components {
             /** Chat Id */
             chat_id: string;
             /** User Message Id */
-            user_message_id: string;
+            user_message_id?: string | null;
             /** Assistant Message Id */
-            assistant_message_id: string;
+            assistant_message_id?: string | null;
             /** Assistant Content */
-            assistant_content: string;
+            assistant_content?: string | null;
             /** Hints */
             hints?: {
                 [key: string]: unknown;
@@ -27183,9 +27116,9 @@ export interface components {
             /** Type */
             type?: string | null;
             /** Highlights */
-            highlights?: components["schemas"]["HighlightEntry-Output"][] | null;
+            highlights?: components["schemas"]["HighlightEntry"][] | null;
             /** Replaces */
-            replaces?: components["schemas"]["ReplacementEntry-Output"][] | null;
+            replaces?: components["schemas"]["ReplacementEntry"][] | null;
         };
         /** ModalitiesGenerationEvent */
         ModalitiesGenerationEvent: {
@@ -28399,8 +28332,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchAuthDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28458,8 +28389,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchChatDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28548,8 +28477,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchCohortDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28616,8 +28543,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchDepartmentDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28670,8 +28595,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchDocumentDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28736,8 +28659,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchEvalDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28792,8 +28713,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchFieldDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28847,8 +28766,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchModelDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28915,8 +28832,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchParameterDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28969,8 +28884,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchPersonaDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -29037,8 +28950,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchProfileDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -29095,8 +29006,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchProviderDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -29153,8 +29062,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchRubricDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -29216,8 +29123,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchScenarioDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -29299,8 +29204,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchSettingDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -29366,8 +29269,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchSimulationDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -29436,8 +29337,6 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchToolDraftApiRequest: {
-            /** Group Id */
-            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -30109,6 +30008,39 @@ export interface components {
             generated?: boolean | null;
             /** Value */
             value?: number | null;
+        };
+        /**
+         * PollEventsApiRequest
+         * @description Generic polling request for any artifact event stream.
+         */
+        PollEventsApiRequest: {
+            /** Artifact */
+            artifact: string;
+            /** Operation */
+            operation: string;
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Cursor */
+            cursor?: string | null;
+            /** Types */
+            types?: string[] | null;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
+        /**
+         * PollEventsApiResponse
+         * @description Generic polling response for any artifact stream.
+         */
+        PollEventsApiResponse: {
+            /** Events */
+            events: components["schemas"]["EventEnvelope"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+            /** Previous Cursor */
+            previous_cursor?: string | null;
         };
         /**
          * PreviousChatOption
@@ -31570,23 +31502,9 @@ export interface components {
         };
         /**
          * ReplacementEntry
-         * @description Agent-provided replacement for an improvement.
-         */
-        "ReplacementEntry-Input": {
-            /** Improvement Id */
-            improvement_id?: string | null;
-            /** Section */
-            section: string;
-            /** Replace */
-            replace: string;
-            /** Idx */
-            idx?: number | null;
-        };
-        /**
-         * ReplacementEntry
          * @description Replacement entry within an improvement.
          */
-        "ReplacementEntry-Output": {
+        ReplacementEntry: {
             /** Section */
             section?: string | null;
             /** Replace */
@@ -32320,6 +32238,8 @@ export interface components {
             message?: string | null;
             /** Is Correct */
             is_correct?: boolean | null;
+            /** Response Id */
+            response_id?: string | null;
         };
         /** RolesGenerationEvent */
         RolesGenerationEvent: {
@@ -33948,40 +33868,90 @@ export interface components {
              */
             page_offset: number | null;
         };
-        /** SearchAttemptApiRequest */
+        /**
+         * SearchAttemptApiRequest
+         * @description Request model for attempt search endpoint.
+         */
         SearchAttemptApiRequest: {
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Chat Id */
-            chat_id?: string | null;
-            /** Group Id */
-            group_id?: string | null;
-            /** Home Id */
-            home_id?: string | null;
-            /** Practice Id */
-            practice_id?: string | null;
-            /** Include Entries */
-            include_entries?: string[] | null;
             /** Search */
             search?: string | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Practice */
+            practice?: boolean | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Simulation Search */
+            simulation_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
             /**
-             * Limit
-             * @default 50
+             * Page Size
+             * @default 20
              */
-            limit: number;
-            /** Cursor */
-            cursor?: string | null;
+            page_size: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
         };
-        /** SearchAttemptApiResponse */
+        /**
+         * SearchAttemptApiResponse
+         * @description Response for attempt search endpoint.
+         */
         SearchAttemptApiResponse: {
-            /** Results */
-            results: {
-                [key: string]: unknown;
-            }[];
-            /** Next Page Url */
-            next_page_url?: string | null;
-            /** Previous Page Url */
-            previous_page_url?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Attempts */
+            attempts?: components["schemas"]["SearchAttemptItem"][] | null;
+            simulation_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * SearchAttemptItem
+         * @description Single attempt row in search results.
+         */
+        SearchAttemptItem: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /** Date */
+            date?: string | null;
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Profile Name */
+            profile_name?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Simulation Name */
+            simulation_name?: string | null;
+            /** Department Id */
+            department_id?: string | null;
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Practice */
+            practice?: boolean | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Num Chats */
+            num_chats?: number | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
         };
         /**
          * SearchAuthApiRequest
@@ -34420,38 +34390,82 @@ export interface components {
              */
             page_offset: number | null;
         };
-        /** SearchTestApiRequest */
+        /**
+         * SearchTestApiRequest
+         * @description Request model for test search endpoint.
+         */
         SearchTestApiRequest: {
-            /** Test Id */
-            test_id?: string | null;
-            /** Invocation Id */
-            invocation_id?: string | null;
-            /** Benchmark Id */
-            benchmark_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Include Entries */
-            include_entries?: string[] | null;
-            /** Search */
-            search?: string | null;
+            /** Eval Ids */
+            eval_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Is Archived */
+            is_archived?: boolean | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Eval Search */
+            eval_search?: string | null;
+            /** Department Search */
+            department_search?: string | null;
             /**
-             * Limit
-             * @default 50
+             * Page Size
+             * @default 20
              */
-            limit: number;
-            /** Cursor */
-            cursor?: string | null;
+            page_size: number;
+            /**
+             * Page Offset
+             * @default 0
+             */
+            page_offset: number;
         };
-        /** SearchTestApiResponse */
+        /**
+         * SearchTestApiResponse
+         * @description Response for test search endpoint.
+         */
         SearchTestApiResponse: {
-            /** Results */
-            results: {
-                [key: string]: unknown;
-            }[];
-            /** Next Page Url */
-            next_page_url?: string | null;
-            /** Previous Page Url */
-            previous_page_url?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Tests */
+            tests?: components["schemas"]["SearchTestItem"][] | null;
+            eval_filter?: components["schemas"]["ListFilterSection"] | null;
+            department_filter?: components["schemas"]["ListFilterSection"] | null;
+            /** Total Count */
+            total_count?: number | null;
+        };
+        /**
+         * SearchTestItem
+         * @description Single test row in search results.
+         */
+        SearchTestItem: {
+            /**
+             * Test Id
+             * Format: uuid
+             */
+            test_id: string;
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Eval Name */
+            eval_name?: string | null;
+            /** Eval Description */
+            eval_description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Test Name */
+            test_name?: string | null;
+            /** Test Description */
+            test_description?: string | null;
+            /** Num Invocations */
+            num_invocations?: number | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+            /** Is Dynamic */
+            is_dynamic?: boolean | null;
+            /** Archived */
+            archived?: boolean | null;
+            /** Created At */
+            created_at?: string | null;
         };
         /**
          * SearchToolApiRequest
@@ -36041,7 +36055,9 @@ export interface components {
             /** Attempt Id */
             attempt_id: string;
             /** Chat Entry Id */
-            chat_entry_id: string;
+            chat_entry_id?: string | null;
+            /** Attempt Chat Id */
+            attempt_chat_id?: string | null;
         };
         /** StartTestApiResponse */
         StartTestApiResponse: {
@@ -36065,18 +36081,6 @@ export interface components {
             success: boolean;
             /** Message */
             message?: string | null;
-        };
-        /**
-         * StrengthEntry
-         * @description Agent-provided strength for a grade.
-         */
-        StrengthEntry: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Message Id */
-            message_id?: string | null;
         };
         /** StrengthsGenerationEvent */
         StrengthsGenerationEvent: {
@@ -36228,45 +36232,6 @@ export interface components {
             message: string;
             /** Error Type */
             error_type?: string | null;
-        };
-        /** TestEvent */
-        TestEvent: {
-            /** Id */
-            id: string;
-            /** Type */
-            type: string;
-            /** Created */
-            created: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
-        };
-        /** TestEventsApiResponse */
-        TestEventsApiResponse: {
-            /** Events */
-            events: components["schemas"]["TestEvent"][];
-            /** Next Page Url */
-            next_page_url?: string | null;
-            /** Previous Page Url */
-            previous_page_url?: string | null;
-        };
-        /** TestEventsPayload */
-        TestEventsPayload: {
-            /**
-             * Invocation Id
-             * Format: uuid
-             */
-            invocation_id: string;
-            /** Cursor */
-            cursor?: string | null;
-            /** Types */
-            types?: string[] | null;
-            /**
-             * Limit
-             * @default 50
-             */
-            limit: number;
         };
         /**
          * TestGradedEvent
@@ -37081,8 +37046,6 @@ export interface components {
         UpdateAgentApiRequest: {
             /** Agents */
             agents: components["schemas"]["UpdateAgentItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateAgentApiResponse
@@ -37136,8 +37099,6 @@ export interface components {
         UpdateAuthApiRequest: {
             /** Auths */
             auths: components["schemas"]["UpdateAuthItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateAuthApiResponse
@@ -37189,8 +37150,6 @@ export interface components {
         UpdateCohortApiRequest: {
             /** Cohorts */
             cohorts: components["schemas"]["UpdateCohortItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateCohortApiResponse
@@ -37248,8 +37207,6 @@ export interface components {
         UpdateDepartmentApiRequest: {
             /** Departments */
             departments: components["schemas"]["UpdateDepartmentItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateDepartmentApiResponse
@@ -37293,8 +37250,6 @@ export interface components {
         UpdateDocumentApiRequest: {
             /** Documents */
             documents: components["schemas"]["UpdateDocumentItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateDocumentApiResponse
@@ -37348,8 +37303,6 @@ export interface components {
         UpdateEvalApiRequest: {
             /** Evals */
             evals: components["schemas"]["UpdateEvalItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateEvalApiResponse
@@ -37401,8 +37354,6 @@ export interface components {
         UpdateFieldApiRequest: {
             /** Fields */
             fields: components["schemas"]["UpdateFieldItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateFieldApiResponse
@@ -37450,8 +37401,6 @@ export interface components {
         UpdateModelApiRequest: {
             /** Models */
             models: components["schemas"]["UpdateModelItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateModelApiResponse
@@ -37513,8 +37462,6 @@ export interface components {
         UpdateParameterApiRequest: {
             /** Parameters */
             parameters: components["schemas"]["UpdateParameterItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateParameterApiResponse
@@ -37558,8 +37505,6 @@ export interface components {
         UpdatePersonaApiRequest: {
             /** Personas */
             personas: components["schemas"]["UpdatePersonaItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdatePersonaApiResponse
@@ -37629,8 +37574,6 @@ export interface components {
         UpdateProfileApiRequest: {
             /** Profiles */
             profiles: components["schemas"]["UpdateProfileItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateProfileApiResponse
@@ -37674,8 +37617,6 @@ export interface components {
         UpdateProviderApiRequest: {
             /** Providers */
             providers: components["schemas"]["UpdateProviderItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateProviderApiResponse
@@ -37725,8 +37666,6 @@ export interface components {
         UpdateRubricApiRequest: {
             /** Rubrics */
             rubrics: components["schemas"]["UpdateRubricItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateRubricApiResponse
@@ -37776,8 +37715,6 @@ export interface components {
         UpdateScenarioApiRequest: {
             /** Scenarios */
             scenarios: components["schemas"]["UpdateScenarioItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateScenarioApiResponse
@@ -37871,8 +37808,6 @@ export interface components {
         UpdateSettingApiRequest: {
             /** Settings */
             settings: components["schemas"]["UpdateSettingItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateSettingApiResponse
@@ -37936,8 +37871,6 @@ export interface components {
         UpdateSimulationApiRequest: {
             /** Simulations */
             simulations: components["schemas"]["UpdateSimulationItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateSimulationApiResponse
@@ -37997,8 +37930,6 @@ export interface components {
         UpdateToolApiRequest: {
             /** Tools */
             tools: components["schemas"]["UpdateToolItem"][];
-            /** Group Id */
-            group_id?: string | null;
         };
         /**
          * UpdateToolApiResponse
@@ -45408,43 +45339,6 @@ export interface operations {
             };
         };
     };
-    group_events_api_v5_artifacts_group_events_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GroupEventsPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GroupEventsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_session_api_v5_artifacts_session_get_post: {
         parameters: {
             query?: never;
@@ -46536,7 +46430,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GradeAttemptApiRequest"];
+                "application/json": components["schemas"]["GradeAttemptRequest"];
             };
         };
         responses: {
@@ -46671,7 +46565,7 @@ export interface operations {
             };
         };
     };
-    attempt_audio_api_v5_artifacts_attempt_audio_post: {
+    attempt_audio_start_api_v5_artifacts_attempt_audio_start_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46684,7 +46578,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AudioPayload"];
+                "application/json": components["schemas"]["AudioStartPayload"];
             };
         };
         responses: {
@@ -46694,7 +46588,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AudioApiResponse"];
+                    "application/json": components["schemas"]["AudioStartInternalResult"];
                 };
             };
             /** @description Validation Error */
@@ -46708,7 +46602,7 @@ export interface operations {
             };
         };
     };
-    attempt_events_api_v5_artifacts_attempt_events_post: {
+    attempt_audio_frame_api_v5_artifacts_attempt_audio_frame_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46721,7 +46615,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AttemptEventsPayload"];
+                "application/json": components["schemas"]["AudioFramePayload"];
             };
         };
         responses: {
@@ -46731,7 +46625,44 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttemptEventsApiResponse"];
+                    "application/json": components["schemas"]["AudioFrameResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_audio_stop_api_v5_artifacts_attempt_audio_stop_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioStopInternalResult"];
                 };
             };
             /** @description Validation Error */
@@ -48568,43 +48499,6 @@ export interface operations {
             };
         };
     };
-    test_events_api_v5_artifacts_test_events_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TestEventsPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestEventsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     search_test_api_v5_artifacts_test_search_post: {
         parameters: {
             query?: never;
@@ -48629,6 +48523,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    poll_events_api_v5_events_poll_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PollEventsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PollEventsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_events_api_v5_events_stream_get: {
+        parameters: {
+            query: {
+                artifact: string;
+                operation: string;
+                entity_id?: string | null;
+                cursor?: string | null;
+                types?: string[] | null;
+                limit?: number;
+            };
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dispatch_webhook_events_api_v5_events_webhooks_dispatch_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DispatchWebhookApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DispatchWebhookApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -14,7 +14,7 @@
           "personas"
         ],
         "summary": "Get Persona",
-        "description": "Get persona information using composable infra architecture.",
+        "description": "Get persona information using the canonical shared persona operation.",
         "operationId": "get_persona_api_v5_artifacts_personas_get_post",
         "parameters": [
           {
@@ -1083,7 +1083,7 @@
           "scenarios"
         ],
         "summary": "Get Scenario",
-        "description": "Get scenario information using composable infra architecture.",
+        "description": "Get scenario information using the canonical shared scenario operation.",
         "operationId": "get_scenario_api_v5_artifacts_scenarios_get_post",
         "parameters": [
           {
@@ -2152,7 +2152,7 @@
           "simulations"
         ],
         "summary": "Get Simulation",
-        "description": "Get simulation information using composable infra architecture.",
+        "description": "Get simulation information using the canonical shared simulation operation.",
         "operationId": "get_simulation_api_v5_artifacts_simulations_get_post",
         "parameters": [
           {
@@ -3320,7 +3320,7 @@
           "documents"
         ],
         "summary": "Get Document",
-        "description": "Get document information using composable infra architecture.",
+        "description": "Get document information using the canonical shared document operation.",
         "operationId": "get_document_api_v5_artifacts_documents_get_post",
         "parameters": [
           {
@@ -4290,7 +4290,7 @@
           "departments"
         ],
         "summary": "Get Department",
-        "description": "Get department information using composable infra architecture.",
+        "description": "Get department information using the canonical shared department operation.",
         "operationId": "get_department_api_v5_artifacts_departments_get_post",
         "parameters": [
           {
@@ -5458,7 +5458,7 @@
           "cohorts"
         ],
         "summary": "Get Cohort",
-        "description": "Get cohort information using composable infra architecture.",
+        "description": "Get cohort information using the canonical shared cohort operation.",
         "operationId": "get_cohort_api_v5_artifacts_cohorts_get_post",
         "parameters": [
           {
@@ -6527,7 +6527,7 @@
           "evals"
         ],
         "summary": "Get Eval",
-        "description": "Get eval information using composable infra architecture.",
+        "description": "Get eval information using the canonical shared eval operation.",
         "operationId": "get_eval_api_v5_artifacts_evals_get_post",
         "parameters": [
           {
@@ -7497,7 +7497,7 @@
           "rubrics"
         ],
         "summary": "Get Rubric",
-        "description": "Get rubric information using composable infra architecture.",
+        "description": "Get rubric information using the canonical shared rubric operation.",
         "operationId": "get_rubric_api_v5_artifacts_rubrics_get_post",
         "parameters": [
           {
@@ -8665,7 +8665,7 @@
           "settings"
         ],
         "summary": "Get Setting",
-        "description": "Get setting information using composable infra architecture.",
+        "description": "Get setting information using the canonical shared setting operation.",
         "operationId": "get_setting_api_v5_artifacts_settings_get_post",
         "parameters": [
           {
@@ -9734,7 +9734,7 @@
           "agents"
         ],
         "summary": "Get Agent",
-        "description": "Get agent information using composable infra architecture.",
+        "description": "Get agent information using the canonical shared agent operation.",
         "operationId": "get_agent_api_v5_artifacts_agents_get_post",
         "parameters": [
           {
@@ -10803,7 +10803,7 @@
           "models"
         ],
         "summary": "Get Model",
-        "description": "Get model information using composable infra architecture.",
+        "description": "Get model information using the canonical shared model operation.",
         "operationId": "get_model_api_v5_artifacts_models_get_post",
         "parameters": [
           {
@@ -11971,7 +11971,7 @@
           "providers"
         ],
         "summary": "Get Provider",
-        "description": "Get provider information using composable infra architecture.",
+        "description": "Get provider information using the canonical shared provider operation.",
         "operationId": "get_provider_api_v5_artifacts_providers_get_post",
         "parameters": [
           {
@@ -13040,7 +13040,7 @@
           "parameters"
         ],
         "summary": "Get Parameter",
-        "description": "Get parameter information using composable infra architecture.",
+        "description": "Get parameter information using the canonical shared parameter operation.",
         "operationId": "get_parameter_api_v5_artifacts_parameters_get_post",
         "parameters": [
           {
@@ -14109,7 +14109,7 @@
           "fields"
         ],
         "summary": "Get Field",
-        "description": "Get field information using composable infra architecture.",
+        "description": "Get field information using the canonical shared field operation.",
         "operationId": "get_field_api_v5_artifacts_fields_get_post",
         "parameters": [
           {
@@ -15277,7 +15277,7 @@
           "profiles"
         ],
         "summary": "Get Profile",
-        "description": "Get profile information using composable infra architecture.",
+        "description": "Get profile information using the canonical shared profile operation.",
         "operationId": "get_profile_api_v5_artifacts_profiles_get_post",
         "parameters": [
           {
@@ -16534,7 +16534,7 @@
           "auths"
         ],
         "summary": "Get Auth",
-        "description": "Get auth information using composable infra architecture.",
+        "description": "Get auth information using the canonical shared auth operation.",
         "operationId": "get_auth_api_v5_artifacts_auths_get_post",
         "parameters": [
           {
@@ -17702,7 +17702,7 @@
           "tools"
         ],
         "summary": "Get Tool",
-        "description": "Get tool information using composable infra architecture.",
+        "description": "Get tool information using the canonical shared tool operation.",
         "operationId": "get_tool_api_v5_artifacts_tools_get_post",
         "parameters": [
           {
@@ -19067,7 +19067,7 @@
           "group"
         ],
         "summary": "Generate",
-        "description": "Trigger artifact generation. Returns immediately; progress via socket.",
+        "description": "Trigger artifact generation. Returns immediately; progress via events.",
         "operationId": "generate_api_v5_artifacts_group_generate_post",
         "parameters": [
           {
@@ -19136,107 +19136,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GenerateApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v5",
-          "artifacts",
-          "artifacts",
-          "group"
-        ]
-      }
-    },
-    "/api/v5/artifacts/group/events": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "artifacts",
-          "group"
-        ],
-        "summary": "Group Events",
-        "description": "Poll for generation events. Returns events since cursor, with pagination URLs.",
-        "operationId": "group_events_api_v5_artifacts_group_events_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GroupEventsPayload"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GroupEventsApiResponse"
                 }
               }
             }
@@ -21219,7 +21118,7 @@
           "attempt"
         ],
         "summary": "Attempt Get",
-        "description": "Get attempt detail with parallel MV fetching.",
+        "description": "Get attempt detail with the canonical shared attempt bundle.",
         "operationId": "attempt_get_api_v5_artifacts_attempt_get_post",
         "parameters": [
           {
@@ -21714,7 +21613,7 @@
           "attempt"
         ],
         "summary": "Start Attempt",
-        "description": "Create a new attempt. Returns attempt_id + first chat_entry_id.",
+        "description": "Create a new attempt using the canonical internal attempt orchestration.",
         "operationId": "start_attempt_api_v5_artifacts_attempt_start_post",
         "parameters": [
           {
@@ -22276,7 +22175,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GradeAttemptApiRequest"
+                "$ref": "#/components/schemas/GradeAttemptRequest"
               }
             }
           }
@@ -22614,7 +22513,7 @@
         ]
       }
     },
-    "/api/v5/artifacts/attempt/audio": {
+    "/api/v5/artifacts/attempt/audio/start": {
       "post": {
         "tags": [
           "v5",
@@ -22622,9 +22521,9 @@
           "artifacts",
           "attempt"
         ],
-        "summary": "Attempt Audio",
-        "description": "Submit audio for an attempt via upload_id. Returns transcription and assistant response.",
-        "operationId": "attempt_audio_api_v5_artifacts_attempt_audio_post",
+        "summary": "Attempt Audio Start",
+        "description": "Start an audio session for an attempt chat.",
+        "operationId": "attempt_audio_start_api_v5_artifacts_attempt_audio_start_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -22680,7 +22579,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AudioPayload"
+                "$ref": "#/components/schemas/AudioStartPayload"
               }
             }
           }
@@ -22691,7 +22590,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AudioApiResponse"
+                  "$ref": "#/components/schemas/AudioStartInternalResult"
                 }
               }
             }
@@ -22715,7 +22614,7 @@
         ]
       }
     },
-    "/api/v5/artifacts/attempt/events": {
+    "/api/v5/artifacts/attempt/audio/frame": {
       "post": {
         "tags": [
           "v5",
@@ -22723,9 +22622,9 @@
           "artifacts",
           "attempt"
         ],
-        "summary": "Attempt Events",
-        "description": "Poll for chat events. Returns events since cursor, with pagination URLs.",
-        "operationId": "attempt_events_api_v5_artifacts_attempt_events_post",
+        "summary": "Attempt Audio Frame",
+        "description": "Push audio bytes from an uploaded file into the session queue.",
+        "operationId": "attempt_audio_frame_api_v5_artifacts_attempt_audio_frame_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -22781,7 +22680,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AttemptEventsPayload"
+                "$ref": "#/components/schemas/AudioFramePayload"
               }
             }
           }
@@ -22792,7 +22691,108 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AttemptEventsApiResponse"
+                  "$ref": "#/components/schemas/AudioFrameResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ]
+      }
+    },
+    "/api/v5/artifacts/attempt/audio/stop": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "artifacts",
+          "attempt"
+        ],
+        "summary": "Attempt Audio Stop",
+        "description": "Stop an audio session for an attempt chat.",
+        "operationId": "attempt_audio_stop_api_v5_artifacts_attempt_audio_stop_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioStopPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioStopInternalResult"
                 }
               }
             }
@@ -22825,7 +22825,7 @@
           "attempt"
         ],
         "summary": "Search Attempt",
-        "description": "Search attempt state \u2014 chats, messages, grades, entries.\n\nUse include_entries to control which entry types are returned.\nSupports cursor-based pagination via next_page_url.",
+        "description": "Search attempts \u2014 composable infra architecture.",
         "operationId": "search_attempt_api_v5_artifacts_attempt_search_post",
         "parameters": [
           {
@@ -23410,7 +23410,6 @@
           "dashboard"
         ],
         "summary": "Get Dashboard",
-        "description": "Get full dashboard bundle with all 4 sections in a single call.",
         "operationId": "get_dashboard_api_v5_artifacts_dashboard_get_post",
         "parameters": [
           {
@@ -24263,7 +24262,6 @@
           "leaderboard"
         ],
         "summary": "Get Leaderboard",
-        "description": "Get leaderboard top sections (header metrics + accolades).",
         "operationId": "get_leaderboard_api_v5_artifacts_leaderboard_get_post",
         "parameters": [
           {
@@ -25213,7 +25211,6 @@
           "activity"
         ],
         "summary": "Get Activity",
-        "description": "Get activity top cards \u2014 header metrics + profile summary.",
         "operationId": "get_activity_api_v5_artifacts_activity_get_post",
         "parameters": [
           {
@@ -26266,7 +26263,7 @@
           "benchmark"
         ],
         "summary": "Get Benchmark",
-        "description": "Get benchmark artifact data with full resource hydration.",
+        "description": "Get benchmark artifact data with the canonical shared benchmark operation.",
         "operationId": "get_benchmark_api_v5_artifacts_benchmark_get_post",
         "parameters": [
           {
@@ -27733,107 +27730,6 @@
         ]
       }
     },
-    "/api/v5/artifacts/test/events": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "artifacts",
-          "test"
-        ],
-        "summary": "Test Events",
-        "description": "Poll for test invocation events. Returns events since cursor, with pagination URLs.",
-        "operationId": "test_events_api_v5_artifacts_test_events_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TestEventsPayload"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TestEventsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v5",
-          "artifacts",
-          "artifacts",
-          "test"
-        ]
-      }
-    },
     "/api/v5/artifacts/test/search": {
       "post": {
         "tags": [
@@ -27843,7 +27739,7 @@
           "test"
         ],
         "summary": "Search Test",
-        "description": "Search test state \u2014 invocations, runs, grades, entries.\n\nUse include_entries to control which entry types are returned.\nSupports cursor-based pagination via next_page_url.",
+        "description": "Search tests \u2014 composable infra architecture.",
         "operationId": "search_test_api_v5_artifacts_test_search_post",
         "parameters": [
           {
@@ -27932,6 +27828,367 @@
           "artifacts",
           "artifacts",
           "test"
+        ]
+      }
+    },
+    "/api/v5/events/poll": {
+      "post": {
+        "tags": [
+          "v5",
+          "events"
+        ],
+        "summary": "Poll Events",
+        "description": "Validate an artifact event subscription and reserve the delivery shape.\n\nTODO: Read persisted call/domain events from the canonical store once wired.",
+        "operationId": "poll_events_api_v5_events_poll_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PollEventsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PollEventsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "events"
+        ]
+      }
+    },
+    "/api/v5/events/stream": {
+      "get": {
+        "tags": [
+          "v5",
+          "events"
+        ],
+        "summary": "Stream Events",
+        "description": "Stream artifact events via SSE using the centralized declaration registry.",
+        "operationId": "stream_events_api_v5_events_stream_get",
+        "parameters": [
+          {
+            "name": "artifact",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Artifact"
+            }
+          },
+          {
+            "name": "operation",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Operation"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Types"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "events"
+        ]
+      }
+    },
+    "/api/v5/events/webhooks/dispatch": {
+      "post": {
+        "tags": [
+          "v5",
+          "events"
+        ],
+        "summary": "Dispatch Webhook Events",
+        "description": "Dispatch artifact events to a webhook target resolved from a license key.",
+        "operationId": "dispatch_webhook_events_api_v5_events_webhooks_dispatch_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DispatchWebhookApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DispatchWebhookApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "events"
         ]
       }
     },
@@ -50450,21 +50707,7 @@
         "type": "object",
         "title": "AnalysesGenerationEvent"
       },
-      "AnalysisEntry-Input": {
-        "properties": {
-          "content": {
-            "type": "string",
-            "title": "Content"
-          }
-        },
-        "type": "object",
-        "required": [
-          "content"
-        ],
-        "title": "AnalysisEntry",
-        "description": "Agent-provided analysis for a grade."
-      },
-      "AnalysisEntry-Output": {
+      "AnalysisEntry": {
         "properties": {
           "content": {
             "anyOf": [
@@ -50633,11 +50876,6 @@
             "type": "boolean",
             "title": "Archived"
           },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "attempt_ids": {
             "anyOf": [
               {
@@ -50764,8 +51002,7 @@
         },
         "type": "object",
         "required": [
-          "archived",
-          "group_id"
+          "archived"
         ],
         "title": "ArchiveAttemptsRequest"
       },
@@ -51957,17 +52194,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Attempt Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
-          "attempt_id",
-          "group_id"
+          "attempt_id"
         ],
         "title": "AttemptEndAllPayload",
         "description": "Client-to-server: end all remaining chats in an attempt."
@@ -51978,11 +52209,6 @@
             "type": "string",
             "format": "uuid",
             "title": "Attempt Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
           },
           "chat_id": {
             "type": "string",
@@ -51998,7 +52224,6 @@
         "type": "object",
         "required": [
           "attempt_id",
-          "group_id",
           "chat_id"
         ],
         "title": "AttemptEndPayload",
@@ -52134,116 +52359,18 @@
         "title": "AttemptErrorEvent",
         "description": "Server-to-client: attempt error."
       },
-      "AttemptEvent": {
+      "AttemptGradeAnalysisEntry": {
         "properties": {
-          "id": {
+          "content": {
             "type": "string",
-            "title": "Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "created": {
-            "type": "string",
-            "title": "Created"
-          },
-          "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
+            "title": "Content"
           }
         },
         "type": "object",
         "required": [
-          "id",
-          "type",
-          "created",
-          "data"
+          "content"
         ],
-        "title": "AttemptEvent"
-      },
-      "AttemptEventsApiResponse": {
-        "properties": {
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/AttemptEvent"
-            },
-            "type": "array",
-            "title": "Events"
-          },
-          "next_page_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next Page Url"
-          },
-          "previous_page_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previous Page Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "events"
-        ],
-        "title": "AttemptEventsApiResponse"
-      },
-      "AttemptEventsPayload": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Chat Id"
-          },
-          "cursor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cursor"
-          },
-          "types": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Types"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 50
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id"
-        ],
-        "title": "AttemptEventsPayload"
+        "title": "AttemptGradeAnalysisEntry"
       },
       "AttemptGradeCompleteEvent": {
         "properties": {
@@ -52269,6 +52396,96 @@
         ],
         "title": "AttemptGradeCompleteEvent",
         "description": "Server-to-client: aggregate grade result."
+      },
+      "AttemptGradeFeedbackEntry": {
+        "properties": {
+          "feedback": {
+            "type": "string",
+            "title": "Feedback"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "feedback"
+        ],
+        "title": "AttemptGradeFeedbackEntry"
+      },
+      "AttemptGradeHighlightEntry": {
+        "properties": {
+          "strength_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strength Id"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section"
+        ],
+        "title": "AttemptGradeHighlightEntry"
+      },
+      "AttemptGradeImprovementEntry": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "AttemptGradeImprovementEntry"
       },
       "AttemptGradePayload": {
         "properties": {
@@ -52373,6 +52590,77 @@
         "title": "AttemptGradeProgressEvent",
         "description": "Server-to-client: per-criterion grade result."
       },
+      "AttemptGradeReplacementEntry": {
+        "properties": {
+          "improvement_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Improvement Id"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "replace": {
+            "type": "string",
+            "title": "Replace"
+          },
+          "idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idx"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section",
+          "replace"
+        ],
+        "title": "AttemptGradeReplacementEntry"
+      },
+      "AttemptGradeStrengthEntry": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "message_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "AttemptGradeStrengthEntry"
+      },
       "AttemptJoinPayload": {
         "properties": {
           "chat_id": {
@@ -52467,11 +52755,6 @@
             "format": "uuid",
             "title": "Attempt Id"
           },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "draft_id": {
             "anyOf": [
               {
@@ -52487,8 +52770,7 @@
         },
         "type": "object",
         "required": [
-          "attempt_id",
-          "group_id"
+          "attempt_id"
         ],
         "title": "AttemptNextPayload",
         "description": "Client-to-server: proceed to the next scenario in an existing attempt."
@@ -52725,6 +53007,17 @@
               }
             ],
             "title": "Is Correct"
+          },
+          "response_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Id"
           }
         },
         "type": "object",
@@ -52906,11 +53199,6 @@
       },
       "AttemptStartPayload": {
         "properties": {
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "home_id": {
             "anyOf": [
               {
@@ -52942,9 +53230,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "AttemptStartPayload",
         "description": "Client-to-server: create a new attempt."
       },
@@ -52973,23 +53258,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Chat Id"
-          },
-          "session_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Session Id"
-          },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
-          "chat_id",
-          "session_id",
-          "group_id"
+          "chat_id"
         ],
         "title": "AttemptStopPayload",
         "description": "Client-to-server: stop message generation."
@@ -53031,11 +53304,6 @@
             "format": "uuid",
             "title": "Attempt Id"
           },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "previous_chat_map": {
             "additionalProperties": {
               "type": "string"
@@ -53047,7 +53315,6 @@
         "type": "object",
         "required": [
           "attempt_id",
-          "group_id",
           "previous_chat_map"
         ],
         "title": "AttemptUsePreviousPayload",
@@ -53152,42 +53419,7 @@
         "title": "AttemptUserStartEvent",
         "description": "Server-to-client: user message started (text or audio)."
       },
-      "AudioApiResponse": {
-        "properties": {
-          "transcription": {
-            "type": "string",
-            "title": "Transcription"
-          },
-          "assistant_message_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assistant Message Id"
-          },
-          "assistant_content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assistant Content"
-          }
-        },
-        "type": "object",
-        "required": [
-          "transcription"
-        ],
-        "title": "AudioApiResponse"
-      },
-      "AudioPayload": {
+      "AudioFramePayload": {
         "properties": {
           "chat_id": {
             "type": "string",
@@ -53205,7 +53437,96 @@
           "chat_id",
           "upload_id"
         ],
-        "title": "AudioPayload"
+        "title": "AudioFramePayload"
+      },
+      "AudioFrameResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted"
+        ],
+        "title": "AudioFrameResponse"
+      },
+      "AudioStartInternalResult": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "group_id": {
+            "type": "string",
+            "title": "Group Id"
+          },
+          "attempt_id": {
+            "type": "string",
+            "title": "Attempt Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "run_id",
+          "group_id",
+          "attempt_id"
+        ],
+        "title": "AudioStartInternalResult",
+        "description": "Structured result for audio start orchestration."
+      },
+      "AudioStartPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "AudioStartPayload"
+      },
+      "AudioStopInternalResult": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "stopped": {
+            "type": "boolean",
+            "title": "Stopped",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "AudioStopInternalResult",
+        "description": "Structured result for audio stop orchestration."
+      },
+      "AudioStopPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "AudioStopPayload"
       },
       "AuthDescriptionSection": {
         "properties": {
@@ -54976,7 +55297,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FeedbackEntry-Output"
+                  "$ref": "#/components/schemas/FeedbackEntry"
                 },
                 "type": "array"
               },
@@ -54990,7 +55311,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/AnalysisEntry-Output"
+                  "$ref": "#/components/schemas/AnalysisEntry"
                 },
                 "type": "array"
               },
@@ -59108,18 +59429,6 @@
             },
             "type": "array",
             "title": "Agents"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -59353,18 +59662,6 @@
             },
             "type": "array",
             "title": "Auths"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -59573,18 +59870,6 @@
             },
             "type": "array",
             "title": "Cohorts"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -59839,18 +60124,6 @@
             },
             "type": "array",
             "title": "Departments"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -60003,18 +60276,6 @@
             },
             "type": "array",
             "title": "Documents"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -60226,18 +60487,6 @@
             },
             "type": "array",
             "title": "Evals"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -60441,18 +60690,6 @@
             },
             "type": "array",
             "title": "Fields"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -60623,18 +60860,6 @@
             },
             "type": "array",
             "title": "Models"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -60913,18 +61138,6 @@
             },
             "type": "array",
             "title": "Parameters"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -61083,18 +61296,6 @@
             },
             "type": "array",
             "title": "Personas"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -61443,18 +61644,6 @@
             },
             "type": "array",
             "title": "Profiles"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -61614,18 +61803,6 @@
             },
             "type": "array",
             "title": "Providers"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -61822,18 +61999,6 @@
             },
             "type": "array",
             "title": "Rubrics"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -62030,18 +62195,6 @@
             },
             "type": "array",
             "title": "Scenarios"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -62523,18 +62676,6 @@
             },
             "type": "array",
             "title": "Settings"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -62821,18 +62962,6 @@
             },
             "type": "array",
             "title": "Simulations"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -63087,18 +63216,6 @@
             },
             "type": "array",
             "title": "Tools"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -66439,6 +66556,109 @@
         "type": "object",
         "title": "DescriptionsGenerationEvent"
       },
+      "DispatchWebhookApiRequest": {
+        "properties": {
+          "artifact": {
+            "type": "string",
+            "title": "Artifact"
+          },
+          "operation": {
+            "type": "string",
+            "title": "Operation"
+          },
+          "license_key": {
+            "type": "string",
+            "title": "License Key"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Types"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "required": [
+          "artifact",
+          "operation",
+          "license_key"
+        ],
+        "title": "DispatchWebhookApiRequest",
+        "description": "Generic webhook dispatch request for any artifact stream."
+      },
+      "DispatchWebhookApiResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "delivered_count": {
+            "type": "integer",
+            "title": "Delivered Count"
+          },
+          "target_url": {
+            "type": "string",
+            "title": "Target Url"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "delivered_count",
+          "target_url"
+        ],
+        "title": "DispatchWebhookApiResponse",
+        "description": "Webhook dispatch result."
+      },
       "DocsApiRequest": {
         "properties": {
           "entity_id": {
@@ -69030,18 +69250,6 @@
             "type": "string",
             "format": "uuid",
             "title": "Scenario Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -69550,11 +69758,6 @@
             "format": "uuid",
             "title": "Attempt Id"
           },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "chat_id": {
             "type": "string",
             "format": "uuid",
@@ -69602,7 +69805,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FeedbackEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeFeedbackEntry"
                 },
                 "type": "array"
               },
@@ -69616,7 +69819,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/StrengthEntry"
+                  "$ref": "#/components/schemas/AttemptGradeStrengthEntry"
                 },
                 "type": "array"
               },
@@ -69630,7 +69833,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ImprovementEntry"
+                  "$ref": "#/components/schemas/AttemptGradeImprovementEntry"
                 },
                 "type": "array"
               },
@@ -69644,7 +69847,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/AnalysisEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeAnalysisEntry"
                 },
                 "type": "array"
               },
@@ -69658,7 +69861,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/HighlightEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeHighlightEntry"
                 },
                 "type": "array"
               },
@@ -69672,7 +69875,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ReplacementEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeReplacementEntry"
                 },
                 "type": "array"
               },
@@ -69686,7 +69889,6 @@
         "type": "object",
         "required": [
           "attempt_id",
-          "group_id",
           "chat_id"
         ],
         "title": "EndAttemptApiRequest"
@@ -71235,6 +71437,82 @@
         "type": "object",
         "title": "EvalsGenerationEvent"
       },
+      "EventEnvelope": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "artifact": {
+            "type": "string",
+            "title": "Artifact"
+          },
+          "operation": {
+            "type": "string",
+            "title": "Operation"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "call_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Call Id"
+          },
+          "tool_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Id"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "event_type",
+          "artifact",
+          "operation",
+          "created_at"
+        ],
+        "title": "EventEnvelope",
+        "description": "Transport-level event shape exposed by generic delivery endpoints."
+      },
       "ExamplesGenerationEvent": {
         "properties": {
           "artifact_type": {
@@ -71567,11 +71845,6 @@
             "format": "uuid",
             "title": "Chat Entry Id"
           },
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
           "attempt_id": {
             "anyOf": [
               {
@@ -71599,8 +71872,7 @@
         },
         "type": "object",
         "required": [
-          "chat_entry_id",
-          "group_id"
+          "chat_entry_id"
         ],
         "title": "ExportChatApiRequest",
         "description": "Request model for chat export."
@@ -72780,32 +73052,7 @@
         "title": "ExportToolApiResponse",
         "description": "Response model for export tool endpoint."
       },
-      "FeedbackEntry-Input": {
-        "properties": {
-          "feedback": {
-            "type": "string",
-            "title": "Feedback"
-          },
-          "total": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total"
-          }
-        },
-        "type": "object",
-        "required": [
-          "feedback"
-        ],
-        "title": "FeedbackEntry",
-        "description": "Agent-provided feedback for a grade."
-      },
-      "FeedbackEntry-Output": {
+      "FeedbackEntry": {
         "properties": {
           "id": {
             "anyOf": [
@@ -74694,16 +74941,11 @@
           "group_id": {
             "type": "string",
             "title": "Group Id"
-          },
-          "run_id": {
-            "type": "string",
-            "title": "Run Id"
           }
         },
         "type": "object",
         "required": [
-          "group_id",
-          "run_id"
+          "group_id"
         ],
         "title": "GenerateApiResponse"
       },
@@ -75070,18 +75312,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -75925,18 +76155,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -76490,18 +76708,6 @@
             ],
             "title": "Draft Id"
           },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "description_search": {
             "anyOf": [
               {
@@ -76894,18 +77100,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -77302,18 +77496,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -77586,18 +77768,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -77978,18 +78148,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -78353,18 +78511,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "descriptions_search": {
             "anyOf": [
@@ -79091,18 +79237,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -79551,18 +79685,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -80057,18 +80179,6 @@
               }
             ],
             "title": "Parameter Field Show Selected"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -80693,18 +80803,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -81080,18 +81178,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -81434,18 +81520,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -82058,18 +82132,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "mcp": {
             "anyOf": [
@@ -82693,18 +82755,6 @@
             ],
             "title": "Draft Id"
           },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "mcp": {
             "anyOf": [
               {
@@ -83102,18 +83152,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           },
           "scenario_search": {
             "anyOf": [
@@ -84366,18 +84404,6 @@
               }
             ],
             "title": "Draft Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -84743,7 +84769,53 @@
         "title": "GetToolDraftsApiResponse",
         "description": "Response model for tool drafts list endpoint."
       },
-      "GradeAttemptApiRequest": {
+      "GradeAttemptApiResponse": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "grade_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grade Id"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "GradeAttemptApiResponse"
+      },
+      "GradeAttemptRequest": {
         "properties": {
           "attempt_id": {
             "type": "string",
@@ -84827,7 +84899,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/FeedbackEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeFeedbackEntry"
                 },
                 "type": "array"
               },
@@ -84841,7 +84913,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/StrengthEntry"
+                  "$ref": "#/components/schemas/AttemptGradeStrengthEntry"
                 },
                 "type": "array"
               },
@@ -84855,7 +84927,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ImprovementEntry"
+                  "$ref": "#/components/schemas/AttemptGradeImprovementEntry"
                 },
                 "type": "array"
               },
@@ -84869,7 +84941,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/AnalysisEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeAnalysisEntry"
                 },
                 "type": "array"
               },
@@ -84883,7 +84955,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/HighlightEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeHighlightEntry"
                 },
                 "type": "array"
               },
@@ -84897,7 +84969,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ReplacementEntry-Input"
+                  "$ref": "#/components/schemas/AttemptGradeReplacementEntry"
                 },
                 "type": "array"
               },
@@ -84912,53 +84984,7 @@
         "required": [
           "attempt_id"
         ],
-        "title": "GradeAttemptApiRequest"
-      },
-      "GradeAttemptApiResponse": {
-        "properties": {
-          "chat_id": {
-            "type": "string",
-            "title": "Chat Id"
-          },
-          "grade_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Grade Id"
-          },
-          "score": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Score"
-          },
-          "passed": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passed"
-          }
-        },
-        "type": "object",
-        "required": [
-          "chat_id"
-        ],
-        "title": "GradeAttemptApiResponse"
+        "title": "GradeAttemptRequest"
       },
       "GradeData": {
         "properties": {
@@ -85564,123 +85590,6 @@
         "title": "GroupDetailRunWithMessages",
         "description": "A run with its messages and context boundary."
       },
-      "GroupEvent": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "created": {
-            "type": "string",
-            "title": "Created"
-          },
-          "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "type",
-          "created",
-          "data"
-        ],
-        "title": "GroupEvent"
-      },
-      "GroupEventsApiResponse": {
-        "properties": {
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/GroupEvent"
-            },
-            "type": "array",
-            "title": "Events"
-          },
-          "next_page_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next Page Url"
-          },
-          "previous_page_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previous Page Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "events"
-        ],
-        "title": "GroupEventsApiResponse"
-      },
-      "GroupEventsPayload": {
-        "properties": {
-          "group_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Group Id"
-          },
-          "run_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Run Id"
-          },
-          "cursor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cursor"
-          },
-          "types": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Types"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 50
-          }
-        },
-        "type": "object",
-        "required": [
-          "group_id",
-          "run_id"
-        ],
-        "title": "GroupEventsPayload"
-      },
       "GroupPositionsGenerationEvent": {
         "properties": {
           "artifact_type": {
@@ -86124,44 +86033,7 @@
         "title": "HealthViews",
         "description": "Health view data."
       },
-      "HighlightEntry-Input": {
-        "properties": {
-          "strength_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Strength Id"
-          },
-          "section": {
-            "type": "string",
-            "title": "Section"
-          },
-          "idx": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idx"
-          }
-        },
-        "type": "object",
-        "required": [
-          "section"
-        ],
-        "title": "HighlightEntry",
-        "description": "Agent-provided highlight for a strength."
-      },
-      "HighlightEntry-Output": {
+      "HighlightEntry": {
         "properties": {
           "section": {
             "anyOf": [
@@ -87396,37 +87268,6 @@
         ],
         "title": "ImportField",
         "description": "Field descriptor for CSV import column mapping."
-      },
-      "ImprovementEntry": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "message_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "ImprovementEntry",
-        "description": "Agent-provided improvement for a grade."
       },
       "ImprovementsGenerationEvent": {
         "properties": {
@@ -92390,18 +92231,6 @@
             "type": "string",
             "title": "Sort Order",
             "default": "desc"
-          },
-          "session_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Session Id"
           }
         },
         "type": "object",
@@ -94972,15 +94801,36 @@
             "title": "Chat Id"
           },
           "user_message_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "User Message Id"
           },
           "assistant_message_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Assistant Message Id"
           },
           "assistant_content": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Assistant Content"
           },
           "hints": {
@@ -95001,10 +94851,7 @@
         },
         "type": "object",
         "required": [
-          "chat_id",
-          "user_message_id",
-          "assistant_message_id",
-          "assistant_content"
+          "chat_id"
         ],
         "title": "MessageAttemptApiResponse"
       },
@@ -95187,7 +95034,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/HighlightEntry-Output"
+                  "$ref": "#/components/schemas/HighlightEntry"
                 },
                 "type": "array"
               },
@@ -95201,7 +95048,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/ReplacementEntry-Output"
+                  "$ref": "#/components/schemas/ReplacementEntry"
                 },
                 "type": "array"
               },
@@ -99315,18 +99162,6 @@
       },
       "PatchAuthDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -99509,18 +99344,6 @@
       },
       "PatchChatDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -99928,18 +99751,6 @@
       },
       "PatchCohortDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -100194,18 +100005,6 @@
       },
       "PatchDepartmentDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -100343,18 +100142,6 @@
       },
       "PatchDocumentDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -100598,18 +100385,6 @@
       },
       "PatchEvalDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -100780,18 +100555,6 @@
       },
       "PatchFieldDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -100944,18 +100707,6 @@
       },
       "PatchModelDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -101216,18 +100967,6 @@
       },
       "PatchParameterDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -101383,18 +101122,6 @@
       },
       "PatchPersonaDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -101632,18 +101359,6 @@
       },
       "PatchProfileDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -101825,18 +101540,6 @@
       },
       "PatchProviderDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -102019,18 +101722,6 @@
       },
       "PatchRubricDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -102213,18 +101904,6 @@
       },
       "PatchScenarioDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -102572,18 +102251,6 @@
       },
       "PatchSettingDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -102811,18 +102478,6 @@
       },
       "PatchSimulationDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -103094,18 +102749,6 @@
       },
       "PatchToolDraftApiRequest": {
         "properties": {
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
           "input_draft_id": {
             "anyOf": [
               {
@@ -105471,6 +105114,108 @@
         },
         "type": "object",
         "title": "PointsGenerationEvent"
+      },
+      "PollEventsApiRequest": {
+        "properties": {
+          "artifact": {
+            "type": "string",
+            "title": "Artifact"
+          },
+          "operation": {
+            "type": "string",
+            "title": "Operation"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cursor"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Types"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 200.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "type": "object",
+        "required": [
+          "artifact",
+          "operation"
+        ],
+        "title": "PollEventsApiRequest",
+        "description": "Generic polling request for any artifact event stream."
+      },
+      "PollEventsApiResponse": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventEnvelope"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "previous_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "events"
+        ],
+        "title": "PollEventsApiResponse",
+        "description": "Generic polling response for any artifact stream."
       },
       "PreviousChatOption": {
         "properties": {
@@ -110517,49 +110262,7 @@
         "title": "RefreshResponse",
         "description": "Standard response for composable refresh endpoints.\n\nReturned by all `refresh_{artifact}_client` infra functions."
       },
-      "ReplacementEntry-Input": {
-        "properties": {
-          "improvement_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Improvement Id"
-          },
-          "section": {
-            "type": "string",
-            "title": "Section"
-          },
-          "replace": {
-            "type": "string",
-            "title": "Replace"
-          },
-          "idx": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Idx"
-          }
-        },
-        "type": "object",
-        "required": [
-          "section",
-          "replace"
-        ],
-        "title": "ReplacementEntry",
-        "description": "Agent-provided replacement for an improvement."
-      },
-      "ReplacementEntry-Output": {
+      "ReplacementEntry": {
         "properties": {
           "section": {
             "anyOf": [
@@ -112545,6 +112248,17 @@
               }
             ],
             "title": "Is Correct"
+          },
+          "response_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Id"
           }
         },
         "type": "object",
@@ -118281,80 +117995,6 @@
       },
       "SearchAttemptApiRequest": {
         "properties": {
-          "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Id"
-          },
-          "chat_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Chat Id"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
-          },
-          "home_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Home Id"
-          },
-          "practice_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Id"
-          },
-          "include_entries": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Include Entries"
-          },
           "search": {
             "anyOf": [
               {
@@ -118366,12 +118006,70 @@
             ],
             "title": "Search"
           },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 50
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
           },
-          "cursor": {
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "start_date": {
             "anyOf": [
               {
                 "type": "string"
@@ -118380,23 +118078,59 @@
                 "type": "null"
               }
             ],
-            "title": "Cursor"
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "simulation_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Search"
+          },
+          "department_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Search"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "default": 20
+          },
+          "page_offset": {
+            "type": "integer",
+            "title": "Page Offset",
+            "default": 0
           }
         },
         "type": "object",
-        "title": "SearchAttemptApiRequest"
+        "title": "SearchAttemptApiRequest",
+        "description": "Request model for attempt search endpoint."
       },
       "SearchAttemptApiResponse": {
         "properties": {
-          "results": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "next_page_url": {
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -118405,9 +118139,66 @@
                 "type": "null"
               }
             ],
-            "title": "Next Page Url"
+            "title": "Actor Name"
           },
-          "previous_page_url": {
+          "attempts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SearchAttemptItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempts"
+          },
+          "simulation_filter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListFilterSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "department_filter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListFilterSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          }
+        },
+        "type": "object",
+        "title": "SearchAttemptApiResponse",
+        "description": "Response for attempt search endpoint."
+      },
+      "SearchAttemptItem": {
+        "properties": {
+          "attempt_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attempt Id"
+          },
+          "date": {
             "anyOf": [
               {
                 "type": "string"
@@ -118416,14 +118207,144 @@
                 "type": "null"
               }
             ],
-            "title": "Previous Page Url"
+            "title": "Date"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "profile_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Name"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "simulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Name"
+          },
+          "department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Id"
+          },
+          "cohort_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Id"
+          },
+          "practice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "num_chats": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Chats"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
           }
         },
         "type": "object",
         "required": [
-          "results"
+          "attempt_id"
         ],
-        "title": "SearchAttemptApiResponse"
+        "title": "SearchAttemptItem",
+        "description": "Single attempt row in search results."
       },
       "SearchAuthApiRequest": {
         "properties": {
@@ -120051,59 +119972,12 @@
       },
       "SearchTestApiRequest": {
         "properties": {
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
-          },
-          "invocation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Invocation Id"
-          },
-          "benchmark_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Benchmark Id"
-          },
-          "run_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run Id"
-          },
-          "include_entries": {
+          "eval_ids": {
             "anyOf": [
               {
                 "items": {
-                  "type": "string"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -120111,9 +119985,35 @@
                 "type": "null"
               }
             ],
-            "title": "Include Entries"
+            "title": "Eval Ids"
           },
-          "search": {
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "is_archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Archived"
+          },
+          "start_date": {
             "anyOf": [
               {
                 "type": "string"
@@ -120122,39 +120022,59 @@
                 "type": "null"
               }
             ],
-            "title": "Search"
+            "title": "Start Date"
           },
-          "limit": {
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "eval_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Search"
+          },
+          "department_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Search"
+          },
+          "page_size": {
             "type": "integer",
-            "title": "Limit",
-            "default": 50
+            "title": "Page Size",
+            "default": 20
           },
-          "cursor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cursor"
+          "page_offset": {
+            "type": "integer",
+            "title": "Page Offset",
+            "default": 0
           }
         },
         "type": "object",
-        "title": "SearchTestApiRequest"
+        "title": "SearchTestApiRequest",
+        "description": "Request model for test search endpoint."
       },
       "SearchTestApiResponse": {
         "properties": {
-          "results": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "next_page_url": {
+          "actor_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -120163,9 +120083,78 @@
                 "type": "null"
               }
             ],
-            "title": "Next Page Url"
+            "title": "Actor Name"
           },
-          "previous_page_url": {
+          "tests": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SearchTestItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tests"
+          },
+          "eval_filter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListFilterSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "department_filter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ListFilterSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Count"
+          }
+        },
+        "type": "object",
+        "title": "SearchTestApiResponse",
+        "description": "Response for test search endpoint."
+      },
+      "SearchTestItem": {
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Test Id"
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id"
+          },
+          "eval_name": {
             "anyOf": [
               {
                 "type": "string"
@@ -120174,14 +120163,118 @@
                 "type": "null"
               }
             ],
-            "title": "Previous Page Url"
+            "title": "Eval Name"
+          },
+          "eval_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "test_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Name"
+          },
+          "test_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Description"
+          },
+          "num_invocations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Invocations"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          },
+          "is_dynamic": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Dynamic"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
           }
         },
         "type": "object",
         "required": [
-          "results"
+          "test_id"
         ],
-        "title": "SearchTestApiResponse"
+        "title": "SearchTestItem",
+        "description": "Single test row in search results."
       },
       "SearchToolApiRequest": {
         "properties": {
@@ -125657,14 +125750,31 @@
             "title": "Attempt Id"
           },
           "chat_entry_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Chat Entry Id"
+          },
+          "attempt_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Chat Id"
           }
         },
         "type": "object",
         "required": [
-          "attempt_id",
-          "chat_entry_id"
+          "attempt_id"
         ],
         "title": "StartAttemptApiResponse"
       },
@@ -125738,37 +125848,6 @@
           "success"
         ],
         "title": "StopTestApiResponse"
-      },
-      "StrengthEntry": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "message_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description"
-        ],
-        "title": "StrengthEntry",
-        "description": "Agent-provided strength for a grade."
       },
       "StrengthsGenerationEvent": {
         "properties": {
@@ -126325,117 +126404,6 @@
         ],
         "title": "TestErrorEvent",
         "description": "Server-to-client: test error."
-      },
-      "TestEvent": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "created": {
-            "type": "string",
-            "title": "Created"
-          },
-          "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "type",
-          "created",
-          "data"
-        ],
-        "title": "TestEvent"
-      },
-      "TestEventsApiResponse": {
-        "properties": {
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/TestEvent"
-            },
-            "type": "array",
-            "title": "Events"
-          },
-          "next_page_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Next Page Url"
-          },
-          "previous_page_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Previous Page Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "events"
-        ],
-        "title": "TestEventsApiResponse"
-      },
-      "TestEventsPayload": {
-        "properties": {
-          "invocation_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Invocation Id"
-          },
-          "cursor": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cursor"
-          },
-          "types": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Types"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit",
-            "default": 50
-          }
-        },
-        "type": "object",
-        "required": [
-          "invocation_id"
-        ],
-        "title": "TestEventsPayload"
       },
       "TestGradedEvent": {
         "properties": {
@@ -128819,18 +128787,6 @@
             },
             "type": "array",
             "title": "Agents"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -129060,18 +129016,6 @@
             },
             "type": "array",
             "title": "Auths"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -129276,18 +129220,6 @@
             },
             "type": "array",
             "title": "Cohorts"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -129538,18 +129470,6 @@
             },
             "type": "array",
             "title": "Departments"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -129698,18 +129618,6 @@
             },
             "type": "array",
             "title": "Documents"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -129917,18 +129825,6 @@
             },
             "type": "array",
             "title": "Evals"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -130128,18 +130024,6 @@
             },
             "type": "array",
             "title": "Fields"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -130306,18 +130190,6 @@
             },
             "type": "array",
             "title": "Models"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -130592,18 +130464,6 @@
             },
             "type": "array",
             "title": "Parameters"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -130758,18 +130618,6 @@
             },
             "type": "array",
             "title": "Personas"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -131073,18 +130921,6 @@
             },
             "type": "array",
             "title": "Profiles"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -131240,18 +131076,6 @@
             },
             "type": "array",
             "title": "Providers"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -131444,18 +131268,6 @@
             },
             "type": "array",
             "title": "Rubrics"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -131648,18 +131460,6 @@
             },
             "type": "array",
             "title": "Scenarios"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -132137,18 +131937,6 @@
             },
             "type": "array",
             "title": "Settings"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -132431,18 +132219,6 @@
             },
             "type": "array",
             "title": "Simulations"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -132693,18 +132469,6 @@
             },
             "type": "array",
             "title": "Tools"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",

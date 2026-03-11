@@ -25,6 +25,39 @@ async def test_route_actor(pool, redis_client, setting_graph_factory):
 
 @pytest.mark.asyncio
 class TestTestWorkflowRoutes:
+    async def test_get_test_route_returns_test_bundle(
+        self,
+        pool,
+        v5_test_route_client,
+        test_route_actor,
+    ):
+        graph = await self._create_test_run_graph(pool, test_route_actor)
+
+        v5_test_route_client.authenticate(
+            profile_id=test_route_actor.profile_id,
+            session_id=test_route_actor.session_id,
+        )
+        response = await v5_test_route_client.client.post(
+            "/api/v5/artifacts/test/get",
+            json={"test_id": graph["test_id"]},
+            headers={"X-Bypass-Cache": "1"},
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.headers["X-Cache-Tags"] == "artifacts,test"
+        payload = response.json()
+        assert payload["test"]["test_id"] == graph["test_id"]
+        assert payload["status"] in {
+            "not_started",
+            "in_progress",
+            "running",
+            "completed",
+        }
+        assert payload["runs"]
+        assert payload["status_summary"]["total"] >= 1
+        assert payload["entries"]["tests"]
+        assert payload["resources"] is not None
+
     async def _create_test_run_graph(self, pool, actor):
         from app.routes.v5.tools.entries.calls.create import create_call
         from app.routes.v5.tools.entries.groups.create import create_group

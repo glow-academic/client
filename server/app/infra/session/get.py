@@ -57,25 +57,25 @@ async def get_session_impl(
     """
     redis = get_redis_client()
 
-    # Phase 0: Resolve both contexts in parallel
-    async def _resolve_session() -> object:
-        return await resolve_session_context(
-            pool,
-            redis,
-            session_id=session_id,
-            profile_id=profile_id,
-            bypass_cache=bypass_cache,
-        )
+    # Resolve common/profile context first so session queries can use the
+    # canonical profiles_resource id expected by sessions_mv.
+    common = await resolve_common_context(
+        pool,
+        redis,
+        profile_id=profile_id,
+        bypass_cache=bypass_cache,
+    )
 
-    async def _resolve_common() -> object:
-        async with pool.acquire() as c:
-            return await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-            )
+    session_profile_id = (
+        common.profile.profiles_id if common is not None else profile_id
+    )
 
-    ctx, common = await asyncio.gather(
-        _resolve_session(),
-        _resolve_common(),
+    ctx = await resolve_session_context(
+        pool,
+        redis,
+        session_id=session_id,
+        profile_id=session_profile_id,
+        bypass_cache=bypass_cache,
     )
 
     # Extract domain entries from session context

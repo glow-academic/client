@@ -1305,14 +1305,17 @@ def _pg_dump_data(
     output_file: Path,
     label: str,
     exclude_tables: set[str] | None = None,
+    on_conflict_do_nothing: bool = False,
 ) -> None:
     """Dump data from testcontainer DB using pg_dump --data-only.
 
-    Uses pg_dump directly against the container, producing clean COPY-based
-    SQL that PostgreSQL itself generates — no hand-built INSERT statements.
+    Uses pg_dump directly against the container, producing clean SQL
+    that PostgreSQL itself generates.
 
     Args:
         exclude_tables: Tables to exclude from the dump (e.g., pre-loaded data).
+        on_conflict_do_nothing: Use INSERT ... ON CONFLICT DO NOTHING instead
+            of COPY. Useful for setup seeds that overlap with base-seed data.
     """
     # Extract connection params from the testcontainer
     pg_host = pg.get_container_host_ip()
@@ -1336,6 +1339,9 @@ def _pg_dump_data(
         f"--dbname={pg_dbname}",
     ]
 
+    if on_conflict_do_nothing:
+        cmd.extend(["--inserts", "--on-conflict-do-nothing"])
+
     for table in sorted(exclude_tables or []):
         cmd.append(f"--exclude-table-data=public.{table}")
 
@@ -1354,10 +1360,14 @@ def _pg_dump_data(
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(header + result.stdout)
 
-    # Count non-empty COPY blocks for summary
-    copy_count = result.stdout.count("\nCOPY ")
-    line_count = result.stdout.count("\n")
-    print(f"  Wrote {output_file} ({copy_count} tables, {line_count} lines)")
+    # Count data statements for summary
+    if on_conflict_do_nothing:
+        stmt_count = result.stdout.count("\nINSERT INTO ")
+        print(f"  Wrote {output_file} ({stmt_count} inserts, ON CONFLICT DO NOTHING)")
+    else:
+        copy_count = result.stdout.count("\nCOPY ")
+        line_count = result.stdout.count("\n")
+        print(f"  Wrote {output_file} ({copy_count} tables, {line_count} lines)")
 
 
 # ---------------------------------------------------------------------------
@@ -1582,7 +1592,9 @@ async def main_setup(setup: str = "university") -> None:
         output_dir = MODULES_DIR / "setups" / setup
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / "seed.sql"
-        _pg_dump_data(pg, output_file, f"Setup: {setup}")
+        _pg_dump_data(
+            pg, output_file, f"Setup: {setup}", on_conflict_do_nothing=True
+        )
 
     finally:
         pg.stop()

@@ -27,9 +27,10 @@ async def test_finds_created_entry(conn, profile_id):
     result, pid = await _setup(conn, profile_id)
     await refresh_test(conn)
 
-    items = await search_tests(conn, profile_ids=[pid])
+    items, total_count = await search_tests(conn, profile_ids=[pid])
 
     ids = [item.test_id for item in items]
+    assert total_count >= 1
     assert result.id in ids
 
 
@@ -37,26 +38,29 @@ async def test_filters_by_profile_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_test(conn)
 
-    items = await search_tests(conn, profile_ids=[nonexistent_id()])
+    items, total_count = await search_tests(conn, profile_ids=[nonexistent_id()])
 
     assert items == []
+    assert total_count == 0
 
 
 async def test_filters_by_eval_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_test(conn)
 
-    items = await search_tests(conn, eval_ids=[nonexistent_id()])
+    items, total_count = await search_tests(conn, eval_ids=[nonexistent_id()])
 
     assert items == []
+    assert total_count == 0
 
 
 async def test_pagination_limit(conn, profile_id):
     result, pid = await _setup(conn, profile_id)
     await refresh_test(conn)
 
-    items = await search_tests(conn, profile_ids=[pid], limit=1)
+    items, total_count = await search_tests(conn, profile_ids=[pid], limit=1)
 
+    assert total_count >= 1
     assert len(items) <= 1
 
 
@@ -64,15 +68,17 @@ async def test_returns_all_without_filter(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_test(conn)
 
-    items = await search_tests(conn)
+    items, total_count = await search_tests(conn)
 
+    assert total_count >= 1
     assert len(items) >= 1
 
 
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, pid = await _setup(conn, profile_id)
 
-    items = await search_tests(conn, profile_ids=[pid], bypass_mv=True)
+    items, total_count = await search_tests(conn, profile_ids=[pid], bypass_mv=True)
 
     ids = [item.test_id for item in items]
+    assert total_count >= 1
     assert result.id in ids

@@ -23,7 +23,18 @@ from app.routes.v5.tools.entries.test_invocation_runs.search import (
     search_test_invocation_runs,
 )
 from app.routes.v5.tools.resources.agents.create import create_agent
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.instructions.create import create_instruction
+from app.routes.v5.tools.resources.modalities.create import create_modality
+from app.routes.v5.tools.resources.prompts.create import create_prompt
+from app.routes.v5.tools.resources.qualities.create import create_quality
+from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
 from app.routes.v5.tools.resources.rubrics.create import create_rubric
+from app.routes.v5.tools.resources.temperature_levels.create import (
+    create_temperature_level,
+)
+from app.routes.v5.tools.resources.tools.create import create_tool
+from app.routes.v5.tools.resources.voices.create import create_voice
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,6 +50,52 @@ async def _resource_id(conn, table: str) -> UUID:
     resource_id = await conn.fetchval(f"SELECT id FROM {table} LIMIT 1")
     assert resource_id is not None
     return resource_id
+
+
+async def _ensure_agent_option_resources(conn, redis_client) -> dict[str, UUID]:
+    return {
+        "department_id": (
+            await create_department(
+                conn,
+                name="generation-test-department",
+                redis=redis_client,
+            )
+        ).id,
+        "voice_id": (await create_voice(conn, "generation-test-voice", redis_client)).id,
+        "reasoning_level_id": (
+            await create_reasoning_level(
+                conn, "generation-test-reasoning", redis_client
+            )
+        ).id,
+        "temperature_level_id": (
+            await create_temperature_level(conn, 0.7, redis_client)
+        ).id,
+        "quality_id": (await create_quality(conn, "high", redis_client)).id,
+        "modality_id": (await create_modality(conn, "text", redis_client)).id,
+        "prompt_id": (
+            await create_prompt(
+                conn,
+                "generation-test-system-prompt",
+                "generation-test-prompt",
+                "generation-test-prompt-description",
+                redis_client,
+            )
+        ).id,
+        "instruction_id": (
+            await create_instruction(
+                conn, "generation-test-instruction-template", redis_client
+            )
+        ).id,
+        "tool_id": (
+            await create_tool(
+                conn,
+                name="generation-test-tool",
+                redis=redis_client,
+                operation="generate",
+                artifacts=["test"],
+            )
+        ).id,
+    }
 
 
 async def _create_agent_config(
@@ -59,28 +116,20 @@ async def _create_agent_config(
     if not with_options:
         return AgentTestConfig(agent_id=agent.id, rubric_id=rubric.id)
 
-    department_id = await _resource_id(conn, "departments_resource")
-    voice_id = await _resource_id(conn, "voices_resource")
-    reasoning_level_id = await _resource_id(conn, "reasoning_levels_resource")
-    temperature_level_id = await _resource_id(conn, "temperature_levels_resource")
-    quality_id = await _resource_id(conn, "qualities_resource")
-    modality_id = await _resource_id(conn, "modalities_resource")
-    prompt_id = await _resource_id(conn, "prompts_resource")
-    instruction_id = await _resource_id(conn, "instructions_resource")
-    tool_id = await _resource_id(conn, "tools_resource")
+    resources = await _ensure_agent_option_resources(conn, redis_client)
 
     return AgentTestConfig(
         agent_id=agent.id,
         rubric_id=rubric.id,
-        department_ids=[department_id],
-        voice_ids=[voice_id],
-        reasoning_level_ids=[reasoning_level_id],
-        temperature_level_ids=[temperature_level_id],
-        quality_ids=[quality_id],
-        modality_ids=[modality_id],
-        prompt_ids=[prompt_id],
-        instruction_ids=[instruction_id],
-        tool_ids=[tool_id],
+        department_ids=[resources["department_id"]],
+        voice_ids=[resources["voice_id"]],
+        reasoning_level_ids=[resources["reasoning_level_id"]],
+        temperature_level_ids=[resources["temperature_level_id"]],
+        quality_ids=[resources["quality_id"]],
+        modality_ids=[resources["modality_id"]],
+        prompt_ids=[resources["prompt_id"]],
+        instruction_ids=[resources["instruction_id"]],
+        tool_ids=[resources["tool_id"]],
     )
 
 

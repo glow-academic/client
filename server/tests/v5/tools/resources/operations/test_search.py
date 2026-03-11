@@ -31,20 +31,40 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 
 
 async def test_respects_limit(conn, redis_client):
+    for operation in ("get", "search", "create"):
+        await create_operation(conn, operation, redis_client)
+
     items = await search_operations(conn, redis_client, limit_count=2)
 
     assert len(items) == 2
 
 
 async def test_respects_offset(conn, redis_client):
-    all_items = await search_operations(conn, redis_client, limit_count=10)
+    first = await create_operation(conn, "get", redis_client)
+    second = await create_operation(conn, "search", redis_client)
+    third = await create_operation(conn, "create", redis_client)
+
+    all_items = await search_operations(
+        conn,
+        redis_client,
+        search=None,
+        limit_count=10,
+    )
     offset_items = await search_operations(
-        conn, redis_client, limit_count=10, offset_count=1
+        conn,
+        redis_client,
+        search=None,
+        limit_count=10,
+        offset_count=1,
     )
 
-    assert len(offset_items) == len(all_items)
-    assert offset_items[0].id != all_items[0].id
-    assert offset_items[0].id == all_items[1].id
+    ids = {first.id, second.id, third.id}
+    filtered_all = [item for item in all_items if item.id in ids]
+    filtered_offset = [item for item in offset_items if item.id in ids]
+
+    assert len(filtered_all) == 3
+    assert len(filtered_offset) == 2
+    assert filtered_offset[0].id == filtered_all[1].id
 
 
 async def test_excludes_ids(conn, redis_client):
