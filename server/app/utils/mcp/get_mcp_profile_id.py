@@ -1,5 +1,7 @@
 """MCP helper to get profile_id from request context."""
 
+from collections.abc import Callable
+
 from fastapi import HTTPException
 
 from app.utils.logging.db_logger import profile_id_context
@@ -27,7 +29,10 @@ def resolve_mcp_profile_id(
     return profile_id
 
 
-def get_mcp_profile_id() -> str:
+def get_mcp_profile_id(
+    *,
+    request_getter: Callable[[], object] | None = None,
+) -> str:
     """Get profile_id from MCP request context.
 
     Uses FastMCP Context system to access HTTP request,
@@ -41,9 +46,11 @@ def get_mcp_profile_id() -> str:
         HTTPException: If profile_id not available
     """
     try:
-        from fastmcp.server.dependencies import get_http_request
+        if request_getter is None:
+            from fastmcp.server.dependencies import get_http_request
 
-        request = get_http_request()
+            request_getter = get_http_request
+        request = request_getter()
     except Exception:
         request = None
 

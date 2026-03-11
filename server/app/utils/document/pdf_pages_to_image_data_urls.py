@@ -3,19 +3,24 @@
 import base64
 
 
-def pdf_pages_to_image_data_urls(full_path: str) -> list[str]:
+def pdf_pages_to_image_data_urls(
+    full_path: str,
+    *,
+    fitz_module: object | None = None,
+) -> list[str]:
     """Best-effort conversion of each PDF page to a base64 PNG data URL.
 
     Tries PyMuPDF (fitz) if available. If unavailable or errors, returns [].
     """
-    try:  # Lazy import to avoid hard dependency
-        import fitz  # type: ignore
-    except Exception:
-        return []
+    if fitz_module is None:
+        try:  # Lazy import to avoid hard dependency
+            import fitz as fitz_module  # type: ignore
+        except Exception:
+            return []
 
     image_urls: list[str] = []
     try:
-        doc = fitz.open(full_path)
+        doc = fitz_module.open(full_path)
         for page in doc:
             pix = page.get_pixmap()
             png_bytes: bytes = pix.tobytes("png")

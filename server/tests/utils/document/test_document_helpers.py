@@ -1,5 +1,7 @@
 """Tests for low-level document helper utilities."""
 
+import base64
+
 import pypdf  # type: ignore
 import pytest
 
@@ -54,3 +56,94 @@ def test_pdf_image_helpers_fail_softly_for_missing_file(tmp_path):
     assert pdf_first_page_to_image_bytes(missing) is None
     assert pdf_pages_to_image_data_urls(missing) == []
 
+
+class _FakePix:
+    def __init__(self, payload: bytes) -> None:
+        self._payload = payload
+
+    def tobytes(self, fmt: str) -> bytes:
+        assert fmt == "png"
+        return self._payload
+
+
+class _FakePage:
+    def __init__(self, payload: bytes) -> None:
+        self._payload = payload
+
+    def get_pixmap(self) -> _FakePix:
+        return _FakePix(self._payload)
+
+
+class _FakeDoc:
+    def __init__(self, payloads: list[bytes]) -> None:
+        self._pages = [_FakePage(payload) for payload in payloads]
+        self.closed = False
+
+    def __len__(self) -> int:
+        return len(self._pages)
+
+    def __getitem__(self, index: int) -> _FakePage:
+        return self._pages[index]
+
+    def __iter__(self):
+        return iter(self._pages)
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeFitz:
+    def __init__(self, payloads: list[bytes], *, raises: bool = False) -> None:
+        self._payloads = payloads
+        self._raises = raises
+
+    def open(self, _path: str) -> _FakeDoc:
+        if self._raises:
+            raise RuntimeError("boom")
+        return _FakeDoc(self._payloads)
+
+
+def test_pdf_first_page_to_image_bytes_returns_png_bytes_with_injected_fitz():
+    payload = b"page-one"
+
+    assert (
+        pdf_first_page_to_image_bytes(
+            "/tmp/example.pdf",
+            fitz_module=_FakeFitz([payload]),
+        )
+        == payload
+    )
+
+
+def test_pdf_first_page_to_image_bytes_returns_none_for_empty_pdf():
+    assert (
+        pdf_first_page_to_image_bytes(
+            "/tmp/empty.pdf",
+            fitz_module=_FakeFitz([]),
+        )
+        is None
+    )
+
+
+def test_pdf_pages_to_image_data_urls_returns_one_data_url_per_page():
+    payloads = [b"page-one", b"page-two"]
+
+    result = pdf_pages_to_image_data_urls(
+        "/tmp/example.pdf",
+        fitz_module=_FakeFitz(payloads),
+    )
+
+    assert result == [
+        f"data:image/png;base64,{base64.b64encode(payload).decode('ascii')}"
+        for payload in payloads
+    ]
+
+
+def test_pdf_pages_to_image_data_urls_returns_empty_list_on_render_error():
+    assert (
+        pdf_pages_to_image_data_urls(
+            "/tmp/broken.pdf",
+            fitz_module=_FakeFitz([], raises=True),
+        )
+        == []
+    )

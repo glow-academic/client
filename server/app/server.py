@@ -38,6 +38,111 @@ except ImportError:
     redis = None  # type: ignore
 
 
+def _configure_named_loggers(
+    logger_names: list[str],
+    formatter: logging.Formatter,
+) -> None:
+    """Ensure each named logger uses the supplied formatter."""
+    for logger_name in logger_names:
+        named_logger = logging.getLogger(logger_name)
+        named_logger.propagate = False
+        if named_logger.handlers:
+            for handler in named_logger.handlers:
+                handler.setFormatter(formatter)
+        else:
+            handler = logging.StreamHandler()
+            handler.setFormatter(formatter)
+            named_logger.addHandler(handler)
+
+
+async def _initialize_redis_client(
+    *,
+    redis_module: Any,
+    redis_url: str | None,
+    globals_module: Any,
+    logger_obj: logging.Logger,
+) -> Any:
+    """Initialize Redis client and store it on the globals module."""
+    logger_obj.info(
+        f"Initializing HTTP cache Redis client: redis={redis_module is not None}, redis_url={redis_url}"
+    )
+    if not redis_module or not redis_url:
+        logger_obj.warning(
+            "Redis disabled (no lib or no REDIS_URL); using in-memory fallbacks"
+        )
+        globals_module.redis_client = None
+        return None
+
+    try:
+        client = redis_module.from_url(redis_url)  # type: ignore[attr-defined]
+        await client.ping()
+        globals_module.redis_client = client
+        logger_obj.info(f"Redis client initialized for HTTP caching: {redis_url}")
+        return client
+    except Exception as e:
+        logger_obj.error(f"Failed to initialize Redis client: {e}", exc_info=True)
+        globals_module.redis_client = None
+        return None
+
+
+def _write_openapi_schema(
+    app: FastAPI,
+    *,
+    get_openapi_fn: Any = get_openapi,
+    output_path: Path | None = None,
+) -> Path:
+    """Generate the OpenAPI schema, add cache tags, and write it to disk."""
+    schema = get_openapi_fn(
+        title=app.title,
+        version="0.1.0",
+        routes=app.routes,
+        description="Auto-generated OpenAPI schema from FastAPI v5 API",
+    )
+
+    for _path, path_item in schema.get("paths", {}).items():
+        for _method, operation in path_item.items():
+            if isinstance(operation, dict) and "tags" in operation:
+                tags = operation.get("tags", [])
+                if tags:
+                    operation["x-cache-tags"] = tags
+
+    effective_output_path = output_path or (
+        Path(__file__).resolve().parents[1] / "openapi.json"
+    )
+    effective_output_path.write_text(json.dumps(schema, indent=2))
+    logger.info(f"OpenAPI schema written to {effective_output_path}")
+    return effective_output_path
+
+
+def _build_voice_session_reaper(
+    *,
+    cleanup_audio_session_fn: Any,
+    get_stale_sessions_fn: Any,
+    sleep_fn: Any = asyncio.sleep,
+    logger_obj: logging.Logger = logger,
+    interval_seconds: float = 60.0,
+    timeout_seconds: float = 300.0,
+) -> Any:
+    """Build the background coroutine that reaps stale voice sessions."""
+
+    async def _reap_stale_voice_sessions() -> None:
+        while True:
+            try:
+                await sleep_fn(interval_seconds)
+                stale = get_stale_sessions_fn(timeout=timeout_seconds)
+                for session in stale:
+                    logger_obj.info(
+                        f"Reaping stale voice session - group_id={session.group_id}"
+                    )
+                    await cleanup_audio_session_fn(session)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger_obj.error(f"Voice session reaper error: {e}")
+
+    return _reap_stale_voice_sessions
+
+
 # ---------------------------------------------------------------------------
 # Lifespan
 # ---------------------------------------------------------------------------
@@ -48,55 +153,32 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         compact_formatter = logging.Formatter(
             "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
-        for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access"]:
-            uvicorn_logger = logging.getLogger(logger_name)
-            uvicorn_logger.propagate = False
-            if uvicorn_logger.handlers:
-                for handler in uvicorn_logger.handlers:
-                    handler.setFormatter(compact_formatter)
-            else:
-                handler = logging.StreamHandler()
-                handler.setFormatter(compact_formatter)
-                uvicorn_logger.addHandler(handler)
+        _configure_named_loggers(
+            ["uvicorn", "uvicorn.error", "uvicorn.access"],
+            compact_formatter,
+        )
 
         # Configure Socket.IO loggers
-        for logger_name in [
-            "socketio",
-            "engineio",
-            "socketio.server",
-            "engineio.server",
-        ]:
-            socketio_logger = logging.getLogger(logger_name)
-            socketio_logger.propagate = False
-            if socketio_logger.handlers:
-                for handler in socketio_logger.handlers:
-                    handler.setFormatter(compact_formatter)
-            else:
-                handler = logging.StreamHandler()
-                handler.setFormatter(compact_formatter)
-                socketio_logger.addHandler(handler)
+        _configure_named_loggers(
+            [
+                "socketio",
+                "engineio",
+                "socketio.server",
+                "engineio.server",
+            ],
+            compact_formatter,
+        )
 
         # Initialize Redis client for HTTP caching and socket ownership management
         import app.infra.globals as _globals
 
         redis_url = os.getenv("REDIS_URL")
-        logger.info(
-            f"Initializing HTTP cache Redis client: redis={redis is not None}, redis_url={redis_url}"
+        await _initialize_redis_client(
+            redis_module=redis,
+            redis_url=redis_url,
+            globals_module=_globals,
+            logger_obj=logger,
         )
-        if not redis or not redis_url:
-            logger.warning(
-                "Redis disabled (no lib or no REDIS_URL); using in-memory fallbacks"
-            )
-            _globals.redis_client = None
-        else:
-            try:
-                client = redis.from_url(redis_url)  # type: ignore
-                await client.ping()
-                _globals.redis_client = client
-                logger.info(f"Redis client initialized for HTTP caching: {redis_url}")
-            except Exception as e:
-                logger.error(f"Failed to initialize Redis client: {e}", exc_info=True)
-                _globals.redis_client = None
 
         # Initialize asyncpg database pool
         await init_db_pool()
@@ -129,44 +211,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         )
 
         # Generate OpenAPI schema and write to disk
-        schema = get_openapi(
-            title=app.title,
-            version="0.1.0",
-            routes=app.routes,
-            description="Auto-generated OpenAPI schema from FastAPI v5 API",
-        )
-
-        for _path, path_item in schema.get("paths", {}).items():
-            for _method, operation in path_item.items():
-                if isinstance(operation, dict) and "tags" in operation:
-                    tags = operation.get("tags", [])
-                    if tags:
-                        operation["x-cache-tags"] = tags
-
-        openapi_path = Path(__file__).resolve().parents[1] / "openapi.json"
-        openapi_path.write_text(json.dumps(schema, indent=2))
-        logger.info(f"OpenAPI schema written to {openapi_path}")
+        _write_openapi_schema(app)
 
         # Start voice session reaper (cleans up idle sessions every 60s)
-        async def _reap_stale_voice_sessions() -> None:
-            from app.infra.websocket.audio_lifecycle import cleanup_audio_session
-            from app.infra.websocket.session_store import get_stale_sessions
+        from app.infra.websocket.audio_lifecycle import cleanup_audio_session
+        from app.infra.websocket.session_store import get_stale_sessions
 
-            while True:
-                try:
-                    await asyncio.sleep(60)
-                    stale = get_stale_sessions(timeout=300.0)
-                    for session in stale:
-                        logger.info(
-                            f"Reaping stale voice session - group_id={session.group_id}"
-                        )
-                        await cleanup_audio_session(session)
-                except asyncio.CancelledError:
-                    break
-                except Exception as e:
-                    logger.error(f"Voice session reaper error: {e}")
-
-        reaper_task = asyncio.create_task(_reap_stale_voice_sessions())
+        reaper_task = asyncio.create_task(
+            _build_voice_session_reaper(
+                cleanup_audio_session_fn=cleanup_audio_session,
+                get_stale_sessions_fn=get_stale_sessions,
+                logger_obj=logger,
+            )()
+        )
 
         yield
 
@@ -203,11 +260,27 @@ fastapi_app.add_middleware(
 class DBLoggingMiddleware(BaseHTTPMiddleware):
     """Middleware that automatically logs all requests/responses to database."""
 
+    def __init__(
+        self,
+        app: Any,
+        *,
+        record_error_fn: Any | None = None,
+        record_request_fn: Any | None = None,
+        set_profile_id_fn: Any | None = None,
+    ) -> None:
+        super().__init__(app)
+        self._record_error_fn = record_error_fn
+        self._record_request_fn = record_request_fn
+        self._set_profile_id_fn = set_profile_id_fn
+
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         from app.routes.metrics.collector import record_error, record_request
         from app.utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
+        record_error_fn = self._record_error_fn or record_error
+        record_request_fn = self._record_request_fn or record_request
+        set_profile_id_fn = self._set_profile_id_fn or set_profile_id
         start_time = time.perf_counter()
 
         profile_id: str | None = None
@@ -242,9 +315,9 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
                 profile_id = request.headers.get("X-Profile-Id")
 
         if profile_id:
-            set_profile_id(profile_id)
+            set_profile_id_fn(profile_id)
         else:
-            set_profile_id(None)
+            set_profile_id_fn(None)
 
         status_code = 500
         error_msg: str | None = None
@@ -260,12 +333,12 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
             duration_ms = (time.perf_counter() - start_time) * 1000
             try:
                 if status_code >= 500:
-                    asyncio.create_task(record_error())
-                asyncio.create_task(record_request(duration_ms))
+                    asyncio.create_task(record_error_fn())
+                asyncio.create_task(record_request_fn(duration_ms))
             except Exception:
                 pass
             finally:
-                set_profile_id(None)
+                set_profile_id_fn(None)
 
 
 fastapi_app.add_middleware(DBLoggingMiddleware)
