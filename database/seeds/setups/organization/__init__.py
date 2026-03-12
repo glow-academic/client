@@ -6,7 +6,11 @@ Dependency order (each module may reference IDs from earlier modules):
   3. fields         (refs: departments)
   4. parameters     (refs: fields, departments)
   5. settings       (refs: departments, auth, systems, thresholds)
-  6. post_links     (refs: departments, settings, pre-existing profiles)
+  6. profiles       (updates: pre-existing profiles → department + email)
+
+Updates are applied automatically after all creates:
+  - departments.get_department_updates() → link departments to settings
+  - profiles.profile_updates → link pre-existing profiles to department
 """
 
 SETUP_NAME = "organization"
@@ -19,5 +23,5 @@ MODULES = [
     "fields",
     "parameters",
     "settings",
-    "post_links",
+    "profiles",
 ]

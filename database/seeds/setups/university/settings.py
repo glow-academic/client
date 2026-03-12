@@ -86,3 +86,19 @@ settings = [
         threshold_ids=[THRESHOLD_SUCCESS, THRESHOLD_WARNING, THRESHOLD_DANGER],
     ),
 ]
+
+# ---------------------------------------------------------------------------
+# Setting updates (applied after colors are created)
+# ---------------------------------------------------------------------------
+
+
+def get_setting_updates():
+    """Deferred import to avoid circular dependency with colors module."""
+    from database.seeds.setups.university.colors import ALL_COLOR_IDS
+
+    return [
+        dict(
+            id=UNIVERSITY_SETTING,
+            color_ids=ALL_COLOR_IDS,
+        ),
+    ]

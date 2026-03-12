@@ -22,6 +22,9 @@ from app.infra.setting.permissions_context import (
     resolve_setting_permissions_context,
     resolve_setting_values,
 )
+from app.routes.v5.tools.artifacts.setting.get import (
+    get_settings as get_setting_artifacts,
+)
 from app.routes.v5.tools.artifacts.setting.update import (
     _UNSET,
 )
@@ -122,16 +125,62 @@ async def update_setting_impl(
     results: list[SettingResultItem] = []
 
     for item in items:
+        # Fetch existing junction IDs so snapshot is always complete
+        async with pool.acquire() as conn:
+            existing = await get_setting_artifacts(
+                conn,
+                [item.setting_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                provider_keys=True,
+                auths=True,
+                systems=True,
+            )
+        if existing:
+            art = existing[0]
+            eff_name_id = item.name_id or (art.name_ids[0] if art.name_ids else None)
+            eff_desc_id = item.description_id or (
+                art.description_ids[0] if art.description_ids else None
+            )
+            eff_department_ids = (
+                item.department_ids
+                if item.department_ids is not None
+                else list(art.department_ids or [])
+            )
+            eff_provider_key_ids = (
+                item.provider_key_ids
+                if item.provider_key_ids is not None
+                else list(art.provider_key_ids or [])
+            )
+            eff_auth_ids = (
+                item.auth_ids
+                if item.auth_ids is not None
+                else list(art.auth_ids or [])
+            )
+            eff_system_ids = (
+                item.system_ids
+                if item.system_ids is not None
+                else list(art.systems_ids or [])
+            )
+        else:
+            eff_name_id = item.name_id
+            eff_desc_id = item.description_id
+            eff_department_ids = item.department_ids
+            eff_provider_key_ids = item.provider_key_ids
+            eff_auth_ids = item.auth_ids
+            eff_system_ids = item.system_ids
+
         # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
         settings_resource_id = await create_denormalized_snapshot(
             pool,
             redis,
-            name_id=item.name_id,
-            description_id=item.description_id,
-            department_ids=item.department_ids,
-            provider_key_ids=item.provider_key_ids,
-            auth_ids=item.auth_ids,
-            system_ids=item.system_ids,
+            name_id=eff_name_id,
+            description_id=eff_desc_id,
+            department_ids=eff_department_ids,
+            provider_key_ids=eff_provider_key_ids,
+            auth_ids=eff_auth_ids,
+            system_ids=eff_system_ids,
         )
 
         # Artifact update inside transaction

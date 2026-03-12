@@ -23,6 +23,9 @@ from app.infra.department.permissions_context import (
     resolve_department_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.routes.v5.tools.artifacts.department.get import (
+    get_departments as get_department_artifacts,
+)
 from app.routes.v5.tools.artifacts.department.update import (
     _UNSET,
 )
@@ -128,13 +131,36 @@ async def update_department_impl(
     saved_department_ids: list[UUID] = []
 
     for item in items:
+        # Fetch existing junction IDs so snapshot is always complete
+        async with pool.acquire() as conn:
+            existing = await get_department_artifacts(
+                conn,
+                [item.department_id],
+                names=True,
+                descriptions=True,
+                settings=True,
+            )
+        if existing:
+            art = existing[0]
+            eff_name_id = item.name_id or (art.name_ids[0] if art.name_ids else None)
+            eff_desc_id = item.description_id or (
+                art.description_ids[0] if art.description_ids else None
+            )
+            eff_setting_ids = (
+                item.settings_ids if item.settings_ids is not None else list(art.settings_ids or [])
+            )
+        else:
+            eff_name_id = item.name_id
+            eff_desc_id = item.description_id
+            eff_setting_ids = item.settings_ids
+
         # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
         departments_resource_id = await create_denormalized_snapshot(
             pool,
             redis,
-            name_id=item.name_id,
-            description_id=item.description_id,
-            setting_ids=item.settings_ids,
+            name_id=eff_name_id,
+            description_id=eff_desc_id,
+            setting_ids=eff_setting_ids,
         )
 
         # Artifact update inside transaction

@@ -1083,92 +1083,192 @@ async def _run_file_seeds(
         print(f"  OK: File linked to document {df['document_id']}")
 
 
-async def _run_post_links(
+async def _cleanup_deactivated_junctions(pool: asyncpg.Pool) -> list[str]:
+    """Collect deactivated junction rows and generate UPDATE SQL.
+
+    The update pass uses upsert_multi which soft-deletes old junction rows
+    (active=false). But pg_dump --on-conflict-do-nothing can't propagate
+    that deactivation to a target DB that already has those rows as active.
+
+    This function:
+      1. Finds all deactivated junction rows
+      2. Generates UPDATE SQL to deactivate them in the target DB
+      3. Deletes them from the testcontainer (so pg_dump doesn't emit
+         conflicting INSERT ... ON CONFLICT DO NOTHING for them)
+
+    Returns a list of SQL UPDATE statements to append to the seed file.
+    """
+    update_stmts: list[str] = []
+
+    async with pool.acquire() as conn:
+        junction_tables = await conn.fetch(
+            "SELECT tablename FROM pg_tables "
+            "WHERE schemaname = 'public' AND tablename LIKE '%\\_junction'"
+        )
+        total = 0
+        for row in junction_tables:
+            table = row["tablename"]
+            has_active = await conn.fetchval(
+                "SELECT EXISTS ("
+                "  SELECT 1 FROM information_schema.columns "
+                "  WHERE table_schema = 'public' "
+                "    AND table_name = $1 "
+                "    AND column_name = 'active'"
+                ")",
+                table,
+            )
+            if not has_active:
+                continue
+
+            # Get PK columns for this junction table
+            pk_cols = await conn.fetch(
+                "SELECT a.attname "
+                "FROM pg_index i "
+                "JOIN pg_attribute a ON a.attrelid = i.indrelid "
+                "  AND a.attnum = ANY(i.indkey) "
+                "JOIN pg_class c ON c.oid = i.indrelid "
+                "WHERE c.relname = $1 AND i.indisprimary "
+                "ORDER BY array_position(i.indkey, a.attnum)",
+                table,
+            )
+            pk_col_names = [r["attname"] for r in pk_cols]
+            if not pk_col_names:
+                continue
+
+            # Fetch deactivated rows
+            deactivated = await conn.fetch(
+                f"SELECT {', '.join(pk_col_names)} "  # noqa: S608
+                f"FROM {table} WHERE active = false"
+            )
+            if not deactivated:
+                continue
+
+            # Generate UPDATE statements
+            for drow in deactivated:
+                where_parts = [
+                    f"{col} = '{drow[col]}'" for col in pk_col_names
+                ]
+                where_clause = " AND ".join(where_parts)
+                update_stmts.append(
+                    f"UPDATE public.{table} SET active = false "
+                    f"WHERE {where_clause};"
+                )
+
+            # Delete from testcontainer so pg_dump won't emit conflicting INSERTs
+            result = await conn.execute(
+                f"DELETE FROM {table} WHERE active = false"  # noqa: S608
+            )
+            count = int(result.split()[-1])
+            total += count
+
+        if total:
+            print(f"  Cleaned up {total} deactivated junction row(s)")
+
+    return update_stmts
+
+
+async def _run_update_pass(
     pool: asyncpg.Pool,
     redis: Redis,
-    mod: object,
+    setup: str,
+    modules: list[str],
 ) -> None:
-    """Run post-creation link updates (bidirectional refs).
+    """Run update pass — applies deferred updates from seed modules.
 
-    Uses canonical infra-layer _impl functions which handle:
-    - Junction updates
-    - Denormalized resource snapshot creation
-    - Cache invalidation
+    After all creates are done, each module may export update data:
+      - departments.get_department_updates() → update_department_impl
+      - settings.get_setting_updates() → update_setting_impl
+      - profiles.profile_updates → update_profile_impl (with email creation)
+
+    Uses canonical infra-layer _impl functions which handle junction updates,
+    denormalized resource snapshot creation, and cache invalidation.
     """
-    # ── Department → Setting link ─────────────────────────────────────
-    if hasattr(mod, "department_updates"):
-        from app.infra.department.update import update_department_impl
-        from app.routes.v5.api.main.department.types import UpdateDepartmentItem
+    import importlib
 
-        items = [
-            UpdateDepartmentItem(
-                department_id=d["id"],
-                settings_ids=d.get("settings_ids"),
-            )
-            for d in mod.department_updates
-        ]
-        await update_department_impl(
-            pool,
-            redis,
-            profile_id=SEED_PROFILE_ID,
-            items=items,
-        )
-        print(f"  OK: {len(items)} department(s) linked to settings")
+    # ── Department updates ────────────────────────────────────────────
+    if "departments" in modules:
+        mod = importlib.import_module(f"database.seeds.setups.{setup}.departments")
+        if hasattr(mod, "get_department_updates"):
+            from app.infra.department.update import update_department_impl
+            from app.routes.v5.api.main.department.types import UpdateDepartmentItem
 
-    # ── Setting → Colors link ─────────────────────────────────────────
-    if hasattr(mod, "setting_updates"):
-        from app.infra.setting.update import update_setting_impl
-        from app.routes.v5.api.main.setting.types import UpdateSettingItem
-
-        items = [
-            UpdateSettingItem(
-                setting_id=s["id"],
-                color_ids=s.get("color_ids"),
-            )
-            for s in mod.setting_updates
-        ]
-        await update_setting_impl(
-            pool,
-            redis,
-            profile_id=SEED_PROFILE_ID,
-            items=items,
-        )
-        print(f"  OK: {len(items)} setting(s) linked to colors")
-
-    # ── Pre-existing Profile → Department + Email link ────────────────
-    if hasattr(mod, "profile_department_links"):
-        from app.infra.profile.update import update_profile_impl
-        from app.routes.v5.api.main.profile.types import UpdateProfileItem
-        from app.routes.v5.tools.resources.emails.create import create_email
-
-        items: list[UpdateProfileItem] = []
-        for p in mod.profile_department_links:
-            # Create email resource (not handled by _impl value resolution)
-            email_id = None
-            if "email" in p:
-                async with pool.acquire() as conn:
-                    email_result = await create_email(
-                        conn,
-                        email=p["email"],
-                        redis=redis,
+            dept_updates = mod.get_department_updates()
+            if dept_updates:
+                items = [
+                    UpdateDepartmentItem(
+                        department_id=d["id"],
+                        settings_ids=d.get("settings_ids"),
                     )
-                    email_id = email_result.id
-
-            items.append(
-                UpdateProfileItem(
-                    profile_id=p["profile_id"],
-                    department_ids=p.get("department_ids"),
-                    email_ids=[email_id] if email_id else None,
+                    for d in dept_updates
+                ]
+                await update_department_impl(
+                    pool,
+                    redis,
+                    profile_id=SEED_PROFILE_ID,
+                    items=items,
                 )
-            )
+                print(f"  OK: {len(items)} department(s) updated")
 
-        await update_profile_impl(
-            pool,
-            redis,
-            profile_id=SEED_PROFILE_ID,
-            items=items,
-        )
-        print(f"  OK: {len(items)} profile(s) linked to departments")
+    # ── Setting updates ───────────────────────────────────────────────
+    if "settings" in modules:
+        mod = importlib.import_module(f"database.seeds.setups.{setup}.settings")
+        if hasattr(mod, "get_setting_updates"):
+            from app.infra.setting.update import update_setting_impl
+            from app.routes.v5.api.main.setting.types import UpdateSettingItem
+
+            setting_updates = mod.get_setting_updates()
+            if setting_updates:
+                items = [
+                    UpdateSettingItem(
+                        setting_id=s["id"],
+                        color_ids=s.get("color_ids"),
+                    )
+                    for s in setting_updates
+                ]
+                await update_setting_impl(
+                    pool,
+                    redis,
+                    profile_id=SEED_PROFILE_ID,
+                    items=items,
+                )
+                print(f"  OK: {len(items)} setting(s) updated")
+
+    # ── Profile updates ───────────────────────────────────────────────
+    if "profiles" in modules:
+        mod = importlib.import_module(f"database.seeds.setups.{setup}.profiles")
+        if hasattr(mod, "profile_updates"):
+            from app.infra.profile.update import update_profile_impl
+            from app.routes.v5.api.main.profile.types import UpdateProfileItem
+            from app.routes.v5.tools.resources.emails.create import create_email
+
+            update_items: list[UpdateProfileItem] = []
+            for p in mod.profile_updates:
+                # Create email resource (not handled by _impl value resolution)
+                email_id = None
+                if "email" in p:
+                    async with pool.acquire() as conn:
+                        email_result = await create_email(
+                            conn,
+                            email=p["email"],
+                            redis=redis,
+                        )
+                        email_id = email_result.id
+
+                update_items.append(
+                    UpdateProfileItem(
+                        profile_id=p["profile_id"],
+                        department_ids=p.get("department_ids"),
+                        email_ids=[email_id] if email_id else None,
+                    )
+                )
+
+            await update_profile_impl(
+                pool,
+                redis,
+                profile_id=SEED_PROFILE_ID,
+                items=update_items,
+            )
+            print(f"  OK: {len(update_items)} profile(s) updated")
 
 
 async def _run_cohort_seeds(
@@ -1579,7 +1679,8 @@ async def main_setup(setup: str = "university") -> None:
             elif module_name == "cohorts":
                 await _run_cohort_seeds(pool, redis_client, mod.cohorts)
             elif module_name == "profiles":
-                await _run_profile_seeds(pool, redis_client, mod.profiles)
+                if hasattr(mod, "profiles"):
+                    await _run_profile_seeds(pool, redis_client, mod.profiles)
             elif module_name == "settings":
                 await _run_setting_seeds(pool, redis_client, mod.settings)
             elif module_name == "colors":
@@ -1594,8 +1695,21 @@ async def main_setup(setup: str = "university") -> None:
                 await _run_file_seeds(
                     pool, redis_client, mod.document_files, assets_dir
                 )
-            elif module_name == "post_links":
-                await _run_post_links(pool, redis_client, mod)
+
+        # ── Update pass — apply deferred updates from seed modules ────
+        print("\nApplying updates...")
+        await _run_update_pass(
+            pool, redis_client, setup, setup_module.MODULES
+        )
+
+        # ── Cleanup deactivated junction rows before dump ─────────────
+        # The update pass soft-deletes old junction rows (active=false),
+        # but pg_dump --on-conflict-do-nothing can't propagate that state
+        # to a DB that already has those rows as active=true from base-seed.
+        # Solution: collect UPDATE statements for the deactivated rows,
+        # delete them from testcontainer (so pg_dump won't conflict),
+        # then append the UPDATEs to the seed file.
+        deactivation_stmts = await _cleanup_deactivated_junctions(pool)
 
         await redis_client.aclose()
         await pool.close()
@@ -1607,6 +1721,20 @@ async def main_setup(setup: str = "university") -> None:
         _pg_dump_data(
             pg, output_file, f"Setup: {setup}", on_conflict_do_nothing=True
         )
+
+        # Append deactivation UPDATEs after the INSERTs
+        if deactivation_stmts:
+            with open(output_file, "a") as f:
+                f.write(
+                    "\n-- Deactivate base-seed junction rows superseded by "
+                    "this setup's updates\n"
+                )
+                for stmt in deactivation_stmts:
+                    f.write(stmt + "\n")
+            print(
+                f"  Appended {len(deactivation_stmts)} deactivation "
+                f"UPDATE(s) to seed file"
+            )
 
     finally:
         pg.stop()

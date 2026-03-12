@@ -22,6 +22,9 @@ from app.infra.profile.permissions_context import (
     resolve_profile_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.routes.v5.tools.artifacts.profile.get import (
+    get_profiles as get_profile_artifacts,
+)
 from app.routes.v5.tools.artifacts.profile.update import (
     _UNSET,
 )
@@ -125,17 +128,39 @@ async def update_profile_impl(
 
     results: list[ProfileResultItem] = []
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            for item in items:
-                # Create denormalized snapshot
-                profiles_resource_id = await create_denormalized_snapshot(
-                    conn,
-                    redis,
-                    name_id=item.name_id,
-                    department_ids=item.department_ids,
-                )
+    for item in items:
+        # Fetch existing junction IDs so snapshot is always complete
+        async with pool.acquire() as conn:
+            existing = await get_profile_artifacts(
+                conn,
+                [item.profile_id],
+                names=True,
+                departments=True,
+            )
+        if existing:
+            art = existing[0]
+            eff_name_id = item.name_id or (art.name_ids[0] if art.name_ids else None)
+            eff_department_ids = (
+                item.department_ids
+                if item.department_ids is not None
+                else list(art.department_ids or [])
+            )
+        else:
+            eff_name_id = item.name_id
+            eff_department_ids = item.department_ids
 
+        # Create denormalized snapshot OUTSIDE transaction (read-only hydration)
+        async with pool.acquire() as conn:
+            profiles_resource_id = await create_denormalized_snapshot(
+                conn,
+                redis,
+                name_id=eff_name_id,
+                department_ids=eff_department_ids,
+            )
+
+        # Artifact update inside transaction
+        async with pool.acquire() as conn:
+            async with conn.transaction():
                 await update_profile_artifact(
                     conn,
                     item.profile_id,
@@ -151,13 +176,13 @@ async def update_profile_impl(
                     redis=redis,
                 )
 
-                results.append(
-                    ProfileResultItem(
-                        success=True,
-                        profile_id=item.profile_id,
-                        message="Profile updated successfully",
-                    )
-                )
+        results.append(
+            ProfileResultItem(
+                success=True,
+                profile_id=item.profile_id,
+                message="Profile updated successfully",
+            )
+        )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

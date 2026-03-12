@@ -11,13 +11,17 @@ Dependency order (each module may reference IDs from earlier modules):
   8. scenarios      (refs: personas, documents, content)
   9. scenario_rubrics (refs: scenarios, rubrics)
   10. simulations   (refs: scenarios, scenario_rubrics)
-  11. profiles      (refs: departments)
+  11. profiles      (refs: departments; updates: pre-existing profiles → department + email)
   12. cohorts       (refs: simulations, profiles)
   13. settings      (refs: departments, auth, providers, systems)
   14. colors        (standalone color resources)
   15. texts         (refs: documents — text upload chain + document link)
   16. files         (refs: documents — file upload chain + document link)
-  17. post_links    (refs: departments, settings, colors, pre-existing profiles)
+
+Updates are applied automatically after all creates:
+  - departments.get_department_updates() → link departments to settings
+  - settings.get_setting_updates() → link settings to colors
+  - profiles.profile_updates → link pre-existing profiles to department
 """
 
 SETUP_NAME = "university"
@@ -41,5 +45,4 @@ MODULES = [
     "colors",
     "texts",
     "files",
-    "post_links",
 ]

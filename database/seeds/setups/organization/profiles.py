@@ -1,13 +1,8 @@
-"""Post-creation links that require both ends to exist.
-
-These are update operations that wire up bidirectional references
-which can't be set at create time due to dependency ordering.
-"""
+"""Organization profile updates — link pre-existing profiles to this setup's department."""
 
 from uuid import UUID
 
 from database.seeds.setups.organization.departments import ORGANIZATION_DEPT
-from database.seeds.setups.organization.settings import ORGANIZATION_SETTING
 
 # ---------------------------------------------------------------------------
 # Pre-existing profile IDs (from 09-profiles in modules 01-10)
@@ -20,21 +15,10 @@ DEFAULT_MEMBER = UUID("019b3be4-36f0-7eb3-bc4e-bcab772edd92")
 DEFAULT_SUPERADMIN = UUID("019b3be4-36f0-788c-9df2-481eb5917940")
 
 # ---------------------------------------------------------------------------
-# Department → Setting link
+# Profile updates — link pre-existing profiles to this setup's department
 # ---------------------------------------------------------------------------
 
-department_updates = [
-    dict(
-        id=ORGANIZATION_DEPT,
-        settings_ids=[ORGANIZATION_SETTING],
-    ),
-]
-
-# ---------------------------------------------------------------------------
-# Pre-existing Profile → Department link + email creation
-# ---------------------------------------------------------------------------
-
-profile_department_links = [
+profile_updates = [
     dict(
         profile_id=DEFAULT_ADMIN,
         department_ids=[ORGANIZATION_DEPT],
