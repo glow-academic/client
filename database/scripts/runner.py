@@ -350,9 +350,7 @@ async def _seed_standards(
     print(f"  OK: {len(items)} standards created")
 
 
-async def _seed_keys(
-    conn: asyncpg.Connection, redis: Redis, items: list[dict]
-) -> None:
+async def _seed_keys(conn: asyncpg.Connection, redis: Redis, items: list[dict]) -> None:
     from app.routes.v5.tools.resources.keys.create import create_key
 
     for item in items:
@@ -1200,13 +1198,10 @@ async def _cleanup_deactivated_junctions(pool: asyncpg.Pool) -> list[str]:
 
             # Generate UPDATE statements
             for drow in deactivated:
-                where_parts = [
-                    f"{col} = '{drow[col]}'" for col in pk_col_names
-                ]
+                where_parts = [f"{col} = '{drow[col]}'" for col in pk_col_names]
                 where_clause = " AND ".join(where_parts)
                 update_stmts.append(
-                    f"UPDATE public.{table} SET active = false "
-                    f"WHERE {where_clause};"
+                    f"UPDATE public.{table} SET active = false WHERE {where_clause};"
                 )
 
             # Delete from testcontainer so pg_dump won't emit conflicting INSERTs
@@ -1286,9 +1281,7 @@ async def _run_update_pass(
                                 conn, artifact_ids, profiles=True
                             )
                         profile_ids = [
-                            p.profile_ids[0]
-                            for p in profiles
-                            if p.profile_ids
+                            p.profile_ids[0] for p in profiles if p.profile_ids
                         ]
 
                     items.append(
@@ -1773,9 +1766,7 @@ async def main_setup(setup: str = "university") -> None:
 
         # ── Update pass — apply deferred updates from seed modules ────
         print("\nApplying updates...")
-        await _run_update_pass(
-            pool, redis_client, setup, setup_module.MODULES
-        )
+        await _run_update_pass(pool, redis_client, setup, setup_module.MODULES)
 
         # ── Cleanup deactivated junction rows before dump ─────────────
         # The update pass soft-deletes old junction rows (active=false),
@@ -1793,9 +1784,7 @@ async def main_setup(setup: str = "university") -> None:
         output_dir = MODULES_DIR / "setups" / setup
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / "seed.sql"
-        _pg_dump_data(
-            pg, output_file, f"Setup: {setup}", on_conflict_do_nothing=True
-        )
+        _pg_dump_data(pg, output_file, f"Setup: {setup}", on_conflict_do_nothing=True)
 
         # Append deactivation UPDATEs after the INSERTs
         if deactivation_stmts:

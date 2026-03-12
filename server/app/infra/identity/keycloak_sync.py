@@ -160,7 +160,9 @@ async def ensure_department_client(
 
         base_url = config.origin.rstrip("/")
         redirect_uri = f"{base_url}{config.app_prefix}/api/auth/callback/keycloak"
-        emulate_redirect_uri = f"{base_url}{config.app_prefix}/api/auth/emulate-redirect*"
+        emulate_redirect_uri = (
+            f"{base_url}{config.app_prefix}/api/auth/emulate-redirect*"
+        )
         redirect_uris = [redirect_uri, f"{base_url}{config.app_prefix}/*"]
         post_logout_uris = f"{base_url}{config.app_prefix}/*"
 
@@ -279,7 +281,9 @@ async def ensure_glow_client_in_master_realm(
         )
 
         # Post-logout redirect URIs for emulation flow (logout then re-auth as different user)
-        emulate_redirect_uri = f"{base_url}{config.app_prefix}/api/auth/emulate-redirect*"
+        emulate_redirect_uri = (
+            f"{base_url}{config.app_prefix}/api/auth/emulate-redirect*"
+        )
         post_logout_uris = f"{base_url}{config.app_prefix}/*"
 
         client_payload: dict[str, Any] = {
@@ -353,9 +357,7 @@ async def ensure_glow_client_in_master_realm(
         logger.warning(f"Could not ensure glow-client in master realm: {e}")
 
 
-async def ensure_mcp_client_scope(
-    kc_admin: Any, config: KeycloakSyncConfig
-) -> None:
+async def ensure_mcp_client_scope(kc_admin: Any, config: KeycloakSyncConfig) -> None:
     """Ensure MCP client scope exists in master realm with audience mapper.
 
     Creates the mcp-resource client scope, adds an audience mapper with the MCP
@@ -662,9 +664,7 @@ async def ensure_mcp_client_scope(
         logger.warning(f"Could not ensure MCP client scope: {e}")
 
 
-async def ensure_mcp_token_lifespan(
-    kc_admin: Any, config: KeycloakSyncConfig
-) -> None:
+async def ensure_mcp_token_lifespan(kc_admin: Any, config: KeycloakSyncConfig) -> None:
     """Ensure master realm has appropriate access token lifespan for MCP.
 
     Configures the access token lifespan in the master realm to a longer duration
@@ -1401,9 +1401,7 @@ def ensure_emulation_first_login_flow(kc_admin: Any) -> str:
         return "first broker login"
 
 
-async def sync_emulation_default_idp(
-    kc_admin: Any, config: KeycloakSyncConfig
-) -> str:
+async def sync_emulation_default_idp(kc_admin: Any, config: KeycloakSyncConfig) -> str:
     """Sync a single default-idp for all emulation flows.
 
     This IdP is used for profile emulation. It's hidden from login templates
@@ -1712,7 +1710,9 @@ async def sync_identity_providers(
             if profile_id in seen_profiles:
                 continue
             seen_profiles.add(profile_id)
-            await sync_default_idp_for_profile(profile_id, sp.profile_name, kc_admin, config)
+            await sync_default_idp_for_profile(
+                profile_id, sp.profile_name, kc_admin, config
+            )
 
         # Step 1: Check if departments exist - if they do, skip realm-level IdPs that are also department-scoped
         async with pool.acquire() as conn:
@@ -2102,7 +2102,9 @@ async def perform_keycloak_sync(
         )
 
     try:
-        await sync_keycloak(department_id=department_id, pool=pool, redis=redis, config=config)
+        await sync_keycloak(
+            department_id=department_id, pool=pool, redis=redis, config=config
+        )
 
         if department_id:
             message = (

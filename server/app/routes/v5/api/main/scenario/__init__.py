@@ -9,8 +9,8 @@ from app.routes.v5.api.main.scenario.draft import router as draft_router
 from app.routes.v5.api.main.scenario.drafts import router as drafts_router
 from app.routes.v5.api.main.scenario.duplicate import router as duplicate_router
 from app.routes.v5.api.main.scenario.export import router as export_router
-from app.routes.v5.api.main.scenario.get import router as get_router
 from app.routes.v5.api.main.scenario.file import router as file_router
+from app.routes.v5.api.main.scenario.get import router as get_router
 from app.routes.v5.api.main.scenario.image import router as image_router
 from app.routes.v5.api.main.scenario.refresh import router as refresh_router
 from app.routes.v5.api.main.scenario.search import router as search_router

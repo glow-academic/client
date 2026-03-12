@@ -29,11 +29,7 @@ from app.routes.v5.api.events.polling import router as poll_router
 from app.routes.v5.api.events.stream import router as stream_router
 from app.routes.v5.api.events.webhooks import router as webhooks_router
 from app.routes.v5.api.main.activity import router as activity_artifact_router
-from app.routes.v5.api.main.group.generate import router as generate_router
 from app.routes.v5.api.main.activity.problem import router as problem_router
-from app.routes.v5.api.main.profile.context import router as context_router
-from app.routes.v5.api.main.profile.emulate import router as emulate_router
-from app.routes.v5.api.main.profile.unemulate import router as unemulate_router
 
 # ============================================================================
 # Artifacts (19 total)
@@ -54,6 +50,7 @@ from app.routes.v5.api.main.document import router as documents_router
 from app.routes.v5.api.main.eval import router as evals_router
 from app.routes.v5.api.main.field import router as fields_router
 from app.routes.v5.api.main.group import router as group_router
+from app.routes.v5.api.main.group.generate import router as generate_router
 from app.routes.v5.api.main.health import router as health_artifact_router
 from app.routes.v5.api.main.home import router as home_artifact_router
 from app.routes.v5.api.main.leaderboard import router as leaderboard_artifact_router
@@ -63,6 +60,9 @@ from app.routes.v5.api.main.persona import router as personas_router
 from app.routes.v5.api.main.practice import router as practice_artifact_router
 from app.routes.v5.api.main.pricing import router as pricing_artifact_router
 from app.routes.v5.api.main.profile import router as profile_router
+from app.routes.v5.api.main.profile.context import router as context_router
+from app.routes.v5.api.main.profile.emulate import router as emulate_router
+from app.routes.v5.api.main.profile.unemulate import router as unemulate_router
 from app.routes.v5.api.main.provider import router as providers_router
 from app.routes.v5.api.main.record import router as record_artifact_router
 from app.routes.v5.api.main.reports import router as reports_artifact_router

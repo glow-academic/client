@@ -154,9 +154,7 @@ async def update_setting_impl(
                 else list(art.provider_key_ids or [])
             )
             eff_auth_ids = (
-                item.auth_ids
-                if item.auth_ids is not None
-                else list(art.auth_ids or [])
+                item.auth_ids if item.auth_ids is not None else list(art.auth_ids or [])
             )
             eff_system_ids = (
                 item.system_ids

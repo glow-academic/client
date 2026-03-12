@@ -54,7 +54,7 @@ def test_get_payload_schema_filters_mcp_from_request_model(monkeypatch):
     monkeypatch.setattr(
         endpoints,
         "_get_handler",
-        lambda module_path, func_name: (lambda request: request),
+        lambda module_path, func_name: lambda request: request,
     )
 
     def fake_get_request_model(_handler):
@@ -310,7 +310,11 @@ async def test_register_endpoints_exposes_and_invokes_public_tools(monkeypatch):
     assert duplicate_artifact["payload"]["name"] == "Copy"
     assert draft_artifact["operation"] == "draft"
 
-    assert ("dashboard", "get", {"start_date": "2026-01-01", "extra": "value"}) in recorded
+    assert (
+        "dashboard",
+        "get",
+        {"start_date": "2026-01-01", "extra": "value"},
+    ) in recorded
     assert ("pricing", "get", {"model_id": "model-1"}) in recorded
     assert ("reports", "get", {"search": "ada", "sort_by": "score"}) in recorded
     assert ("leaderboard", "get", {"page_limit": 5}) in recorded
@@ -345,40 +349,83 @@ async def test_register_endpoints_resource_entry_docs_and_discovery_tools(monkey
 
     async def fake_resource_search(conn, redis=None, **kwargs):
         assert conn is fake_conn
-        return [ResourceRow(id=f"search:{kwargs['limit_count']}:{kwargs.get('search', '')}")]
+        return [
+            ResourceRow(id=f"search:{kwargs['limit_count']}:{kwargs.get('search', '')}")
+        ]
 
     async def fake_resource_create(conn, redis=None, **payload):
         assert conn is fake_conn
         return ResourceRow(id=payload["name"])
 
     async def fake_entry_get(request, http_request, response):
-        return ExampleResponse(echoed=len(request.ids or []), mcp=True, profile_id=http_request.state.profile_id)
+        return ExampleResponse(
+            echoed=len(request.ids or []),
+            mcp=True,
+            profile_id=http_request.state.profile_id,
+        )
 
     async def fake_entry_search(request, http_request, response):
-        return ExampleResponse(echoed=request.limit_count, mcp=True, profile_id=http_request.state.profile_id)
+        return ExampleResponse(
+            echoed=request.limit_count,
+            mcp=True,
+            profile_id=http_request.state.profile_id,
+        )
 
     async def fake_entry_create(request, http_request, response):
-        return ExampleResponse(echoed=request.value, mcp=request.mcp, profile_id=http_request.state.profile_id)
+        return ExampleResponse(
+            echoed=request.value,
+            mcp=request.mcp,
+            profile_id=http_request.state.profile_id,
+        )
 
     def fake_handler(module_path: str, func_name: str):
         table = {
             ("app.routes.v5.tools.resources.names.get", "get_names"): fake_resource_get,
-            ("app.routes.v5.tools.resources.names.search", "search_names"): fake_resource_search,
-            ("app.routes.v5.tools.resources.names.create", "create_names"): fake_resource_create,
-            ("app.routes.v5.tools.resources.profiles.get", "get_profiles"): fake_resource_get,
-            ("app.routes.v5.api.entries.problems.get", "get_problems_entries"): fake_entry_get,
-            ("app.routes.v5.api.entries.problems.search", "search_problems_entries"): fake_entry_search,
-            ("app.routes.v5.api.entries.problems.create", "create_problems_entry"): fake_entry_create,
-            ("app.infra.persona.docs", "docs_persona_impl"): lambda: {"persona": "docs"},
-            ("app.routes.v5.tools.resources.personas.docs", "get_personas_docs"): lambda: {"personas": "docs"},
+            (
+                "app.routes.v5.tools.resources.names.search",
+                "search_names",
+            ): fake_resource_search,
+            (
+                "app.routes.v5.tools.resources.names.create",
+                "create_names",
+            ): fake_resource_create,
+            (
+                "app.routes.v5.tools.resources.profiles.get",
+                "get_profiles",
+            ): fake_resource_get,
+            (
+                "app.routes.v5.api.entries.problems.get",
+                "get_problems_entries",
+            ): fake_entry_get,
+            (
+                "app.routes.v5.api.entries.problems.search",
+                "search_problems_entries",
+            ): fake_entry_search,
+            (
+                "app.routes.v5.api.entries.problems.create",
+                "create_problems_entry",
+            ): fake_entry_create,
+            ("app.infra.persona.docs", "docs_persona_impl"): lambda: {
+                "persona": "docs"
+            },
+            (
+                "app.routes.v5.tools.resources.personas.docs",
+                "get_personas_docs",
+            ): lambda: {"personas": "docs"},
             ("app.routes.v5.api.docs", "get_glow_docs"): lambda: {"glow": True},
         }
         return table[(module_path, func_name)]
 
     monkeypatch.setattr(endpoints, "_get_handler", fake_handler)
-    monkeypatch.setattr(endpoints, "get_artifact_description", lambda name: f"artifact:{name}")
-    monkeypatch.setattr(endpoints, "get_resource_description", lambda name: f"resource:{name}")
-    monkeypatch.setattr(endpoints, "get_entry_description", lambda name: f"entry:{name}")
+    monkeypatch.setattr(
+        endpoints, "get_artifact_description", lambda name: f"artifact:{name}"
+    )
+    monkeypatch.setattr(
+        endpoints, "get_resource_description", lambda name: f"resource:{name}"
+    )
+    monkeypatch.setattr(
+        endpoints, "get_entry_description", lambda name: f"entry:{name}"
+    )
 
     class EntryGetRequest(BaseModel):
         ids: list[str] | None = None
@@ -400,11 +447,19 @@ async def test_register_endpoints_resource_entry_docs_and_discovery_tools(monkey
 
     endpoints.register_endpoints(server)
 
-    resource = await server.tools["get_resource"]("names", ["123e4567-e89b-12d3-a456-426614174000"])
-    searched = await server.tools["search_resource"]("names", query="ada", limit=7, kwargs={"active_only": True})
-    created = await server.tools["create_resource"]("names", {"name": "new-name"}, group_id="group-1", tool_id="tool-1")
+    resource = await server.tools["get_resource"](
+        "names", ["123e4567-e89b-12d3-a456-426614174000"]
+    )
+    searched = await server.tools["search_resource"](
+        "names", query="ada", limit=7, kwargs={"active_only": True}
+    )
+    created = await server.tools["create_resource"](
+        "names", {"name": "new-name"}, group_id="group-1", tool_id="tool-1"
+    )
     entry = await server.tools["get_entry"]("problems", ids=["p-1", "p-2"])
-    searched_entry = await server.tools["search_entry"]("problems", query="issue", limit=9)
+    searched_entry = await server.tools["search_entry"](
+        "problems", query="issue", limit=9
+    )
     created_entry = await server.tools["create_entry"]("problems", {"value": 8})
     docs_glow = server.tools["docs"]("glow")
     docs_merged = server.tools["docs"]("persona")

@@ -62,7 +62,7 @@ def _model_draft_entity_ids(
 MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("artifacts.model.viewed",),
+        domain_events={"artifacts.model.viewed": None},
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
@@ -72,7 +72,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events=("artifacts.model.created",),
+        domain_events={"artifacts.model.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -80,7 +80,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events=("artifacts.model.updated",),
+        domain_events={"artifacts.model.updated": None},
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
@@ -88,7 +88,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events=("artifacts.model.deleted",),
+        domain_events={"artifacts.model.deleted": None},
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
@@ -96,7 +96,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events=("artifacts.model.duplicated",),
+        domain_events={"artifacts.model.duplicated": None},
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
@@ -104,7 +104,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events=("artifacts.model.draft.saved",),
+        domain_events={"artifacts.model.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
@@ -112,7 +112,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events=("artifacts.model.drafts.viewed",),
+        domain_events={"artifacts.model.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -120,7 +120,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events=("artifacts.model.search.performed",),
+        domain_events={"artifacts.model.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -128,7 +128,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events=("artifacts.model.docs.viewed",),
+        domain_events={"artifacts.model.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
@@ -138,7 +138,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events=("artifacts.model.exported",),
+        domain_events={"artifacts.model.exported": None},
         scope="collection",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
@@ -148,7 +148,7 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("artifacts.model.refreshed",),
+        domain_events={"artifacts.model.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

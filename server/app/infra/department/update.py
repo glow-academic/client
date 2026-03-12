@@ -147,7 +147,9 @@ async def update_department_impl(
                 art.description_ids[0] if art.description_ids else None
             )
             eff_setting_ids = (
-                item.settings_ids if item.settings_ids is not None else list(art.settings_ids or [])
+                item.settings_ids
+                if item.settings_ids is not None
+                else list(art.settings_ids or [])
             )
         else:
             eff_name_id = item.name_id

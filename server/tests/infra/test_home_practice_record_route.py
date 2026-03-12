@@ -37,7 +37,7 @@ async def _create_attempt_export_graph(pool, actor, *, practice: bool):
         group = await create_group(
             conn,
             session_id=actor.session_id,
-            name=f"export-{ 'practice' if practice else 'home' }",
+            name=f"export-{'practice' if practice else 'home'}",
         )
         run = await create_run(
             conn,
@@ -62,7 +62,7 @@ async def _create_attempt_export_graph(pool, actor, *, practice: bool):
             conn,
             session_id=actor.session_id,
             department_ids=[actor.department_id],
-            name=f"export-chat-{ 'practice' if practice else 'record' }",
+            name=f"export-chat-{'practice' if practice else 'record'}",
             text_enabled=True,
         )
         await create_attempt_chat(
@@ -218,7 +218,9 @@ class TestHomePracticeRecordRoutes:
             session_id=learning_route_actor.session_id,
         )
 
-        response = await v5_home_route_client.client.post("/api/v5/artifacts/home/export")
+        response = await v5_home_route_client.client.post(
+            "/api/v5/artifacts/home/export"
+        )
 
         assert response.status_code == 200, response.text
         payload = response.json()

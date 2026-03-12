@@ -61,7 +61,9 @@ async def _ensure_agent_option_resources(conn, redis_client) -> dict[str, UUID]:
                 redis=redis_client,
             )
         ).id,
-        "voice_id": (await create_voice(conn, "generation-test-voice", redis_client)).id,
+        "voice_id": (
+            await create_voice(conn, "generation-test-voice", redis_client)
+        ).id,
         "reasoning_level_id": (
             await create_reasoning_level(
                 conn, "generation-test-reasoning", redis_client

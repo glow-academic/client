@@ -13,7 +13,7 @@ def test_get_profile_event_config_maps_domain_event_and_entity_scope() -> None:
     config = get_profile_event_config("get")
 
     assert config is not None
-    assert config.domain_events == ("artifacts.profile.viewed",)
+    assert config.domain_event_names == ("artifacts.profile.viewed",)
     assert config.scope == "entity"
     assert config.entity_key == "target_profile_id"
     assert config.include_call_lifecycle is True
@@ -23,7 +23,7 @@ def test_context_profile_event_config_maps_domain_event_and_entity_scope() -> No
     config = get_profile_event_config("context")
 
     assert config is not None
-    assert config.domain_events == ("artifacts.profile.context.viewed",)
+    assert config.domain_event_names == ("artifacts.profile.context.viewed",)
     assert config.scope == "entity"
     assert config.entity_key == "profile_id"
     assert config.include_call_lifecycle is True
@@ -32,7 +32,7 @@ def test_context_profile_event_config_maps_domain_event_and_entity_scope() -> No
 def test_drafts_profile_event_config_is_collection_scoped() -> None:
     config = PROFILE_EVENT_CONFIGS["drafts"]
 
-    assert config.domain_events == ("artifacts.profile.drafts.viewed",)
+    assert config.domain_event_names == ("artifacts.profile.drafts.viewed",)
     assert config.scope == "collection"
     assert config.entity_key is None
     assert config.include_call_lifecycle is False
@@ -44,7 +44,7 @@ def test_profile_event_types_include_domain_and_lifecycle_events() -> None:
             event_type
             for operation in PROFILE_EVENT_CONFIGS.values()
             for event_type in (
-                *operation.domain_events,
+                *operation.domain_event_names,
                 *(
                     build_default_lifecycle_event_types("profile", operation.operation)
                     if operation.include_call_lifecycle

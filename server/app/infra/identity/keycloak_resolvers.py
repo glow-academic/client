@@ -6,7 +6,6 @@ Each resolver returns plain dicts matching the original SQL return shapes.
 
 from __future__ import annotations
 
-
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -31,9 +30,6 @@ from app.routes.v5.tools.resources.departments.get import (
 from app.routes.v5.tools.resources.items.get import get_items
 from app.routes.v5.tools.resources.keys.get import get_keys
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.settings.get import (
-    get_settings as get_setting_resources,
-)
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -139,9 +135,7 @@ async def resolve_auths_for_realm(
     dept_ids, _ = await search_departments(conn, active_only=True, limit_count=100000)
     dept_setting_ids: set[UUID] = set()
     if dept_ids:
-        dept_artifacts = await get_department_artifacts(
-            conn, dept_ids, settings=True
-        )
+        dept_artifacts = await get_department_artifacts(conn, dept_ids, settings=True)
         for da in dept_artifacts:
             if da.settings_ids:
                 dept_setting_ids.update(da.settings_ids)
@@ -161,9 +155,7 @@ async def resolve_auths_for_realm(
         return []
 
     # Step 4: Get auth artifact IDs via setting_auths_junction
-    realm_settings = await get_setting_artifacts(
-        conn, realm_setting_ids, auths=True
-    )
+    realm_settings = await get_setting_artifacts(conn, realm_setting_ids, auths=True)
 
     auth_ids: set[UUID] = set()
     for sa in realm_settings:
@@ -399,8 +391,12 @@ async def resolve_auth_items(
     all_key_ids = list(set(dept_auth_item_key_ids + default_auth_item_key_ids))
     all_value_ids = list(set(dept_auth_item_value_ids + default_auth_item_value_ids))
 
-    auth_item_keys_list = await get_auth_item_keys(conn, all_key_ids, redis) if all_key_ids else []
-    auth_item_values_list = await get_auth_item_values(conn, all_value_ids, redis) if all_value_ids else []
+    auth_item_keys_list = (
+        await get_auth_item_keys(conn, all_key_ids, redis) if all_key_ids else []
+    )
+    auth_item_values_list = (
+        await get_auth_item_values(conn, all_value_ids, redis) if all_value_ids else []
+    )
 
     # Step 6: Get actual key values for encrypted items
     key_resource_ids = list({aik.key_id for aik in auth_item_keys_list if aik.active})

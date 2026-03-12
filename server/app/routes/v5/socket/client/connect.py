@@ -3,11 +3,9 @@
 Handles profile-based socket management, guest connections, and cleanup.
 """
 
-import time
 import uuid
 
 from app.infra.globals import get_internal_sio, get_pool, sio
-from app.infra.websocket.add_guest_socket import add_guest_socket
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -16,7 +14,6 @@ from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_socket_owner import get_socket_owner
-from app.infra.websocket.increment_guest_count import increment_guest_count
 from app.infra.websocket.is_guest_socket import is_guest_socket
 from app.infra.websocket.remove_active_connection import remove_active_connection
 from app.infra.websocket.remove_guest_socket import remove_guest_socket
@@ -90,7 +87,6 @@ async def connect(
       2. Server validates both and resolves profile_id + session_id
       3. Guest connections use guestId query param (no auth required)
     """
-    from urllib.parse import parse_qs
 
     profile_id: str | None = None
     guest_id: str | None = None

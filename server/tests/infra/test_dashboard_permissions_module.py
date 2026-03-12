@@ -26,11 +26,16 @@ def _ns(**kwargs):
 
 
 def test_dashboard_permission_helpers_cover_core_threshold_logic():
-    assert _weighted_average([(80, 2), (100, 1), (None, 5), (90, 0)]) == 86.66666666666667
+    assert (
+        _weighted_average([(80, 2), (100, 1), (None, 5), (90, 0)]) == 86.66666666666667
+    )
     assert _weighted_average([(None, 1), (90, 0)]) is None
 
     assert _build_trend_analysis([50.0, 60.0]) == "Up 20.0% vs period start"
-    assert _build_trend_analysis([20.0, 10.0], lower_is_better=True) == "Up 50.0% vs period start"
+    assert (
+        _build_trend_analysis([20.0, 10.0], lower_is_better=True)
+        == "Up 50.0% vs period start"
+    )
     assert _build_trend_analysis([0.0, 3.0]) == "Up 3.00 vs period start"
     assert _build_trend_analysis([10.0]) == "Insufficient data"
 
@@ -43,7 +48,9 @@ def test_dashboard_permission_helpers_cover_core_threshold_logic():
 
 
 def test_compute_header_metrics_v2_returns_neutral_empty_metrics():
-    metrics = compute_header_metrics_v2([], thresholds={"success": 90, "warning": 75, "danger": 60})
+    metrics = compute_header_metrics_v2(
+        [], thresholds={"success": 90, "warning": 75, "danger": 60}
+    )
 
     assert metrics.average_score.status == "neutral"
     assert metrics.total_attempts.current_value == 0
@@ -118,12 +125,48 @@ def test_compute_primary_metrics_v2_builds_heatmap_trend_and_skill_packages():
     group_b = str(uuid4())
 
     rubric_facts = [
-        _ns(rubric_id=rubric_id, chat_id=chat_a, standard_group_id=group_a, score_percent=90, attempt_date=date(2026, 1, 1)),
-        _ns(rubric_id=rubric_id, chat_id=chat_a, standard_group_id=group_b, score_percent=60, attempt_date=date(2026, 1, 1)),
-        _ns(rubric_id=rubric_id, chat_id=chat_b, standard_group_id=group_a, score_percent=80, attempt_date=date(2026, 1, 2)),
-        _ns(rubric_id=rubric_id, chat_id=chat_b, standard_group_id=group_b, score_percent=50, attempt_date=date(2026, 1, 2)),
-        _ns(rubric_id=rubric_id, chat_id=chat_c, standard_group_id=group_a, score_percent=70, attempt_date=date(2026, 1, 3)),
-        _ns(rubric_id=rubric_id, chat_id=chat_c, standard_group_id=group_b, score_percent=40, attempt_date=date(2026, 1, 3)),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=chat_a,
+            standard_group_id=group_a,
+            score_percent=90,
+            attempt_date=date(2026, 1, 1),
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=chat_a,
+            standard_group_id=group_b,
+            score_percent=60,
+            attempt_date=date(2026, 1, 1),
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=chat_b,
+            standard_group_id=group_a,
+            score_percent=80,
+            attempt_date=date(2026, 1, 2),
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=chat_b,
+            standard_group_id=group_b,
+            score_percent=50,
+            attempt_date=date(2026, 1, 2),
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=chat_c,
+            standard_group_id=group_a,
+            score_percent=70,
+            attempt_date=date(2026, 1, 3),
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=chat_c,
+            standard_group_id=group_b,
+            score_percent=40,
+            attempt_date=date(2026, 1, 3),
+        ),
     ]
 
     metrics = compute_primary_metrics_v2(
@@ -232,8 +275,16 @@ def test_compute_footer_metrics_v2_builds_scenario_composition_and_stats():
         _ns(id=pf_document, parameter_id=parameter_persona, field_id=field_persona),
     ]
     parameters = [
-        _ns(parameter_id=parameter_regular, document_parameter=False, persona_parameter=False),
-        _ns(parameter_id=parameter_persona, document_parameter=True, persona_parameter=False),
+        _ns(
+            parameter_id=parameter_regular,
+            document_parameter=False,
+            persona_parameter=False,
+        ),
+        _ns(
+            parameter_id=parameter_persona,
+            document_parameter=True,
+            persona_parameter=False,
+        ),
     ]
     fields = [
         _ns(field_id=field_regular, name="Difficulty"),
@@ -253,10 +304,15 @@ def test_compute_footer_metrics_v2_builds_scenario_composition_and_stats():
         thresholds={"success": 85, "warning": 70, "danger": 55},
     )
 
-    assert metrics.scenario_simulation_performance.simulation_facts[0].simulation_name == "Simulation A"
+    assert (
+        metrics.scenario_simulation_performance.simulation_facts[0].simulation_name
+        == "Simulation A"
+    )
     assert metrics.scenario_composition.scenario_summaries[0].name == "Scenario A"
     assert metrics.scenario_performance.valid_parameter_ids == [str(parameter_regular)]
-    assert metrics.scenario_stats.valid_numeric_parameter_ids == [str(parameter_persona)]
+    assert metrics.scenario_stats.valid_numeric_parameter_ids == [
+        str(parameter_persona)
+    ]
 
 
 def test_build_dashboard_bundle_returns_empty_sections_without_data():
@@ -413,12 +469,54 @@ def test_compute_primary_metrics_legacy_builds_growth_persona_and_heatmap():
         ),
     ]
     rubric_group_scores = [
-        _ns(rubric_id=rubric_id, chat_id=uuid4(), standard_group_id=group_a, score_percent=90, group_name="Accuracy", group_short_name="ACC"),
-        _ns(rubric_id=rubric_id, chat_id=uuid4(), standard_group_id=group_b, score_percent=60, group_name="Judgment", group_short_name="JDG"),
-        _ns(rubric_id=rubric_id, chat_id=uuid4(), standard_group_id=group_a, score_percent=80, group_name="Accuracy", group_short_name="ACC"),
-        _ns(rubric_id=rubric_id, chat_id=uuid4(), standard_group_id=group_b, score_percent=50, group_name="Judgment", group_short_name="JDG"),
-        _ns(rubric_id=rubric_id, chat_id=uuid4(), standard_group_id=group_a, score_percent=85, group_name="Accuracy", group_short_name="ACC"),
-        _ns(rubric_id=rubric_id, chat_id=uuid4(), standard_group_id=group_b, score_percent=65, group_name="Judgment", group_short_name="JDG"),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=uuid4(),
+            standard_group_id=group_a,
+            score_percent=90,
+            group_name="Accuracy",
+            group_short_name="ACC",
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=uuid4(),
+            standard_group_id=group_b,
+            score_percent=60,
+            group_name="Judgment",
+            group_short_name="JDG",
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=uuid4(),
+            standard_group_id=group_a,
+            score_percent=80,
+            group_name="Accuracy",
+            group_short_name="ACC",
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=uuid4(),
+            standard_group_id=group_b,
+            score_percent=50,
+            group_name="Judgment",
+            group_short_name="JDG",
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=uuid4(),
+            standard_group_id=group_a,
+            score_percent=85,
+            group_name="Accuracy",
+            group_short_name="ACC",
+        ),
+        _ns(
+            rubric_id=rubric_id,
+            chat_id=uuid4(),
+            standard_group_id=group_b,
+            score_percent=65,
+            group_name="Judgment",
+            group_short_name="JDG",
+        ),
     ]
 
     metrics = compute_primary_metrics(
@@ -433,7 +531,12 @@ def test_compute_primary_metrics_legacy_builds_growth_persona_and_heatmap():
 
     assert metrics.rubric_heatmap.matrices
     assert metrics.rubric_trend.status == "neutral"
-    assert metrics.skill_performance.status in {"success", "warning", "danger", "neutral"}
+    assert metrics.skill_performance.status in {
+        "success",
+        "warning",
+        "danger",
+        "neutral",
+    }
     assert metrics.rubric_heatmap.valid_rubric_ids == [str(rubric_id)]
 
 
@@ -563,8 +666,14 @@ def test_compute_footer_metrics_legacy_builds_composition_and_numeric_stats():
         _ns(id=pf_numeric, parameter_id=param_numeric, field_id=field_numeric),
     ]
     parameters = [
-        _ns(parameter_id=param_regular, document_parameter=False, persona_parameter=False),
-        _ns(parameter_id=param_numeric, document_parameter=True, persona_parameter=False),
+        _ns(
+            parameter_id=param_regular,
+            document_parameter=False,
+            persona_parameter=False,
+        ),
+        _ns(
+            parameter_id=param_numeric, document_parameter=True, persona_parameter=False
+        ),
     ]
     fields = [
         _ns(field_id=field_regular, name="Difficulty"),
@@ -580,11 +689,17 @@ def test_compute_footer_metrics_legacy_builds_composition_and_numeric_stats():
         parameters=parameters,
         fields=fields,
         simulation_name_map={str(sim_id): "Simulation A"},
-        scenario_name_map={str(scenario_id): "Scenario A", str(scenario_two): "Scenario B"},
+        scenario_name_map={
+            str(scenario_id): "Scenario A",
+            str(scenario_two): "Scenario B",
+        },
         thresholds={"success": 85, "warning": 70, "danger": 55},
     )
 
-    assert metrics.scenario_simulation_performance.simulation_facts[0].simulation_name == "Simulation A"
+    assert (
+        metrics.scenario_simulation_performance.simulation_facts[0].simulation_name
+        == "Simulation A"
+    )
     assert {
         summary.name for summary in metrics.scenario_composition.scenario_summaries
     } == {"Scenario A", "Scenario B"}

@@ -62,7 +62,7 @@ def _profile_draft_entity_ids(
 PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "context": OperationEventConfig(
         operation="context",
-        domain_events=("artifacts.profile.context.viewed",),
+        domain_events={"artifacts.profile.context.viewed": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,
@@ -72,7 +72,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("artifacts.profile.viewed",),
+        domain_events={"artifacts.profile.viewed": None},
         scope="entity",
         entity_key="target_profile_id",
         can_subscribe=require_authenticated_profile,
@@ -82,7 +82,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events=("artifacts.profile.created",),
+        domain_events={"artifacts.profile.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -90,7 +90,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events=("artifacts.profile.updated",),
+        domain_events={"artifacts.profile.updated": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,
@@ -98,7 +98,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events=("artifacts.profile.deleted",),
+        domain_events={"artifacts.profile.deleted": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,
@@ -106,7 +106,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events=("artifacts.profile.duplicated",),
+        domain_events={"artifacts.profile.duplicated": None},
         scope="entity",
         entity_key="target_profile_id",
         can_subscribe=require_authenticated_profile,
@@ -114,7 +114,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events=("artifacts.profile.draft.saved",),
+        domain_events={"artifacts.profile.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
@@ -122,7 +122,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events=("artifacts.profile.drafts.viewed",),
+        domain_events={"artifacts.profile.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -130,7 +130,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events=("artifacts.profile.search.performed",),
+        domain_events={"artifacts.profile.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -138,7 +138,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events=("artifacts.profile.docs.viewed",),
+        domain_events={"artifacts.profile.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
@@ -148,7 +148,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events=("artifacts.profile.exported",),
+        domain_events={"artifacts.profile.exported": None},
         scope="collection",
         entity_key="profile_export_id",
         can_subscribe=require_authenticated_profile,
@@ -158,14 +158,14 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("artifacts.profile.refreshed",),
+        domain_events={"artifacts.profile.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
     ),
     "emulate": OperationEventConfig(
         operation="emulate",
-        domain_events=("artifacts.profile.emulated",),
+        domain_events={"artifacts.profile.emulated": None},
         scope="entity",
         entity_key="target_profile_id",
         can_subscribe=require_authenticated_profile,
@@ -175,7 +175,7 @@ PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "unemulate": OperationEventConfig(
         operation="unemulate",
-        domain_events=("artifacts.profile.unemulated",),
+        domain_events={"artifacts.profile.unemulated": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,

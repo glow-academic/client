@@ -13,7 +13,7 @@ def test_get_agent_event_config_maps_domain_event_and_entity_scope() -> None:
     config = get_agent_event_config("get")
 
     assert config is not None
-    assert config.domain_events == ("artifacts.agent.viewed",)
+    assert config.domain_event_names == ("artifacts.agent.viewed",)
     assert config.scope == "entity"
     assert config.entity_key == "agent_id"
     assert config.include_call_lifecycle is True
@@ -22,7 +22,7 @@ def test_get_agent_event_config_maps_domain_event_and_entity_scope() -> None:
 def test_drafts_agent_event_config_is_collection_scoped() -> None:
     config = AGENT_EVENT_CONFIGS["drafts"]
 
-    assert config.domain_events == ("artifacts.agent.drafts.viewed",)
+    assert config.domain_event_names == ("artifacts.agent.drafts.viewed",)
     assert config.scope == "collection"
     assert config.entity_key is None
     assert config.include_call_lifecycle is False
@@ -34,7 +34,7 @@ def test_agent_event_types_include_domain_and_lifecycle_events() -> None:
             event_type
             for operation in AGENT_EVENT_CONFIGS.values()
             for event_type in (
-                *operation.domain_events,
+                *operation.domain_event_names,
                 *(
                     build_default_lifecycle_event_types("agent", operation.operation)
                     if operation.include_call_lifecycle

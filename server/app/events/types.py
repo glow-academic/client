@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal
 from uuid import UUID
 
 import asyncpg
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 EventScope = Literal["entity", "collection"]
@@ -18,6 +19,23 @@ LifecyclePhase = Literal["started", "completed", "failed"]
 CanSubscribe = Callable[..., Awaitable[bool]]
 FilterEvents = Callable[[UUID, list[EventRecord]], Awaitable[list[EventRecord]]]
 ResolveEntityIds = Callable[[EventPayload, EventPayload], list[UUID]]
+
+# Type alias for model references in event configs.
+EventModel = type[BaseModel]
+
+
+# ---------------------------------------------------------------------------
+# Shared error model for all failed lifecycle events
+# ---------------------------------------------------------------------------
+
+
+class OperationErrorEvent(BaseModel):
+    """Payload for lifecycle ``failed`` events across all artifacts."""
+
+    message: str
+    error_type: str | None = None
+    artifact: str | None = None
+    operation: str | None = None
 
 
 def build_lifecycle_event_type(
@@ -43,16 +61,45 @@ def build_default_lifecycle_event_types(
 
 @dataclass(frozen=True)
 class OperationEventConfig:
-    """Declarative event policy for a single artifact operation."""
+    """Declarative event policy for a single artifact operation.
+
+    Two distinct dicts carry typed payload models:
+
+    ``lifecycle_models``
+        Keyed by phase (``started`` / ``completed`` / ``failed``).
+        Deterministic — every operation boundary emits exactly these three.
+        *started* → the request/input model.
+        *completed* → the response/output model.
+        *failed* → error model (typically ``OperationErrorEvent``).
+
+    ``domain_events``
+        Keyed by full event name (e.g. ``artifacts.attempt.assistant.progress``).
+        These fire *during* the operation and can be any number with any shape.
+    """
 
     operation: str
-    domain_events: tuple[str, ...]
     scope: EventScope
     entity_key: str | None
     can_subscribe: CanSubscribe
+
+    # Lifecycle payload types: phase → model
+    lifecycle_models: dict[LifecyclePhase, EventModel | None] = field(
+        default_factory=dict,
+    )
+
+    # Domain event payload types: event_name → model
+    domain_events: dict[str, EventModel | None] = field(
+        default_factory=dict,
+    )
+
     filter_events: FilterEvents | None = None
     include_call_lifecycle: bool = True
     resolve_entity_ids: ResolveEntityIds | None = None
+
+    @property
+    def domain_event_names(self) -> tuple[str, ...]:
+        """Return the domain event names (keys) as a tuple."""
+        return tuple(self.domain_events.keys())
 
 
 @dataclass(frozen=True)
@@ -70,7 +117,7 @@ class ArtifactEventsConfig:
                 event_type
                 for operation in self.operations.values()
                 for event_type in (
-                    *operation.domain_events,
+                    *operation.domain_event_names,
                     *(
                         build_default_lifecycle_event_types(
                             self.artifact,

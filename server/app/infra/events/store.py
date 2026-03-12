@@ -123,7 +123,7 @@ def _project_call_receipt(
         )
 
     if success:
-        for event_type in operation_config.domain_events:
+        for event_type in operation_config.domain_event_names:
             target_entity_ids = domain_entity_ids or [entity_id]
             for target_entity_id in target_entity_ids:
                 events.append(

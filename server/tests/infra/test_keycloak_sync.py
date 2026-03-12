@@ -80,7 +80,11 @@ class FakeKCAdmin:
         self.realm_default_scopes = []
         self.client_default_scopes = []
         self.components = []
-        self.realm = {"id": "realm-id", "accessTokenLifespan": 60, "sslRequired": "EXTERNAL"}
+        self.realm = {
+            "id": "realm-id",
+            "accessTokenLifespan": 60,
+            "sslRequired": "EXTERNAL",
+        }
         self.scope_mappers: dict[str, list[dict]] = {}
         self.idps: dict[str, dict] = {}
 
@@ -120,8 +124,12 @@ class FakeKCAdmin:
     def get_mappers_from_client_scope(self, scope_id):
         return list(self.scope_mappers.get(scope_id, []))
 
-    def update_mapper_in_client_scope(self, client_scope_id, protocol_mapper_id, payload):
-        self.updated_mapper_payloads.append((client_scope_id, protocol_mapper_id, payload))
+    def update_mapper_in_client_scope(
+        self, client_scope_id, protocol_mapper_id, payload
+    ):
+        self.updated_mapper_payloads.append(
+            (client_scope_id, protocol_mapper_id, payload)
+        )
 
     def add_mapper_to_client_scope(self, client_scope_id, payload):
         self.added_mapper_payloads.append((client_scope_id, payload))
@@ -136,7 +144,9 @@ class FakeKCAdmin:
         return list(self.client_default_scopes)
 
     def add_client_default_client_scope(self, client_id, client_scope_id, payload):
-        self.added_client_default_scope_ids.append((client_id, client_scope_id, payload))
+        self.added_client_default_scope_ids.append(
+            (client_id, client_scope_id, payload)
+        )
 
     def get_components(self, query=None):
         return list(self.components)
@@ -167,7 +177,9 @@ async def test_wait_for_keycloak_connects(monkeypatch):
     module = types.SimpleNamespace(KeycloakAdmin=FakeKeycloakAdmin)
     monkeypatch.setitem(sys.modules, "keycloak", module)
 
-    result = await keycloak_sync.wait_for_keycloak("http://keycloak:8080", "admin", "password", max_retries=1)
+    result = await keycloak_sync.wait_for_keycloak(
+        "http://keycloak:8080", "admin", "password", max_retries=1
+    )
 
     assert result is kc_admin
 
@@ -184,7 +196,12 @@ async def test_wait_for_keycloak_returns_none_when_package_missing(monkeypatch):
 
     monkeypatch.setattr("builtins.__import__", fake_import)
 
-    assert await keycloak_sync.wait_for_keycloak("http://keycloak:8080", "admin", "password", max_retries=1) is None
+    assert (
+        await keycloak_sync.wait_for_keycloak(
+            "http://keycloak:8080", "admin", "password", max_retries=1
+        )
+        is None
+    )
 
 
 @pytest.mark.asyncio
@@ -193,7 +210,9 @@ async def test_ensure_department_client_updates_existing_client():
     admin.clients = [{"clientId": "glow-client-dept-1", "id": "client-uuid"}]
     config = make_config()
 
-    result = await keycloak_sync.ensure_department_client("dept-1", "Operations", admin, config)
+    result = await keycloak_sync.ensure_department_client(
+        "dept-1", "Operations", admin, config
+    )
 
     assert result == "glow-client-dept-1"
     assert admin.updated_clients
@@ -205,7 +224,9 @@ async def test_ensure_department_client_creates_new_client():
     admin = FakeKCAdmin()
     config = make_config()
 
-    result = await keycloak_sync.ensure_department_client("dept-2", "People", admin, config)
+    result = await keycloak_sync.ensure_department_client(
+        "dept-2", "People", admin, config
+    )
 
     assert result == "glow-client-dept-2"
     assert admin.created_clients
@@ -224,7 +245,9 @@ async def test_ensure_glow_client_in_master_realm_creates_client():
 
 
 @pytest.mark.asyncio
-async def test_ensure_mcp_client_scope_creates_scope_mapper_and_assignments(monkeypatch):
+async def test_ensure_mcp_client_scope_creates_scope_mapper_and_assignments(
+    monkeypatch,
+):
     admin = FakeKCAdmin()
     admin.clients = [{"clientId": "glow-client", "id": "client-1"}]
     config = make_config()
@@ -275,9 +298,24 @@ async def test_ensure_client_registration_policies_removes_blocking_components()
 async def test_ensure_dynamic_clients_no_consent_updates_matching_clients(monkeypatch):
     admin = FakeKCAdmin()
     admin.clients = [
-        {"clientId": "ChatGPT-123", "id": "chatgpt-id", "consentRequired": True, "redirectUris": ["https://chatgpt.com/callback"]},
-        {"clientId": "glow-client", "id": "managed-id", "consentRequired": True, "redirectUris": []},
-        {"clientId": "123e4567-e89b-12d3-a456-426614174000", "id": "uuid-id", "consentRequired": True, "redirectUris": ["cursor://callback"]},
+        {
+            "clientId": "ChatGPT-123",
+            "id": "chatgpt-id",
+            "consentRequired": True,
+            "redirectUris": ["https://chatgpt.com/callback"],
+        },
+        {
+            "clientId": "glow-client",
+            "id": "managed-id",
+            "consentRequired": True,
+            "redirectUris": [],
+        },
+        {
+            "clientId": "123e4567-e89b-12d3-a456-426614174000",
+            "id": "uuid-id",
+            "consentRequired": True,
+            "redirectUris": ["cursor://callback"],
+        },
     ]
     monkeypatch.setattr(keycloak_sync, "is_mcp_enabled", lambda: True)
 

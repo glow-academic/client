@@ -6,9 +6,9 @@ from app.routes.v5.api.main.attempt.archive import router as archive_router
 from app.routes.v5.api.main.attempt.audio import router as audio_download_router
 from app.routes.v5.api.main.attempt.docs import router as docs_router
 from app.routes.v5.api.main.attempt.end import router as end_router
-from app.routes.v5.api.main.attempt.file import router as file_download_router
 from app.routes.v5.api.main.attempt.end_all import router as end_all_router
 from app.routes.v5.api.main.attempt.export import router as export_router
+from app.routes.v5.api.main.attempt.file import router as file_download_router
 from app.routes.v5.api.main.attempt.get import router as get_router
 from app.routes.v5.api.main.attempt.grade import router as grade_router
 from app.routes.v5.api.main.attempt.image import router as image_download_router

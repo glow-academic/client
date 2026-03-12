@@ -10,25 +10,25 @@ from app.events.types import (
 TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("artifacts.test.viewed",),
+        domain_events={"artifacts.test.viewed": None},
         scope="entity",
         entity_key="test_id",
         can_subscribe=require_authenticated_profile,
     ),
     "start": OperationEventConfig(
         operation="start",
-        domain_events=("artifacts.test.started",),
+        domain_events={"artifacts.test.started": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
     ),
     "run": OperationEventConfig(
         operation="run",
-        domain_events=(
-            "artifacts.test.run.started",
-            "artifacts.test.run.progress",
-            "artifacts.test.run.completed",
-        ),
+        domain_events={
+            "artifacts.test.run.started": None,
+            "artifacts.test.run.progress": None,
+            "artifacts.test.run.completed": None,
+        },
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
@@ -36,21 +36,21 @@ TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "end": OperationEventConfig(
         operation="end",
-        domain_events=("artifacts.test.ended",),
+        domain_events={"artifacts.test.ended": None},
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
     ),
     "stop": OperationEventConfig(
         operation="stop",
-        domain_events=("artifacts.test.stopped",),
+        domain_events={"artifacts.test.stopped": None},
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("artifacts.test.refreshed",),
+        domain_events={"artifacts.test.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

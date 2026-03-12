@@ -317,7 +317,9 @@ async def _resolve_profile_id(
     async with pool.acquire() as conn:
         email_results = await search_emails(conn, redis, search=email, limit_count=100)
 
-    matching_email_ids = [e.id for e in email_results if e.email.lower() == email.lower()]
+    matching_email_ids = [
+        e.id for e in email_results if e.email.lower() == email.lower()
+    ]
     if not matching_email_ids:
         return None
 

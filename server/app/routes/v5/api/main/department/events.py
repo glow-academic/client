@@ -62,7 +62,7 @@ def _department_draft_entity_ids(
 DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("artifacts.department.viewed",),
+        domain_events={"artifacts.department.viewed": None},
         scope="entity",
         entity_key="department_id",
         can_subscribe=require_authenticated_profile,
@@ -72,7 +72,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events=("artifacts.department.created",),
+        domain_events={"artifacts.department.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -80,7 +80,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events=("artifacts.department.updated",),
+        domain_events={"artifacts.department.updated": None},
         scope="entity",
         entity_key="department_id",
         can_subscribe=require_authenticated_profile,
@@ -88,7 +88,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events=("artifacts.department.deleted",),
+        domain_events={"artifacts.department.deleted": None},
         scope="entity",
         entity_key="department_id",
         can_subscribe=require_authenticated_profile,
@@ -96,7 +96,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events=("artifacts.department.duplicated",),
+        domain_events={"artifacts.department.duplicated": None},
         scope="entity",
         entity_key="department_id",
         can_subscribe=require_authenticated_profile,
@@ -104,7 +104,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events=("artifacts.department.draft.saved",),
+        domain_events={"artifacts.department.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
@@ -112,7 +112,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events=("artifacts.department.drafts.viewed",),
+        domain_events={"artifacts.department.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -120,7 +120,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events=("artifacts.department.search.performed",),
+        domain_events={"artifacts.department.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -128,7 +128,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events=("artifacts.department.docs.viewed",),
+        domain_events={"artifacts.department.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
@@ -138,7 +138,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events=("artifacts.department.exported",),
+        domain_events={"artifacts.department.exported": None},
         scope="collection",
         entity_key="department_id",
         can_subscribe=require_authenticated_profile,
@@ -148,7 +148,7 @@ DEPARTMENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("artifacts.department.refreshed",),
+        domain_events={"artifacts.department.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

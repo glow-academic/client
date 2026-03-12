@@ -13,7 +13,7 @@ def test_get_department_event_config_maps_domain_event_and_entity_scope() -> Non
     config = get_department_event_config("get")
 
     assert config is not None
-    assert config.domain_events == ("artifacts.department.viewed",)
+    assert config.domain_event_names == ("artifacts.department.viewed",)
     assert config.scope == "entity"
     assert config.entity_key == "department_id"
     assert config.include_call_lifecycle is True
@@ -22,7 +22,7 @@ def test_get_department_event_config_maps_domain_event_and_entity_scope() -> Non
 def test_drafts_department_event_config_is_collection_scoped() -> None:
     config = DEPARTMENT_EVENT_CONFIGS["drafts"]
 
-    assert config.domain_events == ("artifacts.department.drafts.viewed",)
+    assert config.domain_event_names == ("artifacts.department.drafts.viewed",)
     assert config.scope == "collection"
     assert config.entity_key is None
     assert config.include_call_lifecycle is False
@@ -34,7 +34,7 @@ def test_department_event_types_include_domain_and_lifecycle_events() -> None:
             event_type
             for operation in DEPARTMENT_EVENT_CONFIGS.values()
             for event_type in (
-                *operation.domain_events,
+                *operation.domain_event_names,
                 *(
                     build_default_lifecycle_event_types(
                         "department", operation.operation

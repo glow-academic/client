@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -79,7 +77,9 @@ def test_get_jwks_fetches_and_caches_first_working_endpoint(monkeypatch):
 
 
 def test_get_jwks_uses_expired_cache_when_refresh_fails(monkeypatch):
-    oauth._jwks_cache.update({"keys": [{"kid": "cached"}], "ts": 0.0, "url": "cached-url"})
+    oauth._jwks_cache.update(
+        {"keys": [{"kid": "cached"}], "ts": 0.0, "url": "cached-url"}
+    )
 
     monkeypatch.setattr(oauth, "_can_resolve_hostname", lambda hostname: True)
     monkeypatch.setattr(
@@ -105,7 +105,11 @@ def test_get_jwks_raises_when_all_endpoints_fail_without_cache(monkeypatch):
 
 
 def test_verify_token_validates_jwt_claims(monkeypatch):
-    monkeypatch.setattr(oauth.jwt, "get_unverified_header", lambda token: {"kid": "kid-1", "alg": "RS256"})
+    monkeypatch.setattr(
+        oauth.jwt,
+        "get_unverified_header",
+        lambda token: {"kid": "kid-1", "alg": "RS256"},
+    )
     monkeypatch.setattr(oauth, "get_jwks", lambda: [{"kid": "kid-1"}])
     monkeypatch.setattr(
         oauth.jwt,
@@ -130,7 +134,11 @@ def test_verify_token_rejects_missing_kid(monkeypatch):
 
 
 def test_verify_token_rejects_unknown_jwk(monkeypatch):
-    monkeypatch.setattr(oauth.jwt, "get_unverified_header", lambda token: {"kid": "missing", "alg": "RS256"})
+    monkeypatch.setattr(
+        oauth.jwt,
+        "get_unverified_header",
+        lambda token: {"kid": "missing", "alg": "RS256"},
+    )
     monkeypatch.setattr(oauth, "get_jwks", lambda: [{"kid": "kid-1"}])
 
     with pytest.raises(ValueError, match="No matching JWK"):
@@ -138,7 +146,11 @@ def test_verify_token_rejects_unknown_jwk(monkeypatch):
 
 
 def test_verify_token_rejects_issuer_mismatch(monkeypatch):
-    monkeypatch.setattr(oauth.jwt, "get_unverified_header", lambda token: {"kid": "kid-1", "alg": "RS256"})
+    monkeypatch.setattr(
+        oauth.jwt,
+        "get_unverified_header",
+        lambda token: {"kid": "kid-1", "alg": "RS256"},
+    )
     monkeypatch.setattr(oauth, "get_jwks", lambda: [{"kid": "kid-1"}])
     monkeypatch.setattr(
         oauth.jwt,
@@ -154,7 +166,11 @@ def test_verify_token_rejects_issuer_mismatch(monkeypatch):
 
 
 def test_verify_token_rejects_audience_mismatch(monkeypatch):
-    monkeypatch.setattr(oauth.jwt, "get_unverified_header", lambda token: {"kid": "kid-1", "alg": "RS256"})
+    monkeypatch.setattr(
+        oauth.jwt,
+        "get_unverified_header",
+        lambda token: {"kid": "kid-1", "alg": "RS256"},
+    )
     monkeypatch.setattr(oauth, "get_jwks", lambda: [{"kid": "kid-1"}])
     monkeypatch.setattr(
         oauth.jwt,
@@ -170,7 +186,11 @@ def test_verify_token_rejects_audience_mismatch(monkeypatch):
 
 
 def test_verify_token_allows_missing_audience(monkeypatch):
-    monkeypatch.setattr(oauth.jwt, "get_unverified_header", lambda token: {"kid": "kid-1", "alg": "RS256"})
+    monkeypatch.setattr(
+        oauth.jwt,
+        "get_unverified_header",
+        lambda token: {"kid": "kid-1", "alg": "RS256"},
+    )
     monkeypatch.setattr(oauth, "get_jwks", lambda: [{"kid": "kid-1"}])
     monkeypatch.setattr(
         oauth.jwt,
@@ -186,12 +206,18 @@ def test_verify_token_allows_missing_audience(monkeypatch):
 
 
 def test_verify_token_wraps_expired_signature(monkeypatch):
-    monkeypatch.setattr(oauth.jwt, "get_unverified_header", lambda token: {"kid": "kid-1", "alg": "RS256"})
+    monkeypatch.setattr(
+        oauth.jwt,
+        "get_unverified_header",
+        lambda token: {"kid": "kid-1", "alg": "RS256"},
+    )
     monkeypatch.setattr(oauth, "get_jwks", lambda: [{"kid": "kid-1"}])
     monkeypatch.setattr(
         oauth.jwt,
         "decode",
-        lambda token, key, algorithms, options: (_ for _ in ()).throw(oauth.jwt.ExpiredSignatureError()),
+        lambda token, key, algorithms, options: (_ for _ in ()).throw(
+            oauth.jwt.ExpiredSignatureError()
+        ),
     )
 
     with pytest.raises(ValueError, match="Token expired"):
@@ -243,8 +269,12 @@ async def test_mcp_oauth_middleware_rewrites_sse_and_messages_paths(monkeypatch)
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        sse = await client.get("/mcp/sse/", headers={"Authorization": "Bearer token-123"})
-        messages = await client.post("/mcp/messages", headers={"Authorization": "Bearer token-123"})
+        sse = await client.get(
+            "/mcp/sse/", headers={"Authorization": "Bearer token-123"}
+        )
+        messages = await client.post(
+            "/mcp/messages", headers={"Authorization": "Bearer token-123"}
+        )
 
     assert sse.status_code == 200
     assert sse.json()["path"] == "/mcp"
@@ -262,11 +292,17 @@ async def test_mcp_oauth_middleware_returns_401_on_invalid_token(monkeypatch):
         return {"ok": True}
 
     monkeypatch.setattr(oauth, "is_mcp_enabled", lambda: True)
-    monkeypatch.setattr(oauth, "verify_token", lambda token: (_ for _ in ()).throw(ValueError("bad token")))
+    monkeypatch.setattr(
+        oauth,
+        "verify_token",
+        lambda token: (_ for _ in ()).throw(ValueError("bad token")),
+    )
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        response = await client.get("/mcp", headers={"Authorization": "Bearer token-123"})
+        response = await client.get(
+            "/mcp", headers={"Authorization": "Bearer token-123"}
+        )
 
     assert response.status_code == 401
 
@@ -298,17 +334,25 @@ async def test_mcp_oauth_middleware_attaches_profile_context(monkeypatch):
         return "profile-123"
 
     monkeypatch.setattr(oauth, "is_mcp_enabled", lambda: True)
-    monkeypatch.setattr(oauth, "verify_token", lambda token: {"sub": "subject-1", "email": "user@example.com"})
+    monkeypatch.setattr(
+        oauth,
+        "verify_token",
+        lambda token: {"sub": "subject-1", "email": "user@example.com"},
+    )
     monkeypatch.setattr("app.infra.globals.get_pool", lambda: FakePool())
     monkeypatch.setattr(
         "app.utils.mcp.get_profile_id_from_claims.get_profile_id_from_claims",
         fake_get_profile_id_from_claims,
     )
-    monkeypatch.setattr("app.utils.logging.db_logger.set_profile_id", lambda profile_id: None)
+    monkeypatch.setattr(
+        "app.utils.logging.db_logger.set_profile_id", lambda profile_id: None
+    )
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        response = await client.get("/mcp", headers={"Authorization": "Bearer token-123"})
+        response = await client.get(
+            "/mcp", headers={"Authorization": "Bearer token-123"}
+        )
 
     assert response.status_code == 200
     assert response.json() == {

@@ -62,7 +62,7 @@ def _tool_draft_entity_ids(
 TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("artifacts.tool.viewed",),
+        domain_events={"artifacts.tool.viewed": None},
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
@@ -72,7 +72,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events=("artifacts.tool.created",),
+        domain_events={"artifacts.tool.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -80,7 +80,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events=("artifacts.tool.updated",),
+        domain_events={"artifacts.tool.updated": None},
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
@@ -88,7 +88,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events=("artifacts.tool.deleted",),
+        domain_events={"artifacts.tool.deleted": None},
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
@@ -96,7 +96,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events=("artifacts.tool.duplicated",),
+        domain_events={"artifacts.tool.duplicated": None},
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
@@ -104,7 +104,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events=("artifacts.tool.draft.saved",),
+        domain_events={"artifacts.tool.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
@@ -112,7 +112,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events=("artifacts.tool.drafts.viewed",),
+        domain_events={"artifacts.tool.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -120,7 +120,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events=("artifacts.tool.search.performed",),
+        domain_events={"artifacts.tool.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -128,7 +128,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events=("artifacts.tool.docs.viewed",),
+        domain_events={"artifacts.tool.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
@@ -138,7 +138,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events=("artifacts.tool.exported",),
+        domain_events={"artifacts.tool.exported": None},
         scope="collection",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
@@ -148,7 +148,7 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("artifacts.tool.refreshed",),
+        domain_events={"artifacts.tool.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,

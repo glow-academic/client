@@ -1,4 +1,4 @@
-"""Persona event declarations for future centralized delivery."""
+"""Persona event declarations for centralized delivery."""
 
 from __future__ import annotations
 
@@ -10,10 +10,12 @@ from redis.asyncio import Redis
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     default_filter_events,
     require_authenticated_profile,
 )
+from app.infra.docs.types import ComposedDocsResponse
 from app.infra.persona.permissions import (
     compute_can_create,
     compute_can_delete,
@@ -24,6 +26,23 @@ from app.infra.persona.permissions import (
 )
 from app.infra.persona.permissions_context import resolve_persona_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.routes.v5.api.main.persona.types import (
+    CreatePersonaApiRequest,
+    CreatePersonaApiResponse,
+    DeletePersonaApiRequest,
+    DeletePersonaApiResponse,
+    DuplicatePersonaApiRequest,
+    DuplicatePersonaApiResponse,
+    ExportPersonaApiRequest,
+    ExportPersonaApiResponse,
+    GetPersonaApiRequest,
+    GetPersonaApiResponse,
+    GetPersonaDraftsApiResponse,
+    PatchPersonaDraftApiRequest,
+    PatchPersonaDraftApiResponse,
+    UpdatePersonaApiRequest,
+    UpdatePersonaApiResponse,
+)
 
 EventRecord = dict[str, Any]
 
@@ -285,92 +304,153 @@ async def _passthrough_filter(
 PERSONA_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events=("artifacts.persona.viewed",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_read,
+        lifecycle_models={
+            "started": GetPersonaApiRequest,
+            "completed": GetPersonaApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.viewed": None,
+        },
         filter_events=_passthrough_filter,
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events=("artifacts.persona.created",),
         scope="collection",
         entity_key=None,
         can_subscribe=_can_subscribe_persona_create,
+        lifecycle_models={
+            "started": CreatePersonaApiRequest,
+            "completed": CreatePersonaApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.created": CreatePersonaApiResponse,
+        },
         resolve_entity_ids=_persona_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events=("artifacts.persona.updated",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_edit,
+        lifecycle_models={
+            "started": UpdatePersonaApiRequest,
+            "completed": UpdatePersonaApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.updated": UpdatePersonaApiResponse,
+        },
         resolve_entity_ids=_persona_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events=("artifacts.persona.deleted",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_delete,
+        lifecycle_models={
+            "started": DeletePersonaApiRequest,
+            "completed": DeletePersonaApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.deleted": DeletePersonaApiResponse,
+        },
         resolve_entity_ids=_persona_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events=("artifacts.persona.duplicated",),
         scope="entity",
         entity_key="persona_id",
         can_subscribe=_can_subscribe_persona_duplicate,
+        lifecycle_models={
+            "started": DuplicatePersonaApiRequest,
+            "completed": DuplicatePersonaApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.duplicated": DuplicatePersonaApiResponse,
+        },
         resolve_entity_ids=_persona_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events=("artifacts.persona.draft.saved",),
         scope="entity",
         entity_key="draft_id",
         can_subscribe=_can_subscribe_persona_draft,
+        lifecycle_models={
+            "started": PatchPersonaDraftApiRequest,
+            "completed": PatchPersonaDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.draft.saved": PatchPersonaDraftApiResponse,
+        },
         resolve_entity_ids=_persona_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events=("artifacts.persona.drafts.viewed",),
         scope="collection",
         entity_key=None,
         can_subscribe=_can_subscribe_persona_draft,
+        domain_events={
+            "artifacts.persona.drafts.viewed": GetPersonaDraftsApiResponse,
+        },
         include_call_lifecycle=False,
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events=("artifacts.persona.search.performed",),
         scope="collection",
         entity_key=None,
         can_subscribe=_can_subscribe_persona_read,
+        domain_events={
+            "artifacts.persona.search.performed": None,
+        },
         include_call_lifecycle=False,
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events=("artifacts.persona.docs.viewed",),
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.docs.viewed": None,
+        },
         resolve_entity_ids=lambda arguments, output: _persona_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events=("artifacts.persona.exported",),
         scope="collection",
         entity_key="persona_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportPersonaApiRequest,
+            "completed": ExportPersonaApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.persona.exported": ExportPersonaApiResponse,
+        },
         resolve_entity_ids=_persona_export_entity_ids,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events=("artifacts.persona.refreshed",),
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.persona.refreshed": None,
+        },
     ),
 }
 

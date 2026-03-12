@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 STUB_ATTEMPT_ROUTES: list[tuple[str, dict[str, object]]] = []
 
 
