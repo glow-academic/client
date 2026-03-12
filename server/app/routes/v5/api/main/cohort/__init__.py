@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.cohort.create import router as create_router
+from app.routes.v5.api.main.cohort.csv import router as csv_router
 from app.routes.v5.api.main.cohort.delete import router as delete_router
 from app.routes.v5.api.main.cohort.docs import router as docs_router
 from app.routes.v5.api.main.cohort.draft import router as draft_router
@@ -10,7 +11,6 @@ from app.routes.v5.api.main.cohort.drafts import router as drafts_router
 from app.routes.v5.api.main.cohort.duplicate import router as duplicate_router
 from app.routes.v5.api.main.cohort.export import router as export_router
 from app.routes.v5.api.main.cohort.get import router as get_router
-from app.routes.v5.api.main.cohort.csv import router as csv_router
 from app.routes.v5.api.main.cohort.refresh import router as refresh_router
 from app.routes.v5.api.main.cohort.search import router as search_router
 from app.routes.v5.api.main.cohort.update import router as update_router

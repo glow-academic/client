@@ -12,6 +12,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -36,6 +37,29 @@ from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.names.get import get_names
+
+EVAL_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Midterm Evaluation",
+        "description": "The eval's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "Evaluates clinical reasoning skills...",
+        "description": "Optional description",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_eval_impl(

@@ -506,7 +506,6 @@ class ListSimulationApiResponse(BaseModel):
     department_filter: "ListFilterSection | None" = None
     flag_filter: "ListFilterSection | None" = None
     total_count: int | None = None
-    import_fields: list[Any] | None = None
 
 
 # =============================================================================

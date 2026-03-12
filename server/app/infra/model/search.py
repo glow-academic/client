@@ -13,6 +13,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -43,6 +44,29 @@ from app.routes.v5.tools.resources.providers.get import (
 from app.routes.v5.tools.resources.providers.search import (
     search_providers as search_providers_resource,
 )
+
+MODEL_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "GPT-4o",
+        "description": "The model's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "OpenAI's flagship multimodal model...",
+        "description": "Optional description",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_model_impl(

@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.persona.create import router as create_router
+from app.routes.v5.api.main.persona.csv import router as csv_router
 from app.routes.v5.api.main.persona.delete import router as delete_router
 from app.routes.v5.api.main.persona.docs import router as docs_router
 from app.routes.v5.api.main.persona.draft import router as draft_router
@@ -20,6 +21,7 @@ router = APIRouter(prefix="/personas", tags=["personas"])
 router.include_router(get_router)
 router.include_router(search_router)
 router.include_router(create_router)
+router.include_router(csv_router)
 router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)

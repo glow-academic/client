@@ -12,6 +12,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -45,6 +46,29 @@ from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fie
 from app.routes.v5.tools.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
+
+PARAMETER_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Vital Signs",
+        "description": "The parameter's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "Measures vital signs...",
+        "description": "Optional description",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_parameter_impl(

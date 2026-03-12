@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.scenario.create import router as create_router
+from app.routes.v5.api.main.scenario.csv import router as csv_router
 from app.routes.v5.api.main.scenario.delete import router as delete_router
 from app.routes.v5.api.main.scenario.docs import router as docs_router
 from app.routes.v5.api.main.scenario.draft import router as draft_router
@@ -24,6 +25,7 @@ router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 router.include_router(get_router)
 router.include_router(search_router)
 router.include_router(create_router)
+router.include_router(csv_router)
 router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)

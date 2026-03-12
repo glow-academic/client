@@ -12,6 +12,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -43,6 +44,36 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
+
+DOCUMENT_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Patient Intake Form",
+        "description": "The document's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "Standard intake form for new patients...",
+        "description": "Optional description",
+    },
+    {
+        "key": "is_inactive",
+        "label": "Inactive",
+        "type": "boolean",
+        "example": "false",
+        "description": "Whether the document is inactive (true/false)",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_document_impl(

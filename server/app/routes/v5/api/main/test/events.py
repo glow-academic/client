@@ -12,16 +12,16 @@ from app.routes.v5.api.main.test.types import (
     GetTestArtifactResponse,
 )
 from app.routes.v5.socket.client.types import (
-    # Test lifecycle input payloads (client → server)
-    TestEndPayload,
-    TestStartPayload,
-    TestStopPayload,
     # Test domain event payloads (server → client)
     TestAllCompleteEvent,
+    # Test lifecycle input payloads (client → server)
+    TestEndPayload,
     TestProgressEvent,
     TestRunCompleteEvent,
     TestRunStartEvent,
     TestStartedEvent,
+    TestStartPayload,
+    TestStopPayload,
     TestStoppedEvent,
 )
 

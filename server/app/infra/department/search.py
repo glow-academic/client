@@ -13,6 +13,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -41,6 +42,29 @@ from app.routes.v5.tools.artifacts.profile.search import (
 )
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.names.get import get_names
+
+DEPARTMENT_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Nursing",
+        "description": "The department's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "Nursing department for clinical training...",
+        "description": "Optional description",
+    },
+    {
+        "key": "active_flag",
+        "label": "Active",
+        "type": "boolean",
+        "example": "true",
+        "description": "Whether the department is active (true/false)",
+    },
+]
 
 
 async def search_department_impl(

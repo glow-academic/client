@@ -12,6 +12,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -33,6 +34,36 @@ from app.routes.v5.tools.artifacts.setting.search import (
 )
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.names.get import get_names
+
+SETTING_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "My Setting",
+        "description": "The setting's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "A description of the setting...",
+        "description": "Optional description",
+    },
+    {
+        "key": "active_flag",
+        "label": "Active",
+        "type": "boolean",
+        "example": "true",
+        "description": "Whether the setting is active (true/false)",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_setting_impl(

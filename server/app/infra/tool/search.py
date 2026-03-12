@@ -13,6 +13,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -37,6 +38,22 @@ from app.routes.v5.tools.resources.agents.search import (
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.names.get import get_names
+
+TOOL_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "My Tool",
+        "description": "The tool's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "A description of the tool...",
+        "description": "Optional description",
+    },
+]
 
 
 async def search_tool_impl(

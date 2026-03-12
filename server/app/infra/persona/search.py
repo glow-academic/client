@@ -477,7 +477,6 @@ async def search_persona_impl(
         voice_filter=voice_filter,
         instruction_filter=instruction_filter,
         total_count=total_count,
-        import_fields=PERSONA_IMPORT_FIELDS,
     )
 
 
@@ -491,7 +490,6 @@ def _empty_response(
         actor_name=actor_name,
         personas=[],
         total_count=total_count,
-        import_fields=PERSONA_IMPORT_FIELDS,
     )
 
 

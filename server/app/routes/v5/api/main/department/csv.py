@@ -1,7 +1,7 @@
-"""Cohort import endpoint — parses a CSV file and creates cohorts in one step.
+"""Department import endpoint — parses a CSV file and creates departments in one step.
 
 Takes an upload_id (from a TUS-uploaded CSV), reads the file, auto-maps columns
-to canonical cohort fields, and delegates to the existing create_cohort_impl.
+to canonical department fields, and delegates to the existing create_department_impl.
 """
 
 from __future__ import annotations
@@ -15,12 +15,12 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.cohort.create import (
-    CreateCohortApiResponse,
-    CreateCohortItem,
-    create_cohort_impl,
+from app.infra.department.create import (
+    CreateDepartmentApiResponse,
+    CreateDepartmentItem,
+    create_department_impl,
 )
-from app.infra.cohort.search import COHORT_IMPORT_FIELDS
+from app.infra.department.search import DEPARTMENT_IMPORT_FIELDS
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import (
     UPLOAD_FOLDER,
@@ -39,13 +39,13 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 
 
-class ImportCohortApiRequest(BaseModel):
+class ImportDepartmentApiRequest(BaseModel):
     """Request model — just the upload_id of a TUS-uploaded CSV."""
 
     upload_id: UUID
 
 
-class ImportCohortApiResponse(CreateCohortApiResponse):
+class ImportDepartmentApiResponse(CreateDepartmentApiResponse):
     """Extends create response with import metadata."""
 
     row_count: int = 0
@@ -68,7 +68,7 @@ def _build_field_map(headers: list[str]) -> dict[int, dict[str, Any]]:
     Returns {column_index: field_def} for every matched column.
     """
     field_lookup: dict[str, dict[str, Any]] = {}
-    for field in COHORT_IMPORT_FIELDS:
+    for field in DEPARTMENT_IMPORT_FIELDS:
         field_lookup[_normalize(field["key"])] = field
         field_lookup[_normalize(field["label"])] = field
 
@@ -92,8 +92,8 @@ def _parse_bool(value: str) -> bool | None:
 
 def _row_to_item(
     row: list[str], field_map: dict[int, dict[str, Any]]
-) -> CreateCohortItem:
-    """Convert a single CSV row to a CreateCohortItem using the field map."""
+) -> CreateDepartmentItem:
+    """Convert a single CSV row to a CreateDepartmentItem using the field map."""
     kwargs: dict[str, Any] = {}
 
     for col_idx, field_def in field_map.items():
@@ -115,7 +115,7 @@ def _row_to_item(
         else:
             kwargs[key] = raw
 
-    return CreateCohortItem(**kwargs)
+    return CreateDepartmentItem(**kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -123,18 +123,18 @@ def _row_to_item(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/csv", response_model=ImportCohortApiResponse)
-async def import_cohorts(
-    request: ImportCohortApiRequest,
+@router.post("/csv", response_model=ImportDepartmentApiResponse)
+async def import_departments(
+    request: ImportDepartmentApiRequest,
     http_request: Request,
     response: Response,
-) -> ImportCohortApiResponse:
-    """Import cohorts from a CSV file.
+) -> ImportDepartmentApiResponse:
+    """Import departments from a CSV file.
 
     1. Reads the TUS-uploaded CSV
-    2. Auto-maps columns to canonical cohort fields
-    3. Converts rows to CreateCohortItem objects
-    4. Delegates to existing create_cohort_impl
+    2. Auto-maps columns to canonical department fields
+    3. Converts rows to CreateDepartmentItem objects
+    4. Delegates to existing create_department_impl
     """
     try:
         profile_id = http_request.state.profile_id
@@ -182,14 +182,16 @@ async def import_cohorts(
         if not field_map:
             raise HTTPException(
                 status_code=400,
-                detail="No CSV columns matched cohort import fields. "
-                f"Expected columns: {', '.join(f['label'] for f in COHORT_IMPORT_FIELDS)}",
+                detail="No CSV columns matched department import fields. "
+                f"Expected columns: {', '.join(f['label'] for f in DEPARTMENT_IMPORT_FIELDS)}",
             )
 
         mapped_fields = [field_map[idx]["key"] for idx in sorted(field_map.keys())]
 
         # Check required fields are mapped
-        required_keys = {f["key"] for f in COHORT_IMPORT_FIELDS if f.get("required")}
+        required_keys = {
+            f["key"] for f in DEPARTMENT_IMPORT_FIELDS if f.get("required")
+        }
         mapped_keys = {f["key"] for f in field_map.values()}
         missing = required_keys - mapped_keys
         if missing:
@@ -198,12 +200,12 @@ async def import_cohorts(
                 detail=f"Missing required columns: {', '.join(missing)}",
             )
 
-        # 3. Convert rows to CreateCohortItem objects
+        # 3. Convert rows to CreateDepartmentItem objects
         items = [_row_to_item(row, field_map) for row in data_rows]
 
         # 4. Delegate to existing create logic
-        async def _runner() -> CreateCohortApiResponse:
-            return await create_cohort_impl(
+        async def _runner() -> CreateDepartmentApiResponse:
+            return await create_department_impl(
                 pool,
                 redis,
                 profile_id=profile_id,
@@ -214,7 +216,7 @@ async def import_cohorts(
         create_response = await run_artifact_operation_with_audit(
             pool,
             redis,
-            artifact="cohort",
+            artifact="department",
             profile_id=profile_id,
             session_id=session_id,
             operation="import",
@@ -222,14 +224,14 @@ async def import_cohorts(
                 "upload_id": str(request.upload_id),
                 "row_count": len(data_rows),
             },
-            response_model=CreateCohortApiResponse,
+            response_model=CreateDepartmentApiResponse,
             runner=_runner,
             upload_folder=get_upload_folder(),
         )
 
-        response.headers["X-Invalidate-Tags"] = "cohorts"
+        response.headers["X-Invalidate-Tags"] = "departments"
 
-        return ImportCohortApiResponse(
+        return ImportDepartmentApiResponse(
             results=create_response.results,
             row_count=len(data_rows),
             mapped_fields=mapped_fields,
@@ -242,6 +244,6 @@ async def import_cohorts(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="import_cohorts",
+            operation="import_departments",
             request=http_request,
         )

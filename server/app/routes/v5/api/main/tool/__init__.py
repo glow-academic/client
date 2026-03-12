@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.tool.create import router as create_router
+from app.routes.v5.api.main.tool.csv import router as csv_router
 from app.routes.v5.api.main.tool.delete import router as delete_router
 from app.routes.v5.api.main.tool.docs import router as docs_router
 from app.routes.v5.api.main.tool.draft import router as draft_router
@@ -26,5 +27,6 @@ router.include_router(delete_router)
 router.include_router(draft_router)
 router.include_router(drafts_router)
 router.include_router(export_router)
+router.include_router(csv_router)
 router.include_router(docs_router)
 router.include_router(refresh_router)

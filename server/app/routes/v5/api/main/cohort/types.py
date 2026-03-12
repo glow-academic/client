@@ -5,7 +5,6 @@ SQL-computed permissions and UI flags.
 """
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel

@@ -5,12 +5,12 @@ from __future__ import annotations
 import asyncio
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 
 from app.infra.events.store import build_event_cursor, read_artifact_events
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.api.events.registry import get_artifact_events_config
+from app.routes.v5.api.events.shared import resolve_subscription
 
 router = APIRouter()
 
@@ -26,44 +26,16 @@ async def stream_events(
     limit: int = Query(default=50, ge=1, le=200),
 ) -> StreamingResponse:
     """Stream artifact events via SSE using the centralized declaration registry."""
-    config = get_artifact_events_config(artifact)
-    if config is None:
-        raise HTTPException(status_code=404, detail=f"Unknown artifact '{artifact}'.")
-
-    operation_config = config.get_operation(operation)
-    if operation_config is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Unknown operation '{operation}' for artifact '{artifact}'.",
-        )
-
-    if operation_config.scope == "entity" and entity_id is None:
-        raise HTTPException(
-            status_code=400,
-            detail=f"entity_id is required for {artifact}.{operation} event streaming.",
-        )
-
-    profile_id = http_request.state.profile_id
-    session_id = http_request.state.session_id
-    if not profile_id:
-        raise HTTPException(
-            status_code=401,
-            detail="Profile ID is required. Please sign in again.",
-        )
-
-    allowed = await operation_config.can_subscribe(
-        get_pool(),
-        get_redis_client(),
-        profile_id=profile_id,
+    _, operation_config = await resolve_subscription(
+        artifact=artifact,
+        operation=operation,
         entity_id=entity_id,
-        session_id=session_id,
+        profile_id=http_request.state.profile_id,
+        session_id=http_request.state.session_id,
         event_types=types,
     )
-    if not allowed:
-        raise HTTPException(
-            status_code=403,
-            detail=f"You don't have access to {artifact}.{operation} events.",
-        )
+
+    profile_id = http_request.state.profile_id
 
     async def _gen():
         current_cursor = cursor

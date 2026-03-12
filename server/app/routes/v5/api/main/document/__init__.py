@@ -8,6 +8,7 @@ from app.routes.v5.api.main.document.docs import router as docs_router
 from app.routes.v5.api.main.document.draft import router as draft_router
 from app.routes.v5.api.main.document.drafts import router as drafts_router
 from app.routes.v5.api.main.document.duplicate import router as duplicate_router
+from app.routes.v5.api.main.document.csv import router as csv_router
 from app.routes.v5.api.main.document.export import router as export_router
 from app.routes.v5.api.main.document.file import router as file_router
 from app.routes.v5.api.main.document.get import router as get_router
@@ -31,6 +32,7 @@ router.include_router(drafts_router)
 router.include_router(docs_router)
 router.include_router(refresh_router)
 router.include_router(export_router)
+router.include_router(csv_router)
 
 # Upload modality routers
 router.include_router(file_router)

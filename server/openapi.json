@@ -303,6 +303,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/personas/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ],
+        "summary": "Import Personas",
+        "description": "Import personas from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical persona fields\n3. Converts rows to CreatePersonaItem objects\n4. Delegates to existing create_persona_impl",
+        "operationId": "import_personas_api_v5_artifacts_personas_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportPersonaApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportPersonaApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ]
+      }
+    },
     "/api/v5/artifacts/personas/update": {
       "post": {
         "tags": [
@@ -1350,6 +1449,105 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateScenarioApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ]
+      }
+    },
+    "/api/v5/artifacts/scenarios/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "scenarios"
+        ],
+        "summary": "Import Scenarios",
+        "description": "Import scenarios from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical scenario fields\n3. Converts rows to CreateScenarioItem objects\n4. Delegates to existing create_scenario_impl",
+        "operationId": "import_scenarios_api_v5_artifacts_scenarios_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportScenarioApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportScenarioApiResponse"
                 }
               }
             }
@@ -3705,6 +3903,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/simulations/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ],
+        "summary": "Import Simulations",
+        "description": "Import simulations from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical simulation fields\n3. Converts rows to CreateSimulationItem objects\n4. Delegates to existing create_simulation_impl",
+        "operationId": "import_simulations_api_v5_artifacts_simulations_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportSimulationApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportSimulationApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "simulations"
+        ]
+      }
+    },
     "/api/v5/artifacts/simulations/update": {
       "post": {
         "tags": [
@@ -5524,6 +5821,105 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportDocumentApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ]
+      }
+    },
+    "/api/v5/artifacts/documents/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "documents"
+        ],
+        "summary": "Import Documents",
+        "description": "Import documents from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical document fields\n3. Converts rows to CreateDocumentItem objects\n4. Delegates to existing create_document_impl",
+        "operationId": "import_documents_api_v5_artifacts_documents_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportDocumentApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportDocumentApiResponse"
                 }
               }
             }
@@ -7771,6 +8167,105 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportDepartmentApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ]
+      }
+    },
+    "/api/v5/artifacts/departments/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "departments"
+        ],
+        "summary": "Import Departments",
+        "description": "Import departments from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical department fields\n3. Converts rows to CreateDepartmentItem objects\n4. Delegates to existing create_department_impl",
+        "operationId": "import_departments_api_v5_artifacts_departments_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportDepartmentApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportDepartmentApiResponse"
                 }
               }
             }
@@ -10119,6 +10614,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/evals/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ],
+        "summary": "Import Evals",
+        "description": "Import evals from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical eval fields\n3. Converts rows to CreateEvalItem objects\n4. Delegates to existing create_eval_impl",
+        "operationId": "import_evals_api_v5_artifacts_evals_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportEvalApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportEvalApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "evals"
+        ]
+      }
+    },
     "/api/v5/artifacts/rubrics/get": {
       "post": {
         "tags": [
@@ -11099,6 +11693,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/rubrics/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ],
+        "summary": "Import Rubrics",
+        "description": "Import rubrics from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical rubric fields\n3. Converts rows to CreateRubricItem objects\n4. Delegates to existing create_rubric_impl",
+        "operationId": "import_rubrics_api_v5_artifacts_rubrics_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportRubricApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportRubricApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "rubrics"
+        ]
+      }
+    },
     "/api/v5/artifacts/rubrics/refresh": {
       "post": {
         "tags": [
@@ -12047,6 +12740,105 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportSettingApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ]
+      }
+    },
+    "/api/v5/artifacts/settings/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "settings"
+        ],
+        "summary": "Import Settings",
+        "description": "Import settings from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical setting fields\n3. Converts rows to CreateSettingItem objects\n4. Delegates to existing create_setting_impl",
+        "operationId": "import_settings_api_v5_artifacts_settings_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportSettingApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportSettingApiResponse"
                 }
               }
             }
@@ -13336,6 +14128,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/agents/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ],
+        "summary": "Import Agents",
+        "description": "Import agents from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical agent fields\n3. Converts rows to CreateAgentItem objects\n4. Delegates to existing create_agent_impl",
+        "operationId": "import_agents_api_v5_artifacts_agents_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportAgentApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportAgentApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "agents"
+        ]
+      }
+    },
     "/api/v5/artifacts/agents/refresh": {
       "post": {
         "tags": [
@@ -14405,6 +15296,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/models/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ],
+        "summary": "Import Models",
+        "description": "Import models from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical model fields\n3. Converts rows to CreateModelItem objects\n4. Delegates to existing create_model_impl",
+        "operationId": "import_models_api_v5_artifacts_models_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportModelApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportModelApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "models"
+        ]
+      }
+    },
     "/api/v5/artifacts/models/refresh": {
       "post": {
         "tags": [
@@ -15452,6 +16442,105 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportProviderApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ]
+      }
+    },
+    "/api/v5/artifacts/providers/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "providers"
+        ],
+        "summary": "Import Providers",
+        "description": "Import providers from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical provider fields\n3. Converts rows to CreateProviderItem objects\n4. Delegates to existing create_provider_impl",
+        "operationId": "import_providers_api_v5_artifacts_providers_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportProviderApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportProviderApiResponse"
                 }
               }
             }
@@ -16642,6 +17731,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/parameters/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ],
+        "summary": "Import Parameters",
+        "description": "Import parameters from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical parameter fields\n3. Converts rows to CreateParameterItem objects\n4. Delegates to existing create_parameter_impl",
+        "operationId": "import_parameters_api_v5_artifacts_parameters_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportParameterApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportParameterApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "parameters"
+        ]
+      }
+    },
     "/api/v5/artifacts/parameters/refresh": {
       "post": {
         "tags": [
@@ -17689,6 +18877,105 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportFieldApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ]
+      }
+    },
+    "/api/v5/artifacts/fields/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "fields"
+        ],
+        "summary": "Import Fields",
+        "description": "Import fields from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical field fields\n3. Converts rows to CreateFieldItem objects\n4. Delegates to existing create_field_impl",
+        "operationId": "import_fields_api_v5_artifacts_fields_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportFieldApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportFieldApiResponse"
                 }
               }
             }
@@ -20797,6 +22084,105 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExportToolApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ]
+      }
+    },
+    "/api/v5/artifacts/tools/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "tools"
+        ],
+        "summary": "Import Tools",
+        "description": "Import tools from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical tool fields\n3. Converts rows to CreateToolItem objects\n4. Delegates to existing create_tool_impl",
+        "operationId": "import_tools_api_v5_artifacts_tools_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportToolApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportToolApiResponse"
                 }
               }
             }
@@ -31545,7 +32931,7 @@
           "v5"
         ],
         "summary": "Poll Events",
-        "description": "Validate an artifact event subscription and reserve the delivery shape.\n\nTODO: Read persisted call/domain events from the canonical store once wired.",
+        "description": "Poll for artifact events from the canonical event store.",
         "operationId": "poll_events_api_v5_poll_post",
         "parameters": [
           {
@@ -91004,6 +92390,51 @@
         "type": "object",
         "title": "ImagesGenerationEvent"
       },
+      "ImportAgentApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportAgentApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportAgentApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/AgentResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportAgentApiResponse",
+        "description": "Extends create response with import metadata."
+      },
       "ImportCohortApiRequest": {
         "properties": {
           "upload_id": {
@@ -91049,61 +92480,590 @@
         "title": "ImportCohortApiResponse",
         "description": "Extends create response with import metadata."
       },
-      "ImportField": {
+      "ImportDepartmentApiRequest": {
         "properties": {
-          "key": {
+          "upload_id": {
             "type": "string",
-            "title": "Key"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "required": {
-            "type": "boolean",
-            "title": "Required",
-            "default": false
-          },
-          "multi": {
-            "type": "boolean",
-            "title": "Multi",
-            "default": false
-          },
-          "type": {
-            "type": "string",
-            "title": "Type",
-            "default": "string"
-          },
-          "example": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
+            "format": "uuid",
+            "title": "Upload Id"
           }
         },
         "type": "object",
         "required": [
-          "key",
-          "label"
+          "upload_id"
         ],
-        "title": "ImportField",
-        "description": "Field descriptor for CSV import column mapping."
+        "title": "ImportDepartmentApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportDepartmentApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DepartmentResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportDepartmentApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportDocumentApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportDocumentApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportDocumentApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportDocumentApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportEvalApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportEvalApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportEvalApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/EvalResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportEvalApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportFieldApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportFieldApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportFieldApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/FieldResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportFieldApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportModelApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportModelApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportModelApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ModelResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportModelApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportParameterApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportParameterApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportParameterApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ParameterResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportParameterApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportPersonaApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportPersonaApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportPersonaApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/PersonaResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportPersonaApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportProviderApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportProviderApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportProviderApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportProviderApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportRubricApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportRubricApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportRubricApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/RubricResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportRubricApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportScenarioApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportScenarioApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportScenarioApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportScenarioApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportSettingApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportSettingApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportSettingApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SettingResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportSettingApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportSimulationApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportSimulationApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportSimulationApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SimulationResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportSimulationApiResponse",
+        "description": "Extends create response with import metadata."
+      },
+      "ImportToolApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportToolApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportToolApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ToolResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportToolApiResponse",
+        "description": "Extends create response with import metadata."
       },
       "ImprovementsGenerationEvent": {
         "properties": {
@@ -95801,20 +97761,6 @@
               }
             ],
             "title": "Total Count"
-          },
-          "import_fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ImportField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Import Fields"
           }
         },
         "type": "object",
@@ -97440,20 +99386,6 @@
               }
             ],
             "title": "Total Count"
-          },
-          "import_fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ImportField"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Import Fields"
           }
         },
         "type": "object",
@@ -98104,18 +100036,6 @@
               }
             ],
             "title": "Total Count"
-          },
-          "import_fields": {
-            "anyOf": [
-              {
-                "items": {},
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Import Fields"
           }
         },
         "type": "object",

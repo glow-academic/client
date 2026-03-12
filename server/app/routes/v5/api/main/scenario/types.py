@@ -11,7 +11,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.infra.scenario.create import CreateScenarioItem
-from app.routes.v5.api.main.persona.types import ImportField
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.scenario_drafts.types import GetScenarioDraftResponse
 
@@ -468,7 +467,6 @@ class ListScenarioApiResponse(BaseModel):
     department_filter: "ListFilterSection | None" = None
     flag_filter: "ListFilterSection | None" = None
     total_count: int | None = None
-    import_fields: list[ImportField] | None = None
 
 
 # =============================================================================

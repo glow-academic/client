@@ -12,6 +12,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -40,6 +41,29 @@ from app.routes.v5.tools.resources.parameters.search import (
 from app.routes.v5.tools.resources.personas.search import (
     search_personas as search_personas_resource,
 )
+
+FIELD_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Communication Skills",
+        "description": "The field's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "Assesses verbal and non-verbal communication...",
+        "description": "Optional description",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_field_impl(

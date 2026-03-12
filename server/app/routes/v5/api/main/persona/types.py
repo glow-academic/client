@@ -434,7 +434,6 @@ class ListPersonaApiResponse(BaseModel):
     voice_filter: ListFilterSection | None = None
     instruction_filter: ListFilterSection | None = None
     total_count: int | None = None
-    import_fields: list[ImportField] | None = None
 
 
 # ========== Shared Save/Create/Update Types ==========

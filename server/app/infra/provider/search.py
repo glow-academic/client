@@ -13,6 +13,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -41,6 +42,36 @@ from app.routes.v5.tools.resources.providers.get import (
     get_providers as get_providers_resource,
 )
 from app.routes.v5.tools.resources.values.get import get_values
+
+PROVIDER_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "OpenAI",
+        "description": "The provider's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "OpenAI API provider...",
+        "description": "Optional description",
+    },
+    {
+        "key": "active_flag",
+        "label": "Active",
+        "type": "boolean",
+        "example": "true",
+        "description": "Whether the provider is active (true/false)",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_provider_impl(

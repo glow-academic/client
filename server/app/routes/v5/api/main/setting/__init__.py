@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.setting.create import router as create_router
+from app.routes.v5.api.main.setting.csv import router as csv_router
 from app.routes.v5.api.main.setting.decrypt import router as decrypt_router
 from app.routes.v5.api.main.setting.delete import router as delete_router
 from app.routes.v5.api.main.setting.docs import router as docs_router
@@ -27,6 +28,7 @@ router.include_router(delete_router)
 router.include_router(draft_router)
 router.include_router(drafts_router)
 router.include_router(export_router)
+router.include_router(csv_router)
 router.include_router(docs_router)
 router.include_router(refresh_router)
 router.include_router(decrypt_router)

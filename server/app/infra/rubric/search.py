@@ -13,6 +13,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 from uuid import UUID
 
 import asyncpg
@@ -42,6 +43,36 @@ from app.routes.v5.tools.resources.simulations.search import (
 )
 from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
 from app.routes.v5.tools.resources.standards.get import get_standards
+
+RUBRIC_IMPORT_FIELDS: list[dict[str, Any]] = [
+    {
+        "key": "name",
+        "label": "Name",
+        "required": True,
+        "example": "Clinical Skills Rubric",
+        "description": "The rubric's display name",
+    },
+    {
+        "key": "description",
+        "label": "Description",
+        "example": "Evaluates clinical skills...",
+        "description": "Optional description",
+    },
+    {
+        "key": "active_flag",
+        "label": "Active",
+        "type": "boolean",
+        "example": "true",
+        "description": "Whether the rubric is active (true/false)",
+    },
+    {
+        "key": "departments",
+        "label": "Departments",
+        "multi": True,
+        "example": "Nursing, Medicine",
+        "description": "Comma-separated department names",
+    },
+]
 
 
 async def search_rubric_impl(
