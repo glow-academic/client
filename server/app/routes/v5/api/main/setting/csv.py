@@ -1,68 +1,44 @@
-"""Setting import endpoint — parses a CSV file and creates settings in one step.
-
-Takes an upload_id (from a TUS-uploaded CSV), reads the file, auto-maps columns
-to canonical setting fields, and delegates to the existing create_setting_impl.
-"""
+"""Setting CSV parse endpoint — accepts a CSV file and returns mapped items for preview."""
 
 from __future__ import annotations
 
 import csv
 import io
 import os
+import uuid as uuid_mod
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
-from app.infra.setting.create import (
-    CreateSettingApiResponse,
-    CreateSettingItem,
-    create_setting_impl,
-)
+from app.infra.setting.create import CreateSettingItem
 from app.infra.setting.search import SETTING_IMPORT_FIELDS
-from app.infra.events.audit import run_artifact_operation_with_audit
-from app.infra.globals import UPLOAD_FOLDER, get_pool, get_redis_client, get_upload_folder
-from app.routes.v5.tools.entries.uploads.get import get_upload
+from app.infra.globals import UPLOAD_FOLDER, get_pool
+from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
 
-# ---------------------------------------------------------------------------
-# Request / response types
-# ---------------------------------------------------------------------------
+class ParseSettingCsvApiResponse(BaseModel):
+    """Response for CSV parse — mapped items ready for review."""
 
-class ImportSettingApiRequest(BaseModel):
-    """Request model — just the upload_id of a TUS-uploaded CSV."""
     upload_id: UUID
+    items: list[CreateSettingItem]
+    mapped_fields: list[str]
+    row_count: int
 
-
-class ImportSettingApiResponse(CreateSettingApiResponse):
-    """Extends create response with import metadata."""
-    row_count: int = 0
-    mapped_fields: list[str] = []
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _normalize(s: str) -> str:
-    """Lowercase, strip whitespace and underscores for fuzzy header matching."""
     return s.strip().lower().replace("_", "").replace("-", "").replace(" ", "")
 
 
 def _build_field_map(headers: list[str]) -> dict[int, dict[str, Any]]:
-    """Auto-map CSV column indices to canonical import fields.
-
-    Returns {column_index: field_def} for every matched column.
-    """
     field_lookup: dict[str, dict[str, Any]] = {}
     for field in SETTING_IMPORT_FIELDS:
         field_lookup[_normalize(field["key"])] = field
         field_lookup[_normalize(field["label"])] = field
-
     mapping: dict[int, dict[str, Any]] = {}
     for idx, header in enumerate(headers):
         norm = _normalize(header)
@@ -72,7 +48,6 @@ def _build_field_map(headers: list[str]) -> dict[int, dict[str, Any]]:
 
 
 def _parse_bool(value: str) -> bool | None:
-    """Parse boolean from CSV string."""
     v = value.strip().lower()
     if v in ("true", "yes", "1", "active"):
         return True
@@ -82,76 +57,58 @@ def _parse_bool(value: str) -> bool | None:
 
 
 def _row_to_item(row: list[str], field_map: dict[int, dict[str, Any]]) -> CreateSettingItem:
-    """Convert a single CSV row to a CreateSettingItem using the field map."""
     kwargs: dict[str, Any] = {}
-
     for col_idx, field_def in field_map.items():
         if col_idx >= len(row):
             continue
         raw = row[col_idx].strip()
         if not raw:
             continue
-
         key = field_def["key"]
         is_multi = field_def.get("multi", False)
         field_type = field_def.get("type", "string")
-
         if field_type == "boolean":
             kwargs[key] = _parse_bool(raw)
         elif is_multi:
-            # Split on comma, strip each value
             kwargs[key] = [v.strip() for v in raw.split(",") if v.strip()]
         else:
             kwargs[key] = raw
-
     return CreateSettingItem(**kwargs)
 
 
-# ---------------------------------------------------------------------------
-# Endpoint
-# ---------------------------------------------------------------------------
-
-@router.post("/csv", response_model=ImportSettingApiResponse)
-async def import_settings(
-    request: ImportSettingApiRequest,
+@router.post("/csv", response_model=ParseSettingCsvApiResponse)
+async def parse_setting_csv(
+    file: UploadFile,
     http_request: Request,
-    response: Response,
-) -> ImportSettingApiResponse:
-    """Import settings from a CSV file.
-
-    1. Reads the TUS-uploaded CSV
-    2. Auto-maps columns to canonical setting fields
-    3. Converts rows to CreateSettingItem objects
-    4. Delegates to existing create_setting_impl
-    """
+) -> ParseSettingCsvApiResponse:
+    """Parse a CSV file and return mapped items for preview."""
     try:
-        profile_id = http_request.state.profile_id
         session_id = http_request.state.session_id
-        if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
+        pool = get_pool()
+
+        # 1. Read file
+        file_bytes = await file.read()
+
+        # 2. Save to disk + create upload entry
+        upload_uuid = uuid_mod.uuid4()
+        ext = os.path.splitext(file.filename or "file.csv")[1] or ".csv"
+        relative_path = f"{upload_uuid}{ext}"
+        disk_path = os.path.join(UPLOAD_FOLDER, relative_path)
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        with open(disk_path, "wb") as f:
+            f.write(file_bytes)
+
+        async with pool.acquire() as conn:
+            upload_result = await create_upload(
+                conn,
+                session_id=session_id,
+                file_path=relative_path,
+                mime_type=file.content_type or "text/csv",
+                size=len(file_bytes),
             )
 
-        pool = get_pool()
-        redis = get_redis_client()
-
-        # 1. Read the uploaded CSV file
-        async with pool.acquire() as conn:
-            upload = await get_upload(conn, request.upload_id)
-
-        if upload is None:
-            raise HTTPException(status_code=404, detail="Upload not found")
-
-        stored_path = upload.file_path or ""
-        file_path = os.path.join(UPLOAD_FOLDER, stored_path)
-
-        if not os.path.exists(file_path):
-            raise HTTPException(status_code=404, detail="Upload file not found on disk")
-
-        with open(file_path, encoding="utf-8-sig") as f:
-            content = f.read()
-
+        # 3. Parse CSV
+        content = file_bytes.decode("utf-8-sig")
         reader = csv.reader(io.StringIO(content))
         all_rows = list(reader)
 
@@ -164,19 +121,17 @@ async def import_settings(
         headers = all_rows[0]
         data_rows = all_rows[1:]
 
-        # 2. Auto-map columns to canonical fields
+        # 4. Auto-map columns
         field_map = _build_field_map(headers)
-
         if not field_map:
             raise HTTPException(
                 status_code=400,
-                detail="No CSV columns matched setting import fields. "
-                f"Expected columns: {', '.join(f['label'] for f in SETTING_IMPORT_FIELDS)}",
+                detail="No CSV columns matched import fields. "
+                f"Expected: {', '.join(f['label'] for f in SETTING_IMPORT_FIELDS)}",
             )
 
         mapped_fields = [field_map[idx]["key"] for idx in sorted(field_map.keys())]
 
-        # Check required fields are mapped
         required_keys = {f["key"] for f in SETTING_IMPORT_FIELDS if f.get("required")}
         mapped_keys = {f["key"] for f in field_map.values()}
         missing = required_keys - mapped_keys
@@ -186,38 +141,14 @@ async def import_settings(
                 detail=f"Missing required columns: {', '.join(missing)}",
             )
 
-        # 3. Convert rows to CreateSettingItem objects
+        # 5. Convert to items
         items = [_row_to_item(row, field_map) for row in data_rows]
 
-        # 4. Delegate to existing create logic
-        async def _runner() -> CreateSettingApiResponse:
-            return await create_setting_impl(
-                pool,
-                redis,
-                profile_id=profile_id,
-                items=items,
-                session_id=session_id,
-            )
-
-        create_response = await run_artifact_operation_with_audit(
-            pool,
-            redis,
-            artifact="setting",
-            profile_id=profile_id,
-            session_id=session_id,
-            operation="import",
-            arguments={"upload_id": str(request.upload_id), "row_count": len(data_rows)},
-            response_model=CreateSettingApiResponse,
-            runner=_runner,
-            upload_folder=get_upload_folder(),
-        )
-
-        response.headers["X-Invalidate-Tags"] = "settings"
-
-        return ImportSettingApiResponse(
-            results=create_response.results,
-            row_count=len(data_rows),
+        return ParseSettingCsvApiResponse(
+            upload_id=upload_result.id,
+            items=items,
             mapped_fields=mapped_fields,
+            row_count=len(data_rows),
         )
     except HTTPException:
         raise
@@ -227,6 +158,6 @@ async def import_settings(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="import_settings",
+            operation="parse_setting_csv",
             request=http_request,
         )

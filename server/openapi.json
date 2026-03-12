@@ -310,9 +310,9 @@
           "artifacts",
           "personas"
         ],
-        "summary": "Import Personas",
-        "description": "Import personas from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical persona fields\n3. Converts rows to CreatePersonaItem objects\n4. Delegates to existing create_persona_impl",
-        "operationId": "import_personas_api_v5_artifacts_personas_csv_post",
+        "summary": "Parse Persona Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_persona_csv_api_v5_artifacts_personas_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -366,9 +366,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportPersonaApiRequest"
+                "$ref": "#/components/schemas/Body_parse_persona_csv_api_v5_artifacts_personas_csv_post"
               }
             }
           }
@@ -379,7 +379,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportPersonaApiResponse"
+                  "$ref": "#/components/schemas/ParsePersonaCsvApiResponse"
                 }
               }
             }
@@ -1478,9 +1478,9 @@
           "artifacts",
           "scenarios"
         ],
-        "summary": "Import Scenarios",
-        "description": "Import scenarios from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical scenario fields\n3. Converts rows to CreateScenarioItem objects\n4. Delegates to existing create_scenario_impl",
-        "operationId": "import_scenarios_api_v5_artifacts_scenarios_csv_post",
+        "summary": "Parse Scenario Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_scenario_csv_api_v5_artifacts_scenarios_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -1534,9 +1534,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportScenarioApiRequest"
+                "$ref": "#/components/schemas/Body_parse_scenario_csv_api_v5_artifacts_scenarios_csv_post"
               }
             }
           }
@@ -1547,7 +1547,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportScenarioApiResponse"
+                  "$ref": "#/components/schemas/ParseScenarioCsvApiResponse"
                 }
               }
             }
@@ -3910,9 +3910,9 @@
           "artifacts",
           "simulations"
         ],
-        "summary": "Import Simulations",
-        "description": "Import simulations from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical simulation fields\n3. Converts rows to CreateSimulationItem objects\n4. Delegates to existing create_simulation_impl",
-        "operationId": "import_simulations_api_v5_artifacts_simulations_csv_post",
+        "summary": "Parse Simulation Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_simulation_csv_api_v5_artifacts_simulations_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -3966,9 +3966,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportSimulationApiRequest"
+                "$ref": "#/components/schemas/Body_parse_simulation_csv_api_v5_artifacts_simulations_csv_post"
               }
             }
           }
@@ -3979,7 +3979,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportSimulationApiResponse"
+                  "$ref": "#/components/schemas/ParseSimulationCsvApiResponse"
                 }
               }
             }
@@ -5850,9 +5850,9 @@
           "artifacts",
           "documents"
         ],
-        "summary": "Import Documents",
-        "description": "Import documents from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical document fields\n3. Converts rows to CreateDocumentItem objects\n4. Delegates to existing create_document_impl",
-        "operationId": "import_documents_api_v5_artifacts_documents_csv_post",
+        "summary": "Parse Document Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_document_csv_api_v5_artifacts_documents_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -5906,9 +5906,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportDocumentApiRequest"
+                "$ref": "#/components/schemas/Body_parse_document_csv_api_v5_artifacts_documents_csv_post"
               }
             }
           }
@@ -5919,7 +5919,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportDocumentApiResponse"
+                  "$ref": "#/components/schemas/ParseDocumentCsvApiResponse"
                 }
               }
             }
@@ -8196,9 +8196,9 @@
           "artifacts",
           "departments"
         ],
-        "summary": "Import Departments",
-        "description": "Import departments from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical department fields\n3. Converts rows to CreateDepartmentItem objects\n4. Delegates to existing create_department_impl",
-        "operationId": "import_departments_api_v5_artifacts_departments_csv_post",
+        "summary": "Parse Department Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_department_csv_api_v5_artifacts_departments_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -8252,9 +8252,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportDepartmentApiRequest"
+                "$ref": "#/components/schemas/Body_parse_department_csv_api_v5_artifacts_departments_csv_post"
               }
             }
           }
@@ -8265,7 +8265,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportDepartmentApiResponse"
+                  "$ref": "#/components/schemas/ParseDepartmentCsvApiResponse"
                 }
               }
             }
@@ -9265,9 +9265,9 @@
           "artifacts",
           "cohorts"
         ],
-        "summary": "Import Cohorts",
-        "description": "Import cohorts from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical cohort fields\n3. Converts rows to CreateCohortItem objects\n4. Delegates to existing create_cohort_impl",
-        "operationId": "import_cohorts_api_v5_artifacts_cohorts_csv_post",
+        "summary": "Parse Cohort Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_cohort_csv_api_v5_artifacts_cohorts_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -9321,9 +9321,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportCohortApiRequest"
+                "$ref": "#/components/schemas/Body_parse_cohort_csv_api_v5_artifacts_cohorts_csv_post"
               }
             }
           }
@@ -9334,7 +9334,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportCohortApiResponse"
+                  "$ref": "#/components/schemas/ParseCohortCsvApiResponse"
                 }
               }
             }
@@ -10621,9 +10621,9 @@
           "artifacts",
           "evals"
         ],
-        "summary": "Import Evals",
-        "description": "Import evals from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical eval fields\n3. Converts rows to CreateEvalItem objects\n4. Delegates to existing create_eval_impl",
-        "operationId": "import_evals_api_v5_artifacts_evals_csv_post",
+        "summary": "Parse Eval Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_eval_csv_api_v5_artifacts_evals_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -10677,9 +10677,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportEvalApiRequest"
+                "$ref": "#/components/schemas/Body_parse_eval_csv_api_v5_artifacts_evals_csv_post"
               }
             }
           }
@@ -10690,7 +10690,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportEvalApiResponse"
+                  "$ref": "#/components/schemas/ParseEvalCsvApiResponse"
                 }
               }
             }
@@ -11700,9 +11700,9 @@
           "artifacts",
           "rubrics"
         ],
-        "summary": "Import Rubrics",
-        "description": "Import rubrics from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical rubric fields\n3. Converts rows to CreateRubricItem objects\n4. Delegates to existing create_rubric_impl",
-        "operationId": "import_rubrics_api_v5_artifacts_rubrics_csv_post",
+        "summary": "Parse Rubric Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_rubric_csv_api_v5_artifacts_rubrics_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -11756,9 +11756,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportRubricApiRequest"
+                "$ref": "#/components/schemas/Body_parse_rubric_csv_api_v5_artifacts_rubrics_csv_post"
               }
             }
           }
@@ -11769,7 +11769,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportRubricApiResponse"
+                  "$ref": "#/components/schemas/ParseRubricCsvApiResponse"
                 }
               }
             }
@@ -12769,9 +12769,9 @@
           "artifacts",
           "settings"
         ],
-        "summary": "Import Settings",
-        "description": "Import settings from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical setting fields\n3. Converts rows to CreateSettingItem objects\n4. Delegates to existing create_setting_impl",
-        "operationId": "import_settings_api_v5_artifacts_settings_csv_post",
+        "summary": "Parse Setting Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_setting_csv_api_v5_artifacts_settings_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -12825,9 +12825,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportSettingApiRequest"
+                "$ref": "#/components/schemas/Body_parse_setting_csv_api_v5_artifacts_settings_csv_post"
               }
             }
           }
@@ -12838,7 +12838,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportSettingApiResponse"
+                  "$ref": "#/components/schemas/ParseSettingCsvApiResponse"
                 }
               }
             }
@@ -14135,9 +14135,9 @@
           "artifacts",
           "agents"
         ],
-        "summary": "Import Agents",
-        "description": "Import agents from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical agent fields\n3. Converts rows to CreateAgentItem objects\n4. Delegates to existing create_agent_impl",
-        "operationId": "import_agents_api_v5_artifacts_agents_csv_post",
+        "summary": "Parse Agent Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_agent_csv_api_v5_artifacts_agents_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -14191,9 +14191,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportAgentApiRequest"
+                "$ref": "#/components/schemas/Body_parse_agent_csv_api_v5_artifacts_agents_csv_post"
               }
             }
           }
@@ -14204,7 +14204,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportAgentApiResponse"
+                  "$ref": "#/components/schemas/ParseAgentCsvApiResponse"
                 }
               }
             }
@@ -15303,9 +15303,9 @@
           "artifacts",
           "models"
         ],
-        "summary": "Import Models",
-        "description": "Import models from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical model fields\n3. Converts rows to CreateModelItem objects\n4. Delegates to existing create_model_impl",
-        "operationId": "import_models_api_v5_artifacts_models_csv_post",
+        "summary": "Parse Model Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_model_csv_api_v5_artifacts_models_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -15359,9 +15359,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportModelApiRequest"
+                "$ref": "#/components/schemas/Body_parse_model_csv_api_v5_artifacts_models_csv_post"
               }
             }
           }
@@ -15372,7 +15372,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportModelApiResponse"
+                  "$ref": "#/components/schemas/ParseModelCsvApiResponse"
                 }
               }
             }
@@ -16471,9 +16471,9 @@
           "artifacts",
           "providers"
         ],
-        "summary": "Import Providers",
-        "description": "Import providers from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical provider fields\n3. Converts rows to CreateProviderItem objects\n4. Delegates to existing create_provider_impl",
-        "operationId": "import_providers_api_v5_artifacts_providers_csv_post",
+        "summary": "Parse Provider Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_provider_csv_api_v5_artifacts_providers_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -16527,9 +16527,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportProviderApiRequest"
+                "$ref": "#/components/schemas/Body_parse_provider_csv_api_v5_artifacts_providers_csv_post"
               }
             }
           }
@@ -16540,7 +16540,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportProviderApiResponse"
+                  "$ref": "#/components/schemas/ParseProviderCsvApiResponse"
                 }
               }
             }
@@ -17738,9 +17738,9 @@
           "artifacts",
           "parameters"
         ],
-        "summary": "Import Parameters",
-        "description": "Import parameters from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical parameter fields\n3. Converts rows to CreateParameterItem objects\n4. Delegates to existing create_parameter_impl",
-        "operationId": "import_parameters_api_v5_artifacts_parameters_csv_post",
+        "summary": "Parse Parameter Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_parameter_csv_api_v5_artifacts_parameters_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -17794,9 +17794,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportParameterApiRequest"
+                "$ref": "#/components/schemas/Body_parse_parameter_csv_api_v5_artifacts_parameters_csv_post"
               }
             }
           }
@@ -17807,7 +17807,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportParameterApiResponse"
+                  "$ref": "#/components/schemas/ParseParameterCsvApiResponse"
                 }
               }
             }
@@ -18906,9 +18906,9 @@
           "artifacts",
           "fields"
         ],
-        "summary": "Import Fields",
-        "description": "Import fields from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical field fields\n3. Converts rows to CreateFieldItem objects\n4. Delegates to existing create_field_impl",
-        "operationId": "import_fields_api_v5_artifacts_fields_csv_post",
+        "summary": "Parse Field Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_field_csv_api_v5_artifacts_fields_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -18962,9 +18962,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportFieldApiRequest"
+                "$ref": "#/components/schemas/Body_parse_field_csv_api_v5_artifacts_fields_csv_post"
               }
             }
           }
@@ -18975,7 +18975,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportFieldApiResponse"
+                  "$ref": "#/components/schemas/ParseFieldCsvApiResponse"
                 }
               }
             }
@@ -22113,9 +22113,9 @@
           "artifacts",
           "tools"
         ],
-        "summary": "Import Tools",
-        "description": "Import tools from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical tool fields\n3. Converts rows to CreateToolItem objects\n4. Delegates to existing create_tool_impl",
-        "operationId": "import_tools_api_v5_artifacts_tools_csv_post",
+        "summary": "Parse Tool Csv",
+        "description": "Parse a CSV file and return mapped items for preview.",
+        "operationId": "parse_tool_csv_api_v5_artifacts_tools_csv_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -22169,9 +22169,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ImportToolApiRequest"
+                "$ref": "#/components/schemas/Body_parse_tool_csv_api_v5_artifacts_tools_csv_post"
               }
             }
           }
@@ -22182,7 +22182,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportToolApiResponse"
+                  "$ref": "#/components/schemas/ParseToolCsvApiResponse"
                 }
               }
             }
@@ -38166,6 +38166,216 @@
           "file"
         ],
         "title": "Body_multipart_upload_uploads_upload_post"
+      },
+      "Body_parse_agent_csv_api_v5_artifacts_agents_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_agent_csv_api_v5_artifacts_agents_csv_post"
+      },
+      "Body_parse_cohort_csv_api_v5_artifacts_cohorts_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_cohort_csv_api_v5_artifacts_cohorts_csv_post"
+      },
+      "Body_parse_department_csv_api_v5_artifacts_departments_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_department_csv_api_v5_artifacts_departments_csv_post"
+      },
+      "Body_parse_document_csv_api_v5_artifacts_documents_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_document_csv_api_v5_artifacts_documents_csv_post"
+      },
+      "Body_parse_eval_csv_api_v5_artifacts_evals_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_eval_csv_api_v5_artifacts_evals_csv_post"
+      },
+      "Body_parse_field_csv_api_v5_artifacts_fields_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_field_csv_api_v5_artifacts_fields_csv_post"
+      },
+      "Body_parse_model_csv_api_v5_artifacts_models_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_model_csv_api_v5_artifacts_models_csv_post"
+      },
+      "Body_parse_parameter_csv_api_v5_artifacts_parameters_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_parameter_csv_api_v5_artifacts_parameters_csv_post"
+      },
+      "Body_parse_persona_csv_api_v5_artifacts_personas_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_persona_csv_api_v5_artifacts_personas_csv_post"
+      },
+      "Body_parse_provider_csv_api_v5_artifacts_providers_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_provider_csv_api_v5_artifacts_providers_csv_post"
+      },
+      "Body_parse_rubric_csv_api_v5_artifacts_rubrics_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_rubric_csv_api_v5_artifacts_rubrics_csv_post"
+      },
+      "Body_parse_scenario_csv_api_v5_artifacts_scenarios_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_scenario_csv_api_v5_artifacts_scenarios_csv_post"
+      },
+      "Body_parse_setting_csv_api_v5_artifacts_settings_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_setting_csv_api_v5_artifacts_settings_csv_post"
+      },
+      "Body_parse_simulation_csv_api_v5_artifacts_simulations_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_simulation_csv_api_v5_artifacts_simulations_csv_post"
+      },
+      "Body_parse_tool_csv_api_v5_artifacts_tools_csv_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_tool_csv_api_v5_artifacts_tools_csv_post"
       },
       "Body_token_default_idp_token_post": {
         "properties": {
@@ -66186,681 +66396,6 @@
         ],
         "title": "ImageUploadResponse"
       },
-      "ImportAgentApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportAgentApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportAgentApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/AgentResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportAgentApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportCohortApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportCohortApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportCohortApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/CohortResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportCohortApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportDepartmentApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportDepartmentApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportDepartmentApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/DepartmentResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportDepartmentApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportDocumentApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportDocumentApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportDocumentApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/DocumentResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportDocumentApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportEvalApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportEvalApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportEvalApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/EvalResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportEvalApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportFieldApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportFieldApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportFieldApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/FieldResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportFieldApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportModelApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportModelApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportModelApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/ModelResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportModelApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportParameterApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportParameterApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportParameterApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/ParameterResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportParameterApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportPersonaApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportPersonaApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportPersonaApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/PersonaResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportPersonaApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportProviderApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportProviderApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportProviderApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/ProviderResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportProviderApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportRubricApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportRubricApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportRubricApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/RubricResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportRubricApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportScenarioApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportScenarioApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportScenarioApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/ScenarioResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportScenarioApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportSettingApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportSettingApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportSettingApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/SettingResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportSettingApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportSimulationApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportSimulationApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportSimulationApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/SimulationResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportSimulationApiResponse",
-        "description": "Extends create response with import metadata."
-      },
-      "ImportToolApiRequest": {
-        "properties": {
-          "upload_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "upload_id"
-        ],
-        "title": "ImportToolApiRequest",
-        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
-      },
-      "ImportToolApiResponse": {
-        "properties": {
-          "results": {
-            "items": {
-              "$ref": "#/components/schemas/ToolResultItem"
-            },
-            "type": "array",
-            "title": "Results"
-          },
-          "row_count": {
-            "type": "integer",
-            "title": "Row Count",
-            "default": 0
-          },
-          "mapped_fields": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Mapped Fields",
-            "default": []
-          }
-        },
-        "type": "object",
-        "required": [
-          "results"
-        ],
-        "title": "ImportToolApiResponse",
-        "description": "Extends create response with import metadata."
-      },
       "LeaderboardAccoladeWinner": {
         "properties": {
           "profile_id": {
@@ -76240,6 +75775,78 @@
         "title": "ParameterResultItem",
         "description": "Per-item result within a bulk create/update response."
       },
+      "ParseAgentCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateAgentItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseAgentCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseCohortCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateCohortItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseCohortCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
       "ParseCsvApiRequest": {
         "properties": {
           "upload_id": {
@@ -76287,6 +75894,474 @@
         ],
         "title": "ParseCsvApiResponse",
         "description": "Response model for CSV parse endpoint."
+      },
+      "ParseDepartmentCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateDepartmentItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseDepartmentCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseDocumentCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateDocumentItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseDocumentCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseEvalCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateEvalItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseEvalCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseFieldCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateFieldItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseFieldCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseModelCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateModelItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseModelCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseParameterCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateParameterItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseParameterCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParsePersonaCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreatePersonaItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParsePersonaCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseProviderCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateProviderItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseProviderCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseRubricCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateRubricItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseRubricCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseScenarioCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateScenarioItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseScenarioCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseSettingCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateSettingItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseSettingCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseSimulationCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateSimulationItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseSimulationCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
+      },
+      "ParseToolCsvApiResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CreateToolItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id",
+          "items",
+          "mapped_fields",
+          "row_count"
+        ],
+        "title": "ParseToolCsvApiResponse",
+        "description": "Response for CSV parse \u2014 mapped items ready for review."
       },
       "PatchAgentDraftApiRequest": {
         "properties": {

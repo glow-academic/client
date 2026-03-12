@@ -74,15 +74,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Personas
-         * @description Import personas from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical persona fields
-         *     3. Converts rows to CreatePersonaItem objects
-         *     4. Delegates to existing create_persona_impl
+         * Parse Persona Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_personas_api_v5_artifacts_personas_csv_post"];
+        post: operations["parse_persona_csv_api_v5_artifacts_personas_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -319,15 +314,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Scenarios
-         * @description Import scenarios from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical scenario fields
-         *     3. Converts rows to CreateScenarioItem objects
-         *     4. Delegates to existing create_scenario_impl
+         * Parse Scenario Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_scenarios_api_v5_artifacts_scenarios_csv_post"];
+        post: operations["parse_scenario_csv_api_v5_artifacts_scenarios_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -824,15 +814,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Simulations
-         * @description Import simulations from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical simulation fields
-         *     3. Converts rows to CreateSimulationItem objects
-         *     4. Delegates to existing create_simulation_impl
+         * Parse Simulation Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_simulations_api_v5_artifacts_simulations_csv_post"];
+        post: operations["parse_simulation_csv_api_v5_artifacts_simulations_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1229,15 +1214,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Documents
-         * @description Import documents from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical document fields
-         *     3. Converts rows to CreateDocumentItem objects
-         *     4. Delegates to existing create_document_impl
+         * Parse Document Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_documents_api_v5_artifacts_documents_csv_post"];
+        post: operations["parse_document_csv_api_v5_artifacts_documents_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1714,15 +1694,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Departments
-         * @description Import departments from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical department fields
-         *     3. Converts rows to CreateDepartmentItem objects
-         *     4. Delegates to existing create_department_impl
+         * Parse Department Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_departments_api_v5_artifacts_departments_csv_post"];
+        post: operations["parse_department_csv_api_v5_artifacts_departments_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1939,15 +1914,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Cohorts
-         * @description Import cohorts from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical cohort fields
-         *     3. Converts rows to CreateCohortItem objects
-         *     4. Delegates to existing create_cohort_impl
+         * Parse Cohort Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_cohorts_api_v5_artifacts_cohorts_csv_post"];
+        post: operations["parse_cohort_csv_api_v5_artifacts_cohorts_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2224,15 +2194,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Evals
-         * @description Import evals from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical eval fields
-         *     3. Converts rows to CreateEvalItem objects
-         *     4. Delegates to existing create_eval_impl
+         * Parse Eval Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_evals_api_v5_artifacts_evals_csv_post"];
+        post: operations["parse_eval_csv_api_v5_artifacts_evals_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2449,15 +2414,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Rubrics
-         * @description Import rubrics from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical rubric fields
-         *     3. Converts rows to CreateRubricItem objects
-         *     4. Delegates to existing create_rubric_impl
+         * Parse Rubric Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_rubrics_api_v5_artifacts_rubrics_csv_post"];
+        post: operations["parse_rubric_csv_api_v5_artifacts_rubrics_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2674,15 +2634,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Settings
-         * @description Import settings from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical setting fields
-         *     3. Converts rows to CreateSettingItem objects
-         *     4. Delegates to existing create_setting_impl
+         * Parse Setting Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_settings_api_v5_artifacts_settings_csv_post"];
+        post: operations["parse_setting_csv_api_v5_artifacts_settings_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2959,15 +2914,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Agents
-         * @description Import agents from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical agent fields
-         *     3. Converts rows to CreateAgentItem objects
-         *     4. Delegates to existing create_agent_impl
+         * Parse Agent Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_agents_api_v5_artifacts_agents_csv_post"];
+        post: operations["parse_agent_csv_api_v5_artifacts_agents_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3204,15 +3154,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Models
-         * @description Import models from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical model fields
-         *     3. Converts rows to CreateModelItem objects
-         *     4. Delegates to existing create_model_impl
+         * Parse Model Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_models_api_v5_artifacts_models_csv_post"];
+        post: operations["parse_model_csv_api_v5_artifacts_models_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3449,15 +3394,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Providers
-         * @description Import providers from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical provider fields
-         *     3. Converts rows to CreateProviderItem objects
-         *     4. Delegates to existing create_provider_impl
+         * Parse Provider Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_providers_api_v5_artifacts_providers_csv_post"];
+        post: operations["parse_provider_csv_api_v5_artifacts_providers_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3714,15 +3654,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Parameters
-         * @description Import parameters from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical parameter fields
-         *     3. Converts rows to CreateParameterItem objects
-         *     4. Delegates to existing create_parameter_impl
+         * Parse Parameter Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_parameters_api_v5_artifacts_parameters_csv_post"];
+        post: operations["parse_parameter_csv_api_v5_artifacts_parameters_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3959,15 +3894,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Fields
-         * @description Import fields from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical field fields
-         *     3. Converts rows to CreateFieldItem objects
-         *     4. Delegates to existing create_field_impl
+         * Parse Field Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_fields_api_v5_artifacts_fields_csv_post"];
+        post: operations["parse_field_csv_api_v5_artifacts_fields_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4624,15 +4554,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import Tools
-         * @description Import tools from a CSV file.
-         *
-         *     1. Reads the TUS-uploaded CSV
-         *     2. Auto-maps columns to canonical tool fields
-         *     3. Converts rows to CreateToolItem objects
-         *     4. Delegates to existing create_tool_impl
+         * Parse Tool Csv
+         * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["import_tools_api_v5_artifacts_tools_csv_post"];
+        post: operations["parse_tool_csv_api_v5_artifacts_tools_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8791,6 +8716,126 @@ export interface components {
         };
         /** Body_multipart_upload_uploads_upload_post */
         Body_multipart_upload_uploads_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_agent_csv_api_v5_artifacts_agents_csv_post */
+        Body_parse_agent_csv_api_v5_artifacts_agents_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_cohort_csv_api_v5_artifacts_cohorts_csv_post */
+        Body_parse_cohort_csv_api_v5_artifacts_cohorts_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_department_csv_api_v5_artifacts_departments_csv_post */
+        Body_parse_department_csv_api_v5_artifacts_departments_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_document_csv_api_v5_artifacts_documents_csv_post */
+        Body_parse_document_csv_api_v5_artifacts_documents_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_eval_csv_api_v5_artifacts_evals_csv_post */
+        Body_parse_eval_csv_api_v5_artifacts_evals_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_field_csv_api_v5_artifacts_fields_csv_post */
+        Body_parse_field_csv_api_v5_artifacts_fields_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_model_csv_api_v5_artifacts_models_csv_post */
+        Body_parse_model_csv_api_v5_artifacts_models_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_parameter_csv_api_v5_artifacts_parameters_csv_post */
+        Body_parse_parameter_csv_api_v5_artifacts_parameters_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_persona_csv_api_v5_artifacts_personas_csv_post */
+        Body_parse_persona_csv_api_v5_artifacts_personas_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_provider_csv_api_v5_artifacts_providers_csv_post */
+        Body_parse_provider_csv_api_v5_artifacts_providers_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_rubric_csv_api_v5_artifacts_rubrics_csv_post */
+        Body_parse_rubric_csv_api_v5_artifacts_rubrics_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_scenario_csv_api_v5_artifacts_scenarios_csv_post */
+        Body_parse_scenario_csv_api_v5_artifacts_scenarios_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_setting_csv_api_v5_artifacts_settings_csv_post */
+        Body_parse_setting_csv_api_v5_artifacts_settings_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_simulation_csv_api_v5_artifacts_simulations_csv_post */
+        Body_parse_simulation_csv_api_v5_artifacts_simulations_csv_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_parse_tool_csv_api_v5_artifacts_tools_csv_post */
+        Body_parse_tool_csv_api_v5_artifacts_tools_csv_post: {
             /**
              * File
              * Format: binary
@@ -17726,441 +17771,6 @@ export interface components {
             upload_id: string;
         };
         /**
-         * ImportAgentApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportAgentApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportAgentApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportAgentApiResponse: {
-            /** Results */
-            results: components["schemas"]["AgentResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportCohortApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportCohortApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportCohortApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportCohortApiResponse: {
-            /** Results */
-            results: components["schemas"]["CohortResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportDepartmentApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportDepartmentApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportDepartmentApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportDepartmentApiResponse: {
-            /** Results */
-            results: components["schemas"]["DepartmentResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportDocumentApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportDocumentApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportDocumentApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportDocumentApiResponse: {
-            /** Results */
-            results: components["schemas"]["DocumentResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportEvalApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportEvalApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportEvalApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportEvalApiResponse: {
-            /** Results */
-            results: components["schemas"]["EvalResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportFieldApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportFieldApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportFieldApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportFieldApiResponse: {
-            /** Results */
-            results: components["schemas"]["FieldResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportModelApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportModelApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportModelApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportModelApiResponse: {
-            /** Results */
-            results: components["schemas"]["ModelResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportParameterApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportParameterApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportParameterApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportParameterApiResponse: {
-            /** Results */
-            results: components["schemas"]["ParameterResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportPersonaApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportPersonaApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportPersonaApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportPersonaApiResponse: {
-            /** Results */
-            results: components["schemas"]["PersonaResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportProviderApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportProviderApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportProviderApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportProviderApiResponse: {
-            /** Results */
-            results: components["schemas"]["ProviderResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportRubricApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportRubricApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportRubricApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportRubricApiResponse: {
-            /** Results */
-            results: components["schemas"]["RubricResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportScenarioApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportScenarioApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportScenarioApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportScenarioApiResponse: {
-            /** Results */
-            results: components["schemas"]["ScenarioResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportSettingApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportSettingApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportSettingApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportSettingApiResponse: {
-            /** Results */
-            results: components["schemas"]["SettingResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportSimulationApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportSimulationApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportSimulationApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportSimulationApiResponse: {
-            /** Results */
-            results: components["schemas"]["SimulationResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
-         * ImportToolApiRequest
-         * @description Request model — just the upload_id of a TUS-uploaded CSV.
-         */
-        ImportToolApiRequest: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
-        /**
-         * ImportToolApiResponse
-         * @description Extends create response with import metadata.
-         */
-        ImportToolApiResponse: {
-            /** Results */
-            results: components["schemas"]["ToolResultItem"][];
-            /**
-             * Row Count
-             * @default 0
-             */
-            row_count: number;
-            /**
-             * Mapped Fields
-             * @default []
-             */
-            mapped_fields: string[];
-        };
-        /**
          * LeaderboardAccoladeWinner
          * @description Winner summary for a leaderboard accolade.
          */
@@ -20656,6 +20266,40 @@ export interface components {
             errors?: components["schemas"]["ParameterFieldError"][] | null;
         };
         /**
+         * ParseAgentCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseAgentCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateAgentItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseCohortCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseCohortCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateCohortItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
          * ParseCsvApiRequest
          * @description Request model for CSV parse endpoint.
          */
@@ -20675,6 +20319,227 @@ export interface components {
             headers: string[];
             /** Rows */
             rows: string[][];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseDepartmentCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseDepartmentCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateDepartmentItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseDocumentCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseDocumentCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateDocumentItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseEvalCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseEvalCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateEvalItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseFieldCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseFieldCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateFieldItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseModelCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseModelCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateModelItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseParameterCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseParameterCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateParameterItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParsePersonaCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParsePersonaCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreatePersonaItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseProviderCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseProviderCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateProviderItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseRubricCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseRubricCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateRubricItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseScenarioCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseScenarioCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateScenarioItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseSettingCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseSettingCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateSettingItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseSimulationCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseSimulationCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateSimulationItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
+            /** Row Count */
+            row_count: number;
+        };
+        /**
+         * ParseToolCsvApiResponse
+         * @description Response for CSV parse — mapped items ready for review.
+         */
+        ParseToolCsvApiResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+            /** Items */
+            items: components["schemas"]["CreateToolItem"][];
+            /** Mapped Fields */
+            mapped_fields: string[];
             /** Row Count */
             row_count: number;
         };
@@ -28826,7 +28691,7 @@ export interface operations {
             };
         };
     };
-    import_personas_api_v5_artifacts_personas_csv_post: {
+    parse_persona_csv_api_v5_artifacts_personas_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -28839,7 +28704,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportPersonaApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_persona_csv_api_v5_artifacts_personas_csv_post"];
             };
         };
         responses: {
@@ -28849,7 +28714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportPersonaApiResponse"];
+                    "application/json": components["schemas"]["ParsePersonaCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -29262,7 +29127,7 @@ export interface operations {
             };
         };
     };
-    import_scenarios_api_v5_artifacts_scenarios_csv_post: {
+    parse_scenario_csv_api_v5_artifacts_scenarios_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -29275,7 +29140,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportScenarioApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_scenario_csv_api_v5_artifacts_scenarios_csv_post"];
             };
         };
         responses: {
@@ -29285,7 +29150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportScenarioApiResponse"];
+                    "application/json": components["schemas"]["ParseScenarioCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30153,7 +30018,7 @@ export interface operations {
             };
         };
     };
-    import_simulations_api_v5_artifacts_simulations_csv_post: {
+    parse_simulation_csv_api_v5_artifacts_simulations_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -30166,7 +30031,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportSimulationApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_simulation_csv_api_v5_artifacts_simulations_csv_post"];
             };
         };
         responses: {
@@ -30176,7 +30041,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportSimulationApiResponse"];
+                    "application/json": components["schemas"]["ParseSimulationCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30877,7 +30742,7 @@ export interface operations {
             };
         };
     };
-    import_documents_api_v5_artifacts_documents_csv_post: {
+    parse_document_csv_api_v5_artifacts_documents_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -30890,7 +30755,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportDocumentApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_document_csv_api_v5_artifacts_documents_csv_post"];
             };
         };
         responses: {
@@ -30900,7 +30765,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportDocumentApiResponse"];
+                    "application/json": components["schemas"]["ParseDocumentCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -31737,7 +31602,7 @@ export interface operations {
             };
         };
     };
-    import_departments_api_v5_artifacts_departments_csv_post: {
+    parse_department_csv_api_v5_artifacts_departments_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -31750,7 +31615,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportDepartmentApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_department_csv_api_v5_artifacts_departments_csv_post"];
             };
         };
         responses: {
@@ -31760,7 +31625,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportDepartmentApiResponse"];
+                    "application/json": components["schemas"]["ParseDepartmentCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -32136,7 +32001,7 @@ export interface operations {
             };
         };
     };
-    import_cohorts_api_v5_artifacts_cohorts_csv_post: {
+    parse_cohort_csv_api_v5_artifacts_cohorts_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32149,7 +32014,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportCohortApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_cohort_csv_api_v5_artifacts_cohorts_csv_post"];
             };
         };
         responses: {
@@ -32159,7 +32024,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportCohortApiResponse"];
+                    "application/json": components["schemas"]["ParseCohortCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -32642,7 +32507,7 @@ export interface operations {
             };
         };
     };
-    import_evals_api_v5_artifacts_evals_csv_post: {
+    parse_eval_csv_api_v5_artifacts_evals_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -32655,7 +32520,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportEvalApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_eval_csv_api_v5_artifacts_evals_csv_post"];
             };
         };
         responses: {
@@ -32665,7 +32530,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportEvalApiResponse"];
+                    "application/json": components["schemas"]["ParseEvalCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33045,7 +32910,7 @@ export interface operations {
             };
         };
     };
-    import_rubrics_api_v5_artifacts_rubrics_csv_post: {
+    parse_rubric_csv_api_v5_artifacts_rubrics_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33058,7 +32923,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportRubricApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_rubric_csv_api_v5_artifacts_rubrics_csv_post"];
             };
         };
         responses: {
@@ -33068,7 +32933,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportRubricApiResponse"];
+                    "application/json": components["schemas"]["ParseRubricCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33444,7 +33309,7 @@ export interface operations {
             };
         };
     };
-    import_settings_api_v5_artifacts_settings_csv_post: {
+    parse_setting_csv_api_v5_artifacts_settings_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33457,7 +33322,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportSettingApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_setting_csv_api_v5_artifacts_settings_csv_post"];
             };
         };
         responses: {
@@ -33467,7 +33332,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportSettingApiResponse"];
+                    "application/json": components["schemas"]["ParseSettingCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -33954,7 +33819,7 @@ export interface operations {
             };
         };
     };
-    import_agents_api_v5_artifacts_agents_csv_post: {
+    parse_agent_csv_api_v5_artifacts_agents_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -33967,7 +33832,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportAgentApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_agent_csv_api_v5_artifacts_agents_csv_post"];
             };
         };
         responses: {
@@ -33977,7 +33842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportAgentApiResponse"];
+                    "application/json": components["schemas"]["ParseAgentCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -34390,7 +34255,7 @@ export interface operations {
             };
         };
     };
-    import_models_api_v5_artifacts_models_csv_post: {
+    parse_model_csv_api_v5_artifacts_models_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34403,7 +34268,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportModelApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_model_csv_api_v5_artifacts_models_csv_post"];
             };
         };
         responses: {
@@ -34413,7 +34278,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportModelApiResponse"];
+                    "application/json": components["schemas"]["ParseModelCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -34826,7 +34691,7 @@ export interface operations {
             };
         };
     };
-    import_providers_api_v5_artifacts_providers_csv_post: {
+    parse_provider_csv_api_v5_artifacts_providers_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -34839,7 +34704,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportProviderApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_provider_csv_api_v5_artifacts_providers_csv_post"];
             };
         };
         responses: {
@@ -34849,7 +34714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportProviderApiResponse"];
+                    "application/json": components["schemas"]["ParseProviderCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35299,7 +35164,7 @@ export interface operations {
             };
         };
     };
-    import_parameters_api_v5_artifacts_parameters_csv_post: {
+    parse_parameter_csv_api_v5_artifacts_parameters_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35312,7 +35177,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportParameterApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_parameter_csv_api_v5_artifacts_parameters_csv_post"];
             };
         };
         responses: {
@@ -35322,7 +35187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportParameterApiResponse"];
+                    "application/json": components["schemas"]["ParseParameterCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -35735,7 +35600,7 @@ export interface operations {
             };
         };
     };
-    import_fields_api_v5_artifacts_fields_csv_post: {
+    parse_field_csv_api_v5_artifacts_fields_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -35748,7 +35613,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportFieldApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_field_csv_api_v5_artifacts_fields_csv_post"];
             };
         };
         responses: {
@@ -35758,7 +35623,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportFieldApiResponse"];
+                    "application/json": components["schemas"]["ParseFieldCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -36932,7 +36797,7 @@ export interface operations {
             };
         };
     };
-    import_tools_api_v5_artifacts_tools_csv_post: {
+    parse_tool_csv_api_v5_artifacts_tools_csv_post: {
         parameters: {
             query?: never;
             header?: {
@@ -36945,7 +36810,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImportToolApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_parse_tool_csv_api_v5_artifacts_tools_csv_post"];
             };
         };
         responses: {
@@ -36955,7 +36820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportToolApiResponse"];
+                    "application/json": components["schemas"]["ParseToolCsvApiResponse"];
                 };
             };
             /** @description Validation Error */
