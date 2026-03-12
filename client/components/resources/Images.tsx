@@ -86,6 +86,8 @@ export interface ImagesProps {
   registerFlush?: (
     flush: () => Promise<{ image_ids: string[] } | void>
   ) => void;
+  /** Artifact-scoped base path for upload/download URLs (e.g., "/artifacts/documents") */
+  uploadBasePath?: string;
   /** Action to finalize TUS upload */
   finalizeUploadAction?: (uploadId: string) => Promise<{
     success: boolean;
@@ -131,6 +133,7 @@ export function Images({
   isUploadingImage = false,
   isAutosaveEnabled = true,
   registerFlush,
+  uploadBasePath,
   finalizeUploadAction,
   aiImageResources: _aiImageResources,
   onImageUploadValue,
@@ -379,7 +382,7 @@ export function Images({
       let tusUploadInstance: tus.Upload | null = null;
       try {
         tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/uploads`,
+          endpoint: uploadBasePath ? `/api/v5${uploadBasePath}/image` : `/api/uploads`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,
@@ -436,7 +439,7 @@ export function Images({
             try {
               const uploadUrl = tusUploadInstance?.url || "";
               const tusUploadIdMatch = uploadUrl.match(
-                /\/uploads\/([^\/]+)$/
+                /([^\/]+)$/
               );
               if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
                 throw new Error(

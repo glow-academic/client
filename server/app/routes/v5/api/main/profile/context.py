@@ -1,7 +1,7 @@
-"""POST /artifacts/profiles/context — identity + permissions + theme.
+"""POST /context — identity + permissions + theme.
 
 Thin wrapper over resolve_profile_identity_context().
-Replaces the old /auth/profile and /auth/settings endpoints.
+Root-level layout route (mounted at /api/v5/context).
 """
 
 from __future__ import annotations

@@ -29,6 +29,9 @@ type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
 type PatchScenarioDraftIn = InputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
 type PatchScenarioDraftOut = OutputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
 
+/** Upload action result — matches the interface expected by resource components */
+type UploadResult = { success: boolean; upload_id?: string; message?: string };
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  * Uses unified get endpoint.
@@ -152,6 +155,47 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
+async function finalizeUpload(uploadId: string): Promise<UploadResult> {
+  "use server";
+  try {
+    const result = await api.post(
+      "/artifacts/scenarios/video/{upload_id}/finalize",
+      { path: { upload_id: uploadId } } as InputOf<"/api/v5/artifacts/scenarios/video/{upload_id}/finalize", "post">,
+    );
+    return { success: true, upload_id: result.upload_id };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Finalize failed";
+    return { success: false, message };
+  }
+}
+
+async function uploadFile(
+  modality: "file" | "image" | "text" | "video",
+  formData: FormData,
+): Promise<UploadResult> {
+  "use server";
+  try {
+    const file = formData.get("file") as File | null;
+    if (!file) return { success: false, message: "No file provided" };
+
+    let result: { upload_id: string };
+    switch (modality) {
+      case "image":
+        result = await api.post("/artifacts/scenarios/image/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/scenarios/image/upload", "post">);
+        break;
+      case "video":
+        result = await api.post("/artifacts/scenarios/video/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/scenarios/video/upload", "post">);
+        break;
+      default:
+        return { success: false, message: `Upload not supported for ${modality} in scenarios` };
+    }
+    return { success: true, upload_id: result.upload_id };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Upload failed";
+    return { success: false, message };
+  }
+}
+
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
   return api.post("/artifacts/scenarios/update", input);
@@ -329,6 +373,9 @@ export default async function EditScenarioPage({
             scenarioDetail={scenarioDetail}
             updateScenarioAction={updateScenario}
             patchScenarioDraftAction={patchScenarioDraft}
+            uploadBasePath="/artifacts/scenarios"
+            finalizeUploadAction={finalizeUpload}
+            uploadFileAction={uploadFile}
           />
         </div>
       </DraftProviderClient>

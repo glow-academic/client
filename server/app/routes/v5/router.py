@@ -30,6 +30,8 @@ from app.routes.v5.api.events.stream import router as stream_router
 from app.routes.v5.api.events.webhooks import router as webhooks_router
 from app.routes.v5.api.main.activity import router as activity_artifact_router
 from app.routes.v5.api.main.group.generate import router as generate_router
+from app.routes.v5.api.main.activity.problem import router as problem_router
+from app.routes.v5.api.main.profile.context import router as context_router
 from app.routes.v5.api.main.profile.emulate import router as emulate_router
 from app.routes.v5.api.main.profile.unemulate import router as unemulate_router
 
@@ -134,6 +136,8 @@ router.include_router(artifacts_router)
 # ============================================================================
 # Root-level actions
 # ============================================================================
+router.include_router(context_router)
+router.include_router(problem_router)
 router.include_router(emulate_router)
 router.include_router(unemulate_router)
 router.include_router(generate_router)

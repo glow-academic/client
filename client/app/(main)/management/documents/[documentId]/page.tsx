@@ -43,6 +43,9 @@ type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
 type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
 type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
 
+/** Upload action result — matches the interface expected by resource components */
+type UploadResult = { success: boolean; upload_id?: string; message?: string };
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -129,6 +132,48 @@ async function createDraftTexts(
   return api.post("/resources/texts", input);
 }
 
+async function finalizeUpload(uploadId: string): Promise<UploadResult> {
+  "use server";
+  try {
+    const result = await api.post(
+      "/artifacts/documents/file/{upload_id}/finalize",
+      { path: { upload_id: uploadId } } as InputOf<"/api/v5/artifacts/documents/file/{upload_id}/finalize", "post">,
+    );
+    return { success: true, upload_id: result.upload_id };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Finalize failed";
+    return { success: false, message };
+  }
+}
+
+async function uploadFile(
+  modality: "file" | "image" | "text",
+  formData: FormData,
+): Promise<UploadResult> {
+  "use server";
+  try {
+    const file = formData.get("file") as File | null;
+    if (!file) return { success: false, message: "No file provided" };
+
+    let result: { upload_id: string };
+    switch (modality) {
+      case "file":
+        result = await api.post("/artifacts/documents/file/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/documents/file/upload", "post">);
+        break;
+      case "image":
+        result = await api.post("/artifacts/documents/image/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/documents/image/upload", "post">);
+        break;
+      case "text":
+        result = await api.post("/artifacts/documents/text/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/documents/text/upload", "post">);
+        break;
+    }
+    return { success: true, upload_id: result.upload_id };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Upload failed";
+    return { success: false, message };
+  }
+}
+
 const getDocument = async (
   documentId: string,
   draftId: string | null,
@@ -207,6 +252,9 @@ export default async function DocumentEditPage({
             createUploadsAction={createDraftUploads}
             createImagesAction={createDraftImages}
             createTextsAction={createDraftTexts}
+            uploadBasePath="/artifacts/documents"
+            finalizeUploadAction={finalizeUpload}
+            uploadFileAction={uploadFile}
           />
         </div>
       </DraftProviderClient>

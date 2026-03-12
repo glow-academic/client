@@ -10,12 +10,12 @@ import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfileContextIn = InputOf<"/api/v5/artifacts/profiles/context", "post">;
-type ProfileContextOut = OutputOf<"/api/v5/artifacts/profiles/context", "post">;
+type ProfileContextIn = InputOf<"/api/v5/context", "post">;
+type ProfileContextOut = OutputOf<"/api/v5/context", "post">;
 
 type EmulateProfileIn = InputOf<"/api/v5/emulate", "post">;
-type CreateFeedbackIn = InputOf<"/api/v5/artifacts/activity/problem", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v5/artifacts/activity/problem", "post">;
+type CreateFeedbackIn = InputOf<"/api/v5/problem", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v5/problem", "post">;
 /** Page-specific refresh endpoint mapping */
 const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   chat: "/artifacts/chat/refresh",
@@ -48,7 +48,7 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
 export const getProfileContext = cache(
   async (): Promise<ProfileContextOut> => {
     const extraHeaders = await buildAuthHeaders();
-    return api.post("/artifacts/profiles/context", { body: {} } as ProfileContextIn, { headers: extraHeaders });
+    return api.post("/context", { body: {} } as ProfileContextIn, { headers: extraHeaders });
   }
 );
 
@@ -201,7 +201,7 @@ export async function clearSessionCookies(): Promise<void> {
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  return api.post("/artifacts/activity/problem", input);
+  return api.post("/problem", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */

@@ -73,6 +73,8 @@ export interface VideosProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ video_ids: string[] } | void>) => void;
+  /** Artifact-scoped base path for upload/download URLs (e.g., "/artifacts/scenarios") */
+  uploadBasePath?: string;
   /** Action to finalize TUS upload */
   finalizeUploadAction?: (uploadId: string) => Promise<{
     success: boolean;
@@ -110,6 +112,7 @@ export function Videos({
   isUploadingVideo = false,
   isAutosaveEnabled = true,
   registerFlush,
+  uploadBasePath,
   finalizeUploadAction,
   aiVideoResources: _aiVideoResources,
   onVideoUploadValue,
@@ -321,7 +324,7 @@ export function Videos({
       let tusUploadInstance: tus.Upload | null = null;
       try {
         tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/uploads`,
+          endpoint: uploadBasePath ? `/api/v5${uploadBasePath}/video` : `/api/uploads`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,
@@ -374,7 +377,7 @@ export function Videos({
 
             try {
               const uploadUrl = tusUploadInstance?.url || "";
-              const tusUploadIdMatch = uploadUrl.match(/\/uploads\/([^\/]+)$/);
+              const tusUploadIdMatch = uploadUrl.match(/([^\/]+)$/);
               if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
                 throw new Error("Failed to extract upload ID from upload URL");
               }
@@ -486,6 +489,7 @@ export function Videos({
       create_tool_id,
       onChange,
       onVideoUploadValue,
+      uploadBasePath,
     ]
   );
 
@@ -712,7 +716,7 @@ export function Videos({
         {selectedVideo ? (
           selectedVideo.upload_id ? (
             <video
-              src={`/api/uploads/${selectedVideo.upload_id}/download`}
+              src={uploadBasePath ? `/api/v5${uploadBasePath}/video/${selectedVideo.upload_id}/download` : `/api/uploads/${selectedVideo.upload_id}/download`}
               controls
               className="w-full h-full object-contain"
             />

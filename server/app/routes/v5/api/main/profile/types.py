@@ -417,10 +417,9 @@ class ThemePrimitives(BaseModel):
 
 
 class ProfileContextApiResponse(BaseModel):
-    """Response for POST /artifacts/profiles/context — identity + permissions + theme.
+    """Response for POST /context — identity + permissions + theme.
 
-    Thin wrapper over resolve_profile_identity_context().
-    Replaces the old /auth/profile and /auth/settings endpoints.
+    Root-level layout route (mounted at /api/v5/context).
     """
 
     # Identity

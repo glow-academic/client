@@ -19,6 +19,8 @@ export interface DocumentViewerProps {
   bare?: boolean;
   isFormDocument?: boolean;
   compact?: boolean;
+  /** Base URL for downloads. Defaults to "/api/uploads". */
+  downloadBaseUrl?: string;
 }
 
 // Detect iOS Safari (native PDF viewer has scroll issues in iframes)
@@ -38,6 +40,7 @@ export default function DocumentViewer({
   bare = true,
   isFormDocument = false,
   compact = false,
+  downloadBaseUrl = "/api/uploads",
 }: DocumentViewerProps) {
   const [content, setContent] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
@@ -82,7 +85,7 @@ export default function DocumentViewer({
           setContent(data.html ?? "");
         } else if (document.upload_id) {
           // File-based documents — download via upload
-          let url = `/api/uploads/${document.upload_id}/download`;
+          let url = `${downloadBaseUrl}/${document.upload_id}/download`;
 
           // Add preview parameter for compact mode (backend will only generate previews for PDFs)
           if (compact) {

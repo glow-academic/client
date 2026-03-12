@@ -60,6 +60,8 @@ export interface UploadsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
+  /** Artifact-scoped base path for upload/download URLs (e.g., "/artifacts/documents") */
+  uploadBasePath?: string;
   finalizeUploadAction?: (uploadId: string) => Promise<{
     success: boolean;
     upload_id?: string;
@@ -93,6 +95,7 @@ export function Uploads({
   createUploadsAction,
   onGenerate,
   showAiGenerate = false,
+  uploadBasePath,
   finalizeUploadAction,
   searchTerm = "",
   isAutosaveEnabled = true,
@@ -215,7 +218,7 @@ export function Uploads({
       let tusUploadInstance: tus.Upload | null = null;
       try {
         tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/uploads`,
+          endpoint: uploadBasePath ? `/api/v5${uploadBasePath}/file` : `/api/uploads`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,
@@ -268,7 +271,7 @@ export function Uploads({
 
             try {
               const uploadUrl = tusUploadInstance?.url || "";
-              const tusUploadIdMatch = uploadUrl.match(/\/uploads\/([^\/]+)$/);
+              const tusUploadIdMatch = uploadUrl.match(/([^\/]+)$/);
               if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
                 throw new Error("Failed to extract upload ID from upload URL");
               }

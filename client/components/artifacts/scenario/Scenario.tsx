@@ -123,6 +123,15 @@ export interface ScenarioProps {
   patchScenarioDraftAction?: (
     input: PatchScenarioDraftIn,
   ) => Promise<PatchScenarioDraftOut>;
+  // Artifact-scoped upload props
+  uploadBasePath?: string;
+  finalizeUploadAction?: (
+    uploadId: string,
+  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
+  uploadFileAction?: (
+    modality: "file" | "image" | "text" | "video",
+    formData: FormData,
+  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
 }
 
 const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
@@ -204,6 +213,9 @@ function ScenarioComponent({
   createScenarioAction,
   updateScenarioAction,
   patchScenarioDraftAction,
+  uploadBasePath,
+  finalizeUploadAction,
+  uploadFileAction,
 }: ScenarioProps) {
   const router = useRouter();
   const isEditMode = !!scenarioId;
@@ -1675,6 +1687,8 @@ function ScenarioComponent({
                     multiSelect={true}
                     maxImages={3}
                     isAutosaveEnabled={isAutosaveEnabled}
+                    uploadBasePath={uploadBasePath}
+                    finalizeUploadAction={finalizeUploadAction}
                   />
                 )}
                 {showProblemStatementSection && (
@@ -1984,6 +1998,8 @@ function ScenarioComponent({
                     onGenerate={generateHandlers["videos"]}
                     showAiGenerate={s?.videos?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
+                    uploadBasePath={uploadBasePath}
+                    finalizeUploadAction={finalizeUploadAction}
                   />
                 )}
                 {showQuestionsSection && (
@@ -2124,7 +2140,10 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
   if (
     prevProps.createScenarioAction !== nextProps.createScenarioAction ||
     prevProps.updateScenarioAction !== nextProps.updateScenarioAction ||
-    prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction
+    prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction ||
+    prevProps.uploadBasePath !== nextProps.uploadBasePath ||
+    prevProps.finalizeUploadAction !== nextProps.finalizeUploadAction ||
+    prevProps.uploadFileAction !== nextProps.uploadFileAction
   ) {
     return false;
   }

@@ -28,12 +28,14 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Code,
+  File,
+  Loader2,
   MessageSquare,
   Settings,
   User,
   Wrench,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface GroupProps {
   groupDetail: PricingGroupDetailOut;
@@ -87,6 +89,169 @@ const formatCost = (cost: number): string => {
   return `$${cost.toFixed(6)}`;
 };
 
+/** Artifact-scoped download base URLs for group content. */
+const GROUP_DOWNLOAD_BASE = "/api/group";
+
+/** Fetch text content for a single upload ID via the group text download proxy. */
+async function fetchGroupTextContent(uploadId: string): Promise<string> {
+  const res = await fetch(`${GROUP_DOWNLOAD_BASE}/text/${uploadId}/download`);
+  if (!res.ok) return "";
+  return res.text();
+}
+
+type GroupMessageItem = {
+  id: string | null;
+  text_upload_ids?: string[];
+};
+
+/** Hook: resolve text_upload_ids to displayable strings for each message. */
+function useGroupTextContents(messages: GroupMessageItem[]) {
+  const [contentMap, setContentMap] = useState<Record<string, string[]>>({});
+  const fetchedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const toFetch: { messageId: string; uploadIds: string[] }[] = [];
+
+    for (const msg of messages) {
+      const mid = msg.id;
+      if (!mid || fetchedRef.current.has(mid)) continue;
+      const ids = msg.text_upload_ids;
+      if (!ids || ids.length === 0) continue;
+      toFetch.push({ messageId: mid, uploadIds: ids });
+      fetchedRef.current.add(mid);
+    }
+
+    if (toFetch.length === 0) return;
+
+    for (const { messageId, uploadIds } of toFetch) {
+      Promise.all(uploadIds.map((id) => fetchGroupTextContent(id))).then(
+        (texts) => {
+          setContentMap((prev) => ({ ...prev, [messageId]: texts }));
+        }
+      );
+    }
+  }, [messages]);
+
+  return contentMap;
+}
+
+/** Render the content of a single message from its upload IDs. */
+function MessageContent({
+  msg,
+  textContents,
+}: {
+  msg: {
+    id: string | null;
+    text_upload_ids?: string[];
+    image_upload_ids?: string[];
+    audio_upload_ids?: string[];
+    video_upload_ids?: string[];
+    file_upload_ids?: string[];
+    call_upload_ids?: string[];
+  };
+  textContents: Record<string, string[]>;
+}) {
+  const texts = msg.id ? textContents[msg.id] : undefined;
+  const textContent = texts?.join("\n") ?? "";
+  const isLoadingText =
+    !texts &&
+    ((msg.text_upload_ids?.length ?? 0) > 0);
+  const hasImages = (msg.image_upload_ids?.length ?? 0) > 0;
+  const hasAudio = (msg.audio_upload_ids?.length ?? 0) > 0;
+  const hasVideo = (msg.video_upload_ids?.length ?? 0) > 0;
+  const hasFiles = (msg.file_upload_ids?.length ?? 0) > 0;
+  const hasCalls = (msg.call_upload_ids?.length ?? 0) > 0;
+  const hasAnyContent =
+    isLoadingText || textContent || hasImages || hasAudio || hasVideo || hasFiles || hasCalls;
+
+  if (!hasAnyContent) {
+    return <p className="text-sm text-muted-foreground italic">No content</p>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Text content */}
+      {isLoadingText ? (
+        <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+      ) : textContent ? (
+        <Markdown>{textContent}</Markdown>
+      ) : null}
+
+      {/* Images */}
+      {hasImages &&
+        msg.image_upload_ids!.map((uploadId) => (
+          <img
+            key={uploadId}
+            src={`${GROUP_DOWNLOAD_BASE}/image/${uploadId}/download`}
+            alt="Message image"
+            className="max-w-full rounded-md"
+            loading="lazy"
+          />
+        ))}
+
+      {/* Audio */}
+      {hasAudio &&
+        msg.audio_upload_ids!.map((uploadId) => (
+          <audio
+            key={uploadId}
+            controls
+            preload="metadata"
+            className="w-full"
+          >
+            <source
+              src={`${GROUP_DOWNLOAD_BASE}/audio/${uploadId}/download`}
+            />
+          </audio>
+        ))}
+
+      {/* Video */}
+      {hasVideo &&
+        msg.video_upload_ids!.map((uploadId) => (
+          <video
+            key={uploadId}
+            controls
+            preload="metadata"
+            className="max-w-full rounded-md"
+          >
+            <source
+              src={`${GROUP_DOWNLOAD_BASE}/video/${uploadId}/download`}
+            />
+          </video>
+        ))}
+
+      {/* Files */}
+      {hasFiles &&
+        msg.file_upload_ids!.map((uploadId) => (
+          <a
+            key={uploadId}
+            href={`${GROUP_DOWNLOAD_BASE}/file/${uploadId}/download`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm underline"
+          >
+            <File className="h-3 w-3" />
+            Download file
+          </a>
+        ))}
+
+      {/* Call recordings */}
+      {hasCalls &&
+        msg.call_upload_ids!.map((uploadId) => (
+          <audio
+            key={uploadId}
+            controls
+            preload="metadata"
+            className="w-full"
+          >
+            <source
+              src={`${GROUP_DOWNLOAD_BASE}/call/${uploadId}/download`}
+            />
+          </audio>
+        ))}
+    </div>
+  );
+}
+
 export default function Group({ groupDetail }: GroupProps) {
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
@@ -110,9 +275,22 @@ export default function Group({ groupDetail }: GroupProps) {
     created_at: string;
   };
 
+  // Message type matching server GroupDetailMessageItem (upload IDs by modality)
+  type MessageItem = {
+    id: string | null;
+    role: string | null;
+    text_upload_ids?: string[];
+    audio_upload_ids?: string[];
+    image_upload_ids?: string[];
+    video_upload_ids?: string[];
+    file_upload_ids?: string[];
+    call_upload_ids?: string[];
+    calls?: CallItem[];
+  };
+
   const runs = useMemo(() => {
     if (!groupResponse) return [];
-    return (groupResponse.runs ?? []) as Array<{ run: { created_at: string; model_id: string | null; agent_id: string | null; profile_id: string | null; cost: number | null; input_tokens: number | null; [key: string]: unknown }; messages: Array<{ id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; calls?: CallItem[]; [key: string]: unknown }>; previous_context_start_index: number | null }>;
+    return (groupResponse.runs ?? []) as Array<{ run: { created_at: string; model_id: string | null; agent_id: string | null; profile_id: string | null; cost: number | null; input_tokens: number | null; [key: string]: unknown }; messages: MessageItem[]; previous_context_start_index: number | null }>;
   }, [groupResponse]);
   
   // Use arrays directly (no mapping construction)
@@ -145,15 +323,13 @@ export default function Group({ groupDetail }: GroupProps) {
   const currentRun = sortedRuns[currentRunIndex];
 
   // Filter messages based on toggle switches
-  // Use the message type from the run structure
-  type MessageItem = { id: string | null; role: string | null; contents: Array<{ content: string | null; [key: string]: unknown }> | null; calls?: CallItem[]; [key: string]: unknown };
   const filteredMessages = useMemo(() => {
     if (!currentRun) {
       return [];
     }
 
     // First filter by previous context (if needed)
-    let messagesToFilter = currentRun.messages as MessageItem[];
+    let messagesToFilter = currentRun.messages;
     if (
       !showPreviousContext &&
       currentRun.previous_context_start_index !== null &&
@@ -162,7 +338,7 @@ export default function Group({ groupDetail }: GroupProps) {
       // Hide messages before the previous_context_start_index (these are from previous runs)
       messagesToFilter = currentRun.messages.slice(
         currentRun.previous_context_start_index
-      ) as MessageItem[];
+      );
     }
 
     // Then filter by system/developer toggles
@@ -180,6 +356,12 @@ export default function Group({ groupDetail }: GroupProps) {
       return true;
     });
   }, [currentRun, showSystemPrompt, showDeveloperPrompt, showPreviousContext]);
+
+  // Fetch text content for all messages with text_upload_ids
+  const allMessages = useMemo(() => {
+    return sortedRuns.flatMap((r) => r.messages);
+  }, [sortedRuns]);
+  const textContents = useGroupTextContents(allMessages);
 
   if (!isGroupResponse) {
     return null; // This component only handles group responses
@@ -329,8 +511,7 @@ export default function Group({ groupDetail }: GroupProps) {
                   <p className="text-sm">No messages found for this run</p>
                 </div>
               ) : (
-                filteredMessages.map((message) => {
-                  const msg = message as MessageItem;
+                filteredMessages.map((msg) => {
                   const role = msg.role || "";
                   const isUser = role.toLowerCase() === "user";
                   const RoleIcon = getRoleIcon(role);
@@ -339,7 +520,7 @@ export default function Group({ groupDetail }: GroupProps) {
                   // Check if this is the boundary between previous context and current run
                   // Find the original index in the unfiltered messages array
                   const originalIndex = currentRun.messages.findIndex(
-                    (m) => (m as MessageItem).id === msg.id
+                    (m) => m.id === msg.id
                   );
                   const isPreviousContextBoundary =
                     currentRun.previous_context_start_index !== null &&
@@ -473,37 +654,7 @@ export default function Group({ groupDetail }: GroupProps) {
                                 : "bg-muted"
                             )}
                           >
-                            {msg.contents && msg.contents.length > 0 ? (
-                              <div className="space-y-2">
-                                {msg.contents.map(
-                                  (contentItem, contentIdx: number) => {
-                                    const content = contentItem as { content: string | null; [key: string]: unknown };
-                                    return (
-                                      <div
-                                        key={contentIdx}
-                                        className="flex items-start gap-2"
-                                      >
-                                        {contentIdx > 0 && (
-                                          <div className="w-0.5 h-full bg-border mt-1.5 min-h-[1rem]" />
-                                        )}
-                                        <div className="flex-1">
-                                          <Markdown>
-                                            {content.content || ""}
-                                          </Markdown>
-                                        </div>
-                                      </div>
-                                    );
-                                  }
-                                )}
-                              </div>
-                            ) : (
-                              // Fallback for backward compatibility
-                              <Markdown>
-                                {message.contents && message.contents.length > 0
-                                  ? message.contents[0]?.content || ""
-                                  : ""}
-                              </Markdown>
-                            )}
+                            <MessageContent msg={msg} textContents={textContents} />
                           </div>
                         </div>
                         {isUser && (

@@ -143,6 +143,7 @@ export function AttemptDocumentArea({
                     active_scenario_count: null,
                     total_scenario_links: null,
                   }}
+                  downloadBaseUrl="/api/attempts/file"
                 />
               )}
             </div>

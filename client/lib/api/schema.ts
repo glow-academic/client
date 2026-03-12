@@ -3644,26 +3644,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/profiles/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Context
-         * @description Identity + permissions + theme context endpoint.
-         */
-        post: operations["get_profile_context_api_v5_artifacts_profiles_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/profiles/get": {
         parameters: {
             query?: never;
@@ -5904,26 +5884,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/activity/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Problem
-         * @description Create new problem entry.
-         */
-        post: operations["create_problem_api_v5_artifacts_activity_problem_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/activity/refresh": {
         parameters: {
             query?: never;
@@ -6401,6 +6361,46 @@ export interface paths {
          * @description Search tests — composable infra architecture.
          */
         post: operations["search_test_api_v5_artifacts_test_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile Context
+         * @description Identity + permissions + theme context endpoint.
+         */
+        post: operations["get_profile_context_api_v5_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Problem
+         * @description Create new problem entry.
+         */
+        post: operations["create_problem_api_v5_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -31099,10 +31099,9 @@ export interface components {
         };
         /**
          * ProfileContextApiResponse
-         * @description Response for POST /artifacts/profiles/context — identity + permissions + theme.
+         * @description Response for POST /context — identity + permissions + theme.
          *
-         *     Thin wrapper over resolve_profile_identity_context().
-         *     Replaces the old /auth/profile and /auth/settings endpoints.
+         *     Root-level layout route (mounted at /api/v5/context).
          */
         ProfileContextApiResponse: {
             /** Id */
@@ -45553,43 +45552,6 @@ export interface operations {
             };
         };
     };
-    get_profile_context_api_v5_artifacts_profiles_context_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileContextApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileContextApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_profile_api_v5_artifacts_profiles_get_post: {
         parameters: {
             query?: never;
@@ -49616,43 +49578,6 @@ export interface operations {
             };
         };
     };
-    create_problem_api_v5_artifacts_activity_problem_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateProblemRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateProblemResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     activity_refresh_api_v5_artifacts_activity_refresh_post: {
         parameters: {
             query?: never;
@@ -50500,6 +50425,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchTestApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_context_api_v5_context_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileContextApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_problem_api_v5_problem_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProblemRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateProblemResponse"];
                 };
             };
             /** @description Validation Error */

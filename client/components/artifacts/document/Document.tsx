@@ -153,6 +153,15 @@ export interface DocumentProps {
   createTextsAction?: (
     input: CreateDraftTextsIn,
   ) => Promise<CreateDraftTextsOut>;
+  // Artifact-scoped upload props
+  uploadBasePath?: string;
+  finalizeUploadAction?: (
+    uploadId: string,
+  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
+  uploadFileAction?: (
+    modality: "file" | "image" | "text",
+    formData: FormData,
+  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
 }
 
 function DocumentComponent({
@@ -168,6 +177,9 @@ function DocumentComponent({
   createUploadsAction,
   createImagesAction,
   createTextsAction,
+  uploadBasePath,
+  finalizeUploadAction,
+  uploadFileAction,
 }: DocumentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!documentId;
@@ -1173,6 +1185,8 @@ function DocumentComponent({
                   documentDetail?.uploads?.show_ai_generate ?? false
                 }
                 createUploadsAction={createUploadsAction}
+                uploadBasePath={uploadBasePath}
+                finalizeUploadAction={finalizeUploadAction}
                 searchTerm={uploadSearchTerm}
                 registerFlush={registerFlushCallbacks["uploads"]}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -1232,6 +1246,8 @@ function DocumentComponent({
                   documentDetail?.images?.show_ai_generate ?? false
                 }
                 createImagesAction={createImagesAction}
+                uploadBasePath={uploadBasePath}
+                finalizeUploadAction={finalizeUploadAction}
                 registerFlush={registerFlushCallbacks["images"]}
                 isAutosaveEnabled={isAutosaveEnabled}
               />

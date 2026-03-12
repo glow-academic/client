@@ -32,6 +32,8 @@ interface GenerationPanelProps {
   validArtifactTypes: TypeItem[];
   validResourceTypes: TypeItem[];
   validEntryTypes: TypeItem[];
+  /** Base URL for downloads. Defaults to "/api/uploads". */
+  downloadBaseUrl?: string;
 }
 
 export function GenerationPanel({
@@ -40,6 +42,7 @@ export function GenerationPanel({
   validArtifactTypes,
   validResourceTypes,
   validEntryTypes,
+  downloadBaseUrl,
 }: GenerationPanelProps) {
   return (
     <SidebarProvider
@@ -55,6 +58,7 @@ export function GenerationPanel({
             totalCount={panel.totalMessageCount}
             isLoading={panel.isLoadingMessages}
             onLoadMore={panel.loadMoreMessages}
+            downloadBaseUrl={downloadBaseUrl}
           />
         </SidebarContent>
 

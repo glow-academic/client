@@ -11,17 +11,19 @@ interface MessageTimelineProps {
   totalCount: number;
   isLoading: boolean;
   onLoadMore: () => void;
+  /** Base URL for downloads. Defaults to "/api/uploads". */
+  downloadBaseUrl?: string;
 }
 
 /** Fetch text content for a single upload ID via the download proxy. */
-async function fetchTextContent(uploadId: string): Promise<string> {
-  const res = await fetch(`/api/uploads/${uploadId}/download`);
+async function fetchTextContent(uploadId: string, baseUrl: string): Promise<string> {
+  const res = await fetch(`${baseUrl}/${uploadId}/download`);
   if (!res.ok) return "";
   return res.text();
 }
 
 /** Hook: resolve text_upload_ids → displayable strings for each message. */
-function useTextContents(messages: GroupMessage[]) {
+function useTextContents(messages: GroupMessage[], downloadBaseUrl: string) {
   const [contentMap, setContentMap] = useState<Record<string, string[]>>({});
   const fetchedRef = useRef<Set<string>>(new Set());
 
@@ -40,11 +42,11 @@ function useTextContents(messages: GroupMessage[]) {
     if (toFetch.length === 0) return;
 
     for (const { messageId, uploadIds } of toFetch) {
-      Promise.all(uploadIds.map(fetchTextContent)).then((texts) => {
+      Promise.all(uploadIds.map((id) => fetchTextContent(id, downloadBaseUrl))).then((texts) => {
         setContentMap((prev) => ({ ...prev, [messageId]: texts }));
       });
     }
-  }, [messages]);
+  }, [messages, downloadBaseUrl]);
 
   return contentMap;
 }
@@ -54,10 +56,11 @@ export function MessageTimeline({
   totalCount,
   isLoading,
   onLoadMore,
+  downloadBaseUrl = "/api/uploads",
 }: MessageTimelineProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevLengthRef = useRef(messages.length);
-  const textContents = useTextContents(messages);
+  const textContents = useTextContents(messages, downloadBaseUrl);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {

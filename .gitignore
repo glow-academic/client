@@ -13,9 +13,14 @@ database/schema.sql
 server/tests/test-schema.sql
 .venv/
 uploads/tus_uploads/
+server/uploads/tus_uploads/
 uploads/audio/
 uploads/image
 uploads/video/
+
+# Python bytecode
+__pycache__/
+*.pyc
 
 # Server cache and coverage files
 server/.mypy_cache/

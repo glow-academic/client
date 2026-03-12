@@ -10,6 +10,8 @@ export interface ImageViewerProps {
   mimeType?: string;
   bare?: boolean;
   compact?: boolean;
+  /** Base URL for downloads. Defaults to "/api/uploads". */
+  downloadBaseUrl?: string;
 }
 
 export default function ImageViewer({
@@ -18,6 +20,7 @@ export default function ImageViewer({
   mimeType,
   bare = true,
   compact: _compact = false,
+  downloadBaseUrl = "/api/uploads",
 }: ImageViewerProps) {
   const [content, setContent] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(mimeType || null);
@@ -39,7 +42,7 @@ export default function ImageViewer({
         }
         setContent(null);
 
-        const response = await fetch(`/api/uploads/${imageId}/download`, {
+        const response = await fetch(`${downloadBaseUrl}/${imageId}/download`, {
           method: "GET",
           credentials: "include",
         });
@@ -79,7 +82,7 @@ export default function ImageViewer({
         URL.revokeObjectURL(blobUrl);
       }
     };
-  }, [imageId]); // Only depend on imageId
+  }, [imageId, downloadBaseUrl]);
 
   const renderContent = () => {
     if (loading) {

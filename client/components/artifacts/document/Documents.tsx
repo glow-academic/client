@@ -109,7 +109,7 @@ const DocumentPreviewThumb = ({ document }: { document: DocumentRow }) => {
   return (
     <div className="h-12 w-10 rounded border overflow-hidden bg-muted/40">
       <img
-        src={`/api/uploads/${document.upload_id}/download?preview=true`}
+        src={`/api/documents/file/${document.upload_id}/download?preview=true`}
         alt={document.name ?? "Document preview"}
         className="h-full w-full object-cover"
         loading="lazy"
@@ -817,6 +817,7 @@ export default function Documents({
                   }}
                   bare={true}
                   isFormDocument={false}
+                  downloadBaseUrl="/api/documents/file"
                 />
               </div>
             )}
