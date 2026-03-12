@@ -586,6 +586,7 @@ DashboardPrimaryMetrics.model_rebuild()
 class ExportDashboardApiResponse(BaseModel):
     """Response model for dashboard export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

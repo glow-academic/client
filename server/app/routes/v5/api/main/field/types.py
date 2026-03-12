@@ -280,6 +280,7 @@ class DuplicateFieldApiResponse(BaseModel):
 class ExportFieldApiResponse(BaseModel):
     """Response model for export field endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

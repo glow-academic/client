@@ -595,8 +595,9 @@ class ExportScenarioApiRequest(BaseModel):
 class ExportScenarioApiResponse(BaseModel):
     """Response model for export scenario endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

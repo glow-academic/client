@@ -183,6 +183,7 @@ class GroupInternalData:
 class ExportGroupApiResponse(BaseModel):
     """Response model for group export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

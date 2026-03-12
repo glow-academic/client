@@ -16,7 +16,6 @@ async def export_leaderboard(
 ) -> ExportLeaderboardApiResponse:
     """Export all leaderboard data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id
-    session_id = http_request.state.session_id
     pool = get_pool()
     redis = get_redis_client()
 
@@ -24,5 +23,4 @@ async def export_leaderboard(
         pool,
         redis,
         profile_id=profile_id,
-        session_id=session_id,
     )

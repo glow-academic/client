@@ -317,6 +317,7 @@ class PatchEvalDraftApiResponse(BaseModel):
 class ExportEvalApiResponse(BaseModel):
     """Response model for export eval endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

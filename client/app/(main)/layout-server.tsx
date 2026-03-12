@@ -233,11 +233,11 @@ const EXPORT_ENDPOINT_MAP: Record<string, string> = {
 export async function exportPage(
   page: string,
   filters: Record<string, unknown>,
-): Promise<{ upload_id: string; file_name: string; row_count: number }> {
+): Promise<{ content: string; file_name: string; mime_type: string; row_count: number }> {
   "use server";
   const endpoint = EXPORT_ENDPOINT_MAP[page];
   if (!endpoint) throw new Error(`No export for page: ${page}`);
-  return api.post(endpoint as Parameters<typeof api.post>[0], { body: filters }) as Promise<{ upload_id: string; file_name: string; row_count: number }>;
+  return api.post(endpoint as Parameters<typeof api.post>[0], { body: filters }) as Promise<{ content: string; file_name: string; mime_type: string; row_count: number }>;
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */

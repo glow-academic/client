@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import io
 import zipfile
 
@@ -20,7 +21,6 @@ from app.routes.v5.tools.entries.run_pricing.create import (
 )
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.routes.v5.tools.resources.agents.create import create_agent
 from app.routes.v5.tools.resources.models.create import create_model
 from app.routes.v5.tools.resources.pricing.create import create_pricing
@@ -170,7 +170,7 @@ class TestPricingDocsClient:
 
 class TestExportPricingClient:
     async def test_exports_pricing_zip(
-        self, pool, redis_client, profile_identity_factory, tmp_path
+        self, pool, redis_client, profile_identity_factory
     ):
         profile = await profile_identity_factory()
 
@@ -183,20 +183,15 @@ class TestExportPricingClient:
             pool,
             redis_client,
             profile_id=profile.artifact_id,
-            session_id=session.id,
-            upload_folder=tmp_path,
         )
 
         assert result.row_count >= 1
         assert result.file_name.endswith(".zip")
+        assert result.mime_type == "application/zip"
+        assert result.content != ""
 
-        async with pool.acquire() as conn:
-            upload = await get_upload(conn, result.upload_id)
-
-        zip_path = tmp_path / upload.file_path
-        assert zip_path.exists()
-
-        with zipfile.ZipFile(io.BytesIO(zip_path.read_bytes())) as archive:
+        zip_bytes = base64.b64decode(result.content)
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
             assert archive.namelist() == ["runs.csv"]
             runs_csv = archive.read("runs.csv").decode("utf-8")
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import io
 import zipfile
 from datetime import UTC, datetime
@@ -16,8 +17,6 @@ from app.infra.metrics_snapshot import write_health_checks, write_metrics_snapsh
 from app.routes.v5.tools.entries.health.create import create_health
 from app.routes.v5.tools.entries.metrics.create import create_metrics_entry_internal
 from app.routes.v5.tools.entries.metrics.refresh import refresh_metrics_internal
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.uploads.get import get_upload
 
 pytestmark = pytest.mark.asyncio
 
@@ -86,32 +85,26 @@ class TestHealthDocsClient:
 
 class TestExportHealthClient:
     async def test_exports_health_and_metrics_zip(
-        self, pool, redis_client, profile_identity_factory, tmp_path
+        self, pool, redis_client, profile_identity_factory
     ):
         profile = await profile_identity_factory()
 
         async with pool.acquire() as conn:
             await _seed_health_metrics(conn)
-            session = await create_session(conn, profile_id=profile.profile_resource_id)
 
         result = await export_health_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
-            session_id=session.id,
-            upload_folder=tmp_path,
         )
 
         assert result.row_count >= 2
         assert result.file_name.endswith(".zip")
+        assert result.mime_type == "application/zip"
+        assert result.content != ""
 
-        async with pool.acquire() as conn:
-            upload = await get_upload(conn, result.upload_id)
-
-        zip_path = tmp_path / upload.file_path
-        assert zip_path.exists()
-
-        with zipfile.ZipFile(io.BytesIO(zip_path.read_bytes())) as archive:
+        zip_bytes = base64.b64decode(result.content)
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
             assert sorted(archive.namelist()) == ["health.csv", "metrics.csv"]
             health_csv = archive.read("health.csv").decode("utf-8")
             metrics_csv = archive.read("metrics.csv").decode("utf-8")

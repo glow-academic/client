@@ -11,9 +11,9 @@ Composes existing black-box tools:
 
 from __future__ import annotations
 
+import base64
 import csv
 import io
-import os
 import zipfile
 from datetime import datetime
 from uuid import UUID
@@ -21,12 +21,10 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
 from app.infra.pricing import compute_costs_from_runs
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.groups.get import get_groups
 from app.routes.v5.tools.entries.runs.search import search_runs
-from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.resources.names.get import get_names
 
 PIPE = "|"
@@ -57,9 +55,7 @@ async def export_group_impl(
     redis: Redis,
     *,
     profile_id: UUID,
-    session_id: UUID,
     group_id: UUID,
-    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
 ) -> dict:
     """Group export using composable infra functions."""
     from fastapi import HTTPException
@@ -83,8 +79,9 @@ async def export_group_impl(
 
     if not groups:
         return ExportGroupApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+            content="",
             file_name="",
+            mime_type="application/zip",
             row_count=0,
         )
 
@@ -167,28 +164,13 @@ async def export_group_impl(
     zip_content = zip_buffer.getvalue()
     row_count = len(groups) + len(runs)
 
-    # Write ZIP to upload folder
+    content = base64.b64encode(zip_content).decode("ascii")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"group_export_{timestamp}.zip"
-    file_path = os.path.join(str(upload_folder), file_name)
-
-    os.makedirs(str(upload_folder), exist_ok=True)
-    with open(file_path, "wb") as f:
-        f.write(zip_content)
-
-    # Create upload entry via black-box tool
-    file_size = len(zip_content)
-    async with pool.acquire() as conn:
-        upload_result = await create_upload(
-            conn,
-            session_id=session_id,
-            file_path=file_name,
-            mime_type="application/zip",
-            size=file_size,
-        )
 
     return ExportGroupApiResponse(
-        upload_id=upload_result.id,
+        content=content,
         file_name=file_name,
+        mime_type="application/zip",
         row_count=row_count,
     )

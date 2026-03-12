@@ -152,6 +152,7 @@ class SessionInternalData:
 class ExportSessionApiResponse(BaseModel):
     """Response model for session export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

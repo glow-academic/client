@@ -75,6 +75,7 @@ class ListRecordRequest(BaseModel):
 class ExportRecordApiResponse(BaseModel):
     """Response model for record export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

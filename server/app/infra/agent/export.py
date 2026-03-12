@@ -11,20 +11,18 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+import base64
 import csv
 import io
-import os
 from datetime import datetime
 from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.artifacts.agent.get import get_agents
 from app.routes.v5.tools.artifacts.agent.search import search_agents
-from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.models.get import get_models
@@ -55,9 +53,7 @@ async def export_agent_impl(
     redis: Redis,
     *,
     profile_id: UUID,
-    session_id: UUID,
     agent_id: UUID | None = None,
-    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
 ) -> dict:
     """Agent full export using composable infra functions.
 
@@ -97,8 +93,9 @@ async def export_agent_impl(
 
         if not agent_ids:
             return ExportAgentApiResponse(
-                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                content="",
                 file_name="",
+                mime_type="text/csv",
                 row_count=0,
             )
 
@@ -254,28 +251,13 @@ async def export_agent_impl(
     csv_content = output.getvalue()
     row_count = len(artifacts)
 
-    # Write CSV to upload folder
+    content = base64.b64encode(csv_content.encode("utf-8")).decode("ascii")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"agents_export_{timestamp}.csv"
-    file_path = os.path.join(str(upload_folder), file_name)
-
-    os.makedirs(str(upload_folder), exist_ok=True)
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(csv_content)
-
-    # Create upload entry via black-box tool
-    file_size = len(csv_content.encode("utf-8"))
-    async with pool.acquire() as conn:
-        upload_result = await create_upload(
-            conn,
-            session_id=session_id,
-            file_path=file_name,
-            mime_type="text/csv",
-            size=file_size,
-        )
 
     return ExportAgentApiResponse(
-        upload_id=upload_result.id,
+        content=content,
         file_name=file_name,
+        mime_type="text/csv",
         row_count=row_count,
     )

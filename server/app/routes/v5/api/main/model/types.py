@@ -385,6 +385,7 @@ class GetModelDraftsApiResponse(BaseModel):
 class ExportModelApiResponse(BaseModel):
     """Response model for export model endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

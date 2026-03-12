@@ -541,8 +541,9 @@ class ExportCohortApiRequest(BaseModel):
 class ExportCohortApiResponse(BaseModel):
     """Response model for export cohort endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

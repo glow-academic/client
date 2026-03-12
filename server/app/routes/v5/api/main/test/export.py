@@ -24,13 +24,11 @@ async def export_test(
 ) -> ExportTestApiResponse:
     """Export test data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id
-    session_id = http_request.state.session_id
     pool = get_pool()
 
     return await export_test_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,
-        session_id=session_id,
         test_id=body.test_id,
     )

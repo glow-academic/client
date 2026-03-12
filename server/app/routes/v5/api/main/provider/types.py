@@ -287,8 +287,9 @@ class GetProviderDraftsApiResponse(BaseModel):
 class ExportProviderApiResponse(BaseModel):
     """Response model for export provider endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

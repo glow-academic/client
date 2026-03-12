@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.infra.chat.export import export_chat_impl
@@ -25,7 +25,6 @@ class ExportChatApiRequest(BaseModel):
 async def export_chat(
     body: ExportChatApiRequest,
     http_request: Request,
-    response: Response,
 ) -> ExportChatApiResponse:
     """Export a single chat as a clean, denormalized CSV."""
     profile_id = http_request.state.profile_id
@@ -48,7 +47,6 @@ async def export_chat(
         pool,
         redis,
         profile_id=profile_id,
-        session_id=session_id,
         chat_entry_id=body.chat_entry_id,
         group_id=group_id,
         attempt_id=body.attempt_id,

@@ -25,12 +25,10 @@ async def export_group(
     """Export group data as a clean, denormalized ZIP."""
     pool = get_pool()
     profile_id = http_request.state.profile_id
-    session_id = http_request.state.session_id
 
     return await export_group_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,
-        session_id=session_id,
         group_id=body.group_id,
     )

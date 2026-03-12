@@ -330,8 +330,9 @@ class PatchProfileDraftApiResponse(BaseModel):
 class ExportProfileApiResponse(BaseModel):
     """Response model for export profile endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

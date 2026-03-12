@@ -21,8 +21,9 @@ from app.routes.v5.api.main.types import HistoryResponse
 class ExportPracticeApiResponse(BaseModel):
     """Response model for practice export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

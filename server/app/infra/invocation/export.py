@@ -9,19 +9,17 @@ Composes existing black-box tools:
 
 from __future__ import annotations
 
+import base64
 import csv
 import io
-import os
 from datetime import datetime
 from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
 from app.infra.invocation.context import resolve_invocation_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.entries.uploads.create import create_upload
 
 PIPE = "|"
 
@@ -50,12 +48,10 @@ async def export_invocation_impl(
     redis: Redis,
     *,
     profile_id: UUID,
-    session_id: UUID,
     test_id: UUID,
     group_id: UUID,
     invocation_entry_id: UUID | None = None,
     draft_id: UUID | None = None,
-    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
 ) -> dict:
     """Invocation single-item export using composable infra functions.
 
@@ -203,28 +199,13 @@ async def export_invocation_impl(
     csv_content = output.getvalue()
     row_count = 1
 
-    # Write CSV to upload folder
+    content = base64.b64encode(csv_content.encode("utf-8")).decode("ascii")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"invocation_export_{timestamp}.csv"
-    file_path = os.path.join(str(upload_folder), file_name)
-
-    os.makedirs(str(upload_folder), exist_ok=True)
-    with open(file_path, "w", encoding="utf-8") as f:
-        f.write(csv_content)
-
-    # Create upload entry via black-box tool
-    file_size = len(csv_content.encode("utf-8"))
-    async with pool.acquire() as conn:
-        upload_result = await create_upload(
-            conn,
-            session_id=session_id,
-            file_path=file_name,
-            mime_type="text/csv",
-            size=file_size,
-        )
 
     return ExportInvocationApiResponse(
-        upload_id=upload_result.id,
+        content=content,
         file_name=file_name,
+        mime_type="text/csv",
         row_count=row_count,
     )

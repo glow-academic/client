@@ -256,8 +256,9 @@ class PatchRubricDraftApiResponse(BaseModel):
 class ExportRubricApiResponse(BaseModel):
     """Response model for export rubric endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

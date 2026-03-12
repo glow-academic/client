@@ -10,22 +10,19 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+import base64
 import csv
 import io
-import os
 import zipfile
 from datetime import datetime
-from pathlib import Path
 from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.globals import get_upload_folder
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.health.search import search_health
 from app.routes.v5.tools.entries.metrics.search import search_metrics
-from app.routes.v5.tools.entries.uploads.create import create_upload
 
 HEALTH_CSV_COLUMNS = [
     "date_hour",
@@ -63,8 +60,6 @@ async def export_health_impl(
     redis: Redis,
     *,
     profile_id: UUID,
-    session_id: UUID,
-    upload_folder: str | os.PathLike[str] | None = None,
 ) -> dict:
     """Health full export using composable infra functions.
 
@@ -72,15 +67,11 @@ async def export_health_impl(
       1. resolve_profile_identity_context → role, department_ids
       2. Parallel search health + metrics (full dump, no pagination)
       3. No resource hydration needed (raw metrics data)
-      4. Generate ZIP (health.csv + metrics.csv) + create upload entry
+      4. Generate ZIP (health.csv + metrics.csv) and return base64-encoded content
     """
     from fastapi import HTTPException
 
     from app.routes.v5.api.main.health.types import ExportHealthApiResponse
-
-    effective_upload_folder = (
-        Path(upload_folder) if upload_folder is not None else get_upload_folder()
-    )
 
     # -- Step 1: Profile context --
 
@@ -112,8 +103,9 @@ async def export_health_impl(
 
     if not health_entries and not metrics_entries:
         return ExportHealthApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+            content="",
             file_name="",
+            mime_type="application/zip",
             row_count=0,
         )
 
@@ -176,28 +168,13 @@ async def export_health_impl(
     zip_content = zip_buffer.getvalue()
     row_count = len(health_entries) + len(metrics_entries)
 
-    # Write ZIP to upload folder
+    content = base64.b64encode(zip_content).decode("ascii")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"health_export_{timestamp}.zip"
-    file_path = os.path.join(str(effective_upload_folder), file_name)
-
-    os.makedirs(str(effective_upload_folder), exist_ok=True)
-    with open(file_path, "wb") as f:
-        f.write(zip_content)
-
-    # Create upload entry via black-box tool
-    file_size = len(zip_content)
-    async with pool.acquire() as conn:
-        upload_result = await create_upload(
-            conn,
-            session_id=session_id,
-            file_path=file_name,
-            mime_type="application/zip",
-            size=file_size,
-        )
 
     return ExportHealthApiResponse(
-        upload_id=upload_result.id,
+        content=content,
         file_name=file_name,
+        mime_type="application/zip",
         row_count=row_count,
     )

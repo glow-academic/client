@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from uuid import UUID
-
 from pydantic import BaseModel, Field
 
 from app.routes.auth.types import AnalyticsFacets
@@ -117,6 +115,7 @@ class BenchmarkResponse(BaseModel):
 class ExportBenchmarkApiResponse(BaseModel):
     """Response model for benchmark export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

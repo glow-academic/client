@@ -52803,14 +52803,17 @@
       },
       "ExportActivityApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -52819,8 +52822,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportActivityApiResponse",
@@ -52847,14 +52851,17 @@
       },
       "ExportAgentApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -52863,8 +52870,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportAgentApiResponse",
@@ -52886,14 +52894,17 @@
       },
       "ExportAttemptApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -52902,8 +52913,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportAttemptApiResponse",
@@ -52930,14 +52942,17 @@
       },
       "ExportAuthApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -52946,8 +52961,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportAuthApiResponse",
@@ -52955,14 +52971,17 @@
       },
       "ExportBenchmarkApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -52971,8 +52990,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportBenchmarkApiResponse",
@@ -53019,14 +53039,17 @@
       },
       "ExportChatApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53035,8 +53058,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportChatApiResponse",
@@ -53063,14 +53087,17 @@
       },
       "ExportCohortApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53079,8 +53106,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportCohortApiResponse",
@@ -53088,14 +53116,17 @@
       },
       "ExportDashboardApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53104,8 +53135,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportDashboardApiResponse",
@@ -53132,14 +53164,17 @@
       },
       "ExportDepartmentApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53148,8 +53183,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportDepartmentApiResponse",
@@ -53176,14 +53212,17 @@
       },
       "ExportDocumentApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53192,8 +53231,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportDocumentApiResponse",
@@ -53220,14 +53260,17 @@
       },
       "ExportEvalApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53236,8 +53279,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportEvalApiResponse",
@@ -53264,14 +53308,17 @@
       },
       "ExportFieldApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53280,8 +53327,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportFieldApiResponse",
@@ -53303,14 +53351,17 @@
       },
       "ExportGroupApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53319,8 +53370,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportGroupApiResponse",
@@ -53328,14 +53380,17 @@
       },
       "ExportHealthApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53344,8 +53399,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportHealthApiResponse",
@@ -53353,14 +53409,17 @@
       },
       "ExportHomeApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53369,8 +53428,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportHomeApiResponse",
@@ -53378,14 +53438,17 @@
       },
       "ExportLeaderboardApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53394,8 +53457,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportLeaderboardApiResponse",
@@ -53422,14 +53486,17 @@
       },
       "ExportModelApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53438,8 +53505,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportModelApiResponse",
@@ -53466,14 +53534,17 @@
       },
       "ExportParameterApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53482,8 +53553,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportParameterApiResponse",
@@ -53563,14 +53635,17 @@
       },
       "ExportPersonaApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53579,8 +53654,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportPersonaApiResponse",
@@ -53588,14 +53664,17 @@
       },
       "ExportPracticeApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53604,8 +53683,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportPracticeApiResponse",
@@ -53613,14 +53693,17 @@
       },
       "ExportPricingApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53629,8 +53712,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportPricingApiResponse",
@@ -53657,14 +53741,17 @@
       },
       "ExportProfileApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53673,8 +53760,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportProfileApiResponse",
@@ -53701,14 +53789,17 @@
       },
       "ExportProviderApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53717,8 +53808,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportProviderApiResponse",
@@ -53740,14 +53832,17 @@
       },
       "ExportRecordApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53756,8 +53851,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportRecordApiResponse",
@@ -53765,14 +53861,17 @@
       },
       "ExportReportsApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53781,8 +53880,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportReportsApiResponse",
@@ -53809,14 +53909,17 @@
       },
       "ExportRubricApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53825,8 +53928,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportRubricApiResponse",
@@ -53906,14 +54010,17 @@
       },
       "ExportScenarioApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53922,8 +54029,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportScenarioApiResponse",
@@ -53945,14 +54053,17 @@
       },
       "ExportSessionApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -53961,8 +54072,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportSessionApiResponse",
@@ -53989,14 +54101,17 @@
       },
       "ExportSettingApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -54005,8 +54120,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportSettingApiResponse",
@@ -54086,14 +54202,17 @@
       },
       "ExportSimulationApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -54102,8 +54221,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportSimulationApiResponse",
@@ -54125,14 +54245,17 @@
       },
       "ExportTestApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -54141,8 +54264,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportTestApiResponse",
@@ -54169,14 +54293,17 @@
       },
       "ExportToolApiResponse": {
         "properties": {
-          "upload_id": {
+          "content": {
             "type": "string",
-            "format": "uuid",
-            "title": "Upload Id"
+            "title": "Content"
           },
           "file_name": {
             "type": "string",
             "title": "File Name"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
           },
           "row_count": {
             "type": "integer",
@@ -54185,8 +54312,9 @@
         },
         "type": "object",
         "required": [
-          "upload_id",
+          "content",
           "file_name",
+          "mime_type",
           "row_count"
         ],
         "title": "ExportToolApiResponse",

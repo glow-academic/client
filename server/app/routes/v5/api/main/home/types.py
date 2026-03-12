@@ -21,8 +21,9 @@ from app.routes.v5.api.main.types import HistoryResponse
 class ExportHomeApiResponse(BaseModel):
     """Response model for home certificate export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

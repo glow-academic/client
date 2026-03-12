@@ -13,9 +13,9 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+import base64
 import csv
 import io
-import os
 import zipfile
 from datetime import datetime
 from uuid import UUID
@@ -24,11 +24,9 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.personas.get import get_personas
@@ -76,7 +74,6 @@ async def export_record_client(
     redis: Redis,  # type: ignore[type-arg]
     *,
     profile_id: UUID,
-    session_id: UUID,
     target_profile_id: UUID,
 ) -> dict:
     """Record export using composable infra functions.
@@ -125,8 +122,9 @@ async def export_record_client(
 
     if not attempts and not chats:
         return ExportRecordApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+            content="",
             file_name="",
+            mime_type="application/zip",
             row_count=0,
         )
 
@@ -283,26 +281,13 @@ async def export_record_client(
     zip_content = zip_buffer.getvalue()
     row_count = len(attempts) + len(chats)
 
+    content = base64.b64encode(zip_content).decode("ascii")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"record_export_{timestamp}.zip"
-    file_path = os.path.join(str(UPLOAD_FOLDER), file_name)
-
-    os.makedirs(str(UPLOAD_FOLDER), exist_ok=True)
-    with open(file_path, "wb") as f:
-        f.write(zip_content)
-
-    file_size = len(zip_content)
-    async with pool.acquire() as conn:
-        upload_result = await create_upload(
-            conn,
-            session_id=session_id,
-            file_path=file_name,
-            mime_type="application/zip",
-            size=file_size,
-        )
 
     return ExportRecordApiResponse(
-        upload_id=upload_result.id,
+        content=content,
         file_name=file_name,
+        mime_type="application/zip",
         row_count=row_count,
     )

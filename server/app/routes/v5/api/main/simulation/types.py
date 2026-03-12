@@ -621,8 +621,9 @@ class ExportSimulationApiRequest(BaseModel):
 class ExportSimulationApiResponse(BaseModel):
     """Response model for export simulation endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

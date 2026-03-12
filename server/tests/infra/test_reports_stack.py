@@ -8,7 +8,6 @@ from app.infra.reports.context import resolve_reports_context
 from app.infra.reports.docs import docs_reports_impl
 from app.infra.reports.export import export_reports_impl
 from app.infra.reports.refresh import refresh_reports_impl
-from app.routes.v5.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 
@@ -58,23 +57,20 @@ class TestExportReportsClient:
     ):
         profile = await profile_identity_factory()
 
-        async with pool.acquire() as conn:
-            session = await create_session(conn, profile_id=profile.profile_resource_id)
-
         result = await export_reports_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
-            session_id=session.id,
         )
 
         if result.row_count == 0:
-            assert str(result.upload_id) == "00000000-0000-0000-0000-000000000000"
+            assert result.content == ""
             assert result.file_name == ""
             return
 
         assert result.file_name.endswith(".zip")
-        assert str(result.upload_id) != "00000000-0000-0000-0000-000000000000"
+        assert result.mime_type == "application/zip"
+        assert result.content != ""
         assert result.row_count > 0
 
 

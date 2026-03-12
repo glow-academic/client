@@ -118,6 +118,7 @@ class ListPricingResponse(BaseModel):
 class ExportPricingApiResponse(BaseModel):
     """Response model for pricing export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

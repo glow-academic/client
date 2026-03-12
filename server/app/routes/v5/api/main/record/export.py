@@ -26,12 +26,10 @@ async def export_record(
     pool = get_pool()
     redis = get_redis_client()
     profile_id = http_request.state.profile_id
-    session_id = http_request.state.session_id
 
     return await export_record_client(
         pool,
         redis,
         profile_id=profile_id,
-        session_id=session_id,
         target_profile_id=body.target_profile_id,
     )

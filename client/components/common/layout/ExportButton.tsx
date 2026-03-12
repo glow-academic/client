@@ -60,7 +60,18 @@ export function ExportButton({ exportPage }: ExportButtonProps) {
       };
 
       const result = await exportPage(page, filters);
-      window.open(`/api/uploads/${result.upload_id}/download`, "_blank");
+      const bytes = Uint8Array.from(atob(result.content), (c) =>
+        c.charCodeAt(0),
+      );
+      const blob = new Blob([bytes], { type: result.mime_type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     } catch {
       toast.error("Failed to export data");
     } finally {

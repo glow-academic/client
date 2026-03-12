@@ -342,6 +342,7 @@ class DuplicateParameterApiResponse(BaseModel):
 class ExportParameterApiResponse(BaseModel):
     """Response model for export parameter endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

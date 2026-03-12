@@ -11,12 +11,11 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+import base64
 import csv
 import io
-import os
 import zipfile
 from datetime import datetime
-from pathlib import Path
 from uuid import UUID
 
 import asyncpg
@@ -24,13 +23,11 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.globals import get_upload_folder
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.benchmark.search import search_benchmarks
 from app.routes.v5.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 
@@ -77,8 +74,9 @@ INVOCATION_CSV_COLUMNS = [
 class ExportBenchmarkApiResponse(BaseModel):
     """Response model for benchmark export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 
@@ -91,8 +89,6 @@ async def export_benchmark_impl(
     redis: Redis,  # type: ignore[type-arg]
     *,
     profile_id: UUID,
-    session_id: UUID,
-    upload_folder: str | os.PathLike[str] | None = None,
 ) -> ExportBenchmarkApiResponse:
     """Benchmark full export using composable infra functions.
 
@@ -101,11 +97,8 @@ async def export_benchmark_impl(
       2. search_benchmarks → all entries (full dump)
       3. search_test_invocation_entries_internal → all test invocations
       4. Parallel resource hydration → human-readable values
-      5. Generate ZIP (benchmarks.csv + test_invocations.csv) + create upload entry
+      5. Generate ZIP (benchmarks.csv + test_invocations.csv) and return base64-encoded content
     """
-    effective_upload_folder = (
-        Path(upload_folder) if upload_folder is not None else get_upload_folder()
-    )
 
     # -- Step 1: Profile context --
     profile = await resolve_profile_identity_context(pool, profile_id, redis)
@@ -127,8 +120,9 @@ async def export_benchmark_impl(
 
     if not benchmarks and not invocations:
         return ExportBenchmarkApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+            content="",
             file_name="",
+            mime_type="application/zip",
             row_count=0,
         )
 
@@ -243,26 +237,13 @@ async def export_benchmark_impl(
     zip_content = zip_buffer.getvalue()
     row_count = len(benchmarks) + len(invocations)
 
+    content = base64.b64encode(zip_content).decode("ascii")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"benchmark_export_{timestamp}.zip"
-    file_path = os.path.join(str(effective_upload_folder), file_name)
-
-    os.makedirs(str(effective_upload_folder), exist_ok=True)
-    with open(file_path, "wb") as f:
-        f.write(zip_content)
-
-    file_size = len(zip_content)
-    async with pool.acquire() as conn:
-        upload_result = await create_upload(
-            conn,
-            session_id=session_id,
-            file_path=file_name,
-            mime_type="application/zip",
-            size=file_size,
-        )
 
     return ExportBenchmarkApiResponse(
-        upload_id=upload_result.id,
+        content=content,
         file_name=file_name,
+        mime_type="application/zip",
         row_count=row_count,
     )

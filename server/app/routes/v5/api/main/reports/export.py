@@ -18,11 +18,9 @@ async def export_reports(
     pool = get_pool()
     redis = get_redis_client()
     profile_id = http_request.state.profile_id
-    session_id = http_request.state.session_id
 
     return await export_reports_impl(
         pool,
         redis,
         profile_id=profile_id,
-        session_id=session_id,
     )

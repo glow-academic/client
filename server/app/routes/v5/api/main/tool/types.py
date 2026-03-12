@@ -286,6 +286,7 @@ class GetToolDraftsApiResponse(BaseModel):
 class ExportToolApiResponse(BaseModel):
     """Response model for export tool endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

@@ -369,8 +369,9 @@ class DuplicateSettingApiResponse(BaseModel):
 class ExportSettingApiResponse(BaseModel):
     """Response model for export setting endpoint."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

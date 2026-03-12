@@ -84,6 +84,7 @@ class ListActivityResponse(BaseModel):
 class ExportActivityApiResponse(BaseModel):
     """Response model for activity export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

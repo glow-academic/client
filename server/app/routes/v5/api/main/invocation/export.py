@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
@@ -25,7 +25,6 @@ class ExportInvocationApiRequest(BaseModel):
 async def export_invocation(
     body: ExportInvocationApiRequest,
     http_request: Request,
-    response: Response,
 ) -> ExportInvocationApiResponse:
     """Export a single invocation as a clean, denormalized CSV."""
     profile_id = http_request.state.profile_id
@@ -48,7 +47,6 @@ async def export_invocation(
         pool,
         redis,
         profile_id=profile_id,
-        session_id=session_id,
         test_id=body.test_id,
         group_id=group_id,
         invocation_entry_id=body.invocation_entry_id,

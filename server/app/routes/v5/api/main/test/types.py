@@ -265,6 +265,7 @@ class SearchTestApiResponse(BaseModel):
 class ExportTestApiResponse(BaseModel):
     """Response model for test export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int

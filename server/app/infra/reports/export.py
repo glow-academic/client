@@ -12,9 +12,9 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 import asyncio
+import base64
 import csv
 import io
-import os
 import zipfile
 from datetime import datetime
 from uuid import UUID
@@ -24,7 +24,6 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
@@ -35,7 +34,6 @@ from app.routes.v5.tools.entries.test_invocation_groups.search import (
 from app.routes.v5.tools.entries.test_invocation_runs.search import (
     search_test_invocation_runs,
 )
-from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.voices.get import get_voices
@@ -91,8 +89,9 @@ BRIGHTSPACE_CSV_COLUMNS = [
 class ExportReportsApiResponse(BaseModel):
     """Response model for reports export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 
@@ -105,8 +104,6 @@ async def export_reports_impl(
     redis: Redis,  # type: ignore[type-arg]
     *,
     profile_id: UUID,
-    session_id: UUID,
-    upload_folder: str | os.PathLike[str] = UPLOAD_FOLDER,
 ) -> ExportReportsApiResponse:
     """Reports full export using composable infra functions."""
 
@@ -126,8 +123,9 @@ async def export_reports_impl(
 
     if not invocations:
         return ExportReportsApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+            content="",
             file_name="",
+            mime_type="application/zip",
             row_count=0,
         )
 
@@ -296,7 +294,7 @@ async def export_reports_impl(
                 ]
             )
 
-    # -- Step 6: Generate ZIP + upload --
+    # -- Step 6: Generate ZIP --
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr("invocations.csv", inv_output.getvalue())
@@ -307,26 +305,13 @@ async def export_reports_impl(
     zip_content = zip_buffer.getvalue()
     row_count = len(invocations) + len(groups) + len(runs)
 
+    content = base64.b64encode(zip_content).decode("ascii")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     file_name = f"reports_export_{timestamp}.zip"
-    file_path = os.path.join(str(upload_folder), file_name)
-
-    os.makedirs(str(upload_folder), exist_ok=True)
-    with open(file_path, "wb") as f:
-        f.write(zip_content)
-
-    file_size = len(zip_content)
-    async with pool.acquire() as conn:
-        upload_result = await create_upload(
-            conn,
-            session_id=session_id,
-            file_path=file_name,
-            mime_type="application/zip",
-            size=file_size,
-        )
 
     return ExportReportsApiResponse(
-        upload_id=upload_result.id,
+        content=content,
         file_name=file_name,
+        mime_type="application/zip",
         row_count=row_count,
     )

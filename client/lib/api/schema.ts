@@ -13567,13 +13567,12 @@ export interface components {
          * @description Response model for activity export.
          */
         ExportActivityApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13590,13 +13589,12 @@ export interface components {
          * @description Response model for export agent endpoint.
          */
         ExportAgentApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13613,13 +13611,12 @@ export interface components {
          * @description Response model for attempt export.
          */
         ExportAttemptApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13636,13 +13633,12 @@ export interface components {
          * @description Response model for export auth endpoint.
          */
         ExportAuthApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13651,13 +13647,12 @@ export interface components {
          * @description Response model for benchmark export.
          */
         ExportBenchmarkApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13681,13 +13676,12 @@ export interface components {
          * @description Response model for chat export.
          */
         ExportChatApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13704,13 +13698,12 @@ export interface components {
          * @description Response model for export cohort endpoint.
          */
         ExportCohortApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13719,13 +13712,12 @@ export interface components {
          * @description Response model for dashboard export.
          */
         ExportDashboardApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13742,13 +13734,12 @@ export interface components {
          * @description Response model for export department endpoint.
          */
         ExportDepartmentApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13765,13 +13756,12 @@ export interface components {
          * @description Response model for export document endpoint.
          */
         ExportDocumentApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13788,13 +13778,12 @@ export interface components {
          * @description Response model for export eval endpoint.
          */
         ExportEvalApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13811,13 +13800,12 @@ export interface components {
          * @description Response model for export field endpoint.
          */
         ExportFieldApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13834,13 +13822,12 @@ export interface components {
          * @description Response model for group export.
          */
         ExportGroupApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13849,13 +13836,12 @@ export interface components {
          * @description Response model for health export.
          */
         ExportHealthApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13864,13 +13850,12 @@ export interface components {
          * @description Response model for home certificate export.
          */
         ExportHomeApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13879,13 +13864,12 @@ export interface components {
          * @description Response model for leaderboard export.
          */
         ExportLeaderboardApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13902,13 +13886,12 @@ export interface components {
          * @description Response model for export model endpoint.
          */
         ExportModelApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13925,13 +13908,12 @@ export interface components {
          * @description Response model for export parameter endpoint.
          */
         ExportParameterApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13956,13 +13938,12 @@ export interface components {
          * @description Response model for export persona endpoint.
          */
         ExportPersonaApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13971,13 +13952,12 @@ export interface components {
          * @description Response model for practice export.
          */
         ExportPracticeApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -13986,13 +13966,12 @@ export interface components {
          * @description Response model for pricing export.
          */
         ExportPricingApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14009,13 +13988,12 @@ export interface components {
          * @description Response model for export profile endpoint.
          */
         ExportProfileApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14032,13 +14010,12 @@ export interface components {
          * @description Response model for export provider endpoint.
          */
         ExportProviderApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14055,13 +14032,12 @@ export interface components {
          * @description Response model for record export.
          */
         ExportRecordApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14070,13 +14046,12 @@ export interface components {
          * @description Response model for reports export.
          */
         ExportReportsApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14093,13 +14068,12 @@ export interface components {
          * @description Response model for export rubric endpoint.
          */
         ExportRubricApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14124,13 +14098,12 @@ export interface components {
          * @description Response model for export scenario endpoint.
          */
         ExportScenarioApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14147,13 +14120,12 @@ export interface components {
          * @description Response model for session export.
          */
         ExportSessionApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14170,13 +14142,12 @@ export interface components {
          * @description Response model for export setting endpoint.
          */
         ExportSettingApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14201,13 +14172,12 @@ export interface components {
          * @description Response model for export simulation endpoint.
          */
         ExportSimulationApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14224,13 +14194,12 @@ export interface components {
          * @description Response model for test export.
          */
         ExportTestApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };
@@ -14247,13 +14216,12 @@ export interface components {
          * @description Response model for export tool endpoint.
          */
         ExportToolApiResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Content */
+            content: string;
             /** File Name */
             file_name: string;
+            /** Mime Type */
+            mime_type: string;
             /** Row Count */
             row_count: number;
         };

@@ -32,8 +32,9 @@ class GetChatDraftsApiResponse(BaseModel):
 class ExportChatApiResponse(BaseModel):
     """Response model for chat export."""
 
-    upload_id: UUID
+    content: str
     file_name: str
+    mime_type: str
     row_count: int
 
 

@@ -17,11 +17,9 @@ async def export_health(
     """Export all health data as a clean, denormalized ZIP."""
     pool = get_pool()
     profile_id = http_request.state.profile_id
-    session_id = http_request.state.session_id
 
     return await export_health_impl(
         pool,
         get_redis_client(),
         profile_id=profile_id,
-        session_id=session_id,
     )

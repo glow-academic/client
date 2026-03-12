@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import io
 import zipfile
 
@@ -13,8 +14,6 @@ from app.infra.benchmark.export import export_benchmark_impl
 from app.infra.benchmark.refresh import refresh_benchmark_impl
 from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.benchmark.refresh import refresh_benchmark
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.routes.v5.tools.resources.departments.create import create_department
 
 pytestmark = pytest.mark.asyncio
@@ -82,7 +81,7 @@ class TestBenchmarkDocsClient:
 
 class TestExportBenchmarkClient:
     async def test_exports_benchmarks_zip(
-        self, pool, redis_client, profile_identity_factory, tmp_path
+        self, pool, redis_client, profile_identity_factory
     ):
         profile = await profile_identity_factory()
 
@@ -99,26 +98,20 @@ class TestExportBenchmarkClient:
                 departments_ids=[department.id],
             )
             await refresh_benchmark(conn)
-            session = await create_session(conn, profile_id=profile.profile_resource_id)
 
         result = await export_benchmark_impl(
             pool,
             redis_client,
             profile_id=profile.artifact_id,
-            session_id=session.id,
-            upload_folder=tmp_path,
         )
 
         assert result.row_count >= 1
         assert result.file_name.endswith(".zip")
+        assert result.mime_type == "application/zip"
+        assert result.content != ""
 
-        async with pool.acquire() as conn:
-            upload = await get_upload(conn, result.upload_id)
-
-        zip_path = tmp_path / upload.file_path
-        assert zip_path.exists()
-
-        with zipfile.ZipFile(io.BytesIO(zip_path.read_bytes())) as archive:
+        zip_bytes = base64.b64decode(result.content)
+        with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
             assert sorted(archive.namelist()) == [
                 "benchmarks.csv",
                 "test_invocations.csv",
