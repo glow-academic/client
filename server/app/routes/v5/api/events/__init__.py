@@ -14,6 +14,7 @@ def get_router() -> APIRouter:
         return _router
 
     from app.routes.v5.api.events.polling import router as polling_router
+    from app.routes.v5.api.events.schema import schema_router
     from app.routes.v5.api.events.stream import router as stream_router
     from app.routes.v5.api.events.webhooks import router as webhooks_router
     from app.routes.v5.api.events.websocket import router as websocket_router
@@ -23,5 +24,6 @@ def get_router() -> APIRouter:
     router.include_router(stream_router)
     router.include_router(webhooks_router)
     router.include_router(websocket_router)
+    router.include_router(schema_router)
     _router = router
     return router
