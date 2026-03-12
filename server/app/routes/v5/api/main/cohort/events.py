@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.cohort.types import (
+    CreateCohortApiRequest,
+    CreateCohortApiResponse,
+    DeleteCohortApiRequest,
+    DeleteCohortApiResponse,
+    DuplicateCohortApiRequest,
+    DuplicateCohortApiResponse,
+    ExportCohortApiRequest,
+    ExportCohortApiResponse,
+    GetCohortApiRequest,
+    GetCohortApiResponse,
+    GetCohortDraftsApiResponse,
+    PatchCohortDraftApiRequest,
+    PatchCohortDraftApiResponse,
+    UpdateCohortApiRequest,
+    UpdateCohortApiResponse,
 )
 
 
@@ -62,96 +81,139 @@ def _cohort_draft_entity_ids(
 COHORT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.cohort.viewed": None},
         scope="entity",
         entity_key="cohort_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetCohortApiRequest,
+            "completed": GetCohortApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.cohort.viewed": None},
         resolve_entity_ids=lambda arguments, output: _cohort_request_entity_ids(
             arguments, output, "cohort_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.cohort.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateCohortApiRequest,
+            "completed": CreateCohortApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.cohort.created": CreateCohortApiResponse},
         resolve_entity_ids=_cohort_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.cohort.updated": None},
         scope="entity",
         entity_key="cohort_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateCohortApiRequest,
+            "completed": UpdateCohortApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.cohort.updated": UpdateCohortApiResponse},
         resolve_entity_ids=_cohort_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.cohort.deleted": None},
         scope="entity",
         entity_key="cohort_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteCohortApiRequest,
+            "completed": DeleteCohortApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.cohort.deleted": DeleteCohortApiResponse},
         resolve_entity_ids=_cohort_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.cohort.duplicated": None},
         scope="entity",
         entity_key="cohort_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateCohortApiRequest,
+            "completed": DuplicateCohortApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.cohort.duplicated": DuplicateCohortApiResponse},
         resolve_entity_ids=_cohort_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.cohort.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchCohortDraftApiRequest,
+            "completed": PatchCohortDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.cohort.draft.saved": PatchCohortDraftApiResponse,
+        },
         resolve_entity_ids=_cohort_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.cohort.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.cohort.drafts.viewed": GetCohortDraftsApiResponse,
+        },
         include_call_lifecycle=False,
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events={"artifacts.cohort.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.cohort.search.performed": None},
         include_call_lifecycle=False,
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events={"artifacts.cohort.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.cohort.docs.viewed": None},
         resolve_entity_ids=lambda arguments, output: _cohort_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.cohort.exported": None},
         scope="collection",
         entity_key="cohort_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportCohortApiRequest,
+            "completed": ExportCohortApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.cohort.exported": ExportCohortApiResponse},
         resolve_entity_ids=lambda arguments, output: _cohort_request_entity_ids(
             arguments, output, "cohort_id"
         ),
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.cohort.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.cohort.refreshed": None},
     ),
 }
 

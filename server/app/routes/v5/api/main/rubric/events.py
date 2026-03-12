@@ -7,8 +7,26 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.rubric.types import (
+    CreateRubricApiRequest,
+    CreateRubricApiResponse,
+    DeleteRubricApiRequest,
+    DeleteRubricApiResponse,
+    DuplicateRubricApiRequest,
+    DuplicateRubricApiResponse,
+    ExportRubricApiResponse,
+    GetRubricApiRequest,
+    GetRubricApiResponse,
+    GetRubricDraftsApiResponse,
+    PatchRubricDraftApiRequest,
+    PatchRubricDraftApiResponse,
+    UpdateRubricApiRequest,
+    UpdateRubricApiResponse,
 )
 
 
@@ -62,96 +80,138 @@ def _rubric_draft_entity_ids(
 RUBRIC_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.rubric.viewed": None},
         scope="entity",
         entity_key="rubric_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetRubricApiRequest,
+            "completed": GetRubricApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.rubric.viewed": None},
         resolve_entity_ids=lambda arguments, output: _rubric_request_entity_ids(
             arguments, output, "rubric_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.rubric.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateRubricApiRequest,
+            "completed": CreateRubricApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.rubric.created": CreateRubricApiResponse},
         resolve_entity_ids=_rubric_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.rubric.updated": None},
         scope="entity",
         entity_key="rubric_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateRubricApiRequest,
+            "completed": UpdateRubricApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.rubric.updated": UpdateRubricApiResponse},
         resolve_entity_ids=_rubric_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.rubric.deleted": None},
         scope="entity",
         entity_key="rubric_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteRubricApiRequest,
+            "completed": DeleteRubricApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.rubric.deleted": DeleteRubricApiResponse},
         resolve_entity_ids=_rubric_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.rubric.duplicated": None},
         scope="entity",
         entity_key="rubric_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateRubricApiRequest,
+            "completed": DuplicateRubricApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.rubric.duplicated": DuplicateRubricApiResponse},
         resolve_entity_ids=_rubric_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.rubric.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchRubricDraftApiRequest,
+            "completed": PatchRubricDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.rubric.draft.saved": PatchRubricDraftApiResponse,
+        },
         resolve_entity_ids=_rubric_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.rubric.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.rubric.drafts.viewed": GetRubricDraftsApiResponse,
+        },
         include_call_lifecycle=False,
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events={"artifacts.rubric.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.rubric.search.performed": None},
         include_call_lifecycle=False,
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events={"artifacts.rubric.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.rubric.docs.viewed": None},
         resolve_entity_ids=lambda arguments, output: _rubric_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.rubric.exported": None},
         scope="collection",
         entity_key="rubric_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ExportRubricApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.rubric.exported": ExportRubricApiResponse},
         resolve_entity_ids=lambda arguments, output: _rubric_request_entity_ids(
             arguments, output, "rubric_id"
         ),
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.rubric.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.rubric.refreshed": None},
     ),
 }
 

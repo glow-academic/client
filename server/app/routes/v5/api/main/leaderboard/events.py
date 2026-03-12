@@ -2,17 +2,27 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.routes.v5.api.main.leaderboard.types import (
+    LeaderboardRequest,
+    LeaderboardResponse,
 )
 
 LEADERBOARD_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.leaderboard.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": LeaderboardRequest,
+            "completed": LeaderboardResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.leaderboard.viewed": None},
     ),
     "refresh": OperationEventConfig(
         operation="refresh",

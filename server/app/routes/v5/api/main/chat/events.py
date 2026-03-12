@@ -2,24 +2,34 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.routes.v5.api.main.chat.types import (
+    GetChatRequest,
+    GetChatResponse,
 )
 
 CHAT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.chat.viewed": None},
         scope="entity",
         entity_key="chat_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetChatRequest,
+            "completed": GetChatResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.chat.viewed": None},
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.chat.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.chat.refreshed": None},
     ),
 }
 

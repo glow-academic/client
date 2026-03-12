@@ -10,6 +10,7 @@ from app.routes.v5.api.main.cohort.drafts import router as drafts_router
 from app.routes.v5.api.main.cohort.duplicate import router as duplicate_router
 from app.routes.v5.api.main.cohort.export import router as export_router
 from app.routes.v5.api.main.cohort.get import router as get_router
+from app.routes.v5.api.main.cohort.csv import router as csv_router
 from app.routes.v5.api.main.cohort.refresh import router as refresh_router
 from app.routes.v5.api.main.cohort.search import router as search_router
 from app.routes.v5.api.main.cohort.update import router as update_router
@@ -26,5 +27,6 @@ router.include_router(delete_router)
 router.include_router(draft_router)
 router.include_router(drafts_router)
 router.include_router(export_router)
+router.include_router(csv_router)
 router.include_router(docs_router)
 router.include_router(refresh_router)

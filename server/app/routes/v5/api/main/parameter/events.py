@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.parameter.export import ExportParameterApiRequest
+from app.routes.v5.api.main.parameter.types import (
+    CreateParameterApiRequest,
+    CreateParameterApiResponse,
+    DeleteParameterApiRequest,
+    DeleteParameterApiResponse,
+    DuplicateParameterApiRequest,
+    DuplicateParameterApiResponse,
+    ExportParameterApiResponse,
+    GetParameterApiRequest,
+    GetParameterApiResponse,
+    GetParameterDraftsApiResponse,
+    PatchParameterDraftApiRequest,
+    PatchParameterDraftApiResponse,
+    UpdateParameterApiRequest,
+    UpdateParameterApiResponse,
 )
 
 
@@ -66,53 +85,89 @@ PARAMETER_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="parameter_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetParameterApiRequest,
+            "completed": GetParameterApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _parameter_request_entity_ids(
             arguments, output, "parameter_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.parameter.created": None},
+        domain_events={"artifacts.parameter.created": CreateParameterApiResponse},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateParameterApiRequest,
+            "completed": CreateParameterApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_parameter_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.parameter.updated": None},
+        domain_events={"artifacts.parameter.updated": UpdateParameterApiResponse},
         scope="entity",
         entity_key="parameter_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateParameterApiRequest,
+            "completed": UpdateParameterApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_parameter_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.parameter.deleted": None},
+        domain_events={"artifacts.parameter.deleted": DeleteParameterApiResponse},
         scope="entity",
         entity_key="parameter_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteParameterApiRequest,
+            "completed": DeleteParameterApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_parameter_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.parameter.duplicated": None},
+        domain_events={
+            "artifacts.parameter.duplicated": DuplicateParameterApiResponse,
+        },
         scope="entity",
         entity_key="parameter_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateParameterApiRequest,
+            "completed": DuplicateParameterApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_parameter_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.parameter.draft.saved": None},
+        domain_events={
+            "artifacts.parameter.draft.saved": PatchParameterDraftApiResponse,
+        },
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchParameterDraftApiRequest,
+            "completed": PatchParameterDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_parameter_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.parameter.drafts.viewed": None},
+        domain_events={
+            "artifacts.parameter.drafts.viewed": GetParameterDraftsApiResponse,
+        },
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -132,16 +187,25 @@ PARAMETER_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _parameter_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.parameter.exported": None},
+        domain_events={"artifacts.parameter.exported": ExportParameterApiResponse},
         scope="collection",
         entity_key="parameter_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportParameterApiRequest,
+            "completed": ExportParameterApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _parameter_request_entity_ids(
             arguments, output, "parameter_id"
         ),

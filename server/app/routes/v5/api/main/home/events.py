@@ -2,17 +2,24 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
 )
+from app.routes.v5.api.main.home.types import GetHomeRequest, GetHomeResponse
 
 HOME_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.home.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetHomeRequest,
+            "completed": GetHomeResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.home.viewed": None},
     ),
     "refresh": OperationEventConfig(
         operation="refresh",

@@ -2,58 +2,111 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     default_filter_events,
     require_authenticated_profile,
+)
+from app.routes.v5.api.main.test.types import (
+    GetTestArtifactRequest,
+    GetTestArtifactResponse,
+)
+from app.routes.v5.socket.client.types import (
+    # Test lifecycle input payloads (client → server)
+    TestEndPayload,
+    TestStartPayload,
+    TestStopPayload,
+    # Test domain event payloads (server → client)
+    TestAllCompleteEvent,
+    TestProgressEvent,
+    TestRunCompleteEvent,
+    TestRunStartEvent,
+    TestStartedEvent,
+    TestStoppedEvent,
 )
 
 TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.test.viewed": None},
         scope="entity",
         entity_key="test_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetTestArtifactRequest,
+            "completed": GetTestArtifactResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.test.viewed": None,
+        },
     ),
     "start": OperationEventConfig(
         operation="start",
-        domain_events={"artifacts.test.started": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": TestStartPayload,
+            "completed": TestStartedEvent,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.test.started": TestStartedEvent,
+        },
     ),
     "run": OperationEventConfig(
         operation="run",
-        domain_events={
-            "artifacts.test.run.started": None,
-            "artifacts.test.run.progress": None,
-            "artifacts.test.run.completed": None,
-        },
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": TestRunStartEvent,
+            "completed": TestRunCompleteEvent,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.test.run.started": TestRunStartEvent,
+            "artifacts.test.run.progress": TestProgressEvent,
+            "artifacts.test.run.completed": TestRunCompleteEvent,
+        },
         filter_events=default_filter_events,
     ),
     "end": OperationEventConfig(
         operation="end",
-        domain_events={"artifacts.test.ended": None},
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": TestEndPayload,
+            "completed": TestAllCompleteEvent,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.test.ended": TestAllCompleteEvent,
+        },
     ),
     "stop": OperationEventConfig(
         operation="stop",
-        domain_events={"artifacts.test.stopped": None},
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": TestStopPayload,
+            "completed": TestStoppedEvent,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.test.stopped": TestStoppedEvent,
+        },
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.test.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.test.refreshed": None,
+        },
     ),
 }
 

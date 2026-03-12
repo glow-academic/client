@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.tool.export import ExportToolApiRequest
+from app.routes.v5.api.main.tool.types import (
+    CreateToolApiRequest,
+    CreateToolApiResponse,
+    DeleteToolApiRequest,
+    DeleteToolApiResponse,
+    DuplicateToolApiRequest,
+    DuplicateToolApiResponse,
+    ExportToolApiResponse,
+    GetToolApiRequest,
+    GetToolApiResponse,
+    GetToolDraftsApiResponse,
+    PatchToolDraftApiRequest,
+    PatchToolDraftApiResponse,
+    UpdateToolApiRequest,
+    UpdateToolApiResponse,
 )
 
 
@@ -66,53 +85,83 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetToolApiRequest,
+            "completed": GetToolApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _tool_request_entity_ids(
             arguments, output, "tool_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.tool.created": None},
+        domain_events={"artifacts.tool.created": CreateToolApiResponse},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateToolApiRequest,
+            "completed": CreateToolApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_tool_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.tool.updated": None},
+        domain_events={"artifacts.tool.updated": UpdateToolApiResponse},
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateToolApiRequest,
+            "completed": UpdateToolApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_tool_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.tool.deleted": None},
+        domain_events={"artifacts.tool.deleted": DeleteToolApiResponse},
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteToolApiRequest,
+            "completed": DeleteToolApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_tool_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.tool.duplicated": None},
+        domain_events={"artifacts.tool.duplicated": DuplicateToolApiResponse},
         scope="entity",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateToolApiRequest,
+            "completed": DuplicateToolApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_tool_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.tool.draft.saved": None},
+        domain_events={"artifacts.tool.draft.saved": PatchToolDraftApiResponse},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchToolDraftApiRequest,
+            "completed": PatchToolDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_tool_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.tool.drafts.viewed": None},
+        domain_events={"artifacts.tool.drafts.viewed": GetToolDraftsApiResponse},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -132,16 +181,25 @@ TOOL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _tool_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.tool.exported": None},
+        domain_events={"artifacts.tool.exported": ExportToolApiResponse},
         scope="collection",
         entity_key="tool_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportToolApiRequest,
+            "completed": ExportToolApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _tool_request_entity_ids(
             arguments, output, "tool_id"
         ),

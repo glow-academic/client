@@ -7,8 +7,31 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.profile.export import ExportProfileApiRequest
+from app.routes.v5.api.main.profile.types import (
+    CreateProfileApiRequest,
+    CreateProfileApiResponse,
+    DeleteProfileApiRequest,
+    DeleteProfileApiResponse,
+    DuplicateProfileApiRequest,
+    DuplicateProfileApiResponse,
+    EmulateProfileApiRequest,
+    EmulateProfileApiResponse,
+    ExportProfileApiResponse,
+    GetProfileApiRequest,
+    GetProfileApiResponse,
+    GetProfileDraftsApiResponse,
+    PatchProfileDraftApiRequest,
+    PatchProfileDraftApiResponse,
+    ProfileContextApiResponse,
+    UnemulateProfileApiResponse,
+    UpdateProfileApiRequest,
+    UpdateProfileApiResponse,
 )
 
 
@@ -62,123 +85,179 @@ def _profile_draft_entity_ids(
 PROFILE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "context": OperationEventConfig(
         operation="context",
-        domain_events={"artifacts.profile.context.viewed": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ProfileContextApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.context.viewed": None},
         resolve_entity_ids=lambda arguments, output: _profile_request_entity_ids(
             arguments, output, "profile_id"
         ),
     ),
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.profile.viewed": None},
         scope="entity",
         entity_key="target_profile_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetProfileApiRequest,
+            "completed": GetProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.viewed": None},
         resolve_entity_ids=lambda arguments, output: _profile_request_entity_ids(
             arguments, output, "target_profile_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.profile.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateProfileApiRequest,
+            "completed": CreateProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.created": CreateProfileApiResponse},
         resolve_entity_ids=_profile_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.profile.updated": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateProfileApiRequest,
+            "completed": UpdateProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.updated": UpdateProfileApiResponse},
         resolve_entity_ids=_profile_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.profile.deleted": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteProfileApiRequest,
+            "completed": DeleteProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.deleted": DeleteProfileApiResponse},
         resolve_entity_ids=_profile_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.profile.duplicated": None},
         scope="entity",
         entity_key="target_profile_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateProfileApiRequest,
+            "completed": DuplicateProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.duplicated": DuplicateProfileApiResponse},
         resolve_entity_ids=_profile_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.profile.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchProfileDraftApiRequest,
+            "completed": PatchProfileDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.profile.draft.saved": PatchProfileDraftApiResponse,
+        },
         resolve_entity_ids=_profile_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.profile.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.profile.drafts.viewed": GetProfileDraftsApiResponse,
+        },
         include_call_lifecycle=False,
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events={"artifacts.profile.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.profile.search.performed": None},
         include_call_lifecycle=False,
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events={"artifacts.profile.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.docs.viewed": None},
         resolve_entity_ids=lambda arguments, output: _profile_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.profile.exported": None},
         scope="collection",
         entity_key="profile_export_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportProfileApiRequest,
+            "completed": ExportProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.exported": ExportProfileApiResponse},
         resolve_entity_ids=lambda arguments, output: _profile_request_entity_ids(
             arguments, output, "profile_export_id"
         ),
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.profile.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.profile.refreshed": None},
     ),
     "emulate": OperationEventConfig(
         operation="emulate",
-        domain_events={"artifacts.profile.emulated": None},
         scope="entity",
         entity_key="target_profile_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": EmulateProfileApiRequest,
+            "completed": EmulateProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.emulated": EmulateProfileApiResponse},
         resolve_entity_ids=lambda arguments, output: _profile_request_entity_ids(
             arguments, output, "target_profile_id"
         ),
     ),
     "unemulate": OperationEventConfig(
         operation="unemulate",
-        domain_events={"artifacts.profile.unemulated": None},
         scope="entity",
         entity_key="profile_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": UnemulateProfileApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.profile.unemulated": UnemulateProfileApiResponse},
         resolve_entity_ids=lambda arguments, output: _profile_request_entity_ids(
             arguments, output, "profile_id"
         ),

@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.provider.export import ExportProviderApiRequest
+from app.routes.v5.api.main.provider.types import (
+    CreateProviderApiRequest,
+    CreateProviderApiResponse,
+    DeleteProviderApiRequest,
+    DeleteProviderApiResponse,
+    DuplicateProviderApiRequest,
+    DuplicateProviderApiResponse,
+    ExportProviderApiResponse,
+    GetProviderApiRequest,
+    GetProviderApiResponse,
+    GetProviderDraftsApiResponse,
+    PatchProviderDraftApiRequest,
+    PatchProviderDraftApiResponse,
+    UpdateProviderApiRequest,
+    UpdateProviderApiResponse,
 )
 
 
@@ -66,53 +85,89 @@ PROVIDER_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="provider_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetProviderApiRequest,
+            "completed": GetProviderApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _provider_request_entity_ids(
             arguments, output, "provider_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.provider.created": None},
+        domain_events={"artifacts.provider.created": CreateProviderApiResponse},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateProviderApiRequest,
+            "completed": CreateProviderApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_provider_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.provider.updated": None},
+        domain_events={"artifacts.provider.updated": UpdateProviderApiResponse},
         scope="entity",
         entity_key="provider_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateProviderApiRequest,
+            "completed": UpdateProviderApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_provider_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.provider.deleted": None},
+        domain_events={"artifacts.provider.deleted": DeleteProviderApiResponse},
         scope="entity",
         entity_key="provider_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteProviderApiRequest,
+            "completed": DeleteProviderApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_provider_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.provider.duplicated": None},
+        domain_events={
+            "artifacts.provider.duplicated": DuplicateProviderApiResponse,
+        },
         scope="entity",
         entity_key="provider_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateProviderApiRequest,
+            "completed": DuplicateProviderApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_provider_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.provider.draft.saved": None},
+        domain_events={
+            "artifacts.provider.draft.saved": PatchProviderDraftApiResponse,
+        },
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchProviderDraftApiRequest,
+            "completed": PatchProviderDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_provider_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.provider.drafts.viewed": None},
+        domain_events={
+            "artifacts.provider.drafts.viewed": GetProviderDraftsApiResponse,
+        },
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -132,16 +187,25 @@ PROVIDER_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _provider_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.provider.exported": None},
+        domain_events={"artifacts.provider.exported": ExportProviderApiResponse},
         scope="collection",
         entity_key="provider_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportProviderApiRequest,
+            "completed": ExportProviderApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _provider_request_entity_ids(
             arguments, output, "provider_id"
         ),

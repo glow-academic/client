@@ -1804,6 +1804,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v5/artifacts/cohorts/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Cohorts
+         * @description Import cohorts from a CSV file.
+         *
+         *     1. Reads the TUS-uploaded CSV
+         *     2. Auto-maps columns to canonical cohort fields
+         *     3. Converts rows to CreateCohortItem objects
+         *     4. Delegates to existing create_cohort_impl
+         */
+        post: operations["import_cohorts_api_v5_artifacts_cohorts_csv_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/cohorts/docs": {
         parameters: {
             query?: never;
@@ -25956,6 +25981,35 @@ export interface components {
             description?: string | null;
         };
         /**
+         * ImportCohortApiRequest
+         * @description Request model — just the upload_id of a TUS-uploaded CSV.
+         */
+        ImportCohortApiRequest: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
+        /**
+         * ImportCohortApiResponse
+         * @description Extends create response with import metadata.
+         */
+        ImportCohortApiResponse: {
+            /** Results */
+            results: components["schemas"]["CohortResultItem"][];
+            /**
+             * Row Count
+             * @default 0
+             */
+            row_count: number;
+            /**
+             * Mapped Fields
+             * @default []
+             */
+            mapped_fields: string[];
+        };
+        /**
          * ImportField
          * @description Field descriptor for CSV import column mapping.
          */
@@ -26579,8 +26633,6 @@ export interface components {
             flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
-            /** Import Fields */
-            import_fields?: unknown[] | null;
         };
         /**
          * ListCohortApiSimulation
@@ -42203,6 +42255,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportCohortApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_cohorts_api_v5_artifacts_cohorts_csv_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportCohortApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportCohortApiResponse"];
                 };
             };
             /** @description Validation Error */

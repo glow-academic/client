@@ -8763,6 +8763,105 @@
         ]
       }
     },
+    "/api/v5/artifacts/cohorts/csv": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ],
+        "summary": "Import Cohorts",
+        "description": "Import cohorts from a CSV file.\n\n1. Reads the TUS-uploaded CSV\n2. Auto-maps columns to canonical cohort fields\n3. Converts rows to CreateCohortItem objects\n4. Delegates to existing create_cohort_impl",
+        "operationId": "import_cohorts_api_v5_artifacts_cohorts_csv_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCohortApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportCohortApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "artifacts",
+          "cohorts"
+        ]
+      }
+    },
     "/api/v5/artifacts/cohorts/docs": {
       "post": {
         "tags": [
@@ -90905,6 +91004,51 @@
         "type": "object",
         "title": "ImagesGenerationEvent"
       },
+      "ImportCohortApiRequest": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "ImportCohortApiRequest",
+        "description": "Request model \u2014 just the upload_id of a TUS-uploaded CSV."
+      },
+      "ImportCohortApiResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/CohortResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "mapped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mapped Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "results"
+        ],
+        "title": "ImportCohortApiResponse",
+        "description": "Extends create response with import metadata."
+      },
       "ImportField": {
         "properties": {
           "key": {
@@ -93324,18 +93468,6 @@
               }
             ],
             "title": "Total Count"
-          },
-          "import_fields": {
-            "anyOf": [
-              {
-                "items": {},
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Import Fields"
           }
         },
         "type": "object",

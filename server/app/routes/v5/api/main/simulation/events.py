@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.simulation.types import (
+    CreateSimulationApiRequest,
+    CreateSimulationApiResponse,
+    DeleteSimulationApiRequest,
+    DeleteSimulationApiResponse,
+    DuplicateSimulationApiRequest,
+    DuplicateSimulationApiResponse,
+    ExportSimulationApiRequest,
+    ExportSimulationApiResponse,
+    GetSimulationApiRequest,
+    GetSimulationApiResponse,
+    GetSimulationDraftsApiResponse,
+    PatchSimulationDraftApiRequest,
+    PatchSimulationDraftApiResponse,
+    UpdateSimulationApiRequest,
+    UpdateSimulationApiResponse,
 )
 
 
@@ -62,96 +81,149 @@ def _simulation_draft_entity_ids(
 SIMULATION_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.simulation.viewed": None},
         scope="entity",
         entity_key="simulation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetSimulationApiRequest,
+            "completed": GetSimulationApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.simulation.viewed": None},
         resolve_entity_ids=lambda arguments, output: _simulation_request_entity_ids(
             arguments, output, "simulation_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.simulation.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateSimulationApiRequest,
+            "completed": CreateSimulationApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.simulation.created": CreateSimulationApiResponse,
+        },
         resolve_entity_ids=_simulation_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.simulation.updated": None},
         scope="entity",
         entity_key="simulation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateSimulationApiRequest,
+            "completed": UpdateSimulationApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.simulation.updated": UpdateSimulationApiResponse,
+        },
         resolve_entity_ids=_simulation_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.simulation.deleted": None},
         scope="entity",
         entity_key="simulation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteSimulationApiRequest,
+            "completed": DeleteSimulationApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.simulation.deleted": DeleteSimulationApiResponse,
+        },
         resolve_entity_ids=_simulation_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.simulation.duplicated": None},
         scope="entity",
         entity_key="simulation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateSimulationApiRequest,
+            "completed": DuplicateSimulationApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.simulation.duplicated": DuplicateSimulationApiResponse,
+        },
         resolve_entity_ids=_simulation_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.simulation.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchSimulationDraftApiRequest,
+            "completed": PatchSimulationDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.simulation.draft.saved": PatchSimulationDraftApiResponse,
+        },
         resolve_entity_ids=_simulation_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.simulation.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.simulation.drafts.viewed": GetSimulationDraftsApiResponse,
+        },
         include_call_lifecycle=False,
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events={"artifacts.simulation.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.simulation.search.performed": None},
         include_call_lifecycle=False,
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events={"artifacts.simulation.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.simulation.docs.viewed": None},
         resolve_entity_ids=lambda arguments, output: _simulation_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.simulation.exported": None},
         scope="collection",
         entity_key="simulation_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportSimulationApiRequest,
+            "completed": ExportSimulationApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.simulation.exported": ExportSimulationApiResponse,
+        },
         resolve_entity_ids=lambda arguments, output: _simulation_request_entity_ids(
             arguments, output, "simulation_id"
         ),
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.simulation.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.simulation.refreshed": None},
     ),
 }
 

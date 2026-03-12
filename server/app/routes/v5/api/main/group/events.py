@@ -2,37 +2,63 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     default_filter_events,
     require_authenticated_profile,
+)
+from app.routes.v5.api.main.group.types import (
+    GetGroupDetailRequest,
+    GetGroupDetailResponse,
+)
+from app.routes.v5.socket.client.types import (
+    # Generation lifecycle input payload (client → server)
+    GeneratePayload,
+    # Generation domain event payloads (server → client)
+    GenerationCompleteEvent,
+    GenerationProgressEvent,
 )
 
 GROUP_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.group.viewed": None},
         scope="entity",
         entity_key="group_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetGroupDetailRequest,
+            "completed": GetGroupDetailResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.group.viewed": None,
+        },
     ),
     "generate": OperationEventConfig(
         operation="generate",
-        domain_events={
-            "artifacts.group.generation.started": None,
-            "artifacts.group.generation.progress": None,
-            "artifacts.group.generation.completed": None,
-        },
         scope="entity",
         entity_key="group_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GeneratePayload,
+            "completed": GenerationCompleteEvent,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.group.generation.started": GenerationCompleteEvent,
+            "artifacts.group.generation.progress": GenerationProgressEvent,
+            "artifacts.group.generation.completed": GenerationCompleteEvent,
+        },
         filter_events=default_filter_events,
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.group.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.group.refreshed": None,
+        },
     ),
 }
 

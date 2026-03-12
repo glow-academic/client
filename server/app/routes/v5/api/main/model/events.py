@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.model.export import ExportModelApiRequest
+from app.routes.v5.api.main.model.types import (
+    CreateModelApiRequest,
+    CreateModelApiResponse,
+    DeleteModelApiRequest,
+    DeleteModelApiResponse,
+    DuplicateModelApiRequest,
+    DuplicateModelApiResponse,
+    ExportModelApiResponse,
+    GetModelApiRequest,
+    GetModelApiResponse,
+    GetModelDraftsApiResponse,
+    PatchModelDraftApiRequest,
+    PatchModelDraftApiResponse,
+    UpdateModelApiRequest,
+    UpdateModelApiResponse,
 )
 
 
@@ -66,53 +85,83 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetModelApiRequest,
+            "completed": GetModelApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _model_request_entity_ids(
             arguments, output, "model_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.model.created": None},
+        domain_events={"artifacts.model.created": CreateModelApiResponse},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateModelApiRequest,
+            "completed": CreateModelApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_model_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.model.updated": None},
+        domain_events={"artifacts.model.updated": UpdateModelApiResponse},
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateModelApiRequest,
+            "completed": UpdateModelApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_model_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.model.deleted": None},
+        domain_events={"artifacts.model.deleted": DeleteModelApiResponse},
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteModelApiRequest,
+            "completed": DeleteModelApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_model_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.model.duplicated": None},
+        domain_events={"artifacts.model.duplicated": DuplicateModelApiResponse},
         scope="entity",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateModelApiRequest,
+            "completed": DuplicateModelApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_model_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.model.draft.saved": None},
+        domain_events={"artifacts.model.draft.saved": PatchModelDraftApiResponse},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchModelDraftApiRequest,
+            "completed": PatchModelDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_model_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.model.drafts.viewed": None},
+        domain_events={"artifacts.model.drafts.viewed": GetModelDraftsApiResponse},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -132,16 +181,25 @@ MODEL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _model_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.model.exported": None},
+        domain_events={"artifacts.model.exported": ExportModelApiResponse},
         scope="collection",
         entity_key="model_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportModelApiRequest,
+            "completed": ExportModelApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _model_request_entity_ids(
             arguments, output, "model_id"
         ),

@@ -2,17 +2,27 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.routes.v5.api.main.dashboard.types import (
+    DashboardBundleResponse,
+    DashboardRequest,
 )
 
 DASHBOARD_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.dashboard.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DashboardRequest,
+            "completed": DashboardBundleResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.dashboard.viewed": None},
     ),
     "refresh": OperationEventConfig(
         operation="refresh",

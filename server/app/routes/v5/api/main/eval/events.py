@@ -7,8 +7,26 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.eval.types import (
+    CreateEvalApiRequest,
+    CreateEvalApiResponse,
+    DeleteEvalApiRequest,
+    DeleteEvalApiResponse,
+    DuplicateEvalApiRequest,
+    DuplicateEvalApiResponse,
+    ExportEvalApiResponse,
+    GetEvalApiRequest,
+    GetEvalApiResponse,
+    GetEvalDraftsApiResponse,
+    PatchEvalDraftApiRequest,
+    PatchEvalDraftApiResponse,
+    UpdateEvalApiRequest,
+    UpdateEvalApiResponse,
 )
 
 
@@ -62,96 +80,138 @@ def _eval_draft_entity_ids(
 EVAL_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.eval.viewed": None},
         scope="entity",
         entity_key="eval_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetEvalApiRequest,
+            "completed": GetEvalApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.eval.viewed": None},
         resolve_entity_ids=lambda arguments, output: _eval_request_entity_ids(
             arguments, output, "eval_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.eval.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateEvalApiRequest,
+            "completed": CreateEvalApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.eval.created": CreateEvalApiResponse},
         resolve_entity_ids=_eval_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.eval.updated": None},
         scope="entity",
         entity_key="eval_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateEvalApiRequest,
+            "completed": UpdateEvalApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.eval.updated": UpdateEvalApiResponse},
         resolve_entity_ids=_eval_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.eval.deleted": None},
         scope="entity",
         entity_key="eval_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteEvalApiRequest,
+            "completed": DeleteEvalApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.eval.deleted": DeleteEvalApiResponse},
         resolve_entity_ids=_eval_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.eval.duplicated": None},
         scope="entity",
         entity_key="eval_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateEvalApiRequest,
+            "completed": DuplicateEvalApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.eval.duplicated": DuplicateEvalApiResponse},
         resolve_entity_ids=_eval_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.eval.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchEvalDraftApiRequest,
+            "completed": PatchEvalDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.eval.draft.saved": PatchEvalDraftApiResponse,
+        },
         resolve_entity_ids=_eval_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.eval.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={
+            "artifacts.eval.drafts.viewed": GetEvalDraftsApiResponse,
+        },
         include_call_lifecycle=False,
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events={"artifacts.eval.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.eval.search.performed": None},
         include_call_lifecycle=False,
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events={"artifacts.eval.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.eval.docs.viewed": None},
         resolve_entity_ids=lambda arguments, output: _eval_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.eval.exported": None},
         scope="collection",
         entity_key="eval_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ExportEvalApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.eval.exported": ExportEvalApiResponse},
         resolve_entity_ids=lambda arguments, output: _eval_request_entity_ids(
             arguments, output, "eval_id"
         ),
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.eval.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.eval.refreshed": None},
     ),
 }
 

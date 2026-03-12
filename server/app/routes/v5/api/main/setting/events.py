@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.setting.export import ExportSettingApiRequest
+from app.routes.v5.api.main.setting.types import (
+    CreateSettingApiRequest,
+    CreateSettingApiResponse,
+    DeleteSettingApiRequest,
+    DeleteSettingApiResponse,
+    DuplicateSettingApiRequest,
+    DuplicateSettingApiResponse,
+    ExportSettingApiResponse,
+    GetSettingApiRequest,
+    GetSettingApiResponse,
+    GetSettingDraftsApiResponse,
+    PatchSettingDraftApiRequest,
+    PatchSettingDraftApiResponse,
+    UpdateSettingApiRequest,
+    UpdateSettingApiResponse,
 )
 
 
@@ -66,53 +85,87 @@ SETTING_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="setting_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetSettingApiRequest,
+            "completed": GetSettingApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _setting_request_entity_ids(
             arguments, output, "setting_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.setting.created": None},
+        domain_events={"artifacts.setting.created": CreateSettingApiResponse},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateSettingApiRequest,
+            "completed": CreateSettingApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_setting_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.setting.updated": None},
+        domain_events={"artifacts.setting.updated": UpdateSettingApiResponse},
         scope="entity",
         entity_key="setting_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateSettingApiRequest,
+            "completed": UpdateSettingApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_setting_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.setting.deleted": None},
+        domain_events={"artifacts.setting.deleted": DeleteSettingApiResponse},
         scope="entity",
         entity_key="setting_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteSettingApiRequest,
+            "completed": DeleteSettingApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_setting_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.setting.duplicated": None},
+        domain_events={"artifacts.setting.duplicated": DuplicateSettingApiResponse},
         scope="entity",
         entity_key="setting_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateSettingApiRequest,
+            "completed": DuplicateSettingApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_setting_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.setting.draft.saved": None},
+        domain_events={
+            "artifacts.setting.draft.saved": PatchSettingDraftApiResponse,
+        },
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchSettingDraftApiRequest,
+            "completed": PatchSettingDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=_setting_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.setting.drafts.viewed": None},
+        domain_events={
+            "artifacts.setting.drafts.viewed": GetSettingDraftsApiResponse,
+        },
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
@@ -132,16 +185,25 @@ SETTING_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _setting_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.setting.exported": None},
+        domain_events={"artifacts.setting.exported": ExportSettingApiResponse},
         scope="collection",
         entity_key="setting_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportSettingApiRequest,
+            "completed": ExportSettingApiResponse,
+            "failed": OperationErrorEvent,
+        },
         resolve_entity_ids=lambda arguments, output: _setting_request_entity_ids(
             arguments, output, "setting_id"
         ),

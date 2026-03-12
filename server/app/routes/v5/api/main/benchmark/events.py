@@ -2,17 +2,24 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
 )
+from app.routes.v5.api.main.benchmark.types import BenchmarkRequest, BenchmarkResponse
 
 BENCHMARK_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.benchmark.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": BenchmarkRequest,
+            "completed": BenchmarkResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.benchmark.viewed": None},
     ),
     "refresh": OperationEventConfig(
         operation="refresh",

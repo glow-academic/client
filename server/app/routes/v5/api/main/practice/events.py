@@ -2,24 +2,34 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.routes.v5.api.main.practice.types import (
+    GetPracticeRequest,
+    GetPracticeResponse,
 )
 
 PRACTICE_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.practice.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetPracticeRequest,
+            "completed": GetPracticeResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.practice.viewed": None},
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.practice.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.practice.refreshed": None},
     ),
 }
 

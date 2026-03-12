@@ -7,8 +7,27 @@ from uuid import UUID
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.infra.docs.types import ComposedDocsResponse
+from app.routes.v5.api.main.agent.types import (
+    CreateAgentApiRequest,
+    CreateAgentApiResponse,
+    DeleteAgentApiRequest,
+    DeleteAgentApiResponse,
+    DuplicateAgentApiRequest,
+    DuplicateAgentApiResponse,
+    ExportAgentApiRequest,
+    ExportAgentApiResponse,
+    GetAgentApiRequest,
+    GetAgentApiResponse,
+    GetAgentDraftsApiResponse,
+    PatchAgentDraftApiRequest,
+    PatchAgentDraftApiResponse,
+    UpdateAgentApiRequest,
+    UpdateAgentApiResponse,
 )
 
 
@@ -62,96 +81,135 @@ def _agent_draft_entity_ids(
 AGENT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.agent.viewed": None},
         scope="entity",
         entity_key="agent_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetAgentApiRequest,
+            "completed": GetAgentApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.viewed": None},
         resolve_entity_ids=lambda arguments, output: _agent_request_entity_ids(
             arguments, output, "agent_id"
         ),
     ),
     "create": OperationEventConfig(
         operation="create",
-        domain_events={"artifacts.agent.created": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": CreateAgentApiRequest,
+            "completed": CreateAgentApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.created": CreateAgentApiResponse},
         resolve_entity_ids=_agent_result_entity_ids,
     ),
     "update": OperationEventConfig(
         operation="update",
-        domain_events={"artifacts.agent.updated": None},
         scope="entity",
         entity_key="agent_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": UpdateAgentApiRequest,
+            "completed": UpdateAgentApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.updated": UpdateAgentApiResponse},
         resolve_entity_ids=_agent_result_entity_ids,
     ),
     "delete": OperationEventConfig(
         operation="delete",
-        domain_events={"artifacts.agent.deleted": None},
         scope="entity",
         entity_key="agent_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DeleteAgentApiRequest,
+            "completed": DeleteAgentApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.deleted": DeleteAgentApiResponse},
         resolve_entity_ids=_agent_result_entity_ids,
     ),
     "duplicate": OperationEventConfig(
         operation="duplicate",
-        domain_events={"artifacts.agent.duplicated": None},
         scope="entity",
         entity_key="agent_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": DuplicateAgentApiRequest,
+            "completed": DuplicateAgentApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.duplicated": DuplicateAgentApiResponse},
         resolve_entity_ids=_agent_duplicate_entity_ids,
     ),
     "draft": OperationEventConfig(
         operation="draft",
-        domain_events={"artifacts.agent.draft.saved": None},
         scope="entity",
         entity_key="draft_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": PatchAgentDraftApiRequest,
+            "completed": PatchAgentDraftApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.draft.saved": PatchAgentDraftApiResponse},
         resolve_entity_ids=_agent_draft_entity_ids,
     ),
     "drafts": OperationEventConfig(
         operation="drafts",
-        domain_events={"artifacts.agent.drafts.viewed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.agent.drafts.viewed": GetAgentDraftsApiResponse},
         include_call_lifecycle=False,
     ),
     "search": OperationEventConfig(
         operation="search",
-        domain_events={"artifacts.agent.search.performed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.agent.search.performed": None},
         include_call_lifecycle=False,
     ),
     "docs": OperationEventConfig(
         operation="docs",
-        domain_events={"artifacts.agent.docs.viewed": None},
         scope="entity",
         entity_key="entity_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "completed": ComposedDocsResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.docs.viewed": None},
         resolve_entity_ids=lambda arguments, output: _agent_request_entity_ids(
             arguments, output, "entity_id"
         ),
     ),
     "export": OperationEventConfig(
         operation="export",
-        domain_events={"artifacts.agent.exported": None},
         scope="collection",
         entity_key="agent_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": ExportAgentApiRequest,
+            "completed": ExportAgentApiResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.agent.exported": ExportAgentApiResponse},
         resolve_entity_ids=lambda arguments, output: _agent_request_entity_ids(
             arguments, output, "agent_id"
         ),
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.agent.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.agent.refreshed": None},
     ),
 }
 

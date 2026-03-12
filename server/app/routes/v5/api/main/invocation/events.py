@@ -2,24 +2,34 @@
 
 from app.events.types import (
     ArtifactEventsConfig,
+    OperationErrorEvent,
     OperationEventConfig,
     require_authenticated_profile,
+)
+from app.routes.v5.api.main.invocation.types import (
+    GetSuiteRequest,
+    GetSuiteResponse,
 )
 
 INVOCATION_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
-        domain_events={"artifacts.invocation.viewed": None},
         scope="entity",
         entity_key="test_id",
         can_subscribe=require_authenticated_profile,
+        lifecycle_models={
+            "started": GetSuiteRequest,
+            "completed": GetSuiteResponse,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={"artifacts.invocation.viewed": None},
     ),
     "refresh": OperationEventConfig(
         operation="refresh",
-        domain_events={"artifacts.invocation.refreshed": None},
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        domain_events={"artifacts.invocation.refreshed": None},
     ),
 }
 
