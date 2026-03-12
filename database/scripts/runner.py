@@ -164,6 +164,10 @@ async def _run_resource_seeds(
                 await _seed_standard_groups(conn, redis, items)
             elif module_name == "standards":
                 await _seed_standards(conn, redis, items)
+            elif module_name == "keys":
+                await _seed_keys(conn, redis, items)
+            elif module_name == "items":
+                await _seed_items(conn, redis, items)
 
 
 async def _seed_colors(
@@ -344,6 +348,26 @@ async def _seed_standards(
     for item in items:
         await create_standard(conn, redis=redis, **item)
     print(f"  OK: {len(items)} standards created")
+
+
+async def _seed_keys(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
+    from app.routes.v5.tools.resources.keys.create import create_key
+
+    for item in items:
+        await create_key(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} keys created")
+
+
+async def _seed_items(
+    conn: asyncpg.Connection, redis: Redis, items: list[dict]
+) -> None:
+    from app.routes.v5.tools.resources.items.create import create_item
+
+    for item in items:
+        await create_item(conn, redis=redis, **item)
+    print(f"  OK: {len(items)} items created")
 
 
 # ---------------------------------------------------------------------------
@@ -928,6 +952,37 @@ async def _run_profile_seeds(
             print(f"  OK: {r.message}")
 
     return created_ids
+
+
+async def _run_key_seeds(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    mod: object,
+) -> None:
+    """Run provider_keys, auth_item_keys, and auth_item_values seed definitions."""
+    from app.routes.v5.tools.resources.auth_item_keys.create import (
+        create_auth_item_key,
+    )
+    from app.routes.v5.tools.resources.provider_keys.create import create_provider_key
+
+    async with pool.acquire() as conn:
+        for pk in mod.provider_keys:
+            await create_provider_key(conn, redis=redis, **pk)
+        print(f"  OK: {len(mod.provider_keys)} provider_keys created")
+
+        for aik in mod.auth_item_keys:
+            await create_auth_item_key(conn, redis=redis, **aik)
+        print(f"  OK: {len(mod.auth_item_keys)} auth_item_keys created")
+
+        # Auth item values (non-encrypted OIDC config) — optional per setup
+        if hasattr(mod, "auth_item_values") and mod.auth_item_values:
+            from app.routes.v5.tools.resources.auth_item_values.create import (
+                create_auth_item_value,
+            )
+
+            for aiv in mod.auth_item_values:
+                await create_auth_item_value(conn, redis=redis, **aiv)
+            print(f"  OK: {len(mod.auth_item_values)} auth_item_values created")
 
 
 async def _run_setting_seeds(
@@ -1681,6 +1736,8 @@ async def main_setup(setup: str = "university") -> None:
             elif module_name == "profiles":
                 if hasattr(mod, "profiles"):
                     await _run_profile_seeds(pool, redis_client, mod.profiles)
+            elif module_name == "keys":
+                await _run_key_seeds(pool, redis_client, mod)
             elif module_name == "settings":
                 await _run_setting_seeds(pool, redis_client, mod.settings)
             elif module_name == "colors":

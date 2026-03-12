@@ -5,8 +5,9 @@ Dependency order (each module may reference IDs from earlier modules):
   2. personas       (refs: departments)
   3. fields         (refs: departments)
   4. parameters     (refs: fields, departments)
-  5. settings       (refs: departments, auth, systems, thresholds)
-  6. profiles       (updates: pre-existing profiles → department + email)
+  5. keys           (refs: providers, auths, keys, items from base modules)
+  6. settings       (refs: departments, auth, keys, systems, thresholds)
+  7. profiles       (updates: pre-existing profiles → department + email)
 
 Updates are applied automatically after all creates:
   - departments.get_department_updates() → link departments to settings
@@ -22,6 +23,7 @@ MODULES = [
     "personas",
     "fields",
     "parameters",
+    "keys",
     "settings",
     "profiles",
 ]

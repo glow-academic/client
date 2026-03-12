@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean seed-gen
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean seed-gen
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -45,7 +45,6 @@ configure: setup
 deploy:
 	@echo "🚀 Deploying Glow..."
 	@bash database/scripts/load-modules.sh --output database/seeds/seed_modules.sql
-	@bash database/scripts/bootstrap-keys.sh --append database/seeds/seed_modules.sql || echo "⚠️  Key bootstrap skipped"
 	@docker compose up -d --build
 	@echo "✅ Deploy complete"
 
@@ -53,7 +52,6 @@ deploy:
 deploy-clean:
 	@echo "🚀 Deploying Glow (clean)..."
 	@bash database/scripts/load-modules.sh --output database/seeds/seed_modules.sql
-	@bash database/scripts/bootstrap-keys.sh --append database/seeds/seed_modules.sql || echo "⚠️  Key bootstrap skipped"
 	@docker compose down -v
 	@docker compose up -d --build
 	@echo "✅ Clean deploy complete"
@@ -364,10 +362,6 @@ fresh-db:
 	@echo ""
 	@echo "To start services, run: make run"
 
-# Bootstrap API keys from .env into the database
-bootstrap-keys:
-	@bash database/scripts/bootstrap-keys.sh
-
 
 # MCP setup for Cursor IDE
 mcp: check-venv
@@ -407,7 +401,6 @@ help:
 	@echo "  connect-db       - Connect to database"
 	@echo "  seed-gen         - Regenerate all seed SQL files (base + all setups)"
 	@echo "  fresh-db         - Build fresh DB from schema + modules + keys"
-	@echo "  bootstrap-keys   - Encrypt and inject API keys from .env"
 	@echo "  load-seeds       - Load seed data into local database"
 	@echo ""
 	@echo "Services:"

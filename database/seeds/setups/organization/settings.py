@@ -1,7 +1,7 @@
 """Organization setting seed definitions.
 
 References pre-existing auth, system, and threshold resources from modules 01-10.
-Provider keys and auth item keys are deployment-specific and not seeded here.
+Provider keys and auth item keys are created by the keys module and linked here.
 """
 
 from uuid import UUID
@@ -9,6 +9,7 @@ from uuid import UUID
 from database.seeds.auths import GOOGLE_AUTH
 from database.seeds.ids import sid
 from database.seeds.setups.organization.departments import ORGANIZATION_DEPT
+from database.seeds.setups.organization.keys import AUTH_ITEM_KEY_IDS, PROVIDER_KEY_IDS
 
 # ---------------------------------------------------------------------------
 # Pre-existing threshold resource IDs (from 01-resources/06-thresholds.sql)
@@ -87,6 +88,8 @@ settings = [
         active_flag=True,
         department_ids=[ORGANIZATION_DEPT],
         auth_ids=[GOOGLE_AUTH],
+        provider_key_ids=PROVIDER_KEY_IDS,
+        auth_item_key_ids=AUTH_ITEM_KEY_IDS,
         system_ids=SYSTEMS,
         threshold_ids=[THRESHOLD_SUCCESS, THRESHOLD_WARNING, THRESHOLD_DANGER],
     ),

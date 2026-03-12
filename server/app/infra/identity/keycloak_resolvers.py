@@ -6,7 +6,7 @@ Each resolver returns plain dicts matching the original SQL return shapes.
 
 from __future__ import annotations
 
-import asyncio
+
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -14,6 +14,9 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.routes.v5.tools.artifacts.auth.get import get_auths as get_auth_artifacts
+from app.routes.v5.tools.artifacts.department.get import (
+    get_departments as get_department_artifacts,
+)
 from app.routes.v5.tools.artifacts.department.search import search_departments
 from app.routes.v5.tools.artifacts.setting.get import (
     get_settings as get_setting_artifacts,
@@ -81,28 +84,36 @@ async def resolve_auths_for_department(
     redis: Redis,
     department_id: UUID,
 ) -> list[AuthForSync]:
-    """Auths linked to a department via dept → settings → auths chain.
+    """Auths linked to a department via artifact junctions.
 
-    Composes: get_departments (resource) → get_settings (resource) → get_auths (resource).
+    Chain: department_artifact → department_settings_junction → setting_artifact
+           → setting_auths_junction → auth_artifact → auth_resource (slug/name).
     """
-    depts = await get_department_resources(conn, [department_id], redis)
-    if not depts:
+    # Step 1: Department artifact → setting artifact IDs (via junction)
+    dept_artifacts = await get_department_artifacts(
+        conn, [department_id], settings=True
+    )
+    if not dept_artifacts:
         return []
 
-    setting_ids = depts[0].setting_ids or []
-    if not setting_ids:
+    setting_artifact_ids = dept_artifacts[0].settings_ids or []
+    if not setting_artifact_ids:
         return []
 
-    settings = await get_setting_resources(conn, setting_ids, redis)
+    # Step 2: Setting artifacts → auth artifact IDs (via junction)
+    setting_artifacts = await get_setting_artifacts(
+        conn, setting_artifact_ids, auths=True
+    )
 
     auth_ids: set[UUID] = set()
-    for s in settings:
-        if s.active and s.auth_ids:
-            auth_ids.update(s.auth_ids)
+    for sa in setting_artifacts:
+        if sa.auth_ids:
+            auth_ids.update(sa.auth_ids)
 
     if not auth_ids:
         return []
 
+    # Step 3: Auth resources for slug/name
     auths = await get_auth_resources(conn, list(auth_ids), redis)
     return [
         AuthForSync(id=a.id, slug=a.slug, provider_id=a.protocol, name=a.name)
@@ -121,52 +132,48 @@ async def resolve_auths_for_realm(
 ) -> list[AuthForSync]:
     """Auths from default settings (not linked to any department).
 
-    Composes: search_departments → get_departments (resource) → get_settings (resource)
-    to find settings NOT in any department, then resolves their auths.
+    Uses artifact junctions to find settings NOT linked to any department,
+    then resolves their auths via setting_auths_junction.
     """
-    # Step 1: Collect ALL setting_ids linked to departments
+    # Step 1: Collect ALL setting artifact IDs linked to departments (via junctions)
     dept_ids, _ = await search_departments(conn, active_only=True, limit_count=100000)
     dept_setting_ids: set[UUID] = set()
     if dept_ids:
-        depts = await get_department_resources(conn, dept_ids, redis)
-        for d in depts:
-            if d.setting_ids:
-                dept_setting_ids.update(d.setting_ids)
+        dept_artifacts = await get_department_artifacts(
+            conn, dept_ids, settings=True
+        )
+        for da in dept_artifacts:
+            if da.settings_ids:
+                dept_setting_ids.update(da.settings_ids)
 
-    # Step 2: Get ALL active setting artifacts → their settings_resource IDs
+    # Step 2: Get ALL active setting artifact IDs
     setting_artifact_ids, _ = await search_settings(
         conn, active_only=True, limit_count=100000
     )
     if not setting_artifact_ids:
         return []
 
-    setting_artifacts = await get_setting_artifacts(
-        conn, setting_artifact_ids, settings=True
-    )
-
-    # Collect all settings_resource IDs from artifacts
-    all_settings_resource_ids: set[UUID] = set()
-    for sa in setting_artifacts:
-        if sa.setting_ids:
-            all_settings_resource_ids.update(sa.setting_ids)
-
-    # Step 3: Filter to realm-level (not in any department)
-    realm_setting_ids = all_settings_resource_ids - dept_setting_ids
+    # Step 3: Filter to realm-level (not linked to any department)
+    realm_setting_ids = [
+        sid for sid in setting_artifact_ids if sid not in dept_setting_ids
+    ]
     if not realm_setting_ids:
         return []
 
-    # Step 4: Get settings resources → auth_ids
-    realm_settings = await get_setting_resources(conn, list(realm_setting_ids), redis)
+    # Step 4: Get auth artifact IDs via setting_auths_junction
+    realm_settings = await get_setting_artifacts(
+        conn, realm_setting_ids, auths=True
+    )
 
     auth_ids: set[UUID] = set()
-    for s in realm_settings:
-        if s.active and s.auth_ids:
-            auth_ids.update(s.auth_ids)
+    for sa in realm_settings:
+        if sa.auth_ids:
+            auth_ids.update(sa.auth_ids)
 
     if not auth_ids:
         return []
 
-    # Step 5: Get auth resources
+    # Step 5: Get auth resources for slug/name
     auths = await get_auth_resources(conn, list(auth_ids), redis)
     return [
         AuthForSync(id=a.id, slug=a.slug, provider_id=a.protocol, name=a.name)
@@ -387,14 +394,13 @@ async def resolve_auth_items(
             if sa.auth_item_value_ids:
                 default_auth_item_value_ids.extend(sa.auth_item_value_ids)
 
-    # Step 5: Fetch auth_item_keys + keys, auth_item_values in parallel
+    # Step 5: Fetch auth_item_keys + keys, auth_item_values sequentially
+    # (cannot use asyncio.gather with a single asyncpg connection)
     all_key_ids = list(set(dept_auth_item_key_ids + default_auth_item_key_ids))
     all_value_ids = list(set(dept_auth_item_value_ids + default_auth_item_value_ids))
 
-    auth_item_keys_list, auth_item_values_list = await asyncio.gather(
-        get_auth_item_keys(conn, all_key_ids, redis) if all_key_ids else _empty(),
-        get_auth_item_values(conn, all_value_ids, redis) if all_value_ids else _empty(),
-    )
+    auth_item_keys_list = await get_auth_item_keys(conn, all_key_ids, redis) if all_key_ids else []
+    auth_item_values_list = await get_auth_item_values(conn, all_value_ids, redis) if all_value_ids else []
 
     # Step 6: Get actual key values for encrypted items
     key_resource_ids = list({aik.key_id for aik in auth_item_keys_list if aik.active})
@@ -459,7 +465,3 @@ async def resolve_auth_items(
     combined.update(encrypted_results)
 
     return list(combined.values())
-
-
-async def _empty() -> list:
-    return []

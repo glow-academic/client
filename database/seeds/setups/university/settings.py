@@ -4,7 +4,7 @@ Each setting is a dict mapping directly to CreateSettingItem.
 References pre-existing auth, system, and threshold resources from modules 01-10.
 
 Names and descriptions are CREATED as new resources.
-Provider keys and auth item keys are deployment-specific and not seeded here.
+Provider keys and auth item keys are created by the keys module and linked here.
 """
 
 from uuid import UUID
@@ -12,6 +12,11 @@ from uuid import UUID
 from database.seeds.auths import MICROSOFT_AUTH
 from database.seeds.ids import sid
 from database.seeds.setups.university.departments import UNIVERSITY_DEPT
+from database.seeds.setups.university.keys import (
+    AUTH_ITEM_KEY_IDS,
+    AUTH_ITEM_VALUE_IDS,
+    PROVIDER_KEY_IDS,
+)
 
 # ---------------------------------------------------------------------------
 # Pre-existing threshold resource IDs (from 01-resources/06-thresholds.sql)
@@ -82,6 +87,9 @@ settings = [
         active_flag=True,
         department_ids=[UNIVERSITY_DEPT],
         auth_ids=[MICROSOFT_AUTH],
+        provider_key_ids=PROVIDER_KEY_IDS,
+        auth_item_key_ids=AUTH_ITEM_KEY_IDS,
+        auth_item_value_ids=AUTH_ITEM_VALUE_IDS,
         system_ids=SYSTEMS,
         threshold_ids=[THRESHOLD_SUCCESS, THRESHOLD_WARNING, THRESHOLD_DANGER],
     ),

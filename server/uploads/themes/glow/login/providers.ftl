@@ -1,5 +1,5 @@
 <#-- GENERATED FILE: do not edit manually -->
-<#-- Generated at: 2026-03-12T06:16:34.588565 -->
+<#-- Generated at: 2026-03-12T07:27:40.518221 -->
 <#--
   Provider mapping: department_id -> allowed IdP aliases
 
@@ -8,8 +8,8 @@
     - a2b369c1-a81e-5e02-98d5-dd42af15ae4a: University
 
   Enumerated IdP aliases:
-    - google
-    - microsoft
+    - auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8
+    - auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294
 
   Default-IdP aliases:
 -->
@@ -22,12 +22,12 @@
 
 <#-- Map department_id -> allowed IdP aliases -->
 <#assign allowedProvidersByDept = {
-  "a2b369c1-a81e-5e02-98d5-dd42af15ae4a": [],
-  "f558f882-9630-5b77-a3c8-c09eb940b871": []
+  "a2b369c1-a81e-5e02-98d5-dd42af15ae4a": ["auth_microsoft_019b3be4-3117-7afc-8d1d-a2815d70f294"],
+  "f558f882-9630-5b77-a3c8-c09eb940b871": ["auth_google_019b3be4-3117-7aa4-aa34-0041aa51d1d8"]
 } />
 
 <#-- Platform providers (only used when no departments exist) -->
-<#assign platformProviders = ["microsoft", "google"] />
+<#assign platformProviders = [] />
 
 <#function getAllowedProvidersForDepartment deptId>
   <#-- If departments exist, always use department-specific providers -->

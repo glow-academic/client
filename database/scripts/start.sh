@@ -621,11 +621,7 @@ if [[ "$CLEAN_MODULES" == true ]]; then
   echo "🌱 Loading seed modules..."
   bash "$script_dir/load-modules.sh"
 
-  # Bootstrap keys
-  echo "🔑 Bootstrapping API keys..."
-  bash "$script_dir/bootstrap-keys.sh" || echo "⚠️  Key bootstrap skipped (non-fatal)"
-
-  echo "✅ Database ready (schema + modules + keys)!"
+  echo "✅ Database ready (schema + modules + seeds)!"
   exit 0
 fi
 

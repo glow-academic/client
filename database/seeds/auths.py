@@ -7,6 +7,8 @@ by the _impl function via resolve_auth_values.
 
 from uuid import UUID
 
+from database.seeds.resources.items import GOOGLE_ITEM_IDS, MICROSOFT_ITEM_IDS
+
 # ---------------------------------------------------------------------------
 # Deterministic IDs — importable by other modules
 # ---------------------------------------------------------------------------
@@ -26,6 +28,7 @@ auths = [
         slug="google",
         protocol="google",
         active_flag=True,
+        item_ids=GOOGLE_ITEM_IDS,
     ),
     dict(
         id=MICROSOFT_AUTH,
@@ -34,5 +37,6 @@ auths = [
         slug="microsoft",
         protocol="oidc",
         active_flag=True,
+        item_ids=MICROSOFT_ITEM_IDS,
     ),
 ]
