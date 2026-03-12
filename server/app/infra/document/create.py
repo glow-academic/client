@@ -165,6 +165,9 @@ async def create_document_impl(
             id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            image_ids=item.image_ids,
+            parameter_field_ids=item.field_ids,
         )
 
         flag_ids = [item.flag_id] if item.flag_id else None

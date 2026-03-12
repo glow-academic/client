@@ -127,6 +127,8 @@ async def update_field_impl(
             redis,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            conditional_parameter_ids=item.conditional_parameter_ids,
         )
 
         # Artifact update inside transaction

@@ -159,6 +159,8 @@ async def create_field_impl(
             id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            conditional_parameter_ids=item.conditional_parameter_ids,
         )
 
         # Artifact create inside transaction

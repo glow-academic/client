@@ -156,6 +156,8 @@ async def create_tool_impl(
             name_id=item.name_id,
             description_id=item.description_id,
             department_ids=item.department_ids,
+            args_ids=item.args_ids,
+            args_output_ids=item.args_outputs_ids,
             operation_ids=item.operation_ids,
             artifact_ids=item.artifact_ids,
         )

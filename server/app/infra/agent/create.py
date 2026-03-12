@@ -161,7 +161,9 @@ async def create_agent_impl(
             name_id=item.name_id,
             description_id=item.description_id,
             department_ids=item.department_ids,
+            model_id=item.model_ids[0] if item.model_ids else None,
             tool_ids=item.tool_ids,
+            voice_ids=item.voice_ids,
         )
 
         # Artifact create inside transaction

@@ -162,6 +162,8 @@ async def create_denormalized_snapshot(
     id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
+    department_ids: list[UUID] | None = None,
+    field_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create a parameters_resource snapshot by hydrating IDs to values.
 
@@ -194,5 +196,7 @@ async def create_denormalized_snapshot(
             id=id,
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
+            department_ids=department_ids,
+            field_ids=field_ids,
         )
     return result.id

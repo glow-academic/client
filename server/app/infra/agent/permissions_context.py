@@ -31,6 +31,7 @@ from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.voices.get import get_voices
 
 if TYPE_CHECKING:
     from app.infra.agent.create import AgentFieldError, CreateAgentItem
@@ -153,7 +154,12 @@ async def create_denormalized_snapshot(
     name_id: UUID | None,
     description_id: UUID | None,
     department_ids: list[UUID] | None = None,
+    model_id: UUID | None = None,
+    prompt_id: UUID | None = None,
+    rubric_id: UUID | None = None,
     tool_ids: list[UUID] | None = None,
+    instruction_ids: list[UUID] | None = None,
+    voice_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create an agents_resource snapshot by hydrating IDs to values.
 
@@ -174,10 +180,19 @@ async def create_denormalized_snapshot(
                 conn, [description_id], redis, bypass_cache=True
             )
 
-    names, descriptions = await asyncio.gather(
+    async def _get_voices() -> list:
+        if not voice_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_voices(conn, voice_ids, redis, bypass_cache=True)
+
+    names, descriptions, voices = await asyncio.gather(
         _get_names(),
         _get_descriptions(),
+        _get_voices(),
     )
+
+    voice_strings = [v.voice for v in voices] if voices else None
 
     async with pool.acquire() as conn:
         result = await create_agent_resource(
@@ -186,7 +201,12 @@ async def create_denormalized_snapshot(
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
             department_ids=department_ids,
+            model_id=model_id,
+            prompt_id=prompt_id,
+            rubric_id=rubric_id,
             tool_ids=tool_ids,
+            instruction_ids=instruction_ids,
+            voices=voice_strings,
             redis=redis,
         )
     return result.id

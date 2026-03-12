@@ -158,6 +158,7 @@ async def create_department_impl(
             id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
+            setting_ids=item.settings_ids,
         )
 
         # Artifact create inside transaction

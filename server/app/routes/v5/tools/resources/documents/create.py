@@ -20,12 +20,15 @@ async def create_document(
     soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
+    department_ids: list[UUID] | None = None,
+    image_ids: list[UUID] | None = None,
+    parameter_field_ids: list[UUID] | None = None,
 ) -> GetDocumentResponse:
     """Create a document resource (plain INSERT — no unique constraint)."""
     document_id = await conn.fetchval(
         """
-        INSERT INTO documents_resource (id, name, description, active, mcp, generated)
-        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
+        INSERT INTO documents_resource (id, name, description, active, mcp, generated, department_ids, image_ids, parameter_field_ids)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4, $6, $7, $8)
         RETURNING id
     """,
         name,
@@ -33,6 +36,9 @@ async def create_document(
         not soft,
         mcp,
         id,
+        department_ids or [],
+        image_ids or [],
+        parameter_field_ids or [],
     )
 
     await invalidate_tags(["resources", "documents"], redis=redis)

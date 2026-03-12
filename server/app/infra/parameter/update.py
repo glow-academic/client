@@ -131,6 +131,8 @@ async def update_parameter_impl(
             redis,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            field_ids=item.field_ids,
         )
 
         # Artifact update inside transaction

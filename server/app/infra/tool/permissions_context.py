@@ -129,6 +129,8 @@ async def create_denormalized_snapshot(
     name_id: UUID | None,
     description_id: UUID | None,
     department_ids: list[UUID] | None = None,
+    args_ids: list[UUID] | None = None,
+    args_output_ids: list[UUID] | None = None,
     operation_ids: list[UUID] | None = None,
     artifact_ids: list[UUID] | None = None,
 ) -> UUID:
@@ -177,6 +179,8 @@ async def create_denormalized_snapshot(
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
             department_ids=department_ids,
+            args_ids=args_ids,
+            args_output_ids=args_output_ids,
             operation=operations[0].operation if operations else None,
             artifacts=[item.artifact for item in artifacts],
             redis=redis,

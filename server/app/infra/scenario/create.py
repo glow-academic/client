@@ -206,6 +206,18 @@ async def create_scenario_impl(
             id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            persona_ids=item.persona_ids,
+            parameter_field_ids=item.parameter_field_ids,
+            document_ids=item.document_ids,
+            objective_ids=item.objective_ids,
+            image_ids=item.image_ids,
+            video_ids=item.video_ids,
+            question_ids=item.question_ids,
+            option_ids=item.option_ids,
+            problem_statement_ids=[item.problem_statement_id]
+            if item.problem_statement_id
+            else None,
         )
 
         flag_ids = _collect_flag_ids(item)

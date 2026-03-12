@@ -134,6 +134,7 @@ async def update_department_impl(
             redis,
             name_id=item.name_id,
             description_id=item.description_id,
+            setting_ids=item.settings_ids,
         )
 
         # Artifact update inside transaction

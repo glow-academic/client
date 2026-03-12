@@ -167,6 +167,12 @@ async def create_simulation_impl(
             id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            scenario_ids=item.scenario_ids,
+            scenario_rubric_ids=item.scenario_rubric_ids,
+            scenario_time_limit_ids=item.scenario_time_limit_ids,
+            scenario_position_ids=item.scenario_position_ids,
+            scenario_flag_ids=item.scenario_flag_ids,
         )
 
         # Artifact create inside transaction

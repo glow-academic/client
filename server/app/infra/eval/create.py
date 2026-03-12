@@ -154,6 +154,11 @@ async def create_eval_impl(
             id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            model_ids=item.model_ids,
+            model_rubric_ids=item.model_rubric_ids,
+            model_flag_ids=item.model_flag_ids,
+            model_position_ids=item.model_position_ids,
         )
 
         # Artifact create inside transaction

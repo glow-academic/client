@@ -20,12 +20,23 @@ async def create_eval(
     soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
+    department_ids: list[UUID] | None = None,
+    model_ids: list[UUID] | None = None,
+    model_rubric_ids: list[UUID] | None = None,
+    model_flag_ids: list[UUID] | None = None,
+    model_position_ids: list[UUID] | None = None,
 ) -> GetEvalResponse:
     """Create an eval resource (plain INSERT — no unique constraint)."""
     eval_id = await conn.fetchval(
         """
-        INSERT INTO evals_resource (id, name, description, active, mcp, generated)
-        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
+        INSERT INTO evals_resource (
+            id, name, description, active, mcp, generated,
+            department_ids, model_ids, model_rubric_ids, model_flag_ids, model_position_ids
+        )
+        VALUES (
+            COALESCE($5, uuidv7()), $1, $2, $3, $4, $4,
+            $6, $7, $8, $9, $10
+        )
         RETURNING id
     """,
         name,
@@ -33,6 +44,11 @@ async def create_eval(
         not soft,
         mcp,
         id,
+        department_ids or [],
+        model_ids or [],
+        model_rubric_ids or [],
+        model_flag_ids or [],
+        model_position_ids or [],
     )
 
     await invalidate_tags(["resources", "evals"], redis=redis)

@@ -20,12 +20,25 @@ async def create_cohort(
     soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
+    department_ids: list[UUID] | None = None,
+    simulation_ids: list[UUID] | None = None,
+    profile_ids: list[UUID] | None = None,
+    profile_persona_ids: list[UUID] | None = None,
+    simulation_position_ids: list[UUID] | None = None,
+    simulation_availability_ids: list[UUID] | None = None,
 ) -> GetCohortResponse:
     """Create a cohort resource (plain INSERT — no unique constraint)."""
     cohort_id = await conn.fetchval(
         """
-        INSERT INTO cohorts_resource (id, name, description, active, mcp, generated)
-        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
+        INSERT INTO cohorts_resource (
+            id, name, description, active, mcp, generated,
+            department_ids, simulation_ids, profile_ids,
+            profile_persona_ids, simulation_position_ids, simulation_availability_ids
+        )
+        VALUES (
+            COALESCE($5, uuidv7()), $1, $2, $3, $4, $4,
+            $6, $7, $8, $9, $10, $11
+        )
         RETURNING id
     """,
         name,
@@ -33,6 +46,12 @@ async def create_cohort(
         not soft,
         mcp,
         id,
+        department_ids or [],
+        simulation_ids or [],
+        profile_ids or [],
+        profile_persona_ids or [],
+        simulation_position_ids or [],
+        simulation_availability_ids or [],
     )
 
     await invalidate_tags(["resources", "cohorts"], redis=redis)

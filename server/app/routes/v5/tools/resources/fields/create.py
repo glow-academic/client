@@ -20,12 +20,16 @@ async def create_field(
     soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
+    department_ids: list[UUID] | None = None,
+    conditional_parameter_ids: list[UUID] | None = None,
 ) -> GetFieldResponse:
     """Create a field resource (plain INSERT — no unique constraint)."""
     field_id = await conn.fetchval(
         """
-        INSERT INTO fields_resource (id, name, description, value, active, mcp, generated)
-        VALUES (COALESCE($5, uuidv7()), $1, $2, '', $3, $4, $4)
+        INSERT INTO fields_resource (id, name, description, value, active, mcp, generated,
+            department_ids, conditional_parameter_ids)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, '', $3, $4, $4,
+            $6, $7)
         RETURNING id
         """,
         name,
@@ -33,6 +37,8 @@ async def create_field(
         not soft,
         mcp,
         id,
+        department_ids or [],
+        conditional_parameter_ids or [],
     )
     await invalidate_tags(["resources", "fields"], redis=redis)
     items = await get_fields(conn, [field_id], redis, bypass_cache=True)

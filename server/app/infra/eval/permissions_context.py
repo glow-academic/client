@@ -150,6 +150,11 @@ async def create_denormalized_snapshot(
     id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
+    department_ids: list[UUID] | None = None,
+    model_ids: list[UUID] | None = None,
+    model_rubric_ids: list[UUID] | None = None,
+    model_flag_ids: list[UUID] | None = None,
+    model_position_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create an evals_resource snapshot by hydrating IDs to values.
 
@@ -182,5 +187,10 @@ async def create_denormalized_snapshot(
             id=id,
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
+            department_ids=department_ids,
+            model_ids=model_ids,
+            model_rubric_ids=model_rubric_ids,
+            model_flag_ids=model_flag_ids,
+            model_position_ids=model_position_ids,
         )
     return result.id

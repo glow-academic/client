@@ -130,6 +130,8 @@ async def update_rubric_impl(
             redis,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            standard_group_ids=item.standard_group_ids,
         )
 
         # Artifact update inside transaction

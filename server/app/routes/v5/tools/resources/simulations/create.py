@@ -20,12 +20,21 @@ async def create_simulation(
     soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
+    department_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
+    scenario_rubric_ids: list[UUID] | None = None,
+    scenario_time_limit_ids: list[UUID] | None = None,
+    scenario_position_ids: list[UUID] | None = None,
+    scenario_flag_ids: list[UUID] | None = None,
 ) -> GetSimulationResponse:
     """Create a simulation resource (plain INSERT — no unique constraint)."""
     simulation_id = await conn.fetchval(
         """
-        INSERT INTO simulations_resource (id, name, description, active, mcp, generated)
-        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
+        INSERT INTO simulations_resource (id, name, description, active, mcp, generated,
+            department_ids, scenario_ids, scenario_rubric_ids,
+            scenario_time_limit_ids, scenario_position_ids, scenario_flag_ids)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4,
+            $6, $7, $8, $9, $10, $11)
         RETURNING id
     """,
         name,
@@ -33,6 +42,12 @@ async def create_simulation(
         not soft,
         mcp,
         id,
+        department_ids or [],
+        scenario_ids or [],
+        scenario_rubric_ids or [],
+        scenario_time_limit_ids or [],
+        scenario_position_ids or [],
+        scenario_flag_ids or [],
     )
 
     await invalidate_tags(["resources", "simulations"], redis=redis)

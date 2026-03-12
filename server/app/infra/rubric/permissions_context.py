@@ -201,6 +201,8 @@ async def create_denormalized_snapshot(
     id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
+    department_ids: list[UUID] | None = None,
+    standard_group_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create a rubrics_resource snapshot by hydrating IDs to values.
 
@@ -233,5 +235,7 @@ async def create_denormalized_snapshot(
             id=id,
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
+            department_ids=department_ids,
+            standard_group_ids=standard_group_ids,
         )
     return result.id

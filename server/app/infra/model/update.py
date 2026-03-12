@@ -127,6 +127,14 @@ async def update_model_impl(
             redis,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            provider_ids=item.provider_ids,
+            temperature_level_ids=item.temperature_level_ids,
+            reasoning_level_ids=item.reasoning_level_ids,
+            quality_ids=item.quality_ids,
+            voice_ids=item.voice_ids,
+            modality_ids=item.modality_ids,
+            value_ids=item.value_ids,
         )
 
         # Artifact update inside transaction

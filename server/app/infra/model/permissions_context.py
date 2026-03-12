@@ -32,6 +32,7 @@ from app.routes.v5.tools.resources.models.create import (
 )
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.values.get import get_values
 
 if TYPE_CHECKING:
     from app.infra.model.create import CreateModelItem, ModelFieldError
@@ -170,6 +171,14 @@ async def create_denormalized_snapshot(
     id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
+    department_ids: list[UUID] | None = None,
+    provider_ids: list[UUID] | None = None,
+    temperature_level_ids: list[UUID] | None = None,
+    reasoning_level_ids: list[UUID] | None = None,
+    quality_ids: list[UUID] | None = None,
+    voice_ids: list[UUID] | None = None,
+    modality_ids: list[UUID] | None = None,
+    value_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create a models_resource snapshot by hydrating IDs to values.
 
@@ -190,18 +199,38 @@ async def create_denormalized_snapshot(
                 conn, [description_id], redis, bypass_cache=True
             )
 
-    names, descriptions = await asyncio.gather(
+    async def _get_values() -> list:
+        if not value_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_values(conn, value_ids, redis, bypass_cache=True)
+
+    names, descriptions, values = await asyncio.gather(
         _get_names(),
         _get_descriptions(),
+        _get_values(),
     )
+
+    # Hydrate scalar fields from junction IDs:
+    # - provider_ids → provider_id (first UUID)
+    # - value_ids → value (text from values_resource)
+    provider_id = provider_ids[0] if provider_ids else None
+    value = values[0].value if values else ""
 
     async with pool.acquire() as conn:
         result = await create_model_resource(
             conn,
             id=id,
-            value="",
+            value=value,
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
+            department_ids=department_ids,
+            provider_id=provider_id,
+            temperature_level_ids=temperature_level_ids,
+            reasoning_level_ids=reasoning_level_ids,
+            quality_ids=quality_ids,
+            voice_ids=voice_ids,
+            modality_ids=modality_ids,
             redis=redis,
         )
     return result.id

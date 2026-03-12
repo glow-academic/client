@@ -133,6 +133,7 @@ async def update_profile_impl(
                     conn,
                     redis,
                     name_id=item.name_id,
+                    department_ids=item.department_ids,
                 )
 
                 await update_profile_artifact(

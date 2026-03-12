@@ -172,6 +172,12 @@ async def create_cohort_impl(
             id=item.id,
             name_id=item.name_id,
             description_id=item.description_id,
+            department_ids=item.department_ids,
+            simulation_ids=item.simulation_ids,
+            profile_ids=item.profile_ids,
+            profile_persona_ids=item.profile_persona_ids,
+            simulation_position_ids=item.simulation_position_ids,
+            simulation_availability_ids=item.simulation_availability_ids,
         )
 
         flag_ids = [item.flag_id] if item.flag_id else None

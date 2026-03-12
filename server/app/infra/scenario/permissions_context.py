@@ -414,6 +414,16 @@ async def create_denormalized_snapshot(
     id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
+    department_ids: list[UUID] | None = None,
+    persona_ids: list[UUID] | None = None,
+    parameter_field_ids: list[UUID] | None = None,
+    document_ids: list[UUID] | None = None,
+    objective_ids: list[UUID] | None = None,
+    image_ids: list[UUID] | None = None,
+    video_ids: list[UUID] | None = None,
+    question_ids: list[UUID] | None = None,
+    option_ids: list[UUID] | None = None,
+    problem_statement_ids: list[UUID] | None = None,
 ) -> UUID:
     """Create a scenarios_resource snapshot by hydrating IDs to values.
 
@@ -446,5 +456,15 @@ async def create_denormalized_snapshot(
             id=id,
             name=names[0].name if names else "",
             description=descriptions[0].description if descriptions else "",
+            department_ids=department_ids,
+            persona_ids=persona_ids,
+            parameter_field_ids=parameter_field_ids,
+            document_ids=document_ids,
+            objective_ids=objective_ids,
+            image_ids=image_ids,
+            video_ids=video_ids,
+            question_ids=question_ids,
+            option_ids=option_ids,
+            problem_statement_ids=problem_statement_ids,
         )
     return result.id
