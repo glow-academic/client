@@ -9,12 +9,10 @@ from app.routes.v5.api.main.profile.docs import router as docs_router
 from app.routes.v5.api.main.profile.draft import router as draft_router
 from app.routes.v5.api.main.profile.drafts import router as drafts_router
 from app.routes.v5.api.main.profile.duplicate import router as duplicate_router
-from app.routes.v5.api.main.profile.emulate import router as emulate_router
 from app.routes.v5.api.main.profile.export import router as export_router
 from app.routes.v5.api.main.profile.get import router as get_router
 from app.routes.v5.api.main.profile.refresh import router as refresh_router
 from app.routes.v5.api.main.profile.search import router as search_router
-from app.routes.v5.api.main.profile.unemulate import router as unemulate_router
 from app.routes.v5.api.main.profile.update import router as update_router
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
@@ -30,7 +28,5 @@ router.include_router(draft_router)
 router.include_router(drafts_router)
 router.include_router(delete_router)
 router.include_router(docs_router)
-router.include_router(emulate_router)
-router.include_router(unemulate_router)
 router.include_router(export_router)
 router.include_router(refresh_router)

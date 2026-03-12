@@ -13,7 +13,7 @@ import { cache } from "react";
 type ProfileContextIn = InputOf<"/api/v5/artifacts/profiles/context", "post">;
 type ProfileContextOut = OutputOf<"/api/v5/artifacts/profiles/context", "post">;
 
-type EmulateProfileIn = InputOf<"/api/v5/artifacts/profiles/emulate", "post">;
+type EmulateProfileIn = InputOf<"/api/v5/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v5/artifacts/activity/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v5/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
@@ -146,7 +146,7 @@ export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
   try {
-    const res = await api.post("/artifacts/profiles/emulate", {
+    const res = await api.post("/emulate", {
       body: {
         target_profile_id: input.targetProfileId,
       },
@@ -176,7 +176,7 @@ type ExitEmulationResult = {
  */
 export async function exitEmulation(): Promise<ExitEmulationResult> {
   try {
-    const res = await api.post("/artifacts/profiles/unemulate", {
+    const res = await api.post("/unemulate", {
       body: {},
     });
 

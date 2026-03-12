@@ -10,9 +10,13 @@ from app.routes.v5.api.main.scenario.drafts import router as drafts_router
 from app.routes.v5.api.main.scenario.duplicate import router as duplicate_router
 from app.routes.v5.api.main.scenario.export import router as export_router
 from app.routes.v5.api.main.scenario.get import router as get_router
+from app.routes.v5.api.main.scenario.file import router as file_router
+from app.routes.v5.api.main.scenario.image import router as image_router
 from app.routes.v5.api.main.scenario.refresh import router as refresh_router
 from app.routes.v5.api.main.scenario.search import router as search_router
+from app.routes.v5.api.main.scenario.text import router as text_router
 from app.routes.v5.api.main.scenario.update import router as update_router
+from app.routes.v5.api.main.scenario.video import router as video_router
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
 
@@ -28,3 +32,9 @@ router.include_router(drafts_router)
 router.include_router(export_router)
 router.include_router(docs_router)
 router.include_router(refresh_router)
+
+# Upload modality routers
+router.include_router(file_router)
+router.include_router(image_router)
+router.include_router(text_router)
+router.include_router(video_router)

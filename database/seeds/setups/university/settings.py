@@ -17,6 +17,13 @@ from database.seeds.setups.university.keys import (
     AUTH_ITEM_VALUE_IDS,
     PROVIDER_KEY_IDS,
 )
+from database.seeds.setups.university.profiles import BENCHMARK_PROFILE
+
+# ---------------------------------------------------------------------------
+# Profile artifact IDs that need profiles_resource lookup for setting linkage
+# ---------------------------------------------------------------------------
+
+SETTING_PROFILE_ARTIFACT_IDS = [BENCHMARK_PROFILE]
 
 # ---------------------------------------------------------------------------
 # Pre-existing threshold resource IDs (from 01-resources/06-thresholds.sql)
@@ -108,5 +115,6 @@ def get_setting_updates():
         dict(
             id=UNIVERSITY_SETTING,
             color_ids=ALL_COLOR_IDS,
+            profile_artifact_ids=SETTING_PROFILE_ARTIFACT_IDS,
         ),
     ]

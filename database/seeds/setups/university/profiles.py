@@ -19,6 +19,7 @@ from database.seeds.setups.university.departments import UNIVERSITY_DEPT
 
 ROLE_ADMIN = UUID("019bbabc-5a36-76d3-8fc3-8415fe308cd3")
 ROLE_INSTRUCTIONAL = UUID("019bbabc-5a3b-741e-bad3-474cc6c05fd6")
+ROLE_BENCHMARK = UUID("019bdb94-b279-70c0-a610-6b9696fb5c94")
 
 # ---------------------------------------------------------------------------
 # Deterministic IDs — importable by other modules
@@ -27,6 +28,7 @@ ROLE_INSTRUCTIONAL = UUID("019bbabc-5a3b-741e-bad3-474cc6c05fd6")
 UNIVERSITY_ADMIN = sid("uni/profile/university-admin")
 PROFESSOR_SMITH = sid("uni/profile/professor-smith")
 TA_JOHNSON = sid("uni/profile/ta-johnson")
+BENCHMARK_PROFILE = sid("uni/profile/benchmark")
 
 # ---------------------------------------------------------------------------
 # Profile definitions
@@ -53,6 +55,13 @@ profiles = [
         name="TA Johnson",
         department_ids=[UNIVERSITY_DEPT],
         role_ids=[ROLE_INSTRUCTIONAL],
+    ),
+    # ── Benchmark ──────────────────────────────────────────────────────
+    dict(
+        id=BENCHMARK_PROFILE,
+        name="Benchmark",
+        department_ids=[UNIVERSITY_DEPT],
+        role_ids=[ROLE_BENCHMARK],
     ),
 ]
 

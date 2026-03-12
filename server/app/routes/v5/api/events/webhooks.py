@@ -16,7 +16,7 @@ from app.routes.v5.api.events.types import (
 router = APIRouter()
 
 
-@router.post("/webhooks/dispatch", response_model=DispatchWebhookApiResponse)
+@router.post("/webhooks", response_model=DispatchWebhookApiResponse)
 async def dispatch_webhook_events(
     request: DispatchWebhookApiRequest,
     http_request: Request,

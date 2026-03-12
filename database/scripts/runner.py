@@ -1273,13 +1273,31 @@ async def _run_update_pass(
 
             setting_updates = mod.get_setting_updates()
             if setting_updates:
-                items = [
-                    UpdateSettingItem(
-                        setting_id=s["id"],
-                        color_ids=s.get("color_ids"),
+                from app.routes.v5.tools.artifacts.profile.get import get_profiles
+
+                items = []
+                for s in setting_updates:
+                    # Resolve profile_artifact_ids → profiles_resource IDs
+                    profile_ids = None
+                    artifact_ids = s.get("profile_artifact_ids")
+                    if artifact_ids:
+                        async with pool.acquire() as conn:
+                            profiles = await get_profiles(
+                                conn, artifact_ids, profiles=True
+                            )
+                        profile_ids = [
+                            p.profile_ids[0]
+                            for p in profiles
+                            if p.profile_ids
+                        ]
+
+                    items.append(
+                        UpdateSettingItem(
+                            setting_id=s["id"],
+                            color_ids=s.get("color_ids"),
+                            profile_ids=profile_ids,
+                        )
                     )
-                    for s in setting_updates
-                ]
                 await update_setting_impl(
                     pool,
                     redis,

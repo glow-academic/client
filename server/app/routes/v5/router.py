@@ -25,8 +25,13 @@ from app.infra.identity.middleware import require_auth
 # Docs
 # ============================================================================
 from app.routes.v5.api.docs import router as docs_router
-from app.routes.v5.api.events import get_router as get_events_router
+from app.routes.v5.api.events.polling import router as poll_router
+from app.routes.v5.api.events.stream import router as stream_router
+from app.routes.v5.api.events.webhooks import router as webhooks_router
 from app.routes.v5.api.main.activity import router as activity_artifact_router
+from app.routes.v5.api.main.group.generate import router as generate_router
+from app.routes.v5.api.main.profile.emulate import router as emulate_router
+from app.routes.v5.api.main.profile.unemulate import router as unemulate_router
 
 # ============================================================================
 # Artifacts (19 total)
@@ -125,7 +130,16 @@ artifacts_router.include_router(benchmark_artifact_router)
 artifacts_router.include_router(test_artifact_router)
 
 router.include_router(artifacts_router)
-router.include_router(get_events_router())
+
+# ============================================================================
+# Root-level actions
+# ============================================================================
+router.include_router(emulate_router)
+router.include_router(unemulate_router)
+router.include_router(generate_router)
+router.include_router(poll_router)
+router.include_router(stream_router)
+router.include_router(webhooks_router)
 
 # ============================================================================
 # Docs

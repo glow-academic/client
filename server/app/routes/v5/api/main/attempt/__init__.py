@@ -3,13 +3,15 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.attempt.archive import router as archive_router
-from app.routes.v5.api.main.attempt.audio import router as audio_router
+from app.routes.v5.api.main.attempt.audio import router as audio_download_router
 from app.routes.v5.api.main.attempt.docs import router as docs_router
 from app.routes.v5.api.main.attempt.end import router as end_router
+from app.routes.v5.api.main.attempt.file import router as file_download_router
 from app.routes.v5.api.main.attempt.end_all import router as end_all_router
 from app.routes.v5.api.main.attempt.export import router as export_router
 from app.routes.v5.api.main.attempt.get import router as get_router
 from app.routes.v5.api.main.attempt.grade import router as grade_router
+from app.routes.v5.api.main.attempt.image import router as image_download_router
 from app.routes.v5.api.main.attempt.message import router as message_router
 from app.routes.v5.api.main.attempt.next import router as next_router
 from app.routes.v5.api.main.attempt.refresh import router as refresh_router
@@ -17,7 +19,10 @@ from app.routes.v5.api.main.attempt.response import router as response_router
 from app.routes.v5.api.main.attempt.search import router as search_router
 from app.routes.v5.api.main.attempt.start import router as start_router
 from app.routes.v5.api.main.attempt.stop import router as stop_router
+from app.routes.v5.api.main.attempt.text import router as text_download_router
 from app.routes.v5.api.main.attempt.use_previous import router as use_previous_router
+from app.routes.v5.api.main.attempt.video import router as video_download_router
+from app.routes.v5.api.main.attempt.voice import router as voice_router
 
 router = APIRouter(prefix="/attempt", tags=["artifacts", "attempt"])
 
@@ -36,5 +41,12 @@ router.include_router(grade_router)
 router.include_router(stop_router)
 router.include_router(response_router)
 router.include_router(use_previous_router)
-router.include_router(audio_router)
+router.include_router(voice_router)
 router.include_router(search_router)
+
+# Download modality routers
+router.include_router(audio_download_router)
+router.include_router(file_download_router)
+router.include_router(image_download_router)
+router.include_router(video_download_router)
+router.include_router(text_download_router)
