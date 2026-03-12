@@ -22,8 +22,6 @@ async def create_setting(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetSettingResponse:
     """Create a setting resource (plain INSERT — no unique constraint)."""
     setting_id = await conn.fetchval(

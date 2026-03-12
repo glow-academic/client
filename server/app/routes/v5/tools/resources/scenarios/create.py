@@ -18,8 +18,6 @@ async def create_scenario(
     description: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
     parameter_field_ids: list[UUID] | None = None,

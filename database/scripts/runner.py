@@ -1090,53 +1090,60 @@ async def _run_post_links(
 ) -> None:
     """Run post-creation link updates (bidirectional refs).
 
-    Calls the tool-layer update functions directly (not the client-level ones)
-    to bypass permission checks — artifacts may already be "in use" by
-    child artifacts, which blocks the client-level update functions.
+    Uses canonical infra-layer _impl functions which handle:
+    - Junction updates
+    - Denormalized resource snapshot creation
+    - Cache invalidation
     """
     # ── Department → Setting link ─────────────────────────────────────
     if hasattr(mod, "department_updates"):
-        from app.routes.v5.tools.artifacts.department.update import (
-            update_department,
-        )
+        from app.infra.department.update import update_department_impl
+        from app.routes.v5.api.main.department.types import UpdateDepartmentItem
 
-        for d in mod.department_updates:
-            dept_id = d["id"]
-            async with pool.acquire() as conn:
-                await update_department(
-                    conn,
-                    dept_id,
-                    settings_ids=d.get("settings_ids"),
-                )
-            print(f"  OK: Department {dept_id} linked to settings")
+        items = [
+            UpdateDepartmentItem(
+                department_id=d["id"],
+                settings_ids=d.get("settings_ids"),
+            )
+            for d in mod.department_updates
+        ]
+        await update_department_impl(
+            pool,
+            redis,
+            profile_id=SEED_PROFILE_ID,
+            items=items,
+        )
+        print(f"  OK: {len(items)} department(s) linked to settings")
 
     # ── Setting → Colors link ─────────────────────────────────────────
     if hasattr(mod, "setting_updates"):
-        from app.routes.v5.tools.artifacts.setting.update import (
-            update_setting,
-        )
+        from app.infra.setting.update import update_setting_impl
+        from app.routes.v5.api.main.setting.types import UpdateSettingItem
 
-        for s in mod.setting_updates:
-            setting_id = s["id"]
-            async with pool.acquire() as conn:
-                await update_setting(
-                    conn,
-                    setting_id,
-                    color_ids=s.get("color_ids"),
-                )
-            print(f"  OK: Setting {setting_id} linked to colors")
+        items = [
+            UpdateSettingItem(
+                setting_id=s["id"],
+                color_ids=s.get("color_ids"),
+            )
+            for s in mod.setting_updates
+        ]
+        await update_setting_impl(
+            pool,
+            redis,
+            profile_id=SEED_PROFILE_ID,
+            items=items,
+        )
+        print(f"  OK: {len(items)} setting(s) linked to colors")
 
     # ── Pre-existing Profile → Department + Email link ────────────────
     if hasattr(mod, "profile_department_links"):
-        from app.routes.v5.tools.artifacts.profile.update import (
-            update_profile,
-        )
+        from app.infra.profile.update import update_profile_impl
+        from app.routes.v5.api.main.profile.types import UpdateProfileItem
         from app.routes.v5.tools.resources.emails.create import create_email
 
+        items: list[UpdateProfileItem] = []
         for p in mod.profile_department_links:
-            profile_id = p["profile_id"]
-
-            # Create email resource
+            # Create email resource (not handled by _impl value resolution)
             email_id = None
             if "email" in p:
                 async with pool.acquire() as conn:
@@ -1147,16 +1154,21 @@ async def _run_post_links(
                     )
                     email_id = email_result.id
 
-            # Update profile with department + email
-            async with pool.acquire() as conn:
-                await update_profile(
-                    conn,
-                    profile_id,
+            items.append(
+                UpdateProfileItem(
+                    profile_id=p["profile_id"],
                     department_ids=p.get("department_ids"),
                     email_ids=[email_id] if email_id else None,
-                    redis=redis,
                 )
-            print(f"  OK: Profile {profile_id} linked to department")
+            )
+
+        await update_profile_impl(
+            pool,
+            redis,
+            profile_id=SEED_PROFILE_ID,
+            items=items,
+        )
+        print(f"  OK: {len(items)} profile(s) linked to departments")
 
 
 async def _run_cohort_seeds(
@@ -1603,6 +1615,22 @@ async def main_setup(setup: str = "university") -> None:
     print("\nDone!")
 
 
+KNOWN_SETUPS = ["organization", "university"]
+
+
+async def main_all() -> None:
+    """Seed modules + all setups in one run.
+
+    Runs:
+      1. main_modules()  → base-seed.sql
+      2. main_setup() for each setup → setups/{name}/seed.sql
+    """
+    await main_modules()
+    for setup in KNOWN_SETUPS:
+        await main_setup(setup)
+    print("\n=== All seed SQL files regenerated ===")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run seed definitions")
     parser.add_argument(
@@ -1611,9 +1639,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "--modules", action="store_true", help="Seed all modules → base-seed.sql"
     )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Seed modules + all setups (organization, university)",
+    )
     args = parser.parse_args()
 
-    if args.modules:
+    if args.all:
+        asyncio.run(main_all())
+    elif args.modules:
         asyncio.run(main_modules())
     else:
         asyncio.run(main_setup(args.setup or "university"))

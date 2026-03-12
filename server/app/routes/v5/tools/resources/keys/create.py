@@ -19,8 +19,6 @@ async def create_key(
     soft: bool = False,
     key: str = "",
     description: str = "",
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetKeyResponse:
     """Create a key resource (plain INSERT — no unique constraint)."""
     key_id = await conn.fetchval(

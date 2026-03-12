@@ -25,8 +25,6 @@ async def create_persona(
     parameter_field_ids: list[UUID] | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetPersonaResponse:
     """Create a persona resource (denormalized snapshot)."""
     persona_id = await conn.fetchval(

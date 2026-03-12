@@ -20,8 +20,6 @@ async def create_item(
     soft: bool = False,
     encrypted: bool = False,
     position: int = 0,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetItemResponse:
     """Create an item resource (plain INSERT — no unique constraint)."""
     item_id = await conn.fetchval(

@@ -17,8 +17,6 @@ async def create_endpoint(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetEndpointResponse:
     """Create an endpoint resource."""
     endpoint_id = await conn.fetchval(

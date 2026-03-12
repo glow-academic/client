@@ -18,8 +18,6 @@ async def create_model_flag(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetModelFlagResponse:
     """Create a model_flag resource (plain INSERT — no unique constraint)."""
     model_flag_id = await conn.fetchval(

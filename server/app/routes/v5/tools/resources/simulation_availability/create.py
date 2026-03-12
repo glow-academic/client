@@ -24,8 +24,6 @@ async def create_simulation_availability(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetSimulationAvailabilityResponse:
     """Create a simulation_availability resource (ON CONFLICT on (simulation_id, type))."""
     row_id = await conn.fetchval(

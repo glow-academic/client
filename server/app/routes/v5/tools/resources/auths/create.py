@@ -21,8 +21,6 @@ async def create_auth(
     department_ids: list[UUID] | None = None,
     slug: str | None = None,
     protocol: str | None = None,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetAuthResponse:
     """Create an auth resource (plain INSERT — no unique constraint)."""
     auth_id = await conn.fetchval(

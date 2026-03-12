@@ -17,8 +17,6 @@ async def create_artifact(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetArtifactResponse:
     """Create an artifact resource (insert or get existing)."""
     artifact_id = await conn.fetchval(

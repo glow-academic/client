@@ -18,8 +18,6 @@ async def create_threshold(
     threshold_type: str = "success",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetThresholdResponse:
     """Create a threshold resource (plain INSERT — no unique constraint)."""
     threshold_id = await conn.fetchval(

@@ -18,8 +18,6 @@ async def create_parameter(
     description: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     field_ids: list[UUID] | None = None,
 ) -> GetParameterResponse:

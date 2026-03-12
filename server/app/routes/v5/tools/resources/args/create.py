@@ -21,8 +21,6 @@ async def create_arg(
     description: str = "",
     required: bool = False,
     default_value: str = "",
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetArgResponse:
     """Create an arg resource (plain INSERT — no unique constraint)."""
     arg_id = await conn.fetchval(

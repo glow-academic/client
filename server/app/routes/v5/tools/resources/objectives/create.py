@@ -17,8 +17,6 @@ async def create_objective(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetObjectiveResponse:
     """Create an objective resource."""
     objective_id = await conn.fetchval(

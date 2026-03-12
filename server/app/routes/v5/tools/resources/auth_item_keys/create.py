@@ -21,8 +21,6 @@ async def create_auth_item_key(
     updated_at: datetime | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetAuthItemKeyResponse:
     """Create an auth_item_key resource (ON CONFLICT on (auth_id, item_id, key_id))."""
     row_id = await conn.fetchval(

@@ -18,8 +18,6 @@ async def create_model_position(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetModelPositionResponse:
     """Create a model_position resource (plain INSERT — no unique constraint)."""
     model_position_id = await conn.fetchval(

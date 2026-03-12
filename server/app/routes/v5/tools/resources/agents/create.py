@@ -25,8 +25,6 @@ async def create_agent(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetAgentResponse:
     """Create an agent resource (plain INSERT — no unique constraint)."""
     agent_id = await conn.fetchval(

@@ -18,8 +18,6 @@ async def create_cohort(
     description: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,

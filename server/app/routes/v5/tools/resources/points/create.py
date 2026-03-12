@@ -18,8 +18,6 @@ async def create_point(
     point_type: str = "total",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetPointResponse:
     """Create a point resource (plain INSERT — no unique constraint)."""
     point_id = await conn.fetchval(

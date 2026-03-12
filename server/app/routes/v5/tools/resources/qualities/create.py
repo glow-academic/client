@@ -17,8 +17,6 @@ async def create_quality(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetQualityResponse:
     """Create a quality resource (plain INSERT — no unique constraint)."""
     quality_id = await conn.fetchval(

@@ -19,8 +19,6 @@ async def create_icon(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetIconResponse:
     """Create an icon resource."""
     icon_id = await conn.fetchval(

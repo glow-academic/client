@@ -26,8 +26,6 @@ async def create_model(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetModelResponse:
     """Create a model resource (plain INSERT — no unique constraint)."""
     model_id = await conn.fetchval(

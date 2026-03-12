@@ -18,8 +18,6 @@ async def create_modality(
     is_input: bool = False,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetModalityResponse:
     """Create a modality resource (plain INSERT, no unique constraint)."""
     modality_id = await conn.fetchval(

@@ -17,8 +17,6 @@ async def create_instruction(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetInstructionResponse:
     """Create an instruction resource."""
     instruction_id = await conn.fetchval(

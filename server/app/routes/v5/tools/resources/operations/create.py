@@ -17,8 +17,6 @@ async def create_operation(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetOperationResponse:
     """Create an operation resource (insert or get existing)."""
     operation_id = await conn.fetchval(

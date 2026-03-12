@@ -20,8 +20,6 @@ async def create_profile_persona(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetProfilePersonaResponse:
     """Create a profile_persona resource (ON CONFLICT on (persona_id, profile_id))."""
     row_id = await conn.fetchval(

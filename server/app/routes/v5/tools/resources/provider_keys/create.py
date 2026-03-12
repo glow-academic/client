@@ -21,8 +21,6 @@ async def create_provider_key(
     description: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetProviderKeyResponse:
     """Create a provider_key resource (plain INSERT — no unique constraint)."""
     provider_key_id = await conn.fetchval(

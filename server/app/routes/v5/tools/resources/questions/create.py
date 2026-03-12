@@ -19,8 +19,6 @@ async def create_question(
     allow_multiple: bool = False,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetQuestionResponse:
     """Create a question resource."""
     question_id = await conn.fetchval(

@@ -23,8 +23,6 @@ async def create_scenario_time_limit(
     negative: bool = False,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetScenarioTimeLimitResponse:
     """Create a scenario_time_limit resource (plain INSERT — no unique constraint)."""
     row_id = await conn.fetchval(

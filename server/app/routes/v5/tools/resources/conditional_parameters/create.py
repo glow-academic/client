@@ -21,8 +21,6 @@ async def create_conditional_parameter(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetConditionalParameterResponse:
     """Create a conditional_parameter resource (ON CONFLICT on parameter_id upserts)."""
     conditional_parameter_id = await conn.fetchval(

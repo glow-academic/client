@@ -21,8 +21,6 @@ async def create_flag(
     value: bool = True,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetFlagResponse:
     """Create a flag resource."""
     flag_id = await conn.fetchval(

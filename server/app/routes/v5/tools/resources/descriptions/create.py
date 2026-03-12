@@ -17,8 +17,6 @@ async def create_description(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetDescriptionResponse:
     """Create a description resource."""
     description_id = await conn.fetchval(

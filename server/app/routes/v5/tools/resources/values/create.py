@@ -18,8 +18,6 @@ async def create_value(
     mcp: bool = False,
     soft: bool = False,
     value_type: str = "model",
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetValueResponse:
     """Create a value resource."""
     value_id = await conn.fetchval(

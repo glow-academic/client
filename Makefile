@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean seed-gen
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -348,6 +348,11 @@ connect-db:
 	@cd database && yarn connect
 	@echo "✅ Connected to database"
 
+# Regenerate all seed SQL files (base + all setups) via testcontainers
+seed-gen: check-venv
+	@echo "Regenerating all seed SQL files..."
+	@PYTHONPATH=server $(VENV_PYTHON) -m database.scripts.runner --all
+
 # Load seed data into local database
 load-seeds:
 	@echo "Loading seed data..."
@@ -400,6 +405,7 @@ help:
 	@echo "  migrate-db       - Run most recent database migration"
 	@echo "  migrate-db-all   - Run all database migrations"
 	@echo "  connect-db       - Connect to database"
+	@echo "  seed-gen         - Regenerate all seed SQL files (base + all setups)"
 	@echo "  fresh-db         - Build fresh DB from schema + modules + keys"
 	@echo "  bootstrap-keys   - Encrypt and inject API keys from .env"
 	@echo "  load-seeds       - Load seed data into local database"

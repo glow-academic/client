@@ -17,8 +17,6 @@ async def create_request_limit(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetRequestLimitResponse:
     """Create a request_limit resource (plain INSERT — no unique constraint)."""
     request_limit_id = await conn.fetchval(

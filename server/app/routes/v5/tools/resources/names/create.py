@@ -17,8 +17,6 @@ async def create_name(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetNameResponse:
     """Create a name resource (insert or get existing)."""
     name_id = await conn.fetchval(

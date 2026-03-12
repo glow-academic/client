@@ -20,8 +20,6 @@ async def create_parameter_field(
     parameter_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetParameterFieldResponse:
     """Create a parameter_field resource (plain INSERT — no unique constraint)."""
     parameter_field_id = await conn.fetchval(

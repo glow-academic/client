@@ -18,8 +18,6 @@ async def create_rubric(
     description: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     standard_group_ids: list[UUID] | None = None,
 ) -> GetRubricResponse:
@@ -35,8 +33,8 @@ async def create_rubric(
         not soft,
         mcp,
         id,
-        department_ids,
-        standard_group_ids,
+        department_ids or [],
+        standard_group_ids or [],
     )
 
     await invalidate_tags(["resources", "rubrics"], redis=redis)

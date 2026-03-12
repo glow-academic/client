@@ -20,8 +20,6 @@ async def create_scenario_rubric(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetScenarioRubricResponse:
     """Create a scenario_rubric resource (plain INSERT — no unique constraint)."""
     row_id = await conn.fetchval(

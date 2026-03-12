@@ -18,8 +18,6 @@ async def create_simulation(
     description: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
     scenario_rubric_ids: list[UUID] | None = None,

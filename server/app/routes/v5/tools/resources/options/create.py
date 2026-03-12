@@ -17,8 +17,6 @@ async def create_option(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     question_id: UUID | None = None,
 ) -> GetOptionResponse:
     """Create an option resource (plain INSERT, no unique constraint)."""

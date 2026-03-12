@@ -1,5 +1,5 @@
 <#-- GENERATED FILE: do not edit manually -->
-<#-- Generated at: 2026-03-11T20:34:44.994043 -->
+<#-- Generated at: 2026-03-11T21:08:38.064691 -->
 <#--
   Provider mapping: department_id -> allowed IdP aliases
 
@@ -9,7 +9,6 @@
 
   Enumerated IdP aliases:
     - google
-    - microsoft
 
   Default-IdP aliases:
 -->
@@ -27,7 +26,7 @@
 } />
 
 <#-- Platform providers (only used when no departments exist) -->
-<#assign platformProviders = ["microsoft", "google"] />
+<#assign platformProviders = ["google"] />
 
 <#function getAllowedProvidersForDepartment deptId>
   <#-- If departments exist, always use department-specific providers -->

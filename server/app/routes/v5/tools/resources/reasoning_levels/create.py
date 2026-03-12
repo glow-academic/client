@@ -19,8 +19,6 @@ async def create_reasoning_level(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetReasoningLevelResponse:
     """Create a reasoning_level resource (plain INSERT, no unique constraint)."""
     level_id = await conn.fetchval(

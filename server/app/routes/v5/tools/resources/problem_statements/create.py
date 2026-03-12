@@ -20,8 +20,6 @@ async def create_problem_statement(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetProblemStatementResponse:
     """Create a problem statement resource."""
     problem_statement_id = await conn.fetchval(

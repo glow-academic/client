@@ -19,8 +19,6 @@ async def create_args_output(
     template: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetArgOutputResponse:
     """Create an args_output resource (ON CONFLICT on (args_id, name) upserts)."""
     args_output_id = await conn.fetchval(

@@ -21,8 +21,6 @@ async def create_pricing(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetPricingResponse:
     """Create a pricing resource (plain INSERT, no unique constraint)."""
     pricing_id = await conn.fetchval(

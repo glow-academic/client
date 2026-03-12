@@ -18,8 +18,6 @@ async def create_profile(
     description: str = "",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
 ) -> GetProfileResponse:
     """Create a profile resource (plain INSERT, no unique constraint)."""
@@ -34,7 +32,7 @@ async def create_profile(
         not soft,
         mcp,
         id,
-        department_ids,
+        department_ids or [],
     )
     await invalidate_tags(["resources", "profiles"], redis=redis)
     items = await get_profiles(conn, [profile_id], redis, bypass_cache=True)

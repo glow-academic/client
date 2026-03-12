@@ -22,8 +22,6 @@ async def create_role(
     artifacts: list[str] | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetRoleResponse:
     """Create a role resource (upsert on UNIQUE (role, name) constraint)."""
     role_id = await conn.fetchval(

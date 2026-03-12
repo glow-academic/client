@@ -18,8 +18,6 @@ async def create_provider(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
 ) -> GetProviderResponse:
     """Create a provider resource (plain INSERT — no unique constraint)."""
@@ -34,7 +32,7 @@ async def create_provider(
         not soft,
         mcp,
         id,
-        department_ids,
+        department_ids or [],
     )
     await invalidate_tags(["resources", "providers"], redis=redis)
     items = await get_providers(conn, [provider_id], redis, bypass_cache=True)

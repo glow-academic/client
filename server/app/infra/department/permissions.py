@@ -31,12 +31,8 @@ def compute_can_edit(
     """Unified can_edit logic for both get and list views.
 
     Constraints:
-    1. Not in use by entities
-    2. User has superadmin role
+    1. User has superadmin role
     """
-    if usage_count > 0:
-        return False
-
     return user_role == "superadmin"
 
 
@@ -48,12 +44,6 @@ def compute_disabled_reason(
 
     Returns None if editing is allowed.
     """
-    if usage_count > 0:
-        return (
-            "This department is currently in use and cannot be edited. "
-            "You can view the details but cannot make changes."
-        )
-
     if user_role != "superadmin":
         return (
             "This department cannot be edited. "

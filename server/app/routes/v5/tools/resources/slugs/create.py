@@ -17,8 +17,6 @@ async def create_slug(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetSlugResponse:
     """Create a slug resource (insert or get existing)."""
     slug_id = await conn.fetchval(

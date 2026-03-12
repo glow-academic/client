@@ -20,8 +20,6 @@ async def create_color(
     color_type: str = "primary",
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetColorResponse:
     """Create a color resource."""
     color_id = await conn.fetchval(

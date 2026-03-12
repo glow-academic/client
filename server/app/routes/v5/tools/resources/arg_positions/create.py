@@ -18,8 +18,6 @@ async def create_arg_position(
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
-    group_id: UUID | None = None,
-    tool_id: UUID | None = None,
 ) -> GetArgPositionResponse:
     """Create an arg_position resource (plain INSERT — no unique constraint)."""
     arg_position_id = await conn.fetchval(
