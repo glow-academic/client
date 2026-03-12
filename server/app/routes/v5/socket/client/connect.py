@@ -116,66 +116,32 @@ async def connect(
             token = extract_bearer_token(auth["token"])
             if token:
                 pool = get_pool()
-                async with pool.acquire() as conn:
-                    identity = await resolve_identity(token, conn)
-                    profile_id = str(identity.profile_id)
-                    session_id = str(identity.session_id)
+                identity = await resolve_identity(token, pool)
+                profile_id = str(identity.profile_id)
+                session_id = str(identity.session_id)
         except Exception:
             logger.warning("Failed to resolve identity from auth token for sid %s", sid)
 
-    # Guest fallback: only guestId may come from the query string.
+    # Reject unauthenticated connections
     if not profile_id:
-        query_string = environ.get("QUERY_STRING", "")
-        try:
-            params = parse_qs(query_string)
-            guest_id = params.get("guestId", [None])[0]
-        except Exception:
-            logger.warning("Failed to parse query string params for sid %s", sid)
+        logger.warning("Rejected unauthenticated socket connection for sid %s", sid)
+        return False
 
-        # Validate guest UUIDs
-        if guest_id:
-            try:
-                uuid.UUID(guest_id)
-            except ValueError:
-                guest_id = None
+    # Evict old socket for this profile
+    old_sid = await get_socket_owner(profile_id)
+    if old_sid and old_sid != sid:
+        await remove_socket_owner(profile_id)
+        await _mark_profile_inactive(profile_id, old_sid)
+        await sio.disconnect(old_sid)
 
-    if profile_id:
-        # Evict old socket for this profile
-        old_sid = await get_socket_owner(profile_id)
-        if old_sid and old_sid != sid:
-            await remove_socket_owner(profile_id)
-            await _mark_profile_inactive(profile_id, old_sid)
-            await sio.disconnect(old_sid)
+    # Register new socket
+    await set_socket_owner(profile_id, sid)
+    await sio.enter_room(sid, profile_id)
 
-        # Register new socket
-        await set_socket_owner(profile_id, sid)
-        await sio.enter_room(sid, profile_id)
+    if session_id:
+        await _store_session_id(sid, session_id)
 
-        if session_id:
-            await _store_session_id(sid, session_id)
-
-        await _mark_profile_active(profile_id, session_id)
-    else:
-        # Guest connection
-        if guest_id:
-            await sio.enter_room(sid, f"guest_{guest_id}")
-            try:
-                await add_guest_socket(sid)
-                await increment_guest_count()
-            except Exception:
-                logger.warning("Failed to register guest socket %s", sid)
-
-        await internal_sio.emit(
-            "connection_progress",
-            {
-                "type": "confirmed",
-                "sid": sid,
-                "payload_sid": sid,
-                "profile_id": profile_id,
-                "guest_id": guest_id,
-                "server_time": time.time(),
-            },
-        )
+    await _mark_profile_active(profile_id, session_id)
 
     return True
 

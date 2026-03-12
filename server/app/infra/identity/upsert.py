@@ -178,6 +178,7 @@ async def resolve_profile_upsert(
                     department_ids=department_ids,
                     flag_ids=flag_ids,
                     profile_ids=[profiles_resource_id],
+                    redis=redis,
                 )
                 profile_id = result.id
             else:
@@ -197,6 +198,7 @@ async def resolve_profile_upsert(
                     department_ids=department_ids,
                     flag_ids=flag_ids,
                     profile_ids=[profiles_resource_id],
+                    redis=redis,
                 )
 
             # ── Step 5: Create session (append-only) ────────────────────────────

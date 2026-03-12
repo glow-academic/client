@@ -157,6 +157,18 @@ else
     fi
   done
 
+  # Refresh all unpopulated materialized views
+  echo "Refreshing materialized views..."
+  mv_count=$(psql "$DB_URL" -tAc "SELECT COUNT(*) FROM pg_matviews WHERE NOT ispopulated" 2>/dev/null || echo "0")
+  if [[ "$mv_count" -gt 0 ]]; then
+    psql "$DB_URL" -tAc "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated" 2>/dev/null | while read -r mv; do
+      psql "$DB_URL" --quiet -c "REFRESH MATERIALIZED VIEW \"$mv\"" 2>/dev/null
+    done
+    echo "  $mv_count MVs refreshed."
+  else
+    echo "  All MVs already populated."
+  fi
+
   echo ""
   echo "=== Seed loading complete ==="
 fi

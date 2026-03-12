@@ -249,8 +249,7 @@ async def resolve_identity(token: str, pool: asyncpg.Pool) -> Identity:
     claims = verify_jwt(token)
 
     # Resolve profile_id
-    async with pool.acquire() as conn:
-        profile_id = await _resolve_profile_id(claims, conn)
+    profile_id = await _resolve_profile_id(claims, pool)
 
     # Auto-create guest profile if email exists but no profile found
     if profile_id is None:
@@ -288,13 +287,13 @@ async def resolve_identity(token: str, pool: asyncpg.Pool) -> Identity:
 
 
 async def _resolve_profile_id(
-    claims: dict[str, Any], conn: asyncpg.Connection
+    claims: dict[str, Any], pool: asyncpg.Pool
 ) -> UUID | None:
     """Extract profile_id from JWT claims.
 
     Strategy:
     1. Direct profile_id claim (from default_idp tokens)
-    2. Email lookup (from external IdP tokens)
+    2. Email lookup via black box functions (from external IdP tokens)
     """
     # Strategy 1: Direct profile_id in claims (default_idp puts it there)
     direct_id = claims.get("profile_id")
@@ -304,24 +303,30 @@ async def _resolve_profile_id(
         except ValueError:
             pass
 
-    # Strategy 2: Look up by email
+    # Strategy 2: Look up by email using black box functions
     email = claims.get("email")
     if not email:
         return None
 
-    row = await conn.fetchrow(
-        """
-        SELECT p.id as profile_id
-        FROM profile_artifact p
-        JOIN profile_emails_junction pe ON pe.profile_id = p.id
-        JOIN emails_resource e ON pe.email_id = e.id
-        WHERE e.email = $1
-        LIMIT 1
-        """,
-        email,
-    )
+    from app.infra.globals import get_redis_client
+    from app.routes.v5.tools.artifacts.profile.search import search_profiles
+    from app.routes.v5.tools.resources.emails.search import search_emails
 
-    return row["profile_id"] if row else None
+    redis = get_redis_client()
+
+    async with pool.acquire() as conn:
+        email_results = await search_emails(conn, redis, search=email, limit_count=100)
+
+    matching_email_ids = [e.id for e in email_results if e.email.lower() == email.lower()]
+    if not matching_email_ids:
+        return None
+
+    async with pool.acquire() as conn:
+        artifact_ids, _ = await search_profiles(
+            conn, email_ids=matching_email_ids, active_only=False, limit_count=1
+        )
+
+    return artifact_ids[0] if artifact_ids else None
 
 
 async def _auto_create_guest_profile(
@@ -497,7 +502,21 @@ async def resolve_emulation_chain(
 
 
 async def _get_or_create_session(conn: asyncpg.Connection, profile_id: UUID) -> UUID:
-    """Get the most recent active session for a profile, or create one."""
+    """Get the most recent active session for a profile, or create one.
+
+    profile_id is a profile_artifact.id. We must resolve to profiles_resource.id
+    because profiles_sessions_connection.profiles_id references profiles_resource.
+    """
+    from app.routes.v5.tools.artifacts.profile.get import get_profiles
+
+    # Resolve profile_artifact.id → profiles_resource.id
+    profiles = await get_profiles(conn, [profile_id], profiles=True)
+    if not profiles or not profiles[0].profile_ids:
+        raise ValueError(
+            f"No profiles_resource found for profile_artifact {profile_id}"
+        )
+    profiles_resource_id = profiles[0].profile_ids[0]
+
     # Check for recent active session (within last 24h)
     row = await conn.fetchrow(
         """
@@ -510,7 +529,7 @@ async def _get_or_create_session(conn: asyncpg.Connection, profile_id: UUID) -> 
         ORDER BY se.created_at DESC
         LIMIT 1
         """,
-        profile_id,
+        profiles_resource_id,
     )
 
     if row:
@@ -519,7 +538,7 @@ async def _get_or_create_session(conn: asyncpg.Connection, profile_id: UUID) -> 
     # Create new session
     from app.routes.v5.tools.entries.sessions.create import create_session
 
-    result = await create_session(conn, profile_id=profile_id)
+    result = await create_session(conn, profile_id=profiles_resource_id)
     return result.id
 
 
