@@ -15,7 +15,6 @@ from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.identity.settings import resolve_settings_theme
 from app.infra.identity.simulatable import SIMULATABLE_ROLES
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.auth.route_permissions import compute_available_sections
 from app.routes.shared_types import (
     GetProfileContextApiRequest,
     QGetProfileContextV4RoleResource,
@@ -58,9 +57,6 @@ async def get_profile_context(
             if not identity:
                 raise HTTPException(status_code=404, detail="Profile not found")
 
-            available_sections = compute_available_sections(
-                identity.role_artifacts or []
-            )
             scoped_roles = sorted(SIMULATABLE_ROLES.get(identity.role, set()))
 
             async def _fetch_roles() -> list:
@@ -117,7 +113,6 @@ async def get_profile_context(
                 role=identity.role,
                 active=identity.is_active,
                 role_artifacts=identity.role_artifacts,
-                available_sections=available_sections,
                 scoped_roles=scoped_roles,
                 department_ids=[str(d) for d in identity.department_ids],
                 primary_department_id=str(identity.primary_department_id)

@@ -431,7 +431,6 @@ class ProfileContextApiResponse(BaseModel):
 
     # Routing & permissions
     role_artifacts: list[str] | None = None
-    available_sections: list[str] | None = None
     scoped_roles: list[str] | None = None
 
     # Departments

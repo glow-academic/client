@@ -144,20 +144,20 @@ export function UnifiedSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const { profile, isAuthenticated, isEmulation, availableSections } =
+  const { profile, isAuthenticated, isEmulation, roleArtifacts } =
     useProfile();
   const [isExitingEmulation, setIsExitingEmulation] = useState(false);
   const navMain = useMemo(() => {
     if (!profile) return [];
 
-    const sections = getSidebarSections(availableSections);
+    const sections = getSidebarSections(roleArtifacts);
     const menu: NavSection[] = sections.map((section) => {
       const IconComponent = getIconComponent(section.icon) || Home;
       const items: MenuItem[] | undefined = section.items
         ? section.items.map((item) => ({
             title: item.title,
             url: item.url,
-            section: item.section,
+            section: item.artifact,
           }))
         : undefined;
 
@@ -165,7 +165,7 @@ export function UnifiedSidebar({
         title: section.title,
         url: section.url,
         icon: IconComponent as NavSection["icon"],
-        section: section.section,
+        section: section.artifact,
         items,
       };
     });
@@ -199,7 +199,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [profile, searchTerm, availableSections]);
+  }, [profile, searchTerm, roleArtifacts]);
 
   // Resolve the href for any menu item (for use with <Link>)
   const getItemHref = useCallback(

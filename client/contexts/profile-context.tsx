@@ -33,7 +33,7 @@ interface ProfileContextType {
   isEmulation: boolean; // true if viewing as another profile
 
   // Permissions data (from server)
-  availableSections: string[];
+  roleArtifacts: string[];
   scopedRoles: string[]; // Roles that the effective profile has scope to see
   roleResources: RoleResourceItem[];
 }
@@ -77,7 +77,7 @@ export function ProfileProviderClient({
     isEmulation: !!initial?.is_emulation,
 
     // Permissions data (from server)
-    availableSections: initial?.available_sections ?? [],
+    roleArtifacts: initial?.role_artifacts ?? [],
     scopedRoles: initial?.scoped_roles ?? [],
     roleResources: initial?.role_resources ?? [],
   };

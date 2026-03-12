@@ -30319,8 +30319,6 @@ export interface components {
             active?: boolean | null;
             /** Role Artifacts */
             role_artifacts?: string[] | null;
-            /** Available Sections */
-            available_sections?: string[] | null;
             /** Scoped Roles */
             scoped_roles?: string[] | null;
             /** Department Ids */

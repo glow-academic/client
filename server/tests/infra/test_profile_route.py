@@ -422,7 +422,7 @@ class TestProfileRoute:
         assert payload["id"] == str(profile_route_actor.profile_id)
         assert payload["name"] == profile_route_actor.name
         assert payload["role"] is not None
-        assert payload["available_sections"] is not None
+        assert payload["role_artifacts"] is not None
 
     async def test_profile_emulate_route_creates_grant(
         self,
