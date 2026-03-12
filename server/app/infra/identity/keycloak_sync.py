@@ -2,7 +2,8 @@
 
 import asyncio
 import os
-import socket
+import re
+import uuid
 from dataclasses import dataclass
 from typing import Any
 
@@ -36,6 +37,43 @@ class KeycloakSyncResult:
     error: str | None = None
 
 
+@dataclass
+class KeycloakSyncConfig:
+    """Configuration for Keycloak sync. All env vars resolved once at boundary."""
+
+    auth_keycloak_id: str = "glow-client"
+    auth_keycloak_secret: str | None = None
+    client_port: str = "3000"
+    app_prefix: str = ""
+    origin: str = ""
+    auth_secret: str | None = None
+    keycloak_url: str | None = None
+    keycloak_internal_url: str | None = None
+    keycloak_admin: str = "admin"
+    keycloak_admin_password: str = "admin"
+    docker_env: str | None = None
+    mcp_token_lifespan: int = 86400
+
+    @classmethod
+    def from_env(cls) -> "KeycloakSyncConfig":
+        """Create config from environment variables."""
+        client_port = os.getenv("CLIENT_PORT", "3000")
+        return cls(
+            auth_keycloak_id=os.getenv("AUTH_KEYCLOAK_ID", "glow-client"),
+            auth_keycloak_secret=os.getenv("AUTH_KEYCLOAK_SECRET"),
+            client_port=client_port,
+            app_prefix=os.getenv("APP_PREFIX", ""),
+            origin=os.getenv("ORIGIN", f"http://localhost:{client_port}"),
+            auth_secret=os.getenv("AUTH_SECRET"),
+            keycloak_url=os.getenv("KEYCLOAK_URL"),
+            keycloak_internal_url=os.getenv("KEYCLOAK_INTERNAL_URL"),
+            keycloak_admin=os.getenv("KEYCLOAK_ADMIN", "admin"),
+            keycloak_admin_password=os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin"),
+            docker_env=os.getenv("DOCKER_ENV"),
+            mcp_token_lifespan=int(os.getenv("MCP_TOKEN_LIFESPAN", "86400")),
+        )
+
+
 async def wait_for_keycloak(
     url: str,
     admin: str,
@@ -51,54 +89,22 @@ async def wait_for_keycloak(
 
     retry_delay = INITIAL_RETRY_DELAY
 
-    # Check if we're in local dev mode
-    origin_check = os.getenv("ORIGIN", "http://localhost:3000")
-    is_local_dev = "localhost" in origin_check.lower()
-
     for attempt in range(1, max_retries + 1):
         try:
             logger.info(
                 f"Attempting to connect to Keycloak (attempt {attempt}/{max_retries})..."
             )
 
-            # Disable SSL verification for local development
-            verify_ssl = not is_local_dev
-
-            connection_url = url
-
             kc_admin = KeycloakAdmin(
-                server_url=f"{connection_url}/",
+                server_url=f"{url}/",
                 username=admin,
                 password=password,
                 realm_name="master",
-                verify=False
-                if is_local_dev
-                else verify_ssl,  # Disable SSL verification for local dev
+                verify=False,
             )
             # Test the connection by getting realms
             kc_admin.get_realms()
             logger.info("✅ Successfully connected to Keycloak")
-
-            # Fix master realm SSL requirement for local development
-            # This must be done immediately after connecting, before any other operations
-            try:
-                if is_local_dev:
-                    master_realm = kc_admin.get_realm("master")
-                    current_ssl_required = master_realm.get("sslRequired", "EXTERNAL")
-
-                    if current_ssl_required != "NONE":
-                        kc_admin.update_realm(
-                            realm_name="master",
-                            payload={"sslRequired": "NONE"},
-                        )
-                        logger.info(
-                            f"✅ Disabled SSL requirement for master realm (was: {current_ssl_required})"
-                        )
-            except Exception as e:
-                logger.warning(
-                    f"Could not update master realm SSL setting: {e}. Continuing..."
-                )
-
             return kc_admin
         except Exception as e:
             if attempt < max_retries:
@@ -121,6 +127,7 @@ async def ensure_department_client(
     department_id: str,
     department_name: str,
     kc_admin: Any,
+    config: KeycloakSyncConfig,
 ) -> str | None:
     """Ensure department-specific client exists in master realm.
 
@@ -131,13 +138,12 @@ async def ensure_department_client(
         department_id: Department ID (UUID string)
         department_name: Department name (for display)
         kc_admin: KeycloakAdmin instance (must be in master realm)
+        config: Keycloak sync configuration
 
     Returns:
         client_id if created/updated, None if error
     """
-    target_secret: str | None = os.getenv("AUTH_KEYCLOAK_SECRET")
-    client_port = os.getenv("CLIENT_PORT", "3000")
-    app_prefix = os.getenv("APP_PREFIX", "")
+    target_secret = config.auth_keycloak_secret
 
     if not target_secret:
         logger.warning(
@@ -152,12 +158,11 @@ async def ensure_department_client(
         # Client ID format: glow-client-{department_id}
         department_client_id = f"glow-client-{department_id}"
 
-        origin = os.getenv("ORIGIN", f"http://localhost:{client_port}")
-        base_url = origin.rstrip("/")
-        redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
-        emulate_redirect_uri = f"{base_url}{app_prefix}/api/auth/emulate-redirect*"
-        redirect_uris = [redirect_uri, f"{base_url}{app_prefix}/*"]
-        post_logout_uris = f"{base_url}{app_prefix}/*"
+        base_url = config.origin.rstrip("/")
+        redirect_uri = f"{base_url}{config.app_prefix}/api/auth/callback/keycloak"
+        emulate_redirect_uri = f"{base_url}{config.app_prefix}/api/auth/emulate-redirect*"
+        redirect_uris = [redirect_uri, f"{base_url}{config.app_prefix}/*"]
+        post_logout_uris = f"{base_url}{config.app_prefix}/*"
 
         clients = kc_admin.get_clients()
         existing_client = next(
@@ -243,16 +248,17 @@ async def ensure_department_client(
         return None
 
 
-async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
+async def ensure_glow_client_in_master_realm(
+    kc_admin: Any, config: KeycloakSyncConfig
+) -> None:
     """Ensure glow-client exists in master realm with correct configuration.
 
     Args:
         kc_admin: KeycloakAdmin instance
+        config: Keycloak sync configuration
     """
-    target_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
-    target_secret: str | None = os.getenv("AUTH_KEYCLOAK_SECRET")
-    client_port = os.getenv("CLIENT_PORT", "3000")
-    app_prefix = os.getenv("APP_PREFIX", "")
+    target_client_id = config.auth_keycloak_id
+    target_secret = config.auth_keycloak_secret
 
     if not target_secret:
         logger.warning("⚠️  AUTH_KEYCLOAK_SECRET is missing. Cannot create glow-client.")
@@ -262,10 +268,9 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
         # Switch to master realm to ensure client is created there
         kc_admin.change_current_realm(realm_name="master")
 
-        origin = os.getenv("ORIGIN", f"http://localhost:{client_port}")
-        base_url = origin.rstrip("/")
-        redirect_uri = f"{base_url}{app_prefix}/api/auth/callback/keycloak"
-        redirect_uris = [redirect_uri, f"{base_url}{app_prefix}/*"]
+        base_url = config.origin.rstrip("/")
+        redirect_uri = f"{base_url}{config.app_prefix}/api/auth/callback/keycloak"
+        redirect_uris = [redirect_uri, f"{base_url}{config.app_prefix}/*"]
 
         clients = kc_admin.get_clients()
         existing_client = next(
@@ -274,8 +279,8 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
         )
 
         # Post-logout redirect URIs for emulation flow (logout then re-auth as different user)
-        emulate_redirect_uri = f"{base_url}{app_prefix}/api/auth/emulate-redirect*"
-        post_logout_uris = f"{base_url}{app_prefix}/*"
+        emulate_redirect_uri = f"{base_url}{config.app_prefix}/api/auth/emulate-redirect*"
+        post_logout_uris = f"{base_url}{config.app_prefix}/*"
 
         client_payload: dict[str, Any] = {
             "clientId": target_client_id,
@@ -348,7 +353,9 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
         logger.warning(f"Could not ensure glow-client in master realm: {e}")
 
 
-async def ensure_mcp_client_scope(kc_admin: Any) -> None:
+async def ensure_mcp_client_scope(
+    kc_admin: Any, config: KeycloakSyncConfig
+) -> None:
     """Ensure MCP client scope exists in master realm with audience mapper.
 
     Creates the mcp-resource client scope, adds an audience mapper with the MCP
@@ -356,13 +363,14 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
 
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
+        config: Keycloak sync configuration
     """
     # Check if MCP is enabled
     if not is_mcp_enabled():
         logger.debug("MCP is disabled, skipping MCP client scope creation")
         return
 
-    target_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
+    target_client_id = config.auth_keycloak_id
     scope_name = "mcp-resource"
     mapper_name = "mcp-audience"
 
@@ -386,34 +394,22 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
         if existing_scope:
             scope_id = existing_scope.get("id")
             # Update scope to ensure consent screen is disabled
-            # Note: We update via database directly since Admin API has method signature issues
             try:
-                from app.infra.globals import get_pool
-
-                pool = get_pool()
-                if pool:
-                    async with pool.acquire() as conn:
-                        # Update via SQL to ensure attribute exists and is set to false
-                        await conn.execute(
-                            """
-                            INSERT INTO keycloak.client_scope_attributes (scope_id, name, value)
-                            VALUES ($1, 'display.on.consent.screen', 'false')
-                            ON CONFLICT (scope_id, name) DO UPDATE SET value = 'false'
-                            """,
-                            scope_id,
-                        )
-                        logger.info(
-                            f"✅ Updated client scope '{scope_name}' to disable consent screen"
-                        )
-                else:
-                    logger.warning(
-                        "Database pool not available, cannot update scope attributes"
-                    )
+                kc_admin.update_client_scope(
+                    client_scope_id=scope_id,
+                    payload={
+                        "id": scope_id,
+                        "name": scope_name,
+                        "attributes": {"display.on.consent.screen": "false"},
+                    },
+                )
+                logger.info(
+                    f"✅ Updated client scope '{scope_name}' to disable consent screen"
+                )
             except Exception as e:
                 logger.warning(
                     f"Failed to update client scope '{scope_name}' attributes: {e}"
                 )
-                # Continue anyway - scope exists
         else:
             # Create the client scope
             scope_payload: dict[str, Any] = {
@@ -666,7 +662,9 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
         logger.warning(f"Could not ensure MCP client scope: {e}")
 
 
-async def ensure_mcp_token_lifespan(kc_admin: Any) -> None:
+async def ensure_mcp_token_lifespan(
+    kc_admin: Any, config: KeycloakSyncConfig
+) -> None:
     """Ensure master realm has appropriate access token lifespan for MCP.
 
     Configures the access token lifespan in the master realm to a longer duration
@@ -674,6 +672,7 @@ async def ensure_mcp_token_lifespan(kc_admin: Any) -> None:
 
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
+        config: Keycloak sync configuration
     """
     if not is_mcp_enabled():
         logger.debug("MCP is disabled, skipping token lifespan configuration")
@@ -686,8 +685,7 @@ async def ensure_mcp_token_lifespan(kc_admin: Any) -> None:
         realm = kc_admin.get_realm("master")
         current_lifespan = realm.get("accessTokenLifespan", 60)  # Default is 60 seconds
 
-        # Read desired lifespan from environment (default: 24 hours = 86400 seconds)
-        desired_lifespan = int(os.getenv("MCP_TOKEN_LIFESPAN", "86400"))
+        desired_lifespan = config.mcp_token_lifespan
 
         if current_lifespan < desired_lifespan:
             # Update realm with new token lifespan
@@ -889,8 +887,6 @@ async def ensure_dynamic_clients_no_consent(kc_admin: Any) -> None:
 
             # Pattern 2: UUID-based client_id (common for dynamically registered clients)
             # UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-            import re
-
             is_uuid_client = bool(
                 re.match(
                     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -949,26 +945,13 @@ async def ensure_default_scopes_no_consent(kc_admin: Any) -> None:
     """Disable consent screen display for all default client scopes.
 
     Even if clients have consentRequired=false, Keycloak will still show consent
-    if the scopes themselves have display.on.consent.screen=true. This function
-    updates all default client scopes to disable consent screen display.
-
-    Uses direct database updates since Admin API has method signature issues.
+    if the scopes themselves have display.on.consent.screen=true.
 
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
     """
     try:
-        from app.infra.globals import get_pool
-
-        pool = get_pool()
-        if not pool:
-            logger.warning(
-                "Database pool not available, cannot update scope attributes"
-            )
-            return
-
-        # Scopes that should have consent disabled (all default OIDC scopes)
-        scopes_to_update = [
+        scopes_to_update = {
             "offline_access",
             "address",
             "roles",
@@ -977,52 +960,41 @@ async def ensure_default_scopes_no_consent(kc_admin: Any) -> None:
             "email",
             "phone",
             "mcp-resource",
-        ]
+        }
 
-        async with pool.acquire() as conn:
-            # Get scope IDs for all scopes we need to update
-            scope_ids_result = await conn.fetch(
-                """
-                SELECT id, name 
-                FROM keycloak.client_scope 
-                WHERE name = ANY($1)
-                """,
-                scopes_to_update,
-            )
+        all_scopes = kc_admin.get_client_scopes()
+        updated_count = 0
 
-            if not scope_ids_result:
-                logger.debug("No default scopes found to update")
-                return
+        for scope in all_scopes:
+            scope_name = scope.get("name", "")
+            if scope_name not in scopes_to_update:
+                continue
 
-            updated_count = 0
-            for row in scope_ids_result:
-                scope_id = row["id"]
-                scope_name = row["name"]
+            scope_id = scope.get("id")
+            attrs = scope.get("attributes", {})
+            if attrs.get("display.on.consent.screen") == "false":
+                continue
 
-                try:
-                    # Update via SQL to ensure attribute exists and is set to false
-                    # This works even if the attribute doesn't exist yet (INSERT) or exists (UPDATE)
-                    await conn.execute(
-                        """
-                        INSERT INTO keycloak.client_scope_attributes (scope_id, name, value)
-                        VALUES ($1, 'display.on.consent.screen', 'false')
-                        ON CONFLICT (scope_id, name) DO UPDATE SET value = 'false'
-                        """,
-                        scope_id,
-                    )
-                    logger.info(f"✅ Disabled consent screen for scope: {scope_name}")
-                    updated_count += 1
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to update scope '{scope_name}' to disable consent: {e}"
-                    )
-
-            if updated_count > 0:
-                logger.info(
-                    f"✅ Updated {updated_count} client scope(s) to disable consent screen"
+            try:
+                kc_admin.update_client_scope(
+                    client_scope_id=scope_id,
+                    payload={
+                        "id": scope_id,
+                        "name": scope_name,
+                        "attributes": {"display.on.consent.screen": "false"},
+                    },
                 )
-            else:
-                logger.debug("All client scopes already have consent screen disabled")
+                logger.info(f"✅ Disabled consent screen for scope: {scope_name}")
+                updated_count += 1
+            except Exception as e:
+                logger.warning(
+                    f"Failed to update scope '{scope_name}' to disable consent: {e}"
+                )
+
+        if updated_count > 0:
+            logger.info(
+                f"✅ Updated {updated_count} client scope(s) to disable consent screen"
+            )
 
     except Exception as e:
         logger.warning(
@@ -1037,6 +1009,7 @@ async def sync_identity_provider_for_realm_level(
     display_name: str,
     kc_admin: Any,
     pool: Any,
+    redis: Any,
 ) -> None:
     """Sync a single identity provider at realm level (platform login).
 
@@ -1047,17 +1020,11 @@ async def sync_identity_provider_for_realm_level(
         display_name: Display name for the provider
         kc_admin: KeycloakAdmin instance (must be in master realm)
         pool: Database connection pool
+        redis: Redis client
     """
-    bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
-
     try:
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
-
-        # Get auth items (config) - use None for department_id (default settings)
-        import uuid
-
-        redis = get_redis_client()
         async with pool.acquire() as conn:
             auth_items = await resolve_auth_items(
                 conn, redis, uuid.UUID(auth_id), department_id=None
@@ -1138,6 +1105,7 @@ async def sync_identity_provider_for_org(
     department_id: str,
     kc_admin: Any,
     pool: Any,
+    redis: Any,
 ) -> None:
     """Sync a single identity provider for department-scoped auths.
 
@@ -1152,20 +1120,14 @@ async def sync_identity_provider_for_org(
         department_id: Department ID (for config lookup only)
         kc_admin: KeycloakAdmin instance (must be in master realm)
         pool: Database connection pool
+        redis: Redis client
     """
-    bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
-
     try:
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
 
         # Use auth_id-based alias for 1:1 mapping (auth_{slug}_{auth_id})
         unique_alias = f"auth_{slug}_{auth_id}"
-
-        # Get auth items (config) - use department_id for department-specific settings
-        import uuid
-
-        redis = get_redis_client()
         async with pool.acquire() as conn:
             auth_items = await resolve_auth_items(
                 conn, redis, uuid.UUID(auth_id), department_id=uuid.UUID(department_id)
@@ -1241,7 +1203,7 @@ async def sync_identity_provider_for_org(
         )
 
 
-def get_idp_public_url() -> str:
+def get_idp_public_url(config: KeycloakSyncConfig | None = None) -> str:
     """Get the public base URL for the IdP (accessible from browser).
 
     This URL is used in authorizationUrl, which Keycloak redirects the browser to.
@@ -1253,8 +1215,10 @@ def get_idp_public_url() -> str:
 
     Path is at root level: /default-idp/ (not /api/v5/auth/default-idp/)
     """
-    origin = os.getenv("ORIGIN", "http://localhost:3000")
-    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
+    if config is None:
+        config = KeycloakSyncConfig.from_env()
+    origin = config.origin
+    app_prefix = config.app_prefix.strip("/")
 
     # Detect local dev
     is_local_dev = "localhost" in origin.lower()
@@ -1271,7 +1235,7 @@ def get_idp_public_url() -> str:
     return f"{base}/default-idp"
 
 
-def get_idp_internal_url() -> str:
+def get_idp_internal_url(config: KeycloakSyncConfig | None = None) -> str:
     """Get the internal base URL for the IdP (accessible from Keycloak server).
 
     This URL is used in tokenUrl and jwksUrl, which Keycloak server calls directly.
@@ -1285,9 +1249,11 @@ def get_idp_internal_url() -> str:
 
     Path is at root level: /default-idp/ (not /api/v5/auth/default-idp/)
     """
-    origin = os.getenv("ORIGIN", "http://localhost:3000")
-    app_prefix = os.getenv("APP_PREFIX", "").strip("/")
-    docker_env = os.getenv("DOCKER_ENV")
+    if config is None:
+        config = KeycloakSyncConfig.from_env()
+    origin = config.origin
+    app_prefix = config.app_prefix.strip("/")
+    docker_env = config.docker_env
 
     # Check if we're in Docker environment (server running in Docker)
     if docker_env:
@@ -1325,6 +1291,7 @@ async def sync_default_idp_for_profile(
     profile_id: str,
     profile_name: str | None,
     kc_admin: Any,
+    config: KeycloakSyncConfig,
 ) -> str:
     """Sync a default-idp instance for a specific profile.
 
@@ -1336,10 +1303,10 @@ async def sync_default_idp_for_profile(
         alias = f"default-idp-profile-{profile_id}"
         display_name = profile_name or f"Default Profile {profile_id}"
 
-        idp_public_url = get_idp_public_url()
-        idp_internal_url = get_idp_internal_url()
+        idp_public_url = get_idp_public_url(config)
+        idp_internal_url = get_idp_internal_url(config)
 
-        client_secret = os.getenv("AUTH_SECRET")
+        client_secret = config.auth_secret
         if not client_secret:
             logger.warning(f"AUTH_SECRET not found, cannot create {alias}")
             return alias
@@ -1434,7 +1401,9 @@ def ensure_emulation_first_login_flow(kc_admin: Any) -> str:
         return "first broker login"
 
 
-async def sync_emulation_default_idp(kc_admin: Any) -> str:
+async def sync_emulation_default_idp(
+    kc_admin: Any, config: KeycloakSyncConfig
+) -> str:
     """Sync a single default-idp for all emulation flows.
 
     This IdP is used for profile emulation. It's hidden from login templates
@@ -1451,10 +1420,10 @@ async def sync_emulation_default_idp(kc_admin: Any) -> str:
     try:
         kc_admin.change_current_realm(realm_name="master")
 
-        idp_public_url = get_idp_public_url()
-        idp_internal_url = get_idp_internal_url()
+        idp_public_url = get_idp_public_url(config)
+        idp_internal_url = get_idp_internal_url(config)
 
-        client_secret = os.getenv("AUTH_SECRET")
+        client_secret = config.auth_secret
         if not client_secret:
             logger.warning(f"AUTH_SECRET not found, cannot create {alias}")
             return alias
@@ -1581,13 +1550,15 @@ async def sync_emulation_default_idp(kc_admin: Any) -> str:
         return alias
 
 
-async def ensure_emulation_client_mappers(kc_admin: Any) -> None:
+async def ensure_emulation_client_mappers(
+    kc_admin: Any, config: KeycloakSyncConfig
+) -> None:
     """Ensure client mappers exist to include emulation claims in tokens.
 
     Creates protocol mappers on glow-client to include profile_id, role,
     is_emulation, and actor_profile_id user attributes in the ID token.
     """
-    client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
+    client_id = config.auth_keycloak_id
 
     try:
         kc_admin.change_current_realm(realm_name="master")
@@ -1702,6 +1673,8 @@ async def ensure_emulation_client_mappers(kc_admin: Any) -> None:
 async def sync_identity_providers(
     kc_admin: Any,
     pool: Any,
+    redis: Any,
+    config: KeycloakSyncConfig,
 ) -> None:
     """Sync all identity providers to master realm.
 
@@ -1716,21 +1689,20 @@ async def sync_identity_providers(
     Args:
         kc_admin: KeycloakAdmin instance (must be in master realm)
         pool: Database connection pool
+        redis: Redis client
+        config: Keycloak sync configuration
     """
-    bootstrap_leader = socket.gethostname() or os.getenv("HOSTNAME", "unknown")
-
     try:
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
 
         # Step 0a: Sync single default-idp for emulation flows (hidden from login)
         logger.info("Syncing emulation default-idp Identity Provider...")
-        await sync_emulation_default_idp(kc_admin)
+        await sync_emulation_default_idp(kc_admin, config)
 
         # Step 0b: Sync default-idp instances (custom OIDC IdP per profile)
         logger.info("Syncing default-idp Identity Provider instances (per profile)...")
 
-        redis = get_redis_client()
         async with pool.acquire() as conn:
             setting_profiles = await resolve_setting_profiles_for_idp(conn, redis)
 
@@ -1740,7 +1712,7 @@ async def sync_identity_providers(
             if profile_id in seen_profiles:
                 continue
             seen_profiles.add(profile_id)
-            await sync_default_idp_for_profile(profile_id, sp.profile_name, kc_admin)
+            await sync_default_idp_for_profile(profile_id, sp.profile_name, kc_admin, config)
 
         # Step 1: Check if departments exist - if they do, skip realm-level IdPs that are also department-scoped
         async with pool.acquire() as conn:
@@ -1791,6 +1763,7 @@ async def sync_identity_providers(
                 display_name=provider.name or "",
                 kc_admin=kc_admin,
                 pool=pool,
+                redis=redis,
             )
 
         # Delete realm-level IdPs that shouldn't exist (when departments exist and auth is department-scoped)
@@ -1833,6 +1806,7 @@ async def sync_identity_providers(
                     department_id=dept_id,
                     department_name=dept_name,
                     kc_admin=kc_admin,
+                    config=config,
                 )
 
                 if not dept_client_id:
@@ -1866,6 +1840,7 @@ async def sync_identity_providers(
                 department_id=auth_data["department_id"],
                 kc_admin=kc_admin,
                 pool=pool,
+                redis=redis,
             )
 
         # Step 4: Clean up IdPs that shouldn't exist
@@ -1958,31 +1933,29 @@ async def sync_identity_providers(
 # The old function created separate realms per settings, but we now use a single master realm with client-id based routing
 
 
-async def sync_keycloak(department_id: str | None = None) -> None:
+async def sync_keycloak(
+    department_id: str | None = None,
+    *,
+    pool: Any,
+    redis: Any,
+    config: KeycloakSyncConfig,
+) -> None:
     """Sync Keycloak identity providers from database to Keycloak.
 
     Args:
         department_id: Optional department ID to sync. If None, syncs all active departments.
+        pool: Database connection pool
+        redis: Redis client
+        config: Keycloak sync configuration
     """
-    pool = get_pool()
-    if not pool:
-        logger.warning("Database pool not available, skipping Keycloak sync")
-        return
-
     try:
-        # Keycloak sync configuration
-        app_prefix = os.getenv("APP_PREFIX", "")
-        explicit_keycloak_url = os.getenv("KEYCLOAK_URL")
-
-        if explicit_keycloak_url:
-            keycloak_url = explicit_keycloak_url.rstrip("/")
+        # Resolve Keycloak URL from config
+        if config.keycloak_url:
+            keycloak_url = config.keycloak_url.rstrip("/")
         else:
-            docker_env = os.getenv("DOCKER_ENV")
-            keycloak_internal_url = os.getenv("KEYCLOAK_INTERNAL_URL")
-
-            if keycloak_internal_url:
-                base_url = keycloak_internal_url.rstrip("/")
-            elif docker_env:
+            if config.keycloak_internal_url:
+                base_url = config.keycloak_internal_url.rstrip("/")
+            elif config.docker_env:
                 base_url = "http://keycloak:8080"
             else:
                 base_url = "http://localhost:8080"
@@ -1990,14 +1963,11 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             # Keycloak admin API: use /auth path for consistency
             # For local dev: Keycloak serves at /auth (KC_HTTP_RELATIVE_PATH=/auth)
             # For Docker/production: Keycloak is behind nginx at /auth
-            keycloak_url = f"{base_url}{app_prefix}/auth"
-
-        keycloak_admin = os.getenv("KEYCLOAK_ADMIN", "admin")
-        keycloak_admin_password = os.getenv("KEYCLOAK_ADMIN_PASSWORD", "admin")
+            keycloak_url = f"{base_url}{config.app_prefix}/auth"
 
         # Connect to Keycloak Admin API with retry logic
         kc_admin = await wait_for_keycloak(
-            keycloak_url, keycloak_admin, keycloak_admin_password
+            keycloak_url, config.keycloak_admin, config.keycloak_admin_password
         )
         if not kc_admin:
             logger.warning(
@@ -2007,13 +1977,13 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             return
 
         # Ensure glow-client exists in master realm before syncing
-        await ensure_glow_client_in_master_realm(kc_admin)
+        await ensure_glow_client_in_master_realm(kc_admin, config)
 
         # Ensure MCP client scope is configured (after client is ensured)
-        await ensure_mcp_client_scope(kc_admin)
+        await ensure_mcp_client_scope(kc_admin, config)
 
         # Ensure MCP token lifespan is configured (after client scope)
-        await ensure_mcp_token_lifespan(kc_admin)
+        await ensure_mcp_token_lifespan(kc_admin, config)
 
         # Ensure client registration policies are configured (remove Trusted Hosts and Consent Required)
         await ensure_client_registration_policies(kc_admin)
@@ -2027,11 +1997,11 @@ async def sync_keycloak(department_id: str | None = None) -> None:
 
         # Sync identity providers (realm-level + department-scoped)
         # All IdPs are hidden, theme controls visibility based on client_id
-        await sync_identity_providers(kc_admin, pool)
+        await sync_identity_providers(kc_admin, pool, redis, config)
 
         # Ensure emulation client mappers are configured
         # These mappers include profile_id, role, is_emulation, actor_profile_id in client tokens
-        await ensure_emulation_client_mappers(kc_admin)
+        await ensure_emulation_client_mappers(kc_admin, config)
 
         # Generate theme provider mapping (client_id -> allowed IdP aliases)
         logger.info("Generating comprehensive Keycloak theme provider mapping...")
@@ -2087,18 +2057,21 @@ async def sync_keycloak(department_id: str | None = None) -> None:
 
 async def perform_keycloak_sync(
     department_id: str | None = None,
+    *,
+    pool: Any | None = None,
+    redis: Any | None = None,
+    config: KeycloakSyncConfig | None = None,
 ) -> KeycloakSyncResult:
-    """Perform Keycloak sync and return result.
-
-    This is a wrapper around sync_keycloak() that catches exceptions
-    and returns a structured result. It also checks preconditions like
-    database pool availability and Keycloak connectivity.
+    """Perform Keycloak sync and return structured result.
 
     Args:
-        department_id: Optional department ID to sync. If None, syncs all active departments.
+        department_id: Optional department ID to sync. If None, syncs all.
+        pool: Database connection pool (defaults to get_pool())
+        redis: Redis client (defaults to get_redis_client())
+        config: Keycloak sync configuration (defaults to KeycloakSyncConfig.from_env())
 
     Returns:
-        KeycloakSyncResult with success status, message, and optional error details
+        KeycloakSyncResult with success status and message.
     """
     if os.getenv("PYTEST_CURRENT_TEST"):
         if department_id:
@@ -2113,8 +2086,11 @@ async def perform_keycloak_sync(
             department_id=department_id,
         )
 
-    # Check database pool availability
-    pool = get_pool()
+    # Resolve dependencies (use injected or fall back to globals)
+    pool = pool or get_pool()
+    redis = redis or get_redis_client()
+    config = config or KeycloakSyncConfig.from_env()
+
     if not pool:
         error_msg = "Database pool not available"
         logger.warning(error_msg)
@@ -2126,61 +2102,8 @@ async def perform_keycloak_sync(
         )
 
     try:
-        # Check if Keycloak is available BEFORE attempting sync
-        # Note: Keycloak might return 403 "HTTPS required" before sync disables SSL requirement
-        # This is expected and sync will fix it, so we proceed anyway
-        from app.routes.health import check_keycloak
+        await sync_keycloak(department_id=department_id, pool=pool, redis=redis, config=config)
 
-        keycloak_check = await check_keycloak()
-        # Only fail if Keycloak is completely unavailable (connection error, not 403 HTTPS required)
-        if not keycloak_check.ok and "HTTPS required" not in keycloak_check.error:
-            error_msg = f"Keycloak is not available: {keycloak_check.error}"
-            logger.warning(error_msg)
-            return KeycloakSyncResult(
-                success=False,
-                message=error_msg,
-                department_id=department_id,
-                error=keycloak_check.error,
-            )
-
-        # Call the actual sync function
-        # Note: sync_keycloak() catches exceptions internally and logs warnings,
-        # but we wrap it to catch any unexpected exceptions
-        # Also note: sync_keycloak() may return early if Keycloak admin connection fails
-        # We need to verify sync actually completed by checking if Keycloak is accessible
-        await sync_keycloak(department_id=department_id)
-
-        # Verify Keycloak is accessible after sync
-        # Wait a moment for any async operations to complete
-        await asyncio.sleep(1)
-
-        keycloak_check_after = await check_keycloak()
-        # After sync, Keycloak should be accessible (200 OK, not 403 HTTPS required)
-        if not keycloak_check_after.ok:
-            # If still getting HTTPS required, sync didn't complete successfully
-            if (
-                "HTTPS required" in keycloak_check_after.error
-                or keycloak_check_after.error == "status=403"
-            ):
-                error_msg = "Keycloak sync did not complete: SSL requirement not disabled (Keycloak may need more time to pick up database changes)"
-                logger.warning(error_msg)
-                return KeycloakSyncResult(
-                    success=False,
-                    message=error_msg,
-                    department_id=department_id,
-                    error=keycloak_check_after.error,
-                )
-            else:
-                error_msg = f"Keycloak sync completed but Keycloak became unhealthy: {keycloak_check_after.error}"
-                logger.warning(error_msg)
-                return KeycloakSyncResult(
-                    success=False,
-                    message=error_msg,
-                    department_id=department_id,
-                    error=keycloak_check_after.error,
-                )
-
-        # If we get here, sync completed successfully
         if department_id:
             message = (
                 f"Keycloak sync completed successfully for department {department_id}"

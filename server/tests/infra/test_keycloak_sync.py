@@ -6,6 +6,27 @@ import types
 import pytest
 
 from app.infra.identity import keycloak_sync
+from app.infra.identity.keycloak_sync import KeycloakSyncConfig
+
+
+def make_config(**overrides) -> KeycloakSyncConfig:
+    """Create a test config with sensible defaults."""
+    defaults = {
+        "auth_keycloak_id": "glow-client",
+        "auth_keycloak_secret": "secret",
+        "client_port": "3000",
+        "app_prefix": "",
+        "origin": "http://localhost:3000",
+        "auth_secret": "test-secret",
+        "keycloak_url": None,
+        "keycloak_internal_url": None,
+        "keycloak_admin": "admin",
+        "keycloak_admin_password": "admin",
+        "docker_env": None,
+        "mcp_token_lifespan": 86400,
+    }
+    defaults.update(overrides)
+    return KeycloakSyncConfig(**defaults)
 
 
 class FakeConn:
@@ -51,6 +72,7 @@ class FakeKCAdmin:
         self.updated_mapper_payloads: list[tuple[str, str, dict]] = []
         self.added_realm_default_scope_ids: list[str] = []
         self.added_client_default_scope_ids: list[tuple[str, str, dict]] = []
+        self.updated_client_scopes: list[tuple[str, dict]] = []
         self.idps_created: list[dict] = []
         self.idps_updated: list[tuple[str, dict]] = []
         self.clients = []
@@ -92,6 +114,9 @@ class FakeKCAdmin:
         self.client_scopes.append({"id": "scope-id", "name": payload["name"]})
         return "scope-id"
 
+    def update_client_scope(self, client_scope_id, payload):
+        self.updated_client_scopes.append((client_scope_id, payload))
+
     def get_mappers_from_client_scope(self, scope_id):
         return list(self.scope_mappers.get(scope_id, []))
 
@@ -132,7 +157,7 @@ class FakeKCAdmin:
 
 
 @pytest.mark.asyncio
-async def test_wait_for_keycloak_connects_and_disables_ssl_in_local_dev(monkeypatch):
+async def test_wait_for_keycloak_connects(monkeypatch):
     kc_admin = FakeKCAdmin()
 
     class FakeKeycloakAdmin:
@@ -141,12 +166,10 @@ async def test_wait_for_keycloak_connects_and_disables_ssl_in_local_dev(monkeypa
 
     module = types.SimpleNamespace(KeycloakAdmin=FakeKeycloakAdmin)
     monkeypatch.setitem(sys.modules, "keycloak", module)
-    monkeypatch.setenv("ORIGIN", "http://localhost:3000")
 
     result = await keycloak_sync.wait_for_keycloak("http://keycloak:8080", "admin", "password", max_retries=1)
 
     assert result is kc_admin
-    assert ("master", {"sslRequired": "NONE"}) in kc_admin.updated_realms
 
 
 @pytest.mark.asyncio
@@ -165,12 +188,12 @@ async def test_wait_for_keycloak_returns_none_when_package_missing(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_ensure_department_client_updates_existing_client(monkeypatch):
+async def test_ensure_department_client_updates_existing_client():
     admin = FakeKCAdmin()
     admin.clients = [{"clientId": "glow-client-dept-1", "id": "client-uuid"}]
-    monkeypatch.setenv("AUTH_KEYCLOAK_SECRET", "secret")
+    config = make_config()
 
-    result = await keycloak_sync.ensure_department_client("dept-1", "Operations", admin)
+    result = await keycloak_sync.ensure_department_client("dept-1", "Operations", admin, config)
 
     assert result == "glow-client-dept-1"
     assert admin.updated_clients
@@ -178,11 +201,11 @@ async def test_ensure_department_client_updates_existing_client(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_ensure_department_client_creates_new_client(monkeypatch):
+async def test_ensure_department_client_creates_new_client():
     admin = FakeKCAdmin()
-    monkeypatch.setenv("AUTH_KEYCLOAK_SECRET", "secret")
+    config = make_config()
 
-    result = await keycloak_sync.ensure_department_client("dept-2", "People", admin)
+    result = await keycloak_sync.ensure_department_client("dept-2", "People", admin, config)
 
     assert result == "glow-client-dept-2"
     assert admin.created_clients
@@ -190,12 +213,11 @@ async def test_ensure_department_client_creates_new_client(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_ensure_glow_client_in_master_realm_creates_client(monkeypatch):
+async def test_ensure_glow_client_in_master_realm_creates_client():
     admin = FakeKCAdmin()
-    monkeypatch.setenv("AUTH_KEYCLOAK_SECRET", "secret")
-    monkeypatch.setenv("AUTH_KEYCLOAK_ID", "glow-client")
+    config = make_config()
 
-    await keycloak_sync.ensure_glow_client_in_master_realm(admin)
+    await keycloak_sync.ensure_glow_client_in_master_realm(admin, config)
 
     assert admin.created_clients
     assert admin.updated_clients[-1][1] == {"secret": "secret"}
@@ -205,11 +227,10 @@ async def test_ensure_glow_client_in_master_realm_creates_client(monkeypatch):
 async def test_ensure_mcp_client_scope_creates_scope_mapper_and_assignments(monkeypatch):
     admin = FakeKCAdmin()
     admin.clients = [{"clientId": "glow-client", "id": "client-1"}]
-    conn = FakeConn()
+    config = make_config()
     monkeypatch.setattr(keycloak_sync, "is_mcp_enabled", lambda: True)
-    monkeypatch.setattr("app.infra.globals.get_pool", lambda: FakePool(conn))
 
-    await keycloak_sync.ensure_mcp_client_scope(admin)
+    await keycloak_sync.ensure_mcp_client_scope(admin, config)
 
     assert admin.added_mapper_payloads
     assert admin.added_realm_default_scope_ids == ["scope-id"]
@@ -219,10 +240,10 @@ async def test_ensure_mcp_client_scope_creates_scope_mapper_and_assignments(monk
 @pytest.mark.asyncio
 async def test_ensure_mcp_token_lifespan_updates_master_realm(monkeypatch):
     admin = FakeKCAdmin()
+    config = make_config(mcp_token_lifespan=7200)
     monkeypatch.setattr(keycloak_sync, "is_mcp_enabled", lambda: True)
-    monkeypatch.setenv("MCP_TOKEN_LIFESPAN", "7200")
 
-    await keycloak_sync.ensure_mcp_token_lifespan(admin)
+    await keycloak_sync.ensure_mcp_token_lifespan(admin, config)
 
     assert ("master", {"accessTokenLifespan": 7200}) in admin.updated_realms
 
@@ -269,17 +290,19 @@ async def test_ensure_dynamic_clients_no_consent_updates_matching_clients(monkey
 
 
 @pytest.mark.asyncio
-async def test_ensure_default_scopes_no_consent_updates_scope_attributes(monkeypatch):
+async def test_ensure_default_scopes_no_consent_updates_scope_attributes():
     admin = FakeKCAdmin()
-    conn = FakeConn(
-        fetch_result=[
-            {"id": "scope-1", "name": "profile"},
-            {"id": "scope-2", "name": "email"},
-        ]
-    )
+    admin.client_scopes = [
+        {"id": "scope-1", "name": "profile", "attributes": {}},
+        {"id": "scope-2", "name": "email", "attributes": {}},
+        {"id": "scope-3", "name": "custom-unrelated", "attributes": {}},
+    ]
 
-    monkeypatch.setattr("app.infra.globals.get_pool", lambda: FakePool(conn))
     await keycloak_sync.ensure_default_scopes_no_consent(admin)
 
-    executed_scope_ids = [args[0] for sql, args in conn.executed if "INSERT INTO keycloak.client_scope_attributes" in sql]
-    assert executed_scope_ids == ["scope-1", "scope-2"]
+    # Should update profile and email scopes (they're in the target set)
+    updated_scope_ids = [scope_id for scope_id, _ in admin.updated_client_scopes]
+    assert "scope-1" in updated_scope_ids
+    assert "scope-2" in updated_scope_ids
+    # Should NOT update custom-unrelated (not in the target set)
+    assert "scope-3" not in updated_scope_ids
