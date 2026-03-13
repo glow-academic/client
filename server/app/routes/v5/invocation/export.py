@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.invocation.export import export_invocation_impl
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.invocation.types import ExportInvocationApiResponse
+from app.infra.invocation.types import ExportInvocationApiResponse
 
 router = APIRouter()
 

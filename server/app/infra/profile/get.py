@@ -40,7 +40,7 @@ from app.infra.profile.permissions import (
 )
 from app.infra.profile.permissions_context import resolve_profile_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.profile.types import (
+from app.infra.profile.types import (
     GetProfileApiResponse,
     ProfileDepartmentSection,
     ProfileEmailSection,

@@ -14,7 +14,7 @@ from app.infra.cohort.permissions_context import resolve_cohort_permissions_cont
 from app.infra.cohort.sections import build_cohort_get_result
 from app.infra.common_context import resolve_common_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.cohort.types import GetCohortApiResponse
+from app.infra.cohort.types import GetCohortApiResponse
 
 
 async def get_cohort_impl(

@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.test.types import ArchiveTestsRequest, ArchiveTestsResponse
+from app.infra.test.types import ArchiveTestsRequest, ArchiveTestsResponse
 from app.tools.v5.entries.calls.create import create_call
 from app.tools.v5.entries.groups.create import create_group
 from app.tools.v5.entries.runs.create import create_run

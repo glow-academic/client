@@ -57,7 +57,7 @@ async def update_auth_impl(
       6. perform_keycloak_sync (non-fatal)
     """
     from app.infra.auth.permissions import compute_can_edit
-    from app.routes.v5.auth.types import (
+    from app.infra.auth.types import (
         AuthResultItem,
         UpdateAuthApiResponse,
     )

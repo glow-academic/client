@@ -34,7 +34,7 @@ from app.tools.v5.resources.settings.create import (
 
 if TYPE_CHECKING:
     from app.infra.setting.create import CreateSettingItem, SettingFieldError
-    from app.routes.v5.setting.types import (
+    from app.infra.setting.types import (
         UpdateSettingItem,
     )
 

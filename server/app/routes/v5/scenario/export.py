@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.scenario.export import export_scenario_impl
-from app.routes.v5.scenario.types import (
+from app.infra.scenario.types import (
     ExportScenarioApiRequest,
     ExportScenarioApiResponse,
 )

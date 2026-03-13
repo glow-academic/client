@@ -66,7 +66,7 @@ async def export_agent_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.agent.types import ExportAgentApiResponse
+    from app.infra.agent.types import ExportAgentApiResponse
 
     # -- Step 1: Profile context --
 

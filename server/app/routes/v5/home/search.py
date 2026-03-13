@@ -22,7 +22,7 @@ from app.infra.home_permissions import (
     compute_show_continue,
     compute_show_view,
 )
-from app.routes.v5.home.types import (
+from app.infra.home.types import (
     ListHomeRequest,
     ListHomeResponse,
 )

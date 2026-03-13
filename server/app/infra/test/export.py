@@ -24,7 +24,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.test.types import ExportTestApiResponse
+from app.infra.test.types import ExportTestApiResponse
 from app.tools.v5.entries.test.search import search_tests
 from app.tools.v5.entries.test_invocation.search import (
     search_test_invocation_entries_internal,

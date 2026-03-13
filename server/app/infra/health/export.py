@@ -71,7 +71,7 @@ async def export_health_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.health.types import ExportHealthApiResponse
+    from app.infra.health.types import ExportHealthApiResponse
 
     # -- Step 1: Profile context --
 

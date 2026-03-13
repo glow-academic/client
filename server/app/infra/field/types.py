@@ -277,6 +277,12 @@ class DuplicateFieldApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportFieldApiRequest(BaseModel):
+    """Request model for field export."""
+
+    field_id: UUID | None = None
+
+
 class ExportFieldApiResponse(BaseModel):
     """Response model for export field endpoint."""
 

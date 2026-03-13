@@ -19,7 +19,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.rubric.permissions import compute_can_draft
-from app.routes.v5.rubric.types import (
+from app.infra.rubric.types import (
     PatchRubricDraftApiRequest,
     PatchRubricDraftApiResponse,
     RubricDraftFormState,

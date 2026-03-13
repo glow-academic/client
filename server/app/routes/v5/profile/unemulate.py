@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.identity.emulate import resolve_unemulation
-from app.routes.v5.profile.types import UnemulateProfileApiResponse
+from app.infra.profile.types import UnemulateProfileApiResponse
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 

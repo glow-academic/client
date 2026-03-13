@@ -15,7 +15,7 @@ from fastapi import HTTPException
 from app.infra.globals import get_redis_client
 from app.infra.test.context import resolve_test_context
 from app.infra.test.permissions import compute_test_status
-from app.routes.v5.test.types import (
+from app.infra.test.types import (
     GetTestArtifactRequest,
     GetTestArtifactResponse,
     TestEntries,

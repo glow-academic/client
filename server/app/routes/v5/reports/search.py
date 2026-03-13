@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.reports.get import get_reports_impl
-from app.routes.v5.reports.types import ReportsRequest, ReportsResponse
+from app.infra.reports.types import ReportsRequest, ReportsResponse
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

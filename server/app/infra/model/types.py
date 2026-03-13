@@ -382,6 +382,12 @@ class GetModelDraftsApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportModelApiRequest(BaseModel):
+    """Request model for model export."""
+
+    model_id: UUID | None = None
+
+
 class ExportModelApiResponse(BaseModel):
     """Response model for export model endpoint."""
 

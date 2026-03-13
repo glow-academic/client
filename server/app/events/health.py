@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.health.types import HealthRequest, HealthResponse
+from app.infra.health.types import HealthRequest, HealthResponse
 
 HEALTH_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(

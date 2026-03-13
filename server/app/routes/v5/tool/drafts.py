@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.tool.drafts import list_tool_drafts_impl
-from app.routes.v5.tool.types import GetToolDraftsApiResponse
+from app.infra.tool.types import GetToolDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

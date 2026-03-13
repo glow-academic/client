@@ -12,7 +12,7 @@ from app.events.types import (
     require_authenticated_profile,
 )
 from app.infra.docs.types import ComposedDocsResponse
-from app.routes.v5.simulation.types import (
+from app.infra.simulation.types import (
     CreateSimulationApiRequest,
     CreateSimulationApiResponse,
     DeleteSimulationApiRequest,

@@ -51,7 +51,7 @@ async def update_field_impl(
       5. invalidate_tags
     """
     from app.infra.field.permissions import compute_can_edit
-    from app.routes.v5.field.types import (
+    from app.infra.field.types import (
         FieldResultItem,
         UpdateFieldApiResponse,
     )

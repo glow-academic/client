@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.chat.draft import patch_chat_draft_impl
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.chat.types import (
+from app.infra.chat.types import (
     PatchChatDraftApiRequest,
     PatchChatDraftApiResponse,
 )

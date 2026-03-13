@@ -20,7 +20,7 @@ from app.infra.globals import get_redis_client
 from app.infra.pricing import compute_costs_from_runs
 from app.infra.session.context import resolve_session_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.session.types import (
+from app.infra.session.types import (
     ArtifactSessionGroup,
     GetSessionDetailResponse,
     SessionInternalData,

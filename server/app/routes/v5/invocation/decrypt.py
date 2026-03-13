@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.identity.decrypt import resolve_decrypt
-from app.routes.v5.invocation.types import (
+from app.infra.invocation.types import (
     DecryptInvocationKeyApiRequest,
     DecryptInvocationKeyApiResponse,
 )

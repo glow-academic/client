@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.benchmark.types import BenchmarkRequest, BenchmarkResponse
+from app.infra.benchmark.types import BenchmarkRequest, BenchmarkResponse
 
 BENCHMARK_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(

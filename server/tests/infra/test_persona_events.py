@@ -8,7 +8,7 @@ from app.events.persona import (
     _persona_result_entity_ids,
     get_persona_event_config,
 )
-from app.routes.v5.persona.types import (
+from app.infra.persona.types import (
     CreatePersonaApiResponse,
     GetPersonaApiRequest,
     GetPersonaApiResponse,

@@ -339,6 +339,12 @@ class DuplicateParameterApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportParameterApiRequest(BaseModel):
+    """Request model for parameter export."""
+
+    parameter_id: UUID | None = None
+
+
 class ExportParameterApiResponse(BaseModel):
     """Response model for export parameter endpoint."""
 

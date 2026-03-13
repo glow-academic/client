@@ -24,8 +24,8 @@ from app.infra.scenario.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.persona.types import ImportField
-from app.routes.v5.scenario.types import (
+from app.infra.persona.types import ImportField
+from app.infra.scenario.types import (
     ListScenarioApiCohort,
     ListScenarioApiDepartment,
     ListScenarioApiField,

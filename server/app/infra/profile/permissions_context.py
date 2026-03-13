@@ -32,7 +32,7 @@ from app.tools.v5.resources.profiles.create import (
 
 if TYPE_CHECKING:
     from app.infra.profile.create import CreateProfileItem, ProfileFieldError
-    from app.routes.v5.profile.types import (
+    from app.infra.profile.types import (
         UpdateProfileItem,
     )
 

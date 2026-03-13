@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.practice_export import export_practice_client
-from app.routes.v5.practice.types import ExportPracticeApiResponse
+from app.infra.practice.types import ExportPracticeApiResponse
 
 router = APIRouter()
 

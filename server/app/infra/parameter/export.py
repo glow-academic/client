@@ -58,7 +58,7 @@ async def export_parameter_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.parameter.types import ExportParameterApiResponse
+    from app.infra.parameter.types import ExportParameterApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

@@ -62,7 +62,7 @@ async def export_auth_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.auth.types import ExportAuthApiResponse
+    from app.infra.auth.types import ExportAuthApiResponse
 
     # -- Step 1: Profile context --
 

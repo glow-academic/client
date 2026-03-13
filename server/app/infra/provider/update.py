@@ -51,7 +51,7 @@ async def update_provider_impl(
       5. invalidate_tags
     """
     from app.infra.provider.permissions import compute_can_edit
-    from app.routes.v5.provider.types import (
+    from app.infra.provider.types import (
         ProviderResultItem,
         UpdateProviderApiResponse,
     )

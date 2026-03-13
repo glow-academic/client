@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.health.export import export_health_impl
-from app.routes.v5.health.types import ExportHealthApiResponse
+from app.infra.health.types import ExportHealthApiResponse
 
 router = APIRouter()
 

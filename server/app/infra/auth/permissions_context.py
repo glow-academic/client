@@ -41,7 +41,7 @@ from app.tools.v5.resources.slugs.get import get_slugs
 
 if TYPE_CHECKING:
     from app.infra.auth.create import AuthFieldError, CreateAuthItem
-    from app.routes.v5.auth.types import (
+    from app.infra.auth.types import (
         UpdateAuthItem,
     )
 

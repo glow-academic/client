@@ -381,7 +381,7 @@ fastapi_app.add_middleware(McpOAuthMiddleware)
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
-from app.routes.router import router as root_router  # noqa: E402
+from app.routes import router as root_router  # noqa: E402
 
 fastapi_app.include_router(root_router)
 

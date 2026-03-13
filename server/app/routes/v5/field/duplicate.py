@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.field.duplicate import duplicate_field_impl
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
-from app.routes.v5.field.types import (
+from app.infra.field.types import (
     DuplicateFieldApiRequest,
     DuplicateFieldApiResponse,
 )

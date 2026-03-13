@@ -25,7 +25,7 @@ from app.infra.rubric.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.rubric.types import (
+from app.infra.rubric.types import (
     ListRubricApiResponse,
     ListRubricApiRubric,
     ListRubricApiStandard,

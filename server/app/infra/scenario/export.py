@@ -75,7 +75,7 @@ async def export_scenario_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.scenario.types import ExportScenarioApiResponse
+    from app.infra.scenario.types import ExportScenarioApiResponse
 
     # -- Step 1: Profile context --
 

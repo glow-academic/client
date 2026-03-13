@@ -30,7 +30,7 @@ from app.infra.department.permissions_context import (
 )
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.department.types import (
+from app.infra.department.types import (
     DepartmentDescriptionSection,
     DepartmentFlagConfig,
     DepartmentFlagSection,

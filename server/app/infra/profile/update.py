@@ -54,7 +54,7 @@ async def update_profile_impl(
       5. invalidate_tags
     """
     from app.infra.profile.permissions import compute_can_edit
-    from app.routes.v5.profile.types import (
+    from app.infra.profile.types import (
         ProfileResultItem,
         UpdateProfileApiResponse,
     )

@@ -22,7 +22,7 @@ from app.infra.attempt.permissions import (
     compute_total_possible_points,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.attempt.types import (
+from app.infra.attempt.types import (
     AggregatedResults,
     AnalysisEntry,
     AttemptData,

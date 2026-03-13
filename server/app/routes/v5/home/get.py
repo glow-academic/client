@@ -36,13 +36,13 @@ from app.infra.home_permissions import (
     format_cohort_names,
 )
 from app.infra.auth.types import AnalyticsFilterFields
-from app.routes.v5.chat.types import (
+from app.infra.chat.types import (
     ChatSimulationOperational,
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
 )
-from app.routes.v5.home.types import (
+from app.infra.home.types import (
     GetHomeRequest,
     GetHomeResponse,
 )

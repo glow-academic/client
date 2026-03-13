@@ -1,11 +1,11 @@
-"""Types for home artifact endpoint."""
+"""Types for practice artifact endpoint."""
 
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.infra.auth.types import AnalyticsFacets
-from app.routes.v5.chat.types import (
+from app.infra.chat.types import (
     ChatSimulationOperational,
     RubricMapping,
     StandardGroupMapping,
@@ -18,8 +18,8 @@ from app.infra.v5_types import HistoryResponse
 # =============================================================================
 
 
-class ExportHomeApiResponse(BaseModel):
-    """Response model for home certificate export."""
+class ExportPracticeApiResponse(BaseModel):
+    """Response model for practice export."""
 
     content: str
     file_name: str
@@ -32,16 +32,16 @@ class ExportHomeApiResponse(BaseModel):
 # =============================================================================
 
 
-class GetHomeRequest(BaseModel):
-    """Request for home get endpoint — simulation cards only."""
+class GetPracticeRequest(BaseModel):
+    """Request for practice get endpoint — simulation cards only."""
 
     pass
 
 
-class GetHomeResponse(BaseModel):
-    """Client-facing API response for home get (operational).
+class GetPracticeResponse(BaseModel):
+    """Client-facing API response for practice get (operational).
 
-    Returns simulations user can take, scoped by their cohorts.
+    Returns practice simulations user can take, scoped by their cohorts.
     Includes inline analytics facets for SSR filter rendering.
     """
 
@@ -58,8 +58,8 @@ class GetHomeResponse(BaseModel):
 # =============================================================================
 
 
-class ListHomeRequest(BaseModel):
-    """Request for home list endpoint — paginated attempt history."""
+class ListPracticeRequest(BaseModel):
+    """Request for practice list endpoint — paginated attempt history."""
 
     sort_by: str | None = "date"
     sort_order: str | None = "desc"
@@ -67,11 +67,12 @@ class ListHomeRequest(BaseModel):
     page_size: int = 20
     simulation_search: str | None = None
     scenario_search: str | None = None
+    show_archived: bool = False
     scenario_ids: list[UUID] | None = None
     infinite_mode: bool | None = None
 
 
-class ListHomeResponse(HistoryResponse):
-    """Client-facing API response for home list (paginated history)."""
+class ListPracticeResponse(HistoryResponse):
+    """Client-facing API response for practice list (paginated history)."""
 
     pass

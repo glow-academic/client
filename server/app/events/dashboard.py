@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.dashboard.types import (
+from app.infra.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
 )

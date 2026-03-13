@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from app.infra.benchmark.context import resolve_benchmark_search_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.test.permissions import compute_test_status
-from app.routes.v5.benchmark.types import (
+from app.infra.benchmark.types import (
     BenchmarkHistoryItem,
     BenchmarkHistoryResponse,
     BenchmarkRequest,

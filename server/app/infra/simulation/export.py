@@ -66,7 +66,7 @@ async def export_simulation_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.simulation.types import ExportSimulationApiResponse
+    from app.infra.simulation.types import ExportSimulationApiResponse
 
     # -- Step 1: Profile context --
 

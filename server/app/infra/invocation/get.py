@@ -18,7 +18,7 @@ from redis.asyncio import Redis
 from app.infra.common_context import resolve_common_context
 from app.infra.invocation.context import resolve_invocation_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.invocation.types import (
+from app.infra.invocation.types import (
     BaseSuiteSection,
     GetSuiteResponse,
     SuiteDepartmentSection,

@@ -26,7 +26,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.test.permissions import compute_test_status
 from app.infra.types import ArtifactContext
 from app.infra.auth.types import AnalyticsFilterFields
-from app.routes.v5.benchmark.types import (
+from app.infra.benchmark.types import (
     BenchmarkDepartmentItem,
     BenchmarkEvalOperational,
     BenchmarkHistoryItem,

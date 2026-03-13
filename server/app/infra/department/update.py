@@ -56,7 +56,7 @@ async def update_department_impl(
       6. perform_keycloak_sync (non-fatal)
     """
     from app.infra.department.permissions import compute_can_edit
-    from app.routes.v5.department.types import (
+    from app.infra.department.types import (
         DepartmentResultItem,
         UpdateDepartmentApiResponse,
     )

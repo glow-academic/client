@@ -14,7 +14,7 @@ from app.infra.persona.permissions import PERSONA_RESOURCES, has_access
 from app.infra.persona.permissions_context import resolve_persona_permissions_context
 from app.infra.persona.sections import build_persona_get_result
 from app.infra.tool_graph import score_tools
-from app.routes.v5.persona.types import GetPersonaApiResponse
+from app.infra.persona.types import GetPersonaApiResponse
 
 
 async def get_persona_impl(

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.simulation.export import export_simulation_impl
-from app.routes.v5.simulation.types import (
+from app.infra.simulation.types import (
     ExportSimulationApiRequest,
     ExportSimulationApiResponse,
 )

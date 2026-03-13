@@ -26,7 +26,7 @@ from app.infra.cohort.permissions import (
     compute_can_leave,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.cohort.types import (
+from app.infra.cohort.types import (
     ListCohortApiCohort,
     ListCohortApiDepartment,
     ListCohortApiProfile,

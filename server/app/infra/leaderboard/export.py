@@ -78,7 +78,7 @@ async def export_leaderboard_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.leaderboard.types import ExportLeaderboardApiResponse
+    from app.infra.leaderboard.types import ExportLeaderboardApiResponse
 
     # -- Step 1: Profile context --
 

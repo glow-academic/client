@@ -43,7 +43,7 @@ from app.infra.rubric.permissions import (
 )
 from app.infra.rubric.permissions_context import resolve_rubric_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.rubric.types import (
+from app.infra.rubric.types import (
     GetRubricApiResponse,
     RubricDepartmentSection,
     RubricDescriptionSection,

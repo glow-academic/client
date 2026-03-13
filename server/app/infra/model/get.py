@@ -55,7 +55,7 @@ from app.infra.model.permissions import (
 )
 from app.infra.model.permissions_context import resolve_model_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.model.types import (
+from app.infra.model.types import (
     GetModelApiResponse,
     ModelDepartmentSection,
     ModelDescriptionSection,

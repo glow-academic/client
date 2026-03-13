@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from app.infra.chat.export import export_chat_impl
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.chat.types import ExportChatApiResponse
+from app.infra.chat.types import ExportChatApiResponse
 
 router = APIRouter()
 

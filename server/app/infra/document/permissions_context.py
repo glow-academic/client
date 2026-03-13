@@ -36,7 +36,7 @@ from app.tools.v5.resources.names.get import get_names
 
 if TYPE_CHECKING:
     from app.infra.document.create import CreateDocumentItem, DocumentFieldError
-    from app.routes.v5.document.types import (
+    from app.infra.document.types import (
         UpdateDocumentItem,
     )
 

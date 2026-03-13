@@ -32,7 +32,7 @@ from app.tools.v5.artifacts.scenario.update import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 if TYPE_CHECKING:
-    from app.routes.v5.scenario.types import UpdateScenarioItem
+    from app.infra.scenario.types import UpdateScenarioItem
 
 
 def _collect_flag_ids(item: UpdateScenarioItem) -> list[UUID] | None:
@@ -71,7 +71,7 @@ async def update_scenario_impl(
       5. invalidate_tags
     """
     from app.infra.scenario.permissions import compute_can_edit
-    from app.routes.v5.scenario.types import (
+    from app.infra.scenario.types import (
         ScenarioResultItem,
         UpdateScenarioApiResponse,
     )

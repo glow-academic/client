@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.persona.audit import run_persona_operation_with_audit
 from app.infra.persona.create import create_persona_impl
-from app.routes.v5.persona.types import (
+from app.infra.persona.types import (
     CreatePersonaApiRequest,
     CreatePersonaApiResponse,
 )

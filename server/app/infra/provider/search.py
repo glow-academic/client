@@ -25,7 +25,7 @@ from app.infra.provider.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.provider.types import (
+from app.infra.provider.types import (
     ListProviderApiProvider,
     ListProviderApiResponse,
 )

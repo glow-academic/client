@@ -283,6 +283,12 @@ class GetToolDraftsApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportToolApiRequest(BaseModel):
+    """Request model for tool export."""
+
+    tool_id: UUID | None = None
+
+
 class ExportToolApiResponse(BaseModel):
     """Response model for export tool endpoint."""
 

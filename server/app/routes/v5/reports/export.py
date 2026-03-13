@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.reports.export import export_reports_impl
-from app.routes.v5.reports.types import ExportReportsApiResponse
+from app.infra.reports.types import ExportReportsApiResponse
 
 router = APIRouter(tags=["reports"])
 

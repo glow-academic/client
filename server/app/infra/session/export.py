@@ -74,7 +74,7 @@ async def export_session_impl(
     """Session export using composable infra functions."""
     from fastapi import HTTPException
 
-    from app.routes.v5.session.types import ExportSessionApiResponse
+    from app.infra.session.types import ExportSessionApiResponse
 
     # -- Step 1: Profile context --
 

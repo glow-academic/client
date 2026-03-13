@@ -26,7 +26,7 @@ from app.infra.persona.permissions import (
 )
 from app.infra.persona.permissions_context import resolve_persona_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.persona.types import (
+from app.infra.persona.types import (
     CreatePersonaApiRequest,
     CreatePersonaApiResponse,
     DeletePersonaApiRequest,

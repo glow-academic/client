@@ -61,7 +61,7 @@ async def export_field_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.field.types import ExportFieldApiResponse
+    from app.infra.field.types import ExportFieldApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

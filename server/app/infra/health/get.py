@@ -18,7 +18,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.health.context import resolve_health_context
 from app.infra.tool_graph import score_tools
 from app.infra.auth.types import AnalyticsFacets, AnalyticsFilterFields
-from app.routes.v5.health.types import (
+from app.infra.health.types import (
     HealthInternalData,
     HealthResponse,
     HealthViews,

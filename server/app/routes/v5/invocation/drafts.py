@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.invocation.drafts import list_invocation_drafts_impl
-from app.routes.v5.invocation.types import GetInvocationDraftsApiResponse
+from app.infra.invocation.types import GetInvocationDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

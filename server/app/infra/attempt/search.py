@@ -15,7 +15,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.attempt.types import (
+from app.infra.attempt.types import (
     SearchAttemptApiResponse,
     SearchAttemptItem,
 )

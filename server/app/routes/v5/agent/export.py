@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 
 from app.infra.agent.export import export_agent_impl
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.agent.types import (
+from app.infra.agent.types import (
     ExportAgentApiRequest,
     ExportAgentApiResponse,
 )

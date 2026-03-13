@@ -51,7 +51,7 @@ async def update_eval_impl(
       5. invalidate_tags
     """
     from app.infra.eval.permissions import compute_can_edit
-    from app.routes.v5.eval.types import (
+    from app.infra.eval.types import (
         EvalResultItem,
         UpdateEvalApiResponse,
     )

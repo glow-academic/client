@@ -48,7 +48,7 @@ from app.infra.simulation.permissions_context import (
     resolve_simulation_permissions_context,
 )
 from app.infra.tool_graph import score_tools
-from app.routes.v5.simulation.types import (
+from app.infra.simulation.types import (
     GetSimulationApiResponse,
     SimulationDepartment,
     SimulationDepartmentSection,

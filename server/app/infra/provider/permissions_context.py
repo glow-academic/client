@@ -36,7 +36,7 @@ from app.tools.v5.resources.providers.create import (
 
 if TYPE_CHECKING:
     from app.infra.provider.create import CreateProviderItem, ProviderFieldError
-    from app.routes.v5.provider.types import (
+    from app.infra.provider.types import (
         UpdateProviderItem,
     )
 

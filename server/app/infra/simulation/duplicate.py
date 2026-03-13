@@ -20,7 +20,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.simulation.permissions import compute_can_duplicate
-from app.routes.v5.simulation.types import (
+from app.infra.simulation.types import (
     DuplicateSimulationApiResponse,
 )
 from app.tools.v5.artifacts.simulation.create import (

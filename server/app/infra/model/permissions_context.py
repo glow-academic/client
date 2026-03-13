@@ -36,7 +36,7 @@ from app.tools.v5.resources.values.get import get_values
 
 if TYPE_CHECKING:
     from app.infra.model.create import CreateModelItem, ModelFieldError
-    from app.routes.v5.model.types import (
+    from app.infra.model.types import (
         UpdateModelItem,
     )
 

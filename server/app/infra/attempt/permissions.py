@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from app.routes.v5.attempt.types import (
+from app.infra.attempt.types import (
     AvailableContinuationOptions,
     ChatData,
 )
@@ -353,7 +353,7 @@ def compute_continuation_options(
 
     Returns None if no options.
     """
-    from app.routes.v5.attempt.types import (
+    from app.infra.attempt.types import (
         AvailableContinuationOptions,
         ContinuationOption,
         PreviousChatOption,

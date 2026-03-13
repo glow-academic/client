@@ -41,7 +41,7 @@ from app.infra.persona.permissions import (
 from app.infra.persona.permissions_context import PersonaPermissionsContext
 from app.infra.tool_graph import ArtifactToolScores
 from app.infra.types import ArtifactContext
-from app.routes.v5.persona.types import (
+from app.infra.persona.types import (
     GetPersonaApiResponse,
     PersonaColorResource,
     PersonaColorSection,

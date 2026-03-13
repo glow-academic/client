@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.invocation.draft import patch_invocation_draft_impl
-from app.routes.v5.invocation.types import (
+from app.infra.invocation.types import (
     PatchInvocationDraftApiRequest,
     PatchInvocationDraftApiResponse,
 )

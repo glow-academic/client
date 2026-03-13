@@ -18,7 +18,7 @@ from app.infra.analytics_facets import (
 from app.infra.common_context import resolve_common_context
 from app.infra.pricing.context import resolve_pricing_context
 from app.infra.auth.types import AnalyticsFilterFields
-from app.routes.v5.pricing.types import (
+from app.infra.pricing.types import (
     PricingDailyItem,
     PricingRequest,
     PricingResources,

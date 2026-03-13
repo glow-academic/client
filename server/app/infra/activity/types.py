@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.infra.auth.types import AnalyticsFacets
-from app.routes.v5.session.types import SessionListItem
+from app.infra.session.types import SessionListItem
 
 
 class ActivityRequest(BaseModel):

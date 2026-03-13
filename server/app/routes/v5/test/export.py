@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.test.export import export_test_impl
-from app.routes.v5.test.types import ExportTestApiResponse
+from app.infra.test.types import ExportTestApiResponse
 
 router = APIRouter()
 

@@ -1,21 +1,12 @@
 """Tool export endpoint — composable infra architecture."""
 
-from uuid import UUID
-
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.tool.export import export_tool_impl
-from app.routes.v5.tool.types import ExportToolApiResponse
+from app.infra.tool.types import ExportToolApiRequest, ExportToolApiResponse
 
 router = APIRouter()
-
-
-class ExportToolApiRequest(BaseModel):
-    """Request model for tool export."""
-
-    tool_id: UUID | None = None
 
 
 @router.post("/export", response_model=ExportToolApiResponse)

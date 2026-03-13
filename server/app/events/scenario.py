@@ -12,7 +12,7 @@ from app.events.types import (
     require_authenticated_profile,
 )
 from app.infra.docs.types import ComposedDocsResponse
-from app.routes.v5.scenario.types import (
+from app.infra.scenario.types import (
     CreateScenarioApiRequest,
     CreateScenarioApiResponse,
     DeleteScenarioApiRequest,

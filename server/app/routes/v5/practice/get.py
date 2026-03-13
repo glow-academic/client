@@ -35,13 +35,13 @@ from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.practice_context import resolve_practice_context
 from app.infra.auth.types import AnalyticsFilterFields
-from app.routes.v5.chat.types import (
+from app.infra.chat.types import (
     ChatSimulationOperational,
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
 )
-from app.routes.v5.practice.types import (
+from app.infra.practice.types import (
     GetPracticeRequest,
     GetPracticeResponse,
 )

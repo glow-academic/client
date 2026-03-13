@@ -101,7 +101,7 @@ async def export_activity_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.activity.types import ExportActivityApiResponse
+    from app.infra.activity.types import ExportActivityApiResponse
 
     # -- Step 1: Profile context --
 

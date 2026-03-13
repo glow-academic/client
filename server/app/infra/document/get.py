@@ -39,7 +39,7 @@ from app.infra.document.permissions import (
 from app.infra.document.permissions_context import resolve_document_permissions_context
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.document.types import (
+from app.infra.document.types import (
     DocumentDepartmentSection,
     DocumentDescriptionSection,
     DocumentFieldSection,

@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.chat.drafts import list_chat_drafts_impl
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.chat.types import GetChatDraftsApiResponse
+from app.infra.chat.types import GetChatDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

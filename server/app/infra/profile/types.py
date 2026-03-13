@@ -327,6 +327,12 @@ class PatchProfileDraftApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportProfileApiRequest(BaseModel):
+    """Request model for profile export."""
+
+    profile_export_id: UUID | None = None
+
+
 class ExportProfileApiResponse(BaseModel):
     """Response model for export profile endpoint."""
 

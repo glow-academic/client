@@ -25,7 +25,7 @@ from app.infra.tool.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.tool.types import (
+from app.infra.tool.types import (
     ListToolApiResponse,
     ListToolApiTool,
 )

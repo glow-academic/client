@@ -51,7 +51,7 @@ async def update_simulation_impl(
       5. invalidate_tags
     """
     from app.infra.simulation.permissions import compute_can_edit
-    from app.routes.v5.simulation.types import (
+    from app.infra.simulation.types import (
         SimulationResultItem,
         UpdateSimulationApiResponse,
     )

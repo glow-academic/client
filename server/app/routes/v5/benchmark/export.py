@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.benchmark.export import export_benchmark_impl
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.benchmark.types import ExportBenchmarkApiResponse
+from app.infra.benchmark.types import ExportBenchmarkApiResponse
 
 router = APIRouter()
 

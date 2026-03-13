@@ -12,14 +12,14 @@ from app.events.types import (
     require_authenticated_profile,
 )
 from app.infra.docs.types import ComposedDocsResponse
-from app.routes.v5.tool.export import ExportToolApiRequest
-from app.routes.v5.tool.types import (
+from app.infra.tool.types import (
     CreateToolApiRequest,
     CreateToolApiResponse,
     DeleteToolApiRequest,
     DeleteToolApiResponse,
     DuplicateToolApiRequest,
     DuplicateToolApiResponse,
+    ExportToolApiRequest,
     ExportToolApiResponse,
     GetToolApiRequest,
     GetToolApiResponse,

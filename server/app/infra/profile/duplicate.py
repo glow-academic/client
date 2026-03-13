@@ -20,7 +20,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile.permissions import compute_can_duplicate
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.profile.types import (
+from app.infra.profile.types import (
     DuplicateProfileApiResponse,
 )
 from app.tools.v5.artifacts.profile.create import (

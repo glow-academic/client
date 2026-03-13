@@ -20,7 +20,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.dashboard.context import resolve_dashboard_search_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.types import ArtifactContext
-from app.routes.v5.dashboard.types import (
+from app.infra.dashboard.types import (
     ListDashboardRequest,
 )
 from app.infra.v5_types import FilterOption, HistoryItem, HistoryResponse

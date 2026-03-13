@@ -1,21 +1,12 @@
 """Model export endpoint — composable infra architecture."""
 
-from uuid import UUID
-
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.model.export import export_model_impl
-from app.routes.v5.model.types import ExportModelApiResponse
+from app.infra.model.types import ExportModelApiRequest, ExportModelApiResponse
 
 router = APIRouter()
-
-
-class ExportModelApiRequest(BaseModel):
-    """Request model for model export."""
-
-    model_id: UUID | None = None
 
 
 @router.post("/export", response_model=ExportModelApiResponse)

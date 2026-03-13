@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.practice.types import (
+from app.infra.practice.types import (
     GetPracticeRequest,
     GetPracticeResponse,
 )

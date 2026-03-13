@@ -13,7 +13,7 @@ from app.infra.chat.permissions import CHAT_BUNDLE_RESOURCES
 from app.infra.chat.sections import build_chat_get_result
 from app.infra.common_context import resolve_common_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.chat.types import GetChatRequest, GetChatResponse
+from app.infra.chat.types import GetChatRequest, GetChatResponse
 
 
 async def get_chat_impl(

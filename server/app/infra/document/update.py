@@ -51,7 +51,7 @@ async def update_document_impl(
       5. invalidate_tags
     """
     from app.infra.document.permissions import compute_can_edit
-    from app.routes.v5.document.types import (
+    from app.infra.document.types import (
         DocumentResultItem,
         UpdateDocumentApiResponse,
     )

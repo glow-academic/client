@@ -25,7 +25,7 @@ from app.infra.simulation.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.simulation.types import (
+from app.infra.simulation.types import (
     ListSimulationApiPersona,
     ListSimulationApiResponse,
     ListSimulationApiScenario,

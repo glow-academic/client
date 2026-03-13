@@ -7,7 +7,7 @@ from app.events.types import (
     default_filter_events,
     require_authenticated_profile,
 )
-from app.routes.v5.attempt.types import (
+from app.infra.attempt.types import (
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
 )

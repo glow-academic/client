@@ -78,7 +78,7 @@ async def export_dashboard_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.dashboard.types import ExportDashboardApiResponse
+    from app.infra.dashboard.types import ExportDashboardApiResponse
 
     # -- Step 1: Profile context --
 

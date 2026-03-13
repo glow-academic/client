@@ -366,6 +366,12 @@ class DuplicateSettingApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportSettingApiRequest(BaseModel):
+    """Request model for setting export."""
+
+    setting_id: UUID | None = None
+
+
 class ExportSettingApiResponse(BaseModel):
     """Response model for export setting endpoint."""
 

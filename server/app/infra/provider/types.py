@@ -284,6 +284,12 @@ class GetProviderDraftsApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportProviderApiRequest(BaseModel):
+    """Request model for provider export."""
+
+    provider_id: UUID | None = None
+
+
 class ExportProviderApiResponse(BaseModel):
     """Response model for export provider endpoint."""
 

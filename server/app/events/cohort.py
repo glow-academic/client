@@ -12,7 +12,7 @@ from app.events.types import (
     require_authenticated_profile,
 )
 from app.infra.docs.types import ComposedDocsResponse
-from app.routes.v5.cohort.types import (
+from app.infra.cohort.types import (
     CreateCohortApiRequest,
     CreateCohortApiResponse,
     DeleteCohortApiRequest,

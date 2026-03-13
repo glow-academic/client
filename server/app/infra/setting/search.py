@@ -24,7 +24,7 @@ from app.infra.setting.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.setting.types import (
+from app.infra.setting.types import (
     ListSettingApiResponse,
     ListSettingApiSetting,
 )

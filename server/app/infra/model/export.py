@@ -70,7 +70,7 @@ async def export_model_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.model.types import ExportModelApiResponse
+    from app.infra.model.types import ExportModelApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

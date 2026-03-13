@@ -6,8 +6,8 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.dashboard.types import DashboardBundleResponse
-from app.routes.v5.record.types import RecordRequest
+from app.infra.dashboard.types import DashboardBundleResponse
+from app.infra.record.types import RecordRequest
 
 RECORD_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(

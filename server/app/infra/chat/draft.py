@@ -18,7 +18,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.chat.types import (
+from app.infra.chat.types import (
     ChatDraftFormState,
     PatchChatDraftApiRequest,
     PatchChatDraftApiResponse,

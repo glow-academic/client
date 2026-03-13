@@ -51,7 +51,7 @@ async def update_tool_impl(
       5. invalidate_tags
     """
     from app.infra.tool.permissions import compute_can_edit
-    from app.routes.v5.tool.types import (
+    from app.infra.tool.types import (
         ToolResultItem,
         UpdateToolApiResponse,
     )

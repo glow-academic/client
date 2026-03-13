@@ -12,8 +12,7 @@ from app.events.types import (
     require_authenticated_profile,
 )
 from app.infra.docs.types import ComposedDocsResponse
-from app.routes.v5.profile.export import ExportProfileApiRequest
-from app.routes.v5.profile.types import (
+from app.infra.profile.types import (
     CreateProfileApiRequest,
     CreateProfileApiResponse,
     DeleteProfileApiRequest,
@@ -22,6 +21,7 @@ from app.routes.v5.profile.types import (
     DuplicateProfileApiResponse,
     EmulateProfileApiRequest,
     EmulateProfileApiResponse,
+    ExportProfileApiRequest,
     ExportProfileApiResponse,
     GetProfileApiRequest,
     GetProfileApiResponse,

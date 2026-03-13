@@ -21,7 +21,7 @@ from app.infra.simulation.permissions import compute_can_delete
 from app.infra.simulation.permissions_context import (
     resolve_simulation_permissions_context,
 )
-from app.routes.v5.simulation.types import (
+from app.infra.simulation.types import (
     DeleteSimulationApiResponse,
     DeleteSimulationResult,
 )

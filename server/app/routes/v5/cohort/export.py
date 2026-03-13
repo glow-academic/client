@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.infra.cohort.export import export_cohort_impl
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.cohort.types import ExportCohortApiResponse
+from app.infra.cohort.types import ExportCohortApiResponse
 
 router = APIRouter()
 

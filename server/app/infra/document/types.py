@@ -463,6 +463,12 @@ class PatchDocumentDraftApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportDocumentApiRequest(BaseModel):
+    """Request model for document export."""
+
+    document_id: UUID | None = None
+
+
 class ExportDocumentApiResponse(BaseModel):
     """Response model for export document endpoint."""
 

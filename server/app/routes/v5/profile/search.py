@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.profile.search import search_profile_impl
-from app.routes.v5.profile.types import ListProfilesApiResponse
+from app.infra.profile.types import ListProfilesApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

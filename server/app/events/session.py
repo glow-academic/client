@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.session.types import (
+from app.infra.session.types import (
     GetSessionDetailRequest,
     GetSessionDetailResponse,
 )

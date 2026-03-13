@@ -22,7 +22,7 @@ from app.infra.department.permissions_context import (
     resolve_department_permissions_context,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.department.types import (
+from app.infra.department.types import (
     DeleteDepartmentApiResponse,
     DeleteDepartmentResult,
 )

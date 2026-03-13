@@ -14,7 +14,7 @@ from app.infra.agent.permissions_context import resolve_agent_permissions_contex
 from app.infra.agent.sections import build_agent_get_result
 from app.infra.common_context import resolve_common_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.agent.types import GetAgentApiResponse
+from app.infra.agent.types import GetAgentApiResponse
 
 
 async def get_agent_impl(

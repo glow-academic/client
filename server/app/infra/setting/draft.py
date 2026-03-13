@@ -19,7 +19,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.setting.permissions import compute_can_draft
-from app.routes.v5.setting.types import (
+from app.infra.setting.types import (
     PatchSettingDraftApiRequest,
     PatchSettingDraftApiResponse,
     SaveSettingFieldError,

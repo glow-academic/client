@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.pricing.export import export_pricing_impl
-from app.routes.v5.pricing.types import ExportPricingApiResponse
+from app.infra.pricing.types import ExportPricingApiResponse
 
 router = APIRouter()
 

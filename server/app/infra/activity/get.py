@@ -18,7 +18,7 @@ from app.infra.analytics_facets import (
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_redis_client
 from app.infra.auth.types import AnalyticsFilterFields
-from app.routes.v5.activity.types import (
+from app.infra.activity.types import (
     ActivityRequest,
     ActivityResources,
     ActivityResponse,

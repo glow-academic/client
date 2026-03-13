@@ -42,7 +42,7 @@ from app.infra.scenario.permissions import (
 from app.infra.scenario.permissions_context import ScenarioPermissionsContext
 from app.infra.tool_graph import ArtifactToolScores
 from app.infra.types import ArtifactContext
-from app.routes.v5.scenario.types import (
+from app.infra.scenario.types import (
     GetScenarioApiResponse,
     ScenarioDepartment,
     ScenarioDepartmentSection,

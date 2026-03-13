@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.leaderboard.types import (
+from app.infra.leaderboard.types import (
     LeaderboardRequest,
     LeaderboardResponse,
 )

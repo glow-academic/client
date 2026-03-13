@@ -12,14 +12,14 @@ from app.events.types import (
     require_authenticated_profile,
 )
 from app.infra.docs.types import ComposedDocsResponse
-from app.routes.v5.field.export import ExportFieldApiRequest
-from app.routes.v5.field.types import (
+from app.infra.field.types import (
     CreateFieldApiRequest,
     CreateFieldApiResponse,
     DeleteFieldApiRequest,
     DeleteFieldApiResponse,
     DuplicateFieldApiRequest,
     DuplicateFieldApiResponse,
+    ExportFieldApiRequest,
     ExportFieldApiResponse,
     GetFieldApiRequest,
     GetFieldApiResponse,

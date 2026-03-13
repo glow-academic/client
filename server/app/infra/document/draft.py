@@ -22,7 +22,7 @@ from redis.asyncio import Redis
 from app.infra.document.permissions import compute_can_draft
 from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.document.types import (
+from app.infra.document.types import (
     DocumentDraftFormState,
     PatchDocumentDraftApiRequest,
     PatchDocumentDraftApiResponse,

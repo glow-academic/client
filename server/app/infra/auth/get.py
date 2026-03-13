@@ -31,7 +31,7 @@ from app.infra.auth.permissions_context import (
 from app.infra.common_context import resolve_common_context
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.auth.types import (
+from app.infra.auth.types import (
     AuthDescriptionSection,
     AuthFlagConfig,
     AuthFlagSection,

@@ -22,7 +22,7 @@ from app.infra.chat.permissions import (
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.practice_context import resolve_practice_search_context
-from app.routes.v5.practice.types import (
+from app.infra.practice.types import (
     ListPracticeRequest,
     ListPracticeResponse,
 )

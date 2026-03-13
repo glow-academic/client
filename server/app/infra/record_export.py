@@ -87,7 +87,7 @@ async def export_record_client(
       4. Parallel resource hydration -> human-readable values
       5. Generate ZIP (attempts.csv + chats.csv) + create upload entry
     """
-    from app.routes.v5.record.types import ExportRecordApiResponse
+    from app.infra.record.types import ExportRecordApiResponse
 
     # -- Step 1: Profile context --
 

@@ -65,7 +65,7 @@ async def export_chat_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.chat.types import ExportChatApiResponse
+    from app.infra.chat.types import ExportChatApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

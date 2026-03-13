@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.home.types import GetHomeRequest, GetHomeResponse
+from app.infra.home.types import GetHomeRequest, GetHomeResponse
 
 HOME_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(

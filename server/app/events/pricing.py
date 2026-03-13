@@ -6,7 +6,7 @@ from app.events.types import (
     OperationEventConfig,
     require_authenticated_profile,
 )
-from app.routes.v5.pricing.types import PricingRequest, PricingResponse
+from app.infra.pricing.types import PricingRequest, PricingResponse
 
 PRICING_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(

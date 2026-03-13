@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.persona.export import export_persona_impl
-from app.routes.v5.persona.types import (
+from app.infra.persona.types import (
     ExportPersonaApiRequest,
     ExportPersonaApiResponse,
 )

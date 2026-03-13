@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.profile.create import create_profile_impl
-from app.routes.v5.profile.types import (
+from app.infra.profile.types import (
     CreateProfileApiRequest,
     CreateProfileApiResponse,
 )

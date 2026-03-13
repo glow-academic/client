@@ -10,7 +10,7 @@ from app.infra.leaderboard.context import resolve_leaderboard_search_context
 from app.infra.leaderboard.permissions import (
     build_leaderboard_rows_v3,
 )
-from app.routes.v5.leaderboard.types import (
+from app.infra.leaderboard.types import (
     LeaderboardProfileResource,
     LeaderboardResources,
     LeaderboardScenarioResource,

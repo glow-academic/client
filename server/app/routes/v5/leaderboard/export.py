@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.leaderboard.export import export_leaderboard_impl
-from app.routes.v5.leaderboard.types import ExportLeaderboardApiResponse
+from app.infra.leaderboard.types import ExportLeaderboardApiResponse
 
 router = APIRouter()
 

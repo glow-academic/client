@@ -19,7 +19,7 @@ from app.infra.shared_types import (
     GetProfileContextApiRequest,
     QGetProfileContextV4RoleResource,
 )
-from app.routes.v5.profile.types import (
+from app.infra.profile.types import (
     ProfileContextApiResponse,
     ThemePrimitives,
 )

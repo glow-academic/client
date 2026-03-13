@@ -1,21 +1,12 @@
 """Document export endpoint — composable infra architecture."""
 
-from uuid import UUID
-
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
 
 from app.infra.document.export import export_document_impl
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.document.types import ExportDocumentApiResponse
+from app.infra.document.types import ExportDocumentApiRequest, ExportDocumentApiResponse
 
 router = APIRouter()
-
-
-class ExportDocumentApiRequest(BaseModel):
-    """Request model for document export."""
-
-    document_id: UUID | None = None
 
 
 @router.post("/export", response_model=ExportDocumentApiResponse)
