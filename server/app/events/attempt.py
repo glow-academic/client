@@ -33,6 +33,8 @@ from app.socket.v5.client.types import (
     AttemptResponseResultEvent,
     AttemptStartedEvent,
     AttemptStartPayload,
+    AttemptStopPayload,
+    AttemptStoppedEvent,
 )
 
 ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
@@ -55,6 +57,7 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": AttemptStartPayload,
             "completed": AttemptStartedEvent,
@@ -70,6 +73,7 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="chat_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": AttemptMessagePayload,
             "completed": AttemptAssistantCompleteEvent,
@@ -87,6 +91,7 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": AttemptGradePayload,
             "completed": AttemptGradeCompleteEvent,
@@ -104,6 +109,7 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": AttemptEndPayload,
             "completed": AttemptEndedEvent,
@@ -119,6 +125,7 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": AttemptResponsePayload,
             "completed": AttemptResponseResultEvent,
@@ -128,11 +135,27 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
             "artifacts.attempt.response.saved": AttemptResponseResultEvent,
         },
     ),
+    "stop": OperationEventConfig(
+        operation="stop",
+        scope="entity",
+        entity_key="chat_id",
+        can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
+        lifecycle_models={
+            "started": AttemptStopPayload,
+            "completed": AttemptStoppedEvent,
+            "failed": OperationErrorEvent,
+        },
+        domain_events={
+            "artifacts.attempt.stopped": AttemptStoppedEvent,
+        },
+    ),
     "audio": OperationEventConfig(
         operation="audio",
         scope="entity",
         entity_key="attempt_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": AttemptAudioStartPayload,
             "completed": AttemptAudioEndedEvent,

@@ -27916,7 +27916,6 @@
       "post": {
         "tags": [
           "v5",
-          "reports",
           "reports"
         ],
         "summary": "Export Reports",
@@ -27996,7 +27995,6 @@
         },
         "x-cache-tags": [
           "v5",
-          "reports",
           "reports"
         ]
       }
@@ -29495,7 +29493,6 @@
       "post": {
         "tags": [
           "v5",
-          "activity",
           "activity"
         ],
         "summary": "Resolve Problem",
@@ -29585,7 +29582,6 @@
         },
         "x-cache-tags": [
           "v5",
-          "activity",
           "activity"
         ]
       }
@@ -31762,8 +31758,7 @@
     "/v5/problem": {
       "post": {
         "tags": [
-          "v5",
-          "activity"
+          "v5"
         ],
         "summary": "Create Problem",
         "description": "Create new problem entry.",
@@ -31851,8 +31846,7 @@
           }
         },
         "x-cache-tags": [
-          "v5",
-          "activity"
+          "v5"
         ]
       }
     },
@@ -32711,7 +32705,7 @@
         "tags": [
           "v5",
           "stream",
-          "arg_positions"
+          "tools"
         ],
         "summary": "Schema: ArgPositionsGenerationEvent",
         "operationId": "ArgPositionsGenerationEvent_schema_v5_stream_ArgPositionsGenerationEvent_post",
@@ -32804,7 +32798,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "arg_positions"
+          "tools"
         ]
       }
     },
@@ -32813,7 +32807,7 @@
         "tags": [
           "v5",
           "stream",
-          "args"
+          "tools"
         ],
         "summary": "Schema: ArgsGenerationEvent",
         "operationId": "ArgsGenerationEvent_schema_v5_stream_ArgsGenerationEvent_post",
@@ -32906,7 +32900,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "args"
+          "tools"
         ]
       }
     },
@@ -32915,7 +32909,7 @@
         "tags": [
           "v5",
           "stream",
-          "args_outputs"
+          "tools"
         ],
         "summary": "Schema: ArgsOutputsGenerationEvent",
         "operationId": "ArgsOutputsGenerationEvent_schema_v5_stream_ArgsOutputsGenerationEvent_post",
@@ -33008,7 +33002,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "args_outputs"
+          "tools"
         ]
       }
     },
@@ -35970,6 +35964,210 @@
         ]
       }
     },
+    "/v5/stream/AttemptStopPayload": {
+      "post": {
+        "tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ],
+        "summary": "Schema: AttemptStopPayload",
+        "operationId": "AttemptStopPayload_schema_v5_stream_AttemptStopPayload_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptStopPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Attemptstoppayload Schema V5 Stream Attemptstoppayload Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
+      }
+    },
+    "/v5/stream/AttemptStoppedEvent": {
+      "post": {
+        "tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ],
+        "summary": "Schema: AttemptStoppedEvent",
+        "operationId": "AttemptStoppedEvent_schema_v5_stream_AttemptStoppedEvent_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptStoppedEvent"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Attemptstoppedevent Schema V5 Stream Attemptstoppedevent Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
+      }
+    },
     "/v5/stream/AttemptUsePreviousPayload": {
       "post": {
         "tags": [
@@ -36485,7 +36683,7 @@
         "tags": [
           "v5",
           "stream",
-          "auth_item_keys"
+          "auths"
         ],
         "summary": "Schema: AuthItemKeysGenerationEvent",
         "operationId": "AuthItemKeysGenerationEvent_schema_v5_stream_AuthItemKeysGenerationEvent_post",
@@ -36578,7 +36776,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "auth_item_keys"
+          "auths"
         ]
       }
     },
@@ -36995,7 +37193,7 @@
         "tags": [
           "v5",
           "stream",
-          "colors"
+          "settings"
         ],
         "summary": "Schema: ColorsGenerationEvent",
         "operationId": "ColorsGenerationEvent_schema_v5_stream_ColorsGenerationEvent_post",
@@ -37088,7 +37286,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "colors"
+          "settings"
         ]
       }
     },
@@ -37199,7 +37397,7 @@
         "tags": [
           "v5",
           "stream",
-          "conditional_parameters"
+          "parameters"
         ],
         "summary": "Schema: ConditionalParametersGenerationEvent",
         "operationId": "ConditionalParametersGenerationEvent_schema_v5_stream_ConditionalParametersGenerationEvent_post",
@@ -37292,7 +37490,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "conditional_parameters"
+          "parameters"
         ]
       }
     },
@@ -37300,7 +37498,8 @@
       "post": {
         "tags": [
           "v5",
-          "stream"
+          "stream",
+          "session"
         ],
         "summary": "Schema: ConnectionConfirmedPayload",
         "operationId": "ConnectionConfirmedPayload_schema_v5_stream_ConnectionConfirmedPayload_post",
@@ -37392,7 +37591,8 @@
         },
         "x-cache-tags": [
           "v5",
-          "stream"
+          "stream",
+          "session"
         ]
       }
     },
@@ -48417,7 +48617,7 @@
         "tags": [
           "v5",
           "stream",
-          "emails"
+          "profiles"
         ],
         "summary": "Schema: EmailsGenerationEvent",
         "operationId": "EmailsGenerationEvent_schema_v5_stream_EmailsGenerationEvent_post",
@@ -48510,7 +48710,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "emails"
+          "profiles"
         ]
       }
     },
@@ -48723,7 +48923,7 @@
         "tags": [
           "v5",
           "stream",
-          "endpoints"
+          "providers"
         ],
         "summary": "Schema: EndpointsGenerationEvent",
         "operationId": "EndpointsGenerationEvent_schema_v5_stream_EndpointsGenerationEvent_post",
@@ -48816,7 +49016,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "endpoints"
+          "providers"
         ]
       }
     },
@@ -49029,7 +49229,7 @@
         "tags": [
           "v5",
           "stream",
-          "examples"
+          "personas"
         ],
         "summary": "Schema: ExamplesGenerationEvent",
         "operationId": "ExamplesGenerationEvent_schema_v5_stream_ExamplesGenerationEvent_post",
@@ -49122,7 +49322,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "examples"
+          "personas"
         ]
       }
     },
@@ -52599,7 +52799,7 @@
         "tags": [
           "v5",
           "stream",
-          "flags"
+          "scenarios"
         ],
         "summary": "Schema: FlagsGenerationEvent",
         "operationId": "FlagsGenerationEvent_schema_v5_stream_FlagsGenerationEvent_post",
@@ -52692,7 +52892,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "flags"
+          "scenarios"
         ]
       }
     },
@@ -52904,7 +53104,8 @@
       "post": {
         "tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ],
         "summary": "Schema: GenerationErrorEvent",
         "operationId": "GenerationErrorEvent_schema_v5_stream_GenerationErrorEvent_post",
@@ -52996,7 +53197,8 @@
         },
         "x-cache-tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ]
       }
     },
@@ -53004,7 +53206,8 @@
       "post": {
         "tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ],
         "summary": "Schema: GenerationMediaCompleteEvent",
         "operationId": "GenerationMediaCompleteEvent_schema_v5_stream_GenerationMediaCompleteEvent_post",
@@ -53096,7 +53299,8 @@
         },
         "x-cache-tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ]
       }
     },
@@ -53104,7 +53308,8 @@
       "post": {
         "tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ],
         "summary": "Schema: GenerationMediaProgressEvent",
         "operationId": "GenerationMediaProgressEvent_schema_v5_stream_GenerationMediaProgressEvent_post",
@@ -53196,7 +53401,8 @@
         },
         "x-cache-tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ]
       }
     },
@@ -53306,7 +53512,8 @@
       "post": {
         "tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ],
         "summary": "Schema: GenerationSavedEvent",
         "operationId": "GenerationSavedEvent_schema_v5_stream_GenerationSavedEvent_post",
@@ -53398,7 +53605,8 @@
         },
         "x-cache-tags": [
           "v5",
-          "stream"
+          "stream",
+          "group"
         ]
       }
     },
@@ -60343,7 +60551,7 @@
         "tags": [
           "v5",
           "stream",
-          "group_positions"
+          "group"
         ],
         "summary": "Schema: GroupPositionsGenerationEvent",
         "operationId": "GroupPositionsGenerationEvent_schema_v5_stream_GroupPositionsGenerationEvent_post",
@@ -60436,7 +60644,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "group_positions"
+          "group"
         ]
       }
     },
@@ -60445,7 +60653,7 @@
         "tags": [
           "v5",
           "stream",
-          "group_rubrics"
+          "group"
         ],
         "summary": "Schema: GroupRubricsGenerationEvent",
         "operationId": "GroupRubricsGenerationEvent_schema_v5_stream_GroupRubricsGenerationEvent_post",
@@ -60538,7 +60746,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "group_rubrics"
+          "group"
         ]
       }
     },
@@ -60955,7 +61163,7 @@
         "tags": [
           "v5",
           "stream",
-          "icons"
+          "settings"
         ],
         "summary": "Schema: IconsGenerationEvent",
         "operationId": "IconsGenerationEvent_schema_v5_stream_IconsGenerationEvent_post",
@@ -61048,7 +61256,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "icons"
+          "settings"
         ]
       }
     },
@@ -61057,7 +61265,7 @@
         "tags": [
           "v5",
           "stream",
-          "images"
+          "scenarios"
         ],
         "summary": "Schema: ImagesGenerationEvent",
         "operationId": "ImagesGenerationEvent_schema_v5_stream_ImagesGenerationEvent_post",
@@ -61150,7 +61358,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "images"
+          "scenarios"
         ]
       }
     },
@@ -61261,7 +61469,7 @@
         "tags": [
           "v5",
           "stream",
-          "instructions"
+          "agents"
         ],
         "summary": "Schema: InstructionsGenerationEvent",
         "operationId": "InstructionsGenerationEvent_schema_v5_stream_InstructionsGenerationEvent_post",
@@ -61354,7 +61562,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "instructions"
+          "agents"
         ]
       }
     },
@@ -61363,7 +61571,7 @@
         "tags": [
           "v5",
           "stream",
-          "items"
+          "auths"
         ],
         "summary": "Schema: ItemsGenerationEvent",
         "operationId": "ItemsGenerationEvent_schema_v5_stream_ItemsGenerationEvent_post",
@@ -61456,7 +61664,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "items"
+          "auths"
         ]
       }
     },
@@ -61465,7 +61673,7 @@
         "tags": [
           "v5",
           "stream",
-          "keys"
+          "auths"
         ],
         "summary": "Schema: KeysGenerationEvent",
         "operationId": "KeysGenerationEvent_schema_v5_stream_KeysGenerationEvent_post",
@@ -61558,7 +61766,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "keys"
+          "auths"
         ]
       }
     },
@@ -61771,7 +61979,7 @@
         "tags": [
           "v5",
           "stream",
-          "modalities"
+          "models"
         ],
         "summary": "Schema: ModalitiesGenerationEvent",
         "operationId": "ModalitiesGenerationEvent_schema_v5_stream_ModalitiesGenerationEvent_post",
@@ -61864,7 +62072,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "modalities"
+          "models"
         ]
       }
     },
@@ -62077,7 +62285,7 @@
         "tags": [
           "v5",
           "stream",
-          "objectives"
+          "scenarios"
         ],
         "summary": "Schema: ObjectivesGenerationEvent",
         "operationId": "ObjectivesGenerationEvent_schema_v5_stream_ObjectivesGenerationEvent_post",
@@ -62170,7 +62378,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "objectives"
+          "scenarios"
         ]
       }
     },
@@ -62383,7 +62591,7 @@
         "tags": [
           "v5",
           "stream",
-          "options"
+          "scenarios"
         ],
         "summary": "Schema: OptionsGenerationEvent",
         "operationId": "OptionsGenerationEvent_schema_v5_stream_OptionsGenerationEvent_post",
@@ -62476,7 +62684,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "options"
+          "scenarios"
         ]
       }
     },
@@ -62485,7 +62693,7 @@
         "tags": [
           "v5",
           "stream",
-          "parameter_fields"
+          "parameters"
         ],
         "summary": "Schema: ParameterFieldsGenerationEvent",
         "operationId": "ParameterFieldsGenerationEvent_schema_v5_stream_ParameterFieldsGenerationEvent_post",
@@ -62578,7 +62786,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "parameter_fields"
+          "parameters"
         ]
       }
     },
@@ -66259,7 +66467,7 @@
         "tags": [
           "v5",
           "stream",
-          "points"
+          "rubrics"
         ],
         "summary": "Schema: PointsGenerationEvent",
         "operationId": "PointsGenerationEvent_schema_v5_stream_PointsGenerationEvent_post",
@@ -66352,7 +66560,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "points"
+          "rubrics"
         ]
       }
     },
@@ -66667,7 +66875,7 @@
         "tags": [
           "v5",
           "stream",
-          "problem_statements"
+          "scenarios"
         ],
         "summary": "Schema: ProblemStatementsGenerationEvent",
         "operationId": "ProblemStatementsGenerationEvent_schema_v5_stream_ProblemStatementsGenerationEvent_post",
@@ -66760,7 +66968,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "problem_statements"
+          "scenarios"
         ]
       }
     },
@@ -66871,7 +67079,7 @@
         "tags": [
           "v5",
           "stream",
-          "profile_personas"
+          "profiles"
         ],
         "summary": "Schema: ProfilePersonasGenerationEvent",
         "operationId": "ProfilePersonasGenerationEvent_schema_v5_stream_ProfilePersonasGenerationEvent_post",
@@ -66964,7 +67172,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "profile_personas"
+          "profiles"
         ]
       }
     },
@@ -67075,7 +67283,7 @@
         "tags": [
           "v5",
           "stream",
-          "prompts"
+          "agents"
         ],
         "summary": "Schema: PromptsGenerationEvent",
         "operationId": "PromptsGenerationEvent_schema_v5_stream_PromptsGenerationEvent_post",
@@ -67168,7 +67376,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "prompts"
+          "agents"
         ]
       }
     },
@@ -67177,7 +67385,7 @@
         "tags": [
           "v5",
           "stream",
-          "protocols"
+          "auths"
         ],
         "summary": "Schema: ProtocolsGenerationEvent",
         "operationId": "ProtocolsGenerationEvent_schema_v5_stream_ProtocolsGenerationEvent_post",
@@ -67270,7 +67478,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "protocols"
+          "auths"
         ]
       }
     },
@@ -67279,7 +67487,7 @@
         "tags": [
           "v5",
           "stream",
-          "provider_keys"
+          "providers"
         ],
         "summary": "Schema: ProviderKeysGenerationEvent",
         "operationId": "ProviderKeysGenerationEvent_schema_v5_stream_ProviderKeysGenerationEvent_post",
@@ -67372,7 +67580,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "provider_keys"
+          "providers"
         ]
       }
     },
@@ -67483,7 +67691,7 @@
         "tags": [
           "v5",
           "stream",
-          "qualities"
+          "models"
         ],
         "summary": "Schema: QualitiesGenerationEvent",
         "operationId": "QualitiesGenerationEvent_schema_v5_stream_QualitiesGenerationEvent_post",
@@ -67576,7 +67784,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "qualities"
+          "models"
         ]
       }
     },
@@ -67585,7 +67793,7 @@
         "tags": [
           "v5",
           "stream",
-          "questions"
+          "scenarios"
         ],
         "summary": "Schema: QuestionsGenerationEvent",
         "operationId": "QuestionsGenerationEvent_schema_v5_stream_QuestionsGenerationEvent_post",
@@ -67678,7 +67886,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "questions"
+          "scenarios"
         ]
       }
     },
@@ -67687,7 +67895,7 @@
         "tags": [
           "v5",
           "stream",
-          "reasoning_levels"
+          "models"
         ],
         "summary": "Schema: ReasoningLevelsGenerationEvent",
         "operationId": "ReasoningLevelsGenerationEvent_schema_v5_stream_ReasoningLevelsGenerationEvent_post",
@@ -67780,7 +67988,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "reasoning_levels"
+          "models"
         ]
       }
     },
@@ -67993,7 +68201,7 @@
         "tags": [
           "v5",
           "stream",
-          "request_limits"
+          "profiles"
         ],
         "summary": "Schema: RequestLimitsGenerationEvent",
         "operationId": "RequestLimitsGenerationEvent_schema_v5_stream_RequestLimitsGenerationEvent_post",
@@ -68086,7 +68294,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "request_limits"
+          "profiles"
         ]
       }
     },
@@ -68197,7 +68405,7 @@
         "tags": [
           "v5",
           "stream",
-          "roles"
+          "settings"
         ],
         "summary": "Schema: RolesGenerationEvent",
         "operationId": "RolesGenerationEvent_schema_v5_stream_RolesGenerationEvent_post",
@@ -68290,7 +68498,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "roles"
+          "settings"
         ]
       }
     },
@@ -68401,7 +68609,7 @@
         "tags": [
           "v5",
           "stream",
-          "run_positions"
+          "test"
         ],
         "summary": "Schema: RunPositionsGenerationEvent",
         "operationId": "RunPositionsGenerationEvent_schema_v5_stream_RunPositionsGenerationEvent_post",
@@ -68494,7 +68702,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "run_positions"
+          "test"
         ]
       }
     },
@@ -68503,7 +68711,7 @@
         "tags": [
           "v5",
           "stream",
-          "run_rubrics"
+          "test"
         ],
         "summary": "Schema: RunRubricsGenerationEvent",
         "operationId": "RunRubricsGenerationEvent_schema_v5_stream_RunRubricsGenerationEvent_post",
@@ -68596,7 +68804,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "run_rubrics"
+          "test"
         ]
       }
     },
@@ -68605,7 +68813,7 @@
         "tags": [
           "v5",
           "stream",
-          "scenario_flags"
+          "scenarios"
         ],
         "summary": "Schema: ScenarioFlagsGenerationEvent",
         "operationId": "ScenarioFlagsGenerationEvent_schema_v5_stream_ScenarioFlagsGenerationEvent_post",
@@ -68698,7 +68906,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "scenario_flags"
+          "scenarios"
         ]
       }
     },
@@ -68707,7 +68915,7 @@
         "tags": [
           "v5",
           "stream",
-          "scenario_positions"
+          "scenarios"
         ],
         "summary": "Schema: ScenarioPositionsGenerationEvent",
         "operationId": "ScenarioPositionsGenerationEvent_schema_v5_stream_ScenarioPositionsGenerationEvent_post",
@@ -68800,7 +69008,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "scenario_positions"
+          "scenarios"
         ]
       }
     },
@@ -68809,7 +69017,7 @@
         "tags": [
           "v5",
           "stream",
-          "scenario_rubrics"
+          "scenarios"
         ],
         "summary": "Schema: ScenarioRubricsGenerationEvent",
         "operationId": "ScenarioRubricsGenerationEvent_schema_v5_stream_ScenarioRubricsGenerationEvent_post",
@@ -68902,7 +69110,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "scenario_rubrics"
+          "scenarios"
         ]
       }
     },
@@ -68911,7 +69119,7 @@
         "tags": [
           "v5",
           "stream",
-          "scenario_time_limits"
+          "scenarios"
         ],
         "summary": "Schema: ScenarioTimeLimitsGenerationEvent",
         "operationId": "ScenarioTimeLimitsGenerationEvent_schema_v5_stream_ScenarioTimeLimitsGenerationEvent_post",
@@ -69004,7 +69212,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "scenario_time_limits"
+          "scenarios"
         ]
       }
     },
@@ -69217,7 +69425,7 @@
         "tags": [
           "v5",
           "stream",
-          "simulation_availability"
+          "simulations"
         ],
         "summary": "Schema: SimulationAvailabilityGenerationEvent",
         "operationId": "SimulationAvailabilityGenerationEvent_schema_v5_stream_SimulationAvailabilityGenerationEvent_post",
@@ -69310,7 +69518,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "simulation_availability"
+          "simulations"
         ]
       }
     },
@@ -69319,7 +69527,7 @@
         "tags": [
           "v5",
           "stream",
-          "simulation_positions"
+          "simulations"
         ],
         "summary": "Schema: SimulationPositionsGenerationEvent",
         "operationId": "SimulationPositionsGenerationEvent_schema_v5_stream_SimulationPositionsGenerationEvent_post",
@@ -69412,7 +69620,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "simulation_positions"
+          "simulations"
         ]
       }
     },
@@ -69625,7 +69833,7 @@
         "tags": [
           "v5",
           "stream",
-          "standard_groups"
+          "rubrics"
         ],
         "summary": "Schema: StandardGroupsGenerationEvent",
         "operationId": "StandardGroupsGenerationEvent_schema_v5_stream_StandardGroupsGenerationEvent_post",
@@ -69718,7 +69926,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "standard_groups"
+          "rubrics"
         ]
       }
     },
@@ -69727,7 +69935,7 @@
         "tags": [
           "v5",
           "stream",
-          "standards"
+          "rubrics"
         ],
         "summary": "Schema: StandardsGenerationEvent",
         "operationId": "StandardsGenerationEvent_schema_v5_stream_StandardsGenerationEvent_post",
@@ -69820,7 +70028,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "standards"
+          "rubrics"
         ]
       }
     },
@@ -69931,7 +70139,7 @@
         "tags": [
           "v5",
           "stream",
-          "temperature_levels"
+          "models"
         ],
         "summary": "Schema: TemperatureLevelsGenerationEvent",
         "operationId": "TemperatureLevelsGenerationEvent_schema_v5_stream_TemperatureLevelsGenerationEvent_post",
@@ -70024,7 +70232,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "temperature_levels"
+          "models"
         ]
       }
     },
@@ -71767,7 +71975,7 @@
         "tags": [
           "v5",
           "stream",
-          "texts"
+          "documents"
         ],
         "summary": "Schema: TextsGenerationEvent",
         "operationId": "TextsGenerationEvent_schema_v5_stream_TextsGenerationEvent_post",
@@ -71860,7 +72068,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "texts"
+          "documents"
         ]
       }
     },
@@ -71869,7 +72077,7 @@
         "tags": [
           "v5",
           "stream",
-          "thresholds"
+          "rubrics"
         ],
         "summary": "Schema: ThresholdsGenerationEvent",
         "operationId": "ThresholdsGenerationEvent_schema_v5_stream_ThresholdsGenerationEvent_post",
@@ -71962,7 +72170,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "thresholds"
+          "rubrics"
         ]
       }
     },
@@ -75643,7 +75851,7 @@
         "tags": [
           "v5",
           "stream",
-          "uploads"
+          "documents"
         ],
         "summary": "Schema: UploadsGenerationEvent",
         "operationId": "UploadsGenerationEvent_schema_v5_stream_UploadsGenerationEvent_post",
@@ -75736,7 +75944,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "uploads"
+          "documents"
         ]
       }
     },
@@ -75847,7 +76055,7 @@
         "tags": [
           "v5",
           "stream",
-          "videos"
+          "scenarios"
         ],
         "summary": "Schema: VideosGenerationEvent",
         "operationId": "VideosGenerationEvent_schema_v5_stream_VideosGenerationEvent_post",
@@ -75940,7 +76148,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "videos"
+          "scenarios"
         ]
       }
     },
@@ -75949,7 +76157,7 @@
         "tags": [
           "v5",
           "stream",
-          "voices"
+          "models"
         ],
         "summary": "Schema: VoicesGenerationEvent",
         "operationId": "VoicesGenerationEvent_schema_v5_stream_VoicesGenerationEvent_post",
@@ -76042,7 +76250,7 @@
         "x-cache-tags": [
           "v5",
           "stream",
-          "voices"
+          "models"
         ]
       }
     },
@@ -81313,6 +81521,36 @@
         ],
         "title": "AttemptStopPayload",
         "description": "Client-to-server: stop message generation."
+      },
+      "AttemptStoppedEvent": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "success"
+        ],
+        "title": "AttemptStoppedEvent",
+        "description": "Server-to-client: message generation stopped."
       },
       "AttemptUsePreviousPayload": {
         "properties": {

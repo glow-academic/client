@@ -45,6 +45,7 @@ TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="collection",
         entity_key=None,
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": TestStartPayload,
             "completed": TestStartedEvent,
@@ -59,6 +60,7 @@ TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": TestRunStartEvent,
             "completed": TestRunCompleteEvent,
@@ -76,6 +78,7 @@ TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": TestEndPayload,
             "completed": TestAllCompleteEvent,
@@ -90,6 +93,7 @@ TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         scope="entity",
         entity_key="invocation_id",
         can_subscribe=require_authenticated_profile,
+        project_domain_from_audit=False,
         lifecycle_models={
             "started": TestStopPayload,
             "completed": TestStoppedEvent,

@@ -12,6 +12,7 @@ from app.infra.events.audit import (
     run_artifact_operation_with_audit,
 )
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.stream.socket_bridge import wrap_emit_with_stream_bridge
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
@@ -78,7 +79,12 @@ async def attempt_end_internal_impl(
     session_uuid = UUID(str(session_id))
 
     async def _run() -> AttemptEndInternalResult:
-        downstream_emit = emit or make_emit()
+        downstream_emit = wrap_emit_with_stream_bridge(
+            artifact="attempt",
+            operation="end",
+            emit=emit or make_emit(),
+            entity_id=payload.attempt_id,
+        )
         recorded: list[SocketEvent] = []
 
         async def _emit(events: list[SocketEvent]) -> None:
@@ -196,6 +202,7 @@ async def attempt_end_internal_impl(
         runner=_run,
         arguments=build_audit_arguments(data),
         session_id=session_uuid,
+        entity_id=payload.attempt_id,
         attempt_id=payload.attempt_id,
         response_model=AttemptEndInternalResult,
     )

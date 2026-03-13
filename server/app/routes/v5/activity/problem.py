@@ -27,7 +27,7 @@ class CreateProblemResponse(BaseModel):
     message: str
 
 
-router = APIRouter(tags=["activity"])
+router = APIRouter()
 
 
 @router.post("/problem", response_model=CreateProblemResponse)

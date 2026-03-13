@@ -80,3 +80,53 @@ def test_project_call_receipt_emits_bulk_persona_events_per_result_id() -> None:
         event for event in events if event.event_type == "artifacts.persona.created"
     ]
     assert [event.entity_id for event in domain_events] == [first_id, second_id]
+
+
+def test_project_call_receipt_skips_multi_domain_workflow_projection() -> None:
+    attempt_id = uuid4()
+    events = _project_call_receipt(
+        artifact="attempt",
+        operation="grade",
+        entity_id=attempt_id,
+        created_at=datetime(2026, 3, 10, 12, 0, 0),
+        call_id=uuid4(),
+        tool_id=uuid4(),
+        receipt={
+            "arguments": {"attempt_id": str(attempt_id)},
+            "output": {
+                "success": True,
+                "chat_id": str(uuid4()),
+                "grade_id": str(uuid4()),
+            },
+        },
+    )
+
+    assert [event.event_type for event in events] == [
+        "artifacts.attempt.grade.started",
+        "artifacts.attempt.grade.completed",
+    ]
+
+
+def test_project_call_receipt_skips_domain_projection_for_bridged_stop_workflow() -> None:
+    invocation_id = uuid4()
+    events = _project_call_receipt(
+        artifact="test",
+        operation="stop",
+        entity_id=invocation_id,
+        created_at=datetime(2026, 3, 10, 12, 0, 0),
+        call_id=uuid4(),
+        tool_id=uuid4(),
+        receipt={
+            "arguments": {"invocation_id": str(invocation_id)},
+            "output": {
+                "success": True,
+                "invocation_id": str(invocation_id),
+                "message": "stopped",
+            },
+        },
+    )
+
+    assert [event.event_type for event in events] == [
+        "artifacts.test.stop.started",
+        "artifacts.test.stop.completed",
+    ]

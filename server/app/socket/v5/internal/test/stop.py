@@ -12,6 +12,7 @@ from app.infra.events.audit import (
     run_artifact_operation_with_audit,
 )
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.stream.socket_bridge import wrap_emit_with_stream_bridge
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.socket.v5.client.types import TestStopPayload
 
@@ -40,7 +41,12 @@ async def test_stop_internal_impl(
             success=True,
             message="Test execution stopped",
         )
-        downstream_emit = emit or make_emit()
+        downstream_emit = wrap_emit_with_stream_bridge(
+            artifact="test",
+            operation="stop",
+            emit=emit or make_emit(),
+            entity_id=payload.invocation_id,
+        )
         await downstream_emit(
             [
                 SocketEvent(
@@ -75,6 +81,7 @@ async def test_stop_internal_impl(
         runner=_run,
         arguments=build_audit_arguments(data),
         session_id=UUID(str(session_id)),
+        entity_id=payload.invocation_id,
         response_model=TestStopInternalResult,
     )
 

@@ -10,6 +10,7 @@ from app.infra.events.audit import (
     run_artifact_operation_with_audit,
 )
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.stream.socket_bridge import wrap_emit_with_stream_bridge
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.test.workflows import test_start_impl
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
@@ -53,7 +54,11 @@ async def test_start_internal_impl(
         raise ValueError("Profile context not found for test_start")
 
     async def _run() -> TestStartInternalResult:
-        downstream_emit = emit or make_emit()
+        downstream_emit = wrap_emit_with_stream_bridge(
+            artifact="test",
+            operation="start",
+            emit=emit or make_emit(),
+        )
         recorded: list[SocketEvent] = []
 
         async def _emit(events: list[SocketEvent]) -> None:

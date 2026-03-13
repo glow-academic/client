@@ -12,6 +12,7 @@ from app.infra.events.audit import (
     run_artifact_operation_with_audit,
 )
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.stream.socket_bridge import wrap_emit_with_stream_bridge
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.cancel_active_result import cancel_active_result
 from app.infra.websocket.cancel_active_run import cancel_active_run
@@ -117,7 +118,12 @@ async def attempt_stop_internal_impl(
                 )
                 result = AttemptStopInternalResult(chat_id=chat_id, success=True)
 
-        downstream_emit = emit or make_emit()
+        downstream_emit = wrap_emit_with_stream_bridge(
+            artifact="attempt",
+            operation="stop",
+            emit=emit or make_emit(),
+            entity_id=payload.chat_id,
+        )
         await downstream_emit(
             [
                 SocketEvent(
@@ -147,6 +153,7 @@ async def attempt_stop_internal_impl(
         runner=_run,
         arguments=build_audit_arguments(data),
         session_id=UUID(str(session_id)),
+        entity_id=payload.chat_id,
         response_model=AttemptStopInternalResult,
     )
 

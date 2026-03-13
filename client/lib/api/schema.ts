@@ -7399,6 +7399,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v5/stream/AttemptStopPayload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schema: AttemptStopPayload */
+        post: operations["AttemptStopPayload_schema_v5_stream_AttemptStopPayload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v5/stream/AttemptStoppedEvent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Schema: AttemptStoppedEvent */
+        post: operations["AttemptStoppedEvent_schema_v5_stream_AttemptStoppedEvent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v5/stream/AttemptUsePreviousPayload": {
         parameters: {
             query?: never;
@@ -15945,6 +15979,18 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
+        };
+        /**
+         * AttemptStoppedEvent
+         * @description Server-to-client: message generation stopped.
+         */
+        AttemptStoppedEvent: {
+            /** Chat Id */
+            chat_id: string;
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
         };
         /**
          * AttemptUsePreviousPayload
@@ -55228,6 +55274,84 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AttemptStartedEvent"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    AttemptStopPayload_schema_v5_stream_AttemptStopPayload_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    AttemptStoppedEvent_schema_v5_stream_AttemptStoppedEvent_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStoppedEvent"];
             };
         };
         responses: {

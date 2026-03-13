@@ -54,6 +54,7 @@ async def run_artifact_operation_with_audit(
     group_id: UUID | None = None,
     attempt_id: UUID | None = None,
     test_id: UUID | None = None,
+    entity_id: UUID | None = None,
     bypass_cache: bool = False,
     response_model: type[T] | None = None,
     role: str = "assistant",
@@ -113,7 +114,7 @@ async def run_artifact_operation_with_audit(
                 arguments=arguments,
                 message=str(exc),
                 error_type=type(exc).__name__,
-                entity_id=None,
+                entity_id=entity_id or attempt_id or test_id,
                 tool_id=tool_id,
             )
             raise
@@ -125,7 +126,7 @@ async def run_artifact_operation_with_audit(
                 operation=operation,
                 arguments=arguments,
                 output=output,
-                entity_id=None,
+                entity_id=entity_id or attempt_id or test_id,
                 call_id=None,
                 tool_id=tool_id,
             )
@@ -164,7 +165,7 @@ async def run_artifact_operation_with_audit(
             arguments=arguments,
             message=str(exc),
             error_type=type(exc).__name__,
-            entity_id=None,
+            entity_id=entity_id or attempt_id or test_id,
             tool_id=tool_id,
         )
         raise
@@ -180,7 +181,7 @@ async def run_artifact_operation_with_audit(
             operation=operation,
             arguments=arguments,
             output=emitted_output,
-            entity_id=None,
+            entity_id=entity_id or attempt_id or test_id,
             call_id=result.call_id,
             tool_id=tool_id,
         )

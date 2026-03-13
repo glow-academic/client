@@ -95,6 +95,7 @@ class OperationEventConfig:
     filter_events: FilterEvents | None = None
     include_call_lifecycle: bool = True
     resolve_entity_ids: ResolveEntityIds | None = None
+    project_domain_from_audit: bool = True
 
     @property
     def domain_event_names(self) -> tuple[str, ...]:

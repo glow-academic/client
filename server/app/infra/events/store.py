@@ -123,7 +123,11 @@ def build_operation_events(
             )
         )
 
-    if success:
+    if (
+        success
+        and operation_config.project_domain_from_audit
+        and len(operation_config.domain_event_names) == 1
+    ):
         for event_type in operation_config.domain_event_names:
             target_entity_ids = domain_entity_ids or [entity_id]
             for target_entity_id in target_entity_ids:

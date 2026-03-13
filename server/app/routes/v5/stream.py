@@ -185,6 +185,101 @@ _ARTIFACT_TAGS: dict[str, str] = {
     "tool": "tools",
 }
 
+# Mapping from RESOURCE_SCHEMAS key → parent router tag.
+# Sub-resources are grouped under the artifact they belong to.
+_RESOURCE_PARENT_TAGS: dict[str, str] = {
+    # Top-level artifacts — map to themselves
+    "agents": "agents",
+    "auths": "auths",
+    "cohorts": "cohorts",
+    "departments": "departments",
+    "documents": "documents",
+    "evals": "evals",
+    "fields": "fields",
+    "models": "models",
+    "parameters": "parameters",
+    "personas": "personas",
+    "pricing": "pricing",
+    "profiles": "profiles",
+    "providers": "providers",
+    "rubrics": "rubrics",
+    "scenarios": "scenarios",
+    "settings": "settings",
+    "simulations": "simulations",
+    "tools": "tools",
+    # Sub-resources of tools
+    "args": "tools",
+    "arg_positions": "tools",
+    "args_outputs": "tools",
+    # Sub-resources of auths
+    "auth_item_keys": "auths",
+    "items": "auths",
+    "keys": "auths",
+    "protocols": "auths",
+    # Sub-resources of scenarios
+    "flags": "scenarios",
+    "images": "scenarios",
+    "objectives": "scenarios",
+    "options": "scenarios",
+    "problem_statements": "scenarios",
+    "questions": "scenarios",
+    "scenario_flags": "scenarios",
+    "scenario_positions": "scenarios",
+    "scenario_rubrics": "scenarios",
+    "scenario_time_limits": "scenarios",
+    "videos": "scenarios",
+    # Sub-resources of simulations
+    "simulation_availability": "simulations",
+    "simulation_positions": "simulations",
+    # Sub-resources of rubrics
+    "points": "rubrics",
+    "standard_groups": "rubrics",
+    "standards": "rubrics",
+    "thresholds": "rubrics",
+    # Sub-resources of models
+    "modalities": "models",
+    "qualities": "models",
+    "reasoning_levels": "models",
+    "temperature_levels": "models",
+    "voices": "models",
+    # Sub-resources of agents
+    "instructions": "agents",
+    "prompts": "agents",
+    # Sub-resources of providers
+    "endpoints": "providers",
+    "provider_keys": "providers",
+    # Sub-resources of profiles
+    "emails": "profiles",
+    "profile_personas": "profiles",
+    "request_limits": "profiles",
+    # Sub-resources of parameters/fields
+    "conditional_parameters": "parameters",
+    "parameter_fields": "parameters",
+    # Sub-resources of personas
+    "examples": "personas",
+    # Sub-resources of documents
+    "texts": "documents",
+    "uploads": "documents",
+    # Sub-resources of settings
+    "colors": "settings",
+    "icons": "settings",
+    "roles": "settings",
+    # Sub-resources of groups/tests
+    "group_positions": "group",
+    "group_rubrics": "group",
+    "run_positions": "test",
+    "run_rubrics": "test",
+    # Generic/shared — keep under their own name
+    "artifacts": "artifacts",
+    "descriptions": "descriptions",
+    "entries": "entries",
+    "names": "names",
+    "operations": "operations",
+    "resources": "resources",
+    "slugs": "slugs",
+    "values": "values",
+}
+
 
 def _register(model: type[BaseModel] | None, tag: str | None = None) -> None:
     if model is not None and model.__name__ not in _models:
@@ -206,9 +301,9 @@ for _artifact_key, _config in EVENT_REGISTRY.items():
 for _m in ENTRY_EVENTS.values():
     _register(_m, tag="attempt")
 
-# 3. Resource generation events — key is the plural resource name
+# 3. Resource generation events — tag with parent router
 for _res_name, _m in RESOURCE_EVENTS.items():
-    _register(_m, tag=_res_name)
+    _register(_m, tag=_RESOURCE_PARENT_TAGS.get(_res_name, _res_name))
 
 # 4. Socket types not yet in EVENT_REGISTRY — tag by prefix
 _EXTRA_SOCKET_TYPES: list[type[BaseModel]] = [
@@ -249,6 +344,10 @@ for _m in _EXTRA_SOCKET_TYPES:
         _register(_m, tag="attempt")
     elif _name.startswith("Test"):
         _register(_m, tag="test")
+    elif _name.startswith("Generation") or _name.startswith("Generate"):
+        _register(_m, tag="group")
+    elif _name.startswith("Connection"):
+        _register(_m, tag="session")
     else:
         _register(_m)
 

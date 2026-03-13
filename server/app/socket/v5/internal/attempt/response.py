@@ -13,6 +13,7 @@ from app.infra.events.audit import (
     run_artifact_operation_with_audit,
 )
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.stream.socket_bridge import wrap_emit_with_stream_bridge
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.socket.v5.client.types import AttemptResponsePayload
 from app.socket.v5.internal.attempt.types import (
@@ -63,7 +64,12 @@ async def attempt_response_internal_impl(
         from app.tools.entries.groups.get import get_groups
         from app.tools.entries.runs.create import create_run
 
-        downstream_emit = emit or make_emit()
+        downstream_emit = wrap_emit_with_stream_bridge(
+            artifact="attempt",
+            operation="response",
+            emit=emit or make_emit(),
+            entity_id=None,
+        )
         recorded: list[SocketEvent] = []
 
         async def _emit(events: list[SocketEvent]) -> None:
@@ -211,6 +217,9 @@ async def attempt_response_internal_impl(
         runner=_run,
         arguments=build_audit_arguments(data),
         session_id=UUID(str(session_id)),
+        entity_id=(
+            UUID(str(data["attempt_id"])) if data.get("attempt_id") is not None else None
+        ),
         response_model=AttemptResponseInternalResult,
     )
 

@@ -27,7 +27,7 @@ class ResolveProblemResponse(BaseModel):
     updated_at: datetime
 
 
-router = APIRouter(tags=["activity"])
+router = APIRouter()
 
 
 @router.post("/resolve", response_model=ResolveProblemResponse)
