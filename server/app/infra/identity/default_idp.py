@@ -10,12 +10,11 @@ from jose import jwt
 
 from app.infra.identity.jwks import get_key_id, get_private_key
 from app.infra.identity.keycloak_sync import get_idp_public_url
-from app.tools.artifacts.profile.get import get_profiles as get_profile_artifacts
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.tools.entries.emulations.search import search_emulations
 from app.tools.entries.grant_consumptions.create import create_grant_consumption
 from app.tools.entries.grant_consumptions.search import search_grant_consumptions
 from app.tools.entries.grants.get import get_grants
-from app.tools.resources.profiles.get import get_profiles as get_profile_resources
 
 # In-memory store for authorization codes
 _authorization_codes: dict[str, dict[str, Any]] = {}
@@ -132,24 +131,24 @@ async def resolve_authorization(
     if resolved_profile_id is None:
         raise AuthorizationError(400, "Missing profile_id for default IdP login.")
 
-    async with pool.acquire() as conn:
-        artifacts = await get_profile_artifacts(
-            conn, ids=[resolved_profile_id], profiles=True
+    profile = await resolve_profile_identity_context(
+        pool,
+        resolved_profile_id,
+        redis,
+        bypass_cache=True,
+    )
+    if profile is None:
+        raise AuthorizationError(
+            404, "Profile not found for this default IdP login."
         )
-        if not artifacts or not artifacts[0].profile_ids:
-            raise AuthorizationError(
-                404, "Profile not found for this default IdP login."
-            )
+    resolved_email = profile.primary_email
+    if resolved_email is None and profile.emails:
+        resolved_email = profile.emails[0]
 
-        resources = await get_profile_resources(
-            conn, ids=artifacts[0].profile_ids, redis=redis, bypass_cache=True
+    if not resolved_email:
+        raise AuthorizationError(
+            404, "Profile or email not found for this default IdP login."
         )
-        if not resources or not resources[0].primary_email:
-            raise AuthorizationError(
-                404, "Profile or email not found for this default IdP login."
-            )
-
-    profile = resources[0]
 
     code = secrets.token_urlsafe(32)
     expires_at = int(time.time()) + _code_ttl
@@ -157,7 +156,7 @@ async def resolve_authorization(
     is_emulation = emulation_grant is not None
     _authorization_codes[code] = {
         "profile_id": str(resolved_profile_id),
-        "email": profile.primary_email,
+        "email": resolved_email,
         "name": profile.name or "",
         "role": profile.role if profile.role else None,
         "nonce": nonce,

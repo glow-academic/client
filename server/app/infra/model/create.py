@@ -14,7 +14,7 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from app.infra.model.permissions_context import (
@@ -34,50 +34,50 @@ class CreateModelItem(BaseModel):
     Required fields (name): provide ID or value.
     """
 
-    id: UUID | None = None
+    id: UUID | None = Field(None, description="Optional pre-assigned identifier")
 
     # Dual-mode: name
-    name_id: UUID | None = None
-    name: str | None = None
+    name_id: UUID | None = Field(None, description="Name resource identifier")
+    name: str | None = Field(None, description="Display name value")
     # Dual-mode: description
-    description_id: UUID | None = None
-    description: str | None = None
+    description_id: UUID | None = Field(None, description="Description resource identifier")
+    description: str | None = Field(None, description="Description text value")
     # Dual-mode: departments (match by name)
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
+    department_ids: list[UUID] | None = Field(None, description="Department identifiers")
+    departments: list[str] | None = Field(None, description="Department names to match")
     # ID-only fields
-    flag_ids: list[UUID] | None = None
-    modality_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    provider_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    value_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = Field(None, description="Flag option identifiers")
+    modality_ids: list[UUID] | None = Field(None, description="Modality identifiers")
+    pricing_ids: list[UUID] | None = Field(None, description="Pricing tier identifiers")
+    provider_ids: list[UUID] | None = Field(None, description="Provider identifiers")
+    quality_ids: list[UUID] | None = Field(None, description="Quality level identifiers")
+    reasoning_level_ids: list[UUID] | None = Field(None, description="Reasoning level identifiers")
+    temperature_level_ids: list[UUID] | None = Field(None, description="Temperature level identifiers")
+    value_ids: list[UUID] | None = Field(None, description="Value resource identifiers")
+    voice_ids: list[UUID] | None = Field(None, description="Voice identifiers")
+    model_ids: list[UUID] | None = Field(None, description="Related model identifiers")
 
 
 class ModelFieldError(BaseModel):
     """Per-field error from value resolution."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Field name that caused the error")
+    message: str = Field(..., description="Error message describing the issue")
 
 
 class ModelResultItem(BaseModel):
     """Per-item result within a bulk create/update response."""
 
-    success: bool
-    model_id: UUID | None = None
-    message: str
-    errors: list[ModelFieldError] | None = None
+    success: bool = Field(..., description="Whether the operation succeeded")
+    model_id: UUID | None = Field(None, description="Model unique identifier")
+    message: str = Field(..., description="Result message")
+    errors: list[ModelFieldError] | None = Field(None, description="List of field-level errors")
 
 
 class CreateModelApiResponse(BaseModel):
     """Response model for bulk create model endpoint."""
 
-    results: list[ModelResultItem]
+    results: list[ModelResultItem] = Field(..., description="List of operation results")
 
 
 async def create_model_impl(

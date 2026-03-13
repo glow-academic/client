@@ -365,7 +365,11 @@ async def run_complete_impl(
     if artifact_type in ("attempt", "chat"):
         grade_id_data = metadata.get("grade_id")
         chat_id_data = metadata.get("chat_id")
-        if grade_id_data and chat_id_data:
+        if (
+            grade_id_data
+            and chat_id_data
+            and not metadata.get("grade_complete_emitted")
+        ):
             try:
                 from app.infra.websocket.attempt_types import AttemptGradeCompleteData
 

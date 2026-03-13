@@ -146,6 +146,16 @@ async def attempt_grade_internal_impl(
                     },
                 ),
                 internal_event(
+                    "attempt_grade_complete",
+                    {
+                        "sid": sid,
+                        "attempt_id": str(attempt_id),
+                        "chat_id": str(chat_id),
+                        "grade_id": grade_id,
+                        "rooms": rooms or None,
+                    },
+                ),
+                internal_event(
                     "generate",
                     {
                         "sid": sid,
@@ -162,6 +172,7 @@ async def attempt_grade_internal_impl(
                             "attempt_id": str(attempt_id),
                             "chat_id": str(chat_id),
                             "grade_id": grade_id,
+                            "grade_complete_emitted": True,
                         },
                     },
                 ),

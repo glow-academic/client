@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infra.provider.create import CreateProviderItem
 from app.infra.v5_types import BaseResourceSection, ListFilterSection
@@ -16,49 +16,49 @@ from app.tools.entries.provider_drafts.types import GetProviderDraftResponse
 class ProviderFlagConfig(BaseModel):
     """Enriched flag config for direct client consumption."""
 
-    key: str
-    label: str
-    description: str | None = None
-    icon_id: str | None = None
-    flag_option_id: UUID | None = None
-    show: bool = True
-    required: bool = False
-    generated: bool | None = None
+    key: str = Field(..., description="Flag key identifier")
+    label: str = Field(..., description="Human-readable flag label")
+    description: str | None = Field(None, description="Flag description")
+    icon_id: str | None = Field(None, description="Icon identifier for the flag")
+    flag_option_id: UUID | None = Field(None, description="Option ID to use when enabling")
+    show: bool = Field(True, description="Whether to display this flag in the UI")
+    required: bool = Field(False, description="Whether this flag is required")
+    generated: bool | None = Field(None, description="Whether this flag was AI-generated")
 
 
 class ProviderNameSection(BaseResourceSection):
-    resource: Any | None = None
-    resources: list[Any] | None = None
+    resource: Any | None = Field(None, description="Currently selected name resource")
+    resources: list[Any] | None = Field(None, description="Available name resources")
 
 
 class ProviderDescriptionSection(BaseResourceSection):
-    resource: Any | None = None
-    resources: list[Any] | None = None
+    resource: Any | None = Field(None, description="Currently selected description resource")
+    resources: list[Any] | None = Field(None, description="Available description resources")
 
 
 class ProviderFlagSection(BaseResourceSection):
-    current: list[ProviderFlagConfig] | None = None
-    resources: list[ProviderFlagConfig] | None = None
+    current: list[ProviderFlagConfig] | None = Field(None, description="Currently active flag configs")
+    resources: list[ProviderFlagConfig] | None = Field(None, description="Available flag configs")
 
 
 class ProviderDepartmentSection(BaseResourceSection):
-    current: list[Any] | None = None
-    resources: list[Any] | None = None
+    current: list[Any] | None = Field(None, description="Currently assigned departments")
+    resources: list[Any] | None = Field(None, description="Available departments")
 
 
 class ProviderValueSection(BaseResourceSection):
-    resource: Any | None = None
-    resources: list[Any] | None = None
+    resource: Any | None = Field(None, description="Currently selected value resource")
+    resources: list[Any] | None = Field(None, description="Available value resources")
 
 
 class ProviderEndpointSection(BaseResourceSection):
-    resource: Any | None = None
-    resources: list[Any] | None = None
+    resource: Any | None = Field(None, description="Currently selected endpoint resource")
+    resources: list[Any] | None = Field(None, description="Available endpoint resources")
 
 
 class ProviderKeySection(BaseResourceSection):
-    resource: Any | None = None
-    resources: list[Any] | None = None
+    resource: Any | None = Field(None, description="Currently selected key resource")
+    resources: list[Any] | None = Field(None, description="Available key resources")
 
 
 class GetProviderApiRequest(BaseModel):

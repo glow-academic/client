@@ -22,175 +22,175 @@ from app.tools.entries.scenario_drafts.types import GetScenarioDraftResponse
 class ScenarioNameResource(BaseModel):
     """Name resource for scenario."""
 
-    id: UUID | None = None
-    name: str | None = None
-    generated: bool | None = None
+    id: UUID | None = Field(None, description="UUID of the name resource")
+    name: str | None = Field(None, description="Display name")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioDescriptionResource(BaseModel):
     """Description resource for scenario."""
 
-    id: UUID | None = None
-    description: str | None = None
-    generated: bool | None = None
+    id: UUID | None = Field(None, description="UUID of the description resource")
+    description: str | None = Field(None, description="Description text")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioFlagResource(BaseModel):
     """Flag resource for scenario."""
 
-    id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    icon: str | None = None
-    generated: bool | None = None
+    id: UUID | None = Field(None, description="UUID of the flag resource")
+    name: str | None = Field(None, description="Flag name")
+    description: str | None = Field(None, description="Flag description text")
+    icon: str | None = Field(None, description="Icon identifier for the flag")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioFlagConfig(BaseModel):
     """Enriched flag config for direct client consumption."""
 
-    key: str  # e.g., "active", "objectives_enabled"
-    label: str  # e.g., "Active", "Objectives Enabled"
-    description: str | None = None
-    icon_id: str | None = None
-    flag_option_id: UUID | None = None  # ID to use when enabling
-    show: bool = True
-    required: bool = False
-    generated: bool | None = None
-    video_flag: bool | None = (
-        None  # True if this flag only shows when video_enabled is true
+    key: str = Field(..., description="Flag config key identifier")
+    label: str = Field(..., description="Display label for the flag")
+    description: str | None = Field(None, description="Flag description text")
+    icon_id: str | None = Field(None, description="UUID of the selected icon resource")
+    flag_option_id: UUID | None = Field(None, description="UUID of the flag option to use when enabling")
+    show: bool = Field(True, description="Whether to show this flag in the UI")
+    required: bool = Field(False, description="Whether this flag is required")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
+    video_flag: bool | None = Field(
+        None, description="Whether this flag only shows when video is enabled"
     )
 
 
 class ScenarioDepartment(BaseModel):
     """Department for scenario."""
 
-    department_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    generated: bool | None = None
+    department_id: UUID | None = Field(None, description="UUID of the department")
+    name: str | None = Field(None, description="Department name")
+    description: str | None = Field(None, description="Department description text")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioPersona(BaseModel):
     """Persona for scenario."""
 
-    persona_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    color: str | None = None
-    icon: str | None = None
-    image_model: bool | None = None
-    parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    example: str | None = None
-    video_persona: bool | None = None  # Has linked parameter with video_parameter=true
-    non_video_persona: bool | None = (
-        None  # Has linked parameter with video_parameter=false
+    persona_id: UUID | None = Field(None, description="UUID of the persona")
+    name: str | None = Field(None, description="Persona name")
+    description: str | None = Field(None, description="Persona description text")
+    color: str | None = Field(None, description="Display color for the persona")
+    icon: str | None = Field(None, description="Icon identifier for the persona")
+    image_model: bool | None = Field(None, description="Whether this persona uses an image model")
+    parameter_ids: list[UUID] | None = Field(None, description="Linked parameter UUIDs")
+    field_ids: list[UUID] | None = Field(None, description="Linked field UUIDs")
+    example: str | None = Field(None, description="Example text for the persona")
+    video_persona: bool | None = Field(None, description="Has linked parameter with video enabled")
+    non_video_persona: bool | None = Field(
+        None, description="Has linked parameter with video disabled"
     )
 
 
 class ScenarioObjective(BaseModel):
     """Objective for scenario."""
 
-    id: UUID | None = None
-    objective: str | None = None
-    generated: bool | None = None
+    id: UUID | None = Field(None, description="UUID of the objective")
+    objective: str | None = Field(None, description="Objective text")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioDocument(BaseModel):
     """Document for scenario."""
 
-    document_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    upload_id: UUID | None = None
-    html: bool | None = None
-    parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    parent_document_id: UUID | None = None
-    video_document: bool | None = None  # Has linked parameter with video_parameter=true
-    non_video_document: bool | None = (
-        None  # Has linked parameter with video_parameter=false
+    document_id: UUID | None = Field(None, description="UUID of the document")
+    name: str | None = Field(None, description="Document name")
+    description: str | None = Field(None, description="Document description text")
+    file_path: str | None = Field(None, description="Storage path of the file")
+    mime_type: str | None = Field(None, description="MIME type of the document")
+    upload_id: UUID | None = Field(None, description="UUID of the associated upload")
+    html: bool | None = Field(None, description="Whether the document is HTML content")
+    parameter_ids: list[UUID] | None = Field(None, description="Linked parameter UUIDs")
+    field_ids: list[UUID] | None = Field(None, description="Linked field UUIDs")
+    parent_document_id: UUID | None = Field(None, description="UUID of the parent document")
+    video_document: bool | None = Field(None, description="Has linked parameter with video enabled")
+    non_video_document: bool | None = Field(
+        None, description="Has linked parameter with video disabled"
     )
 
 
 class ScenarioParameter(BaseModel):
     """Parameter for scenario."""
 
-    parameter_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    document_parameter: bool | None = None
-    persona_parameter: bool | None = None
-    scenario_parameter: bool | None = None
-    video_parameter: bool | None = None
-    non_video_parameter: bool | None = (
-        None  # Inverse of video_parameter for frontend filtering
+    parameter_id: UUID | None = Field(None, description="UUID of the parameter")
+    name: str | None = Field(None, description="Parameter name")
+    description: str | None = Field(None, description="Parameter description text")
+    document_parameter: bool | None = Field(None, description="Whether this is a document parameter")
+    persona_parameter: bool | None = Field(None, description="Whether this is a persona parameter")
+    scenario_parameter: bool | None = Field(None, description="Whether this is a scenario parameter")
+    video_parameter: bool | None = Field(None, description="Whether this is a video parameter")
+    non_video_parameter: bool | None = Field(
+        None, description="Inverse of video_parameter for frontend filtering"
     )
-    conditional: bool | None = None
+    conditional: bool | None = Field(None, description="Whether this parameter is conditional")
 
 
 class ScenarioField(BaseModel):
     """Field for scenario."""
 
-    field_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    parameter_id: UUID | None = None
-    parameter_name: str | None = None
-    conditional_parameter_ids: list[UUID] | None = None
-    generated: bool | None = None
+    field_id: UUID | None = Field(None, description="UUID of the field")
+    name: str | None = Field(None, description="Field name")
+    description: str | None = Field(None, description="Field description text")
+    parameter_id: UUID | None = Field(None, description="UUID of the linked parameter")
+    parameter_name: str | None = Field(None, description="Name of the linked parameter")
+    conditional_parameter_ids: list[UUID] | None = Field(None, description="Conditional parameter UUIDs")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioImage(BaseModel):
     """Image for scenario."""
 
-    image_id: UUID | None = None
-    name: str | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    upload_id: UUID | None = None
-    generated: bool | None = None
+    image_id: UUID | None = Field(None, description="UUID of the image")
+    name: str | None = Field(None, description="Image name")
+    file_path: str | None = Field(None, description="Storage path of the image file")
+    mime_type: str | None = Field(None, description="MIME type of the image")
+    upload_id: UUID | None = Field(None, description="UUID of the associated upload")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioVideo(BaseModel):
     """Video for scenario."""
 
-    video_id: UUID | None = None
-    name: str | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    upload_id: UUID | None = None
-    generated: bool | None = None
+    video_id: UUID | None = Field(None, description="UUID of the video")
+    name: str | None = Field(None, description="Video name")
+    file_path: str | None = Field(None, description="Storage path of the video file")
+    mime_type: str | None = Field(None, description="MIME type of the video")
+    upload_id: UUID | None = Field(None, description="UUID of the associated upload")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioQuestion(BaseModel):
     """Question for scenario."""
 
-    question_id: UUID | None = None
-    question_text: str | None = None
-    allow_multiple: bool | None = None
-    generated: bool | None = None
+    question_id: UUID | None = Field(None, description="UUID of the question")
+    question_text: str | None = Field(None, description="Question text content")
+    allow_multiple: bool | None = Field(None, description="Whether multiple answers are allowed")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioOption(BaseModel):
     """Option for scenario."""
 
-    option_id: UUID | None = None
-    option_text: str | None = None
-    is_correct: bool | None = None
-    question_id: UUID | None = None
-    generated: bool | None = None
+    option_id: UUID | None = Field(None, description="UUID of the option")
+    option_text: str | None = Field(None, description="Option text content")
+    is_correct: bool | None = Field(None, description="Whether this is the correct option")
+    question_id: UUID | None = Field(None, description="UUID of the parent question")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioProblemStatement(BaseModel):
     """Problem statement for scenario."""
 
-    problem_statement_id: UUID | None = None
-    name: str | None = None
-    problem_statement: str | None = None
-    generated: bool | None = None
+    problem_statement_id: UUID | None = Field(None, description="UUID of the problem statement")
+    name: str | None = Field(None, description="Problem statement name")
+    problem_statement: str | None = Field(None, description="Problem statement text")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class ScenarioFieldParamFilter(BaseModel):

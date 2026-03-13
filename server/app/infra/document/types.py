@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infra.document.create import CreateDocumentItem
 from app.infra.v5_types import BaseResourceSection, ListFilterSection
@@ -20,7 +20,7 @@ from app.tools.resources.parameters.types import GetParameterResponse
 class GetDocumentDraftsApiResponse(BaseModel):
     """Response model for document drafts list endpoint."""
 
-    entries: list[GetDocumentDraftResponse] | None = None
+    entries: list[GetDocumentDraftResponse] | None = Field(None, description="List of document draft entries")
 
 
 # ---------------------------------------------------------------------------
@@ -31,9 +31,9 @@ class GetDocumentDraftsApiResponse(BaseModel):
 class DocumentNameResource(BaseModel):
     """Name resource for document."""
 
-    id: UUID | None = None
-    name: str | None = None
-    generated: bool | None = None
+    id: UUID | None = Field(None, description="Unique identifier")
+    name: str | None = Field(None, description="Display name")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
 
 
 class DocumentDescriptionResource(BaseModel):

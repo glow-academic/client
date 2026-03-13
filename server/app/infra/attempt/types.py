@@ -30,31 +30,31 @@ from app.tools.entries.runs.search import GetRunListViewResponse
 class VideoQuestionOption(BaseModel):
     """Option for a video question."""
 
-    id: UUID
-    option_text: str | None = None
-    type: str | None = None
-    is_correct: bool | None = None
+    id: UUID = Field(..., description="Unique identifier of the option")
+    option_text: str | None = Field(None, description="Display text for the option")
+    type: str | None = Field(None, description="Type of the option")
+    is_correct: bool | None = Field(None, description="Whether this option is correct")
 
 
 class VideoQuestion(BaseModel):
     """Question for a video."""
 
-    id: UUID
-    question_text: str | None = None
-    type: str | None = None
-    allow_multiple: bool | None = None
-    times: list[int] | None = None
-    options: list[VideoQuestionOption] | None = None
+    id: UUID = Field(..., description="Unique identifier of the question")
+    question_text: str | None = Field(None, description="Text of the question")
+    type: str | None = Field(None, description="Type of the question")
+    allow_multiple: bool | None = Field(None, description="Whether multiple answers are allowed")
+    times: list[int] | None = Field(None, description="Video timestamps to show the question")
+    options: list[VideoQuestionOption] | None = Field(None, description="Available answer options")
 
 
 class VideoData(BaseModel):
     """Video information for a chat (legacy - use VideoEntry instead)."""
 
-    id: UUID | None = None
-    title: str | None = None
-    upload_id: UUID | None = None
-    questions: list[VideoQuestion] | None = None
-    show_image: bool | None = None
+    id: UUID | None = Field(None, description="UUID of the video")
+    title: str | None = Field(None, description="Title of the video")
+    upload_id: UUID | None = Field(None, description="UUID of the uploaded file")
+    questions: list[VideoQuestion] | None = Field(None, description="Questions associated with the video")
+    show_image: bool | None = Field(None, description="Whether to show the video thumbnail")
 
 
 # -----------------------------------------------------------------------------
@@ -65,58 +65,58 @@ class VideoData(BaseModel):
 class ImageEntry(BaseModel):
     """Image entry with resource metadata."""
 
-    image_id: UUID | None = None
-    upload_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
+    image_id: UUID | None = Field(None, description="UUID of the image")
+    upload_id: UUID | None = Field(None, description="UUID of the uploaded file")
+    name: str | None = Field(None, description="Name of the image")
+    description: str | None = Field(None, description="Description of the image")
 
 
 class VideoEntry(BaseModel):
     """Video entry with resource metadata."""
 
-    video_id: UUID | None = None
-    upload_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
+    video_id: UUID | None = Field(None, description="UUID of the video")
+    upload_id: UUID | None = Field(None, description="UUID of the uploaded file")
+    name: str | None = Field(None, description="Name of the video")
+    description: str | None = Field(None, description="Description of the video")
 
 
 class DocumentEntry(BaseModel):
     """Document entry with resource metadata."""
 
-    document_id: UUID | None = None
-    upload_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    template: bool | None = None
+    document_id: UUID | None = Field(None, description="UUID of the document")
+    upload_id: UUID | None = Field(None, description="UUID of the uploaded file")
+    name: str | None = Field(None, description="Name of the document")
+    description: str | None = Field(None, description="Description of the document")
+    template: bool | None = Field(None, description="Whether this document is a template")
 
 
 class AnalysisEntry(BaseModel):
     """Analysis entry for chat-level analysis content."""
 
-    content: str | None = None
+    content: str | None = Field(None, description="Analysis content text")
 
 
 class ObjectiveEntry(BaseModel):
     """Objective entry with resource metadata."""
 
-    objective_id: UUID | None = None
-    objective: str | None = None
+    objective_id: UUID | None = Field(None, description="UUID of the objective")
+    objective: str | None = Field(None, description="Objective text")
 
 
 class ProblemStatementEntry(BaseModel):
     """Problem statement entry with resource metadata."""
 
-    problem_statement_id: UUID | None = None
-    problem_statement: str | None = None
+    problem_statement_id: UUID | None = Field(None, description="UUID of the problem statement")
+    problem_statement: str | None = Field(None, description="Problem statement text")
 
 
 class OptionEntry(BaseModel):
     """Option entry nested under a question."""
 
-    option_id: UUID | None = None
-    question_id: UUID | None = None
-    option_text: str | None = None
-    is_correct: bool | None = None
+    option_id: UUID | None = Field(None, description="UUID of the option")
+    question_id: UUID | None = Field(None, description="UUID of the parent question")
+    option_text: str | None = Field(None, description="Display text for the option")
+    is_correct: bool | None = Field(None, description="Whether this option is correct")
 
 
 class QuestionEntry(BaseModel):
@@ -126,28 +126,28 @@ class QuestionEntry(BaseModel):
     Times indicates video timestamps (seconds) when to show this question.
     """
 
-    question_id: UUID | None = None
-    question_text: str | None = None
-    allow_multiple: bool | None = None
-    times: list[int] | None = None  # Video timestamps when to show
-    options: list[OptionEntry] | None = None  # Nested options
+    question_id: UUID | None = Field(None, description="UUID of the question")
+    question_text: str | None = Field(None, description="Text of the question")
+    allow_multiple: bool | None = Field(None, description="Whether multiple answers are allowed")
+    times: list[int] | None = Field(None, description="Video timestamps when to show")
+    options: list[OptionEntry] | None = Field(None, description="Nested options for the question")
 
 
 class QuizResponse(BaseModel):
     """Quiz response entry."""
 
-    question_id: UUID | None = None
-    option_id: UUID | None = None
-    completed: bool | None = None
-    created_at: datetime | None = None
+    question_id: UUID | None = Field(None, description="UUID of the answered question")
+    option_id: UUID | None = Field(None, description="UUID of the selected option")
+    completed: bool | None = Field(None, description="Whether the response is complete")
+    created_at: datetime | None = Field(None, description="Timestamp when response was created")
 
 
 class QuizData(BaseModel):
     """Quiz information for a chat."""
 
-    id: UUID | None = None
-    completed: bool | None = None
-    responses: list[QuizResponse] | None = None
+    id: UUID | None = Field(None, description="UUID of the quiz")
+    completed: bool | None = Field(None, description="Whether the quiz is completed")
+    responses: list[QuizResponse] | None = Field(None, description="Quiz responses submitted")
 
 
 # -----------------------------------------------------------------------------
@@ -163,11 +163,11 @@ class GradingStateData(BaseModel):
     """
 
     # standard_id -> achieved (boolean)
-    achieved_standards: dict[str, bool] | None = None
+    achieved_standards: dict[str, bool] | None = Field(None, description="Map of standard_id to achieved status")
     # standard_id -> passed (boolean)
-    passed_standards: dict[str, bool] | None = None
+    passed_standards: dict[str, bool] | None = Field(None, description="Map of standard_id to passed status")
     # standard_id -> feedback (string)
-    feedback_by_standard_id: dict[str, str] | None = None
+    feedback_by_standard_id: dict[str, str] | None = Field(None, description="Map of standard_id to feedback text")
 
 
 # -----------------------------------------------------------------------------
@@ -178,27 +178,27 @@ class GradingStateData(BaseModel):
 class SkillScore(BaseModel):
     """Skill score entry."""
 
-    skill_name: str | None = None
-    score: float | None = None
+    skill_name: str | None = Field(None, description="Name of the skill")
+    score: float | None = Field(None, description="Score for the skill")
 
 
 class SkillFeedback(BaseModel):
     """Skill feedback entry."""
 
-    skill_name: str | None = None
-    feedback: str | None = None
+    skill_name: str | None = Field(None, description="Name of the skill")
+    feedback: str | None = Field(None, description="Feedback text for the skill")
 
 
 class DynamicRubricData(BaseModel):
     """Dynamic rubric information for a chat."""
 
-    chat_id: UUID | None = None
-    score: float | None = None
-    passed: bool | None = None
-    time_taken: float | None = None
-    skill_scores: list[SkillScore] | None = None
-    skill_feedbacks: list[SkillFeedback] | None = None
-    total_possible_points: float | None = None
+    chat_id: UUID | None = Field(None, description="UUID of the chat")
+    score: float | None = Field(None, description="Overall rubric score")
+    passed: bool | None = Field(None, description="Whether the rubric was passed")
+    time_taken: float | None = Field(None, description="Time taken in seconds")
+    skill_scores: list[SkillScore] | None = Field(None, description="Scores per skill")
+    skill_feedbacks: list[SkillFeedback] | None = Field(None, description="Feedback per skill")
+    total_possible_points: float | None = Field(None, description="Maximum possible points")
 
 
 # -----------------------------------------------------------------------------
@@ -209,18 +209,18 @@ class DynamicRubricData(BaseModel):
 class StandardGroupMeta(BaseModel):
     """Standard group metadata for rubric display."""
 
-    name: str | None = None
-    description: str | None = None
-    points: float | None = None
-    pass_points: float | None = None
+    name: str | None = Field(None, description="Name of the standard group")
+    description: str | None = Field(None, description="Description of the standard group")
+    points: float | None = Field(None, description="Total points for the group")
+    pass_points: float | None = Field(None, description="Points required to pass")
 
 
 class StandardMeta(BaseModel):
     """Standard metadata for rubric display."""
 
-    name: str | None = None
-    description: str | None = None
-    points: float | None = None
+    name: str | None = Field(None, description="Name of the standard")
+    description: str | None = Field(None, description="Description of the standard")
+    points: float | None = Field(None, description="Points for the standard")
 
 
 class RubricStructureData(BaseModel):
@@ -231,11 +231,11 @@ class RubricStructureData(BaseModel):
     """
 
     # standard_group_id -> list of standard_id strings
-    standard_groups: dict[str, list[str]] | None = None
+    standard_groups: dict[str, list[str]] | None = Field(None, description="Map of group_id to standard_id lists")
     # standard_group_id -> metadata
-    standard_groups_mapping: dict[str, StandardGroupMeta] | None = None
+    standard_groups_mapping: dict[str, StandardGroupMeta] | None = Field(None, description="Map of group_id to group metadata")
     # standard_id -> metadata
-    standards_mapping: dict[str, StandardMeta] | None = None
+    standards_mapping: dict[str, StandardMeta] | None = Field(None, description="Map of standard_id to standard metadata")
 
 
 # -----------------------------------------------------------------------------
@@ -246,65 +246,65 @@ class RubricStructureData(BaseModel):
 class AttemptGradeFeedbackEntry(BaseModel):
     """Agent-provided feedback for an attempt grade."""
 
-    feedback: str
-    total: int | None = None
+    feedback: str = Field(..., description="Feedback text from the agent")
+    total: int | None = Field(None, description="Total score for this feedback")
 
 
 class AttemptGradeStrengthEntry(BaseModel):
     """Agent-provided strength for an attempt grade."""
 
-    name: str
-    description: str
-    message_id: UUID | None = None
+    name: str = Field(..., description="Name of the strength")
+    description: str = Field(..., description="Description of the strength")
+    message_id: UUID | None = Field(None, description="UUID of the associated message")
 
 
 class AttemptGradeImprovementEntry(BaseModel):
     """Agent-provided improvement for an attempt grade."""
 
-    name: str
-    description: str
-    message_id: UUID | None = None
+    name: str = Field(..., description="Name of the improvement")
+    description: str = Field(..., description="Description of the improvement")
+    message_id: UUID | None = Field(None, description="UUID of the associated message")
 
 
 class AttemptGradeAnalysisEntry(BaseModel):
     """Agent-provided analysis for an attempt grade."""
 
-    content: str
+    content: str = Field(..., description="Analysis content text")
 
 
 class AttemptGradeHighlightEntry(BaseModel):
     """Agent-provided highlight for a strength."""
 
-    strength_id: UUID | None = None
-    section: str
-    idx: int | None = None
+    strength_id: UUID | None = Field(None, description="UUID of the parent strength")
+    section: str = Field(..., description="Highlighted text section")
+    idx: int | None = Field(None, description="Index position of the highlight")
 
 
 class AttemptGradeReplacementEntry(BaseModel):
     """Agent-provided replacement for an improvement."""
 
-    improvement_id: UUID | None = None
-    section: str
-    replace: str
-    idx: int | None = None
+    improvement_id: UUID | None = Field(None, description="UUID of the parent improvement")
+    section: str = Field(..., description="Original text section to replace")
+    replace: str = Field(..., description="Replacement text")
+    idx: int | None = Field(None, description="Index position of the replacement")
 
 
 class GradeAttemptRequest(BaseModel):
     """Canonical request shape for attempt grade workflows."""
 
-    attempt_id: UUID
-    chat_id: UUID | None = None
-    resource_types: list[str] | None = None
-    user_instructions: list[str] | None = None
-    score: int | None = None
-    passed: bool | None = None
-    time_taken: int | None = None
-    feedbacks: list[AttemptGradeFeedbackEntry] | None = None
-    strengths: list[AttemptGradeStrengthEntry] | None = None
-    improvements: list[AttemptGradeImprovementEntry] | None = None
-    analyses: list[AttemptGradeAnalysisEntry] | None = None
-    highlights: list[AttemptGradeHighlightEntry] | None = None
-    replacements: list[AttemptGradeReplacementEntry] | None = None
+    attempt_id: UUID = Field(..., description="UUID of the attempt to grade")
+    chat_id: UUID | None = Field(None, description="UUID of the chat to grade")
+    resource_types: list[str] | None = Field(None, description="Resource types to include")
+    user_instructions: list[str] | None = Field(None, description="Custom grading instructions")
+    score: int | None = Field(None, description="Overall score for the attempt")
+    passed: bool | None = Field(None, description="Whether the attempt passed")
+    time_taken: int | None = Field(None, description="Time taken in seconds")
+    feedbacks: list[AttemptGradeFeedbackEntry] | None = Field(None, description="Feedback entries from the agent")
+    strengths: list[AttemptGradeStrengthEntry] | None = Field(None, description="Strength entries from the agent")
+    improvements: list[AttemptGradeImprovementEntry] | None = Field(None, description="Improvement entries from the agent")
+    analyses: list[AttemptGradeAnalysisEntry] | None = Field(None, description="Analysis entries from the agent")
+    highlights: list[AttemptGradeHighlightEntry] | None = Field(None, description="Highlight entries for strengths")
+    replacements: list[AttemptGradeReplacementEntry] | None = Field(None, description="Replacement entries for improvements")
 
 
 # -----------------------------------------------------------------------------
@@ -315,12 +315,12 @@ class GradeAttemptRequest(BaseModel):
 class PersonaEntry(BaseModel):
     """Persona entry for lookup."""
 
-    id: UUID | None = None
-    name: str | None = None
-    icon: str | None = None
-    color: str | None = None
-    instructions: str | None = None
-    examples: list[str] | None = None
+    id: UUID | None = Field(None, description="UUID of the persona")
+    name: str | None = Field(None, description="Name of the persona")
+    icon: str | None = Field(None, description="Icon identifier for the persona")
+    color: str | None = Field(None, description="Display color for the persona")
+    instructions: str | None = Field(None, description="Instructions for the persona")
+    examples: list[str] | None = Field(None, description="Example phrases for the persona")
 
 
 # -----------------------------------------------------------------------------
@@ -331,9 +331,9 @@ class PersonaEntry(BaseModel):
 class ScenarioEntry(BaseModel):
     """Scenario entry with resource metadata."""
 
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
+    scenario_id: UUID | None = Field(None, description="UUID of the scenario")
+    name: str | None = Field(None, description="Name of the scenario")
+    description: str | None = Field(None, description="Description of the scenario")
 
 
 # -----------------------------------------------------------------------------
@@ -344,31 +344,31 @@ class ScenarioEntry(BaseModel):
 class RubricEntry(BaseModel):
     """Rubric entry with resource metadata."""
 
-    rubric_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    total_points: float | None = None
-    pass_points: float | None = None
+    rubric_id: UUID | None = Field(None, description="UUID of the rubric")
+    name: str | None = Field(None, description="Name of the rubric")
+    description: str | None = Field(None, description="Description of the rubric")
+    total_points: float | None = Field(None, description="Total available points")
+    pass_points: float | None = Field(None, description="Points required to pass")
 
 
 class StandardGroupEntry(BaseModel):
     """Standard group entry with resource metadata."""
 
-    standard_group_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    points: float | None = None
-    pass_points: float | None = None
+    standard_group_id: UUID | None = Field(None, description="UUID of the standard group")
+    name: str | None = Field(None, description="Name of the standard group")
+    description: str | None = Field(None, description="Description of the standard group")
+    points: float | None = Field(None, description="Total points for the group")
+    pass_points: float | None = Field(None, description="Points required to pass the group")
 
 
 class StandardEntry(BaseModel):
     """Standard entry with resource metadata."""
 
-    standard_id: UUID | None = None
-    standard_group_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    points: float | None = None
+    standard_id: UUID | None = Field(None, description="UUID of the standard")
+    standard_group_id: UUID | None = Field(None, description="UUID of the parent standard group")
+    name: str | None = Field(None, description="Name of the standard")
+    description: str | None = Field(None, description="Description of the standard")
+    points: float | None = Field(None, description="Points for the standard")
 
 
 # -----------------------------------------------------------------------------
@@ -383,29 +383,29 @@ class GetAttemptDetailRequest(BaseModel):
         attempt_id: The attempt ID to fetch details for.
     """
 
-    attempt_id: UUID
+    attempt_id: UUID = Field(..., description="UUID of the attempt to fetch")
 
 
 class HighlightEntry(BaseModel):
     """Highlight entry within a strength."""
 
-    section: str | None = None
-    idx: int | None = None
+    section: str | None = Field(None, description="Highlighted text section")
+    idx: int | None = Field(None, description="Index position of the highlight")
 
 
 class ReplacementEntry(BaseModel):
     """Replacement entry within an improvement."""
 
-    section: str | None = None
-    replace: str | None = None  # The replacement text
-    idx: int | None = None
+    section: str | None = Field(None, description="Original text section to replace")
+    replace: str | None = Field(None, description="Replacement text")
+    idx: int | None = Field(None, description="Index position of the replacement")
 
 
 class HintEntry(BaseModel):
     """Hint entry (practice mode only, message_id implied by parent)."""
 
-    hint: str | None = None
-    idx: int | None = None
+    hint: str | None = Field(None, description="Hint text for practice mode")
+    idx: int | None = Field(None, description="Index position of the hint")
 
 
 class ContentEntry(BaseModel):
@@ -416,11 +416,11 @@ class ContentEntry(BaseModel):
     own persona styling.
     """
 
-    content: str | None = None
-    name: str | None = None  # "You" for user messages, persona name for responses
-    color: str | None = None  # Persona color (null for user messages)
-    icon: str | None = None  # "User" for user messages, persona icon for responses
-    created_at: str | None = None
+    content: str | None = Field(None, description="Content text of the entry")
+    name: str | None = Field(None, description="Display name (user or persona)")
+    color: str | None = Field(None, description="Persona color for display")
+    icon: str | None = Field(None, description="Icon identifier for display")
+    created_at: str | None = Field(None, description="ISO timestamp when content was created")
 
 
 class MessageFeedbackEntry(BaseModel):
@@ -431,12 +431,12 @@ class MessageFeedbackEntry(BaseModel):
     - type="improvement": has replaces (sections to replace with suggestions)
     """
 
-    id: str  # Unique ID: {message_id}-{type}-{index}
-    name: str | None = None
-    description: str | None = None
-    type: str | None = None  # "strength" | "improvement"
-    highlights: list[HighlightEntry] | None = None  # For strengths
-    replaces: list[ReplacementEntry] | None = None  # For improvements
+    id: str = Field(..., description="Unique ID: {message_id}-{type}-{index}")
+    name: str | None = Field(None, description="Name of the feedback item")
+    description: str | None = Field(None, description="Description of the feedback")
+    type: str | None = Field(None, description="Feedback type: 'strength' or 'improvement'")
+    highlights: list[HighlightEntry] | None = Field(None, description="Highlighted sections for strengths")
+    replaces: list[ReplacementEntry] | None = Field(None, description="Replacement suggestions for improvements")
 
 
 class FeedbackEntry(BaseModel):
@@ -445,11 +445,11 @@ class FeedbackEntry(BaseModel):
     standard_group_id is derived from standards metadata lookup.
     """
 
-    id: UUID | None = None
-    standard_id: UUID | None = None
-    standard_group_id: UUID | None = None  # From standards metadata
-    total: float | None = None
-    feedback: str | None = None
+    id: UUID | None = Field(None, description="UUID of the feedback entry")
+    standard_id: UUID | None = Field(None, description="UUID of the associated standard")
+    standard_group_id: UUID | None = Field(None, description="UUID of the standard group")
+    total: float | None = Field(None, description="Total score for this standard")
+    feedback: str | None = Field(None, description="Feedback text for this standard")
 
 
 class MessageData(BaseModel):
@@ -460,32 +460,32 @@ class MessageData(BaseModel):
     - hints: Practice mode hints (only present in practice mode)
     """
 
-    id: UUID
-    chat_id: UUID | None = None
-    type: str | None = None  # 'query' | 'response'
-    created_at: str | None = None
-    completed: bool | None = None
+    id: UUID = Field(..., description="UUID of the message")
+    chat_id: UUID | None = Field(None, description="UUID of the parent chat")
+    type: str | None = Field(None, description="Message type: 'query' or 'response'")
+    created_at: str | None = Field(None, description="ISO timestamp when message was created")
+    completed: bool | None = Field(None, description="Whether the message is complete")
     # Contents array with display info (name/icon/color per content)
-    contents: list[ContentEntry] | None = None
+    contents: list[ContentEntry] | None = Field(None, description="Content entries with display info")
     # Unified feedbacks (strengths + improvements with type field)
-    feedbacks: list[MessageFeedbackEntry] | None = None
+    feedbacks: list[MessageFeedbackEntry] | None = Field(None, description="Unified strength and improvement feedbacks")
     # Practice mode only
-    hints: list[HintEntry] | None = None
+    hints: list[HintEntry] | None = Field(None, description="Hints for practice mode")
     # Tree branching metadata
-    parent_message_id: UUID | None = None
-    sibling_index: int | None = None
-    sibling_count: int | None = None
+    parent_message_id: UUID | None = Field(None, description="UUID of the parent message in tree")
+    sibling_index: int | None = Field(None, description="Index among sibling messages")
+    sibling_count: int | None = Field(None, description="Total number of sibling messages")
 
 
 class GradeData(BaseModel):
     """Grade information for a chat (no id - not a resource)."""
 
-    score: float | None = None
-    passed: bool | None = None
-    description: str | None = None
-    time_taken: int | None = None
-    total_points: float | None = None
-    pass_points: float | None = None
+    score: float | None = Field(None, description="Grade score achieved")
+    passed: bool | None = Field(None, description="Whether the grade is passing")
+    description: str | None = Field(None, description="Grade description text")
+    time_taken: int | None = Field(None, description="Time taken in seconds")
+    total_points: float | None = Field(None, description="Total available points")
+    pass_points: float | None = Field(None, description="Points required to pass")
 
 
 class ChatData(BaseModel):
@@ -497,90 +497,90 @@ class ChatData(BaseModel):
     - Both Views: documents
     """
 
-    id: UUID
-    created_at: str | None = None
-    completed: bool | None = None
-    is_current: bool | None = None
-    position: int | None = None
-    grade: GradeData | None = None
-    feedbacks: list[FeedbackEntry] | None = None
-    analyses: list[AnalysisEntry] | None = None  # Chat-level analysis content
+    id: UUID = Field(..., description="UUID of the chat")
+    created_at: str | None = Field(None, description="ISO timestamp when chat was created")
+    completed: bool | None = Field(None, description="Whether the chat is completed")
+    is_current: bool | None = Field(None, description="Whether this is the current chat")
+    position: int | None = Field(None, description="Position index of the chat")
+    grade: GradeData | None = Field(None, description="Grade data for the chat")
+    feedbacks: list[FeedbackEntry] | None = Field(None, description="Standard-level feedback entries")
+    analyses: list[AnalysisEntry] | None = Field(None, description="Chat-level analysis content")
 
     # Chat-level flags
-    show_problem_statement: bool | None = None
-    show_objectives: bool | None = None
-    copy_paste_allowed: bool | None = None
-    text_enabled: bool | None = None
-    audio_enabled: bool | None = None
+    show_problem_statement: bool | None = Field(None, description="Whether to show the problem statement")
+    show_objectives: bool | None = Field(None, description="Whether to show objectives")
+    copy_paste_allowed: bool | None = Field(None, description="Whether copy-paste is allowed")
+    text_enabled: bool | None = Field(None, description="Whether text input is enabled")
+    audio_enabled: bool | None = Field(None, description="Whether audio input is enabled")
 
     # Extended fields for full feature support
-    grading_state: GradingStateData | None = None
-    dynamic_rubric: DynamicRubricData | None = None
+    grading_state: GradingStateData | None = Field(None, description="Current grading state data")
+    dynamic_rubric: DynamicRubricData | None = Field(None, description="Dynamic rubric data")
 
     # --- Scenario resource ID ---
-    scenario_id: UUID | None = None
+    scenario_id: UUID | None = Field(None, description="UUID of the associated scenario")
 
     # --- Normal/General View resource IDs ---
-    problem_statement_id: UUID | None = None
-    objective_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
+    problem_statement_id: UUID | None = Field(None, description="UUID of the problem statement")
+    objective_ids: list[UUID] | None = Field(None, description="UUIDs of associated objectives")
+    persona_ids: list[UUID] | None = Field(None, description="UUIDs of associated personas")
+    image_ids: list[UUID] | None = Field(None, description="UUIDs of associated images")
 
     # --- Video/Quiz View resource IDs ---
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    responses: list[QuizResponse] | None = None
+    video_ids: list[UUID] | None = Field(None, description="UUIDs of associated videos")
+    question_ids: list[UUID] | None = Field(None, description="UUIDs of associated questions")
+    option_ids: list[UUID] | None = Field(None, description="UUIDs of associated options")
+    responses: list[QuizResponse] | None = Field(None, description="Quiz responses for the chat")
 
     # --- Both Views resource IDs ---
-    document_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = Field(None, description="UUIDs of associated documents")
 
     # --- Rubric/Grade resource IDs ---
-    rubric_id: UUID | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    rubric_id: UUID | None = Field(None, description="UUID of the rubric")
+    standard_group_ids: list[UUID] | None = Field(None, description="UUIDs of standard groups")
+    standard_ids: list[UUID] | None = Field(None, description="UUIDs of standards")
 
 
 class AttemptResources(BaseModel):
     """Resource maps keyed by ID string."""
 
-    scenarios: dict[str, ScenarioEntry] | None = None
-    personas: dict[str, PersonaEntry] | None = None
-    documents: dict[str, DocumentEntry] | None = None
-    images: dict[str, ImageEntry] | None = None
-    videos: dict[str, VideoEntry] | None = None
-    objectives: dict[str, ObjectiveEntry] | None = None
-    questions: dict[str, QuestionEntry] | None = None
-    options: dict[str, OptionEntry] | None = None
-    problem_statements: dict[str, ProblemStatementEntry] | None = None
-    rubrics: dict[str, RubricEntry] | None = None
-    standard_groups: dict[str, StandardGroupEntry] | None = None
-    standards: dict[str, StandardEntry] | None = None
+    scenarios: dict[str, ScenarioEntry] | None = Field(None, description="Scenario resources keyed by ID")
+    personas: dict[str, PersonaEntry] | None = Field(None, description="Persona resources keyed by ID")
+    documents: dict[str, DocumentEntry] | None = Field(None, description="Document resources keyed by ID")
+    images: dict[str, ImageEntry] | None = Field(None, description="Image resources keyed by ID")
+    videos: dict[str, VideoEntry] | None = Field(None, description="Video resources keyed by ID")
+    objectives: dict[str, ObjectiveEntry] | None = Field(None, description="Objective resources keyed by ID")
+    questions: dict[str, QuestionEntry] | None = Field(None, description="Question resources keyed by ID")
+    options: dict[str, OptionEntry] | None = Field(None, description="Option resources keyed by ID")
+    problem_statements: dict[str, ProblemStatementEntry] | None = Field(None, description="Problem statement resources keyed by ID")
+    rubrics: dict[str, RubricEntry] | None = Field(None, description="Rubric resources keyed by ID")
+    standard_groups: dict[str, StandardGroupEntry] | None = Field(None, description="Standard group resources keyed by ID")
+    standards: dict[str, StandardEntry] | None = Field(None, description="Standard resources keyed by ID")
 
 
 class AttemptEntries(BaseModel):
     """Entry payloads grouped by entry type."""
 
-    attempt: list[GetAttemptResponse] | None = None
-    attempt_chat: list[ChatData] | None = None
-    attempt_message: list[MessageData] | None = None
-    runs: GetRunListViewResponse | None = None
+    attempt: list[GetAttemptResponse] | None = Field(None, description="Attempt entry payloads")
+    attempt_chat: list[ChatData] | None = Field(None, description="Chat entry payloads")
+    attempt_message: list[MessageData] | None = Field(None, description="Message entry payloads")
+    runs: GetRunListViewResponse | None = Field(None, description="Runs list view response")
 
 
 class SimulationData(BaseModel):
     """Simulation metadata."""
 
-    id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    time_limit: int | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_active: bool | None = None
-    copy_paste_allowed: bool | None = None
+    id: UUID | None = Field(None, description="UUID of the simulation")
+    name: str | None = Field(None, description="Name of the simulation")
+    description: str | None = Field(None, description="Description of the simulation")
+    time_limit: int | None = Field(None, description="Time limit in seconds")
+    hints_enabled: bool | None = Field(None, description="Whether hints are enabled")
+    objectives_enabled: bool | None = Field(None, description="Whether objectives are enabled")
+    image_input_active: bool | None = Field(None, description="Whether image input is active")
+    copy_paste_allowed: bool | None = Field(None, description="Whether copy-paste is allowed")
     # Extended config fields
-    practice_simulation: bool | None = None
-    rubric_id: UUID | None = None
+    practice_simulation: bool | None = Field(None, description="Whether this is a practice simulation")
+    rubric_id: UUID | None = Field(None, description="UUID of the associated rubric")
 
 
 class AttemptData(BaseModel):
@@ -590,49 +590,49 @@ class AttemptData(BaseModel):
     is_archived is only populated when practice=True.
     """
 
-    id: UUID
-    created_at: str | None = None
-    infinite_mode: bool | None = None
-    profile_id: UUID | None = None
-    profile_name: str | None = None
-    department_id: UUID | None = None
+    id: UUID = Field(..., description="UUID of the attempt")
+    created_at: str | None = Field(None, description="ISO timestamp when attempt was created")
+    infinite_mode: bool | None = Field(None, description="Whether infinite mode is enabled")
+    profile_id: UUID | None = Field(None, description="UUID of the user profile")
+    profile_name: str | None = Field(None, description="Display name of the user profile")
+    department_id: UUID | None = Field(None, description="UUID of the department")
     # Home mode only
-    cohort_id: UUID | None = None
+    cohort_id: UUID | None = Field(None, description="UUID of the cohort (home mode only)")
     # Practice mode only
-    is_archived: bool | None = None
+    is_archived: bool | None = Field(None, description="Whether the attempt is archived")
 
 
 class TimerData(BaseModel):
     """Timer information."""
 
-    elapsed: int | None = None
-    limit: int | None = None
-    exceeded: bool | None = None
-    formatted: str | None = None
-    negative: bool | None = None  # Allows timer to go negative
+    elapsed: int | None = Field(None, description="Elapsed time in seconds")
+    limit: int | None = Field(None, description="Time limit in seconds")
+    exceeded: bool | None = Field(None, description="Whether the time limit was exceeded")
+    formatted: str | None = Field(None, description="Formatted time string for display")
+    negative: bool | None = Field(None, description="Whether the timer can go negative")
 
 
 class AggregatedResults(BaseModel):
     """Aggregated results for the attempt."""
 
-    total_score: float | None = None
-    total_possible_points: float | None = None
-    percentage: float | None = None
-    passed: bool | None = None
-    chats_completed: int | None = None
-    total_chats: int | None = None
+    total_score: float | None = Field(None, description="Total score across all chats")
+    total_possible_points: float | None = Field(None, description="Maximum possible points")
+    percentage: float | None = Field(None, description="Score as a percentage")
+    passed: bool | None = Field(None, description="Whether the attempt passed overall")
+    chats_completed: int | None = Field(None, description="Number of chats completed")
+    total_chats: int | None = Field(None, description="Total number of chats")
 
 
 class PreviousChatOption(BaseModel):
     """A single chat_entry's best previous graded attempt_chat."""
 
-    chat_entry_id: str | None = None
-    scenario_name: str | None = None
-    attempt_chat_id: str | None = None
-    score: float | None = None
-    percentage: float | None = None
-    time_taken: float | None = None
-    position: int | None = None
+    chat_entry_id: str | None = Field(None, description="ID of the chat entry")
+    scenario_name: str | None = Field(None, description="Name of the scenario")
+    attempt_chat_id: str | None = Field(None, description="ID of the attempt chat")
+    score: float | None = Field(None, description="Score achieved")
+    percentage: float | None = Field(None, description="Score as a percentage")
+    time_taken: float | None = Field(None, description="Time taken in seconds")
+    position: int | None = Field(None, description="Position in the sequence")
 
 
 class ContinuationOption(BaseModel):

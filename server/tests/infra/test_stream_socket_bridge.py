@@ -79,3 +79,36 @@ async def test_wrap_emit_with_stream_bridge_publishes_test_run_progress_event() 
         assert published.payload["score"] == 0.9
     finally:
         unsubscribe(queue)
+
+
+@pytest.mark.asyncio
+async def test_wrap_emit_with_stream_bridge_skips_attempt_server_owned_domain_events() -> None:
+    emit, recorded = recording_emit()
+    bridged = wrap_emit_with_stream_bridge(
+        artifact="attempt",
+        operation="grade",
+        emit=emit,
+        entity_id=UUID("33333333-3333-3333-3333-333333333333"),
+    )
+    queue = subscribe(
+        artifact="attempt",
+        operation="grade",
+        entity_id=UUID("33333333-3333-3333-3333-333333333333"),
+    )
+    try:
+        await bridged(
+            [
+                internal_event(
+                    "attempt_grade_complete",
+                    {
+                        "chat_id": "44444444-4444-4444-4444-444444444444",
+                        "grade_id": "55555555-5555-5555-5555-555555555555",
+                    },
+                )
+            ]
+        )
+
+        assert [event.event for event in recorded] == ["attempt_grade_complete"]
+        assert queue.empty()
+    finally:
+        unsubscribe(queue)

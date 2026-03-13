@@ -14,7 +14,7 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from app.infra.agent.permissions_context import (
@@ -34,47 +34,47 @@ class CreateAgentItem(BaseModel):
     Required fields (name): provide ID or value.
     """
 
-    id: UUID | None = None
+    id: UUID | None = Field(None, description="Client-provided UUID for the agent")
 
     # Dual-mode: name
-    name_id: UUID | None = None
-    name: str | None = None
+    name_id: UUID | None = Field(None, description="UUID of the name resource")
+    name: str | None = Field(None, description="Display name value")
     # Dual-mode: description
-    description_id: UUID | None = None
-    description: str | None = None
+    description_id: UUID | None = Field(None, description="UUID of the description resource")
+    description: str | None = Field(None, description="Description text value")
     # Dual-mode: departments (match by name)
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
+    department_ids: list[UUID] | None = Field(None, description="Associated department UUIDs")
+    departments: list[str] | None = Field(None, description="Department names for matching")
     # ID-only fields
-    flag_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    agent_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = Field(None, description="Associated flag UUIDs")
+    model_ids: list[UUID] | None = Field(None, description="Associated model UUIDs")
+    reasoning_level_ids: list[UUID] | None = Field(None, description="Associated reasoning level UUIDs")
+    temperature_level_ids: list[UUID] | None = Field(None, description="Associated temperature level UUIDs")
+    tool_ids: list[UUID] | None = Field(None, description="Associated tool UUIDs")
+    voice_ids: list[UUID] | None = Field(None, description="Associated voice UUIDs")
+    agent_ids: list[UUID] | None = Field(None, description="Associated agent resource UUIDs")
 
 
 class AgentFieldError(BaseModel):
     """Per-field error from value resolution."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Name of the field with the error")
+    message: str = Field(..., description="Human-readable error message")
 
 
 class AgentResultItem(BaseModel):
     """Per-item result within a bulk create/update response."""
 
-    success: bool
-    agent_id: UUID | None = None
-    message: str
-    errors: list[AgentFieldError] | None = None
+    success: bool = Field(..., description="Whether the operation succeeded")
+    agent_id: UUID | None = Field(None, description="UUID of the affected agent")
+    message: str = Field(..., description="Human-readable result message")
+    errors: list[AgentFieldError] | None = Field(None, description="List of per-field errors")
 
 
 class CreateAgentApiResponse(BaseModel):
     """Response model for bulk create agent endpoint."""
 
-    results: list[AgentResultItem]
+    results: list[AgentResultItem] = Field(..., description="List of operation results")
 
 
 async def create_agent_impl(

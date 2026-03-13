@@ -12,7 +12,6 @@ from app.infra.websocket.socket_event import EmitFn, SocketEvent
 _SOCKET_EVENT_TO_PUBLIC: dict[tuple[str, str], dict[str, str]] = {
     ("attempt", "start"): {
         "attempt_started": "artifacts.attempt.started",
-        "attempt_chat_started": "artifacts.attempt.chat_started",
     },
     ("attempt", "message"): {
         "attempt_assistant_start": "artifacts.attempt.assistant.start",
@@ -22,7 +21,6 @@ _SOCKET_EVENT_TO_PUBLIC: dict[tuple[str, str], dict[str, str]] = {
     ("attempt", "grade"): {
         "attempt_grade_start": "artifacts.attempt.grade.start",
         "attempt_grade_progress": "artifacts.attempt.grade.progress",
-        "attempt_grade_complete": "artifacts.attempt.grade.complete",
     },
     ("attempt", "end"): {
         "attempt_ended": "artifacts.attempt.ended",

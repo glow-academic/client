@@ -292,3 +292,53 @@ class TestRunCompleteImpl:
             "attempt_chat_started",
         ]
         assert events[1].data["chat_id"] == "chat-1"
+
+    async def test_attempt_artifact_skips_duplicate_grade_complete_when_already_emitted(
+        self, conn, redis_client
+    ):
+        profile, session, _group, run = await _run_graph(conn, redis_client)
+        soft_name = await create_name(
+            conn, "attempt-grade-complete-name", redis_client, soft=True
+        )
+        run_id = str(run.id)
+
+        await init_run(
+            redis_client,
+            run_id=run_id,
+            units=[
+                WorkUnit(
+                    agent_id="agent-a", target_type="resource", target_name="names"
+                ),
+            ],
+            num_agents=1,
+        )
+        await record_unit_soft(
+            redis_client,
+            run_id=run_id,
+            agent_id="agent-a",
+            target_type="resource",
+            target_name="names",
+            result_id=str(soft_name.id),
+        )
+
+        emit, events = recording_emit()
+        await run_complete_impl(
+            _base_data(
+                profile_id=str(profile.id),
+                profiles_id=str(profile.id),
+                session_id=str(session.id),
+                run_id=run_id,
+                artifact_type="attempt",
+                metadata={
+                    "attempt_id": "attempt-1",
+                    "chat_id": "chat-1",
+                    "grade_id": "grade-1",
+                    "grade_complete_emitted": True,
+                },
+            ),
+            emit=emit,
+            conn=conn,
+            redis=redis_client,
+        )
+
+        assert [event.event for event in events] == ["generation_channel"]

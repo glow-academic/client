@@ -11,6 +11,9 @@ from app.infra.websocket.socket_event import internal_event, recording_emit
 from app.socket.v5.internal.attempt.start import (
     attempt_start_internal_impl as run_attempt_start_internal,
 )
+from app.socket.v5.internal.attempt.grade import (
+    attempt_grade_internal_impl as run_attempt_grade_internal,
+)
 from app.socket.v5.internal.test.start import (
     test_start_internal_impl as run_test_start_internal,
 )
@@ -164,4 +167,85 @@ async def test_test_start_internal_impl_returns_terminal_result(monkeypatch) -> 
     assert [event.event for event in recorded] == [
         "test_proceed",
         "test_invocation_started",
+    ]
+
+
+async def test_attempt_grade_internal_impl_emits_grade_complete(monkeypatch) -> None:
+    class _Acquire:
+        async def __aenter__(self):
+            return object()
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class _Pool:
+        def acquire(self):
+            return _Acquire()
+
+    async def _resolve_identity(pool, profile_id, redis, *, session_id):
+        del pool, profile_id, redis, session_id
+        return SimpleNamespace(profiles_id=uuid4())
+
+    async def _create_group(conn, *, session_id):
+        del conn, session_id
+        return SimpleNamespace(id=uuid4())
+
+    async def _create_run(conn, *, session_id, group_id, profiles_id):
+        del conn, session_id, group_id, profiles_id
+        return SimpleNamespace(id=uuid4())
+
+    async def _create_call(conn, *, run_id, session_id):
+        del conn, run_id, session_id
+        return SimpleNamespace(id=uuid4())
+
+    async def _create_attempt_grade(conn, *, chat_id, call_id, run_id, time_taken, passed, score):
+        del conn, chat_id, call_id, run_id, time_taken, passed, score
+        return SimpleNamespace(id=uuid4())
+
+    monkeypatch.setattr(
+        "app.socket.v5.internal.attempt.grade.resolve_profile_identity_context",
+        _resolve_identity,
+    )
+    monkeypatch.setattr(
+        "app.socket.v5.internal.attempt.grade.create_group",
+        _create_group,
+    )
+    monkeypatch.setattr(
+        "app.socket.v5.internal.attempt.grade.create_run",
+        _create_run,
+    )
+    monkeypatch.setattr(
+        "app.socket.v5.internal.attempt.grade.create_call",
+        _create_call,
+    )
+    monkeypatch.setattr(
+        "app.socket.v5.internal.attempt.grade.create_attempt_grade",
+        _create_attempt_grade,
+    )
+    monkeypatch.setattr(
+        "app.socket.v5.internal.attempt.grade.get_pool",
+        lambda: _Pool(),
+    )
+    monkeypatch.setattr(
+        "app.socket.v5.internal.attempt.grade.get_redis_client",
+        lambda: object(),
+    )
+
+    emit, recorded = recording_emit()
+    result = await run_attempt_grade_internal(
+        {
+            "sid": "socket-1",
+            "profile_id": str(uuid4()),
+            "session_id": str(uuid4()),
+            "attempt_id": str(uuid4()),
+            "chat_id": str(uuid4()),
+        },
+        emit=emit,
+        audit=False,
+    )
+
+    assert result.grade_id is not None
+    assert [event.event for event in recorded[:2]] == [
+        "attempt_grade_start",
+        "attempt_grade_complete",
     ]
