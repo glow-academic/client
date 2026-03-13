@@ -20,15 +20,11 @@ router = APIRouter()
 router.include_router(v5_router)
 router.include_router(health_router)
 router.include_router(well_known_router)
-
-# Default IdP — OIDC endpoints under /default-idp
-default_idp_router = APIRouter(prefix="/default-idp", tags=["default-idp"])
-default_idp_router.include_router(jwks_router)
-default_idp_router.include_router(discovery_router)
-default_idp_router.include_router(authorize_router)
-default_idp_router.include_router(token_router)
-default_idp_router.include_router(userinfo_router)
-router.include_router(default_idp_router)
+router.include_router(jwks_router)
+router.include_router(discovery_router)
+router.include_router(authorize_router)
+router.include_router(token_router)
+router.include_router(userinfo_router)
 
 
 @router.get("/")

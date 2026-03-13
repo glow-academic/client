@@ -1213,7 +1213,7 @@ def get_idp_public_url(config: KeycloakSyncConfig | None = None) -> str:
     - Local dev: http://localhost:8000 (browser can access)
     - Production: ORIGIN (public domain, nginx proxies to backend)
 
-    Path is at root level: /default-idp/ (not /v5/auth/default-idp/)
+    Endpoints are at root level: /authorize, /token, /jwks, /userinfo
     """
     if config is None:
         config = KeycloakSyncConfig.from_env()
@@ -1227,12 +1227,12 @@ def get_idp_public_url(config: KeycloakSyncConfig | None = None) -> str:
         # Local dev: browser can access localhost:8000 directly
         base = "http://localhost:8000"
     else:
-        # Production: use public ORIGIN (nginx will proxy /default-idp/ to backend)
+        # Production: use public ORIGIN (nginx proxies to backend)
         base = origin.rstrip("/")
 
     if app_prefix:
-        return f"{base}/{app_prefix}/default-idp"
-    return f"{base}/default-idp"
+        return f"{base}/{app_prefix}"
+    return base
 
 
 def get_idp_internal_url(config: KeycloakSyncConfig | None = None) -> str:
@@ -1247,7 +1247,7 @@ def get_idp_internal_url(config: KeycloakSyncConfig | None = None) -> str:
     - Keycloak on host + Server on host: http://localhost:8000 (direct access)
     - Production: ORIGIN (public domain, nginx proxies to backend)
 
-    Path is at root level: /default-idp/ (not /v5/auth/default-idp/)
+    Endpoints are at root level: /authorize, /token, /jwks, /userinfo
     """
     if config is None:
         config = KeycloakSyncConfig.from_env()
@@ -1258,25 +1258,22 @@ def get_idp_internal_url(config: KeycloakSyncConfig | None = None) -> str:
     # Check if we're in Docker environment (server running in Docker)
     if docker_env:
         # Server is in Docker: use service name for internal communication (Keycloak -> Server)
-        # Both Keycloak and Server are in Docker Compose, so they can communicate via service name
         base = "http://server:8000"
     else:
         # Server is running locally (make run), but Keycloak might be in Docker
         # When Keycloak (in Docker) needs to reach host server, use host.docker.internal
-        # This is the same pattern used for database connection in Makefile
         is_local_dev = "localhost" in origin.lower()
 
         if is_local_dev:
             # Keycloak is in Docker, server is on host: use host.docker.internal
-            # This allows Keycloak container to reach the host machine's localhost:8000
             base = "http://host.docker.internal:8000"
         else:
-            # Production: use public ORIGIN (nginx will proxy /default-idp/ to backend)
+            # Production: use public ORIGIN (nginx proxies to backend)
             base = origin.rstrip("/")
 
     if app_prefix:
-        return f"{base}/{app_prefix}/default-idp"
-    return f"{base}/default-idp"
+        return f"{base}/{app_prefix}"
+    return base
 
 
 def get_idp_base_url() -> str:
