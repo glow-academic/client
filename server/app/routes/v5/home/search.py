@@ -26,7 +26,7 @@ from app.routes.v5.home.types import (
     ListHomeRequest,
     ListHomeResponse,
 )
-from app.routes.v5.types import (
+from app.infra.v5_types import (
     FilterOption,
     HistoryItem,
 )

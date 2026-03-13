@@ -1,7 +1,7 @@
 """Tests for persona event declarations."""
 
 from app.events.types import OperationErrorEvent, build_default_lifecycle_event_types
-from app.routes.v5.persona.events import (
+from app.events.persona import (
     PERSONA_EVENT_CONFIGS,
     PERSONA_EVENT_TYPES,
     _persona_draft_entity_ids,

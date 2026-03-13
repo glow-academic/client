@@ -8,7 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.infra.department.create import CreateDepartmentItem
-from app.routes.v5.types import BaseResourceSection
+from app.infra.v5_types import BaseResourceSection
 from app.tools.v5.entries.department_drafts.types import (
     GetDepartmentDraftResponse,
 )

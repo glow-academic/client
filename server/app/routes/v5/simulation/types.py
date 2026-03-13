@@ -11,7 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.infra.simulation.create import CreateSimulationItem
-from app.routes.v5.types import BaseResourceSection, ListFilterSection
+from app.infra.v5_types import BaseResourceSection, ListFilterSection
 from app.tools.v5.entries.simulation_drafts.types import (
     GetSimulationDraftResponse,
 )

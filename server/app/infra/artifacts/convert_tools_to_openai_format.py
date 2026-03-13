@@ -4,7 +4,7 @@ from typing import Any
 
 from openai.types.responses.function_tool_param import FunctionToolParam
 
-from app.routes.shared_types import IGetTextRunContextAndCreateRunV4Tool
+from app.infra.shared_types import IGetTextRunContextAndCreateRunV4Tool
 
 
 def _get_tool_attr(tool: Any, attr: str, default: Any = None) -> Any:

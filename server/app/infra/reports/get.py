@@ -16,7 +16,7 @@ from app.infra.analytics_facets import (
 from app.infra.common_context import resolve_common_context
 from app.infra.reports.context import resolve_reports_context
 from app.infra.reports.permissions import build_reports_sections_v2
-from app.routes.auth.types import AnalyticsFilterFields
+from app.infra.auth.types import AnalyticsFilterFields
 from app.routes.v5.reports.types import (
     ReportsCohortResource,
     ReportsProfileResource,
@@ -28,7 +28,7 @@ from app.routes.v5.reports.types import (
     ReportsSimulationResource,
     ReportsViews,
 )
-from app.routes.v5.types import FilterOption
+from app.infra.v5_types import FilterOption
 
 REPORTS_FACETS_CONFIG = AnalyticsFacetsConfig(
     fields=AnalyticsFilterFields(

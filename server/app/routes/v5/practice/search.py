@@ -26,7 +26,7 @@ from app.routes.v5.practice.types import (
     ListPracticeRequest,
     ListPracticeResponse,
 )
-from app.routes.v5.types import (
+from app.infra.v5_types import (
     FilterOption,
     HistoryItem,
 )

@@ -1,7 +1,7 @@
 """Tests for agent event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.agent.events import (
+from app.events.agent import (
     AGENT_EVENT_CONFIGS,
     _agent_draft_entity_ids,
     _agent_result_entity_ids,

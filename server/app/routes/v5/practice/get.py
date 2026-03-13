@@ -34,7 +34,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.practice_context import resolve_practice_context
-from app.routes.auth.types import AnalyticsFilterFields
+from app.infra.auth.types import AnalyticsFilterFields
 from app.routes.v5.chat.types import (
     ChatSimulationOperational,
     RubricMapping,

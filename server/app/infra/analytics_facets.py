@@ -27,7 +27,7 @@ from app.infra.identity.analytics import (
 )
 from app.infra.identity.simulatable import SIMULATABLE_ROLES
 from app.infra.profile_identity_context import ProfileIdentityContext
-from app.routes.auth.types import (
+from app.infra.auth.types import (
     AnalyticsFacets,
     AnalyticsFilterField,
     AnalyticsFilterFields,

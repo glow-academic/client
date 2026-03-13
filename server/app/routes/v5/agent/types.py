@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.infra.agent.create import CreateAgentItem
-from app.routes.v5.types import BaseResourceSection, ListFilterSection
+from app.infra.v5_types import BaseResourceSection, ListFilterSection
 from app.tools.v5.entries.agent_drafts.types import GetAgentDraftResponse
 
 

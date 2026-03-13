@@ -19,7 +19,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_redis_client
 from app.infra.leaderboard.context import resolve_leaderboard_context
 from app.infra.leaderboard.permissions import build_leaderboard_sections_v3
-from app.routes.auth.types import AnalyticsFilterFields
+from app.infra.auth.types import AnalyticsFilterFields
 from app.routes.v5.leaderboard.types import (
     LeaderboardProfileResource,
     LeaderboardRequest,

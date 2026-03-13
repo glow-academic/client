@@ -1,7 +1,7 @@
 """Tests for tool event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.tool.events import (
+from app.events.tool import (
     TOOL_EVENT_CONFIGS,
     _tool_draft_entity_ids,
     _tool_result_entity_ids,

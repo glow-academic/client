@@ -35,7 +35,7 @@ from app.routes.v5.scenario.types import (
     ListScenarioApiScenario,
     ListScenarioApiSimulation,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.artifacts.scenario.get import get_scenarios
 from app.tools.v5.artifacts.scenario.search import search_scenarios
 from app.tools.v5.resources.departments.get import get_departments

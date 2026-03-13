@@ -188,7 +188,7 @@ async def log_health_checks() -> None:
         return
 
     try:
-        from app.routes.health import run_service_checks
+        from app.infra.health.checks import run_service_checks
 
         checks = await run_service_checks()
 

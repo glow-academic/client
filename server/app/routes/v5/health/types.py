@@ -7,7 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.infra.runs_context import RunsContext
-from app.routes.auth.types import AnalyticsFacets
+from app.infra.auth.types import AnalyticsFacets
 from app.tools.v5.entries.health.types import GetHealthResponse
 from app.tools.v5.entries.metrics.types import GetMetricsSearchResponse
 

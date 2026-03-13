@@ -10,7 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.shared_types import (
+from app.infra.shared_types import (
     QGetAgentsV4Item,
     QGetArgsOutputsV4Item,
     QGetArgsV4Item,

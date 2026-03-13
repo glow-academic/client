@@ -11,7 +11,7 @@ from app.infra.agent.selection import (
     select_agents_for_artifact,
     select_multi_resource_agent,
 )
-from app.routes.v5.types import CandidateAgent
+from app.infra.v5_types import CandidateAgent
 
 # Re-export for backwards compatibility
 __all__ = [

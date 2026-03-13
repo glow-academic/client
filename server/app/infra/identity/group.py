@@ -15,7 +15,7 @@ from uuid import UUID
 
 import asyncpg
 
-from app.routes.auth.types import ResolveGroupApiResponse
+from app.infra.auth.types import ResolveGroupApiResponse
 
 # Canonical entry black boxes — drafts
 from app.tools.v5.entries.agent_drafts.get import get_agent_drafts

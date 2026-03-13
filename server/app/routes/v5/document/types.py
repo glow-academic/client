@@ -12,7 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.infra.document.create import CreateDocumentItem
-from app.routes.v5.types import BaseResourceSection, ListFilterSection
+from app.infra.v5_types import BaseResourceSection, ListFilterSection
 from app.tools.v5.entries.document_drafts.types import GetDocumentDraftResponse
 from app.tools.v5.resources.parameters.types import GetParameterResponse
 

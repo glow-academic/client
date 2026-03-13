@@ -1,7 +1,7 @@
 """Tests for parameter event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.parameter.events import (
+from app.events.parameter import (
     PARAMETER_EVENT_CONFIGS,
     _parameter_draft_entity_ids,
     _parameter_result_entity_ids,

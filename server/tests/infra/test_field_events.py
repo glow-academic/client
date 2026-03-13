@@ -1,7 +1,7 @@
 """Tests for field event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.field.events import (
+from app.events.field import (
     FIELD_EVENT_CONFIGS,
     _field_draft_entity_ids,
     _field_result_entity_ids,

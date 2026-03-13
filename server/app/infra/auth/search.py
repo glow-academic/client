@@ -32,7 +32,7 @@ from app.routes.v5.auth.types import (
     ListAuthApiAuth,
     ListAuthApiResponse,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.artifacts.auth.get import get_auths
 from app.tools.v5.artifacts.auth.search import (
     search_auths as search_auth_artifacts,

@@ -15,10 +15,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from app.routes.v5.types import CandidateAgent
+from app.infra.v5_types import CandidateAgent
 
 if TYPE_CHECKING:
-    from app.routes.auth.types import SettingsAgentToolEntry
+    from app.infra.auth.types import SettingsAgentToolEntry
 
 
 def resolve_agents_for_artifact(

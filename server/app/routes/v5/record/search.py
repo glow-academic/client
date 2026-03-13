@@ -14,7 +14,7 @@ from app.infra.dashboard.context import resolve_dashboard_search_context
 from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.dashboard.search import _build_history_response
 from app.routes.v5.record.types import ListRecordRequest
-from app.routes.v5.types import HistoryResponse
+from app.infra.v5_types import HistoryResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

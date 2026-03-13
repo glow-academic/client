@@ -1,7 +1,7 @@
 """Tests for setting event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.setting.events import (
+from app.events.setting import (
     SETTING_EVENT_CONFIGS,
     _setting_draft_entity_ids,
     _setting_result_entity_ids,

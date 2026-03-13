@@ -1,7 +1,7 @@
 """Tests for document event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.document.events import (
+from app.events.document import (
     DOCUMENT_EVENT_CONFIGS,
     _document_draft_entity_ids,
     _document_result_entity_ids,

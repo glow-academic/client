@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from starlette.requests import Request
 
-from app.routes.mcp import oauth
+from app.infra.mcp import oauth
 
 
 def _request_with_headers(headers: list[tuple[bytes, bytes]]):

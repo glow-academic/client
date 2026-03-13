@@ -10,7 +10,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.infra.cohort.create import CreateCohortItem
-from app.routes.v5.types import BaseResourceSection, ListFilterSection
+from app.infra.v5_types import BaseResourceSection, ListFilterSection
 from app.tools.v5.entries.cohort_drafts.types import GetCohortDraftResponse
 from app.tools.v5.resources.personas.types import GetPersonaResponse
 

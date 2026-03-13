@@ -28,7 +28,7 @@ from app.routes.v5.agent.types import (
     ListAgentApiAgent,
     ListAgentApiResponse,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.artifacts.agent.get import get_agents
 from app.tools.v5.artifacts.agent.search import search_agents
 from app.tools.v5.resources.departments.search import search_departments

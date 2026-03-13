@@ -29,7 +29,7 @@ from app.routes.v5.model.types import (
     ListModelApiModel,
     ListModelApiResponse,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.artifacts.model.get import get_models
 from app.tools.v5.artifacts.model.search import search_models
 from app.tools.v5.resources.agents.search import (

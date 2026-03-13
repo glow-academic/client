@@ -5,8 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.auth.types import AnalyticsFacets
-from app.routes.v5.types import FilterOption
+from app.infra.auth.types import AnalyticsFacets
+from app.infra.v5_types import FilterOption
 
 
 class LeaderboardRequest(BaseModel):

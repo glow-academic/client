@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from pydantic import BaseModel
 
-from app.routes.mcp import endpoints
+from app.infra.mcp import endpoints
 
 
 class FakeMCPServer:

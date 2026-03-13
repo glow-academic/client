@@ -32,13 +32,13 @@ from app.infra.dashboard.permissions import (
     compute_secondary_metrics_v2,
 )
 from app.infra.globals import get_redis_client
-from app.routes.auth.types import AnalyticsFilterFields
+from app.infra.auth.types import AnalyticsFilterFields
 from app.routes.v5.dashboard.search import _build_history_response
 from app.routes.v5.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
 )
-from app.routes.v5.types import FilterOption
+from app.infra.v5_types import FilterOption
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

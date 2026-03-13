@@ -12,7 +12,7 @@ from app.infra.analytics_facets import (
     resolve_analytics_facets,
 )
 from app.infra.profile_identity_context import ProfileIdentityContext
-from app.routes.auth.types import AnalyticsFilterFields
+from app.infra.auth.types import AnalyticsFilterFields
 from app.tools.v5.artifacts.cohort.create import (
     create_cohort as create_cohort_artifact,
 )

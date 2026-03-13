@@ -35,7 +35,7 @@ from app.infra.home_permissions import (
     compute_status_instructional,
     format_cohort_names,
 )
-from app.routes.auth.types import AnalyticsFilterFields
+from app.infra.auth.types import AnalyticsFilterFields
 from app.routes.v5.chat.types import (
     ChatSimulationOperational,
     RubricMapping,

@@ -29,7 +29,7 @@ from app.routes.v5.tool.types import (
     ListToolApiResponse,
     ListToolApiTool,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.artifacts.tool.get import get_tools
 from app.tools.v5.artifacts.tool.search import search_tools
 from app.tools.v5.resources.agents.search import (

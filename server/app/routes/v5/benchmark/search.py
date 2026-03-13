@@ -14,7 +14,7 @@ from app.routes.v5.benchmark.types import (
     BenchmarkHistoryResponse,
     BenchmarkRequest,
 )
-from app.routes.v5.types import FilterOption
+from app.infra.v5_types import FilterOption
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

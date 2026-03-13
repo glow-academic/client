@@ -194,7 +194,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 logger.info(f"System session initialized: {system_session_id}")
 
         # Initialize metrics collector
-        from app.routes.metrics.collector import initialize_metrics
+        from app.infra.metrics.collector import initialize_metrics
 
         if pool:
             await initialize_metrics(pool, _globals.redis_client)
@@ -213,7 +213,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             logger.warning(f"Keycloak sync error (non-blocking): {e}")
 
         # Import MCP server for lifespan management
-        from app.routes.mcp import mcp_server as artifacts_resources_mcp_server
+        from app.infra.mcp import mcp_server as artifacts_resources_mcp_server
 
         await stack.enter_async_context(
             artifacts_resources_mcp_server.session_manager.run()
@@ -239,7 +239,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             while True:
                 try:
                     await asyncio.sleep(60)
-                    from app.routes.metrics.collector import (
+                    from app.infra.metrics.collector import (
                         log_health_checks,
                         log_metrics_snapshot,
                     )
@@ -304,7 +304,7 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
         self._set_profile_id_fn = set_profile_id_fn
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
-        from app.routes.metrics.collector import record_error, record_request
+        from app.infra.metrics.collector import record_error, record_request
         from app.utils.logging.db_logger import get_logger, set_profile_id
 
         logger = get_logger(__name__)
@@ -374,45 +374,24 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 fastapi_app.add_middleware(DBLoggingMiddleware)
 
 # Add MCP OAuth middleware
-from app.routes.mcp.oauth import McpOAuthMiddleware  # noqa: E402
+from app.infra.mcp.oauth import McpOAuthMiddleware  # noqa: E402
 
 fastapi_app.add_middleware(McpOAuthMiddleware)
 
 # ---------------------------------------------------------------------------
-# Routers — versioned API
+# Routes
 # ---------------------------------------------------------------------------
-from app.routes.v5.router import router as api_v5_router  # noqa: E402
+from app.routes.router import router as root_router  # noqa: E402
 
-fastapi_app.include_router(api_v5_router)
+fastapi_app.include_router(root_router)
 
 import app.socket.v5  # noqa: E402, F401 — registers socket handlers on import
 
 # ---------------------------------------------------------------------------
-# Routers — root-level (version-agnostic)
-# ---------------------------------------------------------------------------
-from app.routes.default_idp import router as default_idp_router  # noqa: E402
-
-fastapi_app.include_router(default_idp_router)
-
-from app.routes.health import router as health_router  # noqa: E402
-
-fastapi_app.include_router(health_router)
-
-from app.routes.well_known import router as well_known_router  # noqa: E402
-
-fastapi_app.include_router(well_known_router)
-
-from app.routes.root_info import router as root_info_router  # noqa: E402
-
-fastapi_app.include_router(root_info_router)
-
-
-# ---------------------------------------------------------------------------
 # MCP mount
 # ---------------------------------------------------------------------------
-from app.routes.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
+from app.routes.mcp import mcp_app  # noqa: E402
 
-mcp_app = artifacts_resources_mcp_server.streamable_http_app()
 fastapi_app.mount("/", mcp_app, name="Artifacts-Resources-MCP")
 
 

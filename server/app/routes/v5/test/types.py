@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.types import ListFilterSection
+from app.infra.v5_types import ListFilterSection
 from app.tools.v5.entries.messages.types import SearchMessageResponse
 from app.tools.v5.entries.test.types import GetTestResponse
 from app.tools.v5.entries.test_feedback.types import GetTestFeedbackResponse

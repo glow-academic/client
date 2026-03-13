@@ -19,7 +19,7 @@ from app.routes.v5.attempt.types import (
     SearchAttemptApiResponse,
     SearchAttemptItem,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.entries.attempt.search import search_attempts
 from app.tools.v5.resources.departments.search import search_departments
 from app.tools.v5.resources.simulations.search import search_simulations

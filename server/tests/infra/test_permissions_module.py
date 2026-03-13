@@ -6,16 +6,16 @@ from app.infra.permissions import (
     RoutePermission,
     SectionPermission,
 )
-from app.routes.auth.route_permissions import (
+from app.infra.auth.route_permissions import (
     ROUTE_PERMISSIONS as CANONICAL_ROUTE_PERMISSIONS,
 )
-from app.routes.auth.route_permissions import (
+from app.infra.auth.route_permissions import (
     ProfileRole as CanonicalProfileRole,
 )
-from app.routes.auth.route_permissions import (
+from app.infra.auth.route_permissions import (
     RoutePermission as CanonicalRoutePermission,
 )
-from app.routes.auth.route_permissions import (
+from app.infra.auth.route_permissions import (
     SectionPermission as CanonicalSectionPermission,
 )
 

@@ -1,4 +1,4 @@
-"""OIDC endpoints for default-idp Identity Provider."""
+"""Default OIDC Identity Provider — /default-idp/* endpoints."""
 
 import secrets
 import time
@@ -11,6 +11,7 @@ from fastapi.responses import RedirectResponse
 from jose import jwt
 
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.identity.jwks import get_jwks, get_key_id, get_private_key
 from app.tools.v5.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
@@ -27,25 +28,24 @@ from app.tools.v5.resources.profiles.get import (
 )
 from app.utils.error.handle_route_error import handle_route_error
 
-from .jwks import get_key_id, get_private_key
-
-router = APIRouter()
+router = APIRouter(prefix="/default-idp", tags=["default-idp"])
 
 # In-memory store for authorization codes (code -> {profile_id, email, name, nonce, expires_at})
-# In production, this should be moved to Redis
 _authorization_codes: dict[str, dict[str, Any]] = {}
 _code_ttl = 600  # 10 minutes
 
 
 def get_idp_base_url() -> str:
-    """Get the base URL for the IdP (public URL for issuer).
-
-    Uses the same logic as keycloak_sync.py get_idp_public_url().
-    This URL is used in the issuer claim and must be accessible from browsers.
-    """
+    """Get the base URL for the IdP (public URL for issuer)."""
     from app.infra.identity.keycloak_sync import get_idp_public_url
 
     return get_idp_public_url()
+
+
+@router.get("/jwks")
+async def jwks_endpoint():
+    """JWKS endpoint for public key exposure."""
+    return get_jwks()
 
 
 @router.get("/.well-known/openid-configuration")
@@ -90,26 +90,20 @@ async def authorize(
     response_type: str = Query(...),
     state: str = Query(...),
     scope: str = Query("openid profile email"),
-    nonce: str | None = Query(
-        None
-    ),  # Extract nonce from Keycloak's authorization request
+    nonce: str | None = Query(None),
     profile_id: UUID | None = Query(None),
     emulation_grant: UUID | None = Query(None),
     login_hint: str | None = Query(None),
 ) -> RedirectResponse:
     """Authorization endpoint - handles Keycloak broker redirects."""
     try:
-        # Validate response_type
         if response_type != "code":
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported response_type: {response_type}. Only 'code' is supported.",
             )
 
-        # Use nonce from Keycloak's request if provided, otherwise generate one
-        # Keycloak typically sends nonce for OIDC flows, but we'll handle both cases
         if not nonce:
-            # Generate nonce if Keycloak didn't provide one (shouldn't happen in normal OIDC flow)
             nonce = secrets.token_urlsafe(32)
 
         resolved_profile_id = profile_id
@@ -128,7 +122,6 @@ async def authorize(
 
         if emulation_grant is not None:
             async with pool.acquire() as conn:
-                # 1. Check grant exists and is valid
                 grants = await get_grants(conn, ids=[emulation_grant])
                 if not grants:
                     raise HTTPException(
@@ -143,7 +136,6 @@ async def authorize(
                         detail="Grant expired.",
                     )
 
-                # 2. Check not already consumed
                 consumptions = await search_grant_consumptions(
                     conn, grant_ids=[emulation_grant], limit=1
                 )
@@ -153,13 +145,9 @@ async def authorize(
                         detail="Grant already used.",
                     )
 
-                # 3. Consume the grant
                 await create_grant_consumption(conn, grant_id=emulation_grant)
-
-                # 4. Actor profile from grant connection
                 actor_profile_id = grant.profiles_id
 
-                # 5. Target profile from emulation connection
                 emulations = await search_emulations(
                     conn, grant_ids=[emulation_grant], limit=1
                 )
@@ -172,9 +160,7 @@ async def authorize(
                 detail="Missing profile_id for default IdP login.",
             )
 
-        # Resolve profile details via black-box artifact + resource functions
         async with pool.acquire() as conn:
-            # Step 1: Get artifact → profiles_resource IDs
             artifacts = await get_profile_artifacts(
                 conn, ids=[resolved_profile_id], profiles=True
             )
@@ -184,7 +170,6 @@ async def authorize(
                     detail="Profile not found for this default IdP login.",
                 )
 
-            # Step 2: Get resource → name, email, role
             redis = get_redis_client()
             resources = await get_profile_resources(
                 conn, ids=artifacts[0].profile_ids, redis=redis, bypass_cache=True
@@ -197,11 +182,9 @@ async def authorize(
 
         profile = resources[0]
 
-        # Generate authorization code
         code = secrets.token_urlsafe(32)
         expires_at = int(time.time()) + _code_ttl
 
-        # Store authorization code with profile data (including emulation context)
         is_emulation = emulation_grant is not None
         _authorization_codes[code] = {
             "profile_id": str(resolved_profile_id),
@@ -212,12 +195,10 @@ async def authorize(
             "expires_at": expires_at,
             "client_id": client_id,
             "redirect_uri": redirect_uri,
-            # Emulation context
             "is_emulation": is_emulation,
             "actor_profile_id": str(actor_profile_id) if actor_profile_id else None,
         }
 
-        # Clean up expired codes (simple cleanup, could be optimized)
         current_time = int(time.time())
         expired_codes = [
             code_key
@@ -227,7 +208,6 @@ async def authorize(
         for expired_code in expired_codes:
             del _authorization_codes[expired_code]
 
-        # Redirect back to Keycloak with authorization code
         redirect_url = f"{redirect_uri}?code={code}&state={state}"
         return RedirectResponse(url=redirect_url)
 
@@ -255,36 +235,30 @@ async def token(
 ) -> dict[str, Any]:
     """Token endpoint - exchanges authorization codes for tokens."""
     try:
-        # Validate grant_type
         if grant_type != "authorization_code":
             raise HTTPException(
                 status_code=400,
                 detail=f"Unsupported grant_type: {grant_type}. Only 'authorization_code' is supported.",
             )
 
-        # Look up authorization code
         code_data = _authorization_codes.get(code)
         if not code_data:
             raise HTTPException(status_code=400, detail="Invalid authorization code")
 
-        # Check expiry
         if code_data["expires_at"] < int(time.time()):
             del _authorization_codes[code]
             raise HTTPException(
                 status_code=400, detail="Authorization code has expired"
             )
 
-        # Validate client_id and redirect_uri match
         if code_data["client_id"] != client_id:
             raise HTTPException(status_code=400, detail="Invalid client_id")
 
         if code_data["redirect_uri"] != redirect_uri:
             raise HTTPException(status_code=400, detail="Invalid redirect_uri")
 
-        # Remove used code (one-time use)
         del _authorization_codes[code]
 
-        # Generate tokens
         base_url = get_idp_base_url()
         now = int(time.time())
         key_id = get_key_id()
@@ -295,17 +269,13 @@ async def token(
         given_name = name_parts[0] if name_parts else ""
         family_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
 
-        # Build stable sub claim using underscore (colon is invalid in Keycloak usernames)
-        # Format: default_<profile_id>
-        # Keycloak will handle user linking based on email
         sub = f"default_{code_data['profile_id']}"
 
-        # Create ID token with emulation context
         id_token_payload = {
             "iss": base_url,
             "aud": client_id,
             "sub": sub,
-            "exp": now + 3600,  # 1 hour
+            "exp": now + 3600,
             "iat": now,
             "nonce": code_data["nonce"],
             "email": code_data["email"],
@@ -313,10 +283,8 @@ async def token(
             "name": name,
             "given_name": given_name,
             "family_name": family_name,
-            # Custom claims for direct profile resolution (bypasses email lookup)
             "profile_id": code_data["profile_id"],
             "role": code_data.get("role"),
-            # Emulation context - allows client to know this is an emulated session
             "is_emulation": code_data.get("is_emulation", False),
             "actor_profile_id": code_data.get("actor_profile_id"),
         }
@@ -328,7 +296,6 @@ async def token(
             headers={"kid": key_id},
         )
 
-        # Create access token with user claims (needed for userinfo endpoint)
         access_token_payload = {
             "iss": base_url,
             "aud": client_id,
@@ -336,7 +303,6 @@ async def token(
             "exp": now + 3600,
             "iat": now,
             "scope": "openid profile email",
-            # Include user claims so userinfo can return them
             "email": code_data["email"],
             "name": name,
             "given_name": given_name,
@@ -377,29 +343,22 @@ async def userinfo(
 ) -> dict[str, Any]:
     """UserInfo endpoint - returns user claims from access token."""
     try:
-        # Extract Bearer token from Authorization header
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(
                 status_code=401, detail="Missing or invalid authorization header"
             )
 
-        token = authorization[7:]  # Remove "Bearer " prefix
+        token = authorization[7:]
 
-        # Decode and verify token
-        # Note: In a full implementation, we'd verify the signature using JWKS
-        # For now, we'll decode without verification (Keycloak will verify)
         try:
-            # Decode without verification for UserInfo (Keycloak validates tokens)
-            # python-jose requires a key even with verify_signature=False
             payload = jwt.decode(
                 token,
-                key="",  # Empty key since we're not verifying
+                key="",
                 options={"verify_signature": False, "verify_aud": False},
             )
         except jwt.JWTError as e:
             raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
-        # Return user claims
         return {
             "sub": payload.get("sub"),
             "email": payload.get("email"),

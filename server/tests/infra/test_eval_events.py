@@ -1,7 +1,7 @@
 """Tests for eval event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.eval.events import (
+from app.events.eval import (
     EVAL_EVENT_CONFIGS,
     _eval_draft_entity_ids,
     _eval_result_entity_ids,

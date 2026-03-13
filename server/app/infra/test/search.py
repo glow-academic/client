@@ -19,7 +19,7 @@ from app.routes.v5.test.types import (
     SearchTestApiResponse,
     SearchTestItem,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.entries.test.search import search_tests
 from app.tools.v5.resources.departments.search import search_departments
 from app.tools.v5.resources.evals.search import search_evals

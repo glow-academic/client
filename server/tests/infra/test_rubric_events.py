@@ -1,7 +1,7 @@
 """Tests for rubric event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.rubric.events import (
+from app.events.rubric import (
     RUBRIC_EVENT_CONFIGS,
     _rubric_draft_entity_ids,
     _rubric_result_entity_ids,

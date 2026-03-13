@@ -12,7 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.types import ListFilterSection
+from app.infra.v5_types import ListFilterSection
 from app.tools.v5.entries.attempt.types import GetAttemptResponse
 from app.tools.v5.entries.attempt_chat.types import GetAttemptChatResponse
 from app.tools.v5.entries.attempt_message.types import GetAttemptMessageResponse

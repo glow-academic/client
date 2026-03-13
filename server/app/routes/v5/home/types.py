@@ -4,14 +4,14 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.auth.types import AnalyticsFacets
+from app.infra.auth.types import AnalyticsFacets
 from app.routes.v5.chat.types import (
     ChatSimulationOperational,
     RubricMapping,
     StandardGroupMapping,
     StandardMapping,
 )
-from app.routes.v5.types import HistoryResponse
+from app.infra.v5_types import HistoryResponse
 
 # =============================================================================
 # Export Types

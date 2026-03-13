@@ -31,7 +31,7 @@ from app.routes.v5.simulation.types import (
     ListSimulationApiScenario,
     ListSimulationApiSimulation,
 )
-from app.routes.v5.types import ListFilterOption, ListFilterSection
+from app.infra.v5_types import ListFilterOption, ListFilterSection
 from app.tools.v5.artifacts.simulation.get import get_simulations
 from app.tools.v5.artifacts.simulation.search import search_simulations
 from app.tools.v5.resources.cohorts.search import (
