@@ -94,18 +94,18 @@ async def test_call_handler_returns_not_implemented_for_unknown_artifact() -> No
     assert "available_artifacts" in result
 
 
-def test_name_resolution_helpers_cover_pluralization_and_descriptions(monkeypatch) -> None:
+def test_name_resolution_helpers_cover_pluralization_and_descriptions() -> None:
     assert endpoints.pluralize_artifact("persona") == "personas"
     assert endpoints.pluralize_artifact("policy") == "policies"
-
-    def _fake_handler():
-        """Persona bundle. Extra detail ignored."""
-
-    monkeypatch.setattr(endpoints, "_get_handler", lambda *args: _fake_handler)
-
-    assert endpoints.get_artifact_description("persona") == "Persona bundle"
-    assert endpoints.get_resource_description("personas") == "Persona bundle"
-    assert endpoints.get_entry_description("persona") == "Persona bundle"
+    assert (
+        endpoints.get_artifact_description("persona")
+        == "Get persona information using the canonical shared persona operation"
+    )
+    assert (
+        endpoints.get_resource_description("personas")
+        == "Fetch personas_resource entries by IDs"
+    )
+    assert endpoints.get_entry_description("persona") == "Persona entry"
 
 
 def test_get_available_operations_and_schema_fallbacks() -> None:

@@ -181,11 +181,13 @@ for _m in _EXTRA_SOCKET_TYPES:
 
 
 def _make_endpoint(model: type[BaseModel]) -> Callable[..., Any]:
-    async def endpoint(request: model) -> dict[str, bool]:  # type: ignore[valid-type]
+    async def endpoint(request: Any) -> dict[str, bool]:
         return {"success": True}
 
     endpoint.__name__ = f"{model.__name__}_schema"
     endpoint.__qualname__ = f"{model.__name__}_schema"
+    endpoint.__annotations__["request"] = model
+    endpoint.__annotations__["return"] = dict[str, bool]
     return endpoint
 
 

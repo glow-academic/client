@@ -261,6 +261,10 @@ def exchange_code_for_tokens(
         "name": name,
         "given_name": given_name,
         "family_name": family_name,
+        "profile_id": code_data["profile_id"],
+        "role": code_data.get("role"),
+        "is_emulation": code_data.get("is_emulation", False),
+        "actor_profile_id": code_data.get("actor_profile_id"),
     }
 
     access_token = jwt.encode(

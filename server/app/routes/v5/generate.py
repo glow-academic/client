@@ -2,8 +2,8 @@
 
 Fire-and-return equivalent of the ``generate`` WebSocket event.
 Resolves identity context, emits to the internal ``generate`` event, and
-returns ``group_id`` immediately.  Progress/completion events arrive via
-SSE (``/events/stream``) or polling (``/events/poll``).
+returns ``group_id`` immediately. Progress/completion events arrive via
+SSE at ``/v5/stream``.
 """
 
 from __future__ import annotations
@@ -65,7 +65,7 @@ async def generate(
         )
 
     # Synthetic sid — the generation pipeline routes socket events via sid.
-    # HTTP clients receive progress/completion through SSE/polling instead.
+    # HTTP clients receive progress/completion through SSE instead.
     synthetic_sid = f"http-{uuid.uuid4()}"
 
     internal_sio = get_internal_sio()

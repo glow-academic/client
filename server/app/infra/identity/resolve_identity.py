@@ -24,6 +24,8 @@ import asyncpg
 import requests
 from jose import jwt
 
+from app.infra.identity.keycloak_sync import get_idp_public_url
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -43,12 +45,9 @@ JWKS_URLS = [
     f"{KEYCLOAK_ISSUER}/protocol/openid-connect/certs",
 ]
 
-# Also accept tokens from the built-in default-idp
-origin_check = os.getenv("ORIGIN", "http://localhost:3000")
-_is_local_dev = "localhost" in origin_check.lower()
-_default_idp_base = (
-    "http://localhost:8000" if _is_local_dev else ORIGIN
-) + f"{APP_PREFIX}/default-idp"
+# Also accept tokens from the built-in default-idp.
+# Keep issuer validation aligned with the actual default-idp public URL.
+_default_idp_base = get_idp_public_url()
 
 # JWKS cache (shared across calls)
 _jwks_cache: dict[str, Any] = {"keys": None, "ts": 0.0, "url": None}
@@ -125,9 +124,9 @@ def _get_jwks() -> list[dict[str, Any]]:
             logger.debug(f"Failed to fetch JWKS from {jwks_url}: {e}")
             continue
 
-    # Also include default-idp keys
+    # Also include the built-in default-idp keys from the canonical infra module.
     try:
-        from app.routes.default_idp.jwks import get_jwks as get_default_idp_jwks
+        from app.infra.identity.jwks import get_jwks as get_default_idp_jwks
 
         default_keys = get_default_idp_jwks().get("keys", [])
         all_keys.extend(default_keys)
