@@ -13,8 +13,8 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext
-from app.routes.v5.tools.entries.health.search import search_health
-from app.routes.v5.tools.entries.metrics.search import search_metrics
+from app.tools.v5.entries.health.search import search_health
+from app.tools.v5.entries.metrics.search import search_metrics
 
 
 async def resolve_health_context(

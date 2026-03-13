@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.icons.create import create_icon
-from app.routes.v5.tools.resources.icons.get import get_icons
+from app.tools.v5.resources.icons.create import create_icon
+from app.tools.v5.resources.icons.get import get_icons
 
 pytestmark = pytest.mark.asyncio
 

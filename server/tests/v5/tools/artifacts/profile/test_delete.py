@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.routes.v5.tools.artifacts.profile.create import create_profile
-from app.routes.v5.tools.artifacts.profile.delete import delete_profiles
-from app.routes.v5.tools.artifacts.profile.get import get_profiles
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.artifacts.profile.create import create_profile
+from app.tools.v5.artifacts.profile.delete import delete_profiles
+from app.tools.v5.artifacts.profile.get import get_profiles
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

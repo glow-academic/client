@@ -20,14 +20,14 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Entry fetchers (raw MV reads)
-from app.routes.v5.tools.entries.groups.search import search_groups
-from app.routes.v5.tools.entries.runs.search import search_runs
+from app.tools.v5.entries.groups.search import search_groups
+from app.tools.v5.entries.runs.search import search_runs
 
 # Resource get fetchers
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.pricing.get import get_pricing
+from app.tools.v5.resources.agents.get import get_agents
+from app.tools.v5.resources.models.get import get_models
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.pricing.get import get_pricing
 
 
 async def resolve_pricing_context(

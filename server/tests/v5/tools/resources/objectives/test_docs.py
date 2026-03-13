@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.objectives.docs import get_objectives_docs
+from app.tools.v5.resources.objectives.docs import get_objectives_docs
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.standard_groups.docs import get_standard_groups_docs
+from app.tools.v5.resources.standard_groups.docs import get_standard_groups_docs
 
 pytestmark = pytest.mark.asyncio
 

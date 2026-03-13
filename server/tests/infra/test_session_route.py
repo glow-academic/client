@@ -22,16 +22,16 @@ async def session_route_actor(pool, redis_client, setting_graph_factory):
 
 
 async def _create_session_route_graph(pool, actor):
-    from app.routes.v5.tools.entries.calls.create import create_call
-    from app.routes.v5.tools.entries.chat.create import create_chat
-    from app.routes.v5.tools.entries.chat.refresh import refresh_chat
-    from app.routes.v5.tools.entries.groups.create import create_group
-    from app.routes.v5.tools.entries.groups.refresh import refresh_groups
-    from app.routes.v5.tools.entries.logins.create import create_login
-    from app.routes.v5.tools.entries.logins.refresh import refresh_logins
-    from app.routes.v5.tools.entries.problems.create import create_problem
-    from app.routes.v5.tools.entries.problems.refresh import refresh_problems
-    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.tools.v5.entries.calls.create import create_call
+    from app.tools.v5.entries.chat.create import create_chat
+    from app.tools.v5.entries.chat.refresh import refresh_chat
+    from app.tools.v5.entries.groups.create import create_group
+    from app.tools.v5.entries.groups.refresh import refresh_groups
+    from app.tools.v5.entries.logins.create import create_login
+    from app.tools.v5.entries.logins.refresh import refresh_logins
+    from app.tools.v5.entries.problems.create import create_problem
+    from app.tools.v5.entries.problems.refresh import refresh_problems
+    from app.tools.v5.entries.runs.create import create_run
 
     async with pool.acquire() as conn:
         group = await create_group(
@@ -98,7 +98,7 @@ class TestSessionRoute:
         )
 
         response = await v5_session_route_client.client.post(
-            "/api/v5/artifacts/session/get",
+            "/v5/session/get",
             json={"session_id": graph["session_id"]},
             headers={"X-Bypass-Cache": "1"},
         )

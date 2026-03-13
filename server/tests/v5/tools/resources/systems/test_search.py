@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.systems.create import create_system
-from app.routes.v5.tools.resources.systems.search import search_systems
+from app.tools.v5.resources.systems.create import create_system
+from app.tools.v5.resources.systems.search import search_systems
 
 pytestmark = pytest.mark.asyncio
 

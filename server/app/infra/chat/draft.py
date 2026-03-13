@@ -24,18 +24,18 @@ from app.routes.v5.chat.types import (
     PatchChatDraftApiResponse,
     SaveChatFieldError,
 )
-from app.routes.v5.tools.entries.chat_drafts.create import create_chat_draft
-from app.routes.v5.tools.entries.chat_drafts.refresh import refresh_chat_drafts
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.images.create import create_image
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.objectives.create import create_objective
-from app.routes.v5.tools.resources.options.create import create_option
-from app.routes.v5.tools.resources.problem_statements.create import (
+from app.tools.v5.entries.chat_drafts.create import create_chat_draft
+from app.tools.v5.entries.chat_drafts.refresh import refresh_chat_drafts
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.images.create import create_image
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.objectives.create import create_objective
+from app.tools.v5.resources.options.create import create_option
+from app.tools.v5.resources.problem_statements.create import (
     create_problem_statement,
 )
-from app.routes.v5.tools.resources.questions.create import create_question
-from app.routes.v5.tools.resources.videos.create import create_video
+from app.tools.v5.resources.questions.create import create_question
+from app.tools.v5.resources.videos.create import create_video
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

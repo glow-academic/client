@@ -22,7 +22,7 @@ from app.infra.document.permissions_context import (
     resolve_document_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.document.create import (
+from app.tools.v5.artifacts.document.create import (
     create_document as create_document_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

@@ -1,4 +1,4 @@
-"""Route tests for centralized event polling and streaming."""
+"""Route tests for centralized SSE event streaming."""
 
 from __future__ import annotations
 
@@ -21,103 +21,6 @@ async def events_route_actor(pool, redis_client, setting_graph_factory):
 
 @pytest.mark.asyncio
 class TestEventsRoutes:
-    async def test_poll_requires_known_artifact(
-        self,
-        v5_events_route_client,
-        events_route_actor,
-    ):
-        v5_events_route_client.authenticate(
-            profile_id=events_route_actor.profile_id,
-            session_id=events_route_actor.session_id,
-        )
-
-        response = await v5_events_route_client.client.post(
-            "/api/v5/events/poll",
-            json={"artifact": "unknown", "operation": "get"},
-        )
-
-        assert response.status_code == 404, response.text
-        assert "No event registry found" in response.json()["detail"]
-
-    async def test_poll_requires_known_operation(
-        self,
-        v5_events_route_client,
-        events_route_actor,
-    ):
-        v5_events_route_client.authenticate(
-            profile_id=events_route_actor.profile_id,
-            session_id=events_route_actor.session_id,
-        )
-
-        response = await v5_events_route_client.client.post(
-            "/api/v5/events/poll",
-            json={"artifact": "persona", "operation": "unknown"},
-        )
-
-        assert response.status_code == 404, response.text
-        assert "No event operation 'unknown'" in response.json()["detail"]
-
-    async def test_poll_requires_entity_id_for_entity_scoped_operations(
-        self,
-        v5_events_route_client,
-        events_route_actor,
-    ):
-        v5_events_route_client.authenticate(
-            profile_id=events_route_actor.profile_id,
-            session_id=events_route_actor.session_id,
-        )
-
-        response = await v5_events_route_client.client.post(
-            "/api/v5/events/poll",
-            json={"artifact": "persona", "operation": "get"},
-        )
-
-        assert response.status_code == 400, response.text
-        assert "entity_id is required" in response.json()["detail"]
-
-    async def test_poll_rejects_unknown_event_types(
-        self,
-        v5_events_route_client,
-        events_route_actor,
-    ):
-        v5_events_route_client.authenticate(
-            profile_id=events_route_actor.profile_id,
-            session_id=events_route_actor.session_id,
-        )
-
-        response = await v5_events_route_client.client.post(
-            "/api/v5/events/poll",
-            json={
-                "artifact": "persona",
-                "operation": "search",
-                "types": ["artifacts.persona.not.real"],
-            },
-        )
-
-        assert response.status_code == 400, response.text
-        assert "Unsupported event types" in response.json()["detail"]
-
-    async def test_poll_returns_empty_stream_for_valid_collection_request(
-        self,
-        v5_events_route_client,
-        events_route_actor,
-    ):
-        v5_events_route_client.authenticate(
-            profile_id=events_route_actor.profile_id,
-            session_id=events_route_actor.session_id,
-        )
-
-        response = await v5_events_route_client.client.post(
-            "/api/v5/events/poll",
-            json={"artifact": "persona", "operation": "search", "limit": 5},
-        )
-
-        assert response.status_code == 200, response.text
-        payload = response.json()
-        assert payload["events"] == []
-        assert payload["next_cursor"] is None
-        assert payload["previous_cursor"] is None
-
     async def test_stream_requires_entity_id_for_entity_scoped_operations(
         self,
         v5_events_route_client,
@@ -129,7 +32,7 @@ class TestEventsRoutes:
         )
 
         response = await v5_events_route_client.client.get(
-            "/api/v5/events/stream",
+            "/v5/stream",
             params={"artifact": "persona", "operation": "get"},
         )
 
@@ -141,7 +44,7 @@ class TestEventsRoutes:
         v5_events_route_client,
     ):
         response = await v5_events_route_client.client.get(
-            "/api/v5/events/stream",
+            "/v5/stream",
             params={"artifact": "persona", "operation": "search", "limit": 5},
         )
 

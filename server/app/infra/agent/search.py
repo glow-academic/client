@@ -29,17 +29,17 @@ from app.routes.v5.agent.types import (
     ListAgentApiResponse,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.agent.get import get_agents
-from app.routes.v5.tools.artifacts.agent.search import search_agents
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.models.get import (
+from app.tools.v5.artifacts.agent.get import get_agents
+from app.tools.v5.artifacts.agent.search import search_agents
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.models.get import (
     get_models as get_models_resource,
 )
-from app.routes.v5.tools.resources.models.search import (
+from app.tools.v5.resources.models.search import (
     search_models as search_models_resource,
 )
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.tools.search import (
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.tools.search import (
     search_tools as search_tools_resource,
 )
 

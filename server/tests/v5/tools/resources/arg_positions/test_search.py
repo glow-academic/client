@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.arg_positions.create import create_arg_position
-from app.routes.v5.tools.resources.arg_positions.search import search_arg_positions
-from app.routes.v5.tools.resources.args.create import create_arg
+from app.tools.v5.resources.arg_positions.create import create_arg_position
+from app.tools.v5.resources.arg_positions.search import search_arg_positions
+from app.tools.v5.resources.args.create import create_arg
 
 pytestmark = pytest.mark.asyncio
 

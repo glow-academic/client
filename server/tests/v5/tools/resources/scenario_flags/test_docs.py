@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.scenario_flags.docs import get_scenario_flags_docs
+from app.tools.v5.resources.scenario_flags.docs import get_scenario_flags_docs
 
 pytestmark = pytest.mark.asyncio
 

@@ -14,7 +14,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.types import ArtifactContext
-from app.routes.v5.tools.entries.cohort_drafts.search import search_cohort_drafts
+from app.tools.v5.entries.cohort_drafts.search import search_cohort_drafts
 
 
 async def list_cohort_drafts_impl(

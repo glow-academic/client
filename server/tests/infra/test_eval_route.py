@@ -20,8 +20,8 @@ class EvalRouteResources:
 
 
 async def _create_eval_route_resources(pool, redis_client) -> EvalRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Eval {tag}"
@@ -68,7 +68,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/create",
+            "/v5/evals/create",
             json={
                 "evals": [
                     {
@@ -101,7 +101,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/get",
+            "/v5/evals/get",
             json={"eval_id": created["eval_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -132,7 +132,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/search",
+            "/v5/evals/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(eval_route_actor.department_id)],
@@ -166,7 +166,7 @@ class TestEvalRoute:
         updated = await _create_eval_route_resources(pool, redis_client)
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/update",
+            "/v5/evals/update",
             json={
                 "evals": [
                     {
@@ -199,7 +199,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/delete",
+            "/v5/evals/delete",
             json={"eval_ids": [created["eval_id"]]},
         )
 
@@ -223,7 +223,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/duplicate",
+            "/v5/evals/duplicate",
             json={"eval_id": created["eval_id"]},
         )
 
@@ -247,7 +247,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.patch(
-            "/api/v5/artifacts/evals/draft",
+            "/v5/evals/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -278,7 +278,7 @@ class TestEvalRoute:
         )
 
         draft_response = await v5_eval_route_client.client.patch(
-            "/api/v5/artifacts/evals/draft",
+            "/v5/evals/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -290,7 +290,7 @@ class TestEvalRoute:
         draft_id = draft_response.json()["draft_id"]
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/drafts",
+            "/v5/evals/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -311,7 +311,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/docs",
+            "/v5/evals/docs",
             json={},
         )
 
@@ -337,7 +337,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/export",
+            "/v5/evals/export",
             json={"eval_id": created["eval_id"]},
         )
 
@@ -358,7 +358,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/refresh",
+            "/v5/evals/refresh",
             json={},
         )
 
@@ -382,7 +382,7 @@ class TestEvalRoute:
         )
 
         response = await v5_eval_route_client.client.post(
-            "/api/v5/artifacts/evals/create",
+            "/v5/evals/create",
             json={
                 "evals": [
                     {

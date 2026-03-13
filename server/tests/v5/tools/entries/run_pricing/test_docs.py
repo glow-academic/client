@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.run_pricing.docs import get_run_pricing_docs
+from app.tools.v5.entries.run_pricing.docs import get_run_pricing_docs
 
 pytestmark = pytest.mark.asyncio
 

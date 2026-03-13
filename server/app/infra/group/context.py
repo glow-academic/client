@@ -14,12 +14,12 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.routes.v5.tools.entries.calls.search import search_calls
-from app.routes.v5.tools.entries.groups.get import get_groups
-from app.routes.v5.tools.entries.messages.search import search_messages
-from app.routes.v5.tools.entries.runs.search import search_runs
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.tools.get import get_tools
+from app.tools.v5.entries.calls.search import search_calls
+from app.tools.v5.entries.groups.get import get_groups
+from app.tools.v5.entries.messages.search import search_messages
+from app.tools.v5.entries.runs.search import search_runs
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.tools.get import get_tools
 
 
 async def resolve_group_context(

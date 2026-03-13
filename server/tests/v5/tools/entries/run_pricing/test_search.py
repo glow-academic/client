@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.run_pricing.search import (
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.run_pricing.search import (
     search_run_pricing_entries_internal,
 )
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

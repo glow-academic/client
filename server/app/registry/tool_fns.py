@@ -19,7 +19,7 @@ from typing import Any
 # Resolver
 # ---------------------------------------------------------------------------
 
-_T = "app.routes.v5.tools"
+_T = "app.tools.v5"
 
 
 def resolve_tool_fn(

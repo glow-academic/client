@@ -23,9 +23,9 @@ from app.routes.v5.agent.types import (
     DeleteAgentApiResponse,
     DeleteAgentResult,
 )
-from app.routes.v5.tools.artifacts.agent.delete import delete_agents
-from app.routes.v5.tools.artifacts.agent.get import get_agents
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.agent.delete import delete_agents
+from app.tools.v5.artifacts.agent.get import get_agents
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

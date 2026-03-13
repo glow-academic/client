@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.setting_drafts.create import create_setting_draft
-from app.routes.v5.tools.entries.setting_drafts.get import get_setting_drafts
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.setting_drafts.create import create_setting_draft
+from app.tools.v5.entries.setting_drafts.get import get_setting_drafts
 
 pytestmark = pytest.mark.asyncio
 

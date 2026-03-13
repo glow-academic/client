@@ -3,15 +3,15 @@
 import pytest
 
 from app.infra.websocket.persist_run_message import persist_run_message
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.message_uploads.get import get_message_upload
-from app.routes.v5.tools.entries.messages.get import get_message
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.text_uploads.get import get_text_upload
-from app.routes.v5.tools.entries.texts.get import get_text
-from app.routes.v5.tools.entries.uploads.get import get_upload
-from app.routes.v5.tools.resources.agents.create import create_agent
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.message_uploads.get import get_message_upload
+from app.tools.v5.entries.messages.get import get_message
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.text_uploads.get import get_text_upload
+from app.tools.v5.entries.texts.get import get_text
+from app.tools.v5.entries.uploads.get import get_upload
+from app.tools.v5.resources.agents.create import create_agent
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.artifacts.parameter.docs import get_parameter_docs
+from app.tools.v5.artifacts.parameter.docs import get_parameter_docs
 
 pytestmark = pytest.mark.asyncio
 

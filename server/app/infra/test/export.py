@@ -25,16 +25,16 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.test.types import ExportTestApiResponse
-from app.routes.v5.tools.entries.test.search import search_tests
-from app.routes.v5.tools.entries.test_invocation.search import (
+from app.tools.v5.entries.test.search import search_tests
+from app.tools.v5.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from app.routes.v5.tools.entries.test_invocation_runs.search import (
+from app.tools.v5.entries.test_invocation_runs.search import (
     search_test_invocation_runs,
 )
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.voices.get import get_voices
+from app.tools.v5.resources.departments.get import get_departments
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.voices.get import get_voices
 
 PIPE = "|"
 

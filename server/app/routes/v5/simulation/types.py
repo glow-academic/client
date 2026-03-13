@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.infra.simulation.create import CreateSimulationItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.simulation_drafts.types import (
+from app.tools.v5.entries.simulation_drafts.types import (
     GetSimulationDraftResponse,
 )
 

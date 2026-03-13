@@ -17,18 +17,18 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_upload_folder
-from app.routes.v5.socket.client.attempt.audio.frame_impl import (
+from app.socket.v5.client.attempt.audio.frame_impl import (
     attempt_audio_frame_internal_impl,
 )
-from app.routes.v5.socket.client.attempt.audio.start_impl import (
+from app.socket.v5.client.attempt.audio.start_impl import (
     AudioStartInternalResult,
     attempt_audio_start_internal_impl,
 )
-from app.routes.v5.socket.client.attempt.audio.stop_impl import (
+from app.socket.v5.client.attempt.audio.stop_impl import (
     AudioStopInternalResult,
     attempt_audio_stop_internal_impl,
 )
-from app.routes.v5.tools.entries.uploads.get import get_upload
+from app.tools.v5.entries.uploads.get import get_upload
 
 router = APIRouter()
 

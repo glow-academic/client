@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.texts.create import create_text
-from app.routes.v5.tools.resources.texts.search import search_texts
+from app.tools.v5.resources.texts.create import create_text
+from app.tools.v5.resources.texts.search import search_texts
 
 pytestmark = pytest.mark.asyncio
 

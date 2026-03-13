@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.eval.context import resolve_eval_context
-from app.routes.v5.tools.artifacts.eval.create import create_eval
-from app.routes.v5.tools.artifacts.eval.update import update_eval
+from app.tools.v5.artifacts.eval.create import create_eval
+from app.tools.v5.artifacts.eval.update import update_eval
 
 pytestmark = pytest.mark.asyncio
 

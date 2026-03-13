@@ -19,29 +19,29 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.routes.v5.tools.artifacts.eval.get import (
+from app.tools.v5.artifacts.eval.get import (
     get_evals as get_eval_artifacts,
 )
-from app.routes.v5.tools.entries.eval_drafts.get import get_eval_drafts
+from app.tools.v5.entries.eval_drafts.get import get_eval_drafts
 
 # Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.departments.get import get_departments
+from app.tools.v5.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.model_flags.get import get_model_flags
-from app.routes.v5.tools.resources.model_flags.search import search_model_flags
-from app.routes.v5.tools.resources.model_positions.get import get_model_positions
-from app.routes.v5.tools.resources.model_positions.search import search_model_positions
-from app.routes.v5.tools.resources.model_rubrics.get import get_model_rubrics
-from app.routes.v5.tools.resources.model_rubrics.search import search_model_rubrics
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.descriptions.search import search_descriptions
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.model_flags.get import get_model_flags
+from app.tools.v5.resources.model_flags.search import search_model_flags
+from app.tools.v5.resources.model_positions.get import get_model_positions
+from app.tools.v5.resources.model_positions.search import search_model_positions
+from app.tools.v5.resources.model_rubrics.get import get_model_rubrics
+from app.tools.v5.resources.model_rubrics.search import search_model_rubrics
+from app.tools.v5.resources.models.get import get_models
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.names.search import search_names
 
 # ---------------------------------------------------------------------------
 # Constants

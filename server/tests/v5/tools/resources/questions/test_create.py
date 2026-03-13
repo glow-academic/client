@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.questions.create import create_question
-from app.routes.v5.tools.resources.questions.get import get_questions
+from app.tools.v5.resources.questions.create import create_question
+from app.tools.v5.resources.questions.get import get_questions
 
 pytestmark = pytest.mark.asyncio
 

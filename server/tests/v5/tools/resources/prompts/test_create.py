@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.prompts.create import create_prompt
-from app.routes.v5.tools.resources.prompts.get import get_prompts
+from app.tools.v5.resources.prompts.create import create_prompt
+from app.tools.v5.resources.prompts.get import get_prompts
 
 pytestmark = pytest.mark.asyncio
 

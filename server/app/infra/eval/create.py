@@ -22,7 +22,7 @@ from app.infra.eval.permissions_context import (
     resolve_eval_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.eval.create import (
+from app.tools.v5.artifacts.eval.create import (
     create_eval as create_eval_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

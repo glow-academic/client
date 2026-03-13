@@ -12,9 +12,9 @@ from tests.infra.route_helpers import create_admin_route_actor
 
 
 async def _seed_health_metrics(conn) -> None:
-    from app.routes.v5.tools.entries.health.create import create_health
-    from app.routes.v5.tools.entries.metrics.create import create_metrics_entry_internal
-    from app.routes.v5.tools.entries.metrics.refresh import refresh_metrics_internal
+    from app.tools.v5.entries.health.create import create_health
+    from app.tools.v5.entries.metrics.create import create_metrics_entry_internal
+    from app.tools.v5.entries.metrics.refresh import refresh_metrics_internal
 
     await create_health(
         conn,
@@ -63,7 +63,7 @@ class TestHealthRoute:
             session_id=health_route_actor.session_id,
         )
         response = await v5_health_route_client.client.post(
-            "/api/v5/artifacts/health/get",
+            "/v5/health/get",
             json={
                 "service": "redis",
                 "date_from": "2031-01-01T00:00:00Z",
@@ -94,7 +94,7 @@ class TestHealthRoute:
             session_id=health_route_actor.session_id,
         )
         response = await v5_health_route_client.client.post(
-            "/api/v5/artifacts/health/docs",
+            "/v5/health/docs",
             json={"entity_id": None},
         )
 
@@ -114,7 +114,7 @@ class TestHealthRoute:
         health_route_actor,
     ):
         from app.infra.globals import UPLOAD_FOLDER
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         async with pool.acquire() as conn:
             await _seed_health_metrics(conn)
@@ -124,7 +124,7 @@ class TestHealthRoute:
             session_id=health_route_actor.session_id,
         )
         response = await v5_health_route_client.client.post(
-            "/api/v5/artifacts/health/export",
+            "/v5/health/export",
             json={},
         )
 
@@ -155,7 +155,7 @@ class TestHealthRoute:
         )
 
         response = await v5_health_route_client.client.post(
-            "/api/v5/artifacts/health/refresh",
+            "/v5/health/refresh",
             json={},
         )
 

@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.infra.setting.create import CreateSettingItem
 from app.routes.v5.types import BaseResourceSection
-from app.routes.v5.tools.entries.setting_drafts.types import GetSettingDraftResponse
+from app.tools.v5.entries.setting_drafts.types import GetSettingDraftResponse
 
 # ========== Flag Enrichment ==========
 

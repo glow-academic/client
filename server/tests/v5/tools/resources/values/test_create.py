@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.values.create import create_value
-from app.routes.v5.tools.resources.values.get import get_values
+from app.tools.v5.resources.values.create import create_value
+from app.tools.v5.resources.values.get import get_values
 
 pytestmark = pytest.mark.asyncio
 

@@ -17,14 +17,14 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.profile.get import (
+from app.tools.v5.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.emails.get import get_emails
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.roles.get import get_roles
+from app.tools.v5.resources.departments.get import get_departments
+from app.tools.v5.resources.emails.get import get_emails
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.v5.resources.roles.get import get_roles
 
 # ---------------------------------------------------------------------------
 # Types

@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.practice.create import create_practice
-from app.routes.v5.tools.entries.practice.refresh import refresh_practice
-from app.routes.v5.tools.entries.practice.search import search_practices
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.practice.create import create_practice
+from app.tools.v5.entries.practice.refresh import refresh_practice
+from app.tools.v5.entries.practice.search import search_practices
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

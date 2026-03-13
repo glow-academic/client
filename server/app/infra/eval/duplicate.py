@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.eval.types import (
     DuplicateEvalApiResponse,
 )
-from app.routes.v5.tools.artifacts.eval.create import (
+from app.tools.v5.artifacts.eval.create import (
     create_eval as create_eval_artifact,
 )
-from app.routes.v5.tools.artifacts.eval.get import get_evals
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.eval.get import get_evals
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

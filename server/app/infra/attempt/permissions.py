@@ -13,7 +13,7 @@ from app.routes.v5.attempt.types import (
     AvailableContinuationOptions,
     ChatData,
 )
-from app.routes.v5.tools.entries.attempt_chat.types import (
+from app.tools.v5.entries.attempt_chat.types import (
     GetAttemptChatResponse as ChatViewItem,
 )
 

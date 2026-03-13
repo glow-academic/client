@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.tools.entries.invocation_drafts.types import (
+from app.tools.v5.entries.invocation_drafts.types import (
     GetInvocationDraftResponse,
 )
 

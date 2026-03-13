@@ -30,14 +30,14 @@ from app.routes.v5.tool.types import (
     ListToolApiTool,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.tool.get import get_tools
-from app.routes.v5.tools.artifacts.tool.search import search_tools
-from app.routes.v5.tools.resources.agents.search import (
+from app.tools.v5.artifacts.tool.get import get_tools
+from app.tools.v5.artifacts.tool.search import search_tools
+from app.tools.v5.resources.agents.search import (
     search_agents as search_agents_resource,
 )
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.names.get import get_names
 
 TOOL_IMPORT_FIELDS: list[dict[str, Any]] = [
     {
@@ -96,7 +96,7 @@ async def search_tool_impl(
     if filter_agent_ids:
         # agent_ids filter references agent_artifact IDs
         # Agents have tools_junction → get tool resource IDs
-        from app.routes.v5.tools.artifacts.agent.get import (
+        from app.tools.v5.artifacts.agent.get import (
             get_agents as get_agent_artifacts,
         )
 

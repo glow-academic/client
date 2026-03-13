@@ -22,7 +22,7 @@ from app.infra.setting.permissions_context import (
     create_denormalized_snapshot,
     resolve_setting_values,
 )
-from app.routes.v5.tools.artifacts.setting.create import (
+from app.tools.v5.artifacts.setting.create import (
     create_setting as create_setting_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

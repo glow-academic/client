@@ -6,8 +6,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.pricing import compute_costs_from_runs
-from app.routes.v5.tools.entries.runs.search import RunPricingItem, RunViewItem
-from app.routes.v5.tools.resources.pricing.create import create_pricing
+from app.tools.v5.entries.runs.search import RunPricingItem, RunViewItem
+from app.tools.v5.resources.pricing.create import create_pricing
 
 pytestmark = pytest.mark.asyncio
 

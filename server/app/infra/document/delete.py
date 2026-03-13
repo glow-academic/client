@@ -25,9 +25,9 @@ from app.routes.v5.document.types import (
     DeleteDocumentApiResponse,
     DeleteDocumentResult,
 )
-from app.routes.v5.tools.artifacts.document.delete import delete_documents
-from app.routes.v5.tools.artifacts.document.get import get_documents
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.document.delete import delete_documents
+from app.tools.v5.artifacts.document.get import get_documents
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

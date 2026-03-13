@@ -15,15 +15,15 @@ from app.infra.pricing.context import (
 from app.infra.pricing.docs import docs_pricing_impl
 from app.infra.pricing.export import export_pricing_impl
 from app.infra.pricing.refresh import refresh_pricing_impl
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.run_pricing.create import (
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.run_pricing.create import (
     create_run_pricing_entry_internal,
 )
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.resources.agents.create import create_agent
-from app.routes.v5.tools.resources.models.create import create_model
-from app.routes.v5.tools.resources.pricing.create import create_pricing
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.resources.agents.create import create_agent
+from app.tools.v5.resources.models.create import create_model
+from app.tools.v5.resources.pricing.create import create_pricing
 
 pytestmark = pytest.mark.asyncio
 

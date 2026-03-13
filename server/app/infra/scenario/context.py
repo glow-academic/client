@@ -19,55 +19,55 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.routes.v5.tools.artifacts.scenario.get import (
+from app.tools.v5.artifacts.scenario.get import (
     get_scenarios as get_scenario_artifacts,
 )
 
 # Entry MV fetchers (aliased to avoid collision with resource search functions)
-from app.routes.v5.tools.entries.files.search import search_files as search_file_entries
-from app.routes.v5.tools.entries.images.search import (
+from app.tools.v5.entries.files.search import search_files as search_file_entries
+from app.tools.v5.entries.images.search import (
     search_images as search_image_entries,
 )
-from app.routes.v5.tools.entries.scenario_drafts.get import get_scenario_drafts
-from app.routes.v5.tools.entries.videos.search import (
+from app.tools.v5.entries.scenario_drafts.get import get_scenario_drafts
+from app.tools.v5.entries.videos.search import (
     search_videos as search_video_entries,
 )
 
 # Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.departments.get import get_departments
+from app.tools.v5.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.documents.search import search_documents
-from app.routes.v5.tools.resources.fields.search import search_fields
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.images.search import search_images
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.options.search import search_options
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameter_fields.search import (
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.descriptions.search import search_descriptions
+from app.tools.v5.resources.documents.get import get_documents
+from app.tools.v5.resources.documents.search import search_documents
+from app.tools.v5.resources.fields.search import search_fields
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.images.get import get_images
+from app.tools.v5.resources.images.search import search_images
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.names.search import search_names
+from app.tools.v5.resources.objectives.get import get_objectives
+from app.tools.v5.resources.options.get import get_options
+from app.tools.v5.resources.options.search import search_options
+from app.tools.v5.resources.parameter_fields.get import get_parameter_fields
+from app.tools.v5.resources.parameter_fields.search import (
     search_parameter_fields,
 )
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.parameters.search import search_parameters
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.personas.search import search_personas
-from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
-from app.routes.v5.tools.resources.problem_statements.search import (
+from app.tools.v5.resources.parameters.get import get_parameters
+from app.tools.v5.resources.parameters.search import search_parameters
+from app.tools.v5.resources.personas.get import get_personas
+from app.tools.v5.resources.personas.search import search_personas
+from app.tools.v5.resources.problem_statements.get import get_problem_statements
+from app.tools.v5.resources.problem_statements.search import (
     search_problem_statements,
 )
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.questions.search import search_questions
-from app.routes.v5.tools.resources.videos.get import get_videos
-from app.routes.v5.tools.resources.videos.search import search_videos
+from app.tools.v5.resources.questions.get import get_questions
+from app.tools.v5.resources.questions.search import search_questions
+from app.tools.v5.resources.videos.get import get_videos
+from app.tools.v5.resources.videos.search import search_videos
 
 # ---------------------------------------------------------------------------
 # Types

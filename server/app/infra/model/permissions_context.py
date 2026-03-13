@@ -20,19 +20,19 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.agent.search import search_agents
-from app.routes.v5.tools.artifacts.model.get import (
+from app.tools.v5.artifacts.agent.search import search_agents
+from app.tools.v5.artifacts.model.get import (
     get_models as get_model_artifacts,
 )
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.models.create import (
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.models.create import (
     create_model as create_model_resource,
 )
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.values.get import get_values
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.values.get import get_values
 
 if TYPE_CHECKING:
     from app.infra.model.create import CreateModelItem, ModelFieldError

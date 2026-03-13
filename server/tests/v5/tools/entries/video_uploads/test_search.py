@@ -3,11 +3,11 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.uploads.create import create_upload
-from app.routes.v5.tools.entries.video_uploads.create import create_video_upload
-from app.routes.v5.tools.entries.video_uploads.search import search_video_uploads
-from app.routes.v5.tools.entries.videos.create import create_video
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.v5.entries.video_uploads.create import create_video_upload
+from app.tools.v5.entries.video_uploads.search import search_video_uploads
+from app.tools.v5.entries.videos.create import create_video
 
 pytestmark = pytest.mark.asyncio
 

@@ -21,21 +21,21 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.scenario.get import get_scenarios
-from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.fields.get import get_fields
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.videos.get import get_videos
+from app.tools.v5.artifacts.scenario.get import get_scenarios
+from app.tools.v5.artifacts.scenario.search import search_scenarios
+from app.tools.v5.resources.departments.get import get_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.documents.get import get_documents
+from app.tools.v5.resources.fields.get import get_fields
+from app.tools.v5.resources.images.get import get_images
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.objectives.get import get_objectives
+from app.tools.v5.resources.options.get import get_options
+from app.tools.v5.resources.parameter_fields.get import get_parameter_fields
+from app.tools.v5.resources.personas.get import get_personas
+from app.tools.v5.resources.problem_statements.get import get_problem_statements
+from app.tools.v5.resources.questions.get import get_questions
+from app.tools.v5.resources.videos.get import get_videos
 
 PIPE = "|"
 

@@ -15,10 +15,10 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.entries.file_uploads.create import create_file_upload
-from app.routes.v5.tools.entries.files.create import create_file as create_file_entry
-from app.routes.v5.tools.entries.uploads.create import create_upload
-from app.routes.v5.tools.resources.files.create import (
+from app.tools.v5.entries.file_uploads.create import create_file_upload
+from app.tools.v5.entries.files.create import create_file as create_file_entry
+from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.v5.resources.files.create import (
     create_file as create_file_resource,
 )
 

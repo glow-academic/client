@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.department.context import resolve_department_context
-from app.routes.v5.tools.artifacts.department.create import create_department
-from app.routes.v5.tools.artifacts.department.update import update_department
+from app.tools.v5.artifacts.department.create import create_department
+from app.tools.v5.artifacts.department.update import update_department
 
 pytestmark = pytest.mark.asyncio
 

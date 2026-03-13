@@ -33,8 +33,8 @@ from app.routes.auth.types import (
     AnalyticsFilterFields,
     AnalyticsFilterOption,
 )
-from app.routes.v5.tools.artifacts.cohort.get import get_cohorts as get_cohort_artifacts
-from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
+from app.tools.v5.artifacts.cohort.get import get_cohorts as get_cohort_artifacts
+from app.tools.v5.artifacts.cohort.search import search_cohorts
 
 # ---------------------------------------------------------------------------
 # Convenience constants (re-export for artifact configs)

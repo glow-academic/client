@@ -25,10 +25,10 @@ from app.routes.v5.field.types import (
     PatchFieldDraftApiResponse,
     SaveFieldFieldError,
 )
-from app.routes.v5.tools.entries.field_drafts.create import create_field_draft
-from app.routes.v5.tools.entries.field_drafts.refresh import refresh_field_drafts
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.entries.field_drafts.create import create_field_draft
+from app.tools.v5.entries.field_drafts.refresh import refresh_field_drafts
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

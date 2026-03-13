@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 from tests.infra.route_helpers import create_admin_route_actor
 
-from app.routes.v5.tools.entries.benchmark.create import create_benchmark
+from app.tools.v5.entries.benchmark.create import create_benchmark
 
 
 @pytest_asyncio.fixture
@@ -38,7 +38,7 @@ class TestTestWorkflowRoutes:
             session_id=test_route_actor.session_id,
         )
         response = await v5_test_route_client.client.post(
-            "/api/v5/artifacts/test/get",
+            "/v5/test/get",
             json={"test_id": graph["test_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -59,22 +59,22 @@ class TestTestWorkflowRoutes:
         assert payload["resources"] is not None
 
     async def _create_test_run_graph(self, pool, actor):
-        from app.routes.v5.tools.entries.calls.create import create_call
-        from app.routes.v5.tools.entries.groups.create import create_group
-        from app.routes.v5.tools.entries.messages.create import create_message
-        from app.routes.v5.tools.entries.runs.create import create_run
-        from app.routes.v5.tools.entries.test.create import create_test
-        from app.routes.v5.tools.entries.test.refresh import refresh_test
-        from app.routes.v5.tools.entries.test_invocation.create import (
+        from app.tools.v5.entries.calls.create import create_call
+        from app.tools.v5.entries.groups.create import create_group
+        from app.tools.v5.entries.messages.create import create_message
+        from app.tools.v5.entries.runs.create import create_run
+        from app.tools.v5.entries.test.create import create_test
+        from app.tools.v5.entries.test.refresh import refresh_test
+        from app.tools.v5.entries.test_invocation.create import (
             create_test_invocation,
         )
-        from app.routes.v5.tools.entries.test_invocation.refresh import (
+        from app.tools.v5.entries.test_invocation.refresh import (
             refresh_test_invocation,
         )
-        from app.routes.v5.tools.entries.test_invocation_runs.create import (
+        from app.tools.v5.entries.test_invocation_runs.create import (
             create_test_invocation_runs,
         )
-        from app.routes.v5.tools.entries.test_invocation_runs.refresh import (
+        from app.tools.v5.entries.test_invocation_runs.refresh import (
             refresh_test_invocation_runs,
         )
 
@@ -163,7 +163,7 @@ class TestTestWorkflowRoutes:
             session_id=test_route_actor.session_id,
         )
         response = await v5_test_route_client.client.post(
-            "/api/v5/artifacts/test/start",
+            "/v5/test/start",
             json={"benchmark_id": str(benchmark.id), "infinite_mode": False},
         )
 
@@ -184,7 +184,7 @@ class TestTestWorkflowRoutes:
             session_id=test_route_actor.session_id,
         )
         response = await v5_test_route_client.client.post(
-            "/api/v5/artifacts/test/run",
+            "/v5/test/run",
             json={
                 "test_id": graph["test_id"],
                 "test_invocation_id": graph["test_invocation_id"],
@@ -219,7 +219,7 @@ class TestTestWorkflowRoutes:
             session_id=test_route_actor.session_id,
         )
         response = await v5_test_route_client.client.post(
-            "/api/v5/artifacts/test/next",
+            "/v5/test/next",
             json={"test_id": graph["test_id"]},
         )
 
@@ -251,7 +251,7 @@ class TestTestWorkflowRoutes:
             session_id=test_route_actor.session_id,
         )
         response = await v5_test_route_client.client.post(
-            "/api/v5/artifacts/test/end",
+            "/v5/test/end",
             json={
                 "test_id": graph["test_id"],
                 "test_invocation_id": graph["test_invocation_id"],
@@ -286,7 +286,7 @@ class TestTestWorkflowRoutes:
             session_id=test_route_actor.session_id,
         )
         response = await v5_test_route_client.client.post(
-            "/api/v5/artifacts/test/stop",
+            "/v5/test/stop",
             json={"invocation_id": graph["test_invocation_id"]},
         )
 

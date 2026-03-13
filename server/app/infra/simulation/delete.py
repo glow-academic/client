@@ -25,9 +25,9 @@ from app.routes.v5.simulation.types import (
     DeleteSimulationApiResponse,
     DeleteSimulationResult,
 )
-from app.routes.v5.tools.artifacts.simulation.delete import delete_simulations
-from app.routes.v5.tools.artifacts.simulation.get import get_simulations
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.simulation.delete import delete_simulations
+from app.tools.v5.artifacts.simulation.get import get_simulations
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

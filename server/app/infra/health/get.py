@@ -23,11 +23,11 @@ from app.routes.v5.health.types import (
     HealthResponse,
     HealthViews,
 )
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.systems.get import get_systems
-from app.routes.v5.tools.resources.tools.get import get_tools
+from app.tools.v5.resources.agents.get import get_agents
+from app.tools.v5.resources.models.get import get_models
+from app.tools.v5.resources.providers.get import get_providers
+from app.tools.v5.resources.systems.get import get_systems
+from app.tools.v5.resources.tools.get import get_tools
 
 HEALTH_FACETS_CONFIG = AnalyticsFacetsConfig(
     fields=AnalyticsFilterFields(
@@ -156,7 +156,7 @@ async def get_health_internal(
                 )
 
         if common.profile:
-            from app.routes.v5.tools.resources.profiles.get import get_profiles
+            from app.tools.v5.resources.profiles.get import get_profiles
 
             async with pool.acquire() as conn:
                 config_profile = await get_profiles(

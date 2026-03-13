@@ -16,8 +16,8 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.routes.v5.tools.entries.chat.refresh import refresh_chat
-from app.routes.v5.tools.entries.chat_drafts.refresh import refresh_chat_drafts
+from app.tools.v5.entries.chat.refresh import refresh_chat
+from app.tools.v5.entries.chat_drafts.refresh import refresh_chat_drafts
 
 # Tags to invalidate — artifact cache + resource caches
 _TAGS = ["chat", "artifacts"]

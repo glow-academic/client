@@ -14,8 +14,8 @@ from uuid import UUID
 
 import asyncpg
 
-from app.routes.v5.tools.entries.test_grade.search import search_test_grades
-from app.routes.v5.tools.entries.test_invocation.search import (
+from app.tools.v5.entries.test_grade.search import search_test_grades
+from app.tools.v5.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
 

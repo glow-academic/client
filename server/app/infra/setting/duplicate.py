@@ -23,13 +23,13 @@ from app.infra.setting.permissions import compute_can_duplicate
 from app.routes.v5.setting.types import (
     DuplicateSettingApiResponse,
 )
-from app.routes.v5.tools.artifacts.setting.create import (
+from app.tools.v5.artifacts.setting.create import (
     create_setting as create_setting_artifact,
 )
-from app.routes.v5.tools.artifacts.setting.get import get_settings
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.setting.get import get_settings
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

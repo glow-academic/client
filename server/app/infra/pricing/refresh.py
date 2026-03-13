@@ -16,7 +16,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.routes.v5.tools.entries.run_pricing.refresh import (
+from app.tools.v5.entries.run_pricing.refresh import (
     refresh_run_pricing_internal,
 )
 

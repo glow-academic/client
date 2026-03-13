@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.uploads.create import create_upload
-from app.routes.v5.tools.entries.video_uploads.create import create_video_upload
-from app.routes.v5.tools.entries.videos.create import create_video
-from app.routes.v5.tools.entries.videos.search import search_videos
-from app.routes.v5.tools.resources.videos.create import (
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.v5.entries.video_uploads.create import create_video_upload
+from app.tools.v5.entries.videos.create import create_video
+from app.tools.v5.entries.videos.search import search_videos
+from app.tools.v5.resources.videos.create import (
     create_video as create_video_resource,
 )
 

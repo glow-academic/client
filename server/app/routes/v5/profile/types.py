@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.infra.profile.create import CreateProfileItem
 from app.routes.shared_types import QGetProfileContextV4RoleResource
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.profile_drafts.types import GetProfileDraftResponse
+from app.tools.v5.entries.profile_drafts.types import GetProfileDraftResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -420,7 +420,7 @@ class ThemePrimitives(BaseModel):
 class ProfileContextApiResponse(BaseModel):
     """Response for POST /context — identity + permissions + theme.
 
-    Root-level layout route (mounted at /api/v5/context).
+    Root-level layout route (mounted at /v5/context).
     """
 
     # Identity

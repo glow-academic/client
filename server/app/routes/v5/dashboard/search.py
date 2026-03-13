@@ -24,7 +24,7 @@ from app.routes.v5.dashboard.types import (
     ListDashboardRequest,
 )
 from app.routes.v5.types import FilterOption, HistoryItem, HistoryResponse
-from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
+from app.tools.v5.entries.attempt_chat.types import GetAttemptChatResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

@@ -32,13 +32,13 @@ async def sync_benchmark_entries(
     3. Create entries using black-box entry creation tools
     """
     from app.infra.globals import get_redis_client
-    from app.routes.v5.tools.entries.benchmark.create import create_benchmark
-    from app.routes.v5.tools.entries.invocation.create import create_invocation
-    from app.routes.v5.tools.resources.model_flags.get import get_model_flags
-    from app.routes.v5.tools.resources.model_positions.get import (
+    from app.tools.v5.entries.benchmark.create import create_benchmark
+    from app.tools.v5.entries.invocation.create import create_invocation
+    from app.tools.v5.resources.model_flags.get import get_model_flags
+    from app.tools.v5.resources.model_positions.get import (
         get_model_positions,
     )
-    from app.routes.v5.tools.resources.model_rubrics.get import (
+    from app.tools.v5.resources.model_rubrics.get import (
         get_model_rubrics,
     )
 

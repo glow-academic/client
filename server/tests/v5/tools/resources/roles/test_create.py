@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.roles.create import create_role
-from app.routes.v5.tools.resources.roles.get import get_roles
+from app.tools.v5.resources.roles.create import create_role
+from app.tools.v5.resources.roles.get import get_roles
 
 pytestmark = pytest.mark.asyncio
 

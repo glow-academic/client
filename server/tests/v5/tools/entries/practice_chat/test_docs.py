@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.practice_chat.docs import get_practice_chat_docs
+from app.tools.v5.entries.practice_chat.docs import get_practice_chat_docs
 
 pytestmark = pytest.mark.asyncio
 

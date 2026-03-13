@@ -16,8 +16,8 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.routes.v5.tools.entries.persona.refresh import refresh_persona_internal
-from app.routes.v5.tools.entries.persona_drafts.refresh import refresh_persona_drafts
+from app.tools.v5.entries.persona.refresh import refresh_persona_internal
+from app.tools.v5.entries.persona_drafts.refresh import refresh_persona_drafts
 
 # Tags to invalidate — artifact cache + resource caches
 _TAGS = ["personas", "artifacts"]

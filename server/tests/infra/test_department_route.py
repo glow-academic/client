@@ -23,9 +23,9 @@ class DepartmentRouteResources:
 async def _create_department_route_resources(
     pool, redis_client
 ) -> DepartmentRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.settings.create import create_setting
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.settings.create import create_setting
 
     tag = unique_tag()
     name = f"Route Department {tag}"
@@ -74,7 +74,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/create",
+            "/v5/departments/create",
             json={
                 "departments": [
                     {
@@ -107,7 +107,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/get",
+            "/v5/departments/get",
             json={"department_id": created["department_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -140,7 +140,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/search",
+            "/v5/departments/search",
             json={
                 "search": created["name"],
                 "page_size": 10,
@@ -174,7 +174,7 @@ class TestDepartmentRoute:
         updated = await _create_department_route_resources(pool, redis_client)
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/update",
+            "/v5/departments/update",
             json={
                 "departments": [
                     {
@@ -208,7 +208,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/delete",
+            "/v5/departments/delete",
             json={"department_ids": [created["department_id"]]},
         )
 
@@ -233,7 +233,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/duplicate",
+            "/v5/departments/duplicate",
             json={"department_id": created["department_id"]},
         )
 
@@ -257,7 +257,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.patch(
-            "/api/v5/artifacts/departments/draft",
+            "/v5/departments/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -287,7 +287,7 @@ class TestDepartmentRoute:
             session_id=department_route_actor.session_id,
         )
         draft_response = await v5_department_route_client.client.patch(
-            "/api/v5/artifacts/departments/draft",
+            "/v5/departments/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -296,7 +296,7 @@ class TestDepartmentRoute:
         assert draft_response.status_code == 200, draft_response.text
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/drafts",
+            "/v5/departments/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -321,7 +321,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/docs",
+            "/v5/departments/docs",
             json={"entity_id": None},
         )
 
@@ -346,7 +346,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/export",
+            "/v5/departments/export",
             json={"department_id": created["department_id"]},
         )
 
@@ -367,7 +367,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/refresh",
+            "/v5/departments/refresh",
             json={},
         )
 
@@ -391,7 +391,7 @@ class TestDepartmentRoute:
         )
 
         response = await v5_department_route_client.client.post(
-            "/api/v5/artifacts/departments/create",
+            "/v5/departments/create",
             json={
                 "departments": [
                     {

@@ -13,10 +13,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.types import ListFilterSection
-from app.routes.v5.tools.entries.attempt.types import GetAttemptResponse
-from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
-from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.tools.v5.entries.attempt.types import GetAttemptResponse
+from app.tools.v5.entries.attempt_chat.types import GetAttemptChatResponse
+from app.tools.v5.entries.attempt_message.types import GetAttemptMessageResponse
+from app.tools.v5.entries.runs.search import GetRunListViewResponse
 
 # =============================================================================
 # Attempt detail endpoint types (client-facing)

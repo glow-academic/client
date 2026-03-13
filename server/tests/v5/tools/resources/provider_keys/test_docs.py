@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.provider_keys.docs import get_provider_keys_docs
+from app.tools.v5.resources.provider_keys.docs import get_provider_keys_docs
 
 pytestmark = pytest.mark.asyncio
 

@@ -10,9 +10,9 @@ from pydantic import BaseModel
 
 from app.infra.persona.create import CreatePersonaItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.persona_drafts.types import GetPersonaDraftResponse
-from app.routes.v5.tools.resources.fields.types import GetFieldResponse
-from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
+from app.tools.v5.entries.persona_drafts.types import GetPersonaDraftResponse
+from app.tools.v5.resources.fields.types import GetFieldResponse
+from app.tools.v5.resources.parameters.types import GetParameterResponse
 
 # =============================================================================
 # Resource Types (handcrafted — no dependency on app.sql.types)

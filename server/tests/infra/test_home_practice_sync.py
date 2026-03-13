@@ -24,10 +24,10 @@ async def sync_fixture(pool, redis_client):
 
     Returns a dict of IDs for use in tests.
     """
-    from app.routes.v5.tools.resources.cohorts.create import create_cohort
-    from app.routes.v5.tools.resources.profiles.create import create_profile
-    from app.routes.v5.tools.resources.scenarios.create import create_scenario
-    from app.routes.v5.tools.resources.simulations.create import create_simulation
+    from app.tools.v5.resources.cohorts.create import create_cohort
+    from app.tools.v5.resources.profiles.create import create_profile
+    from app.tools.v5.resources.scenarios.create import create_scenario
+    from app.tools.v5.resources.simulations.create import create_simulation
 
     async with pool.acquire() as conn:
         profile = await create_profile(conn, redis_client)

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.scenarios.create import create_scenario
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
+from app.tools.v5.resources.scenarios.create import create_scenario
+from app.tools.v5.resources.scenarios.get import get_scenarios
 
 pytestmark = pytest.mark.asyncio
 

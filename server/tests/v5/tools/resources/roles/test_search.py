@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.roles.create import create_role
-from app.routes.v5.tools.resources.roles.search import search_roles
+from app.tools.v5.resources.roles.create import create_role
+from app.tools.v5.resources.roles.search import search_roles
 
 pytestmark = pytest.mark.asyncio
 

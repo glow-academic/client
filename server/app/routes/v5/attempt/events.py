@@ -11,7 +11,7 @@ from app.routes.v5.attempt.types import (
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
 )
-from app.routes.v5.socket.client.types import (
+from app.socket.v5.client.types import (
     # Attempt domain event payloads (server → client)
     AttemptAssistantCompleteEvent,
     AttemptAssistantProgressEvent,

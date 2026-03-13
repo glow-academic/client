@@ -3,9 +3,9 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
-from app.routes.v5.tools.resources.standards.create import create_standard
-from app.routes.v5.tools.resources.standards.search import search_standards
+from app.tools.v5.resources.standard_groups.create import create_standard_group
+from app.tools.v5.resources.standards.create import create_standard
+from app.tools.v5.resources.standards.search import search_standards
 
 pytestmark = pytest.mark.asyncio
 

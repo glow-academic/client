@@ -1213,7 +1213,7 @@ def get_idp_public_url(config: KeycloakSyncConfig | None = None) -> str:
     - Local dev: http://localhost:8000 (browser can access)
     - Production: ORIGIN (public domain, nginx proxies to backend)
 
-    Path is at root level: /default-idp/ (not /api/v5/auth/default-idp/)
+    Path is at root level: /default-idp/ (not /v5/auth/default-idp/)
     """
     if config is None:
         config = KeycloakSyncConfig.from_env()
@@ -1247,7 +1247,7 @@ def get_idp_internal_url(config: KeycloakSyncConfig | None = None) -> str:
     - Keycloak on host + Server on host: http://localhost:8000 (direct access)
     - Production: ORIGIN (public domain, nginx proxies to backend)
 
-    Path is at root level: /default-idp/ (not /api/v5/auth/default-idp/)
+    Path is at root level: /default-idp/ (not /v5/auth/default-idp/)
     """
     if config is None:
         config = KeycloakSyncConfig.from_env()

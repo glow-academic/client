@@ -16,16 +16,16 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.profile.get import (
+from app.tools.v5.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
-from app.routes.v5.tools.artifacts.profile.search import search_profiles
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.health.search import search_health
-from app.routes.v5.tools.entries.runs.search import search_runs
-from app.routes.v5.tools.entries.test.search import search_tests
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts
-from app.routes.v5.tools.resources.departments.get import get_departments
+from app.tools.v5.artifacts.profile.search import search_profiles
+from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
+from app.tools.v5.entries.health.search import search_health
+from app.tools.v5.entries.runs.search import search_runs
+from app.tools.v5.entries.test.search import search_tests
+from app.tools.v5.resources.cohorts.get import get_cohorts
+from app.tools.v5.resources.departments.get import get_departments
 
 
 @dataclass(frozen=True)

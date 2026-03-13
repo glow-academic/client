@@ -33,7 +33,7 @@ class TestActivityRoute:
         )
 
         response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/get",
+            "/v5/activity/get",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -60,7 +60,7 @@ class TestActivityRoute:
         )
 
         response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/search",
+            "/v5/activity/search",
             json={"page": 0, "page_size": 50},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -86,7 +86,7 @@ class TestActivityRoute:
         )
 
         response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/problem",
+            "/v5/activity/problem",
             json={"type": "bug", "message": "Route-level problem report"},
         )
 
@@ -107,14 +107,14 @@ class TestActivityRoute:
         )
 
         create_response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/problem",
+            "/v5/activity/problem",
             json={"type": "feature", "message": "Resolve me"},
         )
         assert create_response.status_code == 200, create_response.text
         problem_id = create_response.json()["problem_id"]
 
         resolve_response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/resolve",
+            "/v5/activity/resolve",
             json={"problem_id": problem_id, "resolved": True},
         )
 
@@ -139,7 +139,7 @@ class TestActivityRoute:
         )
 
         response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/docs",
+            "/v5/activity/docs",
             json={"entity_id": None},
         )
 
@@ -169,7 +169,7 @@ class TestActivityRoute:
         )
 
         response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/export",
+            "/v5/activity/export",
             json={},
         )
 
@@ -196,7 +196,7 @@ class TestActivityRoute:
         )
 
         response = await v5_activity_route_client.client.post(
-            "/api/v5/artifacts/activity/refresh",
+            "/v5/activity/refresh",
             json={},
         )
 

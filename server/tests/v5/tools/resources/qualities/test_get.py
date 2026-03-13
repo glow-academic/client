@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.resources.qualities.create import create_quality
-from app.routes.v5.tools.resources.qualities.get import get_qualities
+from app.tools.v5.resources.qualities.create import create_quality
+from app.tools.v5.resources.qualities.get import get_qualities
 
 pytestmark = pytest.mark.asyncio
 
@@ -54,6 +54,6 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     from app.utils.cache.cache_key import cache_key
     from app.utils.cache.get_cached import get_cached
 
-    key = cache_key("/api/v5/resources/qualities/get", {"ids": [str(created.id)]})
+    key = cache_key("/v5/resources/qualities/get", {"ids": [str(created.id)]})
     cached = await get_cached(key, redis=redis_client)
     assert cached is None

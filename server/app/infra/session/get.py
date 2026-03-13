@@ -26,11 +26,11 @@ from app.routes.v5.session.types import (
     SessionInternalData,
     SessionTimelineItem,
 )
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.systems.get import get_systems
-from app.routes.v5.tools.resources.tools.get import get_tools
+from app.tools.v5.resources.agents.get import get_agents
+from app.tools.v5.resources.models.get import get_models
+from app.tools.v5.resources.providers.get import get_providers
+from app.tools.v5.resources.systems.get import get_systems
+from app.tools.v5.resources.tools.get import get_tools
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -174,7 +174,7 @@ async def get_session_impl(
 
         # Config profile
         if common.profile:
-            from app.routes.v5.tools.resources.profiles.get import get_profiles
+            from app.tools.v5.resources.profiles.get import get_profiles
 
             async with pool.acquire() as c:
                 config_profile = await get_profiles(
@@ -296,7 +296,7 @@ async def get_session_detail_impl_cached(
     profile_id: UUID,
     session_id: UUID,
     bypass_cache: bool = False,
-    cache_key_path: str = "/api/v5/artifacts/session/get",
+    cache_key_path: str = "/v5/session/get",
 ) -> tuple[GetSessionDetailResponse, bool]:
     """Build the cached client-facing session detail response."""
     tags = ["artifacts", "session"]

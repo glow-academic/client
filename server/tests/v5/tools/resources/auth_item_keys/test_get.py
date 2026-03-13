@@ -3,11 +3,11 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.resources.auth_item_keys.create import create_auth_item_key
-from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys
-from app.routes.v5.tools.resources.auths.create import create_auth
-from app.routes.v5.tools.resources.items.create import create_item
-from app.routes.v5.tools.resources.keys.create import create_key
+from app.tools.v5.resources.auth_item_keys.create import create_auth_item_key
+from app.tools.v5.resources.auth_item_keys.get import get_auth_item_keys
+from app.tools.v5.resources.auths.create import create_auth
+from app.tools.v5.resources.items.create import create_item
+from app.tools.v5.resources.keys.create import create_key
 
 pytestmark = pytest.mark.asyncio
 
@@ -68,6 +68,6 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     from app.utils.cache.cache_key import cache_key
     from app.utils.cache.get_cached import get_cached
 
-    key_str = cache_key("/api/v5/resources/auth_item_keys/get", {"ids": [str(row.id)]})
+    key_str = cache_key("/v5/resources/auth_item_keys/get", {"ids": [str(row.id)]})
     cached = await get_cached(key_str, redis=redis_client)
     assert cached is None

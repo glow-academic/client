@@ -20,15 +20,15 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.eval.get import get_evals as get_eval_artifacts
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.evals.create import (
+from app.tools.v5.artifacts.eval.get import get_evals as get_eval_artifacts
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.evals.create import (
     create_eval as create_eval_resource,
 )
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 
 if TYPE_CHECKING:
     from app.infra.eval.create import CreateEvalItem, EvalFieldError

@@ -22,13 +22,13 @@ from app.infra.setting.permissions_context import (
     resolve_setting_permissions_context,
     resolve_setting_values,
 )
-from app.routes.v5.tools.artifacts.setting.get import (
+from app.tools.v5.artifacts.setting.get import (
     get_settings as get_setting_artifacts,
 )
-from app.routes.v5.tools.artifacts.setting.update import (
+from app.tools.v5.artifacts.setting.update import (
     _UNSET,
 )
-from app.routes.v5.tools.artifacts.setting.update import (
+from app.tools.v5.artifacts.setting.update import (
     update_setting as update_setting_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

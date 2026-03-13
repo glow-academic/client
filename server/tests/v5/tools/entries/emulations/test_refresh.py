@@ -2,11 +2,11 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.emulations.create import create_emulation
-from app.routes.v5.tools.entries.emulations.get import get_emulations
-from app.routes.v5.tools.entries.emulations.refresh import refresh_emulations
-from app.routes.v5.tools.entries.grants.create import create_grant
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.emulations.create import create_emulation
+from app.tools.v5.entries.emulations.get import get_emulations
+from app.tools.v5.entries.emulations.refresh import refresh_emulations
+from app.tools.v5.entries.grants.create import create_grant
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.qualities.create import create_quality
-from app.routes.v5.tools.resources.qualities.get import get_qualities
+from app.tools.v5.resources.qualities.create import create_quality
+from app.tools.v5.resources.qualities.get import get_qualities
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.flags.create import create_flag
-from app.routes.v5.tools.resources.scenario_flags.create import create_scenario_flag
-from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags
-from app.routes.v5.tools.resources.scenarios.create import create_scenario
+from app.tools.v5.resources.flags.create import create_flag
+from app.tools.v5.resources.scenario_flags.create import create_scenario_flag
+from app.tools.v5.resources.scenario_flags.get import get_scenario_flags
+from app.tools.v5.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
 

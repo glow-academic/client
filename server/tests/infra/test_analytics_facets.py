@@ -13,19 +13,19 @@ from app.infra.analytics_facets import (
 )
 from app.infra.profile_identity_context import ProfileIdentityContext
 from app.routes.auth.types import AnalyticsFilterFields
-from app.routes.v5.tools.artifacts.cohort.create import (
+from app.tools.v5.artifacts.cohort.create import (
     create_cohort as create_cohort_artifact,
 )
-from app.routes.v5.tools.artifacts.profile.create import (
+from app.tools.v5.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.health.create import create_health
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.resources.cohorts.create import create_cohort
-from app.routes.v5.tools.resources.departments.create import create_department
-from app.routes.v5.tools.resources.profiles.create import create_profile
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.health.create import create_health
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.resources.cohorts.create import create_cohort
+from app.tools.v5.resources.departments.create import create_department
+from app.tools.v5.resources.profiles.create import create_profile
 
 pytestmark = pytest.mark.asyncio
 

@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.personas.create import create_persona
-from app.routes.v5.tools.resources.profile_personas.create import create_profile_persona
-from app.routes.v5.tools.resources.profile_personas.search import (
+from app.tools.v5.resources.personas.create import create_persona
+from app.tools.v5.resources.profile_personas.create import create_profile_persona
+from app.tools.v5.resources.profile_personas.search import (
     search_profile_personas,
 )
-from app.routes.v5.tools.resources.profiles.create import create_profile
+from app.tools.v5.resources.profiles.create import create_profile
 
 pytestmark = pytest.mark.asyncio
 

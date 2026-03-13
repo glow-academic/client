@@ -23,32 +23,32 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.model.docs import get_model_docs
-from app.routes.v5.tools.artifacts.model.get import get_models as get_model_artifacts
+from app.tools.v5.artifacts.model.docs import get_model_docs
+from app.tools.v5.artifacts.model.get import get_models as get_model_artifacts
 
 # Entry tool docs
-from app.routes.v5.tools.entries.model_drafts.docs import get_model_drafts_docs
+from app.tools.v5.entries.model_drafts.docs import get_model_drafts_docs
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.modalities.docs import get_modalities_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.modalities.docs import get_modalities_docs
+from app.tools.v5.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.pricing.docs import get_pricing_docs
-from app.routes.v5.tools.resources.providers.docs import get_providers_docs
-from app.routes.v5.tools.resources.qualities.docs import get_qualities_docs
-from app.routes.v5.tools.resources.reasoning_levels.docs import (
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.pricing.docs import get_pricing_docs
+from app.tools.v5.resources.providers.docs import get_providers_docs
+from app.tools.v5.resources.qualities.docs import get_qualities_docs
+from app.tools.v5.resources.reasoning_levels.docs import (
     get_reasoning_levels_docs,
 )
-from app.routes.v5.tools.resources.temperature_levels.docs import (
+from app.tools.v5.resources.temperature_levels.docs import (
     get_temperature_levels_docs,
 )
-from app.routes.v5.tools.resources.values.docs import get_values_docs
-from app.routes.v5.tools.resources.voices.docs import get_voices_docs
+from app.tools.v5.resources.values.docs import get_values_docs
+from app.tools.v5.resources.voices.docs import get_voices_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Models",

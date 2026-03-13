@@ -3,11 +3,11 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.artifacts.agent.create import create_agent
-from app.routes.v5.tools.artifacts.agent.search import search_agents
-from app.routes.v5.tools.resources.departments.create import create_department
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.artifacts.agent.create import create_agent
+from app.tools.v5.artifacts.agent.search import search_agents
+from app.tools.v5.resources.departments.create import create_department
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

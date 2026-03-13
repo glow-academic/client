@@ -23,30 +23,30 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.document.docs import get_document_docs
-from app.routes.v5.tools.artifacts.document.get import (
+from app.tools.v5.artifacts.document.docs import get_document_docs
+from app.tools.v5.artifacts.document.get import (
     get_documents as get_document_artifacts,
 )
 
 # Entry tool docs
-from app.routes.v5.tools.entries.document_drafts.docs import get_document_drafts_docs
+from app.tools.v5.entries.document_drafts.docs import get_document_drafts_docs
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.fields.docs import get_fields_docs
-from app.routes.v5.tools.resources.files.docs import get_files_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.images.docs import get_images_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.fields.docs import get_fields_docs
+from app.tools.v5.resources.files.docs import get_files_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.images.docs import get_images_docs
+from app.tools.v5.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.parameter_fields.docs import (
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
-from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
-from app.routes.v5.tools.resources.texts.docs import get_texts_docs
+from app.tools.v5.resources.parameters.docs import get_parameters_docs
+from app.tools.v5.resources.texts.docs import get_texts_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Documents",

@@ -16,7 +16,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.routes.v5.tools.entries.health.refresh import refresh_health_internal
+from app.tools.v5.entries.health.refresh import refresh_health_internal
 
 # Tags to invalidate — artifact cache + resource caches
 _TAGS = ["health", "artifacts"]

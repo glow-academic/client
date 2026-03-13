@@ -23,7 +23,7 @@ from app.infra.attempt.grade_types import (
     AttemptGradeReplacementEntry,
     AttemptGradeStrengthEntry,
 )
-from app.routes.v5.socket.internal.attempt.end import attempt_end_internal_impl
+from app.socket.v5.internal.attempt.end import attempt_end_internal_impl
 
 router = APIRouter()
 

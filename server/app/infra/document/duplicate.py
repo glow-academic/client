@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.document.types import (
     DuplicateDocumentApiResponse,
 )
-from app.routes.v5.tools.artifacts.document.create import (
+from app.tools.v5.artifacts.document.create import (
     create_document as create_document_artifact,
 )
-from app.routes.v5.tools.artifacts.document.get import get_documents
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.document.get import get_documents
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -21,7 +21,7 @@ from app.infra.reports.types import (
     ReportsTrendPoint,
     ReportsTrendsSection,
 )
-from app.routes.v5.tools.entries.attempt_chat.types import ChatItem
+from app.tools.v5.entries.attempt_chat.types import ChatItem
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)
 AttemptFactsItem = Any

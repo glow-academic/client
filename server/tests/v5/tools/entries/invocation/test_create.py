@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.benchmark.create import create_benchmark
-from app.routes.v5.tools.entries.invocation.create import create_invocation
+from app.tools.v5.entries.benchmark.create import create_benchmark
+from app.tools.v5.entries.invocation.create import create_invocation
 
 pytestmark = pytest.mark.asyncio
 

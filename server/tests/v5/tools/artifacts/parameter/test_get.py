@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.routes.v5.tools.artifacts.parameter.create import create_parameter
-from app.routes.v5.tools.artifacts.parameter.get import get_parameters
-from app.routes.v5.tools.artifacts.parameter.update import update_parameter
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.artifacts.parameter.create import create_parameter
+from app.tools.v5.artifacts.parameter.get import get_parameters
+from app.tools.v5.artifacts.parameter.update import update_parameter
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

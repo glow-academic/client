@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.resources.temperature_levels.create import (
+from app.tools.v5.resources.temperature_levels.create import (
     create_temperature_level,
 )
-from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
+from app.tools.v5.resources.temperature_levels.get import get_temperature_levels
 
 pytestmark = pytest.mark.asyncio
 
@@ -59,7 +59,7 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     from app.utils.cache.get_cached import get_cached
 
     key = cache_key(
-        "/api/v5/resources/temperature_levels/get", {"ids": [str(created.id)]}
+        "/v5/resources/temperature_levels/get", {"ids": [str(created.id)]}
     )
     cached = await get_cached(key, redis=redis_client)
     assert cached is None

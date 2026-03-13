@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.images.create import create_image
-from app.routes.v5.tools.entries.images.get import get_image
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.resources.images.create import (
+from app.tools.v5.entries.images.create import create_image
+from app.tools.v5.entries.images.get import get_image
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.resources.images.create import (
     create_image as create_image_resource,
 )
 

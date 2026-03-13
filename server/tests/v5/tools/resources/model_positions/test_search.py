@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.model_positions.create import create_model_position
-from app.routes.v5.tools.resources.model_positions.search import search_model_positions
-from app.routes.v5.tools.resources.models.create import create_model
+from app.tools.v5.resources.model_positions.create import create_model_position
+from app.tools.v5.resources.model_positions.search import search_model_positions
+from app.tools.v5.resources.models.create import create_model
 
 pytestmark = pytest.mark.asyncio
 

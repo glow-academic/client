@@ -22,13 +22,13 @@ class FieldRouteResources:
 
 
 async def _create_field_route_resources(pool, redis_client) -> FieldRouteResources:
-    from app.routes.v5.tools.resources.conditional_parameters.create import (
+    from app.tools.v5.resources.conditional_parameters.create import (
         create_conditional_parameter,
     )
-    from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.parameters.create import create_parameter
+    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.parameters.create import create_parameter
 
     tag = unique_tag()
     name = f"Route Field {tag}"
@@ -88,7 +88,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/create",
+            "/v5/fields/create",
             json={
                 "fields": [
                     {
@@ -124,7 +124,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/get",
+            "/v5/fields/get",
             json={"field_id": created["field_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -155,7 +155,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/search",
+            "/v5/fields/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(field_route_actor.department_id)],
@@ -189,7 +189,7 @@ class TestFieldRoute:
         updated = await _create_field_route_resources(pool, redis_client)
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/update",
+            "/v5/fields/update",
             json={
                 "fields": [
                     {
@@ -225,7 +225,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/delete",
+            "/v5/fields/delete",
             json={"field_ids": [created["field_id"]]},
         )
 
@@ -249,7 +249,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/duplicate",
+            "/v5/fields/duplicate",
             json={"field_id": created["field_id"]},
         )
 
@@ -273,7 +273,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.patch(
-            "/api/v5/artifacts/fields/draft",
+            "/v5/fields/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -305,7 +305,7 @@ class TestFieldRoute:
         )
 
         draft_response = await v5_field_route_client.client.patch(
-            "/api/v5/artifacts/fields/draft",
+            "/v5/fields/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -317,7 +317,7 @@ class TestFieldRoute:
         draft_id = draft_response.json()["draft_id"]
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/drafts",
+            "/v5/fields/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -338,7 +338,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/docs",
+            "/v5/fields/docs",
             json={},
         )
 
@@ -364,7 +364,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/export",
+            "/v5/fields/export",
             json={"field_id": created["field_id"]},
         )
 
@@ -385,7 +385,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/refresh",
+            "/v5/fields/refresh",
             json={},
         )
 
@@ -409,7 +409,7 @@ class TestFieldRoute:
         )
 
         response = await v5_field_route_client.client.post(
-            "/api/v5/artifacts/fields/create",
+            "/v5/fields/create",
             json={
                 "fields": [
                     {

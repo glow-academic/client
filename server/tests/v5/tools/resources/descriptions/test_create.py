@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.descriptions.get import get_descriptions
 
 pytestmark = pytest.mark.asyncio
 

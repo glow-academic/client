@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.rubrics.create import create_rubric
-from app.routes.v5.tools.resources.scenario_rubrics.create import create_scenario_rubric
-from app.routes.v5.tools.resources.scenario_rubrics.get import get_scenario_rubrics
-from app.routes.v5.tools.resources.scenarios.create import create_scenario
+from app.tools.v5.resources.rubrics.create import create_rubric
+from app.tools.v5.resources.scenario_rubrics.create import create_scenario_rubric
+from app.tools.v5.resources.scenario_rubrics.get import get_scenario_rubrics
+from app.tools.v5.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
 

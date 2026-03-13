@@ -22,7 +22,7 @@ from app.infra.field.permissions_context import (
     resolve_field_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.field.create import (
+from app.tools.v5.artifacts.field.create import (
     create_field as create_field_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

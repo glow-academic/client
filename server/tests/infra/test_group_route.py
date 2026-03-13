@@ -26,13 +26,13 @@ async def _create_group_route_graph(
     redis_client,
     actor: RouteActor,
 ) -> GroupRouteGraph:
-    from app.routes.v5.tools.entries.calls.create import create_call
-    from app.routes.v5.tools.entries.groups.create import create_group
-    from app.routes.v5.tools.entries.messages.create import create_message
-    from app.routes.v5.tools.entries.runs.create import create_run
-    from app.routes.v5.tools.resources.agents.create import create_agent
-    from app.routes.v5.tools.resources.models.create import create_model
-    from app.routes.v5.tools.resources.tools.create import create_tool
+    from app.tools.v5.entries.calls.create import create_call
+    from app.tools.v5.entries.groups.create import create_group
+    from app.tools.v5.entries.messages.create import create_message
+    from app.tools.v5.entries.runs.create import create_run
+    from app.tools.v5.resources.agents.create import create_agent
+    from app.tools.v5.resources.models.create import create_model
+    from app.tools.v5.resources.tools.create import create_tool
 
     tag = unique_tag()
 
@@ -121,7 +121,7 @@ class TestGroupRoute:
         )
 
         response = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/group/get",
+            "/v5/group/get",
             json={"group_id": str(graph.group_id)},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -151,11 +151,11 @@ class TestGroupRoute:
         )
 
         first = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/group/get",
+            "/v5/group/get",
             json={"group_id": str(graph.group_id)},
         )
         second = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/group/get",
+            "/v5/group/get",
             json={"group_id": str(graph.group_id)},
         )
 
@@ -171,7 +171,7 @@ class TestGroupRoute:
         v5_group_route_client,
         group_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         graph = await _create_group_route_graph(pool, redis_client, group_route_actor)
         v5_group_route_client.authenticate(
@@ -180,7 +180,7 @@ class TestGroupRoute:
         )
 
         response = await v5_group_route_client.client.post(
-            "/api/v5/artifacts/group/export",
+            "/v5/group/export",
             json={"group_id": str(graph.group_id)},
         )
 

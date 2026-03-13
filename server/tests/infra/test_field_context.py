@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.field.context import resolve_field_context
-from app.routes.v5.tools.artifacts.field.create import create_field
-from app.routes.v5.tools.artifacts.field.update import update_field
+from app.tools.v5.artifacts.field.create import create_field
+from app.tools.v5.artifacts.field.update import update_field
 
 pytestmark = pytest.mark.asyncio
 

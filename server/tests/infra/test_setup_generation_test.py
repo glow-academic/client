@@ -9,32 +9,32 @@ from app.infra.websocket.setup_generation_test import (
     GenerationTestResult,
     setup_generation_test,
 )
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.test.get import get_tests
-from app.routes.v5.tools.entries.test.refresh import refresh_test
-from app.routes.v5.tools.entries.test_invocation.get import get_test_invocations
-from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
-from app.routes.v5.tools.entries.test_invocation_runs.refresh import (
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.test.get import get_tests
+from app.tools.v5.entries.test.refresh import refresh_test
+from app.tools.v5.entries.test_invocation.get import get_test_invocations
+from app.tools.v5.entries.test_invocation.refresh import refresh_test_invocation
+from app.tools.v5.entries.test_invocation_runs.refresh import (
     refresh_test_invocation_runs,
 )
-from app.routes.v5.tools.entries.test_invocation_runs.search import (
+from app.tools.v5.entries.test_invocation_runs.search import (
     search_test_invocation_runs,
 )
-from app.routes.v5.tools.resources.agents.create import create_agent
-from app.routes.v5.tools.resources.departments.create import create_department
-from app.routes.v5.tools.resources.instructions.create import create_instruction
-from app.routes.v5.tools.resources.modalities.create import create_modality
-from app.routes.v5.tools.resources.prompts.create import create_prompt
-from app.routes.v5.tools.resources.qualities.create import create_quality
-from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
-from app.routes.v5.tools.resources.rubrics.create import create_rubric
-from app.routes.v5.tools.resources.temperature_levels.create import (
+from app.tools.v5.resources.agents.create import create_agent
+from app.tools.v5.resources.departments.create import create_department
+from app.tools.v5.resources.instructions.create import create_instruction
+from app.tools.v5.resources.modalities.create import create_modality
+from app.tools.v5.resources.prompts.create import create_prompt
+from app.tools.v5.resources.qualities.create import create_quality
+from app.tools.v5.resources.reasoning_levels.create import create_reasoning_level
+from app.tools.v5.resources.rubrics.create import create_rubric
+from app.tools.v5.resources.temperature_levels.create import (
     create_temperature_level,
 )
-from app.routes.v5.tools.resources.tools.create import create_tool
-from app.routes.v5.tools.resources.voices.create import create_voice
+from app.tools.v5.resources.tools.create import create_tool
+from app.tools.v5.resources.voices.create import create_voice
 
 pytestmark = pytest.mark.asyncio
 

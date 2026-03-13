@@ -19,34 +19,34 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.routes.v5.tools.artifacts.cohort.get import (
+from app.tools.v5.artifacts.cohort.get import (
     get_cohorts as get_cohort_artifacts,
 )
-from app.routes.v5.tools.entries.cohort_drafts.get import get_cohort_drafts
+from app.tools.v5.entries.cohort_drafts.get import get_cohort_drafts
 
 # Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.departments.get import get_departments
+from app.tools.v5.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.personas.search import search_personas
-from app.routes.v5.tools.resources.profile_personas.get import get_profile_personas
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.profiles.search import search_profiles
-from app.routes.v5.tools.resources.simulation_availability.get import (
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.descriptions.search import search_descriptions
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.names.search import search_names
+from app.tools.v5.resources.personas.search import search_personas
+from app.tools.v5.resources.profile_personas.get import get_profile_personas
+from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.v5.resources.profiles.search import search_profiles
+from app.tools.v5.resources.simulation_availability.get import (
     get_simulation_availability,
 )
-from app.routes.v5.tools.resources.simulation_positions.get import (
+from app.tools.v5.resources.simulation_positions.get import (
     get_simulation_positions,
 )
-from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.simulations.search import search_simulations
+from app.tools.v5.resources.simulations.get import get_simulations
+from app.tools.v5.resources.simulations.search import search_simulations
 
 # ---------------------------------------------------------------------------
 # Constants

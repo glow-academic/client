@@ -11,7 +11,7 @@ from app.routes.v5.group.types import (
     GetGroupDetailRequest,
     GetGroupDetailResponse,
 )
-from app.routes.v5.socket.client.types import (
+from app.socket.v5.client.types import (
     # Generation lifecycle input payload (client → server)
     GeneratePayload,
     # Generation domain event payloads (server → client)

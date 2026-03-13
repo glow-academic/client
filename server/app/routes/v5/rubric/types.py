@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.infra.rubric.create import CreateRubricItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.rubric_drafts.types import GetRubricDraftResponse
+from app.tools.v5.entries.rubric_drafts.types import GetRubricDraftResponse
 
 
 class RubricFlagConfig(BaseModel):

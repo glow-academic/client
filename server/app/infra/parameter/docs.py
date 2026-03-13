@@ -23,21 +23,21 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.parameter.docs import get_parameter_docs
-from app.routes.v5.tools.artifacts.parameter.get import (
+from app.tools.v5.artifacts.parameter.docs import get_parameter_docs
+from app.tools.v5.artifacts.parameter.get import (
     get_parameters as get_parameter_artifacts,
 )
 
 # Entry tool docs
-from app.routes.v5.tools.entries.parameter_drafts.docs import get_parameter_drafts_docs
+from app.tools.v5.entries.parameter_drafts.docs import get_parameter_drafts_docs
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.parameter_fields.docs import (
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.names.docs import get_names_docs
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
 

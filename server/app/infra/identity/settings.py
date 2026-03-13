@@ -17,12 +17,12 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.setting.get import (
+from app.tools.v5.artifacts.setting.get import (
     get_settings as get_setting_artifacts,
 )
-from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.thresholds.get import get_thresholds
+from app.tools.v5.resources.colors.get import get_colors
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.thresholds.get import get_thresholds
 
 
 @dataclass(frozen=True)

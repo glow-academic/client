@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.routes.v5.tools.artifacts.persona.create import create_persona
-from app.routes.v5.tools.artifacts.persona.delete import delete_personas
-from app.routes.v5.tools.artifacts.persona.get import get_personas
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.artifacts.persona.create import create_persona
+from app.tools.v5.artifacts.persona.delete import delete_personas
+from app.tools.v5.artifacts.persona.get import get_personas
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

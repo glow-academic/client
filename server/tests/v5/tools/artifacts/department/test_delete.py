@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.routes.v5.tools.artifacts.department.create import create_department
-from app.routes.v5.tools.artifacts.department.delete import delete_departments
-from app.routes.v5.tools.artifacts.department.get import get_departments
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.artifacts.department.create import create_department
+from app.tools.v5.artifacts.department.delete import delete_departments
+from app.tools.v5.artifacts.department.get import get_departments
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

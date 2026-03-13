@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.benchmark.create import create_benchmark
-from app.routes.v5.tools.entries.invocation.create import create_invocation
-from app.routes.v5.tools.entries.invocation.search import search_invocations
+from app.tools.v5.entries.benchmark.create import create_benchmark
+from app.tools.v5.entries.invocation.create import create_invocation
+from app.tools.v5.entries.invocation.search import search_invocations
 
 pytestmark = pytest.mark.asyncio
 

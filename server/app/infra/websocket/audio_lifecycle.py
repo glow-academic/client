@@ -27,7 +27,7 @@ def get_audio_adapter(
     global _audio_adapter
     if _audio_adapter is None:
         if emitter is None:
-            from app.routes.v5.socket.internal.attempt.audio.events import (
+            from app.socket.v5.internal.attempt.audio.events import (
                 get_audio_emitter,
             )
 

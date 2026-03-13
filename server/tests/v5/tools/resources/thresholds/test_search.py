@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.thresholds.create import create_threshold
-from app.routes.v5.tools.resources.thresholds.search import search_thresholds
+from app.tools.v5.resources.thresholds.create import create_threshold
+from app.tools.v5.resources.thresholds.search import search_thresholds
 
 pytestmark = pytest.mark.asyncio
 

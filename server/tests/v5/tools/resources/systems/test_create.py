@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.agents.create import create_agent
-from app.routes.v5.tools.resources.systems.create import create_system
-from app.routes.v5.tools.resources.systems.get import get_systems
+from app.tools.v5.resources.agents.create import create_agent
+from app.tools.v5.resources.systems.create import create_system
+from app.tools.v5.resources.systems.get import get_systems
 
 pytestmark = pytest.mark.asyncio
 

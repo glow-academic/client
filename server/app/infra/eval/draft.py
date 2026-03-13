@@ -25,10 +25,10 @@ from app.routes.v5.eval.types import (
     PatchEvalDraftApiResponse,
     SaveEvalFieldError,
 )
-from app.routes.v5.tools.entries.eval_drafts.create import create_eval_draft
-from app.routes.v5.tools.entries.eval_drafts.refresh import refresh_eval_drafts
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.entries.eval_drafts.create import create_eval_draft
+from app.tools.v5.entries.eval_drafts.refresh import refresh_eval_drafts
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

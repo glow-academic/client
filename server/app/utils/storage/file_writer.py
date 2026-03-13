@@ -18,7 +18,7 @@ import asyncpg  # type: ignore
 
 from app.infra.globals import UPLOAD_FOLDER
 from app.infra.upload_paths import ensure_upload_subdir, resolve_upload_path
-from app.routes.v5.tools.entries.uploads.create import create_upload
+from app.tools.v5.entries.uploads.create import create_upload
 
 
 async def _create_upload_record(

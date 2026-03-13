@@ -15,10 +15,10 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.tools.entries.save_text_upload import save_text_upload
-from app.routes.v5.tools.entries.text_uploads.create import create_text_upload
-from app.routes.v5.tools.entries.texts.create import create_text as create_text_entry
-from app.routes.v5.tools.entries.uploads.create import create_upload
-from app.routes.v5.tools.resources.texts.create import (
+from app.tools.v5.entries.text_uploads.create import create_text_upload
+from app.tools.v5.entries.texts.create import create_text as create_text_entry
+from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.v5.resources.texts.create import (
     create_text as create_text_resource,
 )
 

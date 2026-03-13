@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.keys.create import create_key
-from app.routes.v5.tools.resources.keys.get import get_keys
+from app.tools.v5.resources.keys.create import create_key
+from app.tools.v5.resources.keys.get import get_keys
 
 pytestmark = pytest.mark.asyncio
 

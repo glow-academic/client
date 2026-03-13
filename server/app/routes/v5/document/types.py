@@ -13,8 +13,8 @@ from pydantic import BaseModel
 
 from app.infra.document.create import CreateDocumentItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.document_drafts.types import GetDocumentDraftResponse
-from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
+from app.tools.v5.entries.document_drafts.types import GetDocumentDraftResponse
+from app.tools.v5.resources.parameters.types import GetParameterResponse
 
 
 class GetDocumentDraftsApiResponse(BaseModel):

@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.protocols.create import create_protocol
-from app.routes.v5.tools.resources.protocols.search import search_protocols
+from app.tools.v5.resources.protocols.create import create_protocol
+from app.tools.v5.resources.protocols.search import search_protocols
 
 pytestmark = pytest.mark.asyncio
 

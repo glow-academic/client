@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.videos.create import create_video
-from app.routes.v5.tools.resources.videos.search import search_videos
+from app.tools.v5.resources.videos.create import create_video
+from app.tools.v5.resources.videos.search import search_videos
 
 pytestmark = pytest.mark.asyncio
 

@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
-from app.routes.v5.tools.resources.reasoning_levels.search import (
+from app.tools.v5.resources.reasoning_levels.create import create_reasoning_level
+from app.tools.v5.resources.reasoning_levels.search import (
     search_reasoning_levels,
 )
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
-from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
+from app.tools.v5.resources.reasoning_levels.create import create_reasoning_level
+from app.tools.v5.resources.reasoning_levels.get import get_reasoning_levels
 
 pytestmark = pytest.mark.asyncio
 

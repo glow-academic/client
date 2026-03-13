@@ -21,25 +21,25 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Cohort search
-from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
+from app.tools.v5.artifacts.cohort.search import search_cohorts
 
 # Entry fetchers (raw MV reads)
-from app.routes.v5.tools.entries.attempt.search import search_attempts
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.chat.get import get_chats
-from app.routes.v5.tools.entries.home.search import search_homes
+from app.tools.v5.entries.attempt.search import search_attempts
+from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
+from app.tools.v5.entries.chat.get import get_chats
+from app.tools.v5.entries.home.search import search_homes
 
 # Resource get fetchers
-from app.routes.v5.tools.resources.cohorts.get import (
+from app.tools.v5.resources.cohorts.get import (
     get_cohorts as get_cohort_resources,
 )
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
-from app.routes.v5.tools.resources.standards.search import search_standards
+from app.tools.v5.resources.personas.get import get_personas
+from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.v5.resources.rubrics.get import get_rubrics
+from app.tools.v5.resources.scenarios.get import get_scenarios
+from app.tools.v5.resources.simulations.get import get_simulations
+from app.tools.v5.resources.standard_groups.get import get_standard_groups
+from app.tools.v5.resources.standards.search import search_standards
 
 
 async def resolve_home_context(

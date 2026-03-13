@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 
 from app.infra.search.search_resource import search_resource_ids
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

@@ -20,8 +20,8 @@ class ModelRouteResources:
 
 
 async def _create_model_route_resources(pool, redis_client) -> ModelRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Model {tag}"
@@ -67,7 +67,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/create",
+            "/v5/models/create",
             json={
                 "models": [
                     {
@@ -100,7 +100,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/get",
+            "/v5/models/get",
             json={"model_id": created["model_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -132,7 +132,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/search",
+            "/v5/models/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(model_route_actor.department_id)],
@@ -166,7 +166,7 @@ class TestModelRoute:
         updated = await _create_model_route_resources(pool, redis_client)
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/update",
+            "/v5/models/update",
             json={
                 "models": [
                     {
@@ -199,7 +199,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/delete",
+            "/v5/models/delete",
             json={"model_ids": [created["model_id"]]},
         )
 
@@ -223,7 +223,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/duplicate",
+            "/v5/models/duplicate",
             json={"model_id": created["model_id"]},
         )
 
@@ -247,7 +247,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.patch(
-            "/api/v5/artifacts/models/draft",
+            "/v5/models/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -275,13 +275,13 @@ class TestModelRoute:
             session_id=model_route_actor.session_id,
         )
         draft_response = await v5_model_route_client.client.patch(
-            "/api/v5/artifacts/models/draft",
+            "/v5/models/draft",
             json={"expected_version": 0, "name_id": str(resources.name_id)},
         )
         assert draft_response.status_code == 200, draft_response.text
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/drafts",
+            "/v5/models/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -302,7 +302,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/docs",
+            "/v5/models/docs",
             json={},
         )
 
@@ -328,7 +328,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/export",
+            "/v5/models/export",
             json={"model_id": created["model_id"]},
         )
 
@@ -349,7 +349,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/refresh",
+            "/v5/models/refresh",
             json={},
         )
 
@@ -373,7 +373,7 @@ class TestModelRoute:
         )
 
         response = await v5_model_route_client.client.post(
-            "/api/v5/artifacts/models/create",
+            "/v5/models/create",
             json={
                 "models": [
                     {

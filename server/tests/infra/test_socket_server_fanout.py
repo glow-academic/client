@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from app.routes.v5.socket.server.attempt.started import (
+from app.socket.v5.server.attempt.started import (
     attempt_started_server_handler,
 )
-from app.routes.v5.socket.server.test.grade_start import (
+from app.socket.v5.server.test.grade_start import (
     test_grade_start_server_handler as handle_test_grade_start,
 )
 
@@ -23,7 +23,7 @@ async def test_attempt_started_server_handler_uses_rooms_without_sid(
         emitted.append((event, payload, room))
 
     monkeypatch.setattr(
-        "app.routes.v5.socket.server.attempt.started.sio.emit",
+        "app.socket.v5.server.attempt.started.sio.emit",
         _emit,
     )
 
@@ -53,7 +53,7 @@ async def test_test_grade_start_server_handler_accepts_test_invocation_id(
         emitted.append((event, payload, room))
 
     monkeypatch.setattr(
-        "app.routes.v5.socket.server.test.grade_start.sio.emit",
+        "app.socket.v5.server.test.grade_start.sio.emit",
         _emit,
     )
 

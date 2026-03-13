@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.conditional_parameters.docs import (
+from app.tools.v5.resources.conditional_parameters.docs import (
     get_conditional_parameters_docs,
 )
 

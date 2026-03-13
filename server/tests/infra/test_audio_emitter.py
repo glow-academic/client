@@ -6,7 +6,7 @@ import pytest
 
 from app.infra.websocket.session_store import create_session, remove_session
 from app.infra.websocket.socket_event import recording_emit
-from app.routes.v5.socket.internal.attempt.audio.events import (
+from app.socket.v5.internal.attempt.audio.events import (
     InternalBusAudioEmitter,
 )
 

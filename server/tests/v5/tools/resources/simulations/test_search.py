@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.simulations.create import create_simulation
-from app.routes.v5.tools.resources.simulations.search import search_simulations
+from app.tools.v5.resources.simulations.create import create_simulation
+from app.tools.v5.resources.simulations.search import search_simulations
 
 pytestmark = pytest.mark.asyncio
 

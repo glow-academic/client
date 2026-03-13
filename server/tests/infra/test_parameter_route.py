@@ -24,10 +24,10 @@ class ParameterRouteResources:
 async def _create_parameter_route_resources(
     pool, redis_client
 ) -> ParameterRouteResources:
-    from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.fields.create import create_field
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.fields.create import create_field
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Parameter {tag}"
@@ -81,7 +81,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/create",
+            "/v5/parameters/create",
             json={
                 "parameters": [
                     {
@@ -115,7 +115,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/get",
+            "/v5/parameters/get",
             json={"parameter_id": created["parameter_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -146,7 +146,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/search",
+            "/v5/parameters/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(parameter_route_actor.department_id)],
@@ -181,7 +181,7 @@ class TestParameterRoute:
         updated = await _create_parameter_route_resources(pool, redis_client)
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/update",
+            "/v5/parameters/update",
             json={
                 "parameters": [
                     {
@@ -215,7 +215,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/delete",
+            "/v5/parameters/delete",
             json={"parameter_ids": [created["parameter_id"]]},
         )
 
@@ -239,7 +239,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/duplicate",
+            "/v5/parameters/duplicate",
             json={"parameter_id": created["parameter_id"]},
         )
 
@@ -263,7 +263,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.patch(
-            "/api/v5/artifacts/parameters/draft",
+            "/v5/parameters/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -295,7 +295,7 @@ class TestParameterRoute:
         )
 
         draft_response = await v5_parameter_route_client.client.patch(
-            "/api/v5/artifacts/parameters/draft",
+            "/v5/parameters/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -307,7 +307,7 @@ class TestParameterRoute:
         draft_id = draft_response.json()["draft_id"]
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/drafts",
+            "/v5/parameters/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -328,7 +328,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/docs",
+            "/v5/parameters/docs",
             json={},
         )
 
@@ -354,7 +354,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/export",
+            "/v5/parameters/export",
             json={"parameter_id": created["parameter_id"]},
         )
 
@@ -375,7 +375,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/refresh",
+            "/v5/parameters/refresh",
             json={},
         )
 
@@ -399,7 +399,7 @@ class TestParameterRoute:
         )
 
         response = await v5_parameter_route_client.client.post(
-            "/api/v5/artifacts/parameters/create",
+            "/v5/parameters/create",
             json={
                 "parameters": [
                     {

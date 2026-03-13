@@ -11,10 +11,10 @@ from uuid import UUID
 
 import asyncpg
 
-from app.routes.v5.tools.entries.message_uploads.create import create_message_upload
-from app.routes.v5.tools.entries.messages.create import create_message
-from app.routes.v5.tools.entries.text_uploads.create import create_text_upload
-from app.routes.v5.tools.entries.texts.create import create_text
+from app.tools.v5.entries.message_uploads.create import create_message_upload
+from app.tools.v5.entries.messages.create import create_message
+from app.tools.v5.entries.text_uploads.create import create_text_upload
+from app.tools.v5.entries.texts.create import create_text
 
 
 @dataclass(frozen=True)

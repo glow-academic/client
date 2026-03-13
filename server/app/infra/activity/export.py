@@ -21,12 +21,12 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.entries.activity.search import search_activity
-from app.routes.v5.tools.entries.emulations.search import search_emulations
-from app.routes.v5.tools.entries.grants.search import search_grants
-from app.routes.v5.tools.entries.logins.search import search_logins
-from app.routes.v5.tools.entries.problems.search import search_problems
-from app.routes.v5.tools.resources.profiles.get import get_profiles
+from app.tools.v5.entries.activity.search import search_activity
+from app.tools.v5.entries.emulations.search import search_emulations
+from app.tools.v5.entries.grants.search import search_grants
+from app.tools.v5.entries.logins.search import search_logins
+from app.tools.v5.entries.problems.search import search_problems
+from app.tools.v5.resources.profiles.get import get_profiles
 
 PIPE = "|"
 

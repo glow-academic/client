@@ -22,10 +22,10 @@ from app.infra.model.permissions_context import (
     resolve_model_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.model.update import (
+from app.tools.v5.artifacts.model.update import (
     _UNSET,
 )
-from app.routes.v5.tools.artifacts.model.update import (
+from app.tools.v5.artifacts.model.update import (
     update_model as update_model_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

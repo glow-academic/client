@@ -16,7 +16,7 @@ from app.infra.tools.entries.create_run_message import (
     create_run_message,
 )
 from app.infra.tools.entries.save_text_upload import save_text_upload
-from app.routes.v5.tools.entries.uploads.create import create_upload
+from app.tools.v5.entries.uploads.create import create_upload
 
 
 async def persist_run_message(

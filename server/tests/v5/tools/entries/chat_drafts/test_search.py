@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.chat_drafts.create import create_chat_draft
-from app.routes.v5.tools.entries.chat_drafts.search import search_chat_drafts
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.chat_drafts.create import create_chat_draft
+from app.tools.v5.entries.chat_drafts.search import search_chat_drafts
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

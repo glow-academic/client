@@ -24,10 +24,10 @@ class AgentRouteResources:
 
 
 async def _create_agent_route_resources(pool, redis_client) -> AgentRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.models.create import create_model
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.tools.create import create_tool
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.models.create import create_model
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.tools.create import create_tool
 
     tag = unique_tag()
     name = f"Route Agent {tag}"
@@ -93,7 +93,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/create",
+            "/v5/agents/create",
             json={
                 "agents": [
                     {
@@ -130,7 +130,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/get",
+            "/v5/agents/get",
             json={"agent_id": created["agent_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -167,7 +167,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/search",
+            "/v5/agents/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(agent_route_actor.department_id)],
@@ -214,11 +214,11 @@ class TestAgentRoute:
         )
 
         first = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/get",
+            "/v5/agents/get",
             json={"agent_id": created["agent_id"]},
         )
         second = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/get",
+            "/v5/agents/get",
             json={"agent_id": created["agent_id"]},
         )
 
@@ -243,7 +243,7 @@ class TestAgentRoute:
         updated = await _create_agent_route_resources(pool, redis_client)
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/update",
+            "/v5/agents/update",
             json={
                 "agents": [
                     {
@@ -265,7 +265,7 @@ class TestAgentRoute:
         assert payload["results"][0]["agent_id"] == created["agent_id"]
 
         get_response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/get",
+            "/v5/agents/get",
             json={"agent_id": created["agent_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -295,7 +295,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/duplicate",
+            "/v5/agents/duplicate",
             json={"agent_id": created["agent_id"]},
         )
 
@@ -321,7 +321,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/delete",
+            "/v5/agents/delete",
             json={"agent_ids": [created["agent_id"]]},
         )
 
@@ -332,7 +332,7 @@ class TestAgentRoute:
         assert payload["results"][0]["agent_id"] == created["agent_id"]
 
         search_response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/search",
+            "/v5/agents/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(agent_route_actor.department_id)],
@@ -364,7 +364,7 @@ class TestAgentRoute:
         draft_name = f"Draft Agent {unique_tag()}"
 
         response = await v5_agent_route_client.client.patch(
-            "/api/v5/artifacts/agents/draft",
+            "/v5/agents/draft",
             json={
                 "expected_version": 0,
                 "name": draft_name,
@@ -383,7 +383,7 @@ class TestAgentRoute:
         assert payload["form_state"]["name_id"] is not None
 
         get_response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/get",
+            "/v5/agents/get",
             json={
                 "agent_id": created["agent_id"],
                 "draft_id": payload["draft_id"],
@@ -402,8 +402,8 @@ class TestAgentRoute:
         v5_agent_route_client,
         agent_route_actor,
     ):
-        from app.routes.v5.tools.entries.agent_drafts.create import create_agent_draft
-        from app.routes.v5.tools.entries.groups.create import create_group
+        from app.tools.v5.entries.agent_drafts.create import create_agent_draft
+        from app.tools.v5.entries.groups.create import create_group
 
         async with pool.acquire() as conn:
             group = await create_group(conn, session_id=agent_route_actor.session_id)
@@ -419,7 +419,7 @@ class TestAgentRoute:
             session_id=agent_route_actor.session_id,
         )
         drafts_response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/drafts",
+            "/v5/agents/drafts",
         )
 
         assert drafts_response.status_code == 200, drafts_response.text
@@ -442,7 +442,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/docs",
+            "/v5/agents/docs",
             json={"entity_id": created["agent_id"]},
         )
 
@@ -463,7 +463,7 @@ class TestAgentRoute:
         v5_agent_route_client,
         agent_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         created = await self._create_agent_via_route(
             pool,
@@ -473,7 +473,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/export",
+            "/v5/agents/export",
             json={"agent_id": created["agent_id"]},
         )
 
@@ -501,7 +501,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/refresh",
+            "/v5/agents/refresh",
         )
 
         assert response.status_code == 200, response.text
@@ -525,7 +525,7 @@ class TestAgentRoute:
         )
 
         response = await v5_agent_route_client.client.post(
-            "/api/v5/artifacts/agents/create",
+            "/v5/agents/create",
             json={
                 "agents": [
                     {

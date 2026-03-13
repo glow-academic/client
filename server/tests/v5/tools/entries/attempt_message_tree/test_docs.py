@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.attempt_message_tree.docs import (
+from app.tools.v5.entries.attempt_message_tree.docs import (
     get_attempt_message_tree_docs,
 )
 

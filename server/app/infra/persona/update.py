@@ -22,10 +22,10 @@ from app.infra.persona.permissions_context import (
     resolve_persona_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.persona.update import (
+from app.tools.v5.artifacts.persona.update import (
     _UNSET,
 )
-from app.routes.v5.tools.artifacts.persona.update import (
+from app.tools.v5.artifacts.persona.update import (
     update_persona as update_persona_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

@@ -29,12 +29,12 @@ class ProviderRouteResources:
 async def _create_provider_route_resources(
     pool, redis_client
 ) -> ProviderRouteResources:
-    from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.endpoints.create import create_endpoint
-    from app.routes.v5.tools.resources.keys.create import create_key
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.values.create import create_value
+    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.endpoints.create import create_endpoint
+    from app.tools.v5.resources.keys.create import create_key
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.values.create import create_value
 
     tag = unique_tag()
     name = f"Route Provider {tag}"
@@ -104,7 +104,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/create",
+            "/v5/providers/create",
             json={
                 "providers": [
                     {
@@ -140,7 +140,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/get",
+            "/v5/providers/get",
             json={"provider_id": created["provider_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -171,7 +171,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/search",
+            "/v5/providers/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(provider_route_actor.department_id)],
@@ -206,7 +206,7 @@ class TestProviderRoute:
         updated = await _create_provider_route_resources(pool, redis_client)
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/update",
+            "/v5/providers/update",
             json={
                 "providers": [
                     {
@@ -242,7 +242,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/delete",
+            "/v5/providers/delete",
             json={"provider_ids": [created["provider_id"]]},
         )
 
@@ -266,7 +266,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/duplicate",
+            "/v5/providers/duplicate",
             json={"provider_id": created["provider_id"]},
         )
 
@@ -290,7 +290,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.patch(
-            "/api/v5/artifacts/providers/draft",
+            "/v5/providers/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -324,7 +324,7 @@ class TestProviderRoute:
         )
 
         draft_response = await v5_provider_route_client.client.patch(
-            "/api/v5/artifacts/providers/draft",
+            "/v5/providers/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -336,7 +336,7 @@ class TestProviderRoute:
         draft_id = draft_response.json()["draft_id"]
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/drafts",
+            "/v5/providers/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -357,7 +357,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/docs",
+            "/v5/providers/docs",
             json={},
         )
 
@@ -383,7 +383,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/export",
+            "/v5/providers/export",
             json={"provider_id": created["provider_id"]},
         )
 
@@ -404,7 +404,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/refresh",
+            "/v5/providers/refresh",
             json={},
         )
 
@@ -429,7 +429,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/decrypt",
+            "/v5/providers/decrypt",
             json={
                 "provider_id": created["provider_id"],
                 "key_id": created["key_id"],
@@ -457,7 +457,7 @@ class TestProviderRoute:
         )
 
         response = await v5_provider_route_client.client.post(
-            "/api/v5/artifacts/providers/create",
+            "/v5/providers/create",
             json={
                 "providers": [
                     {

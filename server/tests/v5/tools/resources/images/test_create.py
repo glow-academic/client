@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.images.create import create_image
-from app.routes.v5.tools.resources.images.get import get_images
+from app.tools.v5.resources.images.create import create_image
+from app.tools.v5.resources.images.get import get_images
 
 pytestmark = pytest.mark.asyncio
 

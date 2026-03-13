@@ -20,8 +20,8 @@ class SettingRouteResources:
 
 
 async def _create_setting_route_resources(pool, redis_client) -> SettingRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Setting {tag}"
@@ -67,7 +67,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/create",
+            "/v5/settings/create",
             json={
                 "settings": [
                     {
@@ -100,7 +100,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/get",
+            "/v5/settings/get",
             json={"settings_id": created["setting_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -136,7 +136,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/search",
+            "/v5/settings/search",
             json={},
         )
 
@@ -165,7 +165,7 @@ class TestSettingRoute:
         updated = await _create_setting_route_resources(pool, redis_client)
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/update",
+            "/v5/settings/update",
             json={
                 "settings": [
                     {
@@ -184,7 +184,7 @@ class TestSettingRoute:
         assert payload["results"][0]["success"] is True
 
         get_response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/get",
+            "/v5/settings/get",
             json={"settings_id": created["setting_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -210,7 +210,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/delete",
+            "/v5/settings/delete",
             json={"setting_ids": [created["setting_id"]]},
         )
 
@@ -234,7 +234,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/duplicate",
+            "/v5/settings/duplicate",
             json={"setting_id": created["setting_id"]},
         )
 
@@ -258,7 +258,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.patch(
-            "/api/v5/artifacts/settings/draft",
+            "/v5/settings/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -287,13 +287,13 @@ class TestSettingRoute:
             session_id=setting_route_actor.session_id,
         )
         draft_response = await v5_setting_route_client.client.patch(
-            "/api/v5/artifacts/settings/draft",
+            "/v5/settings/draft",
             json={"expected_version": 0, "name_id": str(resources.name_id)},
         )
         assert draft_response.status_code == 200, draft_response.text
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/drafts",
+            "/v5/settings/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -314,7 +314,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/docs",
+            "/v5/settings/docs",
             json={},
         )
 
@@ -340,7 +340,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/export",
+            "/v5/settings/export",
             json={"setting_id": created["setting_id"]},
         )
 
@@ -361,7 +361,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/refresh",
+            "/v5/settings/refresh",
             json={},
         )
 
@@ -390,7 +390,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/decrypt",
+            "/v5/settings/decrypt",
             json={
                 "setting_id": created["setting_id"],
                 "key_id": str(uuid4()),
@@ -414,7 +414,7 @@ class TestSettingRoute:
         )
 
         response = await v5_setting_route_client.client.post(
-            "/api/v5/artifacts/settings/create",
+            "/v5/settings/create",
             json={
                 "settings": [
                     {

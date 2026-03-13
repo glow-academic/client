@@ -19,26 +19,26 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.routes.v5.tools.artifacts.profile.get import (
+from app.tools.v5.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
-from app.routes.v5.tools.entries.profile_drafts.get import get_profile_drafts
+from app.tools.v5.entries.profile_drafts.get import get_profile_drafts
 
 # Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.departments.get import get_departments
+from app.tools.v5.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.emails.get import get_emails
-from app.routes.v5.tools.resources.emails.search import search_emails
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.request_limits.get import get_request_limits
-from app.routes.v5.tools.resources.request_limits.search import search_request_limits
-from app.routes.v5.tools.resources.roles.get import get_roles
-from app.routes.v5.tools.resources.roles.search import search_roles
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.emails.get import get_emails
+from app.tools.v5.resources.emails.search import search_emails
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.names.search import search_names
+from app.tools.v5.resources.request_limits.get import get_request_limits
+from app.tools.v5.resources.request_limits.search import search_request_limits
+from app.tools.v5.resources.roles.get import get_roles
+from app.tools.v5.resources.roles.search import search_roles
 
 # ---------------------------------------------------------------------------
 # Types

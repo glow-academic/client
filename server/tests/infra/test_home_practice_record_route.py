@@ -22,16 +22,16 @@ async def learning_route_actor(pool, redis_client, setting_graph_factory):
 
 
 async def _create_attempt_export_graph(pool, actor, *, practice: bool):
-    from app.routes.v5.tools.entries.attempt.create import create_attempt
-    from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
-    from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
-    from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
-    from app.routes.v5.tools.entries.calls.create import create_call
-    from app.routes.v5.tools.entries.chat.create import create_chat
-    from app.routes.v5.tools.entries.chat.refresh import refresh_chat
-    from app.routes.v5.tools.entries.groups.create import create_group
-    from app.routes.v5.tools.entries.persona.create import create_persona
-    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.tools.v5.entries.attempt.create import create_attempt
+    from app.tools.v5.entries.attempt.refresh import refresh_attempt
+    from app.tools.v5.entries.attempt_chat.create import create_attempt_chat
+    from app.tools.v5.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.tools.v5.entries.calls.create import create_call
+    from app.tools.v5.entries.chat.create import create_chat
+    from app.tools.v5.entries.chat.refresh import refresh_chat
+    from app.tools.v5.entries.groups.create import create_group
+    from app.tools.v5.entries.persona.create import create_persona
+    from app.tools.v5.entries.runs.create import create_run
 
     async with pool.acquire() as conn:
         group = await create_group(
@@ -98,7 +98,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_home_route_client.client.post(
-            "/api/v5/artifacts/home/get",
+            "/v5/home/get",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -121,7 +121,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_practice_route_client.client.post(
-            "/api/v5/artifacts/practice/get",
+            "/v5/practice/get",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -144,7 +144,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_home_route_client.client.post(
-            "/api/v5/artifacts/home/search",
+            "/v5/home/search",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -166,7 +166,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_practice_route_client.client.post(
-            "/api/v5/artifacts/practice/search",
+            "/v5/practice/search",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -188,7 +188,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_record_route_client.client.post(
-            "/api/v5/artifacts/record/get",
+            "/v5/record/get",
             json={"target_profile_id": str(learning_route_actor.profiles_id)},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -219,7 +219,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_home_route_client.client.post(
-            "/api/v5/artifacts/home/export"
+            "/v5/home/export"
         )
 
         assert response.status_code == 200, response.text
@@ -252,7 +252,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_practice_route_client.client.post(
-            "/api/v5/artifacts/practice/export"
+            "/v5/practice/export"
         )
 
         assert response.status_code == 200, response.text
@@ -285,7 +285,7 @@ class TestHomePracticeRecordRoutes:
         )
 
         response = await v5_record_route_client.client.post(
-            "/api/v5/artifacts/record/export",
+            "/v5/record/export",
             json={"target_profile_id": str(learning_route_actor.profiles_id)},
         )
 

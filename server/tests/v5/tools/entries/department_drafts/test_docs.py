@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.department_drafts.docs import (
+from app.tools.v5.entries.department_drafts.docs import (
     get_department_drafts_docs,
 )
 

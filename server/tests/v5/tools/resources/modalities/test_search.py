@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.modalities.create import create_modality
-from app.routes.v5.tools.resources.modalities.search import search_modalities
+from app.tools.v5.resources.modalities.create import create_modality
+from app.tools.v5.resources.modalities.search import search_modalities
 
 pytestmark = pytest.mark.asyncio
 

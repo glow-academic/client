@@ -25,12 +25,12 @@ from app.routes.v5.persona.types import (
     PatchPersonaDraftApiResponse,
     SavePersonaFieldError,
 )
-from app.routes.v5.tools.entries.persona_drafts.create import create_persona_draft
-from app.routes.v5.tools.entries.persona_drafts.refresh import refresh_persona_drafts
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.examples.create import create_example
-from app.routes.v5.tools.resources.instructions.create import create_instruction
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.entries.persona_drafts.create import create_persona_draft
+from app.tools.v5.entries.persona_drafts.refresh import refresh_persona_drafts
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.examples.create import create_example
+from app.tools.v5.resources.instructions.create import create_instruction
+from app.tools.v5.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

@@ -10,8 +10,8 @@ import pytest_asyncio
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.sessions.refresh import refresh_sessions
 
 
 @dataclass(frozen=True)
@@ -27,11 +27,11 @@ class ProfileRouteResources:
 
 
 async def _create_profile_route_resources(pool, redis_client) -> ProfileRouteResources:
-    from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.emails.create import create_email
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.request_limits.create import create_request_limit
-    from app.routes.v5.tools.resources.roles.create import create_role
+    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.v5.resources.emails.create import create_email
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.request_limits.create import create_request_limit
+    from app.tools.v5.resources.roles.create import create_role
 
     tag = unique_tag()
     name = f"Route Profile {tag}"
@@ -96,7 +96,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/create",
+            "/v5/profiles/create",
             json={
                 "profiles": [
                     {
@@ -131,7 +131,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/get",
+            "/v5/profiles/get",
             json={"target_profile_id": created["profile_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -159,7 +159,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/search",
+            "/v5/profiles/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(profile_route_actor.department_id)],
@@ -194,7 +194,7 @@ class TestProfileRoute:
         updated = await _create_profile_route_resources(pool, redis_client)
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/update",
+            "/v5/profiles/update",
             json={
                 "profiles": [
                     {
@@ -229,7 +229,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/delete",
+            "/v5/profiles/delete",
             json={"profile_ids": [created["profile_id"]]},
         )
 
@@ -253,7 +253,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/duplicate",
+            "/v5/profiles/duplicate",
             json={"target_profile_id": created["profile_id"]},
         )
 
@@ -277,7 +277,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.patch(
-            "/api/v5/artifacts/profiles/draft",
+            "/v5/profiles/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -310,7 +310,7 @@ class TestProfileRoute:
         )
 
         draft_response = await v5_profile_route_client.client.patch(
-            "/api/v5/artifacts/profiles/draft",
+            "/v5/profiles/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -324,7 +324,7 @@ class TestProfileRoute:
         draft_id = draft_response.json()["draft_id"]
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/drafts",
+            "/v5/profiles/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -345,7 +345,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/docs",
+            "/v5/profiles/docs",
             json={},
         )
 
@@ -371,7 +371,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/export",
+            "/v5/profiles/export",
             json={"profile_export_id": created["profile_id"]},
         )
 
@@ -392,7 +392,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/refresh",
+            "/v5/profiles/refresh",
             json={},
         )
 
@@ -413,7 +413,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/context",
+            "/v5/profiles/context",
             json={},
         )
 
@@ -447,7 +447,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/emulate",
+            "/v5/profiles/emulate",
             json={"target_profile_id": str(target.artifact_id), "ttl_minutes": 30},
         )
 
@@ -481,13 +481,13 @@ class TestProfileRoute:
         )
 
         emulate_response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/emulate",
+            "/v5/profiles/emulate",
             json={"target_profile_id": str(target.artifact_id), "ttl_minutes": 30},
         )
         assert emulate_response.status_code == 200, emulate_response.text
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/unemulate",
+            "/v5/profiles/unemulate",
             json={},
         )
 
@@ -510,7 +510,7 @@ class TestProfileRoute:
         )
 
         response = await v5_profile_route_client.client.post(
-            "/api/v5/artifacts/profiles/create",
+            "/v5/profiles/create",
             json={
                 "profiles": [
                     {

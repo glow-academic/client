@@ -15,16 +15,16 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.instructions.get import get_instructions
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.prompts.get import get_prompts
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.systems.get import get_systems
-from app.routes.v5.tools.resources.tools.get import get_tools
+from app.tools.v5.resources.agents.get import get_agents
+from app.tools.v5.resources.args.get import get_args
+from app.tools.v5.resources.args_outputs.get import get_args_outputs
+from app.tools.v5.resources.instructions.get import get_instructions
+from app.tools.v5.resources.models.get import get_models
+from app.tools.v5.resources.prompts.get import get_prompts
+from app.tools.v5.resources.providers.get import get_providers
+from app.tools.v5.resources.rubrics.get import get_rubrics
+from app.tools.v5.resources.systems.get import get_systems
+from app.tools.v5.resources.tools.get import get_tools
 
 
 @dataclass(frozen=True)

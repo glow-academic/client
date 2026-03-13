@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.benchmark_test.docs import get_benchmark_test_docs
+from app.tools.v5.entries.benchmark_test.docs import get_benchmark_test_docs
 
 pytestmark = pytest.mark.asyncio
 

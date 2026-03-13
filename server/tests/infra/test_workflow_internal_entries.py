@@ -8,10 +8,10 @@ from uuid import uuid4
 import pytest
 
 from app.infra.websocket.socket_event import internal_event, recording_emit
-from app.routes.v5.socket.internal.attempt.start import (
+from app.socket.v5.internal.attempt.start import (
     attempt_start_internal_impl as run_attempt_start_internal,
 )
-from app.routes.v5.socket.internal.test.start import (
+from app.socket.v5.internal.test.start import (
     test_start_internal_impl as run_test_start_internal,
 )
 
@@ -56,19 +56,19 @@ async def test_attempt_start_internal_impl_returns_terminal_result(monkeypatch) 
         )
 
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.attempt.start.attempt_start_impl",
+        "app.socket.v5.internal.attempt.start.attempt_start_impl",
         _start_impl,
     )
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.attempt.start.attempt_proceed_internal_impl",
+        "app.socket.v5.internal.attempt.start.attempt_proceed_internal_impl",
         _proceed_impl,
     )
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.attempt.start.get_pool",
+        "app.socket.v5.internal.attempt.start.get_pool",
         lambda: object(),
     )
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.attempt.start.get_redis_client",
+        "app.socket.v5.internal.attempt.start.get_redis_client",
         lambda: object(),
     )
 
@@ -126,23 +126,23 @@ async def test_test_start_internal_impl_returns_terminal_result(monkeypatch) -> 
         )
 
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.test.start.resolve_profile_identity_context",
+        "app.socket.v5.internal.test.start.resolve_profile_identity_context",
         _resolve_identity,
     )
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.test.start.test_start_impl",
+        "app.socket.v5.internal.test.start.test_start_impl",
         _start_impl,
     )
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.test.start.test_proceed_internal_impl",
+        "app.socket.v5.internal.test.start.test_proceed_internal_impl",
         _proceed_impl,
     )
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.test.start.get_pool",
+        "app.socket.v5.internal.test.start.get_pool",
         lambda: object(),
     )
     monkeypatch.setattr(
-        "app.routes.v5.socket.internal.test.start.get_redis_client",
+        "app.socket.v5.internal.test.start.get_redis_client",
         lambda: object(),
     )
 

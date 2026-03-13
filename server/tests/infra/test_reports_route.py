@@ -31,7 +31,7 @@ class TestReportsRoute:
         )
 
         response = await v5_reports_route_client.client.post(
-            "/api/v5/artifacts/reports/search",
+            "/v5/reports/search",
             json={
                 "target_profile_id": str(reports_route_actor.profiles_id),
                 "actor_profile_id": str(reports_route_actor.profile_id),
@@ -64,7 +64,7 @@ class TestReportsRoute:
         )
 
         response = await v5_reports_route_client.client.post(
-            "/api/v5/artifacts/reports/docs",
+            "/v5/reports/docs",
             json={"entity_id": None},
         )
 
@@ -87,7 +87,7 @@ class TestReportsRoute:
         )
 
         response = await v5_reports_route_client.client.post(
-            "/api/v5/artifacts/reports/export",
+            "/v5/reports/export",
             json={},
         )
 
@@ -114,7 +114,7 @@ class TestReportsRoute:
         )
 
         response = await v5_reports_route_client.client.post(
-            "/api/v5/artifacts/reports/refresh",
+            "/v5/reports/refresh",
             json={},
         )
 

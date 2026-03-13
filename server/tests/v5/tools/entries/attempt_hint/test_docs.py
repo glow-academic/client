@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.attempt_hint.docs import get_attempt_hint_docs
+from app.tools.v5.entries.attempt_hint.docs import get_attempt_hint_docs
 
 pytestmark = pytest.mark.asyncio
 

@@ -12,15 +12,15 @@ from tests.infra.route_helpers import create_admin_route_actor
 
 async def _seed_pricing_route_graph(pool, redis_client, actor):
     from app.infra.globals import UPLOAD_FOLDER
-    from app.routes.v5.tools.entries.groups.create import create_group
-    from app.routes.v5.tools.entries.run_pricing.create import (
+    from app.tools.v5.entries.groups.create import create_group
+    from app.tools.v5.entries.run_pricing.create import (
         create_run_pricing_entry_internal,
     )
-    from app.routes.v5.tools.entries.runs.create import create_run
-    from app.routes.v5.tools.entries.sessions.create import create_session
-    from app.routes.v5.tools.resources.agents.create import create_agent
-    from app.routes.v5.tools.resources.models.create import create_model
-    from app.routes.v5.tools.resources.pricing.create import create_pricing
+    from app.tools.v5.entries.runs.create import create_run
+    from app.tools.v5.entries.sessions.create import create_session
+    from app.tools.v5.resources.agents.create import create_agent
+    from app.tools.v5.resources.models.create import create_model
+    from app.tools.v5.resources.pricing.create import create_pricing
 
     async with pool.acquire() as conn:
         session = await create_session(conn, profile_id=actor.profiles_id)
@@ -121,7 +121,7 @@ class TestPricingRoute:
         )
 
         response = await v5_pricing_route_client.client.post(
-            "/api/v5/artifacts/pricing/get",
+            "/v5/pricing/get",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -153,7 +153,7 @@ class TestPricingRoute:
         )
 
         response = await v5_pricing_route_client.client.post(
-            "/api/v5/artifacts/pricing/search",
+            "/v5/pricing/search",
             json={
                 "page": 0,
                 "page_size": 10,
@@ -181,7 +181,7 @@ class TestPricingRoute:
         )
 
         response = await v5_pricing_route_client.client.post(
-            "/api/v5/artifacts/pricing/docs",
+            "/v5/pricing/docs",
             json={"entity_id": None},
         )
 
@@ -205,7 +205,7 @@ class TestPricingRoute:
         v5_pricing_route_client,
         pricing_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         seeded = await _seed_pricing_route_graph(
             pool, redis_client, pricing_route_actor
@@ -216,7 +216,7 @@ class TestPricingRoute:
         )
 
         response = await v5_pricing_route_client.client.post(
-            "/api/v5/artifacts/pricing/export",
+            "/v5/pricing/export",
             json={},
         )
 
@@ -247,7 +247,7 @@ class TestPricingRoute:
         )
 
         response = await v5_pricing_route_client.client.post(
-            "/api/v5/artifacts/pricing/refresh",
+            "/v5/pricing/refresh",
             json={},
         )
 

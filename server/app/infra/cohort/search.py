@@ -34,22 +34,22 @@ from app.routes.v5.cohort.types import (
     ListCohortApiSimulation,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.cohort.get import get_cohorts
-from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.profiles.get import (
+from app.tools.v5.artifacts.cohort.get import get_cohorts
+from app.tools.v5.artifacts.cohort.search import search_cohorts
+from app.tools.v5.resources.departments.get import get_departments
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.profiles.get import (
     get_profiles as get_profiles_resource,
 )
-from app.routes.v5.tools.resources.profiles.search import (
+from app.tools.v5.resources.profiles.search import (
     search_profiles as search_profiles_resource,
 )
-from app.routes.v5.tools.resources.simulations.get import (
+from app.tools.v5.resources.simulations.get import (
     get_simulations as get_simulations_resource,
 )
-from app.routes.v5.tools.resources.simulations.search import (
+from app.tools.v5.resources.simulations.search import (
     search_simulations as search_simulations_resource,
 )
 

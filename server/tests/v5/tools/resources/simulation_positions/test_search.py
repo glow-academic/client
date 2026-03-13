@@ -2,13 +2,13 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.simulation_positions.create import (
+from app.tools.v5.resources.simulation_positions.create import (
     create_simulation_position,
 )
-from app.routes.v5.tools.resources.simulation_positions.search import (
+from app.tools.v5.resources.simulation_positions.search import (
     search_simulation_positions,
 )
-from app.routes.v5.tools.resources.simulations.create import create_simulation
+from app.tools.v5.resources.simulations.create import create_simulation
 
 pytestmark = pytest.mark.asyncio
 

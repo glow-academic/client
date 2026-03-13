@@ -23,23 +23,23 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.provider.docs import get_provider_docs
-from app.routes.v5.tools.artifacts.provider.get import (
+from app.tools.v5.artifacts.provider.docs import get_provider_docs
+from app.tools.v5.artifacts.provider.get import (
     get_providers as get_provider_artifacts,
 )
 
 # Entry tool docs
-from app.routes.v5.tools.entries.provider_drafts.docs import get_provider_drafts_docs
+from app.tools.v5.entries.provider_drafts.docs import get_provider_drafts_docs
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.endpoints.docs import get_endpoints_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.keys.docs import get_keys_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.values.docs import get_values_docs
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.endpoints.docs import get_endpoints_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.keys.docs import get_keys_docs
+from app.tools.v5.resources.names.docs import get_names_docs
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.values.docs import get_values_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Providers",

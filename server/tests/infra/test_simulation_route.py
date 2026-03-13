@@ -24,9 +24,9 @@ class SimulationRouteResources:
 async def _create_simulation_route_resources(
     pool, redis_client
 ) -> SimulationRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.scenarios.create import create_scenario
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.scenarios.create import create_scenario
 
     tag = unique_tag()
     name = f"Route Simulation {tag}"
@@ -81,7 +81,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/create",
+            "/v5/simulations/create",
             json={
                 "simulations": [
                     {
@@ -115,7 +115,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/get",
+            "/v5/simulations/get",
             json={"simulation_id": created["simulation_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -152,7 +152,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/search",
+            "/v5/simulations/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(simulation_route_actor.department_id)],
@@ -187,7 +187,7 @@ class TestSimulationRoute:
         updated = await _create_simulation_route_resources(pool, redis_client)
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/update",
+            "/v5/simulations/update",
             json={
                 "simulations": [
                     {
@@ -221,7 +221,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/delete",
+            "/v5/simulations/delete",
             json={"simulation_ids": [created["simulation_id"]]},
         )
 
@@ -245,7 +245,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/duplicate",
+            "/v5/simulations/duplicate",
             json={"simulation_id": created["simulation_id"]},
         )
 
@@ -269,7 +269,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.patch(
-            "/api/v5/artifacts/simulations/draft",
+            "/v5/simulations/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -298,13 +298,13 @@ class TestSimulationRoute:
             session_id=simulation_route_actor.session_id,
         )
         draft_response = await v5_simulation_route_client.client.patch(
-            "/api/v5/artifacts/simulations/draft",
+            "/v5/simulations/draft",
             json={"expected_version": 0, "name_id": str(resources.name_id)},
         )
         assert draft_response.status_code == 200, draft_response.text
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/drafts",
+            "/v5/simulations/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -325,7 +325,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/docs",
+            "/v5/simulations/docs",
             json={},
         )
 
@@ -351,7 +351,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/export",
+            "/v5/simulations/export",
             json={"simulation_id": created["simulation_id"]},
         )
 
@@ -372,7 +372,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/refresh",
+            "/v5/simulations/refresh",
             json={},
         )
 
@@ -396,7 +396,7 @@ class TestSimulationRoute:
         )
 
         response = await v5_simulation_route_client.client.post(
-            "/api/v5/artifacts/simulations/create",
+            "/v5/simulations/create",
             json={
                 "simulations": [
                     {

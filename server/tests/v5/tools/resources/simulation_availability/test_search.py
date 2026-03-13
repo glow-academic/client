@@ -4,13 +4,13 @@ from datetime import UTC, datetime
 
 import pytest
 
-from app.routes.v5.tools.resources.simulation_availability.create import (
+from app.tools.v5.resources.simulation_availability.create import (
     create_simulation_availability,
 )
-from app.routes.v5.tools.resources.simulation_availability.search import (
+from app.tools.v5.resources.simulation_availability.search import (
     search_simulation_availability,
 )
-from app.routes.v5.tools.resources.simulations.create import create_simulation
+from app.tools.v5.resources.simulations.create import create_simulation
 
 pytestmark = pytest.mark.asyncio
 

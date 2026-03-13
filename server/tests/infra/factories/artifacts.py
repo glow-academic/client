@@ -25,16 +25,16 @@ async def create_profile_identity_fixture(
     artifact_active: bool = True,
 ) -> ProfileIdentityFixture:
     """Create a real profile artifact plus linked resources for context tests."""
-    from app.routes.v5.tools.artifacts.profile.create import (
+    from app.tools.v5.artifacts.profile.create import (
         create_profile as create_profile_artifact,
     )
-    from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.emails.create import create_email
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.profiles.create import (
+    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.v5.resources.emails.create import create_email
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.profiles.create import (
         create_profile as create_profile_resource,
     )
-    from app.routes.v5.tools.resources.roles.create import create_role
+    from app.tools.v5.resources.roles.create import create_role
 
     tag = unique_tag()
 
@@ -137,20 +137,20 @@ async def create_setting_graph_fixture(
     tool_artifacts: list[str] | None = None,
 ) -> SettingGraphFixture:
     """Create a full profile -> setting -> system -> agent -> tool graph."""
-    from app.routes.v5.tools.artifacts.profile.create import (
+    from app.tools.v5.artifacts.profile.create import (
         create_profile as create_profile_artifact,
     )
-    from app.routes.v5.tools.resources.agents.create import create_agent
-    from app.routes.v5.tools.resources.artifacts.create import create_artifact
-    from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.operations.create import create_operation
-    from app.routes.v5.tools.resources.profiles.create import (
+    from app.tools.v5.resources.agents.create import create_agent
+    from app.tools.v5.resources.artifacts.create import create_artifact
+    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.operations.create import create_operation
+    from app.tools.v5.resources.profiles.create import (
         create_profile as create_profile_resource,
     )
-    from app.routes.v5.tools.resources.settings.create import create_setting
-    from app.routes.v5.tools.resources.systems.create import create_system
-    from app.routes.v5.tools.resources.tools.create import create_tool
+    from app.tools.v5.resources.settings.create import create_setting
+    from app.tools.v5.resources.systems.create import create_system
+    from app.tools.v5.resources.tools.create import create_tool
 
     tag = unique_tag()
     artifacts = tool_artifacts or ["profile", "persona"]
@@ -235,16 +235,16 @@ async def create_system_graph_fixture(
     redis_client,
 ) -> SystemGraphFixture:
     """Create a full system -> agent -> model/provider/tool graph."""
-    from app.routes.v5.tools.resources.agents.create import create_agent
-    from app.routes.v5.tools.resources.args.create import create_arg
-    from app.routes.v5.tools.resources.args_outputs.create import create_args_output
-    from app.routes.v5.tools.resources.instructions.create import create_instruction
-    from app.routes.v5.tools.resources.models.create import create_model
-    from app.routes.v5.tools.resources.prompts.create import create_prompt
-    from app.routes.v5.tools.resources.providers.create import create_provider
-    from app.routes.v5.tools.resources.rubrics.create import create_rubric
-    from app.routes.v5.tools.resources.systems.create import create_system
-    from app.routes.v5.tools.resources.tools.create import create_tool
+    from app.tools.v5.resources.agents.create import create_agent
+    from app.tools.v5.resources.args.create import create_arg
+    from app.tools.v5.resources.args_outputs.create import create_args_output
+    from app.tools.v5.resources.instructions.create import create_instruction
+    from app.tools.v5.resources.models.create import create_model
+    from app.tools.v5.resources.prompts.create import create_prompt
+    from app.tools.v5.resources.providers.create import create_provider
+    from app.tools.v5.resources.rubrics.create import create_rubric
+    from app.tools.v5.resources.systems.create import create_system
+    from app.tools.v5.resources.tools.create import create_tool
 
     tag = unique_tag()
 
@@ -339,14 +339,14 @@ async def create_persona_context_fixture(
     redis_client,
 ) -> PersonaContextFixture:
     """Create a published persona plus a draft override and suggestion resources."""
-    from app.routes.v5.tools.artifacts.persona.create import create_persona
-    from app.routes.v5.tools.entries.groups.create import create_group
-    from app.routes.v5.tools.entries.persona_drafts.create import create_persona_draft
-    from app.routes.v5.tools.entries.sessions.create import create_session
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.flags.create import create_flag
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.profiles.create import (
+    from app.tools.v5.artifacts.persona.create import create_persona
+    from app.tools.v5.entries.groups.create import create_group
+    from app.tools.v5.entries.persona_drafts.create import create_persona_draft
+    from app.tools.v5.entries.sessions.create import create_session
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.flags.create import create_flag
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.profiles.create import (
         create_profile as create_profile_resource,
     )
 

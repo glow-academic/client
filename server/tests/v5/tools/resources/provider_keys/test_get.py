@@ -3,9 +3,9 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.resources.keys.create import create_key
-from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
-from app.routes.v5.tools.resources.providers.create import create_provider
+from app.tools.v5.resources.keys.create import create_key
+from app.tools.v5.resources.provider_keys.get import get_provider_keys
+from app.tools.v5.resources.providers.create import create_provider
 
 pytestmark = pytest.mark.asyncio
 
@@ -13,7 +13,7 @@ pytestmark = pytest.mark.asyncio
 async def test_gets_created_provider_key(conn, redis_client):
     provider = await create_provider(conn, "test-provider", redis=redis_client)
     key = await create_key(conn, redis_client, name="test-key", key="sk-test-123")
-    from app.routes.v5.tools.resources.provider_keys.create import create_provider_key
+    from app.tools.v5.resources.provider_keys.create import create_provider_key
 
     item = await create_provider_key(
         conn,
@@ -54,7 +54,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
     key = await create_key(
         conn, redis_client, name="test-key-cache", key="sk-cache-123"
     )
-    from app.routes.v5.tools.resources.provider_keys.create import create_provider_key
+    from app.tools.v5.resources.provider_keys.create import create_provider_key
 
     item = await create_provider_key(
         conn, provider.id, key.id, redis_client, name="test-pk-cache-hit"
@@ -75,7 +75,7 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     key = await create_key(
         conn, redis_client, name="test-key-bypass", key="sk-bypass-123"
     )
-    from app.routes.v5.tools.resources.provider_keys.create import create_provider_key
+    from app.tools.v5.resources.provider_keys.create import create_provider_key
 
     item = await create_provider_key(
         conn, provider.id, key.id, redis_client, name="test-pk-bypass"
@@ -87,6 +87,6 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     from app.utils.cache.cache_key import cache_key
     from app.utils.cache.get_cached import get_cached
 
-    key_val = cache_key("/api/v5/resources/provider_keys/get", {"ids": [str(item.id)]})
+    key_val = cache_key("/v5/resources/provider_keys/get", {"ids": [str(item.id)]})
     cached = await get_cached(key_val, redis=redis_client)
     assert cached is None

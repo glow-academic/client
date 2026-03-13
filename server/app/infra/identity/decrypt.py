@@ -18,7 +18,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.resources.keys.get import get_keys
+from app.tools.v5.resources.keys.get import get_keys
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 
 ResolveProfileIdentityFn = Callable[..., Awaitable[object | None]]

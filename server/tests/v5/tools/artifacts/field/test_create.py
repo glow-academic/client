@@ -3,16 +3,16 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.artifacts.field.create import create_field
-from app.routes.v5.tools.artifacts.field.get import get_fields
-from app.routes.v5.tools.resources.conditional_parameters.create import (
+from app.tools.v5.artifacts.field.create import create_field
+from app.tools.v5.artifacts.field.get import get_fields
+from app.tools.v5.resources.conditional_parameters.create import (
     create_conditional_parameter,
 )
-from app.routes.v5.tools.resources.departments.create import create_department
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.flags.create import create_flag
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.parameters.create import create_parameter
+from app.tools.v5.resources.departments.create import create_department
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.flags.create import create_flag
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.parameters.create import create_parameter
 
 pytestmark = pytest.mark.asyncio
 

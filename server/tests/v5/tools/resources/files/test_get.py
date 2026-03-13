@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.resources.files.create import create_file
-from app.routes.v5.tools.resources.files.get import get_files
+from app.tools.v5.resources.files.create import create_file
+from app.tools.v5.resources.files.get import get_files
 
 pytestmark = pytest.mark.asyncio
 
@@ -55,6 +55,6 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     from app.utils.cache.cache_key import cache_key
     from app.utils.cache.get_cached import get_cached
 
-    key = cache_key("/api/v5/resources/files/get", {"ids": [str(created.id)]})
+    key = cache_key("/v5/resources/files/get", {"ids": [str(created.id)]})
     cached = await get_cached(key, redis=redis_client)
     assert cached is None

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.infra.tool.create import CreateToolItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.tool_drafts.types import GetToolDraftResponse
+from app.tools.v5.entries.tool_drafts.types import GetToolDraftResponse
 
 
 class ToolFlagConfig(BaseModel):

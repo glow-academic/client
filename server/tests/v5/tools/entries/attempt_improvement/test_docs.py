@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.attempt_improvement.docs import (
+from app.tools.v5.entries.attempt_improvement.docs import (
     get_attempt_improvement_docs,
 )
 

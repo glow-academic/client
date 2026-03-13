@@ -22,7 +22,7 @@ from app.infra.rubric.permissions_context import (
     create_denormalized_snapshot,
     resolve_rubric_values,
 )
-from app.routes.v5.tools.artifacts.rubric.create import (
+from app.tools.v5.artifacts.rubric.create import (
     create_rubric as create_rubric_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

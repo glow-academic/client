@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.colors.docs import get_colors_docs
+from app.tools.v5.resources.colors.docs import get_colors_docs
 
 pytestmark = pytest.mark.asyncio
 

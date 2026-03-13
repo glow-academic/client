@@ -23,13 +23,13 @@ from app.infra.tool.permissions import compute_can_duplicate
 from app.routes.v5.tool.types import (
     DuplicateToolApiResponse,
 )
-from app.routes.v5.tools.artifacts.tool.create import (
+from app.tools.v5.artifacts.tool.create import (
     create_tool as create_tool_artifact,
 )
-from app.routes.v5.tools.artifacts.tool.get import get_tools
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.tool.get import get_tools
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

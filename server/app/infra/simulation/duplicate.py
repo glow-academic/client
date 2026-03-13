@@ -23,13 +23,13 @@ from app.infra.simulation.permissions import compute_can_duplicate
 from app.routes.v5.simulation.types import (
     DuplicateSimulationApiResponse,
 )
-from app.routes.v5.tools.artifacts.simulation.create import (
+from app.tools.v5.artifacts.simulation.create import (
     create_simulation as create_simulation_artifact,
 )
-from app.routes.v5.tools.artifacts.simulation.get import get_simulations
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.simulation.get import get_simulations
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

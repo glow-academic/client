@@ -1,7 +1,7 @@
 """POST /context — identity + permissions + theme.
 
 Thin wrapper over resolve_profile_identity_context().
-Root-level layout route (mounted at /api/v5/context).
+Root-level layout route (mounted at /v5/context).
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from app.routes.v5.profile.types import (
     ProfileContextApiResponse,
     ThemePrimitives,
 )
-from app.routes.v5.tools.resources.roles.get import get_roles
+from app.tools.v5.resources.roles.get import get_roles
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

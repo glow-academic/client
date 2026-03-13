@@ -3,15 +3,15 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.artifacts.persona.create import create_persona
-from app.routes.v5.tools.artifacts.persona.get import get_personas
-from app.routes.v5.tools.resources.colors.create import create_color
-from app.routes.v5.tools.resources.departments.create import create_department
-from app.routes.v5.tools.resources.examples.create import create_example
-from app.routes.v5.tools.resources.flags.create import create_flag
-from app.routes.v5.tools.resources.icons.create import create_icon
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.voices.create import create_voice
+from app.tools.v5.artifacts.persona.create import create_persona
+from app.tools.v5.artifacts.persona.get import get_personas
+from app.tools.v5.resources.colors.create import create_color
+from app.tools.v5.resources.departments.create import create_department
+from app.tools.v5.resources.examples.create import create_example
+from app.tools.v5.resources.flags.create import create_flag
+from app.tools.v5.resources.icons.create import create_icon
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.voices.create import create_voice
 
 pytestmark = pytest.mark.asyncio
 

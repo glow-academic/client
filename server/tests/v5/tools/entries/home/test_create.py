@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.home.create import create_home
-from app.routes.v5.tools.entries.home.get import get_homes
-from app.routes.v5.tools.entries.home.refresh import refresh_home
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.home.create import create_home
+from app.tools.v5.entries.home.get import get_homes
+from app.tools.v5.entries.home.refresh import refresh_home
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

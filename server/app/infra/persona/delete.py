@@ -23,9 +23,9 @@ from app.routes.v5.persona.types import (
     DeletePersonaApiResponse,
     DeletePersonaResult,
 )
-from app.routes.v5.tools.artifacts.persona.delete import delete_personas
-from app.routes.v5.tools.artifacts.persona.get import get_personas
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.persona.delete import delete_personas
+from app.tools.v5.artifacts.persona.get import get_personas
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

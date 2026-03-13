@@ -23,9 +23,9 @@ from app.routes.v5.rubric.types import (
     DeleteRubricApiResponse,
     DeleteRubricResult,
 )
-from app.routes.v5.tools.artifacts.rubric.delete import delete_rubrics
-from app.routes.v5.tools.artifacts.rubric.get import get_rubrics
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.rubric.delete import delete_rubrics
+from app.tools.v5.artifacts.rubric.get import get_rubrics
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

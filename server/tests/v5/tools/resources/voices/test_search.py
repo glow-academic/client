@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.voices.create import create_voice
-from app.routes.v5.tools.resources.voices.search import search_voices
+from app.tools.v5.resources.voices.create import create_voice
+from app.tools.v5.resources.voices.search import search_voices
 
 pytestmark = pytest.mark.asyncio
 

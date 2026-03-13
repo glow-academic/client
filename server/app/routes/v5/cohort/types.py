@@ -11,8 +11,8 @@ from pydantic import BaseModel
 
 from app.infra.cohort.create import CreateCohortItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.cohort_drafts.types import GetCohortDraftResponse
-from app.routes.v5.tools.resources.personas.types import GetPersonaResponse
+from app.tools.v5.entries.cohort_drafts.types import GetCohortDraftResponse
+from app.tools.v5.resources.personas.types import GetPersonaResponse
 
 
 class GetCohortDraftsApiResponse(BaseModel):

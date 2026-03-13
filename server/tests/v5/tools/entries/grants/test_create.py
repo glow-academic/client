@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.grants.create import create_grant
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.grants.create import create_grant
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

@@ -23,11 +23,11 @@ class AuthRouteResources:
 
 
 async def _create_auth_route_resources(pool, redis_client) -> AuthRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.items.create import create_item
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.protocols.create import create_protocol
-    from app.routes.v5.tools.resources.slugs.create import create_slug
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.items.create import create_item
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.protocols.create import create_protocol
+    from app.tools.v5.resources.slugs.create import create_slug
 
     tag = unique_tag()
     name = f"Route Auth {tag}"
@@ -87,7 +87,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/create",
+            "/v5/auths/create",
             json={
                 "auths": [
                     {
@@ -123,7 +123,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/get",
+            "/v5/auths/get",
             json={"auth_id": created["auth_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -154,7 +154,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/search",
+            "/v5/auths/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(auth_route_actor.department_id)],
@@ -188,7 +188,7 @@ class TestAuthRoute:
         updated = await _create_auth_route_resources(pool, redis_client)
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/update",
+            "/v5/auths/update",
             json={
                 "auths": [
                     {
@@ -224,7 +224,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/delete",
+            "/v5/auths/delete",
             json={"auth_ids": [created["auth_id"]]},
         )
 
@@ -248,7 +248,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/duplicate",
+            "/v5/auths/duplicate",
             json={"auth_id": created["auth_id"]},
         )
 
@@ -272,7 +272,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.patch(
-            "/api/v5/artifacts/auths/draft",
+            "/v5/auths/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -306,7 +306,7 @@ class TestAuthRoute:
         )
 
         draft_response = await v5_auth_route_client.client.patch(
-            "/api/v5/artifacts/auths/draft",
+            "/v5/auths/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -321,7 +321,7 @@ class TestAuthRoute:
         draft_id = draft_response.json()["draft_id"]
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/drafts",
+            "/v5/auths/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -342,7 +342,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/docs",
+            "/v5/auths/docs",
             json={},
         )
 
@@ -368,7 +368,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/export",
+            "/v5/auths/export",
             json={"auth_id": created["auth_id"]},
         )
 
@@ -389,7 +389,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/refresh",
+            "/v5/auths/refresh",
             json={},
         )
 
@@ -413,7 +413,7 @@ class TestAuthRoute:
         )
 
         response = await v5_auth_route_client.client.post(
-            "/api/v5/artifacts/auths/create",
+            "/v5/auths/create",
             json={
                 "auths": [
                     {

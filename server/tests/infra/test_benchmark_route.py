@@ -24,9 +24,9 @@ async def benchmark_route_actor(pool, redis_client, setting_graph_factory):
 
 async def _create_benchmark_route_data(pool, redis_client, actor):
     from app.infra.globals import UPLOAD_FOLDER
-    from app.routes.v5.tools.entries.benchmark.create import create_benchmark
-    from app.routes.v5.tools.entries.benchmark.refresh import refresh_benchmark
-    from app.routes.v5.tools.resources.departments.create import create_department
+    from app.tools.v5.entries.benchmark.create import create_benchmark
+    from app.tools.v5.entries.benchmark.refresh import refresh_benchmark
+    from app.tools.v5.resources.departments.create import create_department
 
     async with pool.acquire() as conn:
         department = await create_department(
@@ -68,7 +68,7 @@ class TestBenchmarkRoute:
         )
 
         response = await v5_benchmark_route_client.client.post(
-            "/api/v5/artifacts/benchmark/get",
+            "/v5/benchmark/get",
             json={"department_ids": [seeded["department_id"]]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -101,7 +101,7 @@ class TestBenchmarkRoute:
         )
 
         response = await v5_benchmark_route_client.client.post(
-            "/api/v5/artifacts/benchmark/search",
+            "/v5/benchmark/search",
             json={
                 "department_ids": [seeded["department_id"]],
                 "history_page": 0,
@@ -129,7 +129,7 @@ class TestBenchmarkRoute:
         )
 
         response = await v5_benchmark_route_client.client.post(
-            "/api/v5/artifacts/benchmark/docs",
+            "/v5/benchmark/docs",
             json={"entity_id": None},
         )
 
@@ -153,7 +153,7 @@ class TestBenchmarkRoute:
         v5_benchmark_route_client,
         benchmark_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         seeded = await _create_benchmark_route_data(
             pool, redis_client, benchmark_route_actor
@@ -164,7 +164,7 @@ class TestBenchmarkRoute:
         )
 
         response = await v5_benchmark_route_client.client.post(
-            "/api/v5/artifacts/benchmark/export",
+            "/v5/benchmark/export",
             json={},
         )
 
@@ -198,7 +198,7 @@ class TestBenchmarkRoute:
         )
 
         response = await v5_benchmark_route_client.client.post(
-            "/api/v5/artifacts/benchmark/refresh",
+            "/v5/benchmark/refresh",
             json={},
         )
 

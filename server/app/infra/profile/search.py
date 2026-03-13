@@ -28,18 +28,18 @@ from app.routes.v5.profile.types import (
     ListProfilesApiResponse,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.profile.get import get_profiles
-from app.routes.v5.tools.artifacts.profile.search import search_profiles
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.emails.get import get_emails
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.profiles.get import (
+from app.tools.v5.artifacts.profile.get import get_profiles
+from app.tools.v5.artifacts.profile.search import search_profiles
+from app.tools.v5.resources.departments.get import get_departments
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.emails.get import get_emails
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.profiles.get import (
     get_profiles as get_profiles_resource,
 )
-from app.routes.v5.tools.resources.request_limits.get import get_request_limits
-from app.routes.v5.tools.resources.roles.get import get_roles
-from app.routes.v5.tools.resources.roles.search import search_roles
+from app.tools.v5.resources.request_limits.get import get_request_limits
+from app.tools.v5.resources.roles.get import get_roles
+from app.tools.v5.resources.roles.search import search_roles
 
 
 async def search_profile_impl(

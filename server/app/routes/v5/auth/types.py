@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.infra.auth.create import CreateAuthItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.auth_drafts.types import GetAuthDraftResponse
+from app.tools.v5.entries.auth_drafts.types import GetAuthDraftResponse
 
 
 class AuthFlagConfig(BaseModel):

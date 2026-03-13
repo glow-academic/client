@@ -1,7 +1,7 @@
 """Pydantic models for attempt_* internal events.
 
 Canonical location — importable without triggering the socket tree.
-Re-exported from app.routes.v5.socket.internal.attempt.types for
+Re-exported from app.socket.v5.internal.attempt.types for
 backwards compatibility.
 """
 

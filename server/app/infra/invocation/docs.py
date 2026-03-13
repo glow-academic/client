@@ -20,7 +20,7 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
-from app.routes.v5.tools.entries.invocation.docs import get_invocation_docs
+from app.tools.v5.entries.invocation.docs import get_invocation_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Invocations",

@@ -3,7 +3,7 @@
 import pytest
 
 from app.infra.activate.activate import activate_rows
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.emulations.docs import get_emulations_docs
+from app.tools.v5.entries.emulations.docs import get_emulations_docs
 
 pytestmark = pytest.mark.asyncio
 

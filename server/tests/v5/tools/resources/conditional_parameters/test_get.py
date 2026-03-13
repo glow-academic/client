@@ -3,17 +3,17 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.resources.conditional_parameters.get import (
+from app.tools.v5.resources.conditional_parameters.get import (
     get_conditional_parameters,
 )
-from app.routes.v5.tools.resources.parameters.create import create_parameter
+from app.tools.v5.resources.parameters.create import create_parameter
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_conditional_parameter(conn, redis_client):
     param = await create_parameter(conn, redis_client, name="test-param")
-    from app.routes.v5.tools.resources.conditional_parameters.create import (
+    from app.tools.v5.resources.conditional_parameters.create import (
         create_conditional_parameter,
     )
 
@@ -41,7 +41,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     param = await create_parameter(conn, redis_client, name="test-param-cache")
-    from app.routes.v5.tools.resources.conditional_parameters.create import (
+    from app.tools.v5.resources.conditional_parameters.create import (
         create_conditional_parameter,
     )
 
@@ -59,7 +59,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     param = await create_parameter(conn, redis_client, name="test-param-bypass")
-    from app.routes.v5.tools.resources.conditional_parameters.create import (
+    from app.tools.v5.resources.conditional_parameters.create import (
         create_conditional_parameter,
     )
 
@@ -74,7 +74,7 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     from app.utils.cache.get_cached import get_cached
 
     key = cache_key(
-        "/api/v5/resources/conditional_parameters/get", {"ids": [str(item.id)]}
+        "/v5/resources/conditional_parameters/get", {"ids": [str(item.id)]}
     )
     cached = await get_cached(key, redis=redis_client)
     assert cached is None

@@ -21,17 +21,17 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.department.get import (
+from app.tools.v5.artifacts.department.get import (
     get_departments as get_department_artifacts,
 )
-from app.routes.v5.tools.resources.departments.create import (
+from app.tools.v5.resources.departments.create import (
     create_department as create_department_resource,
 )
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 
 if TYPE_CHECKING:
     from app.infra.department.create import (

@@ -7,10 +7,10 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.tools.entries.calls.create import create_call
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.resolves.create import create_resolve
-from app.routes.v5.tools.entries.runs.create import create_run
+from app.tools.v5.entries.calls.create import create_call
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.resolves.create import create_resolve
+from app.tools.v5.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 

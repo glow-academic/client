@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.infra.provider.create import CreateProviderItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.provider_drafts.types import GetProviderDraftResponse
+from app.tools.v5.entries.provider_drafts.types import GetProviderDraftResponse
 
 
 class ProviderFlagConfig(BaseModel):

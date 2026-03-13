@@ -23,23 +23,23 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.auth.docs import get_auth_docs
-from app.routes.v5.tools.artifacts.auth.get import get_auths as get_auth_artifacts
+from app.tools.v5.artifacts.auth.docs import get_auth_docs
+from app.tools.v5.artifacts.auth.get import get_auths as get_auth_artifacts
 
 # Entry tool docs
-from app.routes.v5.tools.entries.auth_drafts.docs import get_auth_drafts_docs
+from app.tools.v5.entries.auth_drafts.docs import get_auth_drafts_docs
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.items.docs import get_items_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.items.docs import get_items_docs
+from app.tools.v5.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.protocols.docs import get_protocols_docs
-from app.routes.v5.tools.resources.slugs.docs import get_slugs_docs
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.protocols.docs import get_protocols_docs
+from app.tools.v5.resources.slugs.docs import get_slugs_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Auth Providers",

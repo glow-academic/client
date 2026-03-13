@@ -12,11 +12,11 @@ from app.infra.tool_graph import (
     resolve_tool_graph,
     score_tools,
 )
-from app.routes.v5.tools.resources.agents.types import GetAgentResponse
-from app.routes.v5.tools.resources.settings.create import create_setting
-from app.routes.v5.tools.resources.settings.types import GetSettingResponse
-from app.routes.v5.tools.resources.systems.types import GetSystemResponse
-from app.routes.v5.tools.resources.tools.types import GetToolResponse
+from app.tools.v5.resources.agents.types import GetAgentResponse
+from app.tools.v5.resources.settings.create import create_setting
+from app.tools.v5.resources.settings.types import GetSettingResponse
+from app.tools.v5.resources.systems.types import GetSystemResponse
+from app.tools.v5.resources.tools.types import GetToolResponse
 
 NOW = datetime.now(UTC)
 

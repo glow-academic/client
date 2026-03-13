@@ -12,9 +12,9 @@ from app.infra.artifacts.discovery import (
     get_resource_table_columns,
     map_template_values_to_table_columns,
 )
-from app.routes.v5.tools.resources.args.create import create_arg
-from app.routes.v5.tools.resources.args_outputs.create import create_args_output
-from app.routes.v5.tools.resources.tools.create import create_tool
+from app.tools.v5.resources.args.create import create_arg
+from app.tools.v5.resources.args_outputs.create import create_args_output
+from app.tools.v5.resources.tools.create import create_tool
 
 pytestmark = pytest.mark.asyncio
 

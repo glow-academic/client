@@ -29,14 +29,14 @@ from app.routes.v5.eval.types import (
     ListEvalApiResponse,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.eval.get import get_evals
-from app.routes.v5.tools.artifacts.eval.search import (
+from app.tools.v5.artifacts.eval.get import get_evals
+from app.tools.v5.artifacts.eval.search import (
     search_evals as search_eval_artifacts,
 )
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.names.get import get_names
 
 EVAL_IMPORT_FIELDS: list[dict[str, Any]] = [
     {

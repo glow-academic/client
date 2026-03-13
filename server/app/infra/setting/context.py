@@ -19,34 +19,34 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.routes.v5.tools.artifacts.setting.get import (
+from app.tools.v5.artifacts.setting.get import (
     get_settings as get_setting_artifacts,
 )
-from app.routes.v5.tools.entries.setting_drafts.get import get_setting_drafts
+from app.tools.v5.entries.setting_drafts.get import get_setting_drafts
 
 # Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys
+from app.tools.v5.resources.auth_item_keys.get import get_auth_item_keys
 
 # Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.auth_item_keys.search import search_auth_item_keys
-from app.routes.v5.tools.resources.auths.get import get_auths
-from app.routes.v5.tools.resources.auths.search import search_auths
-from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.colors.search import search_colors
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.profiles.search import search_profiles
-from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
-from app.routes.v5.tools.resources.provider_keys.search import search_provider_keys
-from app.routes.v5.tools.resources.systems.get import get_systems
-from app.routes.v5.tools.resources.systems.search import search_systems
+from app.tools.v5.resources.auth_item_keys.search import search_auth_item_keys
+from app.tools.v5.resources.auths.get import get_auths
+from app.tools.v5.resources.auths.search import search_auths
+from app.tools.v5.resources.colors.get import get_colors
+from app.tools.v5.resources.colors.search import search_colors
+from app.tools.v5.resources.departments.get import get_departments
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.descriptions.search import search_descriptions
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.names.search import search_names
+from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.v5.resources.profiles.search import search_profiles
+from app.tools.v5.resources.provider_keys.get import get_provider_keys
+from app.tools.v5.resources.provider_keys.search import search_provider_keys
+from app.tools.v5.resources.systems.get import get_systems
+from app.tools.v5.resources.systems.search import search_systems
 
 # ---------------------------------------------------------------------------
 # Constants

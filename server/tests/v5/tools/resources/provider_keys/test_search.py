@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.keys.create import create_key
-from app.routes.v5.tools.resources.provider_keys.create import create_provider_key
-from app.routes.v5.tools.resources.provider_keys.search import search_provider_keys
-from app.routes.v5.tools.resources.providers.create import create_provider
+from app.tools.v5.resources.keys.create import create_key
+from app.tools.v5.resources.provider_keys.create import create_provider_key
+from app.tools.v5.resources.provider_keys.search import search_provider_keys
+from app.tools.v5.resources.providers.create import create_provider
 
 pytestmark = pytest.mark.asyncio
 

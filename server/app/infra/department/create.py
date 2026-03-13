@@ -23,7 +23,7 @@ from app.infra.department.permissions_context import (
     resolve_department_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.department.create import (
+from app.tools.v5.artifacts.department.create import (
     create_department as create_department_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

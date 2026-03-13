@@ -30,18 +30,18 @@ from app.routes.v5.provider.types import (
     ListProviderApiResponse,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.provider.get import get_providers
-from app.routes.v5.tools.artifacts.provider.search import search_providers
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.models.search import (
+from app.tools.v5.artifacts.provider.get import get_providers
+from app.tools.v5.artifacts.provider.search import search_providers
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.models.search import (
     search_models as search_models_resource,
 )
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.providers.get import (
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.providers.get import (
     get_providers as get_providers_resource,
 )
-from app.routes.v5.tools.resources.values.get import get_values
+from app.tools.v5.resources.values.get import get_values
 
 PROVIDER_IMPORT_FIELDS: list[dict[str, Any]] = [
     {
@@ -115,7 +115,7 @@ async def search_provider_impl(
     if filter_model_ids:
         # model_ids filter references model_artifact IDs
         # Models have providers_junction → get provider resource IDs
-        from app.routes.v5.tools.artifacts.model.get import (
+        from app.tools.v5.artifacts.model.get import (
             get_models as get_model_artifacts,
         )
 

@@ -2,15 +2,15 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.calls.create import create_call
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.test.create import create_test
-from app.routes.v5.tools.entries.test_grade.create import create_test_grade
-from app.routes.v5.tools.entries.test_grade.get import get_test_grades
-from app.routes.v5.tools.entries.test_grade.refresh import refresh_test_grade
-from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
+from app.tools.v5.entries.calls.create import create_call
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.test.create import create_test
+from app.tools.v5.entries.test_grade.create import create_test_grade
+from app.tools.v5.entries.test_grade.get import get_test_grades
+from app.tools.v5.entries.test_grade.refresh import refresh_test_grade
+from app.tools.v5.entries.test_invocation.create import create_test_invocation
 
 pytestmark = pytest.mark.asyncio
 

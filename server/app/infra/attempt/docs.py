@@ -19,7 +19,7 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.entries.attempt.docs import get_attempt_docs
+from app.tools.v5.entries.attempt.docs import get_attempt_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Attempts",

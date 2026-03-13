@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.thresholds.docs import get_thresholds_docs
+from app.tools.v5.resources.thresholds.docs import get_thresholds_docs
 
 pytestmark = pytest.mark.asyncio
 

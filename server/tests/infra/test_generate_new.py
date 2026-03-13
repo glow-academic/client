@@ -14,10 +14,10 @@ from app.infra.websocket.session_store import (
     create_session as create_audio_session,
 )
 from app.infra.websocket.socket_event import recording_emit
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.resources.profiles.create import create_profile
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.resources.profiles.create import create_profile
 
 pytestmark = pytest.mark.asyncio
 

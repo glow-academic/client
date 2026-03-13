@@ -2,17 +2,17 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.grant_consumptions.create import (
+from app.tools.v5.entries.grant_consumptions.create import (
     create_grant_consumption,
 )
-from app.routes.v5.tools.entries.grant_consumptions.get import (
+from app.tools.v5.entries.grant_consumptions.get import (
     get_grant_consumptions,
 )
-from app.routes.v5.tools.entries.grant_consumptions.refresh import (
+from app.tools.v5.entries.grant_consumptions.refresh import (
     refresh_grant_consumptions,
 )
-from app.routes.v5.tools.entries.grants.create import create_grant
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.grants.create import create_grant
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

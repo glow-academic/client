@@ -4,8 +4,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from app.routes.v5.tools.entries.metrics.create import create_metrics_entry_internal
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.metrics.create import create_metrics_entry_internal
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

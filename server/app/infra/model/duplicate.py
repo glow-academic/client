@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.model.types import (
     DuplicateModelApiResponse,
 )
-from app.routes.v5.tools.artifacts.model.create import (
+from app.tools.v5.artifacts.model.create import (
     create_model as create_model_artifact,
 )
-from app.routes.v5.tools.artifacts.model.get import get_models
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.model.get import get_models
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

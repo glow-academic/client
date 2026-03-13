@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 
 from app.infra.globals import VIDEO_FOLDER, get_pool
-from app.routes.v5.tools.entries.uploads.get import get_upload
+from app.tools.v5.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 

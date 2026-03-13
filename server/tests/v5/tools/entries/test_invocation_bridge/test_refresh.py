@@ -2,21 +2,21 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.benchmark.create import create_benchmark
-from app.routes.v5.tools.entries.calls.create import create_call
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.invocation.create import create_invocation
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.test.create import create_test
-from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
-from app.routes.v5.tools.entries.test_invocation_bridge.create import (
+from app.tools.v5.entries.benchmark.create import create_benchmark
+from app.tools.v5.entries.calls.create import create_call
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.invocation.create import create_invocation
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.test.create import create_test
+from app.tools.v5.entries.test_invocation.create import create_test_invocation
+from app.tools.v5.entries.test_invocation_bridge.create import (
     create_test_invocation_bridge,
 )
-from app.routes.v5.tools.entries.test_invocation_bridge.get import (
+from app.tools.v5.entries.test_invocation_bridge.get import (
     get_test_invocation_bridge,
 )
-from app.routes.v5.tools.entries.test_invocation_bridge.refresh import (
+from app.tools.v5.entries.test_invocation_bridge.refresh import (
     refresh_test_invocation_bridge,
 )
 

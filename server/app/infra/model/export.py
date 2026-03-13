@@ -21,18 +21,18 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.model.get import get_models
-from app.routes.v5.tools.artifacts.model.search import search_models
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.modalities.get import get_modalities
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.qualities.get import get_qualities
-from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
-from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
-from app.routes.v5.tools.resources.values.get import get_values
-from app.routes.v5.tools.resources.voices.get import get_voices
+from app.tools.v5.artifacts.model.get import get_models
+from app.tools.v5.artifacts.model.search import search_models
+from app.tools.v5.resources.departments.get import get_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.modalities.get import get_modalities
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.providers.get import get_providers
+from app.tools.v5.resources.qualities.get import get_qualities
+from app.tools.v5.resources.reasoning_levels.get import get_reasoning_levels
+from app.tools.v5.resources.temperature_levels.get import get_temperature_levels
+from app.tools.v5.resources.values.get import get_values
+from app.tools.v5.resources.voices.get import get_voices
 
 PIPE = "|"
 

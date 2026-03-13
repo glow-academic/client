@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.personas.create import create_persona
-from app.routes.v5.tools.resources.personas.get import get_personas
+from app.tools.v5.resources.personas.create import create_persona
+from app.tools.v5.resources.personas.get import get_personas
 
 pytestmark = pytest.mark.asyncio
 

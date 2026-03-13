@@ -15,46 +15,46 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.routes.v5.tools.entries.attempt.search import search_attempts
-from app.routes.v5.tools.entries.attempt_analysis.search import search_attempt_analyses
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.attempt_content.search import search_attempt_contents
-from app.routes.v5.tools.entries.attempt_feedback.search import (
+from app.tools.v5.entries.attempt.search import search_attempts
+from app.tools.v5.entries.attempt_analysis.search import search_attempt_analyses
+from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
+from app.tools.v5.entries.attempt_content.search import search_attempt_contents
+from app.tools.v5.entries.attempt_feedback.search import (
     search_attempt_feedback_entries,
 )
-from app.routes.v5.tools.entries.attempt_grade.search import search_attempt_grades
-from app.routes.v5.tools.entries.attempt_highlight.search import (
+from app.tools.v5.entries.attempt_grade.search import search_attempt_grades
+from app.tools.v5.entries.attempt_highlight.search import (
     search_attempt_highlights,
 )
-from app.routes.v5.tools.entries.attempt_hint.search import search_attempt_hints
-from app.routes.v5.tools.entries.attempt_improvement.search import (
+from app.tools.v5.entries.attempt_hint.search import search_attempt_hints
+from app.tools.v5.entries.attempt_improvement.search import (
     search_attempt_improvements,
 )
-from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
-from app.routes.v5.tools.entries.attempt_replacement.search import (
+from app.tools.v5.entries.attempt_message.search import search_attempt_messages
+from app.tools.v5.entries.attempt_replacement.search import (
     search_attempt_replacements,
 )
-from app.routes.v5.tools.entries.attempt_responses.search import (
+from app.tools.v5.entries.attempt_responses.search import (
     search_attempt_responses,
 )
-from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strengths
-from app.routes.v5.tools.entries.files.search import search_files
-from app.routes.v5.tools.entries.images.search import search_images
-from app.routes.v5.tools.entries.videos.search import search_videos
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
-from app.routes.v5.tools.resources.standards.get import get_standards
-from app.routes.v5.tools.resources.videos.get import get_videos
+from app.tools.v5.entries.attempt_strength.search import search_attempt_strengths
+from app.tools.v5.entries.files.search import search_files
+from app.tools.v5.entries.images.search import search_images
+from app.tools.v5.entries.videos.search import search_videos
+from app.tools.v5.resources.documents.get import get_documents
+from app.tools.v5.resources.images.get import get_images
+from app.tools.v5.resources.objectives.get import get_objectives
+from app.tools.v5.resources.options.get import get_options
+from app.tools.v5.resources.personas.get import get_personas
+from app.tools.v5.resources.problem_statements.get import get_problem_statements
+from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.v5.resources.questions.get import get_questions
+from app.tools.v5.resources.rubrics.get import get_rubrics
+from app.tools.v5.resources.scenarios.get import get_scenarios
+from app.tools.v5.resources.simulations.get import get_simulations
+from app.tools.v5.resources.standard_groups.get import get_standard_groups
+from app.tools.v5.resources.standards.get import get_standards
+from app.tools.v5.resources.videos.get import get_videos
 
 
 async def resolve_attempt_context(

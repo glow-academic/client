@@ -15,15 +15,15 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.routes.v5.tools.entries.attempt_home.search import search_attempt_homes
-from app.routes.v5.tools.entries.chat.search import search_chat_entries_internal
-from app.routes.v5.tools.entries.groups.search import search_groups
-from app.routes.v5.tools.entries.logins.search import search_logins
-from app.routes.v5.tools.entries.practice.search import search_practices
-from app.routes.v5.tools.entries.problems.search import search_problems
-from app.routes.v5.tools.entries.runs.search import search_runs
-from app.routes.v5.tools.entries.sessions.search import search_sessions
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.entries.attempt_home.search import search_attempt_homes
+from app.tools.v5.entries.chat.search import search_chat_entries_internal
+from app.tools.v5.entries.groups.search import search_groups
+from app.tools.v5.entries.logins.search import search_logins
+from app.tools.v5.entries.practice.search import search_practices
+from app.tools.v5.entries.problems.search import search_problems
+from app.tools.v5.entries.runs.search import search_runs
+from app.tools.v5.entries.sessions.search import search_sessions
+from app.tools.v5.resources.names.get import get_names
 
 
 async def resolve_session_context(

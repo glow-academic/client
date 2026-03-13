@@ -23,34 +23,34 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.simulation.docs import get_simulation_docs
-from app.routes.v5.tools.artifacts.simulation.get import (
+from app.tools.v5.artifacts.simulation.docs import get_simulation_docs
+from app.tools.v5.artifacts.simulation.get import (
     get_simulations as get_simulation_artifacts,
 )
 
 # Entry tool docs
-from app.routes.v5.tools.entries.simulation_drafts.docs import (
+from app.tools.v5.entries.simulation_drafts.docs import (
     get_simulation_drafts_docs,
 )
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.rubrics.docs import get_rubrics_docs
-from app.routes.v5.tools.resources.scenario_flags.docs import get_scenario_flags_docs
-from app.routes.v5.tools.resources.scenario_positions.docs import (
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.names.docs import get_names_docs
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.rubrics.docs import get_rubrics_docs
+from app.tools.v5.resources.scenario_flags.docs import get_scenario_flags_docs
+from app.tools.v5.resources.scenario_positions.docs import (
     get_scenario_positions_docs,
 )
-from app.routes.v5.tools.resources.scenario_rubrics.docs import (
+from app.tools.v5.resources.scenario_rubrics.docs import (
     get_scenario_rubrics_docs,
 )
-from app.routes.v5.tools.resources.scenario_time_limits.docs import (
+from app.tools.v5.resources.scenario_time_limits.docs import (
     get_scenario_time_limits_docs,
 )
-from app.routes.v5.tools.resources.scenarios.docs import get_scenarios_docs
+from app.tools.v5.resources.scenarios.docs import get_scenarios_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Simulations",

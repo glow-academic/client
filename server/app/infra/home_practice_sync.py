@@ -11,21 +11,21 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.resources.scenario_flags.types import GetScenarioFlagResponse
-from app.routes.v5.tools.resources.scenario_positions.types import (
+from app.tools.v5.resources.scenario_flags.types import GetScenarioFlagResponse
+from app.tools.v5.resources.scenario_positions.types import (
     GetScenarioPositionResponse,
 )
-from app.routes.v5.tools.resources.scenario_rubrics.types import (
+from app.tools.v5.resources.scenario_rubrics.types import (
     GetScenarioRubricResponse,
 )
-from app.routes.v5.tools.resources.scenario_time_limits.types import (
+from app.tools.v5.resources.scenario_time_limits.types import (
     GetScenarioTimeLimitResponse,
 )
-from app.routes.v5.tools.resources.scenarios.types import GetScenarioResponse
-from app.routes.v5.tools.resources.simulation_availability.types import (
+from app.tools.v5.resources.scenarios.types import GetScenarioResponse
+from app.tools.v5.resources.simulation_availability.types import (
     GetSimulationAvailabilityResponse,
 )
-from app.routes.v5.tools.resources.simulation_positions.types import (
+from app.tools.v5.resources.simulation_positions.types import (
     GetSimulationPositionResponse,
 )
 from app.utils.logging.db_logger import get_logger
@@ -68,37 +68,37 @@ async def sync_home_practice_entries(
     3. Build data structures and call entry creation tools
     """
     from app.infra.globals import get_redis_client
-    from app.routes.v5.tools.entries.chat.create import create_chat
-    from app.routes.v5.tools.entries.home.create import create_home
-    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
-    from app.routes.v5.tools.entries.practice.create import create_practice
-    from app.routes.v5.tools.entries.practice_chat.create import (
+    from app.tools.v5.entries.chat.create import create_chat
+    from app.tools.v5.entries.home.create import create_home
+    from app.tools.v5.entries.home_chat.create import create_home_chat
+    from app.tools.v5.entries.practice.create import create_practice
+    from app.tools.v5.entries.practice_chat.create import (
         create_practice_chat,
     )
-    from app.routes.v5.tools.entries.sessions.create import create_session
-    from app.routes.v5.tools.resources.flags.get import get_flags
-    from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-    from app.routes.v5.tools.resources.scenario_flags.get import (
+    from app.tools.v5.entries.sessions.create import create_session
+    from app.tools.v5.resources.flags.get import get_flags
+    from app.tools.v5.resources.rubrics.get import get_rubrics
+    from app.tools.v5.resources.scenario_flags.get import (
         get_scenario_flags,
     )
-    from app.routes.v5.tools.resources.scenario_positions.get import (
+    from app.tools.v5.resources.scenario_positions.get import (
         get_scenario_positions,
     )
-    from app.routes.v5.tools.resources.scenario_rubrics.get import (
+    from app.tools.v5.resources.scenario_rubrics.get import (
         get_scenario_rubrics,
     )
-    from app.routes.v5.tools.resources.scenario_time_limits.get import (
+    from app.tools.v5.resources.scenario_time_limits.get import (
         get_scenario_time_limits,
     )
-    from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-    from app.routes.v5.tools.resources.simulation_availability.get import (
+    from app.tools.v5.resources.scenarios.get import get_scenarios
+    from app.tools.v5.resources.simulation_availability.get import (
         get_simulation_availability,
     )
-    from app.routes.v5.tools.resources.simulation_positions.get import (
+    from app.tools.v5.resources.simulation_positions.get import (
         get_simulation_positions,
     )
-    from app.routes.v5.tools.resources.simulations.get import get_simulations
-    from app.routes.v5.tools.resources.standards.search import search_standards
+    from app.tools.v5.resources.simulations.get import get_simulations
+    from app.tools.v5.resources.standards.search import search_standards
 
     if not simulation_ids:
         return 0

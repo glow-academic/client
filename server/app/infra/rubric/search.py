@@ -32,17 +32,17 @@ from app.routes.v5.rubric.types import (
     ListRubricApiStandardGroup,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.rubric.get import get_rubrics
-from app.routes.v5.tools.artifacts.rubric.search import search_rubrics
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.points.get import get_points
-from app.routes.v5.tools.resources.simulations.search import (
+from app.tools.v5.artifacts.rubric.get import get_rubrics
+from app.tools.v5.artifacts.rubric.search import search_rubrics
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.points.get import get_points
+from app.tools.v5.resources.simulations.search import (
     search_simulations as search_simulations_resource,
 )
-from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
-from app.routes.v5.tools.resources.standards.get import get_standards
+from app.tools.v5.resources.standard_groups.get import get_standard_groups
+from app.tools.v5.resources.standards.get import get_standards
 
 RUBRIC_IMPORT_FIELDS: list[dict[str, Any]] = [
     {

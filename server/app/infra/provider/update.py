@@ -22,10 +22,10 @@ from app.infra.provider.permissions_context import (
     resolve_provider_permissions_context,
     resolve_provider_values,
 )
-from app.routes.v5.tools.artifacts.provider.update import (
+from app.tools.v5.artifacts.provider.update import (
     _UNSET,
 )
-from app.routes.v5.tools.artifacts.provider.update import (
+from app.tools.v5.artifacts.provider.update import (
     update_provider as update_provider_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

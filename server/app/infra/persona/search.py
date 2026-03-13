@@ -32,25 +32,25 @@ from app.routes.v5.persona.types import (
     ListPersonaApiResponse,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.persona.get import get_personas
-from app.routes.v5.tools.artifacts.persona.search import search_personas
-from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.colors.search import search_colors
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.fields.search import search_fields
-from app.routes.v5.tools.resources.icons.get import get_icons
-from app.routes.v5.tools.resources.icons.search import search_icons
-from app.routes.v5.tools.resources.instructions.search import search_instructions
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.profile_personas.search import (
+from app.tools.v5.artifacts.persona.get import get_personas
+from app.tools.v5.artifacts.persona.search import search_personas
+from app.tools.v5.resources.colors.get import get_colors
+from app.tools.v5.resources.colors.search import search_colors
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.fields.search import search_fields
+from app.tools.v5.resources.icons.get import get_icons
+from app.tools.v5.resources.icons.search import search_icons
+from app.tools.v5.resources.instructions.search import search_instructions
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.profile_personas.search import (
     search_profile_personas,
 )
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.scenarios.search import (
+from app.tools.v5.resources.scenarios.get import get_scenarios
+from app.tools.v5.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
-from app.routes.v5.tools.resources.voices.search import search_voices
+from app.tools.v5.resources.voices.search import search_voices
 
 PERSONA_IMPORT_FIELDS: list[ImportField] = [
     ImportField(

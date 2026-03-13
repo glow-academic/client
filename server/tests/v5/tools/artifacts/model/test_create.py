@@ -3,14 +3,14 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.artifacts.model.create import create_model
-from app.routes.v5.tools.artifacts.model.get import get_models
-from app.routes.v5.tools.resources.departments.create import create_department
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.flags.create import create_flag
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.qualities.create import create_quality
-from app.routes.v5.tools.resources.voices.create import create_voice
+from app.tools.v5.artifacts.model.create import create_model
+from app.tools.v5.artifacts.model.get import get_models
+from app.tools.v5.resources.departments.create import create_department
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.flags.create import create_flag
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.qualities.create import create_quality
+from app.tools.v5.resources.voices.create import create_voice
 
 pytestmark = pytest.mark.asyncio
 

@@ -20,9 +20,9 @@ from app.routes.v5.test.types import (
     SearchTestItem,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.entries.test.search import search_tests
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.evals.search import search_evals
+from app.tools.v5.entries.test.search import search_tests
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.evals.search import search_evals
 
 
 async def search_test_impl(

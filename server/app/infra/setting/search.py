@@ -28,12 +28,12 @@ from app.routes.v5.setting.types import (
     ListSettingApiResponse,
     ListSettingApiSetting,
 )
-from app.routes.v5.tools.artifacts.setting.get import get_settings
-from app.routes.v5.tools.artifacts.setting.search import (
+from app.tools.v5.artifacts.setting.get import get_settings
+from app.tools.v5.artifacts.setting.search import (
     search_settings as search_setting_artifacts,
 )
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.names.get import get_names
 
 SETTING_IMPORT_FIELDS: list[dict[str, Any]] = [
     {

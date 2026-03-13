@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.modalities.create import create_modality
-from app.routes.v5.tools.resources.modalities.get import get_modalities
+from app.tools.v5.resources.modalities.create import create_modality
+from app.tools.v5.resources.modalities.get import get_modalities
 
 pytestmark = pytest.mark.asyncio
 

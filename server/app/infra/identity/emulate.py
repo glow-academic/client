@@ -23,13 +23,13 @@ from app.infra.identity.resolve_identity import (
 )
 from app.infra.identity.simulatable import SIMULATABLE_ROLES
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.entries.emulations.create import create_emulation
-from app.routes.v5.tools.entries.emulations.refresh import refresh_emulations
-from app.routes.v5.tools.entries.grant_consumptions.create import (
+from app.tools.v5.entries.emulations.create import create_emulation
+from app.tools.v5.entries.emulations.refresh import refresh_emulations
+from app.tools.v5.entries.grant_consumptions.create import (
     create_grant_consumption,
 )
-from app.routes.v5.tools.entries.grants.create import create_grant
-from app.routes.v5.tools.entries.sessions.search import search_sessions
+from app.tools.v5.entries.grants.create import create_grant
+from app.tools.v5.entries.sessions.search import search_sessions
 
 logger = logging.getLogger(__name__)
 

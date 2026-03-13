@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
 
 from app.infra.globals import UPLOAD_FOLDER, get_pool
-from app.routes.v5.tools.entries.uploads.get import get_upload
+from app.tools.v5.entries.uploads.get import get_upload
 from app.utils.document.pdf_first_page_to_image_bytes import (
     pdf_first_page_to_image_bytes,
 )

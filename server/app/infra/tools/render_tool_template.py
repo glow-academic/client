@@ -8,8 +8,8 @@ from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.tools.get import get_tools
+from app.tools.v5.resources.args_outputs.get import get_args_outputs
+from app.tools.v5.resources.tools.get import get_tools
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

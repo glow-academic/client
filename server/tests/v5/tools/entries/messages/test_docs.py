@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.messages.docs import get_messages_docs
+from app.tools.v5.entries.messages.docs import get_messages_docs
 
 pytestmark = pytest.mark.asyncio
 

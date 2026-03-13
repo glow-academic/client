@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.setting_drafts.docs import get_setting_drafts_docs
+from app.tools.v5.entries.setting_drafts.docs import get_setting_drafts_docs
 
 pytestmark = pytest.mark.asyncio
 

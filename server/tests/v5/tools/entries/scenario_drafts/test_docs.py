@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.scenario_drafts.docs import get_scenario_drafts_docs
+from app.tools.v5.entries.scenario_drafts.docs import get_scenario_drafts_docs
 
 pytestmark = pytest.mark.asyncio
 

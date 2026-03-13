@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.temperature_levels.create import (
+from app.tools.v5.resources.temperature_levels.create import (
     create_temperature_level,
 )
-from app.routes.v5.tools.resources.temperature_levels.search import (
+from app.tools.v5.resources.temperature_levels.search import (
     search_temperature_levels,
 )
 

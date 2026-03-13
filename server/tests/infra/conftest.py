@@ -130,7 +130,7 @@ def _build_v5_events_test_app(
         request.state.mcp = False
         return False
 
-    from app.routes.v5.events import get_router
+    from app.routes.v5.stream import get_router
 
     app = FastAPI()
     root_router = APIRouter(
@@ -155,7 +155,7 @@ def _redirect_audit_upload_folder(monkeypatch, tmp_path):
 @pytest_asyncio.fixture
 async def name_id(pool, redis_client) -> UUID:
     """Create a fresh name resource via black-box tool."""
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.names.create import create_name
 
     async with pool.acquire() as conn:
         result = await create_name(conn, "Test Name", redis_client)
@@ -165,7 +165,7 @@ async def name_id(pool, redis_client) -> UUID:
 @pytest_asyncio.fixture
 async def description_id(pool, redis_client) -> UUID:
     """Create a fresh description resource via black-box tool."""
-    from app.routes.v5.tools.resources.descriptions.create import create_description
+    from app.tools.v5.resources.descriptions.create import create_description
 
     async with pool.acquire() as conn:
         result = await create_description(conn, "Test description", redis_client)

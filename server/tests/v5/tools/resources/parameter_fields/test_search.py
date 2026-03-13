@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.fields.create import create_field
-from app.routes.v5.tools.resources.parameter_fields.create import create_parameter_field
-from app.routes.v5.tools.resources.parameter_fields.search import (
+from app.tools.v5.resources.fields.create import create_field
+from app.tools.v5.resources.parameter_fields.create import create_parameter_field
+from app.tools.v5.resources.parameter_fields.search import (
     search_parameter_fields,
 )
-from app.routes.v5.tools.resources.parameters.create import create_parameter
+from app.tools.v5.resources.parameters.create import create_parameter
 
 pytestmark = pytest.mark.asyncio
 

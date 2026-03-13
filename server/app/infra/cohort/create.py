@@ -23,7 +23,7 @@ from app.infra.cohort.permissions_context import (
     resolve_cohort_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.cohort.create import (
+from app.tools.v5.artifacts.cohort.create import (
     create_cohort as create_cohort_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.chat.create import create_chat
-from app.routes.v5.tools.entries.home.create import create_home
-from app.routes.v5.tools.entries.home_chat.create import create_home_chat
-from app.routes.v5.tools.entries.home_chat.refresh import refresh_home_chat
-from app.routes.v5.tools.entries.home_chat.search import search_home_chats
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.chat.create import create_chat
+from app.tools.v5.entries.home.create import create_home
+from app.tools.v5.entries.home_chat.create import create_home_chat
+from app.tools.v5.entries.home_chat.refresh import refresh_home_chat
+from app.tools.v5.entries.home_chat.search import search_home_chats
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

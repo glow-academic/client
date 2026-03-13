@@ -22,9 +22,9 @@ class CohortRouteResources:
 
 
 async def _create_cohort_route_resources(pool, redis_client) -> CohortRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.simulations.create import create_simulation
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.simulations.create import create_simulation
 
     tag = unique_tag()
     name = f"Route Cohort {tag}"
@@ -79,7 +79,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/create",
+            "/v5/cohorts/create",
             json={
                 "cohorts": [
                     {
@@ -116,7 +116,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/get",
+            "/v5/cohorts/get",
             json={"cohort_id": created["cohort_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -156,7 +156,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/search",
+            "/v5/cohorts/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(cohort_route_actor.department_id)],
@@ -203,11 +203,11 @@ class TestCohortRoute:
         )
 
         first = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/get",
+            "/v5/cohorts/get",
             json={"cohort_id": created["cohort_id"]},
         )
         second = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/get",
+            "/v5/cohorts/get",
             json={"cohort_id": created["cohort_id"]},
         )
 
@@ -232,7 +232,7 @@ class TestCohortRoute:
         updated = await _create_cohort_route_resources(pool, redis_client)
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/update",
+            "/v5/cohorts/update",
             json={
                 "cohorts": [
                     {
@@ -254,7 +254,7 @@ class TestCohortRoute:
         assert payload["results"][0]["cohort_id"] == created["cohort_id"]
 
         get_response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/get",
+            "/v5/cohorts/get",
             json={"cohort_id": created["cohort_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -285,7 +285,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/duplicate",
+            "/v5/cohorts/duplicate",
             json={"cohort_id": created["cohort_id"]},
         )
 
@@ -311,7 +311,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/delete",
+            "/v5/cohorts/delete",
             json={"cohort_ids": [created["cohort_id"]]},
         )
 
@@ -322,7 +322,7 @@ class TestCohortRoute:
         assert payload["results"][0]["cohort_id"] == created["cohort_id"]
 
         search_response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/search",
+            "/v5/cohorts/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(cohort_route_actor.department_id)],
@@ -354,7 +354,7 @@ class TestCohortRoute:
         draft_name = f"Draft Cohort {unique_tag()}"
 
         response = await v5_cohort_route_client.client.patch(
-            "/api/v5/artifacts/cohorts/draft",
+            "/v5/cohorts/draft",
             json={
                 "expected_version": 0,
                 "name": draft_name,
@@ -373,7 +373,7 @@ class TestCohortRoute:
         assert payload["form_state"]["name_id"] is not None
 
         get_response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/get",
+            "/v5/cohorts/get",
             json={
                 "cohort_id": created["cohort_id"],
                 "draft_id": payload["draft_id"],
@@ -392,8 +392,8 @@ class TestCohortRoute:
         v5_cohort_route_client,
         cohort_route_actor,
     ):
-        from app.routes.v5.tools.entries.cohort_drafts.create import create_cohort_draft
-        from app.routes.v5.tools.entries.groups.create import create_group
+        from app.tools.v5.entries.cohort_drafts.create import create_cohort_draft
+        from app.tools.v5.entries.groups.create import create_group
 
         async with pool.acquire() as conn:
             group = await create_group(conn, session_id=cohort_route_actor.session_id)
@@ -409,7 +409,7 @@ class TestCohortRoute:
             session_id=cohort_route_actor.session_id,
         )
         drafts_response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/drafts",
+            "/v5/cohorts/drafts",
         )
 
         assert drafts_response.status_code == 200, drafts_response.text
@@ -432,7 +432,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/docs",
+            "/v5/cohorts/docs",
             json={"entity_id": created["cohort_id"]},
         )
 
@@ -453,7 +453,7 @@ class TestCohortRoute:
         v5_cohort_route_client,
         cohort_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         created = await self._create_cohort_via_route(
             pool,
@@ -463,7 +463,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/export",
+            "/v5/cohorts/export",
             json={"cohort_id": created["cohort_id"]},
         )
 
@@ -491,7 +491,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/refresh",
+            "/v5/cohorts/refresh",
         )
 
         assert response.status_code == 200, response.text
@@ -515,7 +515,7 @@ class TestCohortRoute:
         )
 
         response = await v5_cohort_route_client.client.post(
-            "/api/v5/artifacts/cohorts/create",
+            "/v5/cohorts/create",
             json={
                 "cohorts": [
                     {

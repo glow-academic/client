@@ -15,15 +15,15 @@ from redis.asyncio import Redis
 
 from app.infra.identity.settings import resolve_thresholds
 from app.infra.types import ArtifactContext, ResourcePair
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.attempt_chat.types import (
+from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
+from app.tools.v5.entries.attempt_chat.types import (
     ChatItem,
     GetAttemptChatResponse,
 )
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations
+from app.tools.v5.resources.cohorts.get import get_cohorts
+from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.v5.resources.scenarios.get import get_scenarios
+from app.tools.v5.resources.simulations.get import get_simulations
 
 
 def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:

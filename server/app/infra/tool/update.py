@@ -22,10 +22,10 @@ from app.infra.tool.permissions_context import (
     resolve_tool_permissions_context,
     resolve_tool_values,
 )
-from app.routes.v5.tools.artifacts.tool.update import (
+from app.tools.v5.artifacts.tool.update import (
     _UNSET,
 )
-from app.routes.v5.tools.artifacts.tool.update import (
+from app.tools.v5.artifacts.tool.update import (
     update_tool as update_tool_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

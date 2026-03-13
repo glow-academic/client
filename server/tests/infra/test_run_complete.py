@@ -15,11 +15,11 @@ from app.infra.websocket.run_tracker import (
     record_unit_soft,
 )
 from app.infra.websocket.socket_event import recording_emit
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.profiles.create import create_profile
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.runs.create import create_run
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.profiles.create import create_profile
 
 pytestmark = pytest.mark.asyncio
 

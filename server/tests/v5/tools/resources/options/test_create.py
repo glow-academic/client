@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.options.create import create_option
-from app.routes.v5.tools.resources.options.get import get_options
+from app.tools.v5.resources.options.create import create_option
+from app.tools.v5.resources.options.get import get_options
 
 pytestmark = pytest.mark.asyncio
 

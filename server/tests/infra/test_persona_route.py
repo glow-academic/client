@@ -31,11 +31,11 @@ async def _create_persona_route_resources(
     pool,
     redis_client,
 ) -> PersonaRouteResources:
-    from app.routes.v5.tools.resources.colors.create import create_color
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.icons.create import create_icon
-    from app.routes.v5.tools.resources.instructions.create import create_instruction
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.colors.create import create_color
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.icons.create import create_icon
+    from app.tools.v5.resources.instructions.create import create_instruction
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Persona {tag}"
@@ -113,7 +113,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/create",
+            "/v5/personas/create",
             json={
                 "personas": [
                     {
@@ -151,7 +151,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/get",
+            "/v5/personas/get",
             json={"persona_id": created["persona_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -195,7 +195,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/search",
+            "/v5/personas/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(persona_route_actor.department_id)],
@@ -244,11 +244,11 @@ class TestPersonaRoute:
         )
 
         first = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/get",
+            "/v5/personas/get",
             json={"persona_id": created["persona_id"]},
         )
         second = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/get",
+            "/v5/personas/get",
             json={"persona_id": created["persona_id"]},
         )
 
@@ -273,7 +273,7 @@ class TestPersonaRoute:
         updated = await _create_persona_route_resources(pool, redis_client)
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/update",
+            "/v5/personas/update",
             json={
                 "personas": [
                     {
@@ -296,7 +296,7 @@ class TestPersonaRoute:
         assert payload["results"][0]["persona_id"] == created["persona_id"]
 
         get_response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/get",
+            "/v5/personas/get",
             json={"persona_id": created["persona_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -330,7 +330,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/duplicate",
+            "/v5/personas/duplicate",
             json={"persona_id": created["persona_id"]},
         )
 
@@ -356,7 +356,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/delete",
+            "/v5/personas/delete",
             json={"persona_ids": [created["persona_id"]]},
         )
 
@@ -367,7 +367,7 @@ class TestPersonaRoute:
         assert payload["results"][0]["persona_id"] == created["persona_id"]
 
         search_response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/search",
+            "/v5/personas/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(persona_route_actor.department_id)],
@@ -399,7 +399,7 @@ class TestPersonaRoute:
         draft_name = f"Draft Persona {unique_tag()}"
 
         response = await v5_persona_route_client.client.patch(
-            "/api/v5/artifacts/personas/draft",
+            "/v5/personas/draft",
             json={
                 "expected_version": 0,
                 "name": draft_name,
@@ -416,7 +416,7 @@ class TestPersonaRoute:
         assert payload["form_state"]["name_id"] is not None
 
         get_response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/get",
+            "/v5/personas/get",
             json={
                 "persona_id": created["persona_id"],
                 "draft_id": payload["draft_id"],
@@ -435,8 +435,8 @@ class TestPersonaRoute:
         v5_persona_route_client,
         persona_route_actor,
     ):
-        from app.routes.v5.tools.entries.groups.create import create_group
-        from app.routes.v5.tools.entries.persona_drafts.create import (
+        from app.tools.v5.entries.groups.create import create_group
+        from app.tools.v5.entries.persona_drafts.create import (
             create_persona_draft,
         )
 
@@ -454,7 +454,7 @@ class TestPersonaRoute:
             session_id=persona_route_actor.session_id,
         )
         drafts_response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/drafts",
+            "/v5/personas/drafts",
         )
 
         assert drafts_response.status_code == 200, drafts_response.text
@@ -477,7 +477,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/docs",
+            "/v5/personas/docs",
             json={"entity_id": created["persona_id"]},
         )
 
@@ -498,7 +498,7 @@ class TestPersonaRoute:
         v5_persona_route_client,
         persona_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         created = await self._create_persona_via_route(
             pool,
@@ -508,7 +508,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/export",
+            "/v5/personas/export",
             json={"persona_id": created["persona_id"]},
         )
 
@@ -536,7 +536,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/refresh",
+            "/v5/personas/refresh",
         )
 
         assert response.status_code == 200, response.text
@@ -560,7 +560,7 @@ class TestPersonaRoute:
         )
 
         response = await v5_persona_route_client.client.post(
-            "/api/v5/artifacts/personas/create",
+            "/v5/personas/create",
             json={
                 "personas": [
                     {

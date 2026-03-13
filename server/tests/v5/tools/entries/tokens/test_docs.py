@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.tokens.docs import get_tokens_docs
+from app.tools.v5.entries.tokens.docs import get_tokens_docs
 
 pytestmark = pytest.mark.asyncio
 

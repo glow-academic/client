@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.eval_drafts.create import create_eval_draft
-from app.routes.v5.tools.entries.eval_drafts.refresh import refresh_eval_drafts
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.eval_drafts.create import create_eval_draft
+from app.tools.v5.entries.eval_drafts.refresh import refresh_eval_drafts
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

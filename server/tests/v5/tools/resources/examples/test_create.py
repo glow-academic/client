@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.examples.create import create_example
-from app.routes.v5.tools.resources.examples.get import get_examples
+from app.tools.v5.resources.examples.create import create_example
+from app.tools.v5.resources.examples.get import get_examples
 
 pytestmark = pytest.mark.asyncio
 

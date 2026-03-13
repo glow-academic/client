@@ -25,10 +25,10 @@ from app.routes.v5.setting.types import (
     SaveSettingFieldError,
     SettingDraftFormState,
 )
-from app.routes.v5.tools.entries.setting_drafts.create import create_setting_draft
-from app.routes.v5.tools.entries.setting_drafts.refresh import refresh_setting_drafts
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.entries.setting_drafts.create import create_setting_draft
+from app.tools.v5.entries.setting_drafts.refresh import refresh_setting_drafts
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

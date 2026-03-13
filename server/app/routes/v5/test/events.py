@@ -11,7 +11,7 @@ from app.routes.v5.test.types import (
     GetTestArtifactRequest,
     GetTestArtifactResponse,
 )
-from app.routes.v5.socket.client.types import (
+from app.socket.v5.client.types import (
     # Test domain event payloads (server → client)
     TestAllCompleteEvent,
     # Test lifecycle input payloads (client → server)

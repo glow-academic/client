@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.infra.parameter.create import CreateParameterItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.parameter_drafts.types import GetParameterDraftResponse
+from app.tools.v5.entries.parameter_drafts.types import GetParameterDraftResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)

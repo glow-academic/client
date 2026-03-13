@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.objectives.create import create_objective
-from app.routes.v5.tools.resources.objectives.get import get_objectives
+from app.tools.v5.resources.objectives.create import create_objective
+from app.tools.v5.resources.objectives.get import get_objectives
 
 pytestmark = pytest.mark.asyncio
 

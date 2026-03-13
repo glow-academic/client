@@ -17,8 +17,8 @@ from app.infra.globals import (
     get_pool,
     get_redis_client,
 )
-from app.routes.v5.tools.entries.uploads.create import create_upload
-from app.routes.v5.tools.entries.uploads.get import get_upload
+from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.v5.entries.uploads.get import get_upload
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
@@ -162,9 +162,9 @@ async def tus_create(request: Request) -> Response:
         f.write(f"length:{upload_length}\noffset:0")
 
     if app_prefix:
-        location = f"/{app_prefix}/api/v5/artifacts/scenarios/video/{upload_id}"
+        location = f"/{app_prefix}/v5/scenarios/video/{upload_id}"
     else:
-        location = f"/api/v5/artifacts/scenarios/video/{upload_id}"
+        location = f"/v5/scenarios/video/{upload_id}"
 
     # Handle creation-with-upload if Content-Length > 0
     if request.headers.get("Content-Length", "0") != "0":

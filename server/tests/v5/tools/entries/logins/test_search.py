@@ -5,10 +5,10 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.logins.create import create_login
-from app.routes.v5.tools.entries.logins.refresh import refresh_logins
-from app.routes.v5.tools.entries.logins.search import search_logins
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.logins.create import create_login
+from app.tools.v5.entries.logins.refresh import refresh_logins
+from app.tools.v5.entries.logins.search import search_logins
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

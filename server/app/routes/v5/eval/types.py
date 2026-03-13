@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.infra.eval.create import CreateEvalItem
 from app.routes.v5.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.eval_drafts.types import GetEvalDraftResponse
+from app.tools.v5.entries.eval_drafts.types import GetEvalDraftResponse
 
 
 class GetEvalDraftsApiResponse(BaseModel):

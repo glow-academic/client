@@ -25,9 +25,9 @@ class ScenarioRouteResources:
 async def _create_scenario_route_resources(
     pool, redis_client
 ) -> ScenarioRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
-    from app.routes.v5.tools.resources.problem_statements.create import (
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
+    from app.tools.v5.resources.problem_statements.create import (
         create_problem_statement,
     )
 
@@ -86,7 +86,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/create",
+            "/v5/scenarios/create",
             json={
                 "scenarios": [
                     {
@@ -122,7 +122,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/get",
+            "/v5/scenarios/get",
             json={"scenario_id": created["scenario_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -160,7 +160,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/search",
+            "/v5/scenarios/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(scenario_route_actor.department_id)],
@@ -209,11 +209,11 @@ class TestScenarioRoute:
         )
 
         first = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/get",
+            "/v5/scenarios/get",
             json={"scenario_id": created["scenario_id"]},
         )
         second = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/get",
+            "/v5/scenarios/get",
             json={"scenario_id": created["scenario_id"]},
         )
 
@@ -238,7 +238,7 @@ class TestScenarioRoute:
         updated = await _create_scenario_route_resources(pool, redis_client)
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/update",
+            "/v5/scenarios/update",
             json={
                 "scenarios": [
                     {
@@ -259,7 +259,7 @@ class TestScenarioRoute:
         assert payload["results"][0]["scenario_id"] == created["scenario_id"]
 
         get_response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/get",
+            "/v5/scenarios/get",
             json={"scenario_id": created["scenario_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -291,7 +291,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/duplicate",
+            "/v5/scenarios/duplicate",
             json={"scenario_id": created["scenario_id"]},
         )
 
@@ -317,7 +317,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/delete",
+            "/v5/scenarios/delete",
             json={"scenario_ids": [created["scenario_id"]]},
         )
 
@@ -328,7 +328,7 @@ class TestScenarioRoute:
         assert payload["results"][0]["scenario_id"] == created["scenario_id"]
 
         search_response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/search",
+            "/v5/scenarios/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(scenario_route_actor.department_id)],
@@ -360,7 +360,7 @@ class TestScenarioRoute:
         draft_name = f"Draft Scenario {unique_tag()}"
 
         response = await v5_scenario_route_client.client.patch(
-            "/api/v5/artifacts/scenarios/draft",
+            "/v5/scenarios/draft",
             json={
                 "expected_version": 0,
                 "name": draft_name,
@@ -377,7 +377,7 @@ class TestScenarioRoute:
         assert payload["form_state"]["name_id"] is not None
 
         get_response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/get",
+            "/v5/scenarios/get",
             json={
                 "scenario_id": created["scenario_id"],
                 "draft_id": payload["draft_id"],
@@ -396,8 +396,8 @@ class TestScenarioRoute:
         v5_scenario_route_client,
         scenario_route_actor,
     ):
-        from app.routes.v5.tools.entries.groups.create import create_group
-        from app.routes.v5.tools.entries.scenario_drafts.create import (
+        from app.tools.v5.entries.groups.create import create_group
+        from app.tools.v5.entries.scenario_drafts.create import (
             create_scenario_draft,
         )
 
@@ -415,7 +415,7 @@ class TestScenarioRoute:
             session_id=scenario_route_actor.session_id,
         )
         drafts_response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/drafts",
+            "/v5/scenarios/drafts",
         )
 
         assert drafts_response.status_code == 200, drafts_response.text
@@ -438,7 +438,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/docs",
+            "/v5/scenarios/docs",
             json={"entity_id": created["scenario_id"]},
         )
 
@@ -459,7 +459,7 @@ class TestScenarioRoute:
         v5_scenario_route_client,
         scenario_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         created = await self._create_scenario_via_route(
             pool,
@@ -469,7 +469,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/export",
+            "/v5/scenarios/export",
             json={"scenario_id": created["scenario_id"]},
         )
 
@@ -497,7 +497,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/refresh",
+            "/v5/scenarios/refresh",
         )
 
         assert response.status_code == 200, response.text
@@ -521,7 +521,7 @@ class TestScenarioRoute:
         )
 
         response = await v5_scenario_route_client.client.post(
-            "/api/v5/artifacts/scenarios/create",
+            "/v5/scenarios/create",
             json={
                 "scenarios": [
                     {

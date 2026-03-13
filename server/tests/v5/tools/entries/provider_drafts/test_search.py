@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.provider_drafts.create import create_provider_draft
-from app.routes.v5.tools.entries.provider_drafts.search import search_provider_drafts
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.groups.create import create_group
+from app.tools.v5.entries.provider_drafts.create import create_provider_draft
+from app.tools.v5.entries.provider_drafts.search import search_provider_drafts
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

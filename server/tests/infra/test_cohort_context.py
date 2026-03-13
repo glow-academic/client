@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.cohort.context import resolve_cohort_context
-from app.routes.v5.tools.artifacts.cohort.create import create_cohort
-from app.routes.v5.tools.artifacts.cohort.update import update_cohort
+from app.tools.v5.artifacts.cohort.create import create_cohort
+from app.tools.v5.artifacts.cohort.update import update_cohort
 
 pytestmark = pytest.mark.asyncio
 

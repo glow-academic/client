@@ -11,18 +11,18 @@ from fastapi.responses import RedirectResponse
 from jose import jwt
 
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.tools.artifacts.profile.get import (
+from app.tools.v5.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
-from app.routes.v5.tools.entries.emulations.search import search_emulations
-from app.routes.v5.tools.entries.grant_consumptions.create import (
+from app.tools.v5.entries.emulations.search import search_emulations
+from app.tools.v5.entries.grant_consumptions.create import (
     create_grant_consumption,
 )
-from app.routes.v5.tools.entries.grant_consumptions.search import (
+from app.tools.v5.entries.grant_consumptions.search import (
     search_grant_consumptions,
 )
-from app.routes.v5.tools.entries.grants.get import get_grants
-from app.routes.v5.tools.resources.profiles.get import (
+from app.tools.v5.entries.grants.get import get_grants
+from app.tools.v5.resources.profiles.get import (
     get_profiles as get_profile_resources,
 )
 from app.utils.error.handle_route_error import handle_route_error

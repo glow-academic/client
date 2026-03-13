@@ -5,9 +5,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
-from app.routes.v5.tools.entries.sessions.search import search_sessions
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.sessions.refresh import refresh_sessions
+from app.tools.v5.entries.sessions.search import search_sessions
 
 pytestmark = pytest.mark.asyncio
 

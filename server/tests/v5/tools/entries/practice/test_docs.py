@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.practice.docs import get_practice_docs
+from app.tools.v5.entries.practice.docs import get_practice_docs
 
 pytestmark = pytest.mark.asyncio
 

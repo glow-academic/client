@@ -2,11 +2,11 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.text_uploads.create import create_text_upload
-from app.routes.v5.tools.entries.text_uploads.get import get_text_upload
-from app.routes.v5.tools.entries.texts.create import create_text
-from app.routes.v5.tools.entries.uploads.create import create_upload
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.text_uploads.create import create_text_upload
+from app.tools.v5.entries.text_uploads.get import get_text_upload
+from app.tools.v5.entries.texts.create import create_text
+from app.tools.v5.entries.uploads.create import create_upload
 
 pytestmark = pytest.mark.asyncio
 

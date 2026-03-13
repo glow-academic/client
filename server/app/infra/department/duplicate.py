@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.department.types import (
     DuplicateDepartmentApiResponse,
 )
-from app.routes.v5.tools.artifacts.department.create import (
+from app.tools.v5.artifacts.department.create import (
     create_department as create_department_artifact,
 )
-from app.routes.v5.tools.artifacts.department.get import get_departments
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.department.get import get_departments
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.infra.runs_context import RunsContext
-from app.routes.v5.tools.entries.runs.search import RunViewItem
+from app.tools.v5.entries.runs.search import RunViewItem
 
 
 class ArtifactSessionGroup(BaseModel):

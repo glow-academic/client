@@ -11,36 +11,36 @@ import pytest
 
 async def _create_attempt_route_graph(pool, actor, redis_client=None):
     from app.infra.globals import UPLOAD_FOLDER
-    from app.routes.v5.tools.entries.attempt.create import create_attempt
-    from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
-    from app.routes.v5.tools.entries.attempt_archive.search import (
+    from app.tools.v5.entries.attempt.create import create_attempt
+    from app.tools.v5.entries.attempt.refresh import refresh_attempt
+    from app.tools.v5.entries.attempt_archive.search import (
         search_attempt_archives,
     )
-    from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
-    from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
-    from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+    from app.tools.v5.entries.attempt_chat.create import create_attempt_chat
+    from app.tools.v5.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.tools.v5.entries.attempt_chat_bridge.create import (
         create_attempt_chat_bridge,
     )
-    from app.routes.v5.tools.entries.attempt_chat_bridge.refresh import (
+    from app.tools.v5.entries.attempt_chat_bridge.refresh import (
         refresh_attempt_chat_bridge,
     )
-    from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
-    from app.routes.v5.tools.entries.attempt_message.create import (
+    from app.tools.v5.entries.attempt_home.create import create_attempt_home
+    from app.tools.v5.entries.attempt_message.create import (
         create_attempt_message,
     )
-    from app.routes.v5.tools.entries.attempt_message.refresh import (
+    from app.tools.v5.entries.attempt_message.refresh import (
         refresh_attempt_message,
     )
-    from app.routes.v5.tools.entries.calls.create import create_call
-    from app.routes.v5.tools.entries.chat.create import create_chat
-    from app.routes.v5.tools.entries.groups.create import create_group
-    from app.routes.v5.tools.entries.home.create import create_home
-    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
-    from app.routes.v5.tools.entries.messages.create import create_message
-    from app.routes.v5.tools.entries.persona.create import create_persona
-    from app.routes.v5.tools.entries.runs.create import create_run
-    from app.routes.v5.tools.resources.options.create import create_option
-    from app.routes.v5.tools.resources.questions.create import create_question
+    from app.tools.v5.entries.calls.create import create_call
+    from app.tools.v5.entries.chat.create import create_chat
+    from app.tools.v5.entries.groups.create import create_group
+    from app.tools.v5.entries.home.create import create_home
+    from app.tools.v5.entries.home_chat.create import create_home_chat
+    from app.tools.v5.entries.messages.create import create_message
+    from app.tools.v5.entries.persona.create import create_persona
+    from app.tools.v5.entries.runs.create import create_run
+    from app.tools.v5.resources.options.create import create_option
+    from app.tools.v5.resources.questions.create import create_question
 
     async with pool.acquire() as conn:
         group = await create_group(
@@ -144,13 +144,13 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
 
 
 async def _create_attempt_start_home(pool, redis_client, actor) -> dict[str, str]:
-    from app.routes.v5.tools.entries.chat.create import create_chat
-    from app.routes.v5.tools.entries.home.create import create_home
-    from app.routes.v5.tools.entries.home.refresh import refresh_home
-    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
-    from app.routes.v5.tools.entries.home_chat.refresh import refresh_home_chat
-    from app.routes.v5.tools.resources.personas.create import create_persona
-    from app.routes.v5.tools.resources.profile_personas.create import (
+    from app.tools.v5.entries.chat.create import create_chat
+    from app.tools.v5.entries.home.create import create_home
+    from app.tools.v5.entries.home.refresh import refresh_home
+    from app.tools.v5.entries.home_chat.create import create_home_chat
+    from app.tools.v5.entries.home_chat.refresh import refresh_home_chat
+    from app.tools.v5.resources.personas.create import create_persona
+    from app.tools.v5.resources.profile_personas.create import (
         create_profile_persona,
     )
 
@@ -213,7 +213,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/start",
+            "/v5/attempt/start",
             json={"home_id": graph["home_id"], "infinite_mode": False},
         )
 
@@ -242,7 +242,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/next",
+            "/v5/attempt/next",
             json={"attempt_id": graph["attempt_id"]},
         )
 
@@ -264,7 +264,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/get",
+            "/v5/attempt/get",
             json={"attempt_id": graph["attempt_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -293,7 +293,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/docs",
+            "/v5/attempt/docs",
             json={"entity_id": None},
         )
 
@@ -311,7 +311,7 @@ class TestAttemptRoute:
         v5_attempt_route_client,
         attempt_route_actor,
     ):
-        from app.routes.v5.tools.entries.uploads.get import get_upload
+        from app.tools.v5.entries.uploads.get import get_upload
 
         graph = await _create_attempt_route_graph(pool, attempt_route_actor)
         v5_attempt_route_client.authenticate(
@@ -320,7 +320,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/export",
+            "/v5/attempt/export",
             json={"attempt_id": graph["attempt_id"]},
         )
 
@@ -355,7 +355,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/refresh",
+            "/v5/attempt/refresh",
             json={},
         )
 
@@ -379,7 +379,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/archive",
+            "/v5/attempt/archive",
             json={
                 "archived": True,
                 "attempt_ids": [graph["attempt_id"]],
@@ -413,7 +413,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/end",
+            "/v5/attempt/end",
             json={
                 "attempt_id": graph["attempt_id"],
                 "chat_id": graph["attempt_chat_id"],
@@ -447,7 +447,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/grade",
+            "/v5/attempt/grade",
             json={
                 "attempt_id": graph["attempt_id"],
                 "chat_id": graph["attempt_chat_id"],
@@ -473,7 +473,7 @@ class TestAttemptRoute:
         v5_attempt_route_client,
         attempt_route_actor,
     ):
-        from app.routes.v5.tools.entries.attempt_message.search import (
+        from app.tools.v5.entries.attempt_message.search import (
             search_attempt_messages,
         )
 
@@ -484,7 +484,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/message",
+            "/v5/attempt/message",
             json={
                 "attempt_id": graph["attempt_id"],
                 "chat_id": graph["attempt_chat_id"],
@@ -524,7 +524,7 @@ class TestAttemptRoute:
         )
 
         response = await v5_attempt_route_client.client.post(
-            "/api/v5/artifacts/attempt/response",
+            "/v5/attempt/response",
             json={
                 "chat_id": graph["attempt_chat_id"],
                 "question_id": graph["question_id"],

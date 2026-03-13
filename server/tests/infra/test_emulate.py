@@ -5,10 +5,10 @@ from __future__ import annotations
 import pytest
 
 from app.infra.identity.emulate import EmulationResult, resolve_emulation
-from app.routes.v5.tools.entries.emulations.search import search_emulations
-from app.routes.v5.tools.entries.grants.search import search_grants
-from app.routes.v5.tools.entries.sessions.create import create_session
-from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
+from app.tools.v5.entries.emulations.search import search_emulations
+from app.tools.v5.entries.grants.search import search_grants
+from app.tools.v5.entries.sessions.create import create_session
+from app.tools.v5.entries.sessions.refresh import refresh_sessions
 
 pytestmark = pytest.mark.asyncio
 

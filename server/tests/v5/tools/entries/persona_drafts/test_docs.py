@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.persona_drafts.docs import get_persona_drafts_docs
+from app.tools.v5.entries.persona_drafts.docs import get_persona_drafts_docs
 
 pytestmark = pytest.mark.asyncio
 

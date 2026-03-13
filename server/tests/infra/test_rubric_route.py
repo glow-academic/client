@@ -20,8 +20,8 @@ class RubricRouteResources:
 
 
 async def _create_rubric_route_resources(pool, redis_client) -> RubricRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Rubric {tag}"
@@ -68,7 +68,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/create",
+            "/v5/rubrics/create",
             json={
                 "rubrics": [
                     {
@@ -101,7 +101,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/get",
+            "/v5/rubrics/get",
             json={"rubric_id": created["rubric_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -132,7 +132,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/search",
+            "/v5/rubrics/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(rubric_route_actor.department_id)],
@@ -166,7 +166,7 @@ class TestRubricRoute:
         updated = await _create_rubric_route_resources(pool, redis_client)
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/update",
+            "/v5/rubrics/update",
             json={
                 "rubrics": [
                     {
@@ -199,7 +199,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/delete",
+            "/v5/rubrics/delete",
             json={"rubric_ids": [created["rubric_id"]]},
         )
 
@@ -223,7 +223,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/duplicate",
+            "/v5/rubrics/duplicate",
             json={"rubric_id": created["rubric_id"]},
         )
 
@@ -247,7 +247,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.patch(
-            "/api/v5/artifacts/rubrics/draft",
+            "/v5/rubrics/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -278,7 +278,7 @@ class TestRubricRoute:
         )
 
         draft_response = await v5_rubric_route_client.client.patch(
-            "/api/v5/artifacts/rubrics/draft",
+            "/v5/rubrics/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -290,7 +290,7 @@ class TestRubricRoute:
         draft_id = draft_response.json()["draft_id"]
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/drafts",
+            "/v5/rubrics/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -311,7 +311,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/docs",
+            "/v5/rubrics/docs",
             json={},
         )
 
@@ -337,7 +337,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/export",
+            "/v5/rubrics/export",
             json={"rubric_id": created["rubric_id"]},
         )
 
@@ -358,7 +358,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/refresh",
+            "/v5/rubrics/refresh",
             json={},
         )
 
@@ -382,7 +382,7 @@ class TestRubricRoute:
         )
 
         response = await v5_rubric_route_client.client.post(
-            "/api/v5/artifacts/rubrics/create",
+            "/v5/rubrics/create",
             json={
                 "rubrics": [
                     {

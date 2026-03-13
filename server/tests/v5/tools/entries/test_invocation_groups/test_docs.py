@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.test_invocation_groups.docs import (
+from app.tools.v5.entries.test_invocation_groups.docs import (
     get_test_invocation_groups_docs,
 )
 

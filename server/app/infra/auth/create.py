@@ -24,7 +24,7 @@ from app.infra.auth.permissions_context import (
 )
 from app.infra.identity.keycloak_sync import perform_keycloak_sync
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.auth.create import (
+from app.tools.v5.artifacts.auth.create import (
     create_auth as create_auth_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

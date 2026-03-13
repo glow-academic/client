@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.routes.v5.tools.artifacts.scenario.create import create_scenario
-from app.routes.v5.tools.artifacts.scenario.delete import delete_scenarios
-from app.routes.v5.tools.artifacts.scenario.get import get_scenarios
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.artifacts.scenario.create import create_scenario
+from app.tools.v5.artifacts.scenario.delete import delete_scenarios
+from app.tools.v5.artifacts.scenario.get import get_scenarios
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

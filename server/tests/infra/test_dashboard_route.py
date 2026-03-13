@@ -31,7 +31,7 @@ class TestDashboardRoute:
         )
 
         response = await v5_dashboard_route_client.client.post(
-            "/api/v5/artifacts/dashboard/get",
+            "/v5/dashboard/get",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -58,7 +58,7 @@ class TestDashboardRoute:
         )
 
         response = await v5_dashboard_route_client.client.post(
-            "/api/v5/artifacts/dashboard/search",
+            "/v5/dashboard/search",
             json={
                 "page": 0,
                 "page_size": 20,
@@ -87,7 +87,7 @@ class TestDashboardRoute:
         )
 
         response = await v5_dashboard_route_client.client.post(
-            "/api/v5/artifacts/dashboard/docs",
+            "/v5/dashboard/docs",
             json={"entity_id": None},
         )
 
@@ -115,7 +115,7 @@ class TestDashboardRoute:
         )
 
         response = await v5_dashboard_route_client.client.post(
-            "/api/v5/artifacts/dashboard/export",
+            "/v5/dashboard/export",
             json={},
         )
 
@@ -142,7 +142,7 @@ class TestDashboardRoute:
         )
 
         response = await v5_dashboard_route_client.client.post(
-            "/api/v5/artifacts/dashboard/refresh",
+            "/v5/dashboard/refresh",
             json={},
         )
 

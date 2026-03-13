@@ -23,9 +23,9 @@ from app.routes.v5.cohort.types import (
     DeleteCohortApiResponse,
     DeleteCohortResult,
 )
-from app.routes.v5.tools.artifacts.cohort.delete import delete_cohorts
-from app.routes.v5.tools.artifacts.cohort.get import get_cohorts
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.artifacts.cohort.delete import delete_cohorts
+from app.tools.v5.artifacts.cohort.get import get_cohorts
+from app.tools.v5.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

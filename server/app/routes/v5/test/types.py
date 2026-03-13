@@ -13,15 +13,15 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.types import ListFilterSection
-from app.routes.v5.tools.entries.messages.types import SearchMessageResponse
-from app.routes.v5.tools.entries.test.types import GetTestResponse
-from app.routes.v5.tools.entries.test_feedback.types import GetTestFeedbackResponse
-from app.routes.v5.tools.entries.test_grade.types import GetTestGradeResponse
-from app.routes.v5.tools.entries.test_invocation.types import GetTestInvocationResponse
-from app.routes.v5.tools.entries.test_invocation_groups.types import (
+from app.tools.v5.entries.messages.types import SearchMessageResponse
+from app.tools.v5.entries.test.types import GetTestResponse
+from app.tools.v5.entries.test_feedback.types import GetTestFeedbackResponse
+from app.tools.v5.entries.test_grade.types import GetTestGradeResponse
+from app.tools.v5.entries.test_invocation.types import GetTestInvocationResponse
+from app.tools.v5.entries.test_invocation_groups.types import (
     GetTestInvocationGroupsResponse,
 )
-from app.routes.v5.tools.entries.test_invocation_runs.types import (
+from app.tools.v5.entries.test_invocation_runs.types import (
     GetTestInvocationRunsResponse,
 )
 

@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.agent.context import resolve_agent_context
-from app.routes.v5.tools.artifacts.agent.create import create_agent
-from app.routes.v5.tools.artifacts.agent.update import update_agent
+from app.tools.v5.artifacts.agent.create import create_agent
+from app.tools.v5.artifacts.agent.update import update_agent
 
 pytestmark = pytest.mark.asyncio
 

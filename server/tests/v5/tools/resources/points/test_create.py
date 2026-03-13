@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.points.create import create_point
-from app.routes.v5.tools.resources.points.get import get_points
+from app.tools.v5.resources.points.create import create_point
+from app.tools.v5.resources.points.get import get_points
 
 pytestmark = pytest.mark.asyncio
 

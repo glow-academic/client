@@ -103,34 +103,34 @@ class MessageStats:
 # Entry search tools
 # Settings
 from app.infra.identity.settings import resolve_thresholds
-from app.routes.v5.tools.entries.attempt.search import search_attempts
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.attempt_chat.types import (
+from app.tools.v5.entries.attempt.search import search_attempts
+from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
+from app.tools.v5.entries.attempt_chat.types import (
     ChatItem,
     GetAttemptChatResponse,
 )
-from app.routes.v5.tools.entries.attempt_feedback.search import (
+from app.tools.v5.entries.attempt_feedback.search import (
     search_attempt_feedback_entries,
 )
-from app.routes.v5.tools.entries.attempt_grade.search import search_attempt_grades
-from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
-from app.routes.v5.tools.entries.attempt_message_completion.search import (
+from app.tools.v5.entries.attempt_grade.search import search_attempt_grades
+from app.tools.v5.entries.attempt_message.search import search_attempt_messages
+from app.tools.v5.entries.attempt_message_completion.search import (
     search_attempt_message_completions,
 )
 
 # Resource get tools
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.fields.get import get_fields
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
-from app.routes.v5.tools.resources.standards.get import get_standards
+from app.tools.v5.resources.cohorts.get import get_cohorts
+from app.tools.v5.resources.documents.get import get_documents
+from app.tools.v5.resources.fields.get import get_fields
+from app.tools.v5.resources.parameter_fields.get import get_parameter_fields
+from app.tools.v5.resources.parameters.get import get_parameters
+from app.tools.v5.resources.personas.get import get_personas
+from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.v5.resources.rubrics.get import get_rubrics
+from app.tools.v5.resources.scenarios.get import get_scenarios
+from app.tools.v5.resources.simulations.get import get_simulations
+from app.tools.v5.resources.standard_groups.get import get_standard_groups
+from app.tools.v5.resources.standards.get import get_standards
 
 
 def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:

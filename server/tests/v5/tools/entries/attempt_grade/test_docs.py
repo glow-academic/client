@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.attempt_grade.docs import get_attempt_grade_docs
+from app.tools.v5.entries.attempt_grade.docs import get_attempt_grade_docs
 
 pytestmark = pytest.mark.asyncio
 

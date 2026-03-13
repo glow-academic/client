@@ -14,7 +14,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.types import ArtifactContext
-from app.routes.v5.tools.entries.document_drafts.search import search_document_drafts
+from app.tools.v5.entries.document_drafts.search import search_document_drafts
 
 
 async def list_document_drafts_impl(

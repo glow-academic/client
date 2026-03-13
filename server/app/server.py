@@ -385,7 +385,7 @@ from app.routes.v5.router import router as api_v5_router  # noqa: E402
 
 fastapi_app.include_router(api_v5_router)
 
-import app.routes.v5.socket  # noqa: E402, F401 — registers socket handlers on import
+import app.socket.v5  # noqa: E402, F401 — registers socket handlers on import
 
 # ---------------------------------------------------------------------------
 # Routers — root-level (version-agnostic)

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.health.create import create_health
-from app.routes.v5.tools.entries.sessions.create import create_session
+from app.tools.v5.entries.health.create import create_health
+from app.tools.v5.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

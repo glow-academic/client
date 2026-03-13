@@ -23,32 +23,32 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.cohort.docs import get_cohort_docs
-from app.routes.v5.tools.artifacts.cohort.get import get_cohorts as get_cohort_artifacts
+from app.tools.v5.artifacts.cohort.docs import get_cohort_docs
+from app.tools.v5.artifacts.cohort.get import get_cohorts as get_cohort_artifacts
 
 # Entry tool docs
-from app.routes.v5.tools.entries.cohort_drafts.docs import get_cohort_drafts_docs
+from app.tools.v5.entries.cohort_drafts.docs import get_cohort_drafts_docs
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.personas.docs import get_personas_docs
-from app.routes.v5.tools.resources.profile_personas.docs import (
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.personas.docs import get_personas_docs
+from app.tools.v5.resources.profile_personas.docs import (
     get_profile_personas_docs,
 )
-from app.routes.v5.tools.resources.profiles.docs import get_profiles_docs
-from app.routes.v5.tools.resources.simulation_availability.docs import (
+from app.tools.v5.resources.profiles.docs import get_profiles_docs
+from app.tools.v5.resources.simulation_availability.docs import (
     get_simulation_availability_docs,
 )
-from app.routes.v5.tools.resources.simulation_positions.docs import (
+from app.tools.v5.resources.simulation_positions.docs import (
     get_simulation_positions_docs,
 )
-from app.routes.v5.tools.resources.simulations.docs import get_simulations_docs
+from app.tools.v5.resources.simulations.docs import get_simulations_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Cohorts",

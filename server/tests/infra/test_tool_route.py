@@ -20,8 +20,8 @@ class ToolRouteResources:
 
 
 async def _create_tool_route_resources(pool, redis_client) -> ToolRouteResources:
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Tool {tag}"
@@ -67,7 +67,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/create",
+            "/v5/tools/create",
             json={
                 "tools": [
                     {
@@ -102,7 +102,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/get",
+            "/v5/tools/get",
             json={"tool_id": created["tool_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -137,7 +137,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/search",
+            "/v5/tools/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(tool_route_actor.department_id)],
@@ -169,11 +169,11 @@ class TestToolRoute:
         )
 
         first = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/get",
+            "/v5/tools/get",
             json={"tool_id": created["tool_id"]},
         )
         second = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/get",
+            "/v5/tools/get",
             json={"tool_id": created["tool_id"]},
         )
 
@@ -198,7 +198,7 @@ class TestToolRoute:
         updated = await _create_tool_route_resources(pool, redis_client)
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/update",
+            "/v5/tools/update",
             json={
                 "tools": [
                     {
@@ -218,7 +218,7 @@ class TestToolRoute:
         assert payload["results"][0]["tool_id"] == created["tool_id"]
 
         get_response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/get",
+            "/v5/tools/get",
             json={"tool_id": created["tool_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -244,7 +244,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/delete",
+            "/v5/tools/delete",
             json={"tool_ids": [created["tool_id"]]},
         )
 
@@ -255,7 +255,7 @@ class TestToolRoute:
         assert payload["results"][0]["tool_id"] == created["tool_id"]
 
         search_response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/search",
+            "/v5/tools/search",
             json={"search": created["name"], "page_size": 10, "page_offset": 0},
         )
         search_payload = search_response.json()
@@ -278,7 +278,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/duplicate",
+            "/v5/tools/duplicate",
             json={"tool_id": created["tool_id"]},
         )
 
@@ -302,7 +302,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.patch(
-            "/api/v5/artifacts/tools/draft",
+            "/v5/tools/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -334,7 +334,7 @@ class TestToolRoute:
             session_id=tool_route_actor.session_id,
         )
         draft_response = await v5_tool_route_client.client.patch(
-            "/api/v5/artifacts/tools/draft",
+            "/v5/tools/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -343,7 +343,7 @@ class TestToolRoute:
         assert draft_response.status_code == 200, draft_response.text
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/drafts",
+            "/v5/tools/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -364,7 +364,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/docs",
+            "/v5/tools/docs",
             json={},
         )
 
@@ -400,7 +400,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/export",
+            "/v5/tools/export",
             json={"tool_id": created["tool_id"]},
         )
 
@@ -421,7 +421,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/refresh",
+            "/v5/tools/refresh",
             json={},
         )
 
@@ -445,7 +445,7 @@ class TestToolRoute:
         )
 
         response = await v5_tool_route_client.client.post(
-            "/api/v5/artifacts/tools/create",
+            "/v5/tools/create",
             json={
                 "tools": [
                     {

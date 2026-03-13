@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.routes.v5.tools.resources.problem_statements.create import (
+from app.tools.v5.resources.problem_statements.create import (
     create_problem_statement,
 )
-from app.routes.v5.tools.resources.problem_statements.search import (
+from app.tools.v5.resources.problem_statements.search import (
     search_problem_statements,
 )
 

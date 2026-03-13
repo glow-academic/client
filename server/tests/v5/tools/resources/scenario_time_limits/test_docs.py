@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.scenario_time_limits.docs import (
+from app.tools.v5.resources.scenario_time_limits.docs import (
     get_scenario_time_limits_docs,
 )
 

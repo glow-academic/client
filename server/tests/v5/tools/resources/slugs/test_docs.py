@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.slugs.docs import get_slugs_docs
+from app.tools.v5.resources.slugs.docs import get_slugs_docs
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.protocols.create import create_protocol
-from app.routes.v5.tools.resources.protocols.get import get_protocols
+from app.tools.v5.resources.protocols.create import create_protocol
+from app.tools.v5.resources.protocols.get import get_protocols
 
 pytestmark = pytest.mark.asyncio
 

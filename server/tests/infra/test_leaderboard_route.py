@@ -31,7 +31,7 @@ class TestLeaderboardRoute:
         )
 
         response = await v5_leaderboard_route_client.client.post(
-            "/api/v5/artifacts/leaderboard/get",
+            "/v5/leaderboard/get",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -60,7 +60,7 @@ class TestLeaderboardRoute:
         )
 
         response = await v5_leaderboard_route_client.client.post(
-            "/api/v5/artifacts/leaderboard/search",
+            "/v5/leaderboard/search",
             json={
                 "page_limit": 50,
                 "page_offset": 0,
@@ -90,7 +90,7 @@ class TestLeaderboardRoute:
         )
 
         response = await v5_leaderboard_route_client.client.post(
-            "/api/v5/artifacts/leaderboard/docs",
+            "/v5/leaderboard/docs",
             json={"entity_id": None},
         )
 
@@ -118,7 +118,7 @@ class TestLeaderboardRoute:
         )
 
         response = await v5_leaderboard_route_client.client.post(
-            "/api/v5/artifacts/leaderboard/export",
+            "/v5/leaderboard/export",
             json={},
         )
 
@@ -145,7 +145,7 @@ class TestLeaderboardRoute:
         )
 
         response = await v5_leaderboard_route_client.client.post(
-            "/api/v5/artifacts/leaderboard/refresh",
+            "/v5/leaderboard/refresh",
             json={},
         )
 

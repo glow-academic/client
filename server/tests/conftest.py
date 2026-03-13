@@ -364,7 +364,7 @@ async def redis_client() -> AsyncGenerator[Redis, None]:
 @pytest_asyncio.fixture
 async def profile_id(conn, redis_client):
     """A fresh profiles_resource ID."""
-    from app.routes.v5.tools.resources.profiles.create import create_profile
+    from app.tools.v5.resources.profiles.create import create_profile
 
     profile = await create_profile(conn, redis_client)
     return profile.id
@@ -373,7 +373,7 @@ async def profile_id(conn, redis_client):
 @pytest_asyncio.fixture
 async def department_id(conn, redis_client):
     """A fresh departments_resource ID."""
-    from app.routes.v5.tools.resources.departments.create import create_department
+    from app.tools.v5.resources.departments.create import create_department
 
     dept = await create_department(conn, redis=redis_client)
     return dept.id
@@ -382,7 +382,7 @@ async def department_id(conn, redis_client):
 @pytest_asyncio.fixture
 async def session_id(conn, profile_id):
     """A fresh sessions_entry ID (depends on profile_id)."""
-    from app.routes.v5.tools.entries.sessions.create import create_session
+    from app.tools.v5.entries.sessions.create import create_session
 
     session = await create_session(conn, profile_id=profile_id)
     return session.id
@@ -391,7 +391,7 @@ async def session_id(conn, profile_id):
 @pytest_asyncio.fixture
 async def group_id(conn, session_id):
     """A fresh groups_entry ID (depends on session_id)."""
-    from app.routes.v5.tools.entries.groups.create import create_group
+    from app.tools.v5.entries.groups.create import create_group
 
     group = await create_group(conn, session_id=session_id)
     return group.id
@@ -400,7 +400,7 @@ async def group_id(conn, session_id):
 @pytest_asyncio.fixture
 async def run_id(conn, group_id, session_id):
     """A fresh runs_entry ID (depends on group_id, session_id)."""
-    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.tools.v5.entries.runs.create import create_run
 
     run = await create_run(conn, group_id=group_id, session_id=session_id)
     return run.id
@@ -409,7 +409,7 @@ async def run_id(conn, group_id, session_id):
 @pytest_asyncio.fixture
 async def call_id(conn, run_id, session_id):
     """A fresh calls_entry ID (depends on run_id, session_id)."""
-    from app.routes.v5.tools.entries.calls.create import create_call
+    from app.tools.v5.entries.calls.create import create_call
 
     call = await create_call(conn, run_id=run_id, session_id=session_id)
     return call.id
@@ -433,20 +433,20 @@ async def simulation_bundle(conn, redis_client, profile_id, department_id):
     """Create all resources needed for practice/home simulation tests."""
     from datetime import UTC, datetime
 
-    from app.routes.v5.tools.resources.cohorts.create import create_cohort
-    from app.routes.v5.tools.resources.personas.create import (
+    from app.tools.v5.resources.cohorts.create import create_cohort
+    from app.tools.v5.resources.personas.create import (
         create_persona as create_persona_resource,
     )
-    from app.routes.v5.tools.resources.profile_personas.create import (
+    from app.tools.v5.resources.profile_personas.create import (
         create_profile_persona,
     )
-    from app.routes.v5.tools.resources.simulation_availability.create import (
+    from app.tools.v5.resources.simulation_availability.create import (
         create_simulation_availability,
     )
-    from app.routes.v5.tools.resources.simulation_positions.create import (
+    from app.tools.v5.resources.simulation_positions.create import (
         create_simulation_position,
     )
-    from app.routes.v5.tools.resources.simulations.create import create_simulation
+    from app.tools.v5.resources.simulations.create import create_simulation
 
     cohort = await create_cohort(conn, redis_client)
     simulation = await create_simulation(conn, redis_client)

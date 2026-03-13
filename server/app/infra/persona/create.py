@@ -22,7 +22,7 @@ from app.infra.persona.permissions_context import (
     resolve_persona_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.persona.create import (
+from app.tools.v5.artifacts.persona.create import (
     create_persona as create_persona_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

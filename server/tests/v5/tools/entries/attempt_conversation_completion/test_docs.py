@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.attempt_conversation_completion.docs import (
+from app.tools.v5.entries.attempt_conversation_completion.docs import (
     get_attempt_conversation_completion_docs,
 )
 

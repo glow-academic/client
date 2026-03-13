@@ -30,18 +30,18 @@ from app.routes.v5.model.types import (
     ListModelApiResponse,
 )
 from app.routes.v5.types import ListFilterOption, ListFilterSection
-from app.routes.v5.tools.artifacts.model.get import get_models
-from app.routes.v5.tools.artifacts.model.search import search_models
-from app.routes.v5.tools.resources.agents.search import (
+from app.tools.v5.artifacts.model.get import get_models
+from app.tools.v5.artifacts.model.search import search_models
+from app.tools.v5.resources.agents.search import (
     search_agents as search_agents_resource,
 )
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.providers.get import (
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.providers.get import (
     get_providers as get_providers_resource,
 )
-from app.routes.v5.tools.resources.providers.search import (
+from app.tools.v5.resources.providers.search import (
     search_providers as search_providers_resource,
 )
 
@@ -111,7 +111,7 @@ async def search_model_impl(
     if filter_agent_ids:
         # agent_ids filter references agent_artifact IDs
         # Agents have models_junction → get model resource IDs
-        from app.routes.v5.tools.artifacts.agent.get import (
+        from app.tools.v5.artifacts.agent.get import (
             get_agents as get_agent_artifacts,
         )
 

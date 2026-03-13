@@ -24,9 +24,9 @@ class DocumentRouteResources:
 async def _create_document_route_resources(
     pool, redis_client
 ) -> DocumentRouteResources:
-    from app.routes.v5.tools.resources.departments.create import create_department
-    from app.routes.v5.tools.resources.descriptions.create import create_description
-    from app.routes.v5.tools.resources.names.create import create_name
+    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.v5.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Document {tag}"
@@ -80,7 +80,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/create",
+            "/v5/documents/create",
             json={
                 "documents": [
                     {
@@ -115,7 +115,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/get",
+            "/v5/documents/get",
             json={"document_id": created["document_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -151,7 +151,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/search",
+            "/v5/documents/search",
             json={
                 "search": created["name"],
                 "filter_department_ids": [str(document_route_actor.department_id)],
@@ -187,7 +187,7 @@ class TestDocumentRoute:
         updated = await _create_document_route_resources(pool, redis_client)
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/update",
+            "/v5/documents/update",
             json={
                 "documents": [
                     {
@@ -207,7 +207,7 @@ class TestDocumentRoute:
         assert payload["results"][0]["document_id"] == created["document_id"]
 
         get_response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/get",
+            "/v5/documents/get",
             json={"document_id": created["document_id"]},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -233,7 +233,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/delete",
+            "/v5/documents/delete",
             json={"document_ids": [created["document_id"]]},
         )
 
@@ -258,7 +258,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/duplicate",
+            "/v5/documents/duplicate",
             json={"document_id": created["document_id"]},
         )
 
@@ -282,7 +282,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.patch(
-            "/api/v5/artifacts/documents/draft",
+            "/v5/documents/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -312,7 +312,7 @@ class TestDocumentRoute:
             session_id=document_route_actor.session_id,
         )
         draft_response = await v5_document_route_client.client.patch(
-            "/api/v5/artifacts/documents/draft",
+            "/v5/documents/draft",
             json={
                 "expected_version": 0,
                 "name_id": str(resources.name_id),
@@ -321,7 +321,7 @@ class TestDocumentRoute:
         assert draft_response.status_code == 200, draft_response.text
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/drafts",
+            "/v5/documents/drafts",
             json={},
             headers={"X-Bypass-Cache": "1"},
         )
@@ -346,7 +346,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/docs",
+            "/v5/documents/docs",
             json={"entity_id": None},
         )
 
@@ -371,7 +371,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/export",
+            "/v5/documents/export",
             json={"document_id": created["document_id"]},
         )
 
@@ -392,7 +392,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/refresh",
+            "/v5/documents/refresh",
             json={},
         )
 
@@ -417,7 +417,7 @@ class TestDocumentRoute:
         )
 
         response = await v5_document_route_client.client.post(
-            "/api/v5/artifacts/documents/create",
+            "/v5/documents/create",
             json={
                 "documents": [
                     {

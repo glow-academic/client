@@ -19,30 +19,30 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.routes.v5.tools.artifacts.tool.get import (
+from app.tools.v5.artifacts.tool.get import (
     get_tools as get_tool_artifacts,
 )
-from app.routes.v5.tools.entries.tool_drafts.get import get_tool_drafts
+from app.tools.v5.entries.tool_drafts.get import get_tool_drafts
 
 # Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions
+from app.tools.v5.resources.arg_positions.get import get_arg_positions
 
 # Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.arg_positions.search import search_arg_positions
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args.search import search_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.args_outputs.search import search_args_outputs
-from app.routes.v5.tools.resources.artifacts.get import get_artifacts
-from app.routes.v5.tools.resources.artifacts.search import search_artifacts
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.operations.get import get_operations
-from app.routes.v5.tools.resources.operations.search import search_operations
+from app.tools.v5.resources.arg_positions.search import search_arg_positions
+from app.tools.v5.resources.args.get import get_args
+from app.tools.v5.resources.args.search import search_args
+from app.tools.v5.resources.args_outputs.get import get_args_outputs
+from app.tools.v5.resources.args_outputs.search import search_args_outputs
+from app.tools.v5.resources.artifacts.get import get_artifacts
+from app.tools.v5.resources.artifacts.search import search_artifacts
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.descriptions.search import search_descriptions
+from app.tools.v5.resources.flags.get import get_flags
+from app.tools.v5.resources.flags.search import search_flags
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.names.search import search_names
+from app.tools.v5.resources.operations.get import get_operations
+from app.tools.v5.resources.operations.search import search_operations
 
 # ---------------------------------------------------------------------------
 # Constants

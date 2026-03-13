@@ -23,24 +23,24 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.routes.v5.tools.artifacts.eval.docs import get_eval_docs
-from app.routes.v5.tools.artifacts.eval.get import get_evals as get_eval_artifacts
+from app.tools.v5.artifacts.eval.docs import get_eval_docs
+from app.tools.v5.artifacts.eval.get import get_evals as get_eval_artifacts
 
 # Entry tool docs
-from app.routes.v5.tools.entries.eval_drafts.docs import get_eval_drafts_docs
+from app.tools.v5.entries.eval_drafts.docs import get_eval_drafts_docs
 
 # Resource tool docs
-from app.routes.v5.tools.resources.departments.docs import get_departments_docs
-from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
-from app.routes.v5.tools.resources.flags.docs import get_flags_docs
-from app.routes.v5.tools.resources.model_flags.docs import get_model_flags_docs
-from app.routes.v5.tools.resources.model_positions.docs import get_model_positions_docs
-from app.routes.v5.tools.resources.model_rubrics.docs import get_model_rubrics_docs
-from app.routes.v5.tools.resources.models.docs import get_models_docs
-from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.tools.v5.resources.departments.docs import get_departments_docs
+from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
+from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.v5.resources.model_flags.docs import get_model_flags_docs
+from app.tools.v5.resources.model_positions.docs import get_model_positions_docs
+from app.tools.v5.resources.model_rubrics.docs import get_model_rubrics_docs
+from app.tools.v5.resources.models.docs import get_models_docs
+from app.tools.v5.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
+from app.tools.v5.resources.names.get import get_names
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Evals",

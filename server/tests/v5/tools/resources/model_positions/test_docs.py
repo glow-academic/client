@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.model_positions.docs import get_model_positions_docs
+from app.tools.v5.resources.model_positions.docs import get_model_positions_docs
 
 pytestmark = pytest.mark.asyncio
 

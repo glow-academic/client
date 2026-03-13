@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.endpoints.create import create_endpoint
-from app.routes.v5.tools.resources.endpoints.get import get_endpoints
+from app.tools.v5.resources.endpoints.create import create_endpoint
+from app.tools.v5.resources.endpoints.get import get_endpoints
 
 pytestmark = pytest.mark.asyncio
 

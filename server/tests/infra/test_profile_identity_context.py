@@ -4,13 +4,13 @@ import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.profile.create import (
+from app.tools.v5.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
-from app.routes.v5.tools.artifacts.profile.update import (
+from app.tools.v5.artifacts.profile.update import (
     update_profile as update_profile_artifact,
 )
-from app.routes.v5.tools.resources.names.create import create_name
+from app.tools.v5.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

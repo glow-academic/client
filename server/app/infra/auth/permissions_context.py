@@ -20,24 +20,24 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.artifacts.auth.get import (
+from app.tools.v5.artifacts.auth.get import (
     get_auths as get_auth_artifacts,
 )
-from app.routes.v5.tools.artifacts.setting.search import (
+from app.tools.v5.artifacts.setting.search import (
     search_settings as search_setting_artifacts,
 )
-from app.routes.v5.tools.resources.auths.create import (
+from app.tools.v5.resources.auths.create import (
     create_auth as create_auth_resource,
 )
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.create import create_description
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.protocols.create import create_protocol
-from app.routes.v5.tools.resources.protocols.get import get_protocols
-from app.routes.v5.tools.resources.slugs.create import create_slug
-from app.routes.v5.tools.resources.slugs.get import get_slugs
+from app.tools.v5.resources.departments.search import search_departments
+from app.tools.v5.resources.descriptions.create import create_description
+from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.v5.resources.names.create import create_name
+from app.tools.v5.resources.names.get import get_names
+from app.tools.v5.resources.protocols.create import create_protocol
+from app.tools.v5.resources.protocols.get import get_protocols
+from app.tools.v5.resources.slugs.create import create_slug
+from app.tools.v5.resources.slugs.get import get_slugs
 
 if TYPE_CHECKING:
     from app.infra.auth.create import AuthFieldError, CreateAuthItem

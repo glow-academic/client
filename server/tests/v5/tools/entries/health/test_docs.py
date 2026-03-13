@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.health.docs import get_health_docs
+from app.tools.v5.entries.health.docs import get_health_docs
 
 pytestmark = pytest.mark.asyncio
 

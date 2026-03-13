@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.evals.create import create_eval
-from app.routes.v5.tools.resources.evals.get import get_evals
+from app.tools.v5.resources.evals.create import create_eval
+from app.tools.v5.resources.evals.get import get_evals
 
 pytestmark = pytest.mark.asyncio
 
