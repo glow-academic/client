@@ -281,6 +281,8 @@ async def attempt_next_impl(
                         sid=sid,
                         attempt_id=attempt_id,
                         group_id=str(group_id),
+                        profile_id=profile_id,
+                        session_id=session_id,
                         draft_id=draft_id,
                         force_proceed=True,
                     ).model_dump(mode="json"),
@@ -914,6 +916,8 @@ async def attempt_start_impl(
                         sid=sid,
                         attempt_id=str(attempt_id),
                         group_id=str(group_id),
+                        profile_id=str(profile_id_uuid),
+                        session_id=str(session_id_uuid),
                         force_proceed=False,
                     ).model_dump(mode="json"),
                 )
@@ -952,6 +956,7 @@ async def emit_chat_generate_impl(
     resource_types: list[str] | None = None,
     user_instructions: list[str] | None = None,
     save: bool = True,
+    chat_started_emitted: bool = False,
 ) -> None:
     """Create group + run, then emit to generate pipeline."""
     from app.tools.entries.groups.create import create_group
@@ -983,6 +988,8 @@ async def emit_chat_generate_impl(
                 GenerateRequestData(
                     sid=sid,
                     profile_id=str(profile_id),
+                    profiles_id=str(profiles_id) if profiles_id else None,
+                    session_id=str(session_id),
                     artifact_types=[{"name": "chat", "operation": "get"}],
                     artifact_id=str(chat_entry_id),
                     draft_id=str(draft_id) if draft_id else None,
@@ -996,6 +1003,7 @@ async def emit_chat_generate_impl(
                         "attempt_chat_id": str(attempt_chat_id)
                         if attempt_chat_id
                         else None,
+                        "chat_started_emitted": chat_started_emitted,
                     },
                 ).model_dump(mode="json"),
             )
@@ -1396,6 +1404,20 @@ async def attempt_proceed_impl(
                     session_id=session_id_uuid,
                 )
 
+        await emit(
+            [
+                internal_event(
+                    "attempt_chat_started",
+                    {
+                        "sid": sid,
+                        "attempt_id": str(attempt_id),
+                        "chat_id": str(attempt_chat_id),
+                        "rooms": [sid, f"attempt_{attempt_chat_id}"] if sid else None,
+                    },
+                )
+            ]
+        )
+
         if needs_generation:
             await emit_chat_generate_impl(
                 emit=emit,
@@ -1410,25 +1432,12 @@ async def attempt_proceed_impl(
                 attempt_chat_id=attempt_chat_id,
                 draft_id=draft_id,
                 resource_types=resource_types_to_generate,
+                chat_started_emitted=True,
             )
         else:
             async with pool.acquire() as conn:
                 await refresh_attempt(conn)
                 await refresh_attempt_chat(conn)
-
-            await emit(
-                [
-                    internal_event(
-                        "attempt_chat_started",
-                        {
-                            "sid": sid,
-                            "attempt_id": str(attempt_id),
-                            "chat_id": str(attempt_chat_id),
-                            "rooms": [sid, f"attempt_{attempt_chat_id}"],
-                        },
-                    )
-                ]
-            )
 
     except Exception as e:
         logger.exception(f"Error in attempt_proceed: {e}")

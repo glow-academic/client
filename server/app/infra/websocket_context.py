@@ -23,6 +23,7 @@ from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
 from app.infra.helpers import dedupe_by_id
+from app.infra.attempt.context import resolve_attempt_context
 from app.infra.persona.context import resolve_persona_context
 from app.infra.system_context import resolve_system_context
 from app.infra.tool_graph import score_tools
@@ -46,6 +47,19 @@ PERSONA_SCORING_RESOURCES: set[str] = {
     "examples",
     "voices",
 }
+# Attempt generation currently needs both chat bootstrap resources and grade resources.
+ATTEMPT_SCORING_RESOURCES: set[str] = {
+    "personas",
+    "scenarios",
+    "parameters",
+    "fields",
+    "feedbacks",
+    "strengths",
+    "improvements",
+    "analyses",
+    "highlights",
+    "replacements",
+}
 # TODO: SCENARIO_SCORING_RESOURCES, SIMULATION_SCORING_RESOURCES, etc.
 
 
@@ -63,7 +77,29 @@ class ArtifactResolverConfig:
     id_kwarg: str  # kwarg name for artifact ID (e.g., "persona_id")
 
 
+async def _resolve_attempt_context_for_websocket(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    *,
+    attempt_id: UUID,
+    bypass_cache: bool = False,
+    **_ignored: Any,
+) -> ArtifactContext:
+    """Adapter for attempt context into the generic websocket registry."""
+    return await resolve_attempt_context(
+        pool,
+        redis,
+        attempt_id=attempt_id,
+        bypass_cache=bypass_cache,
+    )
+
+
 ARTIFACT_RESOLVERS: dict[str, ArtifactResolverConfig] = {
+    "attempt": ArtifactResolverConfig(
+        resolver=_resolve_attempt_context_for_websocket,
+        scoring_resources=ATTEMPT_SCORING_RESOURCES,
+        id_kwarg="attempt_id",
+    ),
     "persona": ArtifactResolverConfig(
         resolver=resolve_persona_context,
         scoring_resources=PERSONA_SCORING_RESOURCES,

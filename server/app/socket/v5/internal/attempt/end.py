@@ -140,6 +140,10 @@ async def attempt_end_internal_impl(
                         GenerateRequestData(
                             sid=sid,
                             profile_id=str(profile_id),
+                            profiles_id=str(identity.profiles_id)
+                            if identity and identity.profiles_id
+                            else None,
+                            session_id=str(session_id),
                             artifact_types=[{"name": "attempt", "operation": "get"}],
                             artifact_id=str(payload.attempt_id),
                             resource_types=GRADE_RESOURCE_TYPES,

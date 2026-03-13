@@ -45,6 +45,8 @@ class AttemptProceedData(BaseModel):
     sid: str
     attempt_id: str
     group_id: str
+    profile_id: str | None = None
+    session_id: str | None = None
     draft_id: str | None = None
     force_proceed: bool = False
     completed_chat_id: str | None = None

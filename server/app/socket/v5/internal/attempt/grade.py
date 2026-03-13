@@ -150,6 +150,8 @@ async def attempt_grade_internal_impl(
                     {
                         "sid": sid,
                         "profile_id": str(profile_id),
+                        "profiles_id": str(profiles_id) if profiles_id else None,
+                        "session_id": str(session_id),
                         "artifact_types": [{"name": "attempt", "operation": "get"}],
                         "artifact_id": str(attempt_id),
                         "resource_types": resource_types,

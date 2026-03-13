@@ -337,7 +337,11 @@ async def run_complete_impl(
     if artifact_type == "chat":
         attempt_id_data = metadata.get("attempt_id")
         attempt_chat_id_data = metadata.get("attempt_chat_id")
-        if attempt_id_data and attempt_chat_id_data:
+        if (
+            attempt_id_data
+            and attempt_chat_id_data
+            and not metadata.get("chat_started_emitted")
+        ):
             try:
                 await refresh_attempt(conn)
                 await refresh_attempt_chat(conn)
