@@ -12,7 +12,7 @@ from app.tools.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 
-router = APIRouter(prefix="/image", tags=["group-image"])
+router = APIRouter(prefix="/image", tags=["image"])
 
 
 @router.get("/{upload_id}/download", response_model=None)

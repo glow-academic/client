@@ -99,7 +99,37 @@ async def run_artifact_operation_with_audit(
         or effective_group_id is None
         or effective_profiles_id is None
     ):
-        return await runner()
+        from app.infra.stream.emitter import (
+            emit_artifact_operation_events,
+            emit_artifact_operation_failure,
+        )
+
+        try:
+            result = await runner()
+        except Exception as exc:
+            await emit_artifact_operation_failure(
+                artifact=artifact,
+                operation=operation,
+                arguments=arguments,
+                message=str(exc),
+                error_type=type(exc).__name__,
+                entity_id=None,
+                tool_id=tool_id,
+            )
+            raise
+
+        output = result.model_dump(mode="json") if hasattr(result, "model_dump") else result
+        if isinstance(output, dict):
+            await emit_artifact_operation_events(
+                artifact=artifact,
+                operation=operation,
+                arguments=arguments,
+                output=output,
+                entity_id=None,
+                call_id=None,
+                tool_id=tool_id,
+            )
+        return result
 
     async def _tool_fn(_conn: asyncpg.Connection, **_arguments: Any) -> Any:
         result = await runner()
@@ -107,19 +137,52 @@ async def run_artifact_operation_with_audit(
             return result.model_dump(mode="json")
         return result
 
-    async with pool.acquire() as conn:
-        result = await create_tool_call(
-            conn,
-            group_id=effective_group_id,
-            session_id=effective_session_id,
-            profile_id=effective_profiles_id,
-            upload_folder=effective_upload_folder,
-            tool_fn=_tool_fn,
+    try:
+        from app.infra.stream.emitter import (
+            emit_artifact_operation_events,
+            emit_artifact_operation_failure,
+        )
+
+        async with pool.acquire() as conn:
+            result = await create_tool_call(
+                conn,
+                group_id=effective_group_id,
+                session_id=effective_session_id,
+                profile_id=effective_profiles_id,
+                upload_folder=effective_upload_folder,
+                tool_fn=_tool_fn,
+                arguments=arguments,
+                tool_id=tool_id,
+                role=role,
+                mcp=mcp,
+                raise_on_error=True,
+            )
+    except Exception as exc:
+        await emit_artifact_operation_failure(
+            artifact=artifact,
+            operation=operation,
             arguments=arguments,
+            message=str(exc),
+            error_type=type(exc).__name__,
+            entity_id=None,
             tool_id=tool_id,
-            role=role,
-            mcp=mcp,
-            raise_on_error=True,
+        )
+        raise
+
+    emitted_output = (
+        result.result.model_dump(mode="json")
+        if hasattr(result.result, "model_dump")
+        else result.result
+    )
+    if isinstance(emitted_output, dict):
+        await emit_artifact_operation_events(
+            artifact=artifact,
+            operation=operation,
+            arguments=arguments,
+            output=emitted_output,
+            entity_id=None,
+            call_id=result.call_id,
+            tool_id=tool_id,
         )
 
     if response_model is not None:

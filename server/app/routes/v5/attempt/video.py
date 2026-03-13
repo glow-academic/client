@@ -12,7 +12,7 @@ from app.tools.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 
-router = APIRouter(prefix="/video", tags=["attempt-video"])
+router = APIRouter(prefix="/video", tags=["video"])
 
 
 def _create_range_streaming_response(

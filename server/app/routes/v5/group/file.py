@@ -12,7 +12,7 @@ from app.tools.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 
-router = APIRouter(prefix="/file", tags=["group-file"])
+router = APIRouter(prefix="/file", tags=["file"])
 
 
 def _create_range_streaming_response(

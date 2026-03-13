@@ -13,7 +13,7 @@ from app.routes.v5.group.refresh import router as refresh_router
 from app.routes.v5.group.text import router as text_router
 from app.routes.v5.group.video import router as video_router
 
-router = APIRouter(prefix="/group", tags=["artifacts", "group"])
+router = APIRouter(prefix="/group", tags=["group"])
 
 router.include_router(get_router)
 router.include_router(refresh_router)

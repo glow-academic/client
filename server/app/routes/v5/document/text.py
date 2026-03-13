@@ -15,7 +15,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 
-router = APIRouter(prefix="/text", tags=["documents-text"])
+router = APIRouter(prefix="/text", tags=["text"])
 
 ALLOWED_TEXT_TYPES = {
     "text/plain",

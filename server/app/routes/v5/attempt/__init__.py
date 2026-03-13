@@ -24,7 +24,7 @@ from app.routes.v5.attempt.use_previous import router as use_previous_router
 from app.routes.v5.attempt.video import router as video_download_router
 from app.routes.v5.attempt.voice import router as voice_router
 
-router = APIRouter(prefix="/attempt", tags=["artifacts", "attempt"])
+router = APIRouter(prefix="/attempt", tags=["attempt"])
 
 router.include_router(get_router)
 router.include_router(archive_router)

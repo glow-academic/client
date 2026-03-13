@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
-from uuid import UUID
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
 import asyncpg
 from redis.asyncio import Redis
@@ -45,17 +45,18 @@ def _is_after_cursor(
     return (created_at, event_id) > cursor
 
 
-def _project_call_receipt(
+def build_operation_events(
     *,
     artifact: str,
     operation: str,
     entity_id: UUID | None,
     created_at: datetime,
-    call_id: UUID,
+    call_id: UUID | None,
     tool_id: UUID | None,
-    receipt: dict,
+    arguments: dict,
+    output: dict,
 ) -> list[EventEnvelope]:
-    """Project a stored call receipt into lifecycle + domain events."""
+    """Project operation input/output into lifecycle + domain events."""
     config = get_artifact_events_config(artifact)
     if config is None:
         return []
@@ -64,7 +65,6 @@ def _project_call_receipt(
     if operation_config is None:
         return []
 
-    output = receipt.get("output") or {}
     if isinstance(output, str):
         try:
             output = json.loads(output)
@@ -78,7 +78,7 @@ def _project_call_receipt(
     if operation_config.resolve_entity_ids is not None:
         try:
             domain_entity_ids = operation_config.resolve_entity_ids(
-                receipt.get("arguments") or {},
+                arguments,
                 output if isinstance(output, dict) else {},
             )
         except (TypeError, ValueError):
@@ -89,10 +89,11 @@ def _project_call_receipt(
         domain_entity_ids = []
 
     if operation_config.include_call_lifecycle:
+        event_root = str(call_id or uuid4())
         started_event_type = build_lifecycle_event_type(artifact, operation, "started")
         events.append(
             EventEnvelope(
-                id=f"{call_id}:{started_event_type}",
+                id=f"{event_root}:{started_event_type}",
                 event_type=started_event_type,
                 artifact=artifact,
                 operation=operation,
@@ -100,7 +101,7 @@ def _project_call_receipt(
                 entity_id=entity_id,
                 call_id=call_id,
                 tool_id=tool_id,
-                payload={"arguments": receipt.get("arguments", {})},
+                payload={"arguments": arguments},
             )
         )
         lifecycle_type = build_lifecycle_event_type(
@@ -110,7 +111,7 @@ def _project_call_receipt(
         )
         events.append(
             EventEnvelope(
-                id=f"{call_id}:{lifecycle_type}",
+                id=f"{event_root}:{lifecycle_type}",
                 event_type=lifecycle_type,
                 artifact=artifact,
                 operation=operation,
@@ -126,9 +127,10 @@ def _project_call_receipt(
         for event_type in operation_config.domain_event_names:
             target_entity_ids = domain_entity_ids or [entity_id]
             for target_entity_id in target_entity_ids:
+                event_root = str(call_id or uuid4())
                 events.append(
                     EventEnvelope(
-                        id=f"{call_id}:{event_type}:{target_entity_id or 'collection'}",
+                        id=f"{event_root}:{event_type}:{target_entity_id or 'collection'}",
                         event_type=event_type,
                         artifact=artifact,
                         operation=operation,
@@ -137,13 +139,36 @@ def _project_call_receipt(
                         call_id=call_id,
                         tool_id=tool_id,
                         payload={
-                            "arguments": receipt.get("arguments", {}),
+                            "arguments": arguments,
                             "output": output,
                         },
                     )
                 )
 
     return events
+
+
+def _project_call_receipt(
+    *,
+    artifact: str,
+    operation: str,
+    entity_id: UUID | None,
+    created_at: datetime,
+    call_id: UUID,
+    tool_id: UUID | None,
+    receipt: dict,
+) -> list[EventEnvelope]:
+    """Project a stored call receipt into lifecycle + domain events."""
+    return build_operation_events(
+        artifact=artifact,
+        operation=operation,
+        entity_id=entity_id,
+        created_at=created_at,
+        call_id=call_id,
+        tool_id=tool_id,
+        arguments=receipt.get("arguments") or {},
+        output=receipt.get("output") or {},
+    )
 
 
 async def read_artifact_events(

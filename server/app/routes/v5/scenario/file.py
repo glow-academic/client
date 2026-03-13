@@ -15,7 +15,7 @@ from app.utils.document.pdf_first_page_to_image_bytes import (
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 
-router = APIRouter(prefix="/file", tags=["scenarios-file"])
+router = APIRouter(prefix="/file", tags=["file"])
 
 
 def _create_range_streaming_response(

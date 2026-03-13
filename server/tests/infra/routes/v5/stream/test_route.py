@@ -12,6 +12,8 @@ from starlette.requests import Request as StarletteRequest
 from tests.infra.route_helpers import create_admin_route_actor
 
 from app.infra.stream.types import EventEnvelope
+from app.infra.stream.emitter import emit_artifact_operation_events
+from app.infra.stream.registry import get_artifact_events_config
 from app.routes.v5.stream import stream_events
 
 
@@ -244,3 +246,74 @@ class TestEventsRoutes:
         )
 
         assert events == ["artifacts.persona.viewed"]
+
+    async def test_stream_emits_live_events_from_hub_when_store_is_empty(
+        self,
+        monkeypatch,
+        events_route_actor,
+    ):
+        async def _read_artifact_events(*_args, **_kwargs):
+            return []
+
+        monkeypatch.setattr(
+            "app.routes.v5.stream.read_artifact_events",
+            _read_artifact_events,
+        )
+        persona_config = get_artifact_events_config("persona")
+        assert persona_config is not None
+        operation_config = persona_config.get_operation("create")
+        assert operation_config is not None
+        async def _resolve_subscription(**_kwargs):
+            return persona_config, operation_config
+        monkeypatch.setattr(
+            "app.routes.v5.stream.resolve_subscription",
+            _resolve_subscription,
+        )
+
+        request = _build_stream_request(
+            events_route_actor.profile_id,
+            events_route_actor.session_id,
+        )
+        response = await stream_events(
+            request,
+            artifact="persona",
+            operation="create",
+            entity_id=None,
+            cursor=None,
+            types=None,
+            limit=10,
+        )
+
+        async def _emit():
+            await asyncio.sleep(0.1)
+            await emit_artifact_operation_events(
+                artifact="persona",
+                operation="create",
+                arguments={"personas": [{"name": "Live Persona"}]},
+                output={
+                    "success": True,
+                    "results": [
+                        {
+                            "success": True,
+                            "persona_id": "019ce726-fa14-7f2a-aebb-0067bca4b029",
+                            "message": "ok",
+                        }
+                    ],
+                },
+            )
+
+        task = asyncio.create_task(_emit())
+        try:
+            events = await _collect_stream_events(
+                response,
+                stop_event="artifacts.persona.created",
+                max_chunks=8,
+            )
+        finally:
+            await task
+
+        assert events == [
+            "artifacts.persona.create.started",
+            "artifacts.persona.create.completed",
+            "artifacts.persona.created",
+        ]

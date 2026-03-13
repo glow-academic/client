@@ -18,6 +18,8 @@ from pydantic import BaseModel
 
 from app.infra.events.store import build_event_cursor, read_artifact_events
 from app.infra.globals import get_pool, get_redis_client
+from app.infra.stream.hub import subscribe as subscribe_live_events
+from app.infra.stream.hub import unsubscribe as unsubscribe_live_events
 from app.infra.stream.registry import EVENT_REGISTRY
 from app.infra.stream.shared import resolve_subscription
 from app.registry.entry_events import ENTRY_EVENTS
@@ -84,33 +86,57 @@ async def stream_events(
     )
 
     profile_id = http_request.state.profile_id
+    live_queue = subscribe_live_events(
+        artifact=artifact,
+        operation=operation,
+        entity_id=entity_id,
+        event_types=types,
+    )
 
     async def _gen():
         current_cursor = cursor
-        while True:
-            events = await read_artifact_events(
-                get_pool(),
-                get_redis_client(),
-                artifact=artifact,
-                operation=operation,
-                entity_id=entity_id,
-                cursor=current_cursor,
-                event_types=types,
-                limit=limit,
-            )
-            if operation_config.filter_events is not None:
-                events = await operation_config.filter_events(profile_id, events)
+        try:
+            while True:
+                events = await read_artifact_events(
+                    get_pool(),
+                    get_redis_client(),
+                    artifact=artifact,
+                    operation=operation,
+                    entity_id=entity_id,
+                    cursor=current_cursor,
+                    event_types=types,
+                    limit=limit,
+                )
+                if operation_config.filter_events is not None:
+                    events = await operation_config.filter_events(profile_id, events)
 
-            if events:
-                for event in events:
+                if events:
+                    for event in events:
+                        current_cursor = build_event_cursor(event)
+                        yield f"id: {event.id}\n"
+                        yield f"event: {event.event_type}\n"
+                        yield f"data: {event.model_dump_json()}\n\n"
+                    continue
+
+                try:
+                    live_event = await asyncio.wait_for(live_queue.get(), timeout=1.0)
+                except TimeoutError:
+                    yield ": keep-alive\n\n"
+                    continue
+
+                filtered_events = [live_event]
+                if operation_config.filter_events is not None:
+                    filtered_events = await operation_config.filter_events(
+                        profile_id, filtered_events
+                    )
+
+                for event in filtered_events:
                     current_cursor = build_event_cursor(event)
                     yield f"id: {event.id}\n"
                     yield f"event: {event.event_type}\n"
                     yield f"data: {event.model_dump_json()}\n\n"
-            else:
-                yield ": keep-alive\n\n"
-
-            await asyncio.sleep(1.0)
+        finally:
+            unsubscribe_live_events(live_queue)
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
 
@@ -120,30 +146,71 @@ async def stream_events(
 # ---------------------------------------------------------------------------
 
 _models: dict[str, type[BaseModel]] = {}
+_model_tags: dict[str, str] = {}  # model name → parent router tag
+
+# Mapping from EVENT_REGISTRY key (singular) to router tag (as in URL prefix)
+_ARTIFACT_TAGS: dict[str, str] = {
+    "activity": "activity",
+    "agent": "agents",
+    "attempt": "attempt",
+    "auth": "auths",
+    "benchmark": "benchmark",
+    "chat": "chat",
+    "cohort": "cohorts",
+    "dashboard": "dashboard",
+    "department": "departments",
+    "document": "documents",
+    "eval": "evals",
+    "field": "fields",
+    "group": "group",
+    "health": "health",
+    "home": "home",
+    "invocation": "invocation",
+    "leaderboard": "leaderboard",
+    "model": "models",
+    "parameter": "parameters",
+    "persona": "personas",
+    "pricing": "pricing",
+    "practice": "practice",
+    "profile": "profiles",
+    "provider": "providers",
+    "record": "record",
+    "reports": "reports",
+    "rubric": "rubrics",
+    "scenario": "scenarios",
+    "session": "session",
+    "setting": "settings",
+    "simulation": "simulations",
+    "test": "test",
+    "tool": "tools",
+}
 
 
-def _register(model: type[BaseModel] | None) -> None:
+def _register(model: type[BaseModel] | None, tag: str | None = None) -> None:
     if model is not None and model.__name__ not in _models:
         _models[model.__name__] = model
+        if tag:
+            _model_tags[model.__name__] = tag
 
 
-# 1. Artifact operations (EVENT_REGISTRY)
-for _config in EVENT_REGISTRY.values():
+# 1. Artifact operations (EVENT_REGISTRY) — tag with parent router
+for _artifact_key, _config in EVENT_REGISTRY.items():
+    _tag = _ARTIFACT_TAGS.get(_artifact_key, _artifact_key)
     for _op in _config.operations.values():
         for _m in _op.lifecycle_models.values():
-            _register(_m)
+            _register(_m, tag=_tag)
         for _m in _op.domain_events.values():
-            _register(_m)
+            _register(_m, tag=_tag)
 
-# 2. Entry generation events
+# 2. Entry generation events — belong to attempt flow
 for _m in ENTRY_EVENTS.values():
-    _register(_m)
+    _register(_m, tag="attempt")
 
-# 3. Resource generation events
-for _m in RESOURCE_EVENTS.values():
-    _register(_m)
+# 3. Resource generation events — key is the plural resource name
+for _res_name, _m in RESOURCE_EVENTS.items():
+    _register(_m, tag=_res_name)
 
-# 4. Socket types not yet in EVENT_REGISTRY
+# 4. Socket types not yet in EVENT_REGISTRY — tag by prefix
 _EXTRA_SOCKET_TYPES: list[type[BaseModel]] = [
     ConnectionConfirmedPayload,
     GeneratePayload,
@@ -177,7 +244,13 @@ _EXTRA_SOCKET_TYPES: list[type[BaseModel]] = [
 ]
 
 for _m in _EXTRA_SOCKET_TYPES:
-    _register(_m)
+    _name = _m.__name__
+    if _name.startswith("Attempt"):
+        _register(_m, tag="attempt")
+    elif _name.startswith("Test"):
+        _register(_m, tag="test")
+    else:
+        _register(_m)
 
 
 def _make_endpoint(model: type[BaseModel]) -> Callable[..., Any]:
@@ -192,10 +265,12 @@ def _make_endpoint(model: type[BaseModel]) -> Callable[..., Any]:
 
 
 for _name, _model in sorted(_models.items()):
+    _extra_tags = [_model_tags[_name]] if _name in _model_tags else []
     router.add_api_route(
         f"/{_name}",
         _make_endpoint(_model),
         methods=["POST"],
+        tags=_extra_tags,
         name=f"{_name}_schema",
         summary=f"Schema: {_name}",
     )

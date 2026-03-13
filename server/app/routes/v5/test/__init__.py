@@ -14,7 +14,7 @@ from app.routes.v5.test.search import router as search_router
 from app.routes.v5.test.start import router as start_router
 from app.routes.v5.test.stop import router as stop_router
 
-router = APIRouter(prefix="/test", tags=["artifacts", "test"])
+router = APIRouter(prefix="/test", tags=["test"])
 
 router.include_router(get_router)
 router.include_router(archive_router)

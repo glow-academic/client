@@ -26,7 +26,7 @@ from app.utils.mime.get_content_type import get_content_type
 
 logger = get_logger(__name__)
 
-router = APIRouter(prefix="/video", tags=["scenarios-video"])
+router = APIRouter(prefix="/video", tags=["video"])
 
 TUS_HEADERS = {
     "Tus-Resumable": "1.0.0",
