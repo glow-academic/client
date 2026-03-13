@@ -44,7 +44,7 @@ def build_lifecycle_event_type(
     phase: LifecyclePhase,
 ) -> str:
     """Build the canonical public lifecycle event name."""
-    return f"artifacts.{artifact}.{operation}.{phase}"
+    return f"{artifact}.{operation}.{phase}"
 
 
 def build_default_lifecycle_event_types(

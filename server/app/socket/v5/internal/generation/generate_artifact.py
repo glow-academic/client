@@ -28,8 +28,6 @@ internal_sio = get_internal_sio()
 async def generate_artifact_internal(data: dict[str, Any]) -> None:
     """Handle generate_artifact event from internal bus (server-to-server)."""
     sid = data.get("sid", "")
-    if not sid:
-        return
     try:
         payload = GenerateArtifactPayload(**data)
     except Exception as e:
@@ -45,7 +43,9 @@ async def generate_artifact_internal(data: dict[str, Any]) -> None:
         )
         return
 
-    profile_id = await find_profile_by_socket(sid)
+    profile_id = data.get("profile_id")
+    if profile_id is None and sid:
+        profile_id = await find_profile_by_socket(sid)
     await generate_artifact_impl(
         payload,
         emit=make_emit(),

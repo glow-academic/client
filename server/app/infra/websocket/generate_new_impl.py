@@ -29,8 +29,6 @@ async def generate_new_impl(
       profile_id, profiles_id, session_id, group_id, requests_per_day
     """
     sid = data.get("sid", "")
-    if not sid:
-        return
 
     artifact_types_raw = data.get("artifact_types") or []
     artifact_type = (
@@ -46,13 +44,19 @@ async def generate_new_impl(
 
     if not profile_id_str:
         await _emit_error(
-            emit, sid, "Profile not found. Please reconnect.", artifact_type
+            emit,
+            sid,
+            "Profile not found. Please reconnect." if sid else "Profile not found.",
+            artifact_type,
         )
         return
 
     if not session_id_str:
         await _emit_error(
-            emit, sid, "Session not found. Please reconnect.", artifact_type
+            emit,
+            sid,
+            "Session not found. Please reconnect." if sid else "Session not found.",
+            artifact_type,
         )
         return
 

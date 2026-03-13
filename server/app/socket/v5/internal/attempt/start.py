@@ -79,8 +79,6 @@ async def attempt_start_internal_impl(
         created_attempt_id = (
             proceed_events[0].data.get("attempt_id", "") if proceed_events else ""
         )
-        if created_attempt_id and not data.get("sid"):
-            return AttemptStartInternalResult(attempt_id=created_attempt_id)
         for event in proceed_events:
             await attempt_proceed_internal_impl(
                 {

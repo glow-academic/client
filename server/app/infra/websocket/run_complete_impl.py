@@ -129,8 +129,6 @@ async def run_complete_impl(
     Callable from socket handler, API, or tests.
     """
     sid = data.get("sid", "")
-    if not sid:
-        return
 
     run_id = data.get("run_id")
     group_id_str = data.get("group_id", "")
@@ -359,6 +357,28 @@ async def run_complete_impl(
                 )
             except Exception as e:
                 logger.exception(f"Failed chat post-save: {e}")
+
+    if artifact_type in ("attempt", "chat"):
+        grade_id_data = metadata.get("grade_id")
+        chat_id_data = metadata.get("chat_id")
+        if grade_id_data and chat_id_data:
+            try:
+                from app.infra.websocket.attempt_types import AttemptGradeCompleteData
+
+                await emit(
+                    [
+                        internal_event(
+                            "attempt_grade_complete",
+                            AttemptGradeCompleteData(
+                                sid=sid,
+                                chat_id=chat_id_data,
+                                grade_id=grade_id_data,
+                            ).model_dump(mode="json"),
+                        )
+                    ]
+                )
+            except Exception as e:
+                logger.exception(f"Failed attempt grade completion emit: {e}")
 
     # Step 7: Cleanup trackers
     await cleanup_run(redis, run_id=run_id)

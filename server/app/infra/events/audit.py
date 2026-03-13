@@ -101,8 +101,17 @@ async def run_artifact_operation_with_audit(
         or effective_profiles_id is None
     ):
         from app.infra.stream.emitter import (
-            emit_artifact_operation_events,
+            emit_artifact_operation_finished,
+            emit_artifact_operation_started,
             emit_artifact_operation_failure,
+        )
+
+        await emit_artifact_operation_started(
+            artifact=artifact,
+            operation=operation,
+            arguments=arguments,
+            entity_id=entity_id or attempt_id or test_id,
+            tool_id=tool_id,
         )
 
         try:
@@ -121,7 +130,7 @@ async def run_artifact_operation_with_audit(
 
         output = result.model_dump(mode="json") if hasattr(result, "model_dump") else result
         if isinstance(output, dict):
-            await emit_artifact_operation_events(
+            await emit_artifact_operation_finished(
                 artifact=artifact,
                 operation=operation,
                 arguments=arguments,
@@ -140,8 +149,17 @@ async def run_artifact_operation_with_audit(
 
     try:
         from app.infra.stream.emitter import (
-            emit_artifact_operation_events,
+            emit_artifact_operation_finished,
+            emit_artifact_operation_started,
             emit_artifact_operation_failure,
+        )
+
+        await emit_artifact_operation_started(
+            artifact=artifact,
+            operation=operation,
+            arguments=arguments,
+            entity_id=entity_id or attempt_id or test_id,
+            tool_id=tool_id,
         )
 
         async with pool.acquire() as conn:
@@ -176,7 +194,7 @@ async def run_artifact_operation_with_audit(
         else result.result
     )
     if isinstance(emitted_output, dict):
-        await emit_artifact_operation_events(
+        await emit_artifact_operation_finished(
             artifact=artifact,
             operation=operation,
             arguments=arguments,

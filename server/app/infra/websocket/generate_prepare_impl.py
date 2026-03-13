@@ -205,8 +205,6 @@ async def generate_prepare_impl(
         artifact_config: ArtifactGenerateConfig from the registry for this artifact_type.
     """
     sid = data.get("sid", "")
-    if not sid:
-        return
 
     artifact_type = resolve_primary_artifact_type(data)
 
@@ -218,19 +216,30 @@ async def generate_prepare_impl(
 
     if not profile_id_str:
         await _emit_error(
-            emit, sid, "Profile not found. Please reconnect.", artifact_type
+            emit,
+            sid,
+            "Profile not found. Please reconnect." if sid else "Profile not found.",
+            artifact_type,
         )
         return
 
     if not profiles_id_str:
         await _emit_error(
-            emit, sid, "Profiles resource not found. Please reconnect.", artifact_type
+            emit,
+            sid,
+            "Profiles resource not found. Please reconnect."
+            if sid
+            else "Profiles resource not found.",
+            artifact_type,
         )
         return
 
     if not session_id_str:
         await _emit_error(
-            emit, sid, "Session not found. Please reconnect.", artifact_type
+            emit,
+            sid,
+            "Session not found. Please reconnect." if sid else "Session not found.",
+            artifact_type,
         )
         return
 
