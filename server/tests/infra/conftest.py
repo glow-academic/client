@@ -130,14 +130,14 @@ def _build_v5_events_test_app(
         request.state.mcp = False
         return False
 
-    from app.routes.v5.stream import get_router
+    from app.routes.v5.stream import router as stream_router
 
     app = FastAPI()
     root_router = APIRouter(
-        prefix="/api/v5",
+        prefix="/v5",
         dependencies=[Depends(require_auth), Depends(get_mcp)],
     )
-    root_router.include_router(get_router())
+    root_router.include_router(stream_router)
     app.include_router(root_router)
     app.dependency_overrides[require_auth] = _require_auth_override
     app.dependency_overrides[get_mcp] = _get_mcp_override

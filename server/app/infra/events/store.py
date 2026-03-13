@@ -11,8 +11,8 @@ from redis.asyncio import Redis
 
 from app.events.types import build_lifecycle_event_type
 from app.infra.tools.call_args import resolve_tool
-from app.routes.v5.stream.registry import get_artifact_events_config
-from app.routes.v5.stream.types import EventEnvelope
+from app.infra.stream.registry import get_artifact_events_config
+from app.infra.stream.types import EventEnvelope
 from app.tools.v5.entries.call_uploads.search import search_call_uploads
 from app.tools.v5.entries.calls.search import search_calls
 from app.tools.v5.entries.uploads.get import get_upload

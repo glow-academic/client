@@ -6,7 +6,7 @@ following the two-pass architecture pattern.
 
 from uuid import UUID
 
-from app.routes.v5.permissions import select_agents_for_artifact
+from app.infra.agent.selection import select_agents_for_artifact
 from app.routes.v5.types import CandidateAgent
 
 # Re-export for use in get.py

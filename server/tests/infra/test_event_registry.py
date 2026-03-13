@@ -1,6 +1,6 @@
 """Tests for the centralized event registry contract."""
 
-from app.routes.v5.stream.registry import get_artifact_events_config
+from app.infra.stream.registry import get_artifact_events_config
 
 
 def test_registry_resolves_persona_config() -> None:

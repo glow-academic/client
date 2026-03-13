@@ -1,32 +1,29 @@
-"""Auto-generated OpenAPI schema routes derived from event declarations.
+"""Stream delivery — GET /v5/stream (SSE) + POST /v5/stream/{Type} (OpenAPI schema).
 
-Exposes every unique Pydantic model referenced in EVENT_REGISTRY,
-ENTRY_EVENTS, and RESOURCE_EVENTS as a dummy POST endpoint so that
-``openapi-typescript`` generates strongly-typed client payloads.
-
-This replaces the manually maintained dummy routes that previously lived
-in ``socket/server/routes.py``, ``socket/client/routes.py``,
-``socket/server/entries/__init__.py``, and
-``socket/server/resources/__init__.py``.
-
-Types are defined once (Pydantic models), referenced in event
-declarations (EVENT_REGISTRY), and OpenAPI schema is derived here.
+The SSE endpoint streams artifact events to clients.
+The schema routes are dummy POST endpoints so ``openapi-typescript``
+generates strongly-typed client payloads from EVENT_REGISTRY.
 """
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from typing import Any
+from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from app.infra.events.store import build_event_cursor, read_artifact_events
+from app.infra.globals import get_pool, get_redis_client
+from app.infra.stream.registry import EVENT_REGISTRY
+from app.infra.stream.shared import resolve_subscription
 from app.registry.entry_events import ENTRY_EVENTS
 from app.registry.resource_events import RESOURCE_EVENTS
-from app.routes.v5.stream.registry import EVENT_REGISTRY
 
 # --- Socket types not yet modeled as artifact operations ----------------
-# These will shrink as operations are added to EVENT_REGISTRY.
 from app.socket.v5.client.types import (
     AttemptAssistantHintsEvent,
     AttemptAudioStopPayload,
@@ -59,10 +56,67 @@ from app.socket.v5.client.types import (
     TestRunPayload,
 )
 
-schema_router = APIRouter(tags=["stream"])
+router = APIRouter(prefix="/stream", tags=["stream"])
 
 # ---------------------------------------------------------------------------
-# Collect unique models
+# SSE endpoint — GET /v5/stream
+# ---------------------------------------------------------------------------
+
+
+@router.get("/")
+async def stream_events(
+    http_request: Request,
+    artifact: str = Query(...),
+    operation: str = Query(...),
+    entity_id: UUID | None = Query(default=None),
+    cursor: str | None = Query(default=None),
+    types: list[str] | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=200),
+) -> StreamingResponse:
+    """Stream artifact events via SSE using the centralized declaration registry."""
+    _, operation_config = await resolve_subscription(
+        artifact=artifact,
+        operation=operation,
+        entity_id=entity_id,
+        profile_id=http_request.state.profile_id,
+        session_id=http_request.state.session_id,
+        event_types=types,
+    )
+
+    profile_id = http_request.state.profile_id
+
+    async def _gen():
+        current_cursor = cursor
+        while True:
+            events = await read_artifact_events(
+                get_pool(),
+                get_redis_client(),
+                artifact=artifact,
+                operation=operation,
+                entity_id=entity_id,
+                cursor=current_cursor,
+                event_types=types,
+                limit=limit,
+            )
+            if operation_config.filter_events is not None:
+                events = await operation_config.filter_events(profile_id, events)
+
+            if events:
+                for event in events:
+                    current_cursor = build_event_cursor(event)
+                    yield f"id: {event.id}\n"
+                    yield f"event: {event.event_type}\n"
+                    yield f"data: {event.model_dump_json()}\n\n"
+            else:
+                yield ": keep-alive\n\n"
+
+            await asyncio.sleep(1.0)
+
+    return StreamingResponse(_gen(), media_type="text/event-stream")
+
+
+# ---------------------------------------------------------------------------
+# OpenAPI schema — POST /v5/stream/{ModelName}
 # ---------------------------------------------------------------------------
 
 _models: dict[str, type[BaseModel]] = {}
@@ -73,7 +127,7 @@ def _register(model: type[BaseModel] | None) -> None:
         _models[model.__name__] = model
 
 
-# 1. Artifact operations (EVENT_REGISTRY) — lifecycle + domain models
+# 1. Artifact operations (EVENT_REGISTRY)
 for _config in EVENT_REGISTRY.values():
     for _op in _config.operations.values():
         for _m in _op.lifecycle_models.values():
@@ -81,19 +135,17 @@ for _config in EVENT_REGISTRY.values():
         for _m in _op.domain_events.values():
             _register(_m)
 
-# 2. Entry generation events (dynamic per entry type)
+# 2. Entry generation events
 for _m in ENTRY_EVENTS.values():
     _register(_m)
 
-# 3. Resource generation events (dynamic per resource type)
+# 3. Resource generation events
 for _m in RESOURCE_EVENTS.values():
     _register(_m)
 
 # 4. Socket types not yet in EVENT_REGISTRY
 _EXTRA_SOCKET_TYPES: list[type[BaseModel]] = [
-    # Connection lifecycle
     ConnectionConfirmedPayload,
-    # Generation lifecycle
     GeneratePayload,
     GenerationProgressEvent,
     GenerationCompleteEvent,
@@ -101,27 +153,22 @@ _EXTRA_SOCKET_TYPES: list[type[BaseModel]] = [
     GenerationSavedEvent,
     GenerationMediaProgressEvent,
     GenerationMediaCompleteEvent,
-    # Attempt room management
     AttemptJoinPayload,
     AttemptLeavePayload,
     AttemptJoinedEvent,
-    # Attempt actions not modeled as operations
     AttemptNextPayload,
     AttemptEndAllPayload,
     AttemptUsePreviousPayload,
     AttemptAudioStopPayload,
     AttemptErrorEvent,
     AttemptAssistantHintsEvent,
-    # Attempt user streaming (audio/voice)
     AttemptUserStartEvent,
     AttemptUserProgressEvent,
     AttemptUserCompleteEvent,
     AttemptUserDeltaEvent,
-    # Test room management
     TestJoinPayload,
     TestLeavePayload,
     TestJoinedEvent,
-    # Test actions not modeled as operations
     TestNextPayload,
     TestRunPayload,
     TestGroupPayload,
@@ -131,10 +178,6 @@ _EXTRA_SOCKET_TYPES: list[type[BaseModel]] = [
 
 for _m in _EXTRA_SOCKET_TYPES:
     _register(_m)
-
-# ---------------------------------------------------------------------------
-# Generate one dummy endpoint per unique model
-# ---------------------------------------------------------------------------
 
 
 def _make_endpoint(model: type[BaseModel]) -> Callable[..., Any]:
@@ -147,7 +190,7 @@ def _make_endpoint(model: type[BaseModel]) -> Callable[..., Any]:
 
 
 for _name, _model in sorted(_models.items()):
-    schema_router.add_api_route(
+    router.add_api_route(
         f"/{_name}",
         _make_endpoint(_model),
         methods=["POST"],

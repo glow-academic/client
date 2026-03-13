@@ -21,7 +21,7 @@ from app.routes.v5.department import router as departments_router
 from app.routes.v5.docs import router as docs_router
 from app.routes.v5.document import router as documents_router
 from app.routes.v5.eval import router as evals_router
-from app.routes.v5.stream import get_router as get_stream_router
+from app.routes.v5.stream import router as stream_router
 from app.routes.v5.field import router as fields_router
 from app.routes.v5.group import router as group_router
 from app.routes.v5.group.generate import router as generate_router
@@ -112,7 +112,7 @@ router.include_router(generate_router)
 # ============================================================================
 # Stream — SSE at /v5/stream, schema at /v5/stream/schema/*
 # ============================================================================
-router.include_router(get_stream_router())
+router.include_router(stream_router)
 
 # ============================================================================
 # Docs — /v5/docs

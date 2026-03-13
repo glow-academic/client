@@ -6,7 +6,7 @@ department membership, and cohort usage.
 
 from uuid import UUID
 
-from app.routes.v5.permissions import (
+from app.infra.agent.selection import (
     select_agents_for_artifact,
     select_multi_resource_agent,
 )

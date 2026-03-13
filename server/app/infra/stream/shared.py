@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from app.events.types import ArtifactEventsConfig, OperationEventConfig
 from app.infra.globals import get_pool, get_redis_client
-from app.routes.v5.stream.registry import get_artifact_events_config
+from app.infra.stream.registry import get_artifact_events_config
 
 
 async def resolve_subscription(
