@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.modalities.create import create_modality
-from app.tools.v5.resources.modalities.get import get_modalities
+from app.tools.resources.modalities.create import create_modality
+from app.tools.resources.modalities.get import get_modalities
 
 pytestmark = pytest.mark.asyncio
 

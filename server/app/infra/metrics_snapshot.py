@@ -10,8 +10,8 @@ from datetime import datetime
 
 import asyncpg
 
-from app.tools.v5.entries.metrics.create import create_metrics_entry_internal
-from app.tools.v5.entries.metrics.types import CreateMetricsEntryResponse
+from app.tools.entries.metrics.create import create_metrics_entry_internal
+from app.tools.entries.metrics.types import CreateMetricsEntryResponse
 
 
 async def write_metrics_snapshot(
@@ -51,7 +51,7 @@ async def write_health_checks(
 ) -> None:
     """Write health check results to the database."""
     from app.infra.identity.resolve_identity import get_system_session_id
-    from app.tools.v5.entries.health.create import create_health
+    from app.tools.entries.health.create import create_health
 
     async with pool.acquire() as conn:
         async with conn.transaction():

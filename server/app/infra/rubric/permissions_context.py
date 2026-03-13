@@ -20,16 +20,16 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.rubric.get import (
+from app.tools.artifacts.rubric.get import (
     get_rubrics as get_rubric_artifacts,
 )
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.rubrics.create import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.rubrics.create import (
     create_rubric as create_rubric_resource,
 )
 

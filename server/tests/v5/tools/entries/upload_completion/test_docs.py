@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.upload_completion.docs import (
+from app.tools.entries.upload_completion.docs import (
     get_upload_completion_docs,
 )
 

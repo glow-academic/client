@@ -23,33 +23,33 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.agent.docs import get_agent_docs
-from app.tools.v5.artifacts.agent.get import get_agents as get_agent_artifacts
+from app.tools.artifacts.agent.docs import get_agent_docs
+from app.tools.artifacts.agent.get import get_agents as get_agent_artifacts
 
 # Entry tool docs
-from app.tools.v5.entries.agent_drafts.docs import get_agent_drafts_docs
+from app.tools.entries.agent_drafts.docs import get_agent_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.departments.docs import get_departments_docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.instructions.docs import get_instructions_docs
-from app.tools.v5.resources.models.docs import get_models_docs
-from app.tools.v5.resources.names.docs import get_names_docs
+from app.tools.resources.departments.docs import get_departments_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.instructions.docs import get_instructions_docs
+from app.tools.resources.models.docs import get_models_docs
+from app.tools.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.prompts.docs import get_prompts_docs
-from app.tools.v5.resources.qualities.docs import get_qualities_docs
-from app.tools.v5.resources.reasoning_levels.docs import (
+from app.tools.resources.names.get import get_names
+from app.tools.resources.prompts.docs import get_prompts_docs
+from app.tools.resources.qualities.docs import get_qualities_docs
+from app.tools.resources.reasoning_levels.docs import (
     get_reasoning_levels_docs,
 )
-from app.tools.v5.resources.rubrics.docs import get_rubrics_docs
-from app.tools.v5.resources.temperature_levels.docs import (
+from app.tools.resources.rubrics.docs import get_rubrics_docs
+from app.tools.resources.temperature_levels.docs import (
     get_temperature_levels_docs,
 )
-from app.tools.v5.resources.tools.docs import get_tools_docs
-from app.tools.v5.resources.voices.docs import get_voices_docs
+from app.tools.resources.tools.docs import get_tools_docs
+from app.tools.resources.voices.docs import get_voices_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Agents",

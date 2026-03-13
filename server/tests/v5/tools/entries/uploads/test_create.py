@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.uploads.create import create_upload
-from app.tools.v5.entries.uploads.get import get_upload
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.uploads.create import create_upload
+from app.tools.entries.uploads.get import get_upload
 
 pytestmark = pytest.mark.asyncio
 

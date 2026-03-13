@@ -37,8 +37,8 @@ async def test_export_persona_impl_writes_to_injected_upload_folder(
 ):
     _ensure_export_type_packages("persona")
     from app.infra.persona.export import export_persona_impl
-    from app.tools.v5.artifacts.persona.create import create_persona
-    from app.tools.v5.resources.names.create import create_name
+    from app.tools.artifacts.persona.create import create_persona
+    from app.tools.resources.names.create import create_name
 
     actor = await create_admin_route_actor(
         pool,
@@ -80,9 +80,9 @@ async def test_export_scenario_impl_writes_to_injected_upload_folder(
 ):
     _ensure_export_type_packages("scenario")
     from app.infra.scenario.export import export_scenario_impl
-    from app.tools.v5.artifacts.scenario.create import create_scenario
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.problem_statements.create import (
+    from app.tools.artifacts.scenario.create import create_scenario
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.problem_statements.create import (
         create_problem_statement,
     )
 
@@ -133,11 +133,11 @@ async def test_export_profile_impl_writes_to_injected_upload_folder(
 ):
     _ensure_export_type_packages("profile")
     from app.infra.profile.export import export_profile_impl
-    from app.tools.v5.artifacts.profile.create import create_profile
-    from app.tools.v5.resources.emails.create import create_email
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.request_limits.create import create_request_limit
-    from app.tools.v5.resources.roles.create import create_role
+    from app.tools.artifacts.profile.create import create_profile
+    from app.tools.resources.emails.create import create_email
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.request_limits.create import create_request_limit
+    from app.tools.resources.roles.create import create_role
 
     actor = await create_admin_route_actor(
         pool,

@@ -2,13 +2,13 @@
 
 import pytest
 
-from app.tools.v5.resources.args.create import create_arg
-from app.tools.v5.resources.args_outputs.create import create_args_output
-from app.tools.v5.resources.artifacts.create import create_artifact
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.operations.create import create_operation
-from app.tools.v5.resources.tools.create import create_tool
-from app.tools.v5.resources.tools.get import get_tools
+from app.tools.resources.args.create import create_arg
+from app.tools.resources.args_outputs.create import create_args_output
+from app.tools.resources.artifacts.create import create_artifact
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.operations.create import create_operation
+from app.tools.resources.tools.create import create_tool
+from app.tools.resources.tools.get import get_tools
 
 pytestmark = pytest.mark.asyncio
 

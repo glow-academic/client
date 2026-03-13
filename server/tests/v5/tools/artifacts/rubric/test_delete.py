@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.tools.v5.artifacts.rubric.create import create_rubric
-from app.tools.v5.artifacts.rubric.delete import delete_rubrics
-from app.tools.v5.artifacts.rubric.get import get_rubrics
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.rubric.create import create_rubric
+from app.tools.artifacts.rubric.delete import delete_rubrics
+from app.tools.artifacts.rubric.get import get_rubrics
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

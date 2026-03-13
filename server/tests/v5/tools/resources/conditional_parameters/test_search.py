@@ -3,13 +3,13 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.conditional_parameters.create import (
+from app.tools.resources.conditional_parameters.create import (
     create_conditional_parameter,
 )
-from app.tools.v5.resources.conditional_parameters.search import (
+from app.tools.resources.conditional_parameters.search import (
     search_conditional_parameters,
 )
-from app.tools.v5.resources.parameters.create import create_parameter
+from app.tools.resources.parameters.create import create_parameter
 
 pytestmark = pytest.mark.asyncio
 

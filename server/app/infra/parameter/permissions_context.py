@@ -20,16 +20,16 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.parameter.get import (
+from app.tools.artifacts.parameter.get import (
     get_parameters as get_parameter_artifacts,
 )
-from app.tools.v5.artifacts.scenario.search import search_scenarios
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameters.create import (
+from app.tools.artifacts.scenario.search import search_scenarios
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameters.create import (
     create_parameter as create_parameter_resource,
 )
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
 
 pytestmark = pytest.mark.asyncio
 

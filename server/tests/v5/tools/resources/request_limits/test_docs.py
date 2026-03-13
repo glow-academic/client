@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.request_limits.docs import get_request_limits_docs
+from app.tools.resources.request_limits.docs import get_request_limits_docs
 
 pytestmark = pytest.mark.asyncio
 

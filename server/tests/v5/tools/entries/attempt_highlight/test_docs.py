@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt_highlight.docs import (
+from app.tools.entries.attempt_highlight.docs import (
     get_attempt_highlight_docs,
 )
 

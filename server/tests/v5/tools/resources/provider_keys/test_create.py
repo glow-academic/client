@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.resources.keys.create import create_key
-from app.tools.v5.resources.provider_keys.create import create_provider_key
-from app.tools.v5.resources.provider_keys.get import get_provider_keys
-from app.tools.v5.resources.providers.create import create_provider
+from app.tools.resources.keys.create import create_key
+from app.tools.resources.provider_keys.create import create_provider_key
+from app.tools.resources.provider_keys.get import get_provider_keys
+from app.tools.resources.providers.create import create_provider
 
 pytestmark = pytest.mark.asyncio
 

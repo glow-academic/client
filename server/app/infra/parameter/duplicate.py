@@ -24,12 +24,12 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.parameter.types import (
     DuplicateParameterApiResponse,
 )
-from app.tools.v5.artifacts.parameter.create import (
+from app.tools.artifacts.parameter.create import (
     create_parameter as create_parameter_artifact,
 )
-from app.tools.v5.artifacts.parameter.get import get_parameters
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.parameter.get import get_parameters
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -26,11 +26,11 @@ from app.infra.session.types import (
     SessionInternalData,
     SessionTimelineItem,
 )
-from app.tools.v5.resources.agents.get import get_agents
-from app.tools.v5.resources.models.get import get_models
-from app.tools.v5.resources.providers.get import get_providers
-from app.tools.v5.resources.systems.get import get_systems
-from app.tools.v5.resources.tools.get import get_tools
+from app.tools.resources.agents.get import get_agents
+from app.tools.resources.models.get import get_models
+from app.tools.resources.providers.get import get_providers
+from app.tools.resources.systems.get import get_systems
+from app.tools.resources.tools.get import get_tools
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -174,7 +174,7 @@ async def get_session_impl(
 
         # Config profile
         if common.profile:
-            from app.tools.v5.resources.profiles.get import get_profiles
+            from app.tools.resources.profiles.get import get_profiles
 
             async with pool.acquire() as c:
                 config_profile = await get_profiles(

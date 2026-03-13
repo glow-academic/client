@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.qualities.create import create_quality
-from app.tools.v5.resources.qualities.get import get_qualities
+from app.tools.resources.qualities.create import create_quality
+from app.tools.resources.qualities.get import get_qualities
 
 pytestmark = pytest.mark.asyncio
 

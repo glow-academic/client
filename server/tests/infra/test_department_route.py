@@ -23,9 +23,9 @@ class DepartmentRouteResources:
 async def _create_department_route_resources(
     pool, redis_client
 ) -> DepartmentRouteResources:
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.settings.create import create_setting
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.settings.create import create_setting
 
     tag = unique_tag()
     name = f"Route Department {tag}"

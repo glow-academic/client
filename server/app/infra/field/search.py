@@ -30,15 +30,15 @@ from app.infra.field.types import (
     ListFieldApiResponse,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.field.get import get_fields
-from app.tools.v5.artifacts.field.search import search_fields
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameters.search import (
+from app.tools.artifacts.field.get import get_fields
+from app.tools.artifacts.field.search import search_fields
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameters.search import (
     search_parameters as search_parameters_resource,
 )
-from app.tools.v5.resources.personas.search import (
+from app.tools.resources.personas.search import (
     search_personas as search_personas_resource,
 )
 

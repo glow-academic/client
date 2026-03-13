@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.icons.create import create_icon
-from app.tools.v5.resources.icons.search import search_icons
+from app.tools.resources.icons.create import create_icon
+from app.tools.resources.icons.search import search_icons
 
 pytestmark = pytest.mark.asyncio
 

@@ -22,10 +22,10 @@ from app.infra.agent.permissions_context import (
     resolve_agent_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.agent.update import (
+from app.tools.artifacts.agent.update import (
     _UNSET,
 )
-from app.tools.v5.artifacts.agent.update import (
+from app.tools.artifacts.agent.update import (
     update_agent as update_agent_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

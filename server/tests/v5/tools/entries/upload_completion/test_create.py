@@ -2,12 +2,12 @@
 
 import pytest
 
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.upload_completion.create import (
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.upload_completion.create import (
     create_upload_completion,
 )
-from app.tools.v5.entries.upload_completion.get import get_upload_completion
-from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.entries.upload_completion.get import get_upload_completion
+from app.tools.entries.uploads.create import create_upload
 
 pytestmark = pytest.mark.asyncio
 

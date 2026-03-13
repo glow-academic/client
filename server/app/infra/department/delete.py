@@ -26,9 +26,9 @@ from app.infra.department.types import (
     DeleteDepartmentApiResponse,
     DeleteDepartmentResult,
 )
-from app.tools.v5.artifacts.department.delete import delete_departments
-from app.tools.v5.artifacts.department.get import get_departments
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.department.delete import delete_departments
+from app.tools.artifacts.department.get import get_departments
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

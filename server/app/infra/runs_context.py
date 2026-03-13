@@ -13,7 +13,7 @@ from uuid import UUID
 
 import asyncpg
 
-from app.tools.v5.entries.runs.search import RunViewItem, search_runs
+from app.tools.entries.runs.search import RunViewItem, search_runs
 
 
 @dataclass(frozen=True)

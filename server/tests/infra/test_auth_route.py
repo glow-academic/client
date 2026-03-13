@@ -23,11 +23,11 @@ class AuthRouteResources:
 
 
 async def _create_auth_route_resources(pool, redis_client) -> AuthRouteResources:
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.items.create import create_item
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.protocols.create import create_protocol
-    from app.tools.v5.resources.slugs.create import create_slug
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.items.create import create_item
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.protocols.create import create_protocol
+    from app.tools.resources.slugs.create import create_slug
 
     tag = unique_tag()
     name = f"Route Auth {tag}"

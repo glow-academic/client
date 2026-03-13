@@ -21,15 +21,15 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.field.get import get_fields
-from app.tools.v5.artifacts.field.search import search_fields
-from app.tools.v5.resources.conditional_parameters.get import (
+from app.tools.artifacts.field.get import get_fields
+from app.tools.artifacts.field.search import search_fields
+from app.tools.resources.conditional_parameters.get import (
     get_conditional_parameters,
 )
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameters.get import get_parameters
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameters.get import get_parameters
 
 PIPE = "|"
 

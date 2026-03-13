@@ -22,7 +22,7 @@ from app.infra.parameter.permissions_context import (
     resolve_parameter_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.parameter.create import (
+from app.tools.artifacts.parameter.create import (
     create_parameter as create_parameter_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

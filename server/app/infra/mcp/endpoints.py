@@ -403,13 +403,13 @@ _RESOURCES_WITH_CREATE = {
 RESOURCE_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {}
 for _name in _ALL_RESOURCES:
     _entry: dict[str, tuple[str, str]] = {
-        "get": (f"app.tools.v5.resources.{_name}.get", f"get_{_name}"),
-        "search": (f"app.tools.v5.resources.{_name}.search", f"search_{_name}"),
-        "docs": (f"app.tools.v5.resources.{_name}.docs", f"get_{_name}_docs"),
+        "get": (f"app.tools.resources.{_name}.get", f"get_{_name}"),
+        "search": (f"app.tools.resources.{_name}.search", f"search_{_name}"),
+        "docs": (f"app.tools.resources.{_name}.docs", f"get_{_name}_docs"),
     }
     if _name in _RESOURCES_WITH_CREATE:
         _entry["create"] = (
-            f"app.tools.v5.resources.{_name}.create",
+            f"app.tools.resources.{_name}.create",
             f"create_{_name}",
         )
     RESOURCE_REGISTRY[_name] = _entry
@@ -529,15 +529,15 @@ _ENTRIES_WITH_CREATE_ROUTE = {
 ENTRY_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {}
 for _name in _ALL_ENTRIES:
     _entry: dict[str, tuple[str, str]] = {
-        "get": (f"app.tools.v5.entries.{_name}.get", f"get_{_name}_entries"),
+        "get": (f"app.tools.entries.{_name}.get", f"get_{_name}_entries"),
         "search": (
-            f"app.tools.v5.entries.{_name}.search",
+            f"app.tools.entries.{_name}.search",
             f"search_{_name}_entries",
         ),
     }
     if _name in _ENTRIES_WITH_CREATE_ROUTE:
         _entry["create"] = (
-            f"app.tools.v5.entries.{_name}.create",
+            f"app.tools.entries.{_name}.create",
             f"create_{_name}_entry",
         )
     ENTRY_REGISTRY[_name] = _entry

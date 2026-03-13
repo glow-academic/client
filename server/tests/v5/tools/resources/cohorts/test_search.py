@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.cohorts.create import create_cohort
-from app.tools.v5.resources.cohorts.search import search_cohorts
+from app.tools.resources.cohorts.create import create_cohort
+from app.tools.resources.cohorts.search import search_cohorts
 
 pytestmark = pytest.mark.asyncio
 

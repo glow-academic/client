@@ -11,19 +11,19 @@ from app.infra.identity.analytics import (
     resolve_pricing_filters,
     resolve_profile_facts_filters,
 )
-from app.tools.v5.artifacts.profile.create import (
+from app.tools.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.health.create import create_health
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.test.create import create_test
-from app.tools.v5.entries.test.refresh import refresh_test
-from app.tools.v5.resources.cohorts.create import create_cohort
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.profiles.create import create_profile
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.health.create import create_health
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.test.create import create_test
+from app.tools.entries.test.refresh import refresh_test
+from app.tools.resources.cohorts.create import create_cohort
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.profiles.create import create_profile
 
 pytestmark = pytest.mark.asyncio
 

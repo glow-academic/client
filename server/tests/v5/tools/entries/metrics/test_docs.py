@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.metrics.docs import get_metrics_docs
+from app.tools.entries.metrics.docs import get_metrics_docs
 
 pytestmark = pytest.mark.asyncio
 

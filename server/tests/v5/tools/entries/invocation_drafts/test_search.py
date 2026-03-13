@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.invocation_drafts.create import create_invocation_draft
-from app.tools.v5.entries.invocation_drafts.search import (
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.invocation_drafts.create import create_invocation_draft
+from app.tools.entries.invocation_drafts.search import (
     search_invocation_drafts,
 )
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

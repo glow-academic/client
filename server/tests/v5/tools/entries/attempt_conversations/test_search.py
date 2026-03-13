@@ -3,23 +3,23 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.attempt.create import create_attempt
-from app.tools.v5.entries.attempt_chat.create import create_attempt_chat
-from app.tools.v5.entries.attempt_conversations.create import (
+from app.tools.entries.attempt.create import create_attempt
+from app.tools.entries.attempt_chat.create import create_attempt_chat
+from app.tools.entries.attempt_conversations.create import (
     create_attempt_conversations,
 )
-from app.tools.v5.entries.attempt_conversations.refresh import (
+from app.tools.entries.attempt_conversations.refresh import (
     refresh_attempt_conversations,
 )
-from app.tools.v5.entries.attempt_conversations.search import (
+from app.tools.entries.attempt_conversations.search import (
     search_attempt_conversations,
 )
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.chat.create import create_chat
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.persona.create import create_persona
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.chat.create import create_chat
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.persona.create import create_persona
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

@@ -33,17 +33,17 @@ from app.infra.parameter.types import (
     ListParameterApiResponse,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.parameter.get import get_parameters
-from app.tools.v5.artifacts.parameter.search import search_parameters
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.fields.get import get_fields as get_fields_resource
-from app.tools.v5.resources.fields.search import (
+from app.tools.artifacts.parameter.get import get_parameters
+from app.tools.artifacts.parameter.search import search_parameters
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.fields.get import get_fields as get_fields_resource
+from app.tools.resources.fields.search import (
     search_fields as search_fields_resource,
 )
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameter_fields.get import get_parameter_fields
-from app.tools.v5.resources.scenarios.search import (
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameter_fields.get import get_parameter_fields
+from app.tools.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
 

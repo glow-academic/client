@@ -2,11 +2,11 @@
 
 import pytest
 
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.messages.create import create_message
-from app.tools.v5.entries.messages.get import get_message
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.messages.create import create_message
+from app.tools.entries.messages.get import get_message
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

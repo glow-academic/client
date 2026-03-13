@@ -22,10 +22,10 @@ from app.infra.simulation.permissions_context import (
     resolve_simulation_permissions_context,
     resolve_simulation_values,
 )
-from app.tools.v5.artifacts.simulation.update import (
+from app.tools.artifacts.simulation.update import (
     _UNSET,
 )
-from app.tools.v5.artifacts.simulation.update import (
+from app.tools.artifacts.simulation.update import (
     update_simulation as update_simulation_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

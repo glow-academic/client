@@ -19,44 +19,44 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.agent.get import (
+from app.tools.artifacts.agent.get import (
     get_agents as get_agent_artifacts,
 )
-from app.tools.v5.entries.agent_drafts.get import get_agent_drafts
+from app.tools.entries.agent_drafts.get import get_agent_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.instructions.get import get_instructions
-from app.tools.v5.resources.instructions.search import search_instructions
-from app.tools.v5.resources.models.get import get_models
-from app.tools.v5.resources.models.search import search_models
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.prompts.get import get_prompts
-from app.tools.v5.resources.prompts.search import search_prompts
-from app.tools.v5.resources.qualities.get import get_qualities
-from app.tools.v5.resources.qualities.search import search_qualities
-from app.tools.v5.resources.reasoning_levels.get import get_reasoning_levels
-from app.tools.v5.resources.reasoning_levels.search import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.instructions.get import get_instructions
+from app.tools.resources.instructions.search import search_instructions
+from app.tools.resources.models.get import get_models
+from app.tools.resources.models.search import search_models
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.prompts.get import get_prompts
+from app.tools.resources.prompts.search import search_prompts
+from app.tools.resources.qualities.get import get_qualities
+from app.tools.resources.qualities.search import search_qualities
+from app.tools.resources.reasoning_levels.get import get_reasoning_levels
+from app.tools.resources.reasoning_levels.search import (
     search_reasoning_levels,
 )
-from app.tools.v5.resources.rubrics.get import get_rubrics
-from app.tools.v5.resources.rubrics.search import search_rubrics
-from app.tools.v5.resources.temperature_levels.get import get_temperature_levels
-from app.tools.v5.resources.temperature_levels.search import (
+from app.tools.resources.rubrics.get import get_rubrics
+from app.tools.resources.rubrics.search import search_rubrics
+from app.tools.resources.temperature_levels.get import get_temperature_levels
+from app.tools.resources.temperature_levels.search import (
     search_temperature_levels,
 )
-from app.tools.v5.resources.tools.get import get_tools
-from app.tools.v5.resources.tools.search import search_tools
-from app.tools.v5.resources.voices.get import get_voices
-from app.tools.v5.resources.voices.search import search_voices
+from app.tools.resources.tools.get import get_tools
+from app.tools.resources.tools.search import search_tools
+from app.tools.resources.voices.get import get_voices
+from app.tools.resources.voices.search import search_voices
 
 # ---------------------------------------------------------------------------
 # Constants

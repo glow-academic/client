@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.tools.v5.resources.models.create import create_model
-from app.tools.v5.resources.models.get import get_models
-from app.tools.v5.resources.providers.create import create_provider
+from app.tools.resources.models.create import create_model
+from app.tools.resources.models.get import get_models
+from app.tools.resources.providers.create import create_provider
 
 pytestmark = pytest.mark.asyncio
 

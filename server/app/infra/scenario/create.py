@@ -22,7 +22,7 @@ from app.infra.scenario.permissions_context import (
     create_denormalized_snapshot,
     resolve_scenario_values,
 )
-from app.tools.v5.artifacts.scenario.create import (
+from app.tools.artifacts.scenario.create import (
     create_scenario as create_scenario_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

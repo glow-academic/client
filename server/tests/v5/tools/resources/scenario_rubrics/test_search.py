@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.rubrics.create import create_rubric
-from app.tools.v5.resources.scenario_rubrics.create import create_scenario_rubric
-from app.tools.v5.resources.scenario_rubrics.search import (
+from app.tools.resources.rubrics.create import create_rubric
+from app.tools.resources.scenario_rubrics.create import create_scenario_rubric
+from app.tools.resources.scenario_rubrics.search import (
     search_scenario_rubrics,
 )
-from app.tools.v5.resources.scenarios.create import create_scenario
+from app.tools.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
 

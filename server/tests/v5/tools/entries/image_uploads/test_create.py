@@ -2,11 +2,11 @@
 
 import pytest
 
-from app.tools.v5.entries.image_uploads.create import create_image_upload
-from app.tools.v5.entries.image_uploads.get import get_image_upload
-from app.tools.v5.entries.images.create import create_image
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.entries.image_uploads.create import create_image_upload
+from app.tools.entries.image_uploads.get import get_image_upload
+from app.tools.entries.images.create import create_image
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.uploads.create import create_upload
 
 pytestmark = pytest.mark.asyncio
 

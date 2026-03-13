@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.scenarios.create import create_scenario
-from app.tools.v5.resources.scenarios.search import search_scenarios
+from app.tools.resources.scenarios.create import create_scenario
+from app.tools.resources.scenarios.search import search_scenarios
 
 pytestmark = pytest.mark.asyncio
 

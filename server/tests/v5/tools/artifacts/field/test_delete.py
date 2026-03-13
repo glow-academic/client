@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.tools.v5.artifacts.field.create import create_field
-from app.tools.v5.artifacts.field.delete import delete_fields
-from app.tools.v5.artifacts.field.get import get_fields
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.field.create import create_field
+from app.tools.artifacts.field.delete import delete_fields
+from app.tools.artifacts.field.get import get_fields
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

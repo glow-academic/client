@@ -20,41 +20,41 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.simulation.get import (
+from app.tools.artifacts.simulation.get import (
     get_simulations as get_simulation_artifacts,
 )
-from app.tools.v5.entries.simulation_drafts.get import get_simulation_drafts
+from app.tools.entries.simulation_drafts.get import get_simulation_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.rubrics.get import get_rubrics
-from app.tools.v5.resources.scenario_flags.get import get_scenario_flags
-from app.tools.v5.resources.scenario_positions.get import get_scenario_positions
-from app.tools.v5.resources.scenario_positions.search import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.rubrics.get import get_rubrics
+from app.tools.resources.scenario_flags.get import get_scenario_flags
+from app.tools.resources.scenario_positions.get import get_scenario_positions
+from app.tools.resources.scenario_positions.search import (
     search_scenario_positions,
 )
-from app.tools.v5.resources.scenario_rubrics.get import get_scenario_rubrics
-from app.tools.v5.resources.scenario_rubrics.search import (
+from app.tools.resources.scenario_rubrics.get import get_scenario_rubrics
+from app.tools.resources.scenario_rubrics.search import (
     search_scenario_rubrics,
 )
-from app.tools.v5.resources.scenario_time_limits.get import (
+from app.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits,
 )
-from app.tools.v5.resources.scenario_time_limits.search import (
+from app.tools.resources.scenario_time_limits.search import (
     search_scenario_time_limits,
 )
-from app.tools.v5.resources.scenarios.get import (
+from app.tools.resources.scenarios.get import (
     get_scenarios as get_scenario_resources,
 )
-from app.tools.v5.resources.scenarios.search import (
+from app.tools.resources.scenarios.search import (
     search_scenarios as search_scenario_resources,
 )
 

@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.request_limits.create import create_request_limit
-from app.tools.v5.resources.request_limits.get import get_request_limits
+from app.tools.resources.request_limits.create import create_request_limit
+from app.tools.resources.request_limits.get import get_request_limits
 
 pytestmark = pytest.mark.asyncio
 

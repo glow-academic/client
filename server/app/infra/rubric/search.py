@@ -32,17 +32,17 @@ from app.infra.rubric.types import (
     ListRubricApiStandardGroup,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.rubric.get import get_rubrics
-from app.tools.v5.artifacts.rubric.search import search_rubrics
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.points.get import get_points
-from app.tools.v5.resources.simulations.search import (
+from app.tools.artifacts.rubric.get import get_rubrics
+from app.tools.artifacts.rubric.search import search_rubrics
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.get import get_names
+from app.tools.resources.points.get import get_points
+from app.tools.resources.simulations.search import (
     search_simulations as search_simulations_resource,
 )
-from app.tools.v5.resources.standard_groups.get import get_standard_groups
-from app.tools.v5.resources.standards.get import get_standards
+from app.tools.resources.standard_groups.get import get_standard_groups
+from app.tools.resources.standards.get import get_standards
 
 RUBRIC_IMPORT_FIELDS: list[dict[str, Any]] = [
     {

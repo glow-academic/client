@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt_chat_completion.docs import (
+from app.tools.entries.attempt_chat_completion.docs import (
     get_attempt_chat_completion_docs,
 )
 

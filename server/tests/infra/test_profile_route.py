@@ -10,8 +10,8 @@ import pytest_asyncio
 from tests.helpers import unique_tag
 from tests.infra.route_helpers import create_admin_route_actor
 
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.sessions.refresh import refresh_sessions
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.sessions.refresh import refresh_sessions
 
 
 @dataclass(frozen=True)
@@ -27,11 +27,11 @@ class ProfileRouteResources:
 
 
 async def _create_profile_route_resources(pool, redis_client) -> ProfileRouteResources:
-    from app.tools.v5.resources.departments.create import create_department
-    from app.tools.v5.resources.emails.create import create_email
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.request_limits.create import create_request_limit
-    from app.tools.v5.resources.roles.create import create_role
+    from app.tools.resources.departments.create import create_department
+    from app.tools.resources.emails.create import create_email
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.request_limits.create import create_request_limit
+    from app.tools.resources.roles.create import create_role
 
     tag = unique_tag()
     name = f"Route Profile {tag}"

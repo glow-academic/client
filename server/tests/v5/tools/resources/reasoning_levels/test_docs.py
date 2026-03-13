@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.reasoning_levels.docs import (
+from app.tools.resources.reasoning_levels.docs import (
     get_reasoning_levels_docs,
 )
 

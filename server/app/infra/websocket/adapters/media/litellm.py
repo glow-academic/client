@@ -8,7 +8,7 @@ from typing import Any
 from app.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER, get_pool
 from app.infra.websocket.adapters.media.base import BaseMediaAdapter, MediaResult
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.entries.uploads.create import create_upload
 
 try:
     import litellm  # type: ignore

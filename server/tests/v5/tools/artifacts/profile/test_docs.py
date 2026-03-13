@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.artifacts.profile.docs import get_profile_docs
+from app.tools.artifacts.profile.docs import get_profile_docs
 
 pytestmark = pytest.mark.asyncio
 

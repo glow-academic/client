@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 
 from app.infra.globals import AUDIO_FOLDER, get_pool
-from app.tools.v5.entries.uploads.get import get_upload
+from app.tools.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 

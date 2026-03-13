@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.problem_statements.docs import (
+from app.tools.resources.problem_statements.docs import (
     get_problem_statements_docs,
 )
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.rubric_drafts.docs import get_rubric_drafts_docs
+from app.tools.entries.rubric_drafts.docs import get_rubric_drafts_docs
 
 pytestmark = pytest.mark.asyncio
 

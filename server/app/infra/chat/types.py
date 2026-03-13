@@ -16,7 +16,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.infra.v5_types import InternalResponseBase
-from app.tools.v5.entries.chat_drafts.types import GetChatDraftResponse
+from app.tools.entries.chat_drafts.types import GetChatDraftResponse
 
 # =============================================================================
 # Export Types

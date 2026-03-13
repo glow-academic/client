@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.tools.v5.artifacts.cohort.create import create_cohort
-from app.tools.v5.artifacts.cohort.get import get_cohorts
-from app.tools.v5.artifacts.cohort.update import update_cohort
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.cohort.create import create_cohort
+from app.tools.artifacts.cohort.get import get_cohorts
+from app.tools.artifacts.cohort.update import update_cohort
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

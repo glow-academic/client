@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.simulation_availability.docs import (
+from app.tools.resources.simulation_availability.docs import (
     get_simulation_availability_docs,
 )
 

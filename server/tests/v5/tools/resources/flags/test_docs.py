@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.flags.docs import get_flags_docs
+from app.tools.resources.flags.docs import get_flags_docs
 
 pytestmark = pytest.mark.asyncio
 

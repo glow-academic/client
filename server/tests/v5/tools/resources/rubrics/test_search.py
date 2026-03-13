@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.rubrics.create import create_rubric
-from app.tools.v5.resources.rubrics.search import search_rubrics
+from app.tools.resources.rubrics.create import create_rubric
+from app.tools.resources.rubrics.search import search_rubrics
 
 pytestmark = pytest.mark.asyncio
 

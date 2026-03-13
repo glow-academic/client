@@ -23,10 +23,10 @@ from app.infra.scenario.permissions_context import (
     resolve_scenario_permissions_context,
     resolve_scenario_values,
 )
-from app.tools.v5.artifacts.scenario.update import (
+from app.tools.artifacts.scenario.update import (
     _UNSET,
 )
-from app.tools.v5.artifacts.scenario.update import (
+from app.tools.artifacts.scenario.update import (
     update_scenario as update_scenario_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

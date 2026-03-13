@@ -16,7 +16,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.tools.v5.entries.attempt.refresh import refresh_attempt
+from app.tools.entries.attempt.refresh import refresh_attempt
 
 # Tags to invalidate — artifact cache + resource caches
 _TAGS = ["attempt", "artifacts"]

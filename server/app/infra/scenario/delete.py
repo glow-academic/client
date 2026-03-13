@@ -23,9 +23,9 @@ from app.infra.scenario.types import (
     DeleteScenarioApiResponse,
     DeleteScenarioResult,
 )
-from app.tools.v5.artifacts.scenario.delete import delete_scenarios
-from app.tools.v5.artifacts.scenario.get import get_scenarios
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.scenario.delete import delete_scenarios
+from app.tools.artifacts.scenario.get import get_scenarios
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

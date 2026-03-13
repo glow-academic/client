@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.artifacts.field.docs import get_field_docs
+from app.tools.artifacts.field.docs import get_field_docs
 
 pytestmark = pytest.mark.asyncio
 

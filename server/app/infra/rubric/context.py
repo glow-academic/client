@@ -19,28 +19,28 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.rubric.get import (
+from app.tools.artifacts.rubric.get import (
     get_rubrics as get_rubric_artifacts,
 )
-from app.tools.v5.entries.rubric_drafts.get import get_rubric_drafts
+from app.tools.entries.rubric_drafts.get import get_rubric_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.points.get import get_points
-from app.tools.v5.resources.points.search import search_points
-from app.tools.v5.resources.standard_groups.get import get_standard_groups
-from app.tools.v5.resources.standard_groups.search import search_standard_groups
-from app.tools.v5.resources.standards.get import get_standards
-from app.tools.v5.resources.standards.search import search_standards
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.points.get import get_points
+from app.tools.resources.points.search import search_points
+from app.tools.resources.standard_groups.get import get_standard_groups
+from app.tools.resources.standard_groups.search import search_standard_groups
+from app.tools.resources.standards.get import get_standards
+from app.tools.resources.standards.search import search_standards
 
 # ---------------------------------------------------------------------------
 # Constants

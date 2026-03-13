@@ -33,13 +33,13 @@ from app.infra.auth.types import (
     ListAuthApiResponse,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.auth.get import get_auths
-from app.tools.v5.artifacts.auth.search import (
+from app.tools.artifacts.auth.get import get_auths
+from app.tools.artifacts.auth.search import (
     search_auths as search_auth_artifacts,
 )
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.get import get_names
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.get import get_names
 
 
 async def search_auth_impl(

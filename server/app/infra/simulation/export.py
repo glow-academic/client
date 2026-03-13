@@ -21,16 +21,16 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.simulation.get import get_simulations
-from app.tools.v5.artifacts.simulation.search import search_simulations
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.scenario_positions.get import get_scenario_positions
-from app.tools.v5.resources.scenario_time_limits.get import (
+from app.tools.artifacts.simulation.get import get_simulations
+from app.tools.artifacts.simulation.search import search_simulations
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.get import get_names
+from app.tools.resources.scenario_positions.get import get_scenario_positions
+from app.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits,
 )
-from app.tools.v5.resources.scenarios.get import (
+from app.tools.resources.scenarios.get import (
     get_scenarios as get_scenarios_resource,
 )
 

@@ -8,9 +8,9 @@ from uuid import UUID
 from tests.helpers import unique_tag
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.sessions.refresh import refresh_sessions
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.sessions.refresh import refresh_sessions
 
 
 @dataclass(frozen=True)
@@ -35,8 +35,8 @@ async def create_admin_route_actor(
     role: str = "admin",
 ) -> RouteActor:
     """Create a route actor with a requested role, session, and group."""
-    from app.tools.v5.artifacts.profile.update import update_profile
-    from app.tools.v5.resources.roles.create import create_role
+    from app.tools.artifacts.profile.update import update_profile
+    from app.tools.resources.roles.create import create_role
 
     graph = await setting_graph_factory(
         tool_artifacts=tool_artifacts or ["persona", "scenario"],

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.agents.docs import get_agents_docs
+from app.tools.resources.agents.docs import get_agents_docs
 
 pytestmark = pytest.mark.asyncio
 

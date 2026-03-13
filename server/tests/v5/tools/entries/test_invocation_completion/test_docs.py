@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.test_invocation_completion.docs import (
+from app.tools.entries.test_invocation_completion.docs import (
     get_test_invocation_completion_docs,
 )
 

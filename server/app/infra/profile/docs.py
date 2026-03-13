@@ -23,22 +23,22 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.profile.docs import get_profile_docs
-from app.tools.v5.artifacts.profile.get import (
+from app.tools.artifacts.profile.docs import get_profile_docs
+from app.tools.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
 
 # Entry tool docs
-from app.tools.v5.entries.profile_drafts.docs import get_profile_drafts_docs
+from app.tools.entries.profile_drafts.docs import get_profile_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.departments.docs import get_departments_docs
-from app.tools.v5.resources.emails.docs import get_emails_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.names.docs import get_names_docs
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.request_limits.docs import get_request_limits_docs
-from app.tools.v5.resources.roles.docs import get_roles_docs
+from app.tools.resources.departments.docs import get_departments_docs
+from app.tools.resources.emails.docs import get_emails_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.names.docs import get_names_docs
+from app.tools.resources.names.get import get_names
+from app.tools.resources.request_limits.docs import get_request_limits_docs
+from app.tools.resources.roles.docs import get_roles_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Profiles",

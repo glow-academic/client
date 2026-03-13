@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.arg_positions.docs import get_arg_positions_docs
+from app.tools.resources.arg_positions.docs import get_arg_positions_docs
 
 pytestmark = pytest.mark.asyncio
 

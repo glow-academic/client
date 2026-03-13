@@ -15,33 +15,33 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.tools.v5.entries.messages.search import search_messages
-from app.tools.v5.entries.test.search import search_tests
-from app.tools.v5.entries.test_feedback.search import (
+from app.tools.entries.messages.search import search_messages
+from app.tools.entries.test.search import search_tests
+from app.tools.entries.test_feedback.search import (
     search_test_feedback_entries,
 )
-from app.tools.v5.entries.test_grade.search import search_test_grades
-from app.tools.v5.entries.test_invocation.search import (
+from app.tools.entries.test_grade.search import search_test_grades
+from app.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from app.tools.v5.entries.test_invocation_groups.search import (
+from app.tools.entries.test_invocation_groups.search import (
     search_test_invocation_groups,
 )
-from app.tools.v5.entries.test_invocation_runs.search import (
+from app.tools.entries.test_invocation_runs.search import (
     search_test_invocation_runs,
 )
-from app.tools.v5.resources.agents.get import get_agents
-from app.tools.v5.resources.evals.get import get_evals
-from app.tools.v5.resources.instructions.get import get_instructions
-from app.tools.v5.resources.modalities.get import get_modalities
-from app.tools.v5.resources.models.get import get_models
-from app.tools.v5.resources.prompts.get import get_prompts
-from app.tools.v5.resources.qualities.get import get_qualities
-from app.tools.v5.resources.reasoning_levels.get import get_reasoning_levels
-from app.tools.v5.resources.rubrics.get import get_rubrics
-from app.tools.v5.resources.temperature_levels.get import get_temperature_levels
-from app.tools.v5.resources.tools.get import get_tools
-from app.tools.v5.resources.voices.get import get_voices
+from app.tools.resources.agents.get import get_agents
+from app.tools.resources.evals.get import get_evals
+from app.tools.resources.instructions.get import get_instructions
+from app.tools.resources.modalities.get import get_modalities
+from app.tools.resources.models.get import get_models
+from app.tools.resources.prompts.get import get_prompts
+from app.tools.resources.qualities.get import get_qualities
+from app.tools.resources.reasoning_levels.get import get_reasoning_levels
+from app.tools.resources.rubrics.get import get_rubrics
+from app.tools.resources.temperature_levels.get import get_temperature_levels
+from app.tools.resources.tools.get import get_tools
+from app.tools.resources.voices.get import get_voices
 
 
 async def resolve_test_context(

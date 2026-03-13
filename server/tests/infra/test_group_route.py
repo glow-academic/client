@@ -26,13 +26,13 @@ async def _create_group_route_graph(
     redis_client,
     actor: RouteActor,
 ) -> GroupRouteGraph:
-    from app.tools.v5.entries.calls.create import create_call
-    from app.tools.v5.entries.groups.create import create_group
-    from app.tools.v5.entries.messages.create import create_message
-    from app.tools.v5.entries.runs.create import create_run
-    from app.tools.v5.resources.agents.create import create_agent
-    from app.tools.v5.resources.models.create import create_model
-    from app.tools.v5.resources.tools.create import create_tool
+    from app.tools.entries.calls.create import create_call
+    from app.tools.entries.groups.create import create_group
+    from app.tools.entries.messages.create import create_message
+    from app.tools.entries.runs.create import create_run
+    from app.tools.resources.agents.create import create_agent
+    from app.tools.resources.models.create import create_model
+    from app.tools.resources.tools.create import create_tool
 
     tag = unique_tag()
 
@@ -171,7 +171,7 @@ class TestGroupRoute:
         v5_group_route_client,
         group_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         graph = await _create_group_route_graph(pool, redis_client, group_route_actor)
         v5_group_route_client.authenticate(

@@ -3,15 +3,15 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.artifacts.tool.create import (
+from app.tools.artifacts.tool.create import (
     create_tool as create_tool_artifact,
 )
-from app.tools.v5.artifacts.tool.get import get_tools
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.tools.create import (
+from app.tools.artifacts.tool.get import get_tools
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.names.create import create_name
+from app.tools.resources.tools.create import (
     create_tool as create_tool_resource,
 )
 

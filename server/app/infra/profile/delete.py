@@ -24,9 +24,9 @@ from app.infra.profile.types import (
     DeleteProfileApiResponse,
     DeleteProfileResult,
 )
-from app.tools.v5.artifacts.profile.delete import delete_profiles
-from app.tools.v5.artifacts.profile.get import get_profiles
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.profile.delete import delete_profiles
+from app.tools.artifacts.profile.get import get_profiles
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

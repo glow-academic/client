@@ -33,15 +33,15 @@ from app.infra.department.types import (
     ListDepartmentApiDepartment,
     ListDepartmentApiResponse,
 )
-from app.tools.v5.artifacts.department.get import get_departments
-from app.tools.v5.artifacts.department.search import (
+from app.tools.artifacts.department.get import get_departments
+from app.tools.artifacts.department.search import (
     search_departments as search_department_artifacts,
 )
-from app.tools.v5.artifacts.profile.search import (
+from app.tools.artifacts.profile.search import (
     search_profiles as search_profile_artifacts,
 )
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.get import get_names
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.get import get_names
 
 DEPARTMENT_IMPORT_FIELDS: list[dict[str, Any]] = [
     {

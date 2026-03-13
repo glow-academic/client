@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.runs.docs import get_runs_docs
+from app.tools.entries.runs.docs import get_runs_docs
 
 pytestmark = pytest.mark.asyncio
 

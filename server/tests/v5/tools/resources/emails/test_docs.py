@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.emails.docs import get_emails_docs
+from app.tools.resources.emails.docs import get_emails_docs
 
 pytestmark = pytest.mark.asyncio
 

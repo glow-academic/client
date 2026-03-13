@@ -19,34 +19,34 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.cohort.get import (
+from app.tools.artifacts.cohort.get import (
     get_cohorts as get_cohort_artifacts,
 )
-from app.tools.v5.entries.cohort_drafts.get import get_cohort_drafts
+from app.tools.entries.cohort_drafts.get import get_cohort_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.personas.search import search_personas
-from app.tools.v5.resources.profile_personas.get import get_profile_personas
-from app.tools.v5.resources.profiles.get import get_profiles
-from app.tools.v5.resources.profiles.search import search_profiles
-from app.tools.v5.resources.simulation_availability.get import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.personas.search import search_personas
+from app.tools.resources.profile_personas.get import get_profile_personas
+from app.tools.resources.profiles.get import get_profiles
+from app.tools.resources.profiles.search import search_profiles
+from app.tools.resources.simulation_availability.get import (
     get_simulation_availability,
 )
-from app.tools.v5.resources.simulation_positions.get import (
+from app.tools.resources.simulation_positions.get import (
     get_simulation_positions,
 )
-from app.tools.v5.resources.simulations.get import get_simulations
-from app.tools.v5.resources.simulations.search import search_simulations
+from app.tools.resources.simulations.get import get_simulations
+from app.tools.resources.simulations.search import search_simulations
 
 # ---------------------------------------------------------------------------
 # Constants

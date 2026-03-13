@@ -22,13 +22,13 @@ from app.infra.profile.permissions_context import (
     resolve_profile_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.profile.get import (
+from app.tools.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
-from app.tools.v5.artifacts.profile.update import (
+from app.tools.artifacts.profile.update import (
     _UNSET,
 )
-from app.tools.v5.artifacts.profile.update import (
+from app.tools.artifacts.profile.update import (
     update_profile as update_profile_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

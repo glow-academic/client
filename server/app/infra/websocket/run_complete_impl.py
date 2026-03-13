@@ -37,9 +37,9 @@ from app.infra.websocket.run_tracker import (
     record_agent_done,
 )
 from app.infra.websocket.socket_event import EmitFn, internal_event
-from app.tools.v5.entries.attempt.refresh import refresh_attempt
-from app.tools.v5.entries.attempt_chat.refresh import refresh_attempt_chat
-from app.tools.v5.entries.tokens.create import create_token
+from app.tools.entries.attempt.refresh import refresh_attempt
+from app.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+from app.tools.entries.tokens.create import create_token
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 

@@ -22,14 +22,14 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.entries.attempt.search import search_attempts
-from app.tools.v5.entries.chat.search import search_chat_entries_internal
-from app.tools.v5.resources.cohorts.get import get_cohorts
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.personas.get import get_personas
-from app.tools.v5.resources.profiles.get import get_profiles
-from app.tools.v5.resources.scenarios.get import get_scenarios
-from app.tools.v5.resources.simulations.get import get_simulations
+from app.tools.entries.attempt.search import search_attempts
+from app.tools.entries.chat.search import search_chat_entries_internal
+from app.tools.resources.cohorts.get import get_cohorts
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.personas.get import get_personas
+from app.tools.resources.profiles.get import get_profiles
+from app.tools.resources.scenarios.get import get_scenarios
+from app.tools.resources.simulations.get import get_simulations
 
 PIPE = "|"
 

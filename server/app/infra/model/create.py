@@ -22,7 +22,7 @@ from app.infra.model.permissions_context import (
     resolve_model_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.model.create import (
+from app.tools.artifacts.model.create import (
     create_model as create_model_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

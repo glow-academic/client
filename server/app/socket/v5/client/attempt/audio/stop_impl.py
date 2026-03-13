@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.infra.globals import get_internal_sio, get_pool
 from app.infra.websocket.session_store import get_session_by_chat_id
-from app.tools.v5.entries.attempt_conversation_completion.create import (
+from app.tools.entries.attempt_conversation_completion.create import (
     create_attempt_conversation_completion,
 )
 from app.utils.logging.db_logger import get_logger

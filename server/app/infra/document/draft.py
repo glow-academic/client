@@ -28,19 +28,19 @@ from app.infra.document.types import (
     PatchDocumentDraftApiResponse,
     SaveDocumentFieldError,
 )
-from app.tools.v5.entries.document_drafts.create import create_document_draft
-from app.tools.v5.entries.document_drafts.refresh import refresh_document_drafts
-from app.tools.v5.entries.file_uploads.create import create_file_upload
-from app.tools.v5.entries.files.create import create_file as create_file_entry
-from app.tools.v5.entries.text_uploads.create import create_text_upload
-from app.tools.v5.entries.texts.create import create_text as create_text_entry
-from app.tools.v5.entries.uploads.create import create_upload
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.files.create import (
+from app.tools.entries.document_drafts.create import create_document_draft
+from app.tools.entries.document_drafts.refresh import refresh_document_drafts
+from app.tools.entries.file_uploads.create import create_file_upload
+from app.tools.entries.files.create import create_file as create_file_entry
+from app.tools.entries.text_uploads.create import create_text_upload
+from app.tools.entries.texts.create import create_text as create_text_entry
+from app.tools.entries.uploads.create import create_upload
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.files.create import (
     create_file as create_file_resource,
 )
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.texts.create import (
+from app.tools.resources.names.create import create_name
+from app.tools.resources.texts.create import (
     create_text as create_text_resource,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

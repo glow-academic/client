@@ -24,10 +24,10 @@ class AgentRouteResources:
 
 
 async def _create_agent_route_resources(pool, redis_client) -> AgentRouteResources:
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.models.create import create_model
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.tools.create import create_tool
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.models.create import create_model
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.tools.create import create_tool
 
     tag = unique_tag()
     name = f"Route Agent {tag}"
@@ -402,8 +402,8 @@ class TestAgentRoute:
         v5_agent_route_client,
         agent_route_actor,
     ):
-        from app.tools.v5.entries.agent_drafts.create import create_agent_draft
-        from app.tools.v5.entries.groups.create import create_group
+        from app.tools.entries.agent_drafts.create import create_agent_draft
+        from app.tools.entries.groups.create import create_group
 
         async with pool.acquire() as conn:
             group = await create_group(conn, session_id=agent_route_actor.session_id)
@@ -463,7 +463,7 @@ class TestAgentRoute:
         v5_agent_route_client,
         agent_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         created = await self._create_agent_via_route(
             pool,

@@ -25,10 +25,10 @@ from app.infra.auth.types import (
     PatchAuthDraftApiResponse,
     SaveAuthFieldError,
 )
-from app.tools.v5.entries.auth_drafts.create import create_auth_draft
-from app.tools.v5.entries.auth_drafts.refresh import refresh_auth_drafts
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.names.create import create_name
+from app.tools.entries.auth_drafts.create import create_auth_draft
+from app.tools.entries.auth_drafts.refresh import refresh_auth_drafts
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

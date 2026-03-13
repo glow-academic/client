@@ -3,9 +3,9 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.grants.create import create_grant
-from app.tools.v5.entries.grants.search import search_grants
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.grants.create import create_grant
+from app.tools.entries.grants.search import search_grants
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

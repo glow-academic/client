@@ -3,13 +3,13 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.artifacts.persona.create import create_persona
-from app.tools.v5.artifacts.persona.get import get_personas
-from app.tools.v5.artifacts.persona.update import update_persona
-from app.tools.v5.resources.colors.create import create_color
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.persona.create import create_persona
+from app.tools.artifacts.persona.get import get_personas
+from app.tools.artifacts.persona.update import update_persona
+from app.tools.resources.colors.create import create_color
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

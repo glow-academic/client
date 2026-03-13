@@ -15,7 +15,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.tools.v5.entries.cohort_drafts.refresh import refresh_cohort_drafts
+from app.tools.entries.cohort_drafts.refresh import refresh_cohort_drafts
 
 # Tags to invalidate — artifact cache + resource caches
 _TAGS = ["cohorts", "artifacts"]

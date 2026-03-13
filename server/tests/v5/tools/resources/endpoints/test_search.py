@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.endpoints.create import create_endpoint
-from app.tools.v5.resources.endpoints.search import search_endpoints
+from app.tools.resources.endpoints.create import create_endpoint
+from app.tools.resources.endpoints.search import search_endpoints
 
 pytestmark = pytest.mark.asyncio
 

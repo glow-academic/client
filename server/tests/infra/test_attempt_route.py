@@ -11,36 +11,36 @@ import pytest
 
 async def _create_attempt_route_graph(pool, actor, redis_client=None):
     from app.infra.globals import UPLOAD_FOLDER
-    from app.tools.v5.entries.attempt.create import create_attempt
-    from app.tools.v5.entries.attempt.refresh import refresh_attempt
-    from app.tools.v5.entries.attempt_archive.search import (
+    from app.tools.entries.attempt.create import create_attempt
+    from app.tools.entries.attempt.refresh import refresh_attempt
+    from app.tools.entries.attempt_archive.search import (
         search_attempt_archives,
     )
-    from app.tools.v5.entries.attempt_chat.create import create_attempt_chat
-    from app.tools.v5.entries.attempt_chat.refresh import refresh_attempt_chat
-    from app.tools.v5.entries.attempt_chat_bridge.create import (
+    from app.tools.entries.attempt_chat.create import create_attempt_chat
+    from app.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.tools.entries.attempt_chat_bridge.create import (
         create_attempt_chat_bridge,
     )
-    from app.tools.v5.entries.attempt_chat_bridge.refresh import (
+    from app.tools.entries.attempt_chat_bridge.refresh import (
         refresh_attempt_chat_bridge,
     )
-    from app.tools.v5.entries.attempt_home.create import create_attempt_home
-    from app.tools.v5.entries.attempt_message.create import (
+    from app.tools.entries.attempt_home.create import create_attempt_home
+    from app.tools.entries.attempt_message.create import (
         create_attempt_message,
     )
-    from app.tools.v5.entries.attempt_message.refresh import (
+    from app.tools.entries.attempt_message.refresh import (
         refresh_attempt_message,
     )
-    from app.tools.v5.entries.calls.create import create_call
-    from app.tools.v5.entries.chat.create import create_chat
-    from app.tools.v5.entries.groups.create import create_group
-    from app.tools.v5.entries.home.create import create_home
-    from app.tools.v5.entries.home_chat.create import create_home_chat
-    from app.tools.v5.entries.messages.create import create_message
-    from app.tools.v5.entries.persona.create import create_persona
-    from app.tools.v5.entries.runs.create import create_run
-    from app.tools.v5.resources.options.create import create_option
-    from app.tools.v5.resources.questions.create import create_question
+    from app.tools.entries.calls.create import create_call
+    from app.tools.entries.chat.create import create_chat
+    from app.tools.entries.groups.create import create_group
+    from app.tools.entries.home.create import create_home
+    from app.tools.entries.home_chat.create import create_home_chat
+    from app.tools.entries.messages.create import create_message
+    from app.tools.entries.persona.create import create_persona
+    from app.tools.entries.runs.create import create_run
+    from app.tools.resources.options.create import create_option
+    from app.tools.resources.questions.create import create_question
 
     async with pool.acquire() as conn:
         group = await create_group(
@@ -144,13 +144,13 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
 
 
 async def _create_attempt_start_home(pool, redis_client, actor) -> dict[str, str]:
-    from app.tools.v5.entries.chat.create import create_chat
-    from app.tools.v5.entries.home.create import create_home
-    from app.tools.v5.entries.home.refresh import refresh_home
-    from app.tools.v5.entries.home_chat.create import create_home_chat
-    from app.tools.v5.entries.home_chat.refresh import refresh_home_chat
-    from app.tools.v5.resources.personas.create import create_persona
-    from app.tools.v5.resources.profile_personas.create import (
+    from app.tools.entries.chat.create import create_chat
+    from app.tools.entries.home.create import create_home
+    from app.tools.entries.home.refresh import refresh_home
+    from app.tools.entries.home_chat.create import create_home_chat
+    from app.tools.entries.home_chat.refresh import refresh_home_chat
+    from app.tools.resources.personas.create import create_persona
+    from app.tools.resources.profile_personas.create import (
         create_profile_persona,
     )
 
@@ -311,7 +311,7 @@ class TestAttemptRoute:
         v5_attempt_route_client,
         attempt_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         graph = await _create_attempt_route_graph(pool, attempt_route_actor)
         v5_attempt_route_client.authenticate(
@@ -473,7 +473,7 @@ class TestAttemptRoute:
         v5_attempt_route_client,
         attempt_route_actor,
     ):
-        from app.tools.v5.entries.attempt_message.search import (
+        from app.tools.entries.attempt_message.search import (
             search_attempt_messages,
         )
 

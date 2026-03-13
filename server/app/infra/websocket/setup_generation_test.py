@@ -16,11 +16,11 @@ from uuid import UUID
 
 import asyncpg
 
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.runs.get import get_run
-from app.tools.v5.entries.test.create import create_test
-from app.tools.v5.entries.test_invocation.create import create_test_invocation
-from app.tools.v5.entries.test_invocation_runs.create import (
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.runs.get import get_run
+from app.tools.entries.test.create import create_test
+from app.tools.entries.test_invocation.create import create_test_invocation
+from app.tools.entries.test_invocation_runs.create import (
     create_test_invocation_runs,
 )
 

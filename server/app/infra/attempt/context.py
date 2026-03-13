@@ -15,46 +15,46 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.tools.v5.entries.attempt.search import search_attempts
-from app.tools.v5.entries.attempt_analysis.search import search_attempt_analyses
-from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-from app.tools.v5.entries.attempt_content.search import search_attempt_contents
-from app.tools.v5.entries.attempt_feedback.search import (
+from app.tools.entries.attempt.search import search_attempts
+from app.tools.entries.attempt_analysis.search import search_attempt_analyses
+from app.tools.entries.attempt_chat.search import search_attempt_chats
+from app.tools.entries.attempt_content.search import search_attempt_contents
+from app.tools.entries.attempt_feedback.search import (
     search_attempt_feedback_entries,
 )
-from app.tools.v5.entries.attempt_grade.search import search_attempt_grades
-from app.tools.v5.entries.attempt_highlight.search import (
+from app.tools.entries.attempt_grade.search import search_attempt_grades
+from app.tools.entries.attempt_highlight.search import (
     search_attempt_highlights,
 )
-from app.tools.v5.entries.attempt_hint.search import search_attempt_hints
-from app.tools.v5.entries.attempt_improvement.search import (
+from app.tools.entries.attempt_hint.search import search_attempt_hints
+from app.tools.entries.attempt_improvement.search import (
     search_attempt_improvements,
 )
-from app.tools.v5.entries.attempt_message.search import search_attempt_messages
-from app.tools.v5.entries.attempt_replacement.search import (
+from app.tools.entries.attempt_message.search import search_attempt_messages
+from app.tools.entries.attempt_replacement.search import (
     search_attempt_replacements,
 )
-from app.tools.v5.entries.attempt_responses.search import (
+from app.tools.entries.attempt_responses.search import (
     search_attempt_responses,
 )
-from app.tools.v5.entries.attempt_strength.search import search_attempt_strengths
-from app.tools.v5.entries.files.search import search_files
-from app.tools.v5.entries.images.search import search_images
-from app.tools.v5.entries.videos.search import search_videos
-from app.tools.v5.resources.documents.get import get_documents
-from app.tools.v5.resources.images.get import get_images
-from app.tools.v5.resources.objectives.get import get_objectives
-from app.tools.v5.resources.options.get import get_options
-from app.tools.v5.resources.personas.get import get_personas
-from app.tools.v5.resources.problem_statements.get import get_problem_statements
-from app.tools.v5.resources.profiles.get import get_profiles
-from app.tools.v5.resources.questions.get import get_questions
-from app.tools.v5.resources.rubrics.get import get_rubrics
-from app.tools.v5.resources.scenarios.get import get_scenarios
-from app.tools.v5.resources.simulations.get import get_simulations
-from app.tools.v5.resources.standard_groups.get import get_standard_groups
-from app.tools.v5.resources.standards.get import get_standards
-from app.tools.v5.resources.videos.get import get_videos
+from app.tools.entries.attempt_strength.search import search_attempt_strengths
+from app.tools.entries.files.search import search_files
+from app.tools.entries.images.search import search_images
+from app.tools.entries.videos.search import search_videos
+from app.tools.resources.documents.get import get_documents
+from app.tools.resources.images.get import get_images
+from app.tools.resources.objectives.get import get_objectives
+from app.tools.resources.options.get import get_options
+from app.tools.resources.personas.get import get_personas
+from app.tools.resources.problem_statements.get import get_problem_statements
+from app.tools.resources.profiles.get import get_profiles
+from app.tools.resources.questions.get import get_questions
+from app.tools.resources.rubrics.get import get_rubrics
+from app.tools.resources.scenarios.get import get_scenarios
+from app.tools.resources.simulations.get import get_simulations
+from app.tools.resources.standard_groups.get import get_standard_groups
+from app.tools.resources.standards.get import get_standards
+from app.tools.resources.videos.get import get_videos
 
 
 async def resolve_attempt_context(

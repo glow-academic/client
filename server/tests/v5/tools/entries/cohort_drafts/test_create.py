@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.entries.cohort_drafts.create import create_cohort_draft
-from app.tools.v5.entries.cohort_drafts.get import get_cohort_drafts
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.cohort_drafts.create import create_cohort_draft
+from app.tools.entries.cohort_drafts.get import get_cohort_drafts
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

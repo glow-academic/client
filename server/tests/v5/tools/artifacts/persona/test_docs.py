@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.artifacts.persona.docs import get_persona_docs
+from app.tools.artifacts.persona.docs import get_persona_docs
 
 pytestmark = pytest.mark.asyncio
 

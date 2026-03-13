@@ -5,12 +5,12 @@ from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.problems.create import (
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.problems.create import (
     create_problem as create_problem_entry,
 )
-from app.tools.v5.entries.runs.create import create_run
+from app.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 

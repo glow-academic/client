@@ -23,32 +23,32 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.persona.docs import get_persona_docs
-from app.tools.v5.artifacts.persona.get import (
+from app.tools.artifacts.persona.docs import get_persona_docs
+from app.tools.artifacts.persona.get import (
     get_personas as get_persona_artifacts,
 )
 
 # Entry tool docs
-from app.tools.v5.entries.persona_drafts.docs import get_persona_drafts_docs
+from app.tools.entries.persona_drafts.docs import get_persona_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.colors.docs import get_colors_docs
-from app.tools.v5.resources.departments.docs import get_departments_docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.examples.docs import get_examples_docs
-from app.tools.v5.resources.fields.docs import get_fields_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.icons.docs import get_icons_docs
-from app.tools.v5.resources.instructions.docs import get_instructions_docs
-from app.tools.v5.resources.names.docs import get_names_docs
+from app.tools.resources.colors.docs import get_colors_docs
+from app.tools.resources.departments.docs import get_departments_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.examples.docs import get_examples_docs
+from app.tools.resources.fields.docs import get_fields_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.icons.docs import get_icons_docs
+from app.tools.resources.instructions.docs import get_instructions_docs
+from app.tools.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameter_fields.docs import (
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
-from app.tools.v5.resources.parameters.docs import get_parameters_docs
-from app.tools.v5.resources.voices.docs import get_voices_docs
+from app.tools.resources.parameters.docs import get_parameters_docs
+from app.tools.resources.voices.docs import get_voices_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Personas",

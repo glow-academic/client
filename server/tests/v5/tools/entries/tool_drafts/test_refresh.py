@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.tool_drafts.create import create_tool_draft
-from app.tools.v5.entries.tool_drafts.refresh import refresh_tool_drafts
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.tool_drafts.create import create_tool_draft
+from app.tools.entries.tool_drafts.refresh import refresh_tool_drafts
 
 pytestmark = pytest.mark.asyncio
 

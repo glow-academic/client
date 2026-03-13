@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.tools.v5.artifacts.document.create import create_document
-from app.tools.v5.artifacts.document.get import get_documents
-from app.tools.v5.artifacts.document.update import update_document
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.document.create import create_document
+from app.tools.artifacts.document.get import get_documents
+from app.tools.artifacts.document.update import update_document
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

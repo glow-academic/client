@@ -3,14 +3,14 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.artifacts.department.create import (
+from app.tools.artifacts.department.create import (
     create_department as create_dept_artifact,
 )
-from app.tools.v5.artifacts.department.get import get_departments
-from app.tools.v5.artifacts.department.update import update_department
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.settings.create import create_setting
+from app.tools.artifacts.department.get import get_departments
+from app.tools.artifacts.department.update import update_department
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.names.create import create_name
+from app.tools.resources.settings.create import create_setting
 
 pytestmark = pytest.mark.asyncio
 

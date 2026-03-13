@@ -5,12 +5,12 @@ from uuid import uuid4
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.artifacts.agent.create import create_agent
-from app.tools.v5.artifacts.agent.get import get_agents
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.agent.create import create_agent
+from app.tools.artifacts.agent.get import get_agents
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

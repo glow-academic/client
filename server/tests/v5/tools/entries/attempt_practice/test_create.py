@@ -2,14 +2,14 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt.create import create_attempt
-from app.tools.v5.entries.attempt_practice.create import create_attempt_practice
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.persona.create import create_persona
-from app.tools.v5.entries.practice.create import create_practice
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.attempt.create import create_attempt
+from app.tools.entries.attempt_practice.create import create_attempt_practice
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.persona.create import create_persona
+from app.tools.entries.practice.create import create_practice
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

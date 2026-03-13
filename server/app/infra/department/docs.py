@@ -23,24 +23,24 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.department.docs import get_department_docs
-from app.tools.v5.artifacts.department.get import (
+from app.tools.artifacts.department.docs import get_department_docs
+from app.tools.artifacts.department.get import (
     get_departments as get_department_artifacts,
 )
 
 # Entry tool docs
-from app.tools.v5.entries.department_drafts.docs import (
+from app.tools.entries.department_drafts.docs import (
     get_department_drafts_docs,
 )
 
 # Resource tool docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.names.docs import get_names_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.settings.docs import get_settings_docs
+from app.tools.resources.names.get import get_names
+from app.tools.resources.settings.docs import get_settings_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Departments",

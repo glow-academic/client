@@ -20,7 +20,7 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
-from app.tools.v5.entries.run_pricing.docs import get_run_pricing_docs
+from app.tools.entries.run_pricing.docs import get_run_pricing_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Pricing",

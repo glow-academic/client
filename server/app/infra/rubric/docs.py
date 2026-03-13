@@ -23,25 +23,25 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.rubric.docs import get_rubric_docs
-from app.tools.v5.artifacts.rubric.get import (
+from app.tools.artifacts.rubric.docs import get_rubric_docs
+from app.tools.artifacts.rubric.get import (
     get_rubrics as get_rubric_artifacts,
 )
 
 # Entry tool docs
-from app.tools.v5.entries.rubric_drafts.docs import get_rubric_drafts_docs
+from app.tools.entries.rubric_drafts.docs import get_rubric_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.departments.docs import get_departments_docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.names.docs import get_names_docs
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.points.docs import get_points_docs
-from app.tools.v5.resources.standard_groups.docs import (
+from app.tools.resources.departments.docs import get_departments_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.names.docs import get_names_docs
+from app.tools.resources.names.get import get_names
+from app.tools.resources.points.docs import get_points_docs
+from app.tools.resources.standard_groups.docs import (
     get_standard_groups_docs,
 )
-from app.tools.v5.resources.standards.docs import get_standards_docs
+from app.tools.resources.standards.docs import get_standards_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Rubrics",

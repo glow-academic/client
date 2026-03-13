@@ -20,18 +20,18 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.agent.get import (
+from app.tools.artifacts.agent.get import (
     get_agents as get_agent_artifacts,
 )
-from app.tools.v5.resources.agents.create import (
+from app.tools.resources.agents.create import (
     create_agent as create_agent_resource,
 )
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.voices.get import get_voices
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.voices.get import get_voices
 
 if TYPE_CHECKING:
     from app.infra.agent.create import AgentFieldError, CreateAgentItem

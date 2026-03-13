@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.auth.types import (
     DuplicateAuthApiResponse,
 )
-from app.tools.v5.artifacts.auth.create import (
+from app.tools.artifacts.auth.create import (
     create_auth as create_auth_artifact,
 )
-from app.tools.v5.artifacts.auth.get import get_auths
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.auth.get import get_auths
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

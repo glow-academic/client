@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.files.docs import get_files_docs
+from app.tools.resources.files.docs import get_files_docs
 
 pytestmark = pytest.mark.asyncio
 

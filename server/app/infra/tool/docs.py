@@ -23,20 +23,20 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.tool.docs import get_tool_docs
-from app.tools.v5.artifacts.tool.get import get_tools as get_tool_artifacts
+from app.tools.artifacts.tool.docs import get_tool_docs
+from app.tools.artifacts.tool.get import get_tools as get_tool_artifacts
 
 # Entry tool docs
-from app.tools.v5.entries.tool_drafts.docs import get_tool_drafts_docs
+from app.tools.entries.tool_drafts.docs import get_tool_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.arg_positions.docs import get_arg_positions_docs
-from app.tools.v5.resources.args.docs import get_args_docs
-from app.tools.v5.resources.args_outputs.docs import get_args_outputs_docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.names.docs import get_names_docs
-from app.tools.v5.resources.names.get import get_names
+from app.tools.resources.arg_positions.docs import get_arg_positions_docs
+from app.tools.resources.args.docs import get_args_docs
+from app.tools.resources.args_outputs.docs import get_args_outputs_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.names.docs import get_names_docs
+from app.tools.resources.names.get import get_names
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Tools",

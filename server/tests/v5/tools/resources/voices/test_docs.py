@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.voices.docs import get_voices_docs
+from app.tools.resources.voices.docs import get_voices_docs
 
 pytestmark = pytest.mark.asyncio
 

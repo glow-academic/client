@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.entries.activity.create import create_activity
-from app.tools.v5.entries.activity.get import get_activity
-from app.tools.v5.entries.activity.refresh import refresh_activity
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.activity.create import create_activity
+from app.tools.entries.activity.get import get_activity
+from app.tools.entries.activity.refresh import refresh_activity
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.examples.docs import get_examples_docs
+from app.tools.resources.examples.docs import get_examples_docs
 
 pytestmark = pytest.mark.asyncio
 

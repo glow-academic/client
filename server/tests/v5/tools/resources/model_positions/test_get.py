@@ -3,15 +3,15 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.model_positions.get import get_model_positions
-from app.tools.v5.resources.models.create import create_model
+from app.tools.resources.model_positions.get import get_model_positions
+from app.tools.resources.models.create import create_model
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_model_position(conn, redis_client):
     model = await create_model(conn, "test-model", redis=redis_client)
-    from app.tools.v5.resources.model_positions.create import (
+    from app.tools.resources.model_positions.create import (
         create_model_position,
     )
 
@@ -40,7 +40,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     model = await create_model(conn, "test-model-cache", redis=redis_client)
-    from app.tools.v5.resources.model_positions.create import (
+    from app.tools.resources.model_positions.create import (
         create_model_position,
     )
 
@@ -58,7 +58,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     model = await create_model(conn, "test-model-bypass", redis=redis_client)
-    from app.tools.v5.resources.model_positions.create import (
+    from app.tools.resources.model_positions.create import (
         create_model_position,
     )
 

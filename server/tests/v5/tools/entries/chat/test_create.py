@@ -4,10 +4,10 @@ from uuid import UUID
 
 import pytest
 
-from app.tools.v5.entries.chat.create import create_chat
-from app.tools.v5.entries.chat.get import get_chat_entries_internal, get_chats
-from app.tools.v5.entries.chat.refresh import refresh_chat
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.chat.create import create_chat
+from app.tools.entries.chat.get import get_chat_entries_internal, get_chats
+from app.tools.entries.chat.refresh import refresh_chat
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

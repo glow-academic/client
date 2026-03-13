@@ -24,9 +24,9 @@ async def benchmark_route_actor(pool, redis_client, setting_graph_factory):
 
 async def _create_benchmark_route_data(pool, redis_client, actor):
     from app.infra.globals import UPLOAD_FOLDER
-    from app.tools.v5.entries.benchmark.create import create_benchmark
-    from app.tools.v5.entries.benchmark.refresh import refresh_benchmark
-    from app.tools.v5.resources.departments.create import create_department
+    from app.tools.entries.benchmark.create import create_benchmark
+    from app.tools.entries.benchmark.refresh import refresh_benchmark
+    from app.tools.resources.departments.create import create_department
 
     async with pool.acquire() as conn:
         department = await create_department(
@@ -153,7 +153,7 @@ class TestBenchmarkRoute:
         v5_benchmark_route_client,
         benchmark_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         seeded = await _create_benchmark_route_data(
             pool, redis_client, benchmark_route_actor

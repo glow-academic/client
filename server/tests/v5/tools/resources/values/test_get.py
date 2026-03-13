@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.values.create import create_value
-from app.tools.v5.resources.values.get import get_values
+from app.tools.resources.values.create import create_value
+from app.tools.resources.values.get import get_values
 
 pytestmark = pytest.mark.asyncio
 

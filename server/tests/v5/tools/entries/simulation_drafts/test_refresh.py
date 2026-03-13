@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.simulation_drafts.create import create_simulation_draft
-from app.tools.v5.entries.simulation_drafts.refresh import (
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.simulation_drafts.create import create_simulation_draft
+from app.tools.entries.simulation_drafts.refresh import (
     refresh_simulation_drafts,
 )
 

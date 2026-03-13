@@ -270,7 +270,7 @@ async def generate_prepare_impl(
             resolve_agent_config,
             validate_payload,
         )
-        from app.tools.v5.entries.runs.create import create_run
+        from app.tools.entries.runs.create import create_run
 
         validate_payload_fn = validate_payload_fn or validate_payload
         resolve_websocket_context_fn = (

@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.persona.create import create_persona
-from app.tools.v5.entries.persona.refresh import refresh_persona_internal
-from app.tools.v5.entries.persona.search import search_personas
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.persona.create import create_persona
+from app.tools.entries.persona.refresh import refresh_persona_internal
+from app.tools.entries.persona.search import search_personas
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

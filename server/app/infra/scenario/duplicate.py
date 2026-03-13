@@ -23,13 +23,13 @@ from app.infra.scenario.permissions import compute_can_duplicate
 from app.infra.scenario.types import (
     DuplicateScenarioApiResponse,
 )
-from app.tools.v5.artifacts.scenario.create import (
+from app.tools.artifacts.scenario.create import (
     create_scenario as create_scenario_artifact,
 )
-from app.tools.v5.artifacts.scenario.get import get_scenarios
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.scenario.get import get_scenarios
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

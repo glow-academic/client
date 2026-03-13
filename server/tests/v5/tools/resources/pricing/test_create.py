@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.pricing.create import create_pricing
-from app.tools.v5.resources.pricing.get import get_pricing
+from app.tools.resources.pricing.create import create_pricing
+from app.tools.resources.pricing.get import get_pricing
 
 pytestmark = pytest.mark.asyncio
 

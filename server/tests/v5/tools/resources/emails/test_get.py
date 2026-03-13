@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.emails.create import create_email
-from app.tools.v5.resources.emails.get import get_emails
+from app.tools.resources.emails.create import create_email
+from app.tools.resources.emails.get import get_emails
 
 pytestmark = pytest.mark.asyncio
 

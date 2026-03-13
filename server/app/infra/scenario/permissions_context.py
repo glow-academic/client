@@ -20,33 +20,33 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.scenario.get import (
+from app.tools.artifacts.scenario.get import (
     get_scenarios as get_scenario_artifacts,
 )
-from app.tools.v5.artifacts.simulation.search import search_simulations
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.documents.search import search_documents
-from app.tools.v5.resources.fields.get import get_fields
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.images.search import search_images
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.objectives.search import search_objectives
-from app.tools.v5.resources.options.search import search_options
-from app.tools.v5.resources.parameter_fields.search import (
+from app.tools.artifacts.simulation.search import search_simulations
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.documents.search import search_documents
+from app.tools.resources.fields.get import get_fields
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.images.search import search_images
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.objectives.search import search_objectives
+from app.tools.resources.options.search import search_options
+from app.tools.resources.parameter_fields.search import (
     search_parameter_fields,
 )
-from app.tools.v5.resources.personas.search import search_personas
-from app.tools.v5.resources.problem_statements.create import (
+from app.tools.resources.personas.search import search_personas
+from app.tools.resources.problem_statements.create import (
     create_problem_statement,
 )
-from app.tools.v5.resources.questions.search import search_questions
-from app.tools.v5.resources.scenarios.create import (
+from app.tools.resources.questions.search import search_questions
+from app.tools.resources.scenarios.create import (
     create_scenario as create_scenario_resource,
 )
-from app.tools.v5.resources.videos.search import search_videos
+from app.tools.resources.videos.search import search_videos
 
 if TYPE_CHECKING:
     from app.infra.scenario.create import CreateScenarioItem, ScenarioFieldError

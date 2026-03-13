@@ -22,10 +22,10 @@ from app.infra.eval.permissions_context import (
     resolve_eval_values,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.eval.update import (
+from app.tools.artifacts.eval.update import (
     _UNSET,
 )
-from app.tools.v5.artifacts.eval.update import (
+from app.tools.artifacts.eval.update import (
     update_eval as update_eval_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

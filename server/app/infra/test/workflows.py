@@ -163,7 +163,7 @@ async def test_grade_complete_impl(
 ) -> None:
     """Handle test grade completion and emit test_grade_progress."""
     from app.infra.websocket.test_types import TestGradedData
-    from app.tools.v5.entries.tokens.create import create_token
+    from app.tools.entries.tokens.create import create_token
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger(__name__)
@@ -247,7 +247,7 @@ async def test_group_impl(
     """Orchestrate sequential runs within a group."""
     from app.infra.websocket.test_types import TestErrorData
     from app.socket.v5.client.types import TestGroupPayload
-    from app.tools.v5.entries.runs.search import search_runs
+    from app.tools.entries.runs.search import search_runs
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger(__name__)
@@ -341,7 +341,7 @@ async def test_next_impl(
         return
 
     from app.infra.websocket.test_types import TestAllCompleteEvent
-    from app.tools.v5.entries.test_invocation.search import (
+    from app.tools.entries.test_invocation.search import (
         search_test_invocation_entries_internal,
     )
     from app.utils.logging.db_logger import get_logger
@@ -466,13 +466,13 @@ async def test_start_impl(
 ) -> None:
     """Create test via black boxes, optional benchmark bridge, delegate to test_proceed."""
     from app.infra.websocket.test_types import TestErrorData, TestProceedData
-    from app.tools.v5.entries.benchmark_test.create import create_benchmark_test
-    from app.tools.v5.entries.calls.create import create_call
-    from app.tools.v5.entries.groups.create import create_group
-    from app.tools.v5.entries.runs.create import create_run
-    from app.tools.v5.entries.sessions.create import create_session
-    from app.tools.v5.entries.test.create import create_test
-    from app.tools.v5.entries.test_invocation.refresh import (
+    from app.tools.entries.benchmark_test.create import create_benchmark_test
+    from app.tools.entries.calls.create import create_call
+    from app.tools.entries.groups.create import create_group
+    from app.tools.entries.runs.create import create_run
+    from app.tools.entries.sessions.create import create_session
+    from app.tools.entries.test.create import create_test
+    from app.tools.entries.test_invocation.refresh import (
         refresh_test_invocation,
     )
     from app.utils.cache.invalidate_tags import invalidate_tags
@@ -589,21 +589,21 @@ async def test_proceed_impl(
 ) -> None:
     """Shared core: resolve context, check done, resolve invocation, emit."""
     from app.infra.websocket.test_types import TestErrorData, TestProceedData
-    from app.tools.v5.entries.calls.create import create_call
-    from app.tools.v5.entries.groups.create import create_group
-    from app.tools.v5.entries.runs.create import create_run
-    from app.tools.v5.entries.sessions.create import create_session
-    from app.tools.v5.entries.test.get import get_tests
-    from app.tools.v5.entries.test_invocation.create import (
+    from app.tools.entries.calls.create import create_call
+    from app.tools.entries.groups.create import create_group
+    from app.tools.entries.runs.create import create_run
+    from app.tools.entries.sessions.create import create_session
+    from app.tools.entries.test.get import get_tests
+    from app.tools.entries.test_invocation.create import (
         create_test_invocation,
     )
-    from app.tools.v5.entries.test_invocation.refresh import (
+    from app.tools.entries.test_invocation.refresh import (
         refresh_test_invocation,
     )
-    from app.tools.v5.entries.test_invocation.search import (
+    from app.tools.entries.test_invocation.search import (
         search_test_invocation_entries_internal,
     )
-    from app.tools.v5.entries.test_invocation_completion.create import (
+    from app.tools.entries.test_invocation_completion.create import (
         create_test_invocation_completion,
     )
     from app.utils.cache.invalidate_tags import invalidate_tags
@@ -842,10 +842,10 @@ async def test_run_impl(
     """Copy conversation from original run, create new run, emit generate_artifact."""
     from app.infra.websocket.test_types import TestErrorData
     from app.socket.v5.client.types import TestRunPayload
-    from app.tools.v5.entries.messages.create import create_message
-    from app.tools.v5.entries.messages.search import search_messages
-    from app.tools.v5.entries.runs.create import create_run
-    from app.tools.v5.entries.test_invocation.get import get_test_invocations
+    from app.tools.entries.messages.create import create_message
+    from app.tools.entries.messages.search import search_messages
+    from app.tools.entries.runs.create import create_run
+    from app.tools.entries.test_invocation.get import get_test_invocations
     from app.utils.logging.db_logger import get_logger
 
     logger = get_logger(__name__)

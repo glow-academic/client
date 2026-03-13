@@ -22,25 +22,25 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Cohort search
-from app.tools.v5.artifacts.cohort.search import search_cohorts
+from app.tools.artifacts.cohort.search import search_cohorts
 
 # Entry fetchers (raw MV reads)
-from app.tools.v5.entries.attempt.search import search_attempts
-from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-from app.tools.v5.entries.chat.get import get_chats
-from app.tools.v5.entries.practice.search import search_practices
+from app.tools.entries.attempt.search import search_attempts
+from app.tools.entries.attempt_chat.search import search_attempt_chats
+from app.tools.entries.chat.get import get_chats
+from app.tools.entries.practice.search import search_practices
 
 # Resource get fetchers
-from app.tools.v5.resources.cohorts.get import (
+from app.tools.resources.cohorts.get import (
     get_cohorts as get_cohort_resources,
 )
-from app.tools.v5.resources.personas.get import get_personas
-from app.tools.v5.resources.profiles.get import get_profiles
-from app.tools.v5.resources.rubrics.get import get_rubrics
-from app.tools.v5.resources.scenarios.get import get_scenarios
-from app.tools.v5.resources.simulations.get import get_simulations
-from app.tools.v5.resources.standard_groups.get import get_standard_groups
-from app.tools.v5.resources.standards.search import search_standards
+from app.tools.resources.personas.get import get_personas
+from app.tools.resources.profiles.get import get_profiles
+from app.tools.resources.rubrics.get import get_rubrics
+from app.tools.resources.scenarios.get import get_scenarios
+from app.tools.resources.simulations.get import get_simulations
+from app.tools.resources.standard_groups.get import get_standard_groups
+from app.tools.resources.standards.search import search_standards
 
 
 async def resolve_practice_context(

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.profiles.create import create_profile
-from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.resources.profiles.create import create_profile
+from app.tools.resources.profiles.get import get_profiles
 
 pytestmark = pytest.mark.asyncio
 

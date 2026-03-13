@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.profile.context import resolve_profile_context
-from app.tools.v5.artifacts.profile.create import create_profile
-from app.tools.v5.artifacts.profile.update import update_profile
+from app.tools.artifacts.profile.create import create_profile
+from app.tools.artifacts.profile.update import update_profile
 
 pytestmark = pytest.mark.asyncio
 

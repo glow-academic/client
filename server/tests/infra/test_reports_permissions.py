@@ -20,7 +20,7 @@ from app.infra.reports.permissions import (
     compute_trends_section,
     compute_trends_section_v2,
 )
-from app.tools.v5.entries.attempt_chat.types import ChatItem
+from app.tools.entries.attempt_chat.types import ChatItem
 
 
 def _chat(

@@ -24,10 +24,10 @@ from app.infra.websocket.socket_event import (
 from app.socket.v5.client.types import TestEndPayload
 from app.socket.v5.internal.test.proceed import test_proceed_internal_impl
 from app.socket.v5.internal.test.types import TestErrorData, TestProceedData
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.test_grade.create import create_test_grade
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.test_grade.create import create_test_grade
 
 internal_sio = get_internal_sio()
 

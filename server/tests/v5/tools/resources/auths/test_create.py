@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.auths.create import create_auth
-from app.tools.v5.resources.auths.get import get_auths
+from app.tools.resources.auths.create import create_auth
+from app.tools.resources.auths.get import get_auths
 
 pytestmark = pytest.mark.asyncio
 

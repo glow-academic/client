@@ -25,12 +25,12 @@ from app.infra.parameter.types import (
     PatchParameterDraftApiResponse,
     SaveParameterFieldError,
 )
-from app.tools.v5.entries.parameter_drafts.create import create_parameter_draft
-from app.tools.v5.entries.parameter_drafts.refresh import (
+from app.tools.entries.parameter_drafts.create import create_parameter_draft
+from app.tools.entries.parameter_drafts.refresh import (
     refresh_parameter_drafts,
 )
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.names.create import create_name
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

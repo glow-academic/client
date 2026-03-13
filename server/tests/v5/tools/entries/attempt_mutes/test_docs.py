@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt_mutes.docs import get_attempt_mutes_docs
+from app.tools.entries.attempt_mutes.docs import get_attempt_mutes_docs
 
 pytestmark = pytest.mark.asyncio
 

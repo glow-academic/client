@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.thresholds.docs import get_thresholds_docs
+from app.tools.resources.thresholds.docs import get_thresholds_docs
 
 pytestmark = pytest.mark.asyncio
 

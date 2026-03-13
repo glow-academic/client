@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.artifacts.cohort.docs import get_cohort_docs
+from app.tools.artifacts.cohort.docs import get_cohort_docs
 
 pytestmark = pytest.mark.asyncio
 

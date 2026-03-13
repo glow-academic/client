@@ -13,9 +13,9 @@ from app.events.types import build_lifecycle_event_type
 from app.infra.tools.call_args import resolve_tool
 from app.infra.stream.registry import get_artifact_events_config
 from app.infra.stream.types import EventEnvelope
-from app.tools.v5.entries.call_uploads.search import search_call_uploads
-from app.tools.v5.entries.calls.search import search_calls
-from app.tools.v5.entries.uploads.get import get_upload
+from app.tools.entries.call_uploads.search import search_call_uploads
+from app.tools.entries.calls.search import search_calls
+from app.tools.entries.uploads.get import get_upload
 from app.utils.storage.file_writer import read_text_file
 
 _FETCH_MULTIPLIER = 5

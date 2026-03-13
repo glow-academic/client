@@ -23,9 +23,9 @@ from app.infra.model.types import (
     DeleteModelApiResponse,
     DeleteModelResult,
 )
-from app.tools.v5.artifacts.model.delete import delete_models
-from app.tools.v5.artifacts.model.get import get_models
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.model.delete import delete_models
+from app.tools.artifacts.model.get import get_models
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

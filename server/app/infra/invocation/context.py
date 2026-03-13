@@ -20,41 +20,41 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Draft fetcher
-from app.tools.v5.entries.invocation_drafts.get import get_invocation_drafts
+from app.tools.entries.invocation_drafts.get import get_invocation_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.endpoints.get import get_endpoints
-from app.tools.v5.resources.endpoints.search import search_endpoints
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.keys.get import get_keys
-from app.tools.v5.resources.keys.search import search_keys
-from app.tools.v5.resources.modalities.get import get_modalities
-from app.tools.v5.resources.modalities.search import search_modalities
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.pricing.get import get_pricing
-from app.tools.v5.resources.pricing.search import search_pricing
-from app.tools.v5.resources.qualities.get import get_qualities
-from app.tools.v5.resources.qualities.search import search_qualities
-from app.tools.v5.resources.reasoning_levels.get import get_reasoning_levels
-from app.tools.v5.resources.reasoning_levels.search import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.endpoints.get import get_endpoints
+from app.tools.resources.endpoints.search import search_endpoints
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.keys.get import get_keys
+from app.tools.resources.keys.search import search_keys
+from app.tools.resources.modalities.get import get_modalities
+from app.tools.resources.modalities.search import search_modalities
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.pricing.get import get_pricing
+from app.tools.resources.pricing.search import search_pricing
+from app.tools.resources.qualities.get import get_qualities
+from app.tools.resources.qualities.search import search_qualities
+from app.tools.resources.reasoning_levels.get import get_reasoning_levels
+from app.tools.resources.reasoning_levels.search import (
     search_reasoning_levels,
 )
-from app.tools.v5.resources.temperature_levels.get import get_temperature_levels
-from app.tools.v5.resources.temperature_levels.search import (
+from app.tools.resources.temperature_levels.get import get_temperature_levels
+from app.tools.resources.temperature_levels.search import (
     search_temperature_levels,
 )
-from app.tools.v5.resources.values.get import get_values
-from app.tools.v5.resources.values.search import search_values
-from app.tools.v5.resources.voices.get import get_voices
-from app.tools.v5.resources.voices.search import search_voices
+from app.tools.resources.values.get import get_values
+from app.tools.resources.values.search import search_values
+from app.tools.resources.voices.get import get_voices
+from app.tools.resources.voices.search import search_voices
 
 # ---------------------------------------------------------------------------
 # Constants

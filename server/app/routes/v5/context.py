@@ -23,7 +23,7 @@ from app.infra.profile.types import (
     ProfileContextApiResponse,
     ThemePrimitives,
 )
-from app.tools.v5.resources.roles.get import get_roles
+from app.tools.resources.roles.get import get_roles
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

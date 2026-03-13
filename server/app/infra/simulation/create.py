@@ -22,7 +22,7 @@ from app.infra.simulation.permissions_context import (
     create_denormalized_snapshot,
     resolve_simulation_values,
 )
-from app.tools.v5.artifacts.simulation.create import (
+from app.tools.artifacts.simulation.create import (
     create_simulation as create_simulation_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

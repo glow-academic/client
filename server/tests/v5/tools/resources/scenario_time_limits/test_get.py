@@ -3,13 +3,13 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.scenario_time_limits.create import (
+from app.tools.resources.scenario_time_limits.create import (
     create_scenario_time_limit,
 )
-from app.tools.v5.resources.scenario_time_limits.get import (
+from app.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits,
 )
-from app.tools.v5.resources.scenarios.create import create_scenario
+from app.tools.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
 

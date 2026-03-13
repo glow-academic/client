@@ -31,11 +31,11 @@ async def _create_persona_route_resources(
     pool,
     redis_client,
 ) -> PersonaRouteResources:
-    from app.tools.v5.resources.colors.create import create_color
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.icons.create import create_icon
-    from app.tools.v5.resources.instructions.create import create_instruction
-    from app.tools.v5.resources.names.create import create_name
+    from app.tools.resources.colors.create import create_color
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.icons.create import create_icon
+    from app.tools.resources.instructions.create import create_instruction
+    from app.tools.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Persona {tag}"
@@ -435,8 +435,8 @@ class TestPersonaRoute:
         v5_persona_route_client,
         persona_route_actor,
     ):
-        from app.tools.v5.entries.groups.create import create_group
-        from app.tools.v5.entries.persona_drafts.create import (
+        from app.tools.entries.groups.create import create_group
+        from app.tools.entries.persona_drafts.create import (
             create_persona_draft,
         )
 
@@ -498,7 +498,7 @@ class TestPersonaRoute:
         v5_persona_route_client,
         persona_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         created = await self._create_persona_via_route(
             pool,

@@ -8,7 +8,7 @@ import pytest
 import pytest_asyncio
 from tests.infra.route_helpers import create_admin_route_actor
 
-from app.tools.v5.entries.benchmark.create import create_benchmark
+from app.tools.entries.benchmark.create import create_benchmark
 
 
 @pytest_asyncio.fixture
@@ -59,22 +59,22 @@ class TestTestWorkflowRoutes:
         assert payload["resources"] is not None
 
     async def _create_test_run_graph(self, pool, actor):
-        from app.tools.v5.entries.calls.create import create_call
-        from app.tools.v5.entries.groups.create import create_group
-        from app.tools.v5.entries.messages.create import create_message
-        from app.tools.v5.entries.runs.create import create_run
-        from app.tools.v5.entries.test.create import create_test
-        from app.tools.v5.entries.test.refresh import refresh_test
-        from app.tools.v5.entries.test_invocation.create import (
+        from app.tools.entries.calls.create import create_call
+        from app.tools.entries.groups.create import create_group
+        from app.tools.entries.messages.create import create_message
+        from app.tools.entries.runs.create import create_run
+        from app.tools.entries.test.create import create_test
+        from app.tools.entries.test.refresh import refresh_test
+        from app.tools.entries.test_invocation.create import (
             create_test_invocation,
         )
-        from app.tools.v5.entries.test_invocation.refresh import (
+        from app.tools.entries.test_invocation.refresh import (
             refresh_test_invocation,
         )
-        from app.tools.v5.entries.test_invocation_runs.create import (
+        from app.tools.entries.test_invocation_runs.create import (
             create_test_invocation_runs,
         )
-        from app.tools.v5.entries.test_invocation_runs.refresh import (
+        from app.tools.entries.test_invocation_runs.refresh import (
             refresh_test_invocation_runs,
         )
 

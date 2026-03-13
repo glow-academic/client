@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.models.create import create_model
-from app.tools.v5.resources.models.get import get_models
+from app.tools.resources.models.create import create_model
+from app.tools.resources.models.get import get_models
 
 pytestmark = pytest.mark.asyncio
 

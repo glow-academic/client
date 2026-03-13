@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.test_grade.docs import get_test_grade_docs
+from app.tools.entries.test_grade.docs import get_test_grade_docs
 
 pytestmark = pytest.mark.asyncio
 

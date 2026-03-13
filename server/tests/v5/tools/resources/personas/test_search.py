@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.personas.create import create_persona
-from app.tools.v5.resources.personas.search import search_personas
+from app.tools.resources.personas.create import create_persona
+from app.tools.resources.personas.search import search_personas
 
 pytestmark = pytest.mark.asyncio
 

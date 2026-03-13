@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.modalities.docs import get_modalities_docs
+from app.tools.resources.modalities.docs import get_modalities_docs
 
 pytestmark = pytest.mark.asyncio
 

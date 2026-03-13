@@ -24,14 +24,14 @@ from app.infra.invocation.types import (
     PatchInvocationDraftApiResponse,
     SaveInvocationFieldError,
 )
-from app.tools.v5.entries.invocation_drafts.create import (
+from app.tools.entries.invocation_drafts.create import (
     create_invocation_draft,
 )
-from app.tools.v5.entries.invocation_drafts.refresh import (
+from app.tools.entries.invocation_drafts.refresh import (
     refresh_invocation_drafts,
 )
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.names.create import create_name
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

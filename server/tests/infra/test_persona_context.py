@@ -10,8 +10,8 @@ from app.infra.persona.context import (
     resolve_persona_context,
 )
 from app.infra.types import ResourcePair
-from app.tools.v5.artifacts.persona.create import create_persona
-from app.tools.v5.artifacts.persona.update import update_persona
+from app.tools.artifacts.persona.create import create_persona
+from app.tools.artifacts.persona.update import update_persona
 
 
 def _artifact_stub(**overrides):

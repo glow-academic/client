@@ -20,17 +20,17 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.agent.search import search_agents
-from app.tools.v5.artifacts.tool.get import (
+from app.tools.artifacts.agent.search import search_agents
+from app.tools.artifacts.tool.get import (
     get_tools as get_tool_artifacts,
 )
-from app.tools.v5.resources.artifacts.get import get_artifacts
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.operations.get import get_operations
-from app.tools.v5.resources.tools.create import (
+from app.tools.resources.artifacts.get import get_artifacts
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.operations.get import get_operations
+from app.tools.resources.tools.create import (
     create_tool as create_tool_resource,
 )
 

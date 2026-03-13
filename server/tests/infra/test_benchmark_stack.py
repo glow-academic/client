@@ -12,9 +12,9 @@ from app.infra.benchmark.context import resolve_benchmark_context
 from app.infra.benchmark.docs import docs_benchmark_impl
 from app.infra.benchmark.export import export_benchmark_impl
 from app.infra.benchmark.refresh import refresh_benchmark_impl
-from app.tools.v5.entries.benchmark.create import create_benchmark
-from app.tools.v5.entries.benchmark.refresh import refresh_benchmark
-from app.tools.v5.resources.departments.create import create_department
+from app.tools.entries.benchmark.create import create_benchmark
+from app.tools.entries.benchmark.refresh import refresh_benchmark
+from app.tools.resources.departments.create import create_department
 
 pytestmark = pytest.mark.asyncio
 

@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.tools.v5.artifacts.simulation.create import create_simulation
-from app.tools.v5.artifacts.simulation.get import get_simulations
-from app.tools.v5.artifacts.simulation.update import update_simulation
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.simulation.create import create_simulation
+from app.tools.artifacts.simulation.get import get_simulations
+from app.tools.artifacts.simulation.update import update_simulation
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

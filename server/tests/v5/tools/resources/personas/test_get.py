@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.personas.create import create_persona
-from app.tools.v5.resources.personas.get import get_personas
+from app.tools.resources.personas.create import create_persona
+from app.tools.resources.personas.get import get_personas
 
 pytestmark = pytest.mark.asyncio
 

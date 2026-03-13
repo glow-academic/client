@@ -155,7 +155,7 @@ def _redirect_audit_upload_folder(monkeypatch, tmp_path):
 @pytest_asyncio.fixture
 async def name_id(pool, redis_client) -> UUID:
     """Create a fresh name resource via black-box tool."""
-    from app.tools.v5.resources.names.create import create_name
+    from app.tools.resources.names.create import create_name
 
     async with pool.acquire() as conn:
         result = await create_name(conn, "Test Name", redis_client)
@@ -165,7 +165,7 @@ async def name_id(pool, redis_client) -> UUID:
 @pytest_asyncio.fixture
 async def description_id(pool, redis_client) -> UUID:
     """Create a fresh description resource via black-box tool."""
-    from app.tools.v5.resources.descriptions.create import create_description
+    from app.tools.resources.descriptions.create import create_description
 
     async with pool.acquire() as conn:
         result = await create_description(conn, "Test description", redis_client)

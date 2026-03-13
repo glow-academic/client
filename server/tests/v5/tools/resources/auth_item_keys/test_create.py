@@ -2,11 +2,11 @@
 
 import pytest
 
-from app.tools.v5.resources.auth_item_keys.create import create_auth_item_key
-from app.tools.v5.resources.auth_item_keys.get import get_auth_item_keys
-from app.tools.v5.resources.auths.create import create_auth
-from app.tools.v5.resources.items.create import create_item
-from app.tools.v5.resources.keys.create import create_key
+from app.tools.resources.auth_item_keys.create import create_auth_item_key
+from app.tools.resources.auth_item_keys.get import get_auth_item_keys
+from app.tools.resources.auths.create import create_auth
+from app.tools.resources.items.create import create_item
+from app.tools.resources.keys.create import create_key
 
 pytestmark = pytest.mark.asyncio
 

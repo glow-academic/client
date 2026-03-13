@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 
 from app.infra.runs_context import RunsContext
 from app.infra.auth.types import AnalyticsFacets
-from app.tools.v5.entries.health.types import GetHealthResponse
-from app.tools.v5.entries.metrics.types import GetMetricsSearchResponse
+from app.tools.entries.health.types import GetHealthResponse
+from app.tools.entries.metrics.types import GetMetricsSearchResponse
 
 
 class HealthRequest(BaseModel):

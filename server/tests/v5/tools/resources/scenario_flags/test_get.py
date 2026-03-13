@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.scenario_flags.create import create_scenario_flag
-from app.tools.v5.resources.scenario_flags.get import get_scenario_flags
-from app.tools.v5.resources.scenarios.create import create_scenario
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.scenario_flags.create import create_scenario_flag
+from app.tools.resources.scenario_flags.get import get_scenario_flags
+from app.tools.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
 

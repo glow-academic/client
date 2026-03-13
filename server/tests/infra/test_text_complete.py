@@ -7,11 +7,11 @@ from tests.helpers import nonexistent_id
 
 from app.infra.websocket.socket_event import recording_emit
 from app.infra.websocket.text_complete_impl import text_complete_impl
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.messages.search import search_messages
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.uploads.get import get_upload
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.messages.search import search_messages
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.uploads.get import get_upload
 
 pytestmark = pytest.mark.asyncio
 

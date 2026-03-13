@@ -20,20 +20,20 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.cohort.get import (
+from app.tools.artifacts.cohort.get import (
     get_cohorts as get_cohort_artifacts,
 )
-from app.tools.v5.resources.cohorts.create import (
+from app.tools.resources.cohorts.create import (
     create_cohort as create_cohort_resource,
 )
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.profiles.search import search_profiles
-from app.tools.v5.resources.simulations.search import search_simulations
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.profiles.search import search_profiles
+from app.tools.resources.simulations.search import search_simulations
 
 if TYPE_CHECKING:
     from app.infra.cohort.create import CohortFieldError, CreateCohortItem

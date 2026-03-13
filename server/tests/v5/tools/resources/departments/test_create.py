@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.settings.create import create_setting
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.settings.create import create_setting
 
 pytestmark = pytest.mark.asyncio
 

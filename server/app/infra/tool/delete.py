@@ -23,9 +23,9 @@ from app.infra.tool.types import (
     DeleteToolApiResponse,
     DeleteToolResult,
 )
-from app.tools.v5.artifacts.tool.delete import delete_tools
-from app.tools.v5.artifacts.tool.get import get_tools
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.tool.delete import delete_tools
+from app.tools.artifacts.tool.get import get_tools
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

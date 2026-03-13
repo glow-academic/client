@@ -25,10 +25,10 @@ from app.infra.provider.types import (
     ProviderDraftFormState,
     SaveProviderFieldError,
 )
-from app.tools.v5.entries.provider_drafts.create import create_provider_draft
-from app.tools.v5.entries.provider_drafts.refresh import refresh_provider_drafts
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.names.create import create_name
+from app.tools.entries.provider_drafts.create import create_provider_draft
+from app.tools.entries.provider_drafts.refresh import refresh_provider_drafts
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

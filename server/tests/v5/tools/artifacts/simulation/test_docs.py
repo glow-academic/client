@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.artifacts.simulation.docs import get_simulation_docs
+from app.tools.artifacts.simulation.docs import get_simulation_docs
 
 pytestmark = pytest.mark.asyncio
 

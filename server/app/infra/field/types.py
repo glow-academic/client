@@ -9,8 +9,8 @@ from pydantic import BaseModel
 
 from app.infra.field.create import CreateFieldItem
 from app.infra.v5_types import BaseResourceSection, ListFilterSection
-from app.tools.v5.entries.field_drafts.types import GetFieldDraftResponse
-from app.tools.v5.resources.parameters.types import GetParameterResponse
+from app.tools.entries.field_drafts.types import GetFieldDraftResponse
+from app.tools.resources.parameters.types import GetParameterResponse
 
 
 class GetFieldDraftsApiResponse(BaseModel):

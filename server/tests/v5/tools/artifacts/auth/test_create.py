@@ -3,14 +3,14 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.artifacts.auth.create import create_auth
-from app.tools.v5.artifacts.auth.get import get_auths
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.items.create import create_item
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.slugs.create import create_slug
+from app.tools.artifacts.auth.create import create_auth
+from app.tools.artifacts.auth.get import get_auths
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.items.create import create_item
+from app.tools.resources.names.create import create_name
+from app.tools.resources.slugs.create import create_slug
 
 pytestmark = pytest.mark.asyncio
 

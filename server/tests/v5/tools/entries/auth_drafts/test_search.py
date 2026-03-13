@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.auth_drafts.create import create_auth_draft
-from app.tools.v5.entries.auth_drafts.search import search_auth_drafts
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.auth_drafts.create import create_auth_draft
+from app.tools.entries.auth_drafts.search import search_auth_drafts
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

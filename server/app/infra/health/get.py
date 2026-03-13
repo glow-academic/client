@@ -23,11 +23,11 @@ from app.infra.health.types import (
     HealthResponse,
     HealthViews,
 )
-from app.tools.v5.resources.agents.get import get_agents
-from app.tools.v5.resources.models.get import get_models
-from app.tools.v5.resources.providers.get import get_providers
-from app.tools.v5.resources.systems.get import get_systems
-from app.tools.v5.resources.tools.get import get_tools
+from app.tools.resources.agents.get import get_agents
+from app.tools.resources.models.get import get_models
+from app.tools.resources.providers.get import get_providers
+from app.tools.resources.systems.get import get_systems
+from app.tools.resources.tools.get import get_tools
 
 HEALTH_FACETS_CONFIG = AnalyticsFacetsConfig(
     fields=AnalyticsFilterFields(
@@ -156,7 +156,7 @@ async def get_health_internal(
                 )
 
         if common.profile:
-            from app.tools.v5.resources.profiles.get import get_profiles
+            from app.tools.resources.profiles.get import get_profiles
 
             async with pool.acquire() as conn:
                 config_profile = await get_profiles(

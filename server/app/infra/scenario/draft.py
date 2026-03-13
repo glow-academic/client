@@ -25,18 +25,18 @@ from app.infra.scenario.types import (
     SaveScenarioFieldError,
     ScenarioDraftFormState,
 )
-from app.tools.v5.entries.scenario_drafts.create import create_scenario_draft
-from app.tools.v5.entries.scenario_drafts.refresh import refresh_scenario_drafts
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.images.create import create_image
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.objectives.create import create_objective
-from app.tools.v5.resources.options.create import create_option
-from app.tools.v5.resources.problem_statements.create import (
+from app.tools.entries.scenario_drafts.create import create_scenario_draft
+from app.tools.entries.scenario_drafts.refresh import refresh_scenario_drafts
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.images.create import create_image
+from app.tools.resources.names.create import create_name
+from app.tools.resources.objectives.create import create_objective
+from app.tools.resources.options.create import create_option
+from app.tools.resources.problem_statements.create import (
     create_problem_statement,
 )
-from app.tools.v5.resources.questions.create import create_question
-from app.tools.v5.resources.videos.create import create_video
+from app.tools.resources.questions.create import create_question
+from app.tools.resources.videos.create import create_video
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

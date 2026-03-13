@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.infra.scenario.create import CreateScenarioItem
 from app.infra.v5_types import BaseResourceSection, ListFilterSection
-from app.tools.v5.entries.scenario_drafts.types import GetScenarioDraftResponse
+from app.tools.entries.scenario_drafts.types import GetScenarioDraftResponse
 
 # =============================================================================
 # Resource Types

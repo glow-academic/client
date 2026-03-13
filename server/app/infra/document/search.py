@@ -33,15 +33,15 @@ from app.infra.document.types import (
     ListDocumentApiResponse,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.document.get import get_documents
-from app.tools.v5.artifacts.document.search import search_documents
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.fields.search import (
+from app.tools.artifacts.document.get import get_documents
+from app.tools.artifacts.document.search import search_documents
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.fields.search import (
     search_fields as search_fields_resource,
 )
-from app.tools.v5.resources.files.get import get_files as get_uploads
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.scenarios.search import (
+from app.tools.resources.files.get import get_files as get_uploads
+from app.tools.resources.names.get import get_names
+from app.tools.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
 

@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.videos.create import create_video
-from app.tools.v5.entries.videos.get import get_video
-from app.tools.v5.resources.videos.create import (
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.videos.create import create_video
+from app.tools.entries.videos.get import get_video
+from app.tools.resources.videos.create import (
     create_video as create_video_resource,
 )
 

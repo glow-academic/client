@@ -23,21 +23,21 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.department.get import (
+from app.tools.artifacts.department.get import (
     get_departments as get_department_artifacts,
 )
-from app.tools.v5.entries.department_drafts.get import get_department_drafts
+from app.tools.entries.department_drafts.get import get_department_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.get import get_descriptions
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.settings.get import get_settings
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.settings.get import get_settings
 
 # ---------------------------------------------------------------------------
 # Constants

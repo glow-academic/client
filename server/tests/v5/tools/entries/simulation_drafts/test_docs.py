@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.simulation_drafts.docs import (
+from app.tools.entries.simulation_drafts.docs import (
     get_simulation_drafts_docs,
 )
 

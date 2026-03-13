@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
-from app.tools.v5.artifacts.persona.create import create_persona
-from app.tools.v5.artifacts.persona.get import get_personas
-from app.tools.v5.artifacts.persona.update import update_persona
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.persona.create import create_persona
+from app.tools.artifacts.persona.get import get_personas
+from app.tools.artifacts.persona.update import update_persona
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

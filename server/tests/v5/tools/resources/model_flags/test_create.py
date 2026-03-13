@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.model_flags.create import create_model_flag
-from app.tools.v5.resources.model_flags.get import get_model_flags
-from app.tools.v5.resources.models.create import create_model
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.model_flags.create import create_model_flag
+from app.tools.resources.model_flags.get import get_model_flags
+from app.tools.resources.models.create import create_model
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.providers.create import create_provider
-from app.tools.v5.resources.providers.get import get_providers
+from app.tools.resources.providers.create import create_provider
+from app.tools.resources.providers.get import get_providers
 
 pytestmark = pytest.mark.asyncio
 

@@ -15,8 +15,8 @@ from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.typed_emit import emit_to_internal
 from app.socket.v5.client.types import GeneratePayload
 from app.socket.v5.types import GenerateErrorApiRequest
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.runs.create import create_run
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

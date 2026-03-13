@@ -25,14 +25,14 @@ from app.infra.department.types import (
     PatchDepartmentDraftApiResponse,
     SaveDepartmentFieldError,
 )
-from app.tools.v5.entries.department_drafts.create import (
+from app.tools.entries.department_drafts.create import (
     create_department_draft,
 )
-from app.tools.v5.entries.department_drafts.refresh import (
+from app.tools.entries.department_drafts.refresh import (
     refresh_department_drafts,
 )
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.names.create import create_name
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.names.create import create_name
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

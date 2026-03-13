@@ -20,13 +20,13 @@ from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.socket.v5.client.types import AttemptStopPayload
 from app.socket.v5.internal.attempt.types import AttemptStoppedData
-from app.tools.v5.entries.attempt_chat.get import get_attempt_chats
-from app.tools.v5.entries.attempt_message.search import search_attempt_messages
-from app.tools.v5.entries.attempt_message_completion.create import (
+from app.tools.entries.attempt_chat.get import get_attempt_chats
+from app.tools.entries.attempt_message.search import search_attempt_messages
+from app.tools.entries.attempt_message_completion.create import (
     create_attempt_message_completion,
 )
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.runs.create import create_run
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.runs.create import create_run
 
 internal_sio = get_internal_sio()
 

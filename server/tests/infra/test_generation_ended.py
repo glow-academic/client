@@ -19,14 +19,14 @@ from app.infra.websocket.setup_generation_test import (
     setup_generation_test,
 )
 from app.infra.websocket.socket_event import recording_emit
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.test_grade.create import create_test_grade
-from app.tools.v5.resources.agents.create import create_agent
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.rubrics.create import create_rubric
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.test_grade.create import create_test_grade
+from app.tools.resources.agents.create import create_agent
+from app.tools.resources.names.create import create_name
+from app.tools.resources.rubrics.create import create_rubric
 
 pytestmark = pytest.mark.asyncio
 

@@ -23,34 +23,34 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.scenario.docs import get_scenario_docs
-from app.tools.v5.artifacts.scenario.get import (
+from app.tools.artifacts.scenario.docs import get_scenario_docs
+from app.tools.artifacts.scenario.get import (
     get_scenarios as get_scenario_artifacts,
 )
 
 # Entry tool docs
-from app.tools.v5.entries.scenario_drafts.docs import get_scenario_drafts_docs
+from app.tools.entries.scenario_drafts.docs import get_scenario_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.departments.docs import get_departments_docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.documents.docs import get_documents_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.images.docs import get_images_docs
-from app.tools.v5.resources.names.docs import get_names_docs
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.objectives.docs import get_objectives_docs
-from app.tools.v5.resources.options.docs import get_options_docs
-from app.tools.v5.resources.parameter_fields.docs import (
+from app.tools.resources.departments.docs import get_departments_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.documents.docs import get_documents_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.images.docs import get_images_docs
+from app.tools.resources.names.docs import get_names_docs
+from app.tools.resources.names.get import get_names
+from app.tools.resources.objectives.docs import get_objectives_docs
+from app.tools.resources.options.docs import get_options_docs
+from app.tools.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
-from app.tools.v5.resources.parameters.docs import get_parameters_docs
-from app.tools.v5.resources.personas.docs import get_personas_docs
-from app.tools.v5.resources.problem_statements.docs import (
+from app.tools.resources.parameters.docs import get_parameters_docs
+from app.tools.resources.personas.docs import get_personas_docs
+from app.tools.resources.problem_statements.docs import (
     get_problem_statements_docs,
 )
-from app.tools.v5.resources.questions.docs import get_questions_docs
-from app.tools.v5.resources.videos.docs import get_videos_docs
+from app.tools.resources.questions.docs import get_questions_docs
+from app.tools.resources.videos.docs import get_videos_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Scenarios",

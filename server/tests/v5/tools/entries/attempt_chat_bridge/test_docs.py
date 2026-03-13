@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt_chat_bridge.docs import (
+from app.tools.entries.attempt_chat_bridge.docs import (
     get_attempt_chat_bridge_docs,
 )
 

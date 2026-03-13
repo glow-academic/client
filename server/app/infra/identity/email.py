@@ -18,8 +18,8 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.profile.search import search_profiles
-from app.tools.v5.resources.emails.search import search_emails
+from app.tools.artifacts.profile.search import search_profiles
+from app.tools.resources.emails.search import search_emails
 
 
 @dataclass(frozen=True)

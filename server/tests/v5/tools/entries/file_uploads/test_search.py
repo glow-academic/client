@@ -3,11 +3,11 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.file_uploads.create import create_file_upload
-from app.tools.v5.entries.file_uploads.search import search_file_uploads
-from app.tools.v5.entries.files.create import create_file
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.entries.file_uploads.create import create_file_upload
+from app.tools.entries.file_uploads.search import search_file_uploads
+from app.tools.entries.files.create import create_file
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.uploads.create import create_upload
 
 pytestmark = pytest.mark.asyncio
 

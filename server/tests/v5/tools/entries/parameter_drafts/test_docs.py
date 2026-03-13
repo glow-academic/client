@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.parameter_drafts.docs import get_parameter_drafts_docs
+from app.tools.entries.parameter_drafts.docs import get_parameter_drafts_docs
 
 pytestmark = pytest.mark.asyncio
 

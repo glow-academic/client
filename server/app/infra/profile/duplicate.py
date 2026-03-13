@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.profile.types import (
     DuplicateProfileApiResponse,
 )
-from app.tools.v5.artifacts.profile.create import (
+from app.tools.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
-from app.tools.v5.artifacts.profile.get import get_profiles
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.profile.get import get_profiles
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.scenario.context import resolve_scenario_context
-from app.tools.v5.artifacts.scenario.create import create_scenario
-from app.tools.v5.artifacts.scenario.update import update_scenario
+from app.tools.artifacts.scenario.create import create_scenario
+from app.tools.artifacts.scenario.update import update_scenario
 
 pytestmark = pytest.mark.asyncio
 

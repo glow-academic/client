@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.cohort.types import (
     DuplicateCohortApiResponse,
 )
-from app.tools.v5.artifacts.cohort.create import (
+from app.tools.artifacts.cohort.create import (
     create_cohort as create_cohort_artifact,
 )
-from app.tools.v5.artifacts.cohort.get import get_cohorts
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.cohort.get import get_cohorts
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -28,7 +28,7 @@ from app.socket.v5.client.attempt.audio.stop_impl import (
     AudioStopInternalResult,
     attempt_audio_stop_internal_impl,
 )
-from app.tools.v5.entries.uploads.get import get_upload
+from app.tools.entries.uploads.get import get_upload
 
 router = APIRouter()
 

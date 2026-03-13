@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.infra.profile.create import CreateProfileItem
 from app.infra.shared_types import QGetProfileContextV4RoleResource
 from app.infra.v5_types import BaseResourceSection, ListFilterSection
-from app.tools.v5.entries.profile_drafts.types import GetProfileDraftResponse
+from app.tools.entries.profile_drafts.types import GetProfileDraftResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)

@@ -23,13 +23,13 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.field.types import (
     DuplicateFieldApiResponse,
 )
-from app.tools.v5.artifacts.field.create import (
+from app.tools.artifacts.field.create import (
     create_field as create_field_artifact,
 )
-from app.tools.v5.artifacts.field.get import get_fields
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.field.get import get_fields
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

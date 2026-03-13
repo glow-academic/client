@@ -2,12 +2,12 @@
 
 import pytest
 
-from app.tools.v5.entries.chat.create import create_chat
-from app.tools.v5.entries.home.create import create_home
-from app.tools.v5.entries.home_chat.create import create_home_chat
-from app.tools.v5.entries.home_chat.get import get_home_chats
-from app.tools.v5.entries.home_chat.refresh import refresh_home_chat
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.chat.create import create_chat
+from app.tools.entries.home.create import create_home
+from app.tools.entries.home_chat.create import create_home_chat
+from app.tools.entries.home_chat.get import get_home_chats
+from app.tools.entries.home_chat.refresh import refresh_home_chat
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

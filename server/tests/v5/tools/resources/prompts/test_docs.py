@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.prompts.docs import get_prompts_docs
+from app.tools.resources.prompts.docs import get_prompts_docs
 
 pytestmark = pytest.mark.asyncio
 

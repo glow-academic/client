@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.parameter_fields.docs import (
+from app.tools.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
 

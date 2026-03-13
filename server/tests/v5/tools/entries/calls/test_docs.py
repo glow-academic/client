@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.calls.docs import get_calls_docs
+from app.tools.entries.calls.docs import get_calls_docs
 
 pytestmark = pytest.mark.asyncio
 

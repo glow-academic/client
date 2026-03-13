@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.logins.create import create_login
-from app.tools.v5.entries.logins.get import get_logins
-from app.tools.v5.entries.logins.refresh import refresh_logins
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.logins.create import create_login
+from app.tools.entries.logins.get import get_logins
+from app.tools.entries.logins.refresh import refresh_logins
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

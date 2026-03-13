@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.cohorts.create import create_cohort
-from app.tools.v5.resources.cohorts.get import get_cohorts
+from app.tools.resources.cohorts.create import create_cohort
+from app.tools.resources.cohorts.get import get_cohorts
 
 pytestmark = pytest.mark.asyncio
 

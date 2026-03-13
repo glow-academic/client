@@ -24,10 +24,10 @@ from app.infra.field.types import (
     DeleteFieldApiResponse,
     DeleteFieldResult,
 )
-from app.tools.v5.artifacts.field.delete import delete_fields
-from app.tools.v5.artifacts.field.get import get_fields
-from app.tools.v5.artifacts.parameter.search import search_parameters
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.field.delete import delete_fields
+from app.tools.artifacts.field.get import get_fields
+from app.tools.artifacts.parameter.search import search_parameters
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

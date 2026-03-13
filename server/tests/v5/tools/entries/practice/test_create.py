@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.entries.practice.create import create_practice
-from app.tools.v5.entries.practice.get import get_practices
-from app.tools.v5.entries.practice.refresh import refresh_practice
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.practice.create import create_practice
+from app.tools.entries.practice.get import get_practices
+from app.tools.entries.practice.refresh import refresh_practice
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

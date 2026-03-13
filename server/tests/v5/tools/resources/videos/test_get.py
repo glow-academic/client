@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.videos.create import create_video
-from app.tools.v5.resources.videos.get import get_videos
+from app.tools.resources.videos.create import create_video
+from app.tools.resources.videos.get import get_videos
 
 pytestmark = pytest.mark.asyncio
 

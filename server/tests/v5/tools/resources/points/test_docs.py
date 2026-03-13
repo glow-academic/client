@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.points.docs import get_points_docs
+from app.tools.resources.points.docs import get_points_docs
 
 pytestmark = pytest.mark.asyncio
 

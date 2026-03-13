@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.artifacts.profile.create import create_profile
-from app.tools.v5.resources.emails.create import create_email
+from app.tools.artifacts.profile.create import create_profile
+from app.tools.resources.emails.create import create_email
 from app.utils.mcp.get_profile_id_from_claims import get_profile_id_from_claims
 
 pytestmark = pytest.mark.asyncio

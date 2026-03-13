@@ -13,11 +13,11 @@ from app.infra.tools.entries.create_run_message import create_run_message
 from app.infra.tools.entries.save_call_upload import save_call_upload
 from app.infra.tools.entries.save_text_upload import save_text_upload
 from app.infra.tools.entries.types import CreateToolSetupResponse
-from app.tools.v5.entries.call_uploads.create import create_call_upload
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.message_uploads.create import create_message_upload
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.entries.call_uploads.create import create_call_upload
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.message_uploads.create import create_message_upload
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.uploads.create import create_upload
 
 
 async def create_tool_call(

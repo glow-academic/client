@@ -14,7 +14,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.types import ArtifactContext
-from app.tools.v5.entries.persona_drafts.search import search_persona_drafts
+from app.tools.entries.persona_drafts.search import search_persona_drafts
 
 
 async def list_persona_drafts_impl(

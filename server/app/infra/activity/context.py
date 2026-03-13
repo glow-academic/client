@@ -20,18 +20,18 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Entry fetchers (raw MV reads)
-from app.tools.v5.entries.activity.search import search_activity
-from app.tools.v5.entries.emulations.search import search_emulations
-from app.tools.v5.entries.grants.search import search_grants
-from app.tools.v5.entries.groups.search import search_groups
-from app.tools.v5.entries.logins.search import search_logins
-from app.tools.v5.entries.problems.search import search_problems
-from app.tools.v5.entries.runs.search import search_runs
-from app.tools.v5.entries.sessions.search import search_sessions
+from app.tools.entries.activity.search import search_activity
+from app.tools.entries.emulations.search import search_emulations
+from app.tools.entries.grants.search import search_grants
+from app.tools.entries.groups.search import search_groups
+from app.tools.entries.logins.search import search_logins
+from app.tools.entries.problems.search import search_problems
+from app.tools.entries.runs.search import search_runs
+from app.tools.entries.sessions.search import search_sessions
 
 # Resource get fetchers
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.pricing.get import get_pricing
+from app.tools.resources.names.get import get_names
+from app.tools.resources.pricing.get import get_pricing
 
 
 async def _resolve_profile_ids(

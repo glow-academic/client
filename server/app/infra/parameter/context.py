@@ -20,24 +20,24 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.parameter.get import (
+from app.tools.artifacts.parameter.get import (
     get_parameters as get_parameter_artifacts,
 )
-from app.tools.v5.entries.parameter_drafts.get import get_parameter_drafts
+from app.tools.entries.parameter_drafts.get import get_parameter_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.parameter_fields.get import get_parameter_fields
-from app.tools.v5.resources.parameter_fields.search import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.parameter_fields.get import get_parameter_fields
+from app.tools.resources.parameter_fields.search import (
     search_parameter_fields,
 )
 

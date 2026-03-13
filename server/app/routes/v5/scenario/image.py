@@ -9,8 +9,8 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from app.infra.globals import IMAGE_FOLDER, get_pool, get_redis_client
-from app.tools.v5.entries.uploads.create import create_upload
-from app.tools.v5.entries.uploads.get import get_upload
+from app.tools.entries.uploads.create import create_upload
+from app.tools.entries.uploads.get import get_upload
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type

@@ -20,13 +20,13 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Entry fetchers (raw MV reads)
-from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-from app.tools.v5.entries.attempt_message.search import search_attempt_messages
+from app.tools.entries.attempt_chat.search import search_attempt_chats
+from app.tools.entries.attempt_message.search import search_attempt_messages
 
 # Resource get fetchers
-from app.tools.v5.resources.profiles.get import get_profiles
-from app.tools.v5.resources.scenarios.get import get_scenarios
-from app.tools.v5.resources.simulations.get import get_simulations
+from app.tools.resources.profiles.get import get_profiles
+from app.tools.resources.scenarios.get import get_scenarios
+from app.tools.resources.simulations.get import get_simulations
 
 
 async def resolve_leaderboard_context(

@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.fields.create import create_field
-from app.tools.v5.resources.fields.get import get_fields
+from app.tools.resources.fields.create import create_field
+from app.tools.resources.fields.get import get_fields
 
 pytestmark = pytest.mark.asyncio
 

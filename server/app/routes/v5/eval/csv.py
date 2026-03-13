@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from app.infra.eval.create import CreateEvalItem
 from app.infra.eval.search import EVAL_IMPORT_FIELDS
 from app.infra.globals import UPLOAD_FOLDER, get_pool
-from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.entries.uploads.create import create_upload
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

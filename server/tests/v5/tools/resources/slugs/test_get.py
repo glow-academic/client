@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.slugs.create import create_slug
-from app.tools.v5.resources.slugs.get import get_slugs
+from app.tools.resources.slugs.create import create_slug
+from app.tools.resources.slugs.get import get_slugs
 
 pytestmark = pytest.mark.asyncio
 

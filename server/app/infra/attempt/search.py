@@ -20,9 +20,9 @@ from app.infra.attempt.types import (
     SearchAttemptItem,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.entries.attempt.search import search_attempts
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.simulations.search import search_simulations
+from app.tools.entries.attempt.search import search_attempts
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.simulations.search import search_simulations
 
 
 async def search_attempt_impl(

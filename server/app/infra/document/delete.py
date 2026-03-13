@@ -25,9 +25,9 @@ from app.infra.document.types import (
     DeleteDocumentApiResponse,
     DeleteDocumentResult,
 )
-from app.tools.v5.artifacts.document.delete import delete_documents
-from app.tools.v5.artifacts.document.get import get_documents
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.document.delete import delete_documents
+from app.tools.artifacts.document.get import get_documents
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

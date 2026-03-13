@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.colors.create import create_color
-from app.tools.v5.resources.colors.get import get_colors
+from app.tools.resources.colors.create import create_color
+from app.tools.resources.colors.get import get_colors
 
 pytestmark = pytest.mark.asyncio
 

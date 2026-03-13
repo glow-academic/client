@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.scenario_rubrics.docs import (
+from app.tools.resources.scenario_rubrics.docs import (
     get_scenario_rubrics_docs,
 )
 

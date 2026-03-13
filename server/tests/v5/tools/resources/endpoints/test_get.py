@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.endpoints.create import create_endpoint
-from app.tools.v5.resources.endpoints.get import get_endpoints
+from app.tools.resources.endpoints.create import create_endpoint
+from app.tools.resources.endpoints.get import get_endpoints
 
 pytestmark = pytest.mark.asyncio
 

@@ -12,24 +12,24 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.auth.get import get_auths as get_auth_artifacts
-from app.tools.v5.artifacts.department.get import (
+from app.tools.artifacts.auth.get import get_auths as get_auth_artifacts
+from app.tools.artifacts.department.get import (
     get_departments as get_department_artifacts,
 )
-from app.tools.v5.artifacts.department.search import search_departments
-from app.tools.v5.artifacts.setting.get import (
+from app.tools.artifacts.department.search import search_departments
+from app.tools.artifacts.setting.get import (
     get_settings as get_setting_artifacts,
 )
-from app.tools.v5.artifacts.setting.search import search_settings
-from app.tools.v5.resources.auth_item_keys.get import get_auth_item_keys
-from app.tools.v5.resources.auth_item_values.get import get_auth_item_values
-from app.tools.v5.resources.auths.get import get_auths as get_auth_resources
-from app.tools.v5.resources.departments.get import (
+from app.tools.artifacts.setting.search import search_settings
+from app.tools.resources.auth_item_keys.get import get_auth_item_keys
+from app.tools.resources.auth_item_values.get import get_auth_item_values
+from app.tools.resources.auths.get import get_auths as get_auth_resources
+from app.tools.resources.departments.get import (
     get_departments as get_department_resources,
 )
-from app.tools.v5.resources.items.get import get_items
-from app.tools.v5.resources.keys.get import get_keys
-from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.resources.items.get import get_items
+from app.tools.resources.keys.get import get_keys
+from app.tools.resources.profiles.get import get_profiles
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

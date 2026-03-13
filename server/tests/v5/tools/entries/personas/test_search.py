@@ -3,9 +3,9 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.personas.create import create_personas
-from app.tools.v5.entries.personas.search import search_personas
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.personas.create import create_personas
+from app.tools.entries.personas.search import search_personas
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

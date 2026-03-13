@@ -22,16 +22,16 @@ async def learning_route_actor(pool, redis_client, setting_graph_factory):
 
 
 async def _create_attempt_export_graph(pool, actor, *, practice: bool):
-    from app.tools.v5.entries.attempt.create import create_attempt
-    from app.tools.v5.entries.attempt.refresh import refresh_attempt
-    from app.tools.v5.entries.attempt_chat.create import create_attempt_chat
-    from app.tools.v5.entries.attempt_chat.refresh import refresh_attempt_chat
-    from app.tools.v5.entries.calls.create import create_call
-    from app.tools.v5.entries.chat.create import create_chat
-    from app.tools.v5.entries.chat.refresh import refresh_chat
-    from app.tools.v5.entries.groups.create import create_group
-    from app.tools.v5.entries.persona.create import create_persona
-    from app.tools.v5.entries.runs.create import create_run
+    from app.tools.entries.attempt.create import create_attempt
+    from app.tools.entries.attempt.refresh import refresh_attempt
+    from app.tools.entries.attempt_chat.create import create_attempt_chat
+    from app.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.tools.entries.calls.create import create_call
+    from app.tools.entries.chat.create import create_chat
+    from app.tools.entries.chat.refresh import refresh_chat
+    from app.tools.entries.groups.create import create_group
+    from app.tools.entries.persona.create import create_persona
+    from app.tools.entries.runs.create import create_run
 
     async with pool.acquire() as conn:
         group = await create_group(

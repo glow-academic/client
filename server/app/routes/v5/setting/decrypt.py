@@ -14,7 +14,7 @@ from app.infra.setting.types import (
     DecryptSettingKeyApiRequest,
     DecryptSettingKeyApiResponse,
 )
-from app.tools.v5.artifacts.setting.get import get_settings
+from app.tools.artifacts.setting.get import get_settings
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

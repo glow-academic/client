@@ -2,11 +2,11 @@
 
 import pytest
 
-from app.tools.v5.entries.audio_uploads.create import create_audio_upload
-from app.tools.v5.entries.audio_uploads.refresh import refresh_audio_uploads
-from app.tools.v5.entries.audios.create import create_audio
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.uploads.create import create_upload
+from app.tools.entries.audio_uploads.create import create_audio_upload
+from app.tools.entries.audio_uploads.refresh import refresh_audio_uploads
+from app.tools.entries.audios.create import create_audio
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.uploads.create import create_upload
 
 pytestmark = pytest.mark.asyncio
 

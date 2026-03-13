@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.files.create import create_file
-from app.tools.v5.resources.files.get import get_files
+from app.tools.resources.files.create import create_file
+from app.tools.resources.files.get import get_files
 
 pytestmark = pytest.mark.asyncio
 

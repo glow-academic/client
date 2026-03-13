@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.artifacts.setting.docs import get_setting_docs
+from app.tools.artifacts.setting.docs import get_setting_docs
 
 pytestmark = pytest.mark.asyncio
 

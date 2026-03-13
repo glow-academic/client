@@ -5,13 +5,13 @@ import json
 import pytest
 
 from app.infra.tools.entries.create_tool_call import create_tool_call
-from app.tools.v5.entries.calls.get import get_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.messages.get import get_message
-from app.tools.v5.entries.runs.get import get_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.texts.get import get_text
-from app.tools.v5.resources.tools.create import (
+from app.tools.entries.calls.get import get_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.messages.get import get_message
+from app.tools.entries.runs.get import get_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.texts.get import get_text
+from app.tools.resources.tools.create import (
     create_tool as create_tool_resource,
 )
 

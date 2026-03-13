@@ -23,9 +23,9 @@ from app.infra.eval.types import (
     DeleteEvalApiResponse,
     DeleteEvalResult,
 )
-from app.tools.v5.artifacts.eval.delete import delete_evals
-from app.tools.v5.artifacts.eval.get import get_evals
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.eval.delete import delete_evals
+from app.tools.artifacts.eval.get import get_evals
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -52,16 +52,16 @@ async def attempt_response_internal_impl(
         raise ValueError("Missing session_id for attempt_response_submit")
 
     async def _run() -> AttemptResponseInternalResult:
-        from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-        from app.tools.v5.entries.attempt_responses.create import (
+        from app.tools.entries.attempt_chat.search import search_attempt_chats
+        from app.tools.entries.attempt_responses.create import (
             create_attempt_responses,
         )
-        from app.tools.v5.entries.attempt_responses.refresh import (
+        from app.tools.entries.attempt_responses.refresh import (
             refresh_attempt_responses,
         )
-        from app.tools.v5.entries.calls.create import create_call
-        from app.tools.v5.entries.groups.get import get_groups
-        from app.tools.v5.entries.runs.create import create_run
+        from app.tools.entries.calls.create import create_call
+        from app.tools.entries.groups.get import get_groups
+        from app.tools.entries.runs.create import create_run
 
         downstream_emit = emit or make_emit()
         recorded: list[SocketEvent] = []

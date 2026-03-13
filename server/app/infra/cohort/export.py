@@ -21,20 +21,20 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.cohort.get import get_cohorts
-from app.tools.v5.artifacts.cohort.search import search_cohorts
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.profile_personas.get import get_profile_personas
-from app.tools.v5.resources.profiles.get import get_profiles
-from app.tools.v5.resources.simulation_availability.get import (
+from app.tools.artifacts.cohort.get import get_cohorts
+from app.tools.artifacts.cohort.search import search_cohorts
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.names.get import get_names
+from app.tools.resources.profile_personas.get import get_profile_personas
+from app.tools.resources.profiles.get import get_profiles
+from app.tools.resources.simulation_availability.get import (
     get_simulation_availability,
 )
-from app.tools.v5.resources.simulation_positions.get import (
+from app.tools.resources.simulation_positions.get import (
     get_simulation_positions,
 )
-from app.tools.v5.resources.simulations.get import get_simulations
+from app.tools.resources.simulations.get import get_simulations
 
 PIPE = "|"
 

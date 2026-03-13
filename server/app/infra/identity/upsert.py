@@ -22,18 +22,18 @@ from redis.asyncio import Redis
 from app.infra.identity.simulatable import SIMULATABLE_ROLES
 from app.infra.profile.permissions_context import create_denormalized_snapshot
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.profile.create import (
+from app.tools.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
-from app.tools.v5.artifacts.profile.search import search_profiles
-from app.tools.v5.artifacts.profile.update import (
+from app.tools.artifacts.profile.search import search_profiles
+from app.tools.artifacts.profile.update import (
     update_profile as update_profile_artifact,
 )
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.resources.emails.create import create_email
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.roles.search import search_roles
+from app.tools.entries.sessions.create import create_session
+from app.tools.resources.emails.create import create_email
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.create import create_name
+from app.tools.resources.roles.search import search_roles
 
 ResolveProfileIdentityFn = Callable[..., Awaitable[object | None]]
 CreateNameFn = Callable[..., Awaitable[object]]

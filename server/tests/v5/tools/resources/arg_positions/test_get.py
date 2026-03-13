@@ -3,15 +3,15 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.arg_positions.get import get_arg_positions
-from app.tools.v5.resources.args.create import create_arg
+from app.tools.resources.arg_positions.get import get_arg_positions
+from app.tools.resources.args.create import create_arg
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_arg_position(conn, redis_client):
     arg = await create_arg(conn, "test-arg", "text", redis_client)
-    from app.tools.v5.resources.arg_positions.create import create_arg_position
+    from app.tools.resources.arg_positions.create import create_arg_position
 
     item = await create_arg_position(conn, arg.id, 1, redis_client)
 
@@ -38,7 +38,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     arg = await create_arg(conn, "test-arg-cache", "text", redis_client)
-    from app.tools.v5.resources.arg_positions.create import create_arg_position
+    from app.tools.resources.arg_positions.create import create_arg_position
 
     item = await create_arg_position(conn, arg.id, 2, redis_client)
 
@@ -54,7 +54,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     arg = await create_arg(conn, "test-arg-bypass", "text", redis_client)
-    from app.tools.v5.resources.arg_positions.create import create_arg_position
+    from app.tools.resources.arg_positions.create import create_arg_position
 
     item = await create_arg_position(conn, arg.id, 3, redis_client)
 

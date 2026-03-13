@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from app.infra.agent.create import CreateAgentItem
 from app.infra.v5_types import BaseResourceSection, ListFilterSection
-from app.tools.v5.entries.agent_drafts.types import GetAgentDraftResponse
+from app.tools.entries.agent_drafts.types import GetAgentDraftResponse
 
 
 class AgentFlagConfig(BaseModel):

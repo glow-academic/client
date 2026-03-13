@@ -15,12 +15,12 @@ from app.socket.v5.client.types import AttemptAudioStartPayload
 from app.socket.v5.internal.attempt.types import (
     GenerateRequestData,
 )
-from app.tools.v5.entries.attempt_chat.get import get_attempt_chats
-from app.tools.v5.entries.attempt_conversations.create import (
+from app.tools.entries.attempt_chat.get import get_attempt_chats
+from app.tools.entries.attempt_conversations.create import (
     create_attempt_conversations,
 )
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.runs.create import create_run
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

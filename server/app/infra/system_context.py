@@ -15,16 +15,16 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.resources.agents.get import get_agents
-from app.tools.v5.resources.args.get import get_args
-from app.tools.v5.resources.args_outputs.get import get_args_outputs
-from app.tools.v5.resources.instructions.get import get_instructions
-from app.tools.v5.resources.models.get import get_models
-from app.tools.v5.resources.prompts.get import get_prompts
-from app.tools.v5.resources.providers.get import get_providers
-from app.tools.v5.resources.rubrics.get import get_rubrics
-from app.tools.v5.resources.systems.get import get_systems
-from app.tools.v5.resources.tools.get import get_tools
+from app.tools.resources.agents.get import get_agents
+from app.tools.resources.args.get import get_args
+from app.tools.resources.args_outputs.get import get_args_outputs
+from app.tools.resources.instructions.get import get_instructions
+from app.tools.resources.models.get import get_models
+from app.tools.resources.prompts.get import get_prompts
+from app.tools.resources.providers.get import get_providers
+from app.tools.resources.rubrics.get import get_rubrics
+from app.tools.resources.systems.get import get_systems
+from app.tools.resources.tools.get import get_tools
 
 
 @dataclass(frozen=True)

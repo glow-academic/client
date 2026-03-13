@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.emails.create import create_email
-from app.tools.v5.resources.emails.search import search_emails
+from app.tools.resources.emails.create import create_email
+from app.tools.resources.emails.search import search_emails
 
 pytestmark = pytest.mark.asyncio
 

@@ -12,9 +12,9 @@ from tests.infra.route_helpers import create_admin_route_actor
 
 
 async def _seed_health_metrics(conn) -> None:
-    from app.tools.v5.entries.health.create import create_health
-    from app.tools.v5.entries.metrics.create import create_metrics_entry_internal
-    from app.tools.v5.entries.metrics.refresh import refresh_metrics_internal
+    from app.tools.entries.health.create import create_health
+    from app.tools.entries.metrics.create import create_metrics_entry_internal
+    from app.tools.entries.metrics.refresh import refresh_metrics_internal
 
     await create_health(
         conn,
@@ -114,7 +114,7 @@ class TestHealthRoute:
         health_route_actor,
     ):
         from app.infra.globals import UPLOAD_FOLDER
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         async with pool.acquire() as conn:
             await _seed_health_metrics(conn)

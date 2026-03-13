@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.voices.create import create_voice
-from app.tools.v5.resources.voices.get import get_voices
+from app.tools.resources.voices.create import create_voice
+from app.tools.resources.voices.get import get_voices
 
 pytestmark = pytest.mark.asyncio
 

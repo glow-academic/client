@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.profile_personas.docs import (
+from app.tools.resources.profile_personas.docs import (
     get_profile_personas_docs,
 )
 

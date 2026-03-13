@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.model_drafts.docs import get_model_drafts_docs
+from app.tools.entries.model_drafts.docs import get_model_drafts_docs
 
 pytestmark = pytest.mark.asyncio
 

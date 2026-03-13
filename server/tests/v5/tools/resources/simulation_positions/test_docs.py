@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.simulation_positions.docs import (
+from app.tools.resources.simulation_positions.docs import (
     get_simulation_positions_docs,
 )
 

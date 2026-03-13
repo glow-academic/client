@@ -23,24 +23,24 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.field.docs import get_field_docs
-from app.tools.v5.artifacts.field.get import get_fields as get_field_artifacts
+from app.tools.artifacts.field.docs import get_field_docs
+from app.tools.artifacts.field.get import get_fields as get_field_artifacts
 
 # Entry tool docs
-from app.tools.v5.entries.field_drafts.docs import get_field_drafts_docs
+from app.tools.entries.field_drafts.docs import get_field_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.conditional_parameters.docs import (
+from app.tools.resources.conditional_parameters.docs import (
     get_conditional_parameters_docs,
 )
-from app.tools.v5.resources.departments.docs import get_departments_docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.names.docs import get_names_docs
+from app.tools.resources.departments.docs import get_departments_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.names.docs import get_names_docs
 
 # Name hydration
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameters.docs import get_parameters_docs
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameters.docs import get_parameters_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Fields",

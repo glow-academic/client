@@ -21,14 +21,14 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.auth.get import get_auths
-from app.tools.v5.artifacts.auth.search import search_auths
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.items.get import get_items
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.protocols.get import get_protocols
-from app.tools.v5.resources.slugs.get import get_slugs
+from app.tools.artifacts.auth.get import get_auths
+from app.tools.artifacts.auth.search import search_auths
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.items.get import get_items
+from app.tools.resources.names.get import get_names
+from app.tools.resources.protocols.get import get_protocols
+from app.tools.resources.slugs.get import get_slugs
 
 PIPE = "|"
 

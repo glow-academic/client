@@ -2,14 +2,14 @@
 
 import pytest
 
-from app.tools.v5.resources.agents.create import create_agent
-from app.tools.v5.resources.agents.get import get_agents
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.instructions.create import create_instruction
-from app.tools.v5.resources.models.create import create_model
-from app.tools.v5.resources.prompts.create import create_prompt
-from app.tools.v5.resources.rubrics.create import create_rubric
-from app.tools.v5.resources.tools.create import create_tool
+from app.tools.resources.agents.create import create_agent
+from app.tools.resources.agents.get import get_agents
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.instructions.create import create_instruction
+from app.tools.resources.models.create import create_model
+from app.tools.resources.prompts.create import create_prompt
+from app.tools.resources.rubrics.create import create_rubric
+from app.tools.resources.tools.create import create_tool
 
 pytestmark = pytest.mark.asyncio
 

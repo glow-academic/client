@@ -25,11 +25,11 @@ from app.infra.profile.types import (
     ProfileDraftFormState,
     SaveProfileFieldError,
 )
-from app.tools.v5.entries.profile_drafts.create import create_profile_draft
-from app.tools.v5.entries.profile_drafts.refresh import refresh_profile_drafts
-from app.tools.v5.resources.emails.create import create_email
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.request_limits.create import create_request_limit
+from app.tools.entries.profile_drafts.create import create_profile_draft
+from app.tools.entries.profile_drafts.refresh import refresh_profile_drafts
+from app.tools.resources.emails.create import create_email
+from app.tools.resources.names.create import create_name
+from app.tools.resources.request_limits.create import create_request_limit
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------

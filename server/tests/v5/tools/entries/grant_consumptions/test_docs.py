@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.grant_consumptions.docs import (
+from app.tools.entries.grant_consumptions.docs import (
     get_grant_consumptions_docs,
 )
 

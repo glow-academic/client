@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.standard_groups.create import create_standard_group
-from app.tools.v5.resources.standard_groups.search import search_standard_groups
+from app.tools.resources.standard_groups.create import create_standard_group
+from app.tools.resources.standard_groups.search import search_standard_groups
 
 pytestmark = pytest.mark.asyncio
 

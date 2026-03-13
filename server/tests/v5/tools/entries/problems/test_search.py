@@ -5,13 +5,13 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.problems.create import create_problem
-from app.tools.v5.entries.problems.refresh import refresh_problems
-from app.tools.v5.entries.problems.search import search_problems
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.problems.create import create_problem
+from app.tools.entries.problems.refresh import refresh_problems
+from app.tools.entries.problems.search import search_problems
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

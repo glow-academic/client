@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.audio_uploads.docs import get_audio_uploads_docs
+from app.tools.entries.audio_uploads.docs import get_audio_uploads_docs
 
 pytestmark = pytest.mark.asyncio
 

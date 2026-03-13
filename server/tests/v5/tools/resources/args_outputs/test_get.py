@@ -3,15 +3,15 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.args.create import create_arg
-from app.tools.v5.resources.args_outputs.get import get_args_outputs
+from app.tools.resources.args.create import create_arg
+from app.tools.resources.args_outputs.get import get_args_outputs
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_args_output(conn, redis_client):
     arg = await create_arg(conn, "test-arg", "text", redis_client)
-    from app.tools.v5.resources.args_outputs.create import create_args_output
+    from app.tools.resources.args_outputs.create import create_args_output
 
     item = await create_args_output(conn, arg.id, "output-name", redis_client)
 
@@ -38,7 +38,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     arg = await create_arg(conn, "test-arg-cache", "text", redis_client)
-    from app.tools.v5.resources.args_outputs.create import create_args_output
+    from app.tools.resources.args_outputs.create import create_args_output
 
     item = await create_args_output(conn, arg.id, "cache-output", redis_client)
 
@@ -54,7 +54,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     arg = await create_arg(conn, "test-arg-bypass", "text", redis_client)
-    from app.tools.v5.resources.args_outputs.create import create_args_output
+    from app.tools.resources.args_outputs.create import create_args_output
 
     item = await create_args_output(conn, arg.id, "bypass-output", redis_client)
 

@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.points.create import create_point
-from app.tools.v5.resources.points.get import get_points
+from app.tools.resources.points.create import create_point
+from app.tools.resources.points.get import get_points
 
 pytestmark = pytest.mark.asyncio
 

@@ -25,9 +25,9 @@ class ScenarioRouteResources:
 async def _create_scenario_route_resources(
     pool, redis_client
 ) -> ScenarioRouteResources:
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.problem_statements.create import (
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.problem_statements.create import (
         create_problem_statement,
     )
 
@@ -396,8 +396,8 @@ class TestScenarioRoute:
         v5_scenario_route_client,
         scenario_route_actor,
     ):
-        from app.tools.v5.entries.groups.create import create_group
-        from app.tools.v5.entries.scenario_drafts.create import (
+        from app.tools.entries.groups.create import create_group
+        from app.tools.entries.scenario_drafts.create import (
             create_scenario_draft,
         )
 
@@ -459,7 +459,7 @@ class TestScenarioRoute:
         v5_scenario_route_client,
         scenario_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         created = await self._create_scenario_via_route(
             pool,

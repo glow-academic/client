@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.images.create import create_image
-from app.tools.v5.resources.images.get import get_images
+from app.tools.resources.images.create import create_image
+from app.tools.resources.images.get import get_images
 
 pytestmark = pytest.mark.asyncio
 

@@ -309,8 +309,8 @@ async def _resolve_profile_id(
         return None
 
     from app.infra.globals import get_redis_client
-    from app.tools.v5.artifacts.profile.search import search_profiles
-    from app.tools.v5.resources.emails.search import search_emails
+    from app.tools.artifacts.profile.search import search_profiles
+    from app.tools.resources.emails.search import search_emails
 
     redis = get_redis_client()
 
@@ -403,12 +403,12 @@ async def _find_active_grant_target(
 
     from app.infra.globals import get_redis_client
     from app.infra.profile_identity_context import resolve_profile_identity_context
-    from app.tools.v5.artifacts.profile.search import search_profiles
-    from app.tools.v5.entries.emulations.search import search_emulations
-    from app.tools.v5.entries.grant_consumptions.search import (
+    from app.tools.artifacts.profile.search import search_profiles
+    from app.tools.entries.emulations.search import search_emulations
+    from app.tools.entries.grant_consumptions.search import (
         search_grant_consumptions,
     )
-    from app.tools.v5.entries.grants.search import search_grants
+    from app.tools.entries.grants.search import search_grants
 
     redis = get_redis_client()
 
@@ -509,7 +509,7 @@ async def _get_or_create_session(conn: asyncpg.Connection, profile_id: UUID) -> 
     profile_id is a profile_artifact.id. We must resolve to profiles_resource.id
     because profiles_sessions_connection.profiles_id references profiles_resource.
     """
-    from app.tools.v5.artifacts.profile.get import get_profiles
+    from app.tools.artifacts.profile.get import get_profiles
 
     # Resolve profile_artifact.id → profiles_resource.id
     profiles = await get_profiles(conn, [profile_id], profiles=True)
@@ -538,7 +538,7 @@ async def _get_or_create_session(conn: asyncpg.Connection, profile_id: UUID) -> 
         return row["id"]
 
     # Create new session
-    from app.tools.v5.entries.sessions.create import create_session
+    from app.tools.entries.sessions.create import create_session
 
     result = await create_session(conn, profile_id=profiles_resource_id)
     return result.id
@@ -567,7 +567,7 @@ async def get_system_session_id(conn: asyncpg.Connection) -> UUID:
             return _system_session_id
 
     # Create a system session (no profile link needed).
-    from app.tools.v5.entries.sessions.create import create_session
+    from app.tools.entries.sessions.create import create_session
 
     session_id = (await create_session(conn)).id
 

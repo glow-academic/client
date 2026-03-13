@@ -20,8 +20,8 @@ class SettingRouteResources:
 
 
 async def _create_setting_route_resources(pool, redis_client) -> SettingRouteResources:
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.names.create import create_name
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Setting {tag}"

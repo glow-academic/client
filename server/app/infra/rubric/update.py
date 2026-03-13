@@ -22,10 +22,10 @@ from app.infra.rubric.permissions_context import (
     resolve_rubric_permissions_context,
     resolve_rubric_values,
 )
-from app.tools.v5.artifacts.rubric.update import (
+from app.tools.artifacts.rubric.update import (
     _UNSET,
 )
-from app.tools.v5.artifacts.rubric.update import (
+from app.tools.artifacts.rubric.update import (
     update_rubric as update_rubric_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

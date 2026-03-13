@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt_responses.docs import (
+from app.tools.entries.attempt_responses.docs import (
     get_attempt_responses_docs,
 )
 

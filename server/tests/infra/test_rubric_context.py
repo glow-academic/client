@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.rubric.context import resolve_rubric_context
-from app.tools.v5.artifacts.rubric.create import create_rubric
-from app.tools.v5.artifacts.rubric.update import update_rubric
+from app.tools.artifacts.rubric.create import create_rubric
+from app.tools.artifacts.rubric.update import update_rubric
 
 pytestmark = pytest.mark.asyncio
 

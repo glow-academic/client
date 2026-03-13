@@ -36,29 +36,29 @@ from app.infra.scenario.types import (
     ListScenarioApiSimulation,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.scenario.get import get_scenarios
-from app.tools.v5.artifacts.scenario.search import search_scenarios
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.departments.search import (
+from app.tools.artifacts.scenario.get import get_scenarios
+from app.tools.artifacts.scenario.search import search_scenarios
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.departments.search import (
     search_departments,
 )
-from app.tools.v5.resources.fields.get import get_fields
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.objectives.get import get_objectives
-from app.tools.v5.resources.personas.get import (
+from app.tools.resources.fields.get import get_fields
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.get import get_names
+from app.tools.resources.objectives.get import get_objectives
+from app.tools.resources.personas.get import (
     get_personas as get_personas_resource,
 )
-from app.tools.v5.resources.personas.search import (
+from app.tools.resources.personas.search import (
     search_personas as search_personas_resource,
 )
-from app.tools.v5.resources.scenarios.get import (
+from app.tools.resources.scenarios.get import (
     get_scenarios as get_scenarios_resource,
 )
-from app.tools.v5.resources.simulations.get import (
+from app.tools.resources.simulations.get import (
     get_simulations as get_simulations_resource,
 )
-from app.tools.v5.resources.simulations.search import (
+from app.tools.resources.simulations.search import (
     search_simulations as search_simulations_resource,
 )
 

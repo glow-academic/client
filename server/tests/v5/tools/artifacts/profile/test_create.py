@@ -3,13 +3,13 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.artifacts.profile.create import create_profile
-from app.tools.v5.artifacts.profile.get import get_profiles
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.emails.create import create_email
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.request_limits.create import create_request_limit
+from app.tools.artifacts.profile.create import create_profile
+from app.tools.artifacts.profile.get import get_profiles
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.emails.create import create_email
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.names.create import create_name
+from app.tools.resources.request_limits.create import create_request_limit
 
 pytestmark = pytest.mark.asyncio
 

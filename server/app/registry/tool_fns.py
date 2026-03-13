@@ -19,7 +19,7 @@ from typing import Any
 # Resolver
 # ---------------------------------------------------------------------------
 
-_T = "app.tools.v5"
+_T = "app.tools"
 
 
 def resolve_tool_fn(

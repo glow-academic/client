@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.standard_groups.create import create_standard_group
-from app.tools.v5.resources.standard_groups.get import get_standard_groups
+from app.tools.resources.standard_groups.create import create_standard_group
+from app.tools.resources.standard_groups.get import get_standard_groups
 
 pytestmark = pytest.mark.asyncio
 

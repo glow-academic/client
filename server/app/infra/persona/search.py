@@ -32,25 +32,25 @@ from app.infra.persona.types import (
     ListPersonaApiResponse,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.persona.get import get_personas
-from app.tools.v5.artifacts.persona.search import search_personas
-from app.tools.v5.resources.colors.get import get_colors
-from app.tools.v5.resources.colors.search import search_colors
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.fields.search import search_fields
-from app.tools.v5.resources.icons.get import get_icons
-from app.tools.v5.resources.icons.search import search_icons
-from app.tools.v5.resources.instructions.search import search_instructions
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.profile_personas.search import (
+from app.tools.artifacts.persona.get import get_personas
+from app.tools.artifacts.persona.search import search_personas
+from app.tools.resources.colors.get import get_colors
+from app.tools.resources.colors.search import search_colors
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.fields.search import search_fields
+from app.tools.resources.icons.get import get_icons
+from app.tools.resources.icons.search import search_icons
+from app.tools.resources.instructions.search import search_instructions
+from app.tools.resources.names.get import get_names
+from app.tools.resources.profile_personas.search import (
     search_profile_personas,
 )
-from app.tools.v5.resources.scenarios.get import get_scenarios
-from app.tools.v5.resources.scenarios.search import (
+from app.tools.resources.scenarios.get import get_scenarios
+from app.tools.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
-from app.tools.v5.resources.voices.search import search_voices
+from app.tools.resources.voices.search import search_voices
 
 PERSONA_IMPORT_FIELDS: list[ImportField] = [
     ImportField(

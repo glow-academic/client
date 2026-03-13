@@ -18,7 +18,7 @@ from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
 from app.socket.v5.client.types import AttemptUsePreviousPayload
 from app.socket.v5.internal.attempt.proceed import attempt_proceed_internal_impl
-from app.tools.v5.entries.attempt_chat_bridge.create import (
+from app.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
 )
 from app.utils.logging.db_logger import get_logger

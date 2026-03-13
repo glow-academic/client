@@ -318,11 +318,11 @@ async def user_start_impl(
         return
 
     try:
-        from app.tools.v5.entries.attempt_message.create import (
+        from app.tools.entries.attempt_message.create import (
             create_attempt_message,
         )
-        from app.tools.v5.entries.calls.create import create_call
-        from app.tools.v5.entries.messages.create import create_message
+        from app.tools.entries.calls.create import create_call
+        from app.tools.entries.messages.create import create_message
 
         run_id_uuid = uuid.UUID(run_id)
         session_id_uuid = uuid.UUID(session_id_str) if session_id_str else None
@@ -452,14 +452,14 @@ async def user_complete_impl(
     pool: asyncpg.Pool,
 ) -> None:
     """Write content to open user message and emit attempt_user_complete."""
-    from app.tools.v5.entries.attempt.search import search_attempts
-    from app.tools.v5.entries.attempt_content.create import (
+    from app.tools.entries.attempt.search import search_attempts
+    from app.tools.entries.attempt_content.create import (
         create_attempt_content as create_attempt_content_entry_internal,
     )
-    from app.tools.v5.entries.attempt_message.search import (
+    from app.tools.entries.attempt_message.search import (
         search_attempt_messages,
     )
-    from app.tools.v5.entries.attempt_message_completion.create import (
+    from app.tools.entries.attempt_message_completion.create import (
         create_attempt_message_completion,
     )
 
@@ -472,7 +472,7 @@ async def user_complete_impl(
         return
 
     try:
-        from app.tools.v5.entries.calls.create import create_call
+        from app.tools.entries.calls.create import create_call
 
         run_id_uuid = uuid.UUID(run_id)
         session_id_uuid = uuid.UUID(session_id_str) if session_id_str else None
@@ -571,8 +571,8 @@ async def attempt_message_impl(
     - otherwise stop after the persisted user message
     """
     from app.infra.profile_identity_context import resolve_profile_identity_context
-    from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-    from app.tools.v5.entries.runs.create import create_run
+    from app.tools.entries.attempt_chat.search import search_attempt_chats
+    from app.tools.entries.runs.create import create_run
 
     sid = data.get("sid", "")
     attempt_id = data.get("attempt_id")
@@ -679,7 +679,7 @@ async def speech_complete_impl(
     from pathlib import Path
 
     from app.infra.globals import AUDIO_FOLDER
-    from app.tools.v5.entries.uploads.create import create_upload
+    from app.tools.entries.uploads.create import create_upload
 
     group_id = data.get("group_id")
     if not group_id:
@@ -744,24 +744,24 @@ async def attempt_start_impl(
     """Create attempt via black boxes, then delegate to attempt_proceed."""
     from app.infra.profile_identity_context import resolve_profile_identity_context
     from app.socket.v5.client.types import AttemptStartPayload
-    from app.tools.v5.entries.attempt.create import create_attempt
-    from app.tools.v5.entries.attempt.refresh import refresh_attempt
-    from app.tools.v5.entries.attempt_chat.refresh import refresh_attempt_chat
-    from app.tools.v5.entries.attempt_home.create import create_attempt_home
-    from app.tools.v5.entries.attempt_practice.create import (
+    from app.tools.entries.attempt.create import create_attempt
+    from app.tools.entries.attempt.refresh import refresh_attempt
+    from app.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.tools.entries.attempt_home.create import create_attempt_home
+    from app.tools.entries.attempt_practice.create import (
         create_attempt_practice,
     )
-    from app.tools.v5.entries.calls.create import create_call
-    from app.tools.v5.entries.home.get import get_homes
-    from app.tools.v5.entries.home_chat.search import search_home_chats
-    from app.tools.v5.entries.persona.create import create_persona
-    from app.tools.v5.entries.practice.get import get_practices
-    from app.tools.v5.entries.practice_chat.search import search_practice_chats
-    from app.tools.v5.entries.runs.create import create_run
-    from app.tools.v5.resources.profile_personas.search import (
+    from app.tools.entries.calls.create import create_call
+    from app.tools.entries.home.get import get_homes
+    from app.tools.entries.home_chat.search import search_home_chats
+    from app.tools.entries.persona.create import create_persona
+    from app.tools.entries.practice.get import get_practices
+    from app.tools.entries.practice_chat.search import search_practice_chats
+    from app.tools.entries.runs.create import create_run
+    from app.tools.resources.profile_personas.search import (
         search_profile_personas,
     )
-    from app.tools.v5.resources.simulations.get import get_simulations
+    from app.tools.resources.simulations.get import get_simulations
 
     sid = data.get("sid", "")
 
@@ -954,8 +954,8 @@ async def emit_chat_generate_impl(
     save: bool = True,
 ) -> None:
     """Create group + run, then emit to generate pipeline."""
-    from app.tools.v5.entries.groups.create import create_group
-    from app.tools.v5.entries.runs.create import create_run
+    from app.tools.entries.groups.create import create_group
+    from app.tools.entries.runs.create import create_run
 
     resolved_resource_types = resource_types or [
         "personas",
@@ -1018,29 +1018,29 @@ async def attempt_proceed_impl(
         AttemptEndedData,
         AttemptStartedData,
     )
-    from app.tools.v5.entries.attempt.get import get_attempts
-    from app.tools.v5.entries.attempt.refresh import refresh_attempt
-    from app.tools.v5.entries.attempt_chat.create import create_attempt_chat
-    from app.tools.v5.entries.attempt_chat.refresh import refresh_attempt_chat
-    from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-    from app.tools.v5.entries.attempt_chat_bridge.create import (
+    from app.tools.entries.attempt.get import get_attempts
+    from app.tools.entries.attempt.refresh import refresh_attempt
+    from app.tools.entries.attempt_chat.create import create_attempt_chat
+    from app.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+    from app.tools.entries.attempt_chat.search import search_attempt_chats
+    from app.tools.entries.attempt_chat_bridge.create import (
         create_attempt_chat_bridge,
     )
-    from app.tools.v5.entries.attempt_chat_bridge.search import (
+    from app.tools.entries.attempt_chat_bridge.search import (
         search_attempt_chat_bridges,
     )
-    from app.tools.v5.entries.attempt_chat_completion.create import (
+    from app.tools.entries.attempt_chat_completion.create import (
         create_attempt_chat_completion,
     )
-    from app.tools.v5.entries.attempt_home.search import search_attempt_homes
-    from app.tools.v5.entries.attempt_practice.search import (
+    from app.tools.entries.attempt_home.search import search_attempt_homes
+    from app.tools.entries.attempt_practice.search import (
         search_attempt_practice_entries,
     )
-    from app.tools.v5.entries.calls.create import create_call
-    from app.tools.v5.entries.chat.get import get_chat_entries_internal
-    from app.tools.v5.entries.home_chat.search import search_home_chats
-    from app.tools.v5.entries.practice_chat.search import search_practice_chats
-    from app.tools.v5.entries.runs.create import create_run
+    from app.tools.entries.calls.create import create_call
+    from app.tools.entries.chat.get import get_chat_entries_internal
+    from app.tools.entries.home_chat.search import search_home_chats
+    from app.tools.entries.practice_chat.search import search_practice_chats
+    from app.tools.entries.runs.create import create_run
 
     sid = data.get("sid", "")
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.scenario_positions.docs import (
+from app.tools.resources.scenario_positions.docs import (
     get_scenario_positions_docs,
 )
 

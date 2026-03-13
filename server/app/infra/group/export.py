@@ -23,9 +23,9 @@ from redis.asyncio import Redis
 
 from app.infra.pricing import compute_costs_from_runs
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.entries.groups.get import get_groups
-from app.tools.v5.entries.runs.search import search_runs
-from app.tools.v5.resources.names.get import get_names
+from app.tools.entries.groups.get import get_groups
+from app.tools.entries.runs.search import search_runs
+from app.tools.resources.names.get import get_names
 
 PIPE = "|"
 

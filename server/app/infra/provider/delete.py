@@ -23,9 +23,9 @@ from app.infra.provider.types import (
     DeleteProviderApiResponse,
     DeleteProviderResult,
 )
-from app.tools.v5.artifacts.provider.delete import delete_providers
-from app.tools.v5.artifacts.provider.get import get_providers
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.provider.delete import delete_providers
+from app.tools.artifacts.provider.get import get_providers
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

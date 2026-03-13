@@ -9,7 +9,7 @@ from typing import Any
 
 from app.infra.globals import get_pool, sio
 from app.infra.websocket.session_store import get_session_by_chat_id
-from app.tools.v5.entries.attempt_mutes.create import create_attempt_mutes
+from app.tools.entries.attempt_mutes.create import create_attempt_mutes
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

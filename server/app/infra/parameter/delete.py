@@ -25,9 +25,9 @@ from app.infra.parameter.types import (
     DeleteParameterApiResponse,
     DeleteParameterResult,
 )
-from app.tools.v5.artifacts.parameter.delete import delete_parameters
-from app.tools.v5.artifacts.parameter.get import get_parameters
-from app.tools.v5.resources.names.get import get_names
+from app.tools.artifacts.parameter.delete import delete_parameters
+from app.tools.artifacts.parameter.get import get_parameters
+from app.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

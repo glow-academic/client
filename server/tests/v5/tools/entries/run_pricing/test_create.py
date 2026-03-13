@@ -2,13 +2,13 @@
 
 import pytest
 
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.run_pricing.create import (
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.run_pricing.create import (
     create_run_pricing_entry_internal,
 )
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.resources.pricing.create import create_pricing
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.resources.pricing.create import create_pricing
 
 pytestmark = pytest.mark.asyncio
 

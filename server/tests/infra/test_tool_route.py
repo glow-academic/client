@@ -20,8 +20,8 @@ class ToolRouteResources:
 
 
 async def _create_tool_route_resources(pool, redis_client) -> ToolRouteResources:
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.names.create import create_name
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.names.create import create_name
 
     tag = unique_tag()
     name = f"Route Tool {tag}"

@@ -26,15 +26,15 @@ from app.infra.cohort.types import (
     PatchCohortDraftApiResponse,
     SaveCohortFieldError,
 )
-from app.tools.v5.entries.cohort_drafts.create import create_cohort_draft
-from app.tools.v5.entries.cohort_drafts.refresh import refresh_cohort_drafts
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.profile_personas.create import create_profile_persona
-from app.tools.v5.resources.simulation_availability.create import (
+from app.tools.entries.cohort_drafts.create import create_cohort_draft
+from app.tools.entries.cohort_drafts.refresh import refresh_cohort_drafts
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.names.create import create_name
+from app.tools.resources.profile_personas.create import create_profile_persona
+from app.tools.resources.simulation_availability.create import (
     create_simulation_availability,
 )
-from app.tools.v5.resources.simulation_positions.create import (
+from app.tools.resources.simulation_positions.create import (
     create_simulation_position as create_sim_position,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

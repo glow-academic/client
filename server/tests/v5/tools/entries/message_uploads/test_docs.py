@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.message_uploads.docs import get_message_uploads_docs
+from app.tools.entries.message_uploads.docs import get_message_uploads_docs
 
 pytestmark = pytest.mark.asyncio
 

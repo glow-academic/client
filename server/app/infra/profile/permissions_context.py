@@ -19,14 +19,14 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.cohort.search import search_cohorts
-from app.tools.v5.artifacts.profile.get import (
+from app.tools.artifacts.cohort.search import search_cohorts
+from app.tools.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.profiles.create import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.profiles.create import (
     create_profile as create_profile_resource,
 )
 

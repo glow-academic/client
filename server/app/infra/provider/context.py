@@ -19,28 +19,28 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.provider.get import (
+from app.tools.artifacts.provider.get import (
     get_providers as get_provider_artifacts,
 )
-from app.tools.v5.entries.provider_drafts.get import get_provider_drafts
+from app.tools.entries.provider_drafts.get import get_provider_drafts
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.endpoints.get import get_endpoints
-from app.tools.v5.resources.endpoints.search import search_endpoints
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.keys.get import get_keys
-from app.tools.v5.resources.keys.search import search_keys
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.values.get import get_values
-from app.tools.v5.resources.values.search import search_values
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.endpoints.get import get_endpoints
+from app.tools.resources.endpoints.search import search_endpoints
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.keys.get import get_keys
+from app.tools.resources.keys.search import search_keys
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.values.get import get_values
+from app.tools.resources.values.search import search_values
 
 # ---------------------------------------------------------------------------
 # Constants

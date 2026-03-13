@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.entries.files.create import create_file
-from app.tools.v5.entries.files.get import get_file
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.resources.files.create import (
+from app.tools.entries.files.create import create_file
+from app.tools.entries.files.get import get_file
+from app.tools.entries.sessions.create import create_session
+from app.tools.resources.files.create import (
     create_file as create_file_resource,
 )
 

@@ -234,7 +234,7 @@ async def test_register_endpoints_exposes_and_invokes_public_tools(monkeypatch):
         ]
 
     def fake_get_handler(module_path: str, func_name: str):
-        if module_path == "app.tools.v5.resources.profiles.get":
+        if module_path == "app.tools.resources.profiles.get":
             assert func_name == "get_profiles"
             return fake_resource_get_handler
         if module_path == "app.infra.persona.docs":
@@ -380,36 +380,36 @@ async def test_register_endpoints_resource_entry_docs_and_discovery_tools(monkey
 
     def fake_handler(module_path: str, func_name: str):
         table = {
-            ("app.tools.v5.resources.names.get", "get_names"): fake_resource_get,
+            ("app.tools.resources.names.get", "get_names"): fake_resource_get,
             (
-                "app.tools.v5.resources.names.search",
+                "app.tools.resources.names.search",
                 "search_names",
             ): fake_resource_search,
             (
-                "app.tools.v5.resources.names.create",
+                "app.tools.resources.names.create",
                 "create_names",
             ): fake_resource_create,
             (
-                "app.tools.v5.resources.profiles.get",
+                "app.tools.resources.profiles.get",
                 "get_profiles",
             ): fake_resource_get,
             (
-                "app.tools.v5.entries.problems.get",
+                "app.tools.entries.problems.get",
                 "get_problems_entries",
             ): fake_entry_get,
             (
-                "app.tools.v5.entries.problems.search",
+                "app.tools.entries.problems.search",
                 "search_problems_entries",
             ): fake_entry_search,
             (
-                "app.tools.v5.entries.problems.create",
+                "app.tools.entries.problems.create",
                 "create_problems_entry",
             ): fake_entry_create,
             ("app.infra.persona.docs", "docs_persona_impl"): lambda: {
                 "persona": "docs"
             },
             (
-                "app.tools.v5.resources.personas.docs",
+                "app.tools.resources.personas.docs",
                 "get_personas_docs",
             ): lambda: {"personas": "docs"},
             ("app.routes.v5.docs", "get_glow_docs"): lambda: {"glow": True},

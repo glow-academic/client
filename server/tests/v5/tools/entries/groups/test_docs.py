@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.groups.docs import get_groups_docs
+from app.tools.entries.groups.docs import get_groups_docs
 
 pytestmark = pytest.mark.asyncio
 

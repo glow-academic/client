@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.invocation_drafts.docs import (
+from app.tools.entries.invocation_drafts.docs import (
     get_invocation_drafts_docs,
 )
 

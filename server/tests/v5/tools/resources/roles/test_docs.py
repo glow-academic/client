@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.roles.docs import get_roles_docs
+from app.tools.resources.roles.docs import get_roles_docs
 
 pytestmark = pytest.mark.asyncio
 

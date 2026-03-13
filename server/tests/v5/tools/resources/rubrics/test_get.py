@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.rubrics.create import create_rubric
-from app.tools.v5.resources.rubrics.get import get_rubrics
+from app.tools.resources.rubrics.create import create_rubric
+from app.tools.resources.rubrics.get import get_rubrics
 
 pytestmark = pytest.mark.asyncio
 

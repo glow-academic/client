@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.videos.docs import get_videos_docs
+from app.tools.resources.videos.docs import get_videos_docs
 
 pytestmark = pytest.mark.asyncio
 

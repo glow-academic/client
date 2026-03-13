@@ -2,9 +2,9 @@
 
 import pytest
 
-from app.tools.v5.entries.audios.create import create_audio
-from app.tools.v5.entries.audios.get import get_audio
-from app.tools.v5.entries.sessions.create import create_session
+from app.tools.entries.audios.create import create_audio
+from app.tools.entries.audios.get import get_audio
+from app.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio
 

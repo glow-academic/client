@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.departments.get import get_departments
 
 pytestmark = pytest.mark.asyncio
 

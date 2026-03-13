@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.home_chat.docs import get_home_chat_docs
+from app.tools.entries.home_chat.docs import get_home_chat_docs
 
 pytestmark = pytest.mark.asyncio
 

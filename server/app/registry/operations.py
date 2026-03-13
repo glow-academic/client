@@ -390,7 +390,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   docs   → None (not yet implemented)
 # ---------------------------------------------------------------------------
 
-_R = "app.tools.v5.resources"
+_R = "app.tools.resources"
 
 
 def _res(
@@ -502,7 +502,7 @@ RESOURCE_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   attempt_responses → get_simulation_responses_internal
 # ---------------------------------------------------------------------------
 
-_E = "app.tools.v5.entries"
+_E = "app.tools.entries"
 
 
 def _ent(

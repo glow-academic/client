@@ -13,7 +13,7 @@ from app.infra.provider.types import (
     DecryptProviderKeyApiRequest,
     DecryptProviderKeyApiResponse,
 )
-from app.tools.v5.artifacts.provider.get import get_providers
+from app.tools.artifacts.provider.get import get_providers
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

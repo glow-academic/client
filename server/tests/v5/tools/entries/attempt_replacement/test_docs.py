@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt_replacement.docs import (
+from app.tools.entries.attempt_replacement.docs import (
     get_attempt_replacement_docs,
 )
 

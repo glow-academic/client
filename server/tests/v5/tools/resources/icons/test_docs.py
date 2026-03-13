@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.icons.docs import get_icons_docs
+from app.tools.resources.icons.docs import get_icons_docs
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.images.docs import get_images_docs
+from app.tools.entries.images.docs import get_images_docs
 
 pytestmark = pytest.mark.asyncio
 

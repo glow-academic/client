@@ -29,12 +29,12 @@ class ProviderRouteResources:
 async def _create_provider_route_resources(
     pool, redis_client
 ) -> ProviderRouteResources:
-    from app.tools.v5.resources.departments.create import create_department
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.endpoints.create import create_endpoint
-    from app.tools.v5.resources.keys.create import create_key
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.values.create import create_value
+    from app.tools.resources.departments.create import create_department
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.endpoints.create import create_endpoint
+    from app.tools.resources.keys.create import create_key
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.values.create import create_value
 
     tag = unique_tag()
     name = f"Route Provider {tag}"

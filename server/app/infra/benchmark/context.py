@@ -14,16 +14,16 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.tools.v5.entries.benchmark.search import search_benchmarks
-from app.tools.v5.entries.invocation.search import search_invocations
-from app.tools.v5.entries.test.search import search_tests
-from app.tools.v5.entries.test_invocation.search import (
+from app.tools.entries.benchmark.search import search_benchmarks
+from app.tools.entries.invocation.search import search_invocations
+from app.tools.entries.test.search import search_tests
+from app.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.evals.get import get_evals
-from app.tools.v5.resources.models.get import get_models
-from app.tools.v5.resources.rubrics.get import get_rubrics
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.evals.get import get_evals
+from app.tools.resources.models.get import get_models
+from app.tools.resources.rubrics.get import get_rubrics
 
 
 async def resolve_benchmark_context(

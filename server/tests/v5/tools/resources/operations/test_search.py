@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.operations.create import create_operation
-from app.tools.v5.resources.operations.search import search_operations
+from app.tools.resources.operations.create import create_operation
+from app.tools.resources.operations.search import search_operations
 
 pytestmark = pytest.mark.asyncio
 

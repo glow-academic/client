@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.attempt_home.docs import get_attempt_home_docs
+from app.tools.entries.attempt_home.docs import get_attempt_home_docs
 
 pytestmark = pytest.mark.asyncio
 

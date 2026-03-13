@@ -22,7 +22,7 @@ from app.infra.provider.permissions_context import (
     create_denormalized_snapshot,
     resolve_provider_values,
 )
-from app.tools.v5.artifacts.provider.create import (
+from app.tools.artifacts.provider.create import (
     create_provider as create_provider_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags

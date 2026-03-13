@@ -22,9 +22,9 @@ class CohortRouteResources:
 
 
 async def _create_cohort_route_resources(pool, redis_client) -> CohortRouteResources:
-    from app.tools.v5.resources.descriptions.create import create_description
-    from app.tools.v5.resources.names.create import create_name
-    from app.tools.v5.resources.simulations.create import create_simulation
+    from app.tools.resources.descriptions.create import create_description
+    from app.tools.resources.names.create import create_name
+    from app.tools.resources.simulations.create import create_simulation
 
     tag = unique_tag()
     name = f"Route Cohort {tag}"
@@ -392,8 +392,8 @@ class TestCohortRoute:
         v5_cohort_route_client,
         cohort_route_actor,
     ):
-        from app.tools.v5.entries.cohort_drafts.create import create_cohort_draft
-        from app.tools.v5.entries.groups.create import create_group
+        from app.tools.entries.cohort_drafts.create import create_cohort_draft
+        from app.tools.entries.groups.create import create_group
 
         async with pool.acquire() as conn:
             group = await create_group(conn, session_id=cohort_route_actor.session_id)
@@ -453,7 +453,7 @@ class TestCohortRoute:
         v5_cohort_route_client,
         cohort_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         created = await self._create_cohort_via_route(
             pool,

@@ -2,13 +2,13 @@
 
 import pytest
 
-from app.tools.v5.resources.scenario_positions.create import (
+from app.tools.resources.scenario_positions.create import (
     create_scenario_position,
 )
-from app.tools.v5.resources.scenario_positions.search import (
+from app.tools.resources.scenario_positions.search import (
     search_scenario_positions,
 )
-from app.tools.v5.resources.scenarios.create import create_scenario
+from app.tools.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
 

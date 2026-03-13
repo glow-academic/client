@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.reasoning_levels.create import create_reasoning_level
-from app.tools.v5.resources.reasoning_levels.get import get_reasoning_levels
+from app.tools.resources.reasoning_levels.create import create_reasoning_level
+from app.tools.resources.reasoning_levels.get import get_reasoning_levels
 
 pytestmark = pytest.mark.asyncio
 

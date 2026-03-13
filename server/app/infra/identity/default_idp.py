@@ -10,12 +10,12 @@ from jose import jwt
 
 from app.infra.identity.jwks import get_key_id, get_private_key
 from app.infra.identity.keycloak_sync import get_idp_public_url
-from app.tools.v5.artifacts.profile.get import get_profiles as get_profile_artifacts
-from app.tools.v5.entries.emulations.search import search_emulations
-from app.tools.v5.entries.grant_consumptions.create import create_grant_consumption
-from app.tools.v5.entries.grant_consumptions.search import search_grant_consumptions
-from app.tools.v5.entries.grants.get import get_grants
-from app.tools.v5.resources.profiles.get import get_profiles as get_profile_resources
+from app.tools.artifacts.profile.get import get_profiles as get_profile_artifacts
+from app.tools.entries.emulations.search import search_emulations
+from app.tools.entries.grant_consumptions.create import create_grant_consumption
+from app.tools.entries.grant_consumptions.search import search_grant_consumptions
+from app.tools.entries.grants.get import get_grants
+from app.tools.resources.profiles.get import get_profiles as get_profile_resources
 
 # In-memory store for authorization codes
 _authorization_codes: dict[str, dict[str, Any]] = {}

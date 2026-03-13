@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.entries.grants.docs import get_grants_docs
+from app.tools.entries.grants.docs import get_grants_docs
 
 pytestmark = pytest.mark.asyncio
 

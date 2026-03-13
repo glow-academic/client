@@ -12,15 +12,15 @@ from tests.infra.route_helpers import create_admin_route_actor
 
 async def _seed_pricing_route_graph(pool, redis_client, actor):
     from app.infra.globals import UPLOAD_FOLDER
-    from app.tools.v5.entries.groups.create import create_group
-    from app.tools.v5.entries.run_pricing.create import (
+    from app.tools.entries.groups.create import create_group
+    from app.tools.entries.run_pricing.create import (
         create_run_pricing_entry_internal,
     )
-    from app.tools.v5.entries.runs.create import create_run
-    from app.tools.v5.entries.sessions.create import create_session
-    from app.tools.v5.resources.agents.create import create_agent
-    from app.tools.v5.resources.models.create import create_model
-    from app.tools.v5.resources.pricing.create import create_pricing
+    from app.tools.entries.runs.create import create_run
+    from app.tools.entries.sessions.create import create_session
+    from app.tools.resources.agents.create import create_agent
+    from app.tools.resources.models.create import create_model
+    from app.tools.resources.pricing.create import create_pricing
 
     async with pool.acquire() as conn:
         session = await create_session(conn, profile_id=actor.profiles_id)
@@ -205,7 +205,7 @@ class TestPricingRoute:
         v5_pricing_route_client,
         pricing_route_actor,
     ):
-        from app.tools.v5.entries.uploads.get import get_upload
+        from app.tools.entries.uploads.get import get_upload
 
         seeded = await _seed_pricing_route_graph(
             pool, redis_client, pricing_route_actor

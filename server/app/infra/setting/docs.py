@@ -23,26 +23,26 @@ from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
-from app.tools.v5.artifacts.setting.docs import get_setting_docs
-from app.tools.v5.artifacts.setting.get import (
+from app.tools.artifacts.setting.docs import get_setting_docs
+from app.tools.artifacts.setting.get import (
     get_settings as get_setting_artifacts,
 )
 
 # Entry tool docs
-from app.tools.v5.entries.setting_drafts.docs import get_setting_drafts_docs
+from app.tools.entries.setting_drafts.docs import get_setting_drafts_docs
 
 # Resource tool docs
-from app.tools.v5.resources.auth_item_keys.docs import get_auth_item_keys_docs
-from app.tools.v5.resources.auths.docs import get_auths_docs
-from app.tools.v5.resources.colors.docs import get_colors_docs
-from app.tools.v5.resources.departments.docs import get_departments_docs
-from app.tools.v5.resources.descriptions.docs import get_descriptions_docs
-from app.tools.v5.resources.flags.docs import get_flags_docs
-from app.tools.v5.resources.names.docs import get_names_docs
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.profiles.docs import get_profiles_docs
-from app.tools.v5.resources.provider_keys.docs import get_provider_keys_docs
-from app.tools.v5.resources.systems.docs import get_systems_docs
+from app.tools.resources.auth_item_keys.docs import get_auth_item_keys_docs
+from app.tools.resources.auths.docs import get_auths_docs
+from app.tools.resources.colors.docs import get_colors_docs
+from app.tools.resources.departments.docs import get_departments_docs
+from app.tools.resources.descriptions.docs import get_descriptions_docs
+from app.tools.resources.flags.docs import get_flags_docs
+from app.tools.resources.names.docs import get_names_docs
+from app.tools.resources.names.get import get_names
+from app.tools.resources.profiles.docs import get_profiles_docs
+from app.tools.resources.provider_keys.docs import get_provider_keys_docs
+from app.tools.resources.systems.docs import get_systems_docs
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Settings",

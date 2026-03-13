@@ -21,32 +21,32 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.tools.v5.artifacts.persona.get import (
+from app.tools.artifacts.persona.get import (
     get_personas as get_persona_artifacts,
 )
-from app.tools.v5.artifacts.scenario.search import search_scenarios
-from app.tools.v5.resources.colors.get import get_colors
-from app.tools.v5.resources.colors.search import search_colors
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.examples.create import create_example
-from app.tools.v5.resources.examples.get import get_examples
-from app.tools.v5.resources.fields.get import get_fields
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.icons.get import get_icons
-from app.tools.v5.resources.icons.search import search_icons
-from app.tools.v5.resources.instructions.create import create_instruction
-from app.tools.v5.resources.instructions.get import get_instructions
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameter_fields.search import (
+from app.tools.artifacts.scenario.search import search_scenarios
+from app.tools.resources.colors.get import get_colors
+from app.tools.resources.colors.search import search_colors
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.examples.create import create_example
+from app.tools.resources.examples.get import get_examples
+from app.tools.resources.fields.get import get_fields
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.icons.get import get_icons
+from app.tools.resources.icons.search import search_icons
+from app.tools.resources.instructions.create import create_instruction
+from app.tools.resources.instructions.get import get_instructions
+from app.tools.resources.names.create import create_name
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameter_fields.search import (
     search_parameter_fields,
 )
-from app.tools.v5.resources.personas.create import (
+from app.tools.resources.personas.create import (
     create_persona as create_persona_resource,
 )
-from app.tools.v5.resources.voices.search import search_voices
+from app.tools.resources.voices.search import search_voices
 
 if TYPE_CHECKING:
     from app.infra.persona.create import CreatePersonaItem, PersonaFieldError

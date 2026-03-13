@@ -83,70 +83,70 @@ from app.infra.websocket.test_events_impl import (
 from app.infra.websocket.test_events_impl import (
     test_start_impl as _test_start_impl,
 )
-from app.tools.v5.entries.attempt.create import create_attempt
-from app.tools.v5.entries.attempt.get import get_attempts
-from app.tools.v5.entries.attempt.refresh import refresh_attempt
-from app.tools.v5.entries.attempt_chat.create import create_attempt_chat
-from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-from app.tools.v5.entries.attempt_chat_bridge.create import (
+from app.tools.entries.attempt.create import create_attempt
+from app.tools.entries.attempt.get import get_attempts
+from app.tools.entries.attempt.refresh import refresh_attempt
+from app.tools.entries.attempt_chat.create import create_attempt_chat
+from app.tools.entries.attempt_chat.search import search_attempt_chats
+from app.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
 )
-from app.tools.v5.entries.attempt_chat_bridge.search import (
+from app.tools.entries.attempt_chat_bridge.search import (
     search_attempt_chat_bridges,
 )
-from app.tools.v5.entries.attempt_chat_completion.search import (
+from app.tools.entries.attempt_chat_completion.search import (
     search_attempt_chat_completions,
 )
-from app.tools.v5.entries.attempt_content.search import search_attempt_contents
-from app.tools.v5.entries.attempt_message.create import create_attempt_message
-from app.tools.v5.entries.attempt_message.search import search_attempt_messages
-from app.tools.v5.entries.attempt_message_completion.create import (
+from app.tools.entries.attempt_content.search import search_attempt_contents
+from app.tools.entries.attempt_message.create import create_attempt_message
+from app.tools.entries.attempt_message.search import search_attempt_messages
+from app.tools.entries.attempt_message_completion.create import (
     create_attempt_message_completion,
 )
-from app.tools.v5.entries.attempt_message_completion.search import (
+from app.tools.entries.attempt_message_completion.search import (
     search_attempt_message_completions,
 )
-from app.tools.v5.entries.attempt_practice.create import (
+from app.tools.entries.attempt_practice.create import (
     create_attempt_practice,
 )
-from app.tools.v5.entries.benchmark.create import create_benchmark
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.chat.create import create_chat
-from app.tools.v5.entries.chat.refresh import refresh_chat
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.groups.get import get_groups
-from app.tools.v5.entries.messages.create import create_message
-from app.tools.v5.entries.messages.get import get_message
-from app.tools.v5.entries.messages.search import search_messages
-from app.tools.v5.entries.persona.create import create_persona
-from app.tools.v5.entries.practice.create import create_practice
-from app.tools.v5.entries.practice.refresh import refresh_practice
-from app.tools.v5.entries.practice_chat.create import create_practice_chat
-from app.tools.v5.entries.practice_chat.refresh import refresh_practice_chat
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.runs.get import get_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.test.create import create_test
-from app.tools.v5.entries.test.refresh import refresh_test
-from app.tools.v5.entries.test_grade.create import create_test_grade
-from app.tools.v5.entries.test_invocation.create import create_test_invocation
-from app.tools.v5.entries.test_invocation.refresh import refresh_test_invocation
-from app.tools.v5.entries.test_invocation.search import (
+from app.tools.entries.benchmark.create import create_benchmark
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.chat.create import create_chat
+from app.tools.entries.chat.refresh import refresh_chat
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.groups.get import get_groups
+from app.tools.entries.messages.create import create_message
+from app.tools.entries.messages.get import get_message
+from app.tools.entries.messages.search import search_messages
+from app.tools.entries.persona.create import create_persona
+from app.tools.entries.practice.create import create_practice
+from app.tools.entries.practice.refresh import refresh_practice
+from app.tools.entries.practice_chat.create import create_practice_chat
+from app.tools.entries.practice_chat.refresh import refresh_practice_chat
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.runs.get import get_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.test.create import create_test
+from app.tools.entries.test.refresh import refresh_test
+from app.tools.entries.test_grade.create import create_test_grade
+from app.tools.entries.test_invocation.create import create_test_invocation
+from app.tools.entries.test_invocation.refresh import refresh_test_invocation
+from app.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from app.tools.v5.entries.test_invocation_completion.search import (
+from app.tools.entries.test_invocation_completion.search import (
     search_test_invocation_completions,
 )
-from app.tools.v5.entries.tokens.refresh import refresh_tokens
-from app.tools.v5.entries.tokens.search import search_tokens
-from app.tools.v5.entries.uploads.get import get_upload
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.personas.create import (
+from app.tools.entries.tokens.refresh import refresh_tokens
+from app.tools.entries.tokens.search import search_tokens
+from app.tools.entries.uploads.get import get_upload
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.personas.create import (
     create_persona as create_persona_resource,
 )
-from app.tools.v5.resources.profile_personas.create import create_profile_persona
-from app.tools.v5.resources.profiles.create import create_profile
-from app.tools.v5.resources.simulations.create import create_simulation
+from app.tools.resources.profile_personas.create import create_profile_persona
+from app.tools.resources.profiles.create import create_profile
+from app.tools.resources.simulations.create import create_simulation
 
 _P = "app.infra.websocket.attempt_events_impl"
 
@@ -1122,7 +1122,7 @@ class TestFindNextRunId:
 # test_group_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_RUNS_SEARCH = "app.tools.v5.entries.runs.search"
+_RUNS_SEARCH = "app.tools.entries.runs.search"
 
 
 @pytest.mark.asyncio
@@ -1206,9 +1206,9 @@ class TestGroupImpl:
 # test_start_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_TEST_CREATE = "app.tools.v5.entries.test.create"
-_BENCHMARK_CREATE = "app.tools.v5.entries.benchmark_test.create"
-_REFRESH = "app.tools.v5.entries.test_invocation.refresh"
+_TEST_CREATE = "app.tools.entries.test.create"
+_BENCHMARK_CREATE = "app.tools.entries.benchmark_test.create"
+_REFRESH = "app.tools.entries.test_invocation.refresh"
 _CACHE = "app.utils.cache.invalidate_tags"
 
 
@@ -1527,7 +1527,7 @@ class TestProceedImpl:
 # test_run_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_RUN_CREATE = "app.tools.v5.entries.runs.create"
+_RUN_CREATE = "app.tools.entries.runs.create"
 
 
 @pytest.mark.asyncio
@@ -1848,7 +1848,7 @@ class TestUserCompleteImpl:
 # speech_complete_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_UPLOAD_CREATE = "app.tools.v5.entries.uploads.create"
+_UPLOAD_CREATE = "app.tools.entries.uploads.create"
 
 
 @pytest.mark.asyncio
@@ -1929,17 +1929,17 @@ class TestSpeechCompleteImpl:
 # ═══════════════════════════════════════════════════════════════════════════
 
 _PROFILE_CTX = "app.infra.profile_identity_context"
-_ATTEMPT_CREATE = "app.tools.v5.entries.attempt.create"
-_ATTEMPT_REFRESH = "app.tools.v5.entries.attempt.refresh"
-_ATTEMPT_CHAT_REFRESH = "app.tools.v5.entries.attempt_chat.refresh"
-_ATTEMPT_PRACTICE = "app.tools.v5.entries.attempt_practice.create"
-_ATTEMPT_HOME = "app.tools.v5.entries.attempt_home.create"
-_CALLS_CREATE = "app.tools.v5.entries.calls.create"
-_PERSONA_CREATE = "app.tools.v5.entries.persona.create"
-_PRACTICE_GET = "app.tools.v5.entries.practice.get"
-_PRACTICE_CHAT_SEARCH = "app.tools.v5.entries.practice_chat.search"
-_PROFILE_PERSONAS_GET = "app.tools.v5.resources.profile_personas.get"
-_SIMULATIONS_GET = "app.tools.v5.resources.simulations.get"
+_ATTEMPT_CREATE = "app.tools.entries.attempt.create"
+_ATTEMPT_REFRESH = "app.tools.entries.attempt.refresh"
+_ATTEMPT_CHAT_REFRESH = "app.tools.entries.attempt_chat.refresh"
+_ATTEMPT_PRACTICE = "app.tools.entries.attempt_practice.create"
+_ATTEMPT_HOME = "app.tools.entries.attempt_home.create"
+_CALLS_CREATE = "app.tools.entries.calls.create"
+_PERSONA_CREATE = "app.tools.entries.persona.create"
+_PRACTICE_GET = "app.tools.entries.practice.get"
+_PRACTICE_CHAT_SEARCH = "app.tools.entries.practice_chat.search"
+_PROFILE_PERSONAS_GET = "app.tools.resources.profile_personas.get"
+_SIMULATIONS_GET = "app.tools.resources.simulations.get"
 
 
 @pytest.mark.asyncio
@@ -2209,29 +2209,29 @@ class TestEmitChatGenerateImpl:
 
 @pytest.mark.asyncio
 class TestAttemptProceedImpl:
-    _RUNS = "app.tools.v5.entries.runs.create.create_run"
-    _GET_ATTEMPTS = "app.tools.v5.entries.attempt.get.get_attempts"
-    _BRIDGES = "app.tools.v5.entries.attempt_chat_bridge.search.search_attempt_chat_bridges"
+    _RUNS = "app.tools.entries.runs.create.create_run"
+    _GET_ATTEMPTS = "app.tools.entries.attempt.get.get_attempts"
+    _BRIDGES = "app.tools.entries.attempt_chat_bridge.search.search_attempt_chat_bridges"
     _SEARCH_CHATS = (
-        "app.tools.v5.entries.attempt_chat.search.search_attempt_chats"
+        "app.tools.entries.attempt_chat.search.search_attempt_chats"
     )
-    _PRACTICE_ENTRIES = "app.tools.v5.entries.attempt_practice.search.search_attempt_practice_entries"
+    _PRACTICE_ENTRIES = "app.tools.entries.attempt_practice.search.search_attempt_practice_entries"
     _HOME_ENTRIES = (
-        "app.tools.v5.entries.attempt_home.search.search_attempt_homes"
+        "app.tools.entries.attempt_home.search.search_attempt_homes"
     )
     _PRACTICE_CHATS = (
-        "app.tools.v5.entries.practice_chat.search.search_practice_chats"
+        "app.tools.entries.practice_chat.search.search_practice_chats"
     )
-    _HOME_CHATS = "app.tools.v5.entries.home_chat.search.search_home_chats"
-    _CHAT_ENTRIES = "app.tools.v5.entries.chat.get.get_chat_entries_internal"
-    _CREATE_CALL = "app.tools.v5.entries.calls.create.create_call"
-    _CREATE_CHAT = "app.tools.v5.entries.attempt_chat.create.create_attempt_chat"
-    _CREATE_BRIDGE = "app.tools.v5.entries.attempt_chat_bridge.create.create_attempt_chat_bridge"
-    _REFRESH_ATTEMPT = "app.tools.v5.entries.attempt.refresh.refresh_attempt"
+    _HOME_CHATS = "app.tools.entries.home_chat.search.search_home_chats"
+    _CHAT_ENTRIES = "app.tools.entries.chat.get.get_chat_entries_internal"
+    _CREATE_CALL = "app.tools.entries.calls.create.create_call"
+    _CREATE_CHAT = "app.tools.entries.attempt_chat.create.create_attempt_chat"
+    _CREATE_BRIDGE = "app.tools.entries.attempt_chat_bridge.create.create_attempt_chat_bridge"
+    _REFRESH_ATTEMPT = "app.tools.entries.attempt.refresh.refresh_attempt"
     _REFRESH_CHAT = (
-        "app.tools.v5.entries.attempt_chat.refresh.refresh_attempt_chat"
+        "app.tools.entries.attempt_chat.refresh.refresh_attempt_chat"
     )
-    _CHAT_COMPLETION = "app.tools.v5.entries.attempt_chat_completion.create.create_attempt_chat_completion"
+    _CHAT_COMPLETION = "app.tools.entries.attempt_chat_completion.create.create_attempt_chat_completion"
     _EMIT_GENERATE = f"{_P}.emit_chat_generate_impl"
 
     async def test_no_sid_returns_early(self):

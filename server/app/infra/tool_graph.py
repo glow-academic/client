@@ -18,12 +18,12 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.registry.modalities import get_tool_output_modalities
-from app.tools.v5.resources.agents.get import get_agents
-from app.tools.v5.resources.agents.types import GetAgentResponse
-from app.tools.v5.resources.settings.get import get_settings
-from app.tools.v5.resources.systems.get import get_systems
-from app.tools.v5.resources.tools.get import get_tools
-from app.tools.v5.resources.tools.types import GetToolResponse
+from app.tools.resources.agents.get import get_agents
+from app.tools.resources.agents.types import GetAgentResponse
+from app.tools.resources.settings.get import get_settings
+from app.tools.resources.systems.get import get_systems
+from app.tools.resources.tools.get import get_tools
+from app.tools.resources.tools.types import GetToolResponse
 
 # ---------------------------------------------------------------------------
 # Types

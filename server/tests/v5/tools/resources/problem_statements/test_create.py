@@ -2,10 +2,10 @@
 
 import pytest
 
-from app.tools.v5.resources.problem_statements.create import (
+from app.tools.resources.problem_statements.create import (
     create_problem_statement,
 )
-from app.tools.v5.resources.problem_statements.get import get_problem_statements
+from app.tools.resources.problem_statements.get import get_problem_statements
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.protocols.docs import get_protocols_docs
+from app.tools.resources.protocols.docs import get_protocols_docs
 
 pytestmark = pytest.mark.asyncio
 

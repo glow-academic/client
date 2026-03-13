@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.flags.create import create_flag
-from app.tools.v5.resources.flags.get import get_flags
+from app.tools.resources.flags.create import create_flag
+from app.tools.resources.flags.get import get_flags
 
 pytestmark = pytest.mark.asyncio
 

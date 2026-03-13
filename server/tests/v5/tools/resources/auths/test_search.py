@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.resources.auths.create import create_auth
-from app.tools.v5.resources.auths.search import search_auths
+from app.tools.resources.auths.create import create_auth
+from app.tools.resources.auths.search import search_auths
 
 pytestmark = pytest.mark.asyncio
 

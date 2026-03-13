@@ -19,42 +19,42 @@ from redis.asyncio import Redis
 from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
-from app.tools.v5.artifacts.document.get import (
+from app.tools.artifacts.document.get import (
     get_documents as get_document_artifacts,
 )
-from app.tools.v5.entries.document_drafts.get import get_document_drafts
+from app.tools.entries.document_drafts.get import get_document_drafts
 
 # Entry MV fetchers (aliased to avoid collision with resource search functions)
-from app.tools.v5.entries.files.search import search_files as search_file_entries
-from app.tools.v5.entries.images.search import (
+from app.tools.entries.files.search import search_files as search_file_entries
+from app.tools.entries.images.search import (
     search_images as search_image_entries,
 )
-from app.tools.v5.entries.texts.search import search_texts as search_text_entries
+from app.tools.entries.texts.search import search_texts as search_text_entries
 
 # Resource get fetchers (by known IDs)
-from app.tools.v5.resources.departments.get import get_departments
+from app.tools.resources.departments.get import get_departments
 
 # Resource search fetchers (bounded, paginated)
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.descriptions.search import search_descriptions
-from app.tools.v5.resources.fields.search import search_fields
-from app.tools.v5.resources.files.get import get_files
-from app.tools.v5.resources.files.search import search_files
-from app.tools.v5.resources.flags.get import get_flags
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.images.get import get_images
-from app.tools.v5.resources.images.search import search_images
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.names.search import search_names
-from app.tools.v5.resources.parameter_fields.get import get_parameter_fields
-from app.tools.v5.resources.parameter_fields.search import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.descriptions.search import search_descriptions
+from app.tools.resources.fields.search import search_fields
+from app.tools.resources.files.get import get_files
+from app.tools.resources.files.search import search_files
+from app.tools.resources.flags.get import get_flags
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.images.get import get_images
+from app.tools.resources.images.search import search_images
+from app.tools.resources.names.get import get_names
+from app.tools.resources.names.search import search_names
+from app.tools.resources.parameter_fields.get import get_parameter_fields
+from app.tools.resources.parameter_fields.search import (
     search_parameter_fields,
 )
-from app.tools.v5.resources.parameters.get import get_parameters
-from app.tools.v5.resources.parameters.search import search_parameters
-from app.tools.v5.resources.texts.get import get_texts
-from app.tools.v5.resources.texts.search import search_texts
+from app.tools.resources.parameters.get import get_parameters
+from app.tools.resources.parameters.search import search_parameters
+from app.tools.resources.texts.get import get_texts
+from app.tools.resources.texts.search import search_texts
 
 # ---------------------------------------------------------------------------
 # Constants

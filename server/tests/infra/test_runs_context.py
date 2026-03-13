@@ -5,10 +5,10 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.infra.runs_context import RunsContext, resolve_runs_context
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.resources.profiles.create import create_profile
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.resources.profiles.create import create_profile
 
 pytestmark = pytest.mark.asyncio
 

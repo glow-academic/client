@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.thresholds.create import create_threshold
-from app.tools.v5.resources.thresholds.get import get_thresholds
+from app.tools.resources.thresholds.create import create_threshold
+from app.tools.resources.thresholds.get import get_thresholds
 
 pytestmark = pytest.mark.asyncio
 

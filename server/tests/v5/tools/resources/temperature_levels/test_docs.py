@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.resources.temperature_levels.docs import (
+from app.tools.resources.temperature_levels.docs import (
     get_temperature_levels_docs,
 )
 

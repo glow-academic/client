@@ -15,7 +15,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.tools.v5.entries.setting_drafts.refresh import (
+from app.tools.entries.setting_drafts.refresh import (
     refresh_setting_drafts,
 )
 

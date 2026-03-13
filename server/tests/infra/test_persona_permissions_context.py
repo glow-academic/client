@@ -4,11 +4,11 @@ import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
 from app.infra.persona.permissions_context import resolve_persona_permissions_context
-from app.tools.v5.artifacts.persona.create import create_persona
-from app.tools.v5.artifacts.scenario.create import create_scenario
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.names.create import create_name
-from app.tools.v5.resources.personas.create import (
+from app.tools.artifacts.persona.create import create_persona
+from app.tools.artifacts.scenario.create import create_scenario
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.names.create import create_name
+from app.tools.resources.personas.create import (
     create_persona as create_persona_resource,
 )
 

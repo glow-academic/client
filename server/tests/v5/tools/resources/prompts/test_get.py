@@ -3,8 +3,8 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.prompts.create import create_prompt
-from app.tools.v5.resources.prompts.get import get_prompts
+from app.tools.resources.prompts.create import create_prompt
+from app.tools.resources.prompts.get import get_prompts
 
 pytestmark = pytest.mark.asyncio
 

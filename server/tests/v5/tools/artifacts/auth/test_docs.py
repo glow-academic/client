@@ -2,7 +2,7 @@
 
 import pytest
 
-from app.tools.v5.artifacts.auth.docs import get_auth_docs
+from app.tools.artifacts.auth.docs import get_auth_docs
 
 pytestmark = pytest.mark.asyncio
 

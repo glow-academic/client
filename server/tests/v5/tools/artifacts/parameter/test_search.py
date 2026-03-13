@@ -3,12 +3,12 @@
 import pytest
 from tests.helpers import unique_tag
 
-from app.tools.v5.artifacts.parameter.create import create_parameter
-from app.tools.v5.artifacts.parameter.search import search_parameters
-from app.tools.v5.resources.departments.create import create_department
-from app.tools.v5.resources.descriptions.create import create_description
-from app.tools.v5.resources.fields.create import create_field
-from app.tools.v5.resources.names.create import create_name
+from app.tools.artifacts.parameter.create import create_parameter
+from app.tools.artifacts.parameter.search import search_parameters
+from app.tools.resources.departments.create import create_department
+from app.tools.resources.descriptions.create import create_description
+from app.tools.resources.fields.create import create_field
+from app.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 

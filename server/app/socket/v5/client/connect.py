@@ -19,7 +19,7 @@ from app.infra.websocket.remove_active_connection import remove_active_connectio
 from app.infra.websocket.remove_guest_socket import remove_guest_socket
 from app.infra.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.websocket.set_socket_owner import set_socket_owner
-from app.tools.v5.entries.activity.create import create_activity
+from app.tools.entries.activity.create import create_activity
 
 internal_sio = get_internal_sio()
 

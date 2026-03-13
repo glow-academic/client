@@ -4,7 +4,7 @@ import pytest
 from tests.helpers import nonexistent_id, unique_tag
 
 from app.infra.system_context import SystemContext, resolve_system_context
-from app.tools.v5.resources.systems.create import create_system
+from app.tools.resources.systems.create import create_system
 
 pytestmark = pytest.mark.asyncio
 
@@ -74,15 +74,15 @@ class TestResolveSystemContext:
         assert [rubric.id for rubric in result.rubrics] == [fixture.rubric_id]
 
     async def test_dedupes_shared_dependencies(self, pool, redis_client):
-        from app.tools.v5.resources.agents.create import create_agent
-        from app.tools.v5.resources.args.create import create_arg
-        from app.tools.v5.resources.args_outputs.create import create_args_output
-        from app.tools.v5.resources.instructions.create import create_instruction
-        from app.tools.v5.resources.models.create import create_model
-        from app.tools.v5.resources.prompts.create import create_prompt
-        from app.tools.v5.resources.providers.create import create_provider
-        from app.tools.v5.resources.rubrics.create import create_rubric
-        from app.tools.v5.resources.tools.create import create_tool
+        from app.tools.resources.agents.create import create_agent
+        from app.tools.resources.args.create import create_arg
+        from app.tools.resources.args_outputs.create import create_args_output
+        from app.tools.resources.instructions.create import create_instruction
+        from app.tools.resources.models.create import create_model
+        from app.tools.resources.prompts.create import create_prompt
+        from app.tools.resources.providers.create import create_provider
+        from app.tools.resources.rubrics.create import create_rubric
+        from app.tools.resources.tools.create import create_tool
 
         tag = unique_tag()
         async with pool.acquire() as conn:

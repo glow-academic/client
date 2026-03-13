@@ -21,18 +21,18 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.artifacts.persona.get import get_personas
-from app.tools.v5.artifacts.persona.search import search_personas
-from app.tools.v5.resources.colors.get import get_colors
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.descriptions.get import get_descriptions
-from app.tools.v5.resources.examples.get import get_examples
-from app.tools.v5.resources.fields.get import get_fields
-from app.tools.v5.resources.icons.get import get_icons
-from app.tools.v5.resources.instructions.get import get_instructions
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.parameter_fields.get import get_parameter_fields
-from app.tools.v5.resources.voices.get import get_voices
+from app.tools.artifacts.persona.get import get_personas
+from app.tools.artifacts.persona.search import search_personas
+from app.tools.resources.colors.get import get_colors
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.descriptions.get import get_descriptions
+from app.tools.resources.examples.get import get_examples
+from app.tools.resources.fields.get import get_fields
+from app.tools.resources.icons.get import get_icons
+from app.tools.resources.instructions.get import get_instructions
+from app.tools.resources.names.get import get_names
+from app.tools.resources.parameter_fields.get import get_parameter_fields
+from app.tools.resources.voices.get import get_voices
 
 PIPE = "|"
 

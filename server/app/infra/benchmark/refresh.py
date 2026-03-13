@@ -16,7 +16,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.refresh.types import RefreshResponse
 
 # Black-box entry refresh tools
-from app.tools.v5.entries.benchmark.refresh import refresh_benchmark
+from app.tools.entries.benchmark.refresh import refresh_benchmark
 
 # Tags to invalidate — artifact cache + resource caches
 _TAGS = ["benchmark", "artifacts"]

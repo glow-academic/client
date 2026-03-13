@@ -18,44 +18,44 @@ import asyncpg
 from app.infra.auth.types import ResolveGroupApiResponse
 
 # Canonical entry black boxes — drafts
-from app.tools.v5.entries.agent_drafts.get import get_agent_drafts
+from app.tools.entries.agent_drafts.get import get_agent_drafts
 
 # Canonical entry black boxes — attempts
-from app.tools.v5.entries.attempt.get import get_attempts
-from app.tools.v5.entries.attempt_chat.search import search_attempt_chats
-from app.tools.v5.entries.attempt_message.search import search_attempt_messages
-from app.tools.v5.entries.auth_drafts.get import get_auth_drafts
-from app.tools.v5.entries.chat_drafts.get import get_chat_drafts
-from app.tools.v5.entries.cohort_drafts.get import get_cohort_drafts
-from app.tools.v5.entries.department_drafts.get import get_department_drafts
-from app.tools.v5.entries.document_drafts.get import get_document_drafts
-from app.tools.v5.entries.eval_drafts.get import get_eval_drafts
-from app.tools.v5.entries.field_drafts.get import get_field_drafts
+from app.tools.entries.attempt.get import get_attempts
+from app.tools.entries.attempt_chat.search import search_attempt_chats
+from app.tools.entries.attempt_message.search import search_attempt_messages
+from app.tools.entries.auth_drafts.get import get_auth_drafts
+from app.tools.entries.chat_drafts.get import get_chat_drafts
+from app.tools.entries.cohort_drafts.get import get_cohort_drafts
+from app.tools.entries.department_drafts.get import get_department_drafts
+from app.tools.entries.document_drafts.get import get_document_drafts
+from app.tools.entries.eval_drafts.get import get_eval_drafts
+from app.tools.entries.field_drafts.get import get_field_drafts
 
 # Canonical entry black boxes — groups
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.invocation_drafts.get import get_invocation_drafts
-from app.tools.v5.entries.model_drafts.get import get_model_drafts
-from app.tools.v5.entries.parameter_drafts.get import get_parameter_drafts
-from app.tools.v5.entries.persona_drafts.get import get_persona_drafts
-from app.tools.v5.entries.profile_drafts.get import get_profile_drafts
-from app.tools.v5.entries.provider_drafts.get import get_provider_drafts
-from app.tools.v5.entries.rubric_drafts.get import get_rubric_drafts
-from app.tools.v5.entries.scenario_drafts.get import get_scenario_drafts
-from app.tools.v5.entries.setting_drafts.get import get_setting_drafts
-from app.tools.v5.entries.simulation_drafts.get import get_simulation_drafts
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.invocation_drafts.get import get_invocation_drafts
+from app.tools.entries.model_drafts.get import get_model_drafts
+from app.tools.entries.parameter_drafts.get import get_parameter_drafts
+from app.tools.entries.persona_drafts.get import get_persona_drafts
+from app.tools.entries.profile_drafts.get import get_profile_drafts
+from app.tools.entries.provider_drafts.get import get_provider_drafts
+from app.tools.entries.rubric_drafts.get import get_rubric_drafts
+from app.tools.entries.scenario_drafts.get import get_scenario_drafts
+from app.tools.entries.setting_drafts.get import get_setting_drafts
+from app.tools.entries.simulation_drafts.get import get_simulation_drafts
 
 # Canonical entry black boxes — tests
-from app.tools.v5.entries.test_invocation.search import (
+from app.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from app.tools.v5.entries.test_invocation_groups.search import (
+from app.tools.entries.test_invocation_groups.search import (
     search_test_invocation_groups,
 )
-from app.tools.v5.entries.test_invocation_runs.search import (
+from app.tools.entries.test_invocation_runs.search import (
     search_test_invocation_runs,
 )
-from app.tools.v5.entries.tool_drafts.get import get_tool_drafts
+from app.tools.entries.tool_drafts.get import get_tool_drafts
 
 # Draft function dispatch map: artifact_type → get_X_drafts(conn, ids)
 _DRAFT_FN_MAP: dict[

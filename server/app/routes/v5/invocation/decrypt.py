@@ -13,7 +13,7 @@ from app.infra.invocation.types import (
     DecryptInvocationKeyApiRequest,
     DecryptInvocationKeyApiResponse,
 )
-from app.tools.v5.entries.invocation.get import get_invocations
+from app.tools.entries.invocation.get import get_invocations
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

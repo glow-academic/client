@@ -3,9 +3,9 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.benchmark.create import create_benchmark
-from app.tools.v5.entries.invocation.create import create_invocation
-from app.tools.v5.entries.invocation.get import get_invocations
+from app.tools.entries.benchmark.create import create_benchmark
+from app.tools.entries.invocation.create import create_invocation
+from app.tools.entries.invocation.get import get_invocations
 
 pytestmark = pytest.mark.asyncio
 

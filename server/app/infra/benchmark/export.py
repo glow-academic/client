@@ -24,12 +24,12 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.tools.v5.entries.benchmark.search import search_benchmarks
-from app.tools.v5.entries.test_invocation.search import (
+from app.tools.entries.benchmark.search import search_benchmarks
+from app.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from app.tools.v5.resources.departments.get import get_departments
-from app.tools.v5.resources.profiles.get import get_profiles
+from app.tools.resources.departments.get import get_departments
+from app.tools.resources.profiles.get import get_profiles
 
 PIPE = "|"
 

@@ -32,21 +32,21 @@ from app.infra.simulation.types import (
     ListSimulationApiSimulation,
 )
 from app.infra.v5_types import ListFilterOption, ListFilterSection
-from app.tools.v5.artifacts.simulation.get import get_simulations
-from app.tools.v5.artifacts.simulation.search import search_simulations
-from app.tools.v5.resources.cohorts.search import (
+from app.tools.artifacts.simulation.get import get_simulations
+from app.tools.artifacts.simulation.search import search_simulations
+from app.tools.resources.cohorts.search import (
     search_cohorts as search_cohorts_resource,
 )
-from app.tools.v5.resources.departments.search import search_departments
-from app.tools.v5.resources.flags.search import search_flags
-from app.tools.v5.resources.names.get import get_names
-from app.tools.v5.resources.personas.get import (
+from app.tools.resources.departments.search import search_departments
+from app.tools.resources.flags.search import search_flags
+from app.tools.resources.names.get import get_names
+from app.tools.resources.personas.get import (
     get_personas as get_personas_resource,
 )
-from app.tools.v5.resources.scenarios.get import (
+from app.tools.resources.scenarios.get import (
     get_scenarios as get_scenarios_resource,
 )
-from app.tools.v5.resources.scenarios.search import (
+from app.tools.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
 

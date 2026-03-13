@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 from app.infra.model.create import CreateModelItem
 from app.infra.v5_types import BaseResourceSection, ListFilterSection
-from app.tools.v5.entries.model_drafts.types import GetModelDraftResponse
+from app.tools.entries.model_drafts.types import GetModelDraftResponse
 
 # =============================================================================
 # Flag Config

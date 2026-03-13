@@ -5,8 +5,8 @@ from uuid import uuid4
 import pytest
 
 from app.infra.simulation.context import resolve_simulation_context
-from app.tools.v5.artifacts.simulation.create import create_simulation
-from app.tools.v5.artifacts.simulation.update import update_simulation
+from app.tools.artifacts.simulation.create import create_simulation
+from app.tools.artifacts.simulation.update import update_simulation
 
 pytestmark = pytest.mark.asyncio
 

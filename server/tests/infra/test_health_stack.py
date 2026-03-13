@@ -14,9 +14,9 @@ from app.infra.health.docs import docs_health_impl
 from app.infra.health.export import export_health_impl
 from app.infra.health.refresh import refresh_health_impl
 from app.infra.metrics_snapshot import write_health_checks, write_metrics_snapshot
-from app.tools.v5.entries.health.create import create_health
-from app.tools.v5.entries.metrics.create import create_metrics_entry_internal
-from app.tools.v5.entries.metrics.refresh import refresh_metrics_internal
+from app.tools.entries.health.create import create_health
+from app.tools.entries.metrics.create import create_metrics_entry_internal
+from app.tools.entries.metrics.refresh import refresh_metrics_internal
 
 pytestmark = pytest.mark.asyncio
 

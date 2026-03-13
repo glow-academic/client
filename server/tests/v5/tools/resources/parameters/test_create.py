@@ -2,8 +2,8 @@
 
 import pytest
 
-from app.tools.v5.resources.parameters.create import create_parameter
-from app.tools.v5.resources.parameters.get import get_parameters
+from app.tools.resources.parameters.create import create_parameter
+from app.tools.resources.parameters.get import get_parameters
 
 pytestmark = pytest.mark.asyncio
 

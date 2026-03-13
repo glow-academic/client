@@ -3,15 +3,15 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.entries.benchmark.create import create_benchmark
-from app.tools.v5.entries.benchmark_test.create import create_benchmark_test
-from app.tools.v5.entries.benchmark_test.refresh import refresh_benchmark_test
-from app.tools.v5.entries.benchmark_test.search import search_benchmark_tests
-from app.tools.v5.entries.calls.create import create_call
-from app.tools.v5.entries.groups.create import create_group
-from app.tools.v5.entries.runs.create import create_run
-from app.tools.v5.entries.sessions.create import create_session
-from app.tools.v5.entries.test.create import create_test
+from app.tools.entries.benchmark.create import create_benchmark
+from app.tools.entries.benchmark_test.create import create_benchmark_test
+from app.tools.entries.benchmark_test.refresh import refresh_benchmark_test
+from app.tools.entries.benchmark_test.search import search_benchmark_tests
+from app.tools.entries.calls.create import create_call
+from app.tools.entries.groups.create import create_group
+from app.tools.entries.runs.create import create_run
+from app.tools.entries.sessions.create import create_session
+from app.tools.entries.test.create import create_test
 
 pytestmark = pytest.mark.asyncio
 

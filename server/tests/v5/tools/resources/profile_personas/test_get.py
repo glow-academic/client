@@ -3,10 +3,10 @@
 import pytest
 from tests.helpers import nonexistent_id
 
-from app.tools.v5.resources.personas.create import create_persona
-from app.tools.v5.resources.profile_personas.create import create_profile_persona
-from app.tools.v5.resources.profile_personas.get import get_profile_personas
-from app.tools.v5.resources.profiles.create import create_profile
+from app.tools.resources.personas.create import create_persona
+from app.tools.resources.profile_personas.create import create_profile_persona
+from app.tools.resources.profile_personas.get import get_profile_personas
+from app.tools.resources.profiles.create import create_profile
 
 pytestmark = pytest.mark.asyncio
 
