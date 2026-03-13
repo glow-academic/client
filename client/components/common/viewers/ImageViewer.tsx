@@ -10,8 +10,8 @@ export interface ImageViewerProps {
   mimeType?: string;
   bare?: boolean;
   compact?: boolean;
-  /** Base URL for downloads. Defaults to "/api/uploads". */
-  downloadBaseUrl?: string;
+  /** Base URL for downloads. */
+  downloadBaseUrl: string;
 }
 
 export default function ImageViewer({
@@ -20,7 +20,7 @@ export default function ImageViewer({
   mimeType,
   bare = true,
   compact: _compact = false,
-  downloadBaseUrl = "/api/uploads",
+  downloadBaseUrl,
 }: ImageViewerProps) {
   const [content, setContent] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(mimeType || null);

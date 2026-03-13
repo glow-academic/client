@@ -25,8 +25,7 @@ type CreateSimulationIn = InputOf<"/api/v5/artifacts/simulations/create", "post"
 type CreateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/create", "post">;
 type UpdateSimulationIn = InputOf<"/api/v5/artifacts/simulations/update", "post">;
 type UpdateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/update", "post">;
-type ParseCsvIn = InputOf<"/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for simulations list request ---- */
 type SimulationsListBody = {
@@ -89,9 +88,9 @@ async function updateSimulation(input: UpdateSimulationIn): Promise<UpdateSimula
   return api.post("/artifacts/simulations/update", input);
 }
 
-async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/uploads/csv", input);
+  return api.post("/artifacts/simulations/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -193,8 +192,6 @@ export type {
   DeleteSimulationOut,
   DuplicateSimulationIn,
   DuplicateSimulationOut,
-  ParseCsvIn,
-  ParseCsvOut,
   CreateSimulationIn,
   CreateSimulationOut,
   UpdateSimulationIn,

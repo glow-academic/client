@@ -11,8 +11,8 @@ interface MessageTimelineProps {
   totalCount: number;
   isLoading: boolean;
   onLoadMore: () => void;
-  /** Base URL for downloads. Defaults to "/api/uploads". */
-  downloadBaseUrl?: string;
+  /** Base URL for downloads. */
+  downloadBaseUrl: string;
 }
 
 /** Fetch text content for a single upload ID via the download proxy. */
@@ -56,7 +56,7 @@ export function MessageTimeline({
   totalCount,
   isLoading,
   onLoadMore,
-  downloadBaseUrl = "/api/uploads",
+  downloadBaseUrl,
 }: MessageTimelineProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevLengthRef = useRef(messages.length);

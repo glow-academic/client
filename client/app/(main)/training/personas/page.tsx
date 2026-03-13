@@ -25,8 +25,7 @@ type CreatePersonaIn = InputOf<"/api/v5/artifacts/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v5/artifacts/personas/create", "post">;
 type UpdatePersonaIn = InputOf<"/api/v5/artifacts/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/api/v5/artifacts/personas/update", "post">;
-type ParseCsvIn = InputOf<"/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {
@@ -89,9 +88,9 @@ async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> 
   return api.post("/artifacts/personas/update", input);
 }
 
-async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/uploads/csv", input);
+  return api.post("/artifacts/personas/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -197,8 +196,6 @@ export type {
   DeletePersonaOut,
   DuplicatePersonaIn,
   DuplicatePersonaOut,
-  ParseCsvIn,
-  ParseCsvOut,
   PersonasListOut,
   CreatePersonaIn,
   CreatePersonaOut,

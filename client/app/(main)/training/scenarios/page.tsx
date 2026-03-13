@@ -25,8 +25,7 @@ type CreateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
-type ParseCsvIn = InputOf<"/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for scenarios list request ---- */
 type ScenariosListBody = {
@@ -89,9 +88,9 @@ async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOu
   return api.post("/artifacts/scenarios/update", input);
 }
 
-async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/uploads/csv", input);
+  return api.post("/artifacts/scenarios/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -193,8 +192,6 @@ export type {
   DeleteScenarioOut,
   DuplicateScenarioIn,
   DuplicateScenarioOut,
-  ParseCsvIn,
-  ParseCsvOut,
   CreateScenarioIn,
   CreateScenarioOut,
   UpdateScenarioIn,

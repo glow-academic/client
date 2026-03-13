@@ -22,15 +22,13 @@ import type {
   DeleteSimulationOut,
   DuplicateSimulationIn,
   DuplicateSimulationOut,
-  ParseCsvIn,
-  ParseCsvOut,
   CreateSimulationIn,
   CreateSimulationOut,
   UpdateSimulationIn,
   UpdateSimulationOut,
   SimulationsListOut,
 } from "@/app/(main)/training/simulations/page";
-import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
@@ -86,7 +84,7 @@ export interface SimulationsProps {
   ) => Promise<DeleteSimulationOut>;
   createSimulationAction?: (input: CreateSimulationIn) => Promise<CreateSimulationOut>;
   updateSimulationAction?: (input: UpdateSimulationIn) => Promise<UpdateSimulationOut>;
-  parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;

@@ -26,15 +26,13 @@ import type {
   DeletePersonaOut,
   DuplicatePersonaIn,
   DuplicatePersonaOut,
-  ParseCsvIn,
-  ParseCsvOut,
   PersonasListOut,
   CreatePersonaIn,
   CreatePersonaOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
 } from "@/app/(main)/training/personas/page";
-import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -109,7 +107,7 @@ export interface PersonasProps {
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
-  parseCsvAction?: ((input: ParseCsvIn) => Promise<ParseCsvOut>) | undefined;
+  parseCsvAction?: ((formData: FormData) => Promise<ParseCsvResult>) | undefined;
   importFields?: ImportFieldDef[] | undefined;
   // Server-side pagination
   pageIndex: number;

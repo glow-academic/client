@@ -32,15 +32,13 @@ import type {
   DeleteScenarioOut,
   DuplicateScenarioIn,
   DuplicateScenarioOut,
-  ParseCsvIn,
-  ParseCsvOut,
   CreateScenarioIn,
   CreateScenarioOut,
   UpdateScenarioIn,
   UpdateScenarioOut,
   ScenariosListOut,
 } from "@/app/(main)/training/scenarios/page";
-import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -100,7 +98,7 @@ export interface ScenariosProps {
   ) => Promise<DeleteScenarioOut>;
   createScenarioAction?: (input: CreateScenarioIn) => Promise<CreateScenarioOut>;
   updateScenarioAction?: (input: UpdateScenarioIn) => Promise<UpdateScenarioOut>;
-  parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;

@@ -324,7 +324,7 @@ export function Videos({
       let tusUploadInstance: tus.Upload | null = null;
       try {
         tusUploadInstance = new tus.Upload(file, {
-          endpoint: uploadBasePath ? `/api/v5${uploadBasePath}/video` : `/api/uploads`,
+          endpoint: `/api/v5${uploadBasePath}/video`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: {
             filename: file.name,
@@ -716,7 +716,7 @@ export function Videos({
         {selectedVideo ? (
           selectedVideo.upload_id ? (
             <video
-              src={uploadBasePath ? `/api/v5${uploadBasePath}/video/${selectedVideo.upload_id}/download` : `/api/uploads/${selectedVideo.upload_id}/download`}
+              src={`/api/v5${uploadBasePath}/video/${selectedVideo.upload_id}/download`}
               controls
               className="w-full h-full object-contain"
             />

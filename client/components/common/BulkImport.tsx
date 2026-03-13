@@ -3,28 +3,17 @@
 import {
   Check,
   CheckCircle2,
-  ChevronsUpDown,
   Download,
   FileUp,
   Loader2,
-  Map,
   Upload as UploadIcon,
   X,
 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import * as tus from "tus-js-client";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -35,11 +24,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -70,22 +54,22 @@ interface SaveResult {
   [key: string]: unknown;
 }
 
+export interface ParseCsvResult {
+  items: Record<string, unknown>[];
+  mapped_fields: string[];
+  row_count: number;
+}
+
 export interface BulkImportProps {
   open: boolean;
   onClose: () => void;
   fields: ImportFieldDef[];
   artifactName: string;
   onSave: (items: Record<string, unknown>[]) => Promise<{ results: SaveResult[] }>;
-  parseCsvAction: (input: { body: { upload_id: string } }) => Promise<{
-    headers: string[];
-    rows: string[][];
-    row_count: number;
-  }>;
+  parseCsvAction: (formData: FormData) => Promise<ParseCsvResult>;
 }
 
-type Stage = "upload" | "map" | "review";
-
-const IGNORE_VALUE = "__ignore__";
+type Stage = "upload" | "review";
 
 // ---- CSV helpers ----
 
@@ -120,103 +104,10 @@ function downloadCSV(content: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-// ---- ColumnPicker combobox ----
-
-function ColumnPicker({
-  value,
-  fields,
-  usedKeys,
-  onChange,
-}: {
-  value: string;
-  fields: ImportFieldDef[];
-  usedKeys: Set<string>;
-  onChange: (key: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selectedField = fields.find((f) => f.key === value);
-  const displayLabel =
-    value === IGNORE_VALUE || !selectedField ? "(Ignore)" : selectedField.label;
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-[300px] justify-between"
-        >
-          <span className="truncate">{displayLabel}</span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0">
-        <Command>
-          <CommandList>
-            <CommandEmpty>No field found.</CommandEmpty>
-            <CommandGroup>
-              <CommandItem
-                value={IGNORE_VALUE}
-                onSelect={() => {
-                  onChange(IGNORE_VALUE);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    value === IGNORE_VALUE ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                (Ignore)
-              </CommandItem>
-            </CommandGroup>
-            <CommandGroup heading="Fields">
-              {fields.map((f) => {
-                const isSelected = value === f.key;
-                const isUsed = usedKeys.has(f.key) && !isSelected;
-                return (
-                  <CommandItem
-                    key={f.key}
-                    value={f.key}
-                    disabled={isUsed}
-                    onSelect={() => {
-                      onChange(f.key);
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        isSelected ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    <div className="flex flex-col">
-                      <span>
-                        {f.label}
-                        {f.required && <span className="text-destructive ml-1">*</span>}
-                      </span>
-                      {f.description && (
-                        <span className="text-xs text-muted-foreground">{f.description}</span>
-                      )}
-                    </div>
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 // ---- Stepper ----
 
 const STEPS: { key: Stage; label: string; icon: typeof FileUp }[] = [
   { key: "upload", label: "Upload", icon: FileUp },
-  { key: "map", label: "Map Columns", icon: Map },
   { key: "review", label: "Review", icon: CheckCircle2 },
 ];
 
@@ -281,31 +172,29 @@ export default function BulkImport({
   // Upload stage
   const [fileName, setFileName] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  // Map stage
-  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [csvRows, setCsvRows] = useState<string[][]>([]);
-  const [mappings, setMappings] = useState<Record<number, string>>({}); // csvColIndex -> fieldKey | IGNORE_VALUE
-  const [included, setIncluded] = useState<Record<number, boolean>>({}); // csvColIndex -> included
 
   // Review stage
   const [editedData, setEditedData] = useState<Record<string, unknown>[]>([]);
+  const [serverMappedFieldKeys, setServerMappedFieldKeys] = useState<string[]>([]);
   const [showErrorsOnly, setShowErrorsOnly] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveResults, setSaveResults] = useState<SaveResult[] | null>(null);
+
+  // ---- Derived ----
+  const mappedFieldKeys = useMemo(() => new Set(serverMappedFieldKeys), [serverMappedFieldKeys]);
+
+  const mappedFields = useMemo(
+    () => fields.filter((f) => mappedFieldKeys.has(f.key)),
+    [fields, mappedFieldKeys]
+  );
 
   // ---- Reset ----
   const reset = useCallback(() => {
     setStage("upload");
     setFileName(null);
     setIsUploading(false);
-    setUploadProgress(0);
-    setCsvHeaders([]);
-    setCsvRows([]);
-    setMappings({});
-    setIncluded({});
     setEditedData([]);
+    setServerMappedFieldKeys([]);
     setShowErrorsOnly(false);
     setIsSaving(false);
     setSaveResults(null);
@@ -318,14 +207,11 @@ export default function BulkImport({
 
   // ---- Template download ----
   const handleDownloadTemplate = useCallback(() => {
-    const headerRow: Record<string, string> = {};
     const exampleRow: Record<string, string> = {};
     for (const f of fields) {
-      headerRow[f.label] = f.label;
       exampleRow[f.label] = f.example ?? "";
     }
     const csv = unparseCSV([exampleRow]);
-    // Prepend header manually since unparseCSV uses keys as headers which are already labels
     downloadCSV(csv, `${artifactName.toLowerCase()}_template.csv`);
   }, [fields, artifactName]);
 
@@ -337,77 +223,16 @@ export default function BulkImport({
 
       setFileName(file.name);
       setIsUploading(true);
-      setUploadProgress(0);
 
       try {
-        // TUS upload
-        const uploadId = await new Promise<string>((resolve, reject) => {
-          const upload = new tus.Upload(file, {
-            endpoint: "/api/uploads",
-            retryDelays: [0, 3000, 5000],
-            metadata: {
-              filename: file.name,
-              filetype: file.type || "text/csv",
-            },
-            onProgress: (bytesUploaded, bytesTotal) => {
-              setUploadProgress(Math.round((bytesUploaded / bytesTotal) * 100));
-            },
-            onSuccess: async () => {
-              const url = upload.url || "";
-              const match = url.match(/\/uploads\/([^/]+)$/);
-              if (!match?.[1]) {
-                reject(new Error("Failed to extract upload ID"));
-                return;
-              }
-              const tusId = match[1];
+        const formData = new FormData();
+        formData.append("file", file);
 
-              // Finalize
-              try {
-                const finalizeRes = await fetch(
-                  `/api/uploads/${tusId}/finalize`,
-                  { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
-                );
-                const finalizeData = await finalizeRes.json();
-                if (!finalizeData.success || !finalizeData.upload_id) {
-                  reject(new Error(finalizeData.message || "Finalize failed"));
-                  return;
-                }
-                resolve(finalizeData.upload_id);
-              } catch (err) {
-                reject(err);
-              }
-            },
-            onError: (error) => reject(error),
-          });
-          upload.start();
-        });
+        const result = await parseCsvAction(formData);
 
-        // Parse CSV via server action
-        const parsed = await parseCsvAction({ body: { upload_id: uploadId } });
-        setCsvHeaders(parsed.headers);
-        setCsvRows(parsed.rows);
-
-        // Auto-map by fuzzy matching
-        const autoMappings: Record<number, string> = {};
-        const autoIncluded: Record<number, boolean> = {};
-        parsed.headers.forEach((header, idx) => {
-          const normalized = header.toLowerCase().trim().replace(/[_\s-]+/g, "");
-          const matched = fields.find((f) => {
-            const fKey = f.key.toLowerCase().replace(/[_\s-]+/g, "");
-            const fLabel = f.label.toLowerCase().replace(/[_\s-]+/g, "");
-            return fKey === normalized || fLabel === normalized;
-          });
-          if (matched) {
-            autoMappings[idx] = matched.key;
-            autoIncluded[idx] = true;
-          } else {
-            autoMappings[idx] = IGNORE_VALUE;
-            autoIncluded[idx] = false;
-          }
-        });
-        setMappings(autoMappings);
-        setIncluded(autoIncluded);
-        setStage("map");
+        setEditedData(result.items as Record<string, unknown>[]);
+        setServerMappedFieldKeys(result.mapped_fields);
+        setStage("review");
       } catch (err) {
         toast.error("Upload failed", {
           description: err instanceof Error ? err.message : "An error occurred",
@@ -416,7 +241,7 @@ export default function BulkImport({
         setIsUploading(false);
       }
     },
-    [fields, parseCsvAction]
+    [parseCsvAction]
   );
 
   const { getRootProps, getInputProps, isDragActive, open: openFileDialog } = useDropzone({
@@ -427,70 +252,6 @@ export default function BulkImport({
     noClick: true,
     noKeyboard: true,
   });
-
-  // ---- Map stage ----
-  const updateMapping = useCallback((colIndex: number, fieldKey: string) => {
-    setMappings((prev) => ({ ...prev, [colIndex]: fieldKey }));
-    // Auto-include when a real field is selected
-    if (fieldKey !== IGNORE_VALUE) {
-      setIncluded((prev) => ({ ...prev, [colIndex]: true }));
-    }
-  }, []);
-
-  const toggleInclude = useCallback((colIndex: number, checked: boolean) => {
-    setIncluded((prev) => ({ ...prev, [colIndex]: checked }));
-  }, []);
-
-  const mappedFieldKeys = useMemo(() => {
-    const keys = new Set<string>();
-    Object.entries(mappings).forEach(([colIdxStr, fieldKey]) => {
-      const colIdx = parseInt(colIdxStr, 10);
-      if (fieldKey !== IGNORE_VALUE && included[colIdx]) {
-        keys.add(fieldKey);
-      }
-    });
-    return keys;
-  }, [mappings, included]);
-
-  const allRequiredMapped = useMemo(
-    () => fields.filter((f) => f.required).every((f) => mappedFieldKeys.has(f.key)),
-    [fields, mappedFieldKeys]
-  );
-
-  // ---- Review stage: build data from CSV + mappings ----
-  const buildMappedData = useCallback(() => {
-    return csvRows.map((row) => {
-      const item: Record<string, unknown> = {};
-      Object.entries(mappings).forEach(([colIdxStr, fieldKey]) => {
-        const colIdx = parseInt(colIdxStr, 10);
-        if (fieldKey === IGNORE_VALUE || !included[colIdx]) return;
-        const field = fields.find((f) => f.key === fieldKey);
-        const raw = row[colIdx]?.trim() ?? "";
-        if (!raw) return;
-
-        if (field?.multi) {
-          item[fieldKey] = raw.split(",").map((s) => s.trim()).filter(Boolean);
-        } else if (field?.type === "boolean") {
-          const lower = raw.toLowerCase();
-          item[fieldKey] = lower === "true" || lower === "yes" || lower === "1";
-        } else {
-          item[fieldKey] = raw;
-        }
-      });
-      return item;
-    });
-  }, [csvRows, mappings, included, fields]);
-
-  const goToReview = useCallback(() => {
-    const data = buildMappedData();
-    setEditedData(data);
-    setStage("review");
-  }, [buildMappedData]);
-
-  const mappedFields = useMemo(
-    () => fields.filter((f) => mappedFieldKeys.has(f.key)),
-    [fields, mappedFieldKeys]
-  );
 
   // ---- Inline editing in review ----
   const updateCell = useCallback((rowIdx: number, fieldKey: string, value: unknown) => {
@@ -559,7 +320,6 @@ export default function BulkImport({
           <DialogTitle>Import {artifactName} from CSV</DialogTitle>
           <DialogDescription>
             {stage === "upload" && "Upload a CSV file to import records in bulk."}
-            {stage === "map" && "Map each CSV column to a destination field."}
             {stage === "review" && !saveResults && `${editedData.length} rows ready to import.`}
             {stage === "review" && saveResults && `${successCount} succeeded, ${failCount} failed.`}
           </DialogDescription>
@@ -600,7 +360,7 @@ export default function BulkImport({
                 <div className="space-y-3">
                   <Loader2 className="h-10 w-10 mx-auto animate-spin text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Uploading {fileName}... {uploadProgress}%
+                    Uploading {fileName}...
                   </p>
                 </div>
               ) : (
@@ -634,67 +394,6 @@ export default function BulkImport({
                     )}
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* ---- Map Stage ---- */}
-          {stage === "map" && (
-            <div className="space-y-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[180px]">Your File Column</TableHead>
-                    <TableHead className="w-[180px]">Your Sample Data</TableHead>
-                    <TableHead>Destination Column</TableHead>
-                    <TableHead className="w-[80px] text-center">Include</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {csvHeaders.map((header, idx) => {
-                    const sample = csvRows
-                      .slice(0, 3)
-                      .map((r) => r[idx])
-                      .filter(Boolean)
-                      .join(", ");
-                    const currentMapping = mappings[idx] || IGNORE_VALUE;
-                    const isIncluded = included[idx] ?? false;
-                    return (
-                      <TableRow key={idx}>
-                        <TableCell className="font-medium">{header}</TableCell>
-                        <TableCell className="text-muted-foreground text-xs max-w-[180px]">
-                          <span className="truncate block">
-                            {sample.length > 30 ? `${sample.slice(0, 30)}...` : sample || "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <ColumnPicker
-                            value={currentMapping}
-                            fields={fields}
-                            usedKeys={mappedFieldKeys}
-                            onChange={(key) => updateMapping(idx, key)}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={isIncluded && currentMapping !== IGNORE_VALUE}
-                            disabled={currentMapping === IGNORE_VALUE}
-                            onCheckedChange={(checked) => toggleInclude(idx, !!checked)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              {!allRequiredMapped && (
-                <p className="text-sm text-destructive">
-                  All required fields must be mapped:{" "}
-                  {fields
-                    .filter((f) => f.required && !mappedFieldKeys.has(f.key))
-                    .map((f) => f.label)
-                    .join(", ")}
-                </p>
               )}
             </div>
           )}
@@ -823,32 +522,9 @@ export default function BulkImport({
               Cancel
             </Button>
           )}
-          {stage === "upload" && (
-            <Button disabled>
-              Next
-            </Button>
-          )}
-
-          {stage === "map" && (
-            <Button
-              variant="ghost"
-              onClick={() => {
-                reset();
-                setStage("upload");
-              }}
-              className="mr-auto"
-            >
-              Back
-            </Button>
-          )}
-          {stage === "map" && (
-            <Button onClick={goToReview} disabled={!allRequiredMapped}>
-              Continue to Review
-            </Button>
-          )}
 
           {stage === "review" && !saveResults && (
-            <Button variant="ghost" onClick={() => setStage("map")} className="mr-auto">
+            <Button variant="ghost" onClick={() => { reset(); setStage("upload"); }} className="mr-auto">
               Back
             </Button>
           )}

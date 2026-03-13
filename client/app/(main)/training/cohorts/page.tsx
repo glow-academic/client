@@ -25,8 +25,7 @@ type CreateCohortIn = InputOf<"/api/v5/artifacts/cohorts/create", "post">;
 type CreateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/create", "post">;
 type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
 type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
-type ParseCsvIn = InputOf<"/uploads/csv", "post">;
-type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for cohorts list request ---- */
 type CohortsListBody = {
@@ -87,9 +86,9 @@ async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   return api.post("/artifacts/cohorts/update", input);
 }
 
-async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
+async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/uploads/csv", input);
+  return api.post("/artifacts/cohorts/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -192,8 +191,6 @@ export type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
-  ParseCsvIn,
-  ParseCsvOut,
   CreateCohortIn,
   CreateCohortOut,
   UpdateCohortIn,

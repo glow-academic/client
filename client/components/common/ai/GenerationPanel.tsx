@@ -32,8 +32,8 @@ interface GenerationPanelProps {
   validArtifactTypes: TypeItem[];
   validResourceTypes: TypeItem[];
   validEntryTypes: TypeItem[];
-  /** Base URL for downloads. Defaults to "/api/uploads". */
-  downloadBaseUrl?: string;
+  /** Base URL for downloads. */
+  downloadBaseUrl: string;
 }
 
 export function GenerationPanel({

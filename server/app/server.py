@@ -394,10 +394,6 @@ from app.routes.default_idp import router as default_idp_router  # noqa: E402
 
 fastapi_app.include_router(default_idp_router)
 
-from app.routes.uploads import router as uploads_router  # noqa: E402
-
-fastapi_app.include_router(uploads_router)
-
 from app.routes.health import router as health_router  # noqa: E402
 
 fastapi_app.include_router(health_router)

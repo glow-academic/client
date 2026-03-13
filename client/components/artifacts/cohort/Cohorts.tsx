@@ -17,14 +17,12 @@ import type {
   DeleteCohortOut,
   DuplicateCohortIn,
   DuplicateCohortOut,
-  ParseCsvIn,
-  ParseCsvOut,
   CreateCohortIn,
   CreateCohortOut,
   UpdateCohortIn,
   UpdateCohortOut,
 } from "@/app/(main)/training/cohorts/page";
-import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
+import BulkImport, { type ImportFieldDef, type ParseCsvResult } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import { DataTableViewOptions } from "@/components/common/table/DataTableViewOptions";
@@ -85,7 +83,7 @@ export interface CohortsProps {
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
   createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
   updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
-  parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
+  parseCsvAction?: (formData: FormData) => Promise<ParseCsvResult>;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
   pageIndex: number;
