@@ -14,7 +14,7 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
@@ -31,45 +31,45 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 class CreateProviderItem(BaseModel):
     """Single provider item for create — no provider_id."""
 
-    id: UUID | None = None
+    id: UUID | None = Field(None, description="Optional pre-assigned identifier")
 
     # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
+    name_id: UUID | None = Field(None, description="Name resource identifier")
+    name: str | None = Field(None, description="Display name value")
     # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
+    description_id: UUID | None = Field(None, description="Description resource identifier")
+    description: str | None = Field(None, description="Description text value")
+    active_flag_id: UUID | None = Field(None, description="Active flag option identifier")
+    active_flag: bool | None = Field(None, description="Whether the provider is active")
     # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
+    department_ids: list[UUID] | None = Field(None, description="Department identifiers")
+    departments: list[str] | None = Field(None, description="Department names to match")
     # ID-only fields
-    endpoint_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    value_ids: list[UUID] | None = None
+    endpoint_ids: list[UUID] | None = Field(None, description="Endpoint resource identifiers")
+    key_ids: list[UUID] | None = Field(None, description="API key resource identifiers")
+    value_ids: list[UUID] | None = Field(None, description="Value resource identifiers")
 
 
 class ProviderFieldError(BaseModel):
     """Per-field error from value resolution."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Field name that caused the error")
+    message: str = Field(..., description="Error message describing the issue")
 
 
 class ProviderResultItem(BaseModel):
     """Per-item result within a bulk create/update response."""
 
-    success: bool
-    provider_id: UUID | None = None
-    message: str
-    errors: list[ProviderFieldError] | None = None
+    success: bool = Field(..., description="Whether the operation succeeded")
+    provider_id: UUID | None = Field(None, description="Provider unique identifier")
+    message: str = Field(..., description="Result message")
+    errors: list[ProviderFieldError] | None = Field(None, description="List of field-level errors")
 
 
 class CreateProviderApiResponse(BaseModel):
     """Response model for bulk create provider endpoint."""
 
-    results: list[ProviderResultItem]
+    results: list[ProviderResultItem] = Field(..., description="List of operation results")
 
 
 async def create_provider_impl(

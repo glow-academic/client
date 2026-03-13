@@ -14,7 +14,7 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
@@ -31,45 +31,45 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 class CreateRubricItem(BaseModel):
     """Single rubric item for create — no rubric_id."""
 
-    id: UUID | None = None
+    id: UUID | None = Field(None, description="Optional pre-assigned UUID")
 
     # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
+    name_id: UUID | None = Field(None, description="Name resource UUID")
+    name: str | None = Field(None, description="Name value for resolution")
     # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
+    description_id: UUID | None = Field(None, description="Description resource UUID")
+    description: str | None = Field(None, description="Description value for resolution")
+    active_flag_id: UUID | None = Field(None, description="Active flag option UUID")
+    active_flag: bool | None = Field(None, description="Active flag boolean value")
     # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
+    department_ids: list[UUID] | None = Field(None, description="Department UUIDs")
+    departments: list[str] | None = Field(None, description="Department names for resolution")
     # ID-only fields
-    point_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+    point_ids: list[UUID] | None = Field(None, description="Point UUIDs")
+    standard_group_ids: list[UUID] | None = Field(None, description="Standard group UUIDs")
+    standard_ids: list[UUID] | None = Field(None, description="Standard UUIDs")
 
 
 class RubricFieldError(BaseModel):
     """Per-field error from value resolution."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Field name that has the error")
+    message: str = Field(..., description="Human-readable error message")
 
 
 class RubricResultItem(BaseModel):
     """Per-item result within a bulk create/update response."""
 
-    success: bool
-    rubric_id: UUID | None = None
-    message: str
-    errors: list[RubricFieldError] | None = None
+    success: bool = Field(..., description="Whether the operation succeeded")
+    rubric_id: UUID | None = Field(None, description="Rubric UUID")
+    message: str = Field(..., description="Human-readable result message")
+    errors: list[RubricFieldError] | None = Field(None, description="List of per-field errors")
 
 
 class CreateRubricApiResponse(BaseModel):
     """Response model for bulk create rubric endpoint."""
 
-    results: list[RubricResultItem]
+    results: list[RubricResultItem] = Field(..., description="List of operation results")
 
 
 async def create_rubric_impl(

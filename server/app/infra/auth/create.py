@@ -15,7 +15,7 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from app.infra.auth.permissions_context import (
@@ -39,48 +39,48 @@ class CreateAuthItem(BaseModel):
     Required fields (name): provide ID or value.
     """
 
-    id: UUID | None = None
+    id: UUID | None = Field(None, description="Optional preset UUID for the new auth provider")
 
     # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
+    name_id: UUID | None = Field(None, description="UUID of the name resource")
+    name: str | None = Field(None, description="Name value to resolve or create")
     # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    slug_id: UUID | None = None
-    slug: str | None = None
+    description_id: UUID | None = Field(None, description="UUID of the description resource")
+    description: str | None = Field(None, description="Description value to resolve or create")
+    slug_id: UUID | None = Field(None, description="UUID of the slug resource")
+    slug: str | None = Field(None, description="Slug value to resolve or create")
     # Optional flag
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
+    active_flag_id: UUID | None = Field(None, description="UUID of the active flag option")
+    active_flag: bool | None = Field(None, description="Whether the auth provider is active")
     # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    protocol_ids: list[UUID] | None = None
-    protocol: str | None = None
-    item_ids: list[UUID] | None = None
-    auth_resource_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = Field(None, description="Department UUIDs to assign")
+    departments: list[str] | None = Field(None, description="Department names to resolve")
+    protocol_ids: list[UUID] | None = Field(None, description="Protocol resource UUIDs")
+    protocol: str | None = Field(None, description="Protocol value to resolve")
+    item_ids: list[UUID] | None = Field(None, description="Auth item UUIDs")
+    auth_resource_ids: list[UUID] | None = Field(None, description="Auth resource UUIDs")
 
 
 class AuthFieldError(BaseModel):
     """Per-field error from value resolution."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Name of the field that failed validation")
+    message: str = Field(..., description="Validation error message")
 
 
 class AuthResultItem(BaseModel):
     """Per-item result within a bulk create/update response."""
 
-    success: bool
-    auth_id: UUID | None = None
-    message: str
-    errors: list[AuthFieldError] | None = None
+    success: bool = Field(..., description="Whether the operation succeeded")
+    auth_id: UUID | None = Field(None, description="UUID of the created auth provider")
+    message: str = Field(..., description="Result message")
+    errors: list[AuthFieldError] | None = Field(None, description="Per-field validation errors")
 
 
 class CreateAuthApiResponse(BaseModel):
     """Response model for bulk create auth endpoint."""
 
-    results: list[AuthResultItem]
+    results: list[AuthResultItem] = Field(..., description="Per-item creation results")
 
 
 async def create_auth_impl(

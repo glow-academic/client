@@ -14,25 +14,25 @@ MV_NAME = "runs_mv"
 class RunPricingItem(BaseModel):
     """Single pricing entry for a run. Cost computed at runtime."""
 
-    pricing_type: str | None = None
-    count: int = 0
-    pricing_id: UUID | None = None
+    pricing_type: str | None = Field(None, description="Type of pricing (e.g. input, output, cached)")
+    count: int = Field(0, description="Token count for this pricing type")
+    pricing_id: UUID | None = Field(None, description="UUID of the pricing configuration")
 
 
 class RunViewItem(BaseModel):
     """Single run from the run list."""
 
-    run_id: UUID
-    group_id: UUID | None = None
-    profiles_id: UUID | None = None
-    input_tokens: int = 0
-    output_tokens: int = 0
-    cached_input_tokens: int = 0
-    run_created_at: datetime | None = None
-    agent_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    provider_ids: list[UUID] | None = None
-    pricing: list[RunPricingItem] = Field(default_factory=list)
+    run_id: UUID = Field(..., description="UUID of the run")
+    group_id: UUID | None = Field(None, description="UUID of the owning group")
+    profiles_id: UUID | None = Field(None, description="UUID of the profile that created the run")
+    input_tokens: int = Field(0, description="Number of input tokens used")
+    output_tokens: int = Field(0, description="Number of output tokens generated")
+    cached_input_tokens: int = Field(0, description="Number of cached input tokens")
+    run_created_at: datetime | None = Field(None, description="Run creation timestamp")
+    agent_ids: list[UUID] | None = Field(None, description="Agent UUIDs involved in the run")
+    model_ids: list[UUID] | None = Field(None, description="Model UUIDs used in the run")
+    provider_ids: list[UUID] | None = Field(None, description="Provider UUIDs used in the run")
+    pricing: list[RunPricingItem] = Field(default_factory=list, description="Pricing breakdown entries")
 
 
 class GetRunListViewResponse(BaseModel):

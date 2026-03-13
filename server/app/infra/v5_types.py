@@ -29,31 +29,31 @@ class BaseResourceSection(BaseModel):
     Uses `tool_id` for create tools and `link_tool_id` for link tools.
     """
 
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+    show: bool = Field(False, description="Whether this section is visible in the UI")
+    required: bool = Field(False, description="Whether this section requires a selection")
+    suggestions: list[UUID] | None = Field(None, description="Suggested resource UUIDs for this section")
+    show_ai_generate: bool = Field(False, description="Whether AI generation is available for this section")
+    tool_id: UUID | None = Field(None, description="UUID of the create tool for this resource")
+    link_tool_id: UUID | None = Field(None, description="UUID of the link tool for this resource")
 
 
 class ListFilterOption(BaseModel):
     """Standardized option for list endpoint filter sections."""
 
-    id: str | None = None
-    name: str | None = None
-    count: int | None = None
-    hex_code: str | None = None
-    value: str | None = None
-    type: str | None = None
+    id: str | None = Field(None, description="Unique identifier for this filter option")
+    name: str | None = Field(None, description="Display name")
+    count: int | None = Field(None, description="Number of matching records")
+    hex_code: str | None = Field(None, description="Hex color code for display")
+    value: str | None = Field(None, description="Internal value")
+    type: str | None = Field(None, description="Option type discriminator")
 
 
 class ListFilterSection(BaseModel):
     """Filter section with options and echoed request state."""
 
-    options: list[ListFilterOption] | None = None
-    selected_ids: list[str] | None = None
-    search: str | None = None
+    options: list[ListFilterOption] | None = Field(None, description="Available filter options")
+    selected_ids: list[str] | None = Field(None, description="Currently selected filter option IDs")
+    search: str | None = Field(None, description="Active search text for filtering")
 
     @classmethod
     def from_sql_options(
@@ -90,42 +90,42 @@ class ListFilterSection(BaseModel):
 class DomainAgent(BaseModel):
     """Maps a domain to its assigned agent and group. Used internally by server."""
 
-    domain_id: UUID
-    agent_id: UUID | None = None
-    group_id: UUID | None = None  # Per-resource group ID for this domain
+    domain_id: UUID = Field(..., description="UUID of the domain")
+    agent_id: UUID | None = Field(None, description="UUID of the assigned agent")
+    group_id: UUID | None = Field(None, description="Per-resource group ID for this domain")
 
 
 class EntryAgent(BaseModel):
     """Maps an entry_type to its assigned agent and per-entry group."""
 
-    entry_type: str  # e.g., "contents", "hints", "grades", "feedbacks"
-    agent_id: UUID | None = None
-    group_id: UUID | None = None
+    entry_type: str = Field(..., description="Entry type key (e.g. contents, hints, grades, feedbacks)")
+    agent_id: UUID | None = Field(None, description="UUID of the assigned agent")
+    group_id: UUID | None = Field(None, description="Per-entry group ID")
 
 
 class DomainData(BaseModel):
     """Rich metadata for a domain, used in generate/regenerate modals."""
 
-    domain_id: UUID
-    name: str  # Display name, e.g., "Name", "Description", "Instructions"
-    description: str  # Description for tooltips/modals
-    resource: str  # Internal resource type (for server use if needed)
-    icon: str | None = None  # Optional display icon
-    required: bool = False
-    show: bool = True
+    domain_id: UUID = Field(..., description="UUID of the domain")
+    name: str = Field(..., description="Display name (e.g. Name, Description, Instructions)")
+    description: str = Field(..., description="Description for tooltips and modals")
+    resource: str = Field(..., description="Internal resource type identifier")
+    icon: str | None = Field(None, description="Optional display icon identifier")
+    required: bool = Field(False, description="Whether this domain is required")
+    show: bool = Field(True, description="Whether to show this domain in the UI")
 
 
 class CandidateAgentRow(BaseModel):
     """SQL row type for candidate agent from composite type."""
 
-    agent_id: UUID
-    agent_name: str
-    tool_resources: list[str] | None = None
-    create_tool_ids: list[UUID | None] | None = None
-    link_tool_ids: list[UUID | None] | None = None
-    department_ids: list[UUID] | None = None
-    updated_at: datetime
-    is_mcp: bool = False
+    agent_id: UUID = Field(..., description="UUID of the agent")
+    agent_name: str = Field(..., description="Display name of the agent")
+    tool_resources: list[str] | None = Field(None, description="Resource types covered by the agent tools")
+    create_tool_ids: list[UUID | None] | None = Field(None, description="Create tool UUIDs per resource")
+    link_tool_ids: list[UUID | None] | None = Field(None, description="Link tool UUIDs per resource")
+    department_ids: list[UUID] | None = Field(None, description="Department UUIDs the agent belongs to")
+    updated_at: datetime = Field(..., description="Last updated timestamp")
+    is_mcp: bool = Field(False, description="Whether the agent is an MCP agent")
 
 
 @dataclass
@@ -218,114 +218,114 @@ def build_domain_data(
 class InternalResponseBase(BaseModel):
     """Base for all internal/websocket fetcher responses. Flat config chain."""
 
-    systems: list[QGetSystemsV4Item] | None = None
-    agents: list[QGetAgentsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
-    providers: list[QGetProvidersV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
-    args: list[QGetArgsV4Item] | None = None
-    args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    profile: list[QGetProfilesV4Item] | None = None
-    params: BaseModel | None = None
-    resource_system_ids: dict[str, UUID | None] | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
+    systems: list[QGetSystemsV4Item] | None = Field(None, description="System configuration items")
+    agents: list[QGetAgentsV4Item] | None = Field(None, description="Agent configuration items")
+    models: list[QGetModelsV4Item] | None = Field(None, description="Model configuration items")
+    providers: list[QGetProvidersV4Item] | None = Field(None, description="Provider configuration items")
+    tools: list[QGetToolsV4Item] | None = Field(None, description="Tool configuration items")
+    args: list[QGetArgsV4Item] | None = Field(None, description="Argument configuration items")
+    args_outputs: list[QGetArgsOutputsV4Item] | None = Field(None, description="Argument output configuration items")
+    profile: list[QGetProfilesV4Item] | None = Field(None, description="Profile configuration items")
+    params: BaseModel | None = Field(None, description="Additional parameters model")
+    resource_system_ids: dict[str, UUID | None] | None = Field(None, description="Mapping of resource type to system UUID")
+    resource_agent_ids: dict[str, UUID | None] | None = Field(None, description="Mapping of resource type to agent UUID")
+    group_id: UUID | None = Field(None, description="UUID of the owning group")
 
 
 class FilterOption(BaseModel):
     """A single filter option for dropdown selectors."""
 
-    value: str
-    label: str | None = None
-    count: int | None = None
+    value: str = Field(..., description="Internal value for the filter option")
+    label: str | None = Field(None, description="Display label for the filter option")
+    count: int | None = Field(None, description="Number of matching records")
 
 
 class HistoryItem(BaseModel):
     """Single attempt row in history list."""
 
-    attempt_id: UUID
-    date: str | None = None
-    profile_id: UUID | None = None
-    profile_name: str | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    num_scenarios: int | None = None
-    num_scenarios_completed: int | None = None
-    infinite_mode: bool | None = None
-    time_limit: int | None = None
-    persona_names_junction: list[str] | None = None
-    persona_colors_junction: list[str] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_titles: list[str] | None = None
-    department_ids: list[str] | None = None
-    score: int | None = None
-    score_status: str | None = None
-    pass_pct: int | None = None
-    show_view: bool | None = None
-    show_continue: bool | None = None
-    is_archived: bool | None = None
-    practice_simulation: bool | None = None
-    practice_scenario_id: UUID | None = None
+    attempt_id: UUID = Field(..., description="UUID of the attempt")
+    date: str | None = Field(None, description="Formatted date string of the attempt")
+    profile_id: UUID | None = Field(None, description="UUID of the profile who took the attempt")
+    profile_name: str | None = Field(None, description="Display name of the profile")
+    simulation_id: UUID | None = Field(None, description="UUID of the simulation")
+    simulation_name: str | None = Field(None, description="Display name of the simulation")
+    num_scenarios: int | None = Field(None, description="Total number of scenarios in the attempt")
+    num_scenarios_completed: int | None = Field(None, description="Number of scenarios completed")
+    infinite_mode: bool | None = Field(None, description="Whether the attempt is in infinite mode")
+    time_limit: int | None = Field(None, description="Time limit in seconds")
+    persona_names_junction: list[str] | None = Field(None, description="Persona names from junction table")
+    persona_colors_junction: list[str] | None = Field(None, description="Persona colors from junction table")
+    scenario_ids: list[UUID] | None = Field(None, description="UUIDs of associated scenarios")
+    scenario_titles: list[str] | None = Field(None, description="Titles of associated scenarios")
+    department_ids: list[str] | None = Field(None, description="Associated department IDs")
+    score: int | None = Field(None, description="Overall attempt score")
+    score_status: str | None = Field(None, description="Score status label (e.g. pass, fail)")
+    pass_pct: int | None = Field(None, description="Pass percentage threshold")
+    show_view: bool | None = Field(None, description="Whether the view action is available")
+    show_continue: bool | None = Field(None, description="Whether the continue action is available")
+    is_archived: bool | None = Field(None, description="Whether the attempt is archived")
+    practice_simulation: bool | None = Field(None, description="Whether this is a practice simulation")
+    practice_scenario_id: UUID | None = Field(None, description="UUID of the practice scenario")
 
 
 class HistoryResponse(BaseModel):
     """Paginated attempt history list."""
 
-    data: list[HistoryItem] = Field(default_factory=list)
-    total_count: int = 0
-    page: int = 0
-    page_size: int = 20
-    total_pages: int = 0
-    simulation_options: list[FilterOption] | None = None
-    scenario_options: list[FilterOption] | None = None
-    profile_options: list[FilterOption] | None = None
+    data: list[HistoryItem] = Field(default_factory=list, description="List of history items")
+    total_count: int = Field(0, description="Total number of matching records")
+    page: int = Field(0, description="Current page number")
+    page_size: int = Field(20, description="Items per page")
+    total_pages: int = Field(0, description="Total number of pages")
+    simulation_options: list[FilterOption] | None = Field(None, description="Filter options for simulations")
+    scenario_options: list[FilterOption] | None = Field(None, description="Filter options for scenarios")
+    profile_options: list[FilterOption] | None = Field(None, description="Filter options for profiles")
 
 
 class TestHistoryItem(BaseModel):
     """Single test row in history list."""
 
-    attempt_id: str
-    eval_id: str | None = None
-    eval_name: str | None = None
-    eval_description: str | None = None
-    rubric_id: str | None = None
-    rubric_name: str | None = None
-    created_at: str | None = None
-    archived: bool = False
-    status: str = "pending"
-    total_runs: int = 0
-    completed_runs: int = 0
-    pending_runs: int = 0
+    attempt_id: str = Field(..., description="ID of the test attempt")
+    eval_id: str | None = Field(None, description="ID of the evaluation")
+    eval_name: str | None = Field(None, description="Display name of the evaluation")
+    eval_description: str | None = Field(None, description="Description of the evaluation")
+    rubric_id: str | None = Field(None, description="ID of the rubric")
+    rubric_name: str | None = Field(None, description="Display name of the rubric")
+    created_at: str | None = Field(None, description="Creation timestamp string")
+    archived: bool = Field(False, description="Whether the test is archived")
+    status: str = Field("pending", description="Current test status")
+    total_runs: int = Field(0, description="Total number of runs")
+    completed_runs: int = Field(0, description="Number of completed runs")
+    pending_runs: int = Field(0, description="Number of pending runs")
 
 
 class TestHistoryResponse(BaseModel):
     """Paginated test history list."""
 
-    data: list[TestHistoryItem] = Field(default_factory=list)
-    total_count: int = 0
-    page: int = 0
-    page_size: int = 10
-    eval_options: list[FilterOption] | None = None
+    data: list[TestHistoryItem] = Field(default_factory=list, description="List of test history items")
+    total_count: int = Field(0, description="Total number of matching records")
+    page: int = Field(0, description="Current page number")
+    page_size: int = Field(10, description="Items per page")
+    eval_options: list[FilterOption] | None = Field(None, description="Filter options for evaluations")
 
 
 class AnalyticsFilterOptions(BaseModel):
     """Filter options returned by analytics endpoints for populating UI dropdowns."""
 
-    earliest_date: str | None = None
-    simulation_options: list[FilterOption] = Field(default_factory=list)
-    scenario_options: list[FilterOption] = Field(default_factory=list)
-    profile_options: list[FilterOption] = Field(default_factory=list)
+    earliest_date: str | None = Field(None, description="Earliest date available for filtering")
+    simulation_options: list[FilterOption] = Field(default_factory=list, description="Filter options for simulations")
+    scenario_options: list[FilterOption] = Field(default_factory=list, description="Filter options for scenarios")
+    profile_options: list[FilterOption] = Field(default_factory=list, description="Filter options for profiles")
 
 
 class BaseAnalyticsRequest(BaseModel):
     """Common request fields shared across analytics endpoints."""
 
-    start_date: str | None = None
-    end_date: str | None = None
-    cohort_ids: list[str] = Field(default_factory=list)
-    department_ids: list[str] = Field(default_factory=list)
-    simulation_ids: list[str] = Field(default_factory=list)
-    roles: list[str] = Field(default_factory=list)
-    simulation_filters: list[str] = Field(default_factory=list)
-    actor_profile_id: str | None = None
-    target_profile_id: str | None = None
+    start_date: str | None = Field(None, description="Start date for the analytics period")
+    end_date: str | None = Field(None, description="End date for the analytics period")
+    cohort_ids: list[str] = Field(default_factory=list, description="Cohort IDs to filter by")
+    department_ids: list[str] = Field(default_factory=list, description="Department IDs to filter by")
+    simulation_ids: list[str] = Field(default_factory=list, description="Simulation IDs to filter by")
+    roles: list[str] = Field(default_factory=list, description="Roles to filter by")
+    simulation_filters: list[str] = Field(default_factory=list, description="Additional simulation filter values")
+    actor_profile_id: str | None = Field(None, description="Profile ID of the requesting actor")
+    target_profile_id: str | None = Field(None, description="Profile ID of the target user")

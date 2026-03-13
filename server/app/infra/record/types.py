@@ -2,69 +2,69 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RecordRequest(BaseModel):
     """Request for record profile report — dashboard scoped to one profile."""
 
-    target_profile_id: UUID
+    target_profile_id: UUID = Field(..., description="Target profile ID to scope data")
 
     # Global filters
-    start_date: str | None = None
-    end_date: str | None = None
-    cohort_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_filters: list[str] | None = None
-    actor_profile_id: UUID | None = None
+    start_date: str | None = Field(None, description="Filter start date")
+    end_date: str | None = Field(None, description="Filter end date")
+    cohort_ids: list[UUID] | None = Field(None, description="Cohort IDs to filter by")
+    simulation_ids: list[UUID] | None = Field(None, description="Simulation IDs to filter by")
+    department_ids: list[UUID] | None = Field(None, description="Department IDs to filter by")
+    simulation_filters: list[str] | None = Field(None, description="Simulation filter strings")
+    actor_profile_id: UUID | None = Field(None, description="Acting user profile ID")
 
     # Section pickers
-    rubric_ids: list[UUID] | None = None
-    rubric_search: str | None = None
-    simulation_picker_ids: list[UUID] | None = None
-    simulation_picker_search: str | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_search: str | None = None
+    rubric_ids: list[UUID] | None = Field(None, description="Rubric IDs for section picker")
+    rubric_search: str | None = Field(None, description="Search string for rubrics")
+    simulation_picker_ids: list[UUID] | None = Field(None, description="Simulation picker IDs")
+    simulation_picker_search: str | None = Field(None, description="Search string for simulations")
+    parameter_ids: list[UUID] | None = Field(None, description="Parameter IDs for section picker")
+    parameter_search: str | None = Field(None, description="Search string for parameters")
+    scenario_ids: list[UUID] | None = Field(None, description="Scenario IDs for section picker")
+    scenario_search: str | None = Field(None, description="Search string for scenarios")
 
     # History section (inline in /get for backward compat)
-    history_practice: bool = False
-    history_scenario_ids: list[UUID] | None = None
-    history_infinite_mode: bool | None = None
-    history_show_archived: bool = False
-    history_sort_by: str | None = "date"
-    history_sort_order: str | None = "desc"
-    history_page: int = 0
-    history_page_size: int = 20
-    history_simulation_search: str | None = None
-    history_scenario_search: str | None = None
-    history_profile_search: str | None = None
+    history_practice: bool = Field(False, description="Filter to practice attempts only")
+    history_scenario_ids: list[UUID] | None = Field(None, description="Scenario IDs for history filter")
+    history_infinite_mode: bool | None = Field(None, description="Filter by infinite mode status")
+    history_show_archived: bool = Field(False, description="Include archived attempts")
+    history_sort_by: str | None = Field("date", description="History sort field")
+    history_sort_order: str | None = Field("desc", description="History sort direction")
+    history_page: int = Field(0, description="History pagination page number")
+    history_page_size: int = Field(20, description="History items per page")
+    history_simulation_search: str | None = Field(None, description="Search string for history simulations")
+    history_scenario_search: str | None = Field(None, description="Search string for history scenarios")
+    history_profile_search: str | None = Field(None, description="Search string for history profiles")
 
 
 class ListRecordRequest(BaseModel):
     """Request for record history list endpoint (paginated attempt history)."""
 
-    target_profile_id: UUID
+    target_profile_id: UUID = Field(..., description="Target profile ID to scope data")
 
     # Global filters
-    start_date: str | None = None
-    end_date: str | None = None
-    cohort_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
+    start_date: str | None = Field(None, description="Filter start date")
+    end_date: str | None = Field(None, description="Filter end date")
+    cohort_ids: list[UUID] | None = Field(None, description="Cohort IDs to filter by")
+    department_ids: list[UUID] | None = Field(None, description="Department IDs to filter by")
 
     # History-specific
-    practice: bool = False
-    scenario_ids: list[UUID] | None = None
-    infinite_mode: bool | None = None
-    show_archived: bool = False
-    sort_by: str = "date"
-    sort_order: str = "desc"
-    page: int = 0
-    page_size: int = 20
-    simulation_search: str | None = None
-    scenario_search: str | None = None
+    practice: bool = Field(False, description="Filter to practice attempts only")
+    scenario_ids: list[UUID] | None = Field(None, description="Scenario IDs to filter by")
+    infinite_mode: bool | None = Field(None, description="Filter by infinite mode status")
+    show_archived: bool = Field(False, description="Include archived attempts")
+    sort_by: str = Field("date", description="Sort field name")
+    sort_order: str = Field("desc", description="Sort direction (asc or desc)")
+    page: int = Field(0, description="Pagination page number")
+    page_size: int = Field(20, description="Items per page")
+    simulation_search: str | None = Field(None, description="Search string for simulations")
+    scenario_search: str | None = Field(None, description="Search string for scenarios")
 
 
 # =============================================================================
@@ -75,7 +75,7 @@ class ListRecordRequest(BaseModel):
 class ExportRecordApiResponse(BaseModel):
     """Response model for record export."""
 
-    content: str
-    file_name: str
-    mime_type: str
-    row_count: int
+    content: str = Field(..., description="Base64-encoded file content")
+    file_name: str = Field(..., description="Suggested download file name")
+    mime_type: str = Field(..., description="MIME type of the export file")
+    row_count: int = Field(..., description="Number of rows in the export")

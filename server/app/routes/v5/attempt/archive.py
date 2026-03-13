@@ -22,21 +22,21 @@ router = APIRouter()
 
 
 class ArchiveAttemptsRequest(BaseModel):
-    archived: bool
-    attempt_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    start_date: str | None = None
-    end_date: str | None = None
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile_ids_filter: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    infinite_mode: bool | None = None
+    archived: bool = Field(..., description="Whether to archive (true) or unarchive (false)")
+    attempt_ids: list[UUID] | None = Field(default_factory=list, description="Specific attempt UUIDs to archive")  # type: ignore[arg-type]
+    start_date: str | None = Field(None, description="Start date for filter-based archive")
+    end_date: str | None = Field(None, description="End date for filter-based archive")
+    cohort_ids: list[UUID] | None = Field(default_factory=list, description="Cohort UUIDs to filter by")  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list, description="Department UUIDs to filter by")  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list, description="Simulation UUIDs to filter by")  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list, description="Scenario UUIDs to filter by")  # type: ignore[arg-type]
+    profile_ids_filter: list[UUID] | None = Field(default_factory=list, description="Profile UUIDs to filter by")  # type: ignore[arg-type]
+    infinite_mode: bool | None = Field(None, description="Filter by infinite mode status")
 
 
 class ArchiveAttemptsResponse(BaseModel):
-    updated_count: int = 0
-    profile_ids_to_invalidate: list[str] | None = None
+    updated_count: int = Field(0, description="Number of attempts updated")
+    profile_ids_to_invalidate: list[str] | None = Field(None, description="Profile IDs whose caches need invalidation")
 
 
 @router.post("/archive", response_model=ArchiveAttemptsResponse)

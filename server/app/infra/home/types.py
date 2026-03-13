@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infra.auth.types import AnalyticsFacets
 from app.infra.chat.types import (
@@ -21,10 +21,10 @@ from app.infra.v5_types import HistoryResponse
 class ExportHomeApiResponse(BaseModel):
     """Response model for home certificate export."""
 
-    content: str
-    file_name: str
-    mime_type: str
-    row_count: int
+    content: str = Field(..., description="Base64-encoded file content")
+    file_name: str = Field(..., description="Suggested download file name")
+    mime_type: str = Field(..., description="MIME type of the export file")
+    row_count: int = Field(..., description="Number of rows in the export")
 
 
 # =============================================================================
@@ -45,12 +45,12 @@ class GetHomeResponse(BaseModel):
     Includes inline analytics facets for SSR filter rendering.
     """
 
-    actor_name: str | None = None
-    items: list[ChatSimulationOperational] | None = None
-    rubrics: list[RubricMapping] | None = None
-    standard_groups: list[StandardGroupMapping] | None = None
-    standards: list[StandardMapping] | None = None
-    analytics: AnalyticsFacets | None = None
+    actor_name: str | None = Field(None, description="Current user display name")
+    items: list[ChatSimulationOperational] | None = Field(None, description="Available simulation cards")
+    rubrics: list[RubricMapping] | None = Field(None, description="Rubric mapping data")
+    standard_groups: list[StandardGroupMapping] | None = Field(None, description="Standard group mapping data")
+    standards: list[StandardMapping] | None = Field(None, description="Standard mapping data")
+    analytics: AnalyticsFacets | None = Field(None, description="Inline analytics facets for SSR")
 
 
 # =============================================================================
@@ -61,14 +61,14 @@ class GetHomeResponse(BaseModel):
 class ListHomeRequest(BaseModel):
     """Request for home list endpoint — paginated attempt history."""
 
-    sort_by: str | None = "date"
-    sort_order: str | None = "desc"
-    page: int = 0
-    page_size: int = 20
-    simulation_search: str | None = None
-    scenario_search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    infinite_mode: bool | None = None
+    sort_by: str | None = Field("date", description="Sort field name")
+    sort_order: str | None = Field("desc", description="Sort direction (asc or desc)")
+    page: int = Field(0, description="Pagination page number")
+    page_size: int = Field(20, description="Items per page")
+    simulation_search: str | None = Field(None, description="Search string for simulations")
+    scenario_search: str | None = Field(None, description="Search string for scenarios")
+    scenario_ids: list[UUID] | None = Field(None, description="Scenario IDs to filter by")
+    infinite_mode: bool | None = Field(None, description="Filter by infinite mode status")
 
 
 class ListHomeResponse(HistoryResponse):

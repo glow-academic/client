@@ -8,7 +8,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infra.globals import get_pool, get_redis_client, get_upload_folder
 from app.infra.persona.audit import run_persona_operation_with_audit
@@ -23,21 +23,21 @@ class SearchPersonaApiRequest(BaseModel):
     """Request model for persona search endpoint."""
 
     # Main filters
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
+    search: str | None = Field(None, description="Full-text search query for personas")
+    scenario_ids: list[UUID] | None = Field(None, description="Filter by scenario UUIDs")
+    field_ids: list[UUID] | None = Field(None, description="Filter by field UUIDs")
+    filter_department_ids: list[UUID] | None = Field(None, description="Filter by department UUIDs")
     # Facet search text
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    color_search: str | None = None
-    icon_search: str | None = None
-    voice_search: str | None = None
-    instruction_search: str | None = None
+    scenario_search: str | None = Field(None, description="Search text for scenario facet")
+    field_search: str | None = Field(None, description="Search text for field facet")
+    department_search: str | None = Field(None, description="Search text for department facet")
+    color_search: str | None = Field(None, description="Search text for color facet")
+    icon_search: str | None = Field(None, description="Search text for icon facet")
+    voice_search: str | None = Field(None, description="Search text for voice facet")
+    instruction_search: str | None = Field(None, description="Search text for instruction facet")
     # Pagination
-    page_size: int | None = 12
-    page_offset: int | None = 0
+    page_size: int | None = Field(12, description="Number of results per page")
+    page_offset: int | None = Field(0, description="Pagination offset")
 
 
 @router.post("/search", response_model=ListPersonaApiResponse)

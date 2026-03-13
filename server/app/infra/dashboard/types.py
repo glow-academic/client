@@ -403,178 +403,178 @@ class FooterScenarioStats(BaseModel):
 
 
 class FooterScenarioSimulationFact(BaseModel):
-    scenario_id: str | None = None
-    simulation_id: str | None = None
-    simulation_name: str | None = None
-    avg_score: float | None = None
-    success_rate: float | None = None
-    total_attempts: int | None = None
-    completed_attempts: int | None = None
+    scenario_id: str | None = Field(None, description="Associated scenario ID")
+    simulation_id: str | None = Field(None, description="Associated simulation ID")
+    simulation_name: str | None = Field(None, description="Simulation display name")
+    avg_score: float | None = Field(None, description="Average score")
+    success_rate: float | None = Field(None, description="Success rate percentage")
+    total_attempts: int | None = Field(None, description="Total number of attempts")
+    completed_attempts: int | None = Field(None, description="Number of completed attempts")
 
 
 class FooterScenarioSimulationPerformance(BaseModel):
-    simulation_facts: list[FooterScenarioSimulationFact] = Field(default_factory=list)
-    valid_scenario_ids: list[str] = Field(default_factory=list)
-    status: str = "neutral"
+    simulation_facts: list[FooterScenarioSimulationFact] = Field(default_factory=list, description="Per-simulation scenario facts")
+    valid_scenario_ids: list[str] = Field(default_factory=list, description="Valid scenario IDs in scope")
+    status: str = Field("neutral", description="Section status indicator")
 
 
 class FooterScenarioCompositionSummary(BaseModel):
     """Per-scenario summary with high/low chat split."""
 
-    scenario_id: str | None = None
-    name: str | None = None
-    total_chats: int | None = None
-    high_count: int | None = None
-    low_count: int | None = None
-    high_avg_score: float | None = None
-    low_avg_score: float | None = None
+    scenario_id: str | None = Field(None, description="Associated scenario ID")
+    name: str | None = Field(None, description="Scenario display name")
+    total_chats: int | None = Field(None, description="Total number of chats")
+    high_count: int | None = Field(None, description="Count of high-scoring chats")
+    low_count: int | None = Field(None, description="Count of low-scoring chats")
+    high_avg_score: float | None = Field(None, description="Average score of high group")
+    low_avg_score: float | None = Field(None, description="Average score of low group")
 
 
 class FooterScenarioCompositionParamFact(BaseModel):
     """Parameter counts per (scenario, group) — group is 'high' or 'low'."""
 
-    scenario_id: str | None = None
-    group: str | None = None
-    parameter_id: str | None = None
-    parameter_item_id: str | None = None
-    chat_count: int | None = None
+    scenario_id: str | None = Field(None, description="Associated scenario ID")
+    group: str | None = Field(None, description="Score group (high or low)")
+    parameter_id: str | None = Field(None, description="Parameter identifier")
+    parameter_item_id: str | None = Field(None, description="Parameter item identifier")
+    chat_count: int | None = Field(None, description="Number of chats in this group")
 
 
 class FooterScenarioComposition(BaseModel):
     scenario_summaries: list[FooterScenarioCompositionSummary] = Field(
-        default_factory=list
+        default_factory=list, description="Per-scenario composition summaries"
     )
     chat_parameter_facts: list[FooterScenarioCompositionParamFact] = Field(
-        default_factory=list
+        default_factory=list, description="Chat parameter composition facts"
     )
-    valid_scenario_ids: list[str] = Field(default_factory=list)
-    status: str = "neutral"
+    valid_scenario_ids: list[str] = Field(default_factory=list, description="Valid scenario IDs in scope")
+    status: str = Field("neutral", description="Section status indicator")
 
 
 class DashboardFooterMetrics(BaseModel):
     scenario_performance: FooterScenarioPerformance = Field(
-        default_factory=FooterScenarioPerformance
+        default_factory=FooterScenarioPerformance, description="Scenario attribute performance data"
     )
-    scenario_stats: FooterScenarioStats = Field(default_factory=FooterScenarioStats)
+    scenario_stats: FooterScenarioStats = Field(default_factory=FooterScenarioStats, description="Numeric scenario statistics")
     scenario_simulation_performance: FooterScenarioSimulationPerformance = Field(
-        default_factory=FooterScenarioSimulationPerformance
+        default_factory=FooterScenarioSimulationPerformance, description="Per-simulation scenario performance"
     )
     scenario_composition: FooterScenarioComposition = Field(
-        default_factory=FooterScenarioComposition
+        default_factory=FooterScenarioComposition, description="Scenario composition analysis"
     )
 
 
 class DashboardSimulationMeta(BaseModel):
-    simulation_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    department_ids: list[str] | None = None
-    time_limit: int | None = None
+    simulation_id: str | None = Field(None, description="Simulation identifier")
+    name: str | None = Field(None, description="Simulation display name")
+    description: str | None = Field(None, description="Simulation description")
+    department_ids: list[str] | None = Field(None, description="Associated department IDs")
+    time_limit: int | None = Field(None, description="Time limit in seconds")
 
 
 class DashboardScenarioMeta(BaseModel):
-    scenario_id: str | None = None
-    name: str | None = None
-    description: str | None = None
+    scenario_id: str | None = Field(None, description="Scenario identifier")
+    name: str | None = Field(None, description="Scenario display name")
+    description: str | None = Field(None, description="Scenario description")
 
 
 class DashboardRubricMeta(BaseModel):
-    rubric_id: str | None = None
-    name: str | None = None
-    description: str | None = None
+    rubric_id: str | None = Field(None, description="Rubric identifier")
+    name: str | None = Field(None, description="Rubric display name")
+    description: str | None = Field(None, description="Rubric description")
 
 
 class DashboardParameterMeta(BaseModel):
-    parameter_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    numerical: bool | None = None
-    document_parameter: bool | None = None
-    persona_parameter: bool | None = None
+    parameter_id: str | None = Field(None, description="Parameter identifier")
+    name: str | None = Field(None, description="Parameter display name")
+    description: str | None = Field(None, description="Parameter description")
+    numerical: bool | None = Field(None, description="Whether parameter is numerical")
+    document_parameter: bool | None = Field(None, description="Whether parameter is document-type")
+    persona_parameter: bool | None = Field(None, description="Whether parameter is persona-type")
 
 
 class DashboardFieldMeta(BaseModel):
-    field_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    parameter_id: str | None = None
-    parameter_name: str | None = None
+    field_id: str | None = Field(None, description="Field identifier")
+    name: str | None = Field(None, description="Field display name")
+    description: str | None = Field(None, description="Field description")
+    parameter_id: str | None = Field(None, description="Parent parameter ID")
+    parameter_name: str | None = Field(None, description="Parent parameter name")
 
 
 class DashboardInsightObject(BaseModel):
-    insight: str | None = None
+    insight: str | None = Field(None, description="Generated insight text")
 
 
 class DashboardInsights(BaseModel):
-    rubric_trend: str | None = None
-    rubric_heatmap: str | None = None
-    attempt_improvement: str | None = None
-    skill_performance: str | None = None
-    scenario_performance: str | None = None
-    scenario_stats: str | None = None
-    scenario_simulation_performance: str | None = None
-    scenario_composition: str | None = None
-    persona: dict[str, str | DashboardInsightObject | None] | None = None
-    cohort: dict[str, str | DashboardInsightObject | None] | None = None
+    rubric_trend: str | None = Field(None, description="Rubric trend insight text")
+    rubric_heatmap: str | None = Field(None, description="Rubric heatmap insight text")
+    attempt_improvement: str | None = Field(None, description="Attempt improvement insight text")
+    skill_performance: str | None = Field(None, description="Skill performance insight text")
+    scenario_performance: str | None = Field(None, description="Scenario performance insight text")
+    scenario_stats: str | None = Field(None, description="Scenario stats insight text")
+    scenario_simulation_performance: str | None = Field(None, description="Scenario simulation insight text")
+    scenario_composition: str | None = Field(None, description="Scenario composition insight text")
+    persona: dict[str, str | DashboardInsightObject | None] | None = Field(None, description="Per-persona insights")
+    cohort: dict[str, str | DashboardInsightObject | None] | None = Field(None, description="Per-cohort insights")
 
 
 class DashboardThresholds(BaseModel):
-    success: float = 0
-    warning: float = 0
-    danger: float = 0
+    success: float = Field(0, description="Success threshold value")
+    warning: float = Field(0, description="Warning threshold value")
+    danger: float = Field(0, description="Danger threshold value")
 
 
 class DashboardBundleResponse(BaseModel):
     """Target dashboard bundle shape expected by dashboard client."""
 
     header_metrics: DashboardHeaderMetrics = Field(
-        default_factory=DashboardHeaderMetrics
+        default_factory=DashboardHeaderMetrics, description="Header summary metrics"
     )
     primary_metrics: DashboardPrimaryMetrics = Field(
-        default_factory=DashboardPrimaryMetrics
+        default_factory=DashboardPrimaryMetrics, description="Primary dashboard metrics"
     )
     secondary_metrics: DashboardSecondaryMetrics = Field(
-        default_factory=DashboardSecondaryMetrics
+        default_factory=DashboardSecondaryMetrics, description="Secondary dashboard metrics"
     )
     footer_metrics: DashboardFooterMetrics = Field(
-        default_factory=DashboardFooterMetrics
+        default_factory=DashboardFooterMetrics, description="Footer dashboard metrics"
     )
 
-    simulations: list[DashboardSimulationMeta] = Field(default_factory=list)
-    scenarios: list[DashboardScenarioMeta] = Field(default_factory=list)
-    rubrics: list[DashboardRubricMeta] = Field(default_factory=list)
-    parameters: list[DashboardParameterMeta] = Field(default_factory=list)
-    fields: list[DashboardFieldMeta] = Field(default_factory=list)
+    simulations: list[DashboardSimulationMeta] = Field(default_factory=list, description="Simulation metadata list")
+    scenarios: list[DashboardScenarioMeta] = Field(default_factory=list, description="Scenario metadata list")
+    rubrics: list[DashboardRubricMeta] = Field(default_factory=list, description="Rubric metadata list")
+    parameters: list[DashboardParameterMeta] = Field(default_factory=list, description="Parameter metadata list")
+    fields: list[DashboardFieldMeta] = Field(default_factory=list, description="Field metadata list")
 
-    thresholds: DashboardThresholds | None = None
-    insights: DashboardInsights | None = None
+    thresholds: DashboardThresholds | None = Field(None, description="Score thresholds configuration")
+    insights: DashboardInsights | None = Field(None, description="Generated insights per section")
 
-    simulation_options: list[FilterOption] = Field(default_factory=list)
+    simulation_options: list[FilterOption] = Field(default_factory=list, description="Simulation filter options")
 
     # Profile metadata (populated when target_profile_id is provided)
-    profile_name: str | None = None
-    profile_emails: list[str] | None = None
-    profile_primary_email: str | None = None
-    profile_role: str | None = None
+    profile_name: str | None = Field(None, description="Target profile display name")
+    profile_emails: list[str] | None = Field(None, description="Target profile email addresses")
+    profile_primary_email: str | None = Field(None, description="Target profile primary email")
+    profile_role: str | None = Field(None, description="Target profile role")
 
     # Inline analytics facets
-    analytics: AnalyticsFacets | None = None
+    analytics: AnalyticsFacets | None = Field(None, description="Inline analytics facets for SSR")
 
     # Attempt history
-    history: HistoryResponse | None = None
+    history: HistoryResponse | None = Field(None, description="Inline attempt history response")
 
 
 class ListDashboardResponse(BaseModel):
     """Response for dashboard history list endpoint."""
 
-    data: list = Field(default_factory=list)
-    total_count: int = 0
-    page: int = 0
-    page_size: int = 20
-    total_pages: int = 0
-    simulation_options: list[FilterOption] | None = None
-    scenario_options: list[FilterOption] | None = None
-    profile_options: list[FilterOption] | None = None
+    data: list = Field(default_factory=list, description="List of history row items")
+    total_count: int = Field(0, description="Total number of matching records")
+    page: int = Field(0, description="Current page number")
+    page_size: int = Field(20, description="Items per page")
+    total_pages: int = Field(0, description="Total number of pages")
+    simulation_options: list[FilterOption] | None = Field(None, description="Simulation filter options")
+    scenario_options: list[FilterOption] | None = Field(None, description="Scenario filter options")
+    profile_options: list[FilterOption] | None = Field(None, description="Profile filter options")
 
 
 # Resolve forward reference for DashboardPrimaryMetrics.skill_performance
@@ -588,7 +588,7 @@ DashboardPrimaryMetrics.model_rebuild()
 class ExportDashboardApiResponse(BaseModel):
     """Response model for dashboard export."""
 
-    content: str
-    file_name: str
-    mime_type: str
-    row_count: int
+    content: str = Field(..., description="Base64-encoded file content")
+    file_name: str = Field(..., description="Suggested download file name")
+    mime_type: str = Field(..., description="MIME type of the export file")
+    row_count: int = Field(..., description="Number of rows in the export")

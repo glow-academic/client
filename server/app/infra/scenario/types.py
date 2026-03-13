@@ -196,8 +196,8 @@ class ScenarioProblemStatement(BaseModel):
 class ScenarioFieldParamFilter(BaseModel):
     """Field parameter filter for show_selected filtering."""
 
-    parameter_id: UUID | None = None
-    show_selected: bool | None = None
+    parameter_id: UUID | None = Field(None, description="UUID of the parameter to filter by")
+    show_selected: bool | None = Field(None, description="Whether to show only selected items")
 
 
 # =============================================================================
@@ -208,27 +208,27 @@ class ScenarioFieldParamFilter(BaseModel):
 class ScenarioResourceBucket(BaseModel):
     """Generic resources bucket with full objects (always plural lists)."""
 
-    names: list[ScenarioNameResource] | None = None
-    descriptions: list[ScenarioDescriptionResource] | None = None
-    problem_statements: list[ScenarioProblemStatement] | None = None
-    flags: list[ScenarioFlagConfig] | None = None
-    departments: list[ScenarioDepartment] | None = None
-    personas: list[ScenarioPersona] | None = None
-    documents: list[ScenarioDocument] | None = None
-    parameters: list[ScenarioParameter] | None = None
-    parameter_fields: list[ScenarioField] | None = None
-    objectives: list[ScenarioObjective] | None = None
-    images: list[ScenarioImage] | None = None
-    videos: list[ScenarioVideo] | None = None
-    questions: list[ScenarioQuestion] | None = None
-    options: list[ScenarioOption] | None = None
+    names: list[ScenarioNameResource] | None = Field(None, description="List of name resources")
+    descriptions: list[ScenarioDescriptionResource] | None = Field(None, description="List of description resources")
+    problem_statements: list[ScenarioProblemStatement] | None = Field(None, description="List of problem statement resources")
+    flags: list[ScenarioFlagConfig] | None = Field(None, description="List of flag configs")
+    departments: list[ScenarioDepartment] | None = Field(None, description="List of department resources")
+    personas: list[ScenarioPersona] | None = Field(None, description="List of persona resources")
+    documents: list[ScenarioDocument] | None = Field(None, description="List of document resources")
+    parameters: list[ScenarioParameter] | None = Field(None, description="List of parameter resources")
+    parameter_fields: list[ScenarioField] | None = Field(None, description="List of parameter field resources")
+    objectives: list[ScenarioObjective] | None = Field(None, description="List of objective resources")
+    images: list[ScenarioImage] | None = Field(None, description="List of image resources")
+    videos: list[ScenarioVideo] | None = Field(None, description="List of video resources")
+    questions: list[ScenarioQuestion] | None = Field(None, description="List of question resources")
+    options: list[ScenarioOption] | None = Field(None, description="List of option resources")
 
 
 class ScenarioResources(BaseModel):
     """Full resources + current selections."""
 
-    resources: ScenarioResourceBucket | None = None
-    current: ScenarioResourceBucket | None = None
+    resources: ScenarioResourceBucket | None = Field(None, description="All available resources")
+    current: ScenarioResourceBucket | None = Field(None, description="Currently selected resources")
 
 
 # =============================================================================
@@ -239,137 +239,137 @@ class ScenarioResources(BaseModel):
 class GetScenarioApiRequest(BaseModel):
     """Request for getting a single scenario."""
 
-    scenario_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_persona_ids: list[UUID] | None = None
-    filter_document_ids: list[UUID] | None = None
-    filter_parameter_ids: list[UUID] | None = None
-    filter_field_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    document_search: str | None = None
-    parameter_search: str | None = None
-    description_search: str | None = None
-    problem_statement_search: str | None = None
-    image_search: str | None = None
-    video_search: str | None = None
-    question_search: str | None = None
-    option_search: str | None = None
-    persona_show_selected: bool | None = None
-    document_show_selected: bool | None = None
-    parameter_show_selected: bool | None = None
+    scenario_id: UUID | None = Field(None, description="UUID of the scenario to retrieve")
+    document_ids: list[UUID] | None = Field(None, description="Filter by document UUIDs")
+    problem_statement_ids: list[UUID] | None = Field(None, description="Filter by problem statement UUIDs")
+    filter_department_ids: list[UUID] | None = Field(None, description="Filter by department UUIDs")
+    filter_persona_ids: list[UUID] | None = Field(None, description="Filter by persona UUIDs")
+    filter_document_ids: list[UUID] | None = Field(None, description="Filter by document UUIDs")
+    filter_parameter_ids: list[UUID] | None = Field(None, description="Filter by parameter UUIDs")
+    filter_field_ids: list[UUID] | None = Field(None, description="Filter by field UUIDs")
+    persona_search: str | None = Field(None, description="Search text to filter personas")
+    document_search: str | None = Field(None, description="Search text to filter documents")
+    parameter_search: str | None = Field(None, description="Search text to filter parameters")
+    description_search: str | None = Field(None, description="Search text to filter descriptions")
+    problem_statement_search: str | None = Field(None, description="Search text to filter problem statements")
+    image_search: str | None = Field(None, description="Search text to filter images")
+    video_search: str | None = Field(None, description="Search text to filter videos")
+    question_search: str | None = Field(None, description="Search text to filter questions")
+    option_search: str | None = Field(None, description="Search text to filter options")
+    persona_show_selected: bool | None = Field(None, description="Show only selected personas")
+    document_show_selected: bool | None = Field(None, description="Show only selected documents")
+    parameter_show_selected: bool | None = Field(None, description="Show only selected parameters")
     field_show_selected_by_param: list[ScenarioFieldParamFilter] | None = Field(
-        default_factory=list
+        default_factory=list, description="Field-level show_selected filters by parameter"
     )
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    parameter_ids: list[UUID] | None = None
+    draft_id: UUID | None = Field(None, description="UUID of the draft to retrieve")
+    mcp: bool | None = Field(False, description="Whether this is an MCP request")
+    parameter_ids: list[UUID] | None = Field(None, description="Filter by parameter UUIDs")
 
 
 class ScenarioNameSection(BaseResourceSection):
-    resource: ScenarioNameResource | None = None
-    resources: list[ScenarioNameResource] | None = None
+    resource: ScenarioNameResource | None = Field(None, description="Currently selected name resource")
+    resources: list[ScenarioNameResource] | None = Field(None, description="Available name resources")
 
 
 class ScenarioDescriptionSection(BaseResourceSection):
-    resource: ScenarioDescriptionResource | None = None
-    resources: list[ScenarioDescriptionResource] | None = None
+    resource: ScenarioDescriptionResource | None = Field(None, description="Currently selected description resource")
+    resources: list[ScenarioDescriptionResource] | None = Field(None, description="Available description resources")
 
 
 class ScenarioProblemStatementSection(BaseResourceSection):
-    resource: ScenarioProblemStatement | None = None
-    resources: list[ScenarioProblemStatement] | None = None
+    resource: ScenarioProblemStatement | None = Field(None, description="Currently selected problem statement")
+    resources: list[ScenarioProblemStatement] | None = Field(None, description="Available problem statements")
 
 
 class ScenarioFlagSection(BaseResourceSection):
-    current: list[ScenarioFlagConfig] | None = None
-    resources: list[ScenarioFlagConfig] | None = None
+    current: list[ScenarioFlagConfig] | None = Field(None, description="Currently selected flags")
+    resources: list[ScenarioFlagConfig] | None = Field(None, description="Available flag configs")
 
 
 class ScenarioDepartmentSection(BaseResourceSection):
-    current: list[ScenarioDepartment] | None = None
-    resources: list[ScenarioDepartment] | None = None
+    current: list[ScenarioDepartment] | None = Field(None, description="Currently selected departments")
+    resources: list[ScenarioDepartment] | None = Field(None, description="Available departments")
 
 
 class ScenarioPersonaSection(BaseResourceSection):
-    current: list[ScenarioPersona] | None = None
-    resources: list[ScenarioPersona] | None = None
+    current: list[ScenarioPersona] | None = Field(None, description="Currently selected personas")
+    resources: list[ScenarioPersona] | None = Field(None, description="Available personas")
 
 
 class ScenarioDocumentSection(BaseResourceSection):
-    current: list[ScenarioDocument] | None = None
-    resources: list[ScenarioDocument] | None = None
+    current: list[ScenarioDocument] | None = Field(None, description="Currently selected documents")
+    resources: list[ScenarioDocument] | None = Field(None, description="Available documents")
 
 
 class ScenarioParameterSection(BaseResourceSection):
-    current: list[ScenarioParameter] | None = None
-    resources: list[ScenarioParameter] | None = None
+    current: list[ScenarioParameter] | None = Field(None, description="Currently selected parameters")
+    resources: list[ScenarioParameter] | None = Field(None, description="Available parameters")
 
 
 class ScenarioParameterFieldSection(BaseResourceSection):
-    current: list[ScenarioField] | None = None
-    resources: list[ScenarioField] | None = None
+    current: list[ScenarioField] | None = Field(None, description="Currently selected parameter fields")
+    resources: list[ScenarioField] | None = Field(None, description="Available parameter fields")
 
 
 class ScenarioObjectiveSection(BaseResourceSection):
-    current: list[ScenarioObjective] | None = None
-    resources: list[ScenarioObjective] | None = None
+    current: list[ScenarioObjective] | None = Field(None, description="Currently selected objectives")
+    resources: list[ScenarioObjective] | None = Field(None, description="Available objectives")
 
 
 class ScenarioImageSection(BaseResourceSection):
-    current: list[ScenarioImage] | None = None
-    resources: list[ScenarioImage] | None = None
+    current: list[ScenarioImage] | None = Field(None, description="Currently selected images")
+    resources: list[ScenarioImage] | None = Field(None, description="Available images")
 
 
 class ScenarioVideoSection(BaseResourceSection):
-    current: list[ScenarioVideo] | None = None
-    resources: list[ScenarioVideo] | None = None
+    current: list[ScenarioVideo] | None = Field(None, description="Currently selected videos")
+    resources: list[ScenarioVideo] | None = Field(None, description="Available videos")
 
 
 class ScenarioQuestionSection(BaseResourceSection):
-    current: list[ScenarioQuestion] | None = None
-    resources: list[ScenarioQuestion] | None = None
+    current: list[ScenarioQuestion] | None = Field(None, description="Currently selected questions")
+    resources: list[ScenarioQuestion] | None = Field(None, description="Available questions")
 
 
 class ScenarioOptionSection(BaseResourceSection):
-    current: list[ScenarioOption] | None = None
-    resources: list[ScenarioOption] | None = None
+    current: list[ScenarioOption] | None = Field(None, description="Currently selected options")
+    resources: list[ScenarioOption] | None = Field(None, description="Available options")
 
 
 class GetScenarioApiResponse(BaseModel):
     """Response for getting a single scenario."""
 
     # Context
-    actor_name: str | None = None
-    scenario_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    scenario_exists: bool | None = Field(None, description="Whether the scenario exists")
+    can_edit: bool | None = Field(None, description="Whether the current user can edit")
+    disabled_reason: str | None = Field(None, description="Reason the scenario is disabled")
+    draft_version: int | None = Field(None, description="Current draft version number")
+    group_id: UUID | None = Field(None, description="UUID of the owning group")
 
     # Step-level AI generation flags
-    basic_show_ai_generate: bool | None = None
-    content_show_ai_generate: bool | None = None
+    basic_show_ai_generate: bool | None = Field(None, description="Show AI generate for basic step")
+    content_show_ai_generate: bool | None = Field(None, description="Show AI generate for content step")
 
     # Resolved parameter IDs (derived from saved parameter_fields)
-    resolved_parameter_ids: list[str] | None = None
+    resolved_parameter_ids: list[str] | None = Field(None, description="Resolved parameter IDs from saved fields")
 
     # Per-resource sections
-    names: ScenarioNameSection | None = None
-    descriptions: ScenarioDescriptionSection | None = None
-    problem_statements: ScenarioProblemStatementSection | None = None
-    flags: ScenarioFlagSection | None = None
-    departments: ScenarioDepartmentSection | None = None
-    personas: ScenarioPersonaSection | None = None
-    documents: ScenarioDocumentSection | None = None
-    parameters: ScenarioParameterSection | None = None
-    parameter_fields: ScenarioParameterFieldSection | None = None
-    objectives: ScenarioObjectiveSection | None = None
-    images: ScenarioImageSection | None = None
-    videos: ScenarioVideoSection | None = None
-    questions: ScenarioQuestionSection | None = None
-    options: ScenarioOptionSection | None = None
+    names: ScenarioNameSection | None = Field(None, description="Name section data")
+    descriptions: ScenarioDescriptionSection | None = Field(None, description="Description section data")
+    problem_statements: ScenarioProblemStatementSection | None = Field(None, description="Problem statement section data")
+    flags: ScenarioFlagSection | None = Field(None, description="Flag section data")
+    departments: ScenarioDepartmentSection | None = Field(None, description="Department section data")
+    personas: ScenarioPersonaSection | None = Field(None, description="Persona section data")
+    documents: ScenarioDocumentSection | None = Field(None, description="Document section data")
+    parameters: ScenarioParameterSection | None = Field(None, description="Parameter section data")
+    parameter_fields: ScenarioParameterFieldSection | None = Field(None, description="Parameter field section data")
+    objectives: ScenarioObjectiveSection | None = Field(None, description="Objective section data")
+    images: ScenarioImageSection | None = Field(None, description="Image section data")
+    videos: ScenarioVideoSection | None = Field(None, description="Video section data")
+    questions: ScenarioQuestionSection | None = Field(None, description="Question section data")
+    options: ScenarioOptionSection | None = Field(None, description="Option section data")
 
 
 # =============================================================================
@@ -380,93 +380,93 @@ class GetScenarioApiResponse(BaseModel):
 class ListScenarioApiScenario(BaseModel):
     """Scenario item in list response with Python-computed permissions."""
 
-    scenario_id: UUID | None = None
-    name: str | None = None
-    problem_statement: str | None = None
-    is_inactive: bool | None = None
-    generated: bool | None = None
-    mcp: bool | None = None
-    department_ids: list[str] | None = None
-    objective_ids: list[str] | None = None
-    persona_ids: list[str] | None = None
-    field_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    num_simulations: int | None = None
-    active_simulation_count: int | None = None
-    can_edit: bool | None = None
-    can_delete: bool | None = None
-    can_duplicate: bool | None = None
-    cohort_ids: list[str] | None = None
-    updated_at: datetime | None = None
+    scenario_id: UUID | None = Field(None, description="UUID of the scenario")
+    name: str | None = Field(None, description="Display name")
+    problem_statement: str | None = Field(None, description="Problem statement text")
+    is_inactive: bool | None = Field(None, description="Whether the scenario is inactive")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
+    mcp: bool | None = Field(None, description="Whether this is an MCP scenario")
+    department_ids: list[str] | None = Field(None, description="Associated department UUIDs")
+    objective_ids: list[str] | None = Field(None, description="Associated objective UUIDs")
+    persona_ids: list[str] | None = Field(None, description="Associated persona UUIDs")
+    field_ids: list[str] | None = Field(None, description="Associated field UUIDs")
+    simulation_ids: list[str] | None = Field(None, description="Associated simulation UUIDs")
+    num_simulations: int | None = Field(None, description="Total number of simulations")
+    active_simulation_count: int | None = Field(None, description="Number of active simulations")
+    can_edit: bool | None = Field(None, description="Whether the current user can edit")
+    can_delete: bool | None = Field(None, description="Whether the current user can delete")
+    can_duplicate: bool | None = Field(None, description="Whether the current user can duplicate")
+    cohort_ids: list[str] | None = Field(None, description="Associated cohort UUIDs")
+    updated_at: datetime | None = Field(None, description="Last updated timestamp")
 
 
 class ListScenarioApiObjective(BaseModel):
     """Objective in list response."""
 
-    objective_id: str | None = None
-    name: str | None = None
-    description: str | None = None
+    objective_id: str | None = Field(None, description="UUID of the objective")
+    name: str | None = Field(None, description="Objective name")
+    description: str | None = Field(None, description="Objective description text")
 
 
 class ListScenarioApiField(BaseModel):
     """Field in list response."""
 
-    field_id: str | None = None
-    name: str | None = None
-    description: str | None = None
+    field_id: str | None = Field(None, description="UUID of the field")
+    name: str | None = Field(None, description="Field name")
+    description: str | None = Field(None, description="Field description text")
 
 
 class ListScenarioApiCohort(BaseModel):
     """Cohort in list response."""
 
-    cohort_id: str | None = None
-    name: str | None = None
-    description: str | None = None
+    cohort_id: str | None = Field(None, description="UUID of the cohort")
+    name: str | None = Field(None, description="Cohort name")
+    description: str | None = Field(None, description="Cohort description text")
 
 
 class ListScenarioApiPersona(BaseModel):
     """Persona in list response."""
 
-    persona_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    color: str | None = None
-    icon: str | None = None
+    persona_id: str | None = Field(None, description="UUID of the persona")
+    name: str | None = Field(None, description="Persona name")
+    description: str | None = Field(None, description="Persona description text")
+    color: str | None = Field(None, description="Display color for the persona")
+    icon: str | None = Field(None, description="Icon identifier for the persona")
 
 
 class ListScenarioApiSimulation(BaseModel):
     """Simulation in list response."""
 
-    simulation_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    department_ids: list[str] | None = None
+    simulation_id: str | None = Field(None, description="UUID of the simulation")
+    name: str | None = Field(None, description="Simulation name")
+    description: str | None = Field(None, description="Simulation description text")
+    department_ids: list[str] | None = Field(None, description="Associated department UUIDs")
 
 
 class ListScenarioApiDepartment(BaseModel):
     """Department in list response."""
 
-    department_id: str | None = None
-    name: str | None = None
-    description: str | None = None
+    department_id: str | None = Field(None, description="UUID of the department")
+    name: str | None = Field(None, description="Department name")
+    description: str | None = Field(None, description="Department description text")
 
 
 class ListScenarioApiResponse(BaseModel):
     """Response for listing scenarios."""
 
-    actor_name: str | None = None
-    scenarios: list[ListScenarioApiScenario] | None = None
-    objectives: list[ListScenarioApiObjective] | None = None
-    fields: list[ListScenarioApiField] | None = None
-    cohorts: list[ListScenarioApiCohort] | None = None
-    personas: list[ListScenarioApiPersona] | None = None
-    simulations: list[ListScenarioApiSimulation] | None = None
-    departments: list[ListScenarioApiDepartment] | None = None
-    persona_filter: "ListFilterSection | None" = None
-    simulation_filter: "ListFilterSection | None" = None
-    department_filter: "ListFilterSection | None" = None
-    flag_filter: "ListFilterSection | None" = None
-    total_count: int | None = None
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    scenarios: list[ListScenarioApiScenario] | None = Field(None, description="List of scenario items")
+    objectives: list[ListScenarioApiObjective] | None = Field(None, description="List of objective items")
+    fields: list[ListScenarioApiField] | None = Field(None, description="List of field items")
+    cohorts: list[ListScenarioApiCohort] | None = Field(None, description="List of cohort items")
+    personas: list[ListScenarioApiPersona] | None = Field(None, description="List of persona items")
+    simulations: list[ListScenarioApiSimulation] | None = Field(None, description="List of simulation items")
+    departments: list[ListScenarioApiDepartment] | None = Field(None, description="List of department items")
+    persona_filter: "ListFilterSection | None" = Field(None, description="Filter options for personas")
+    simulation_filter: "ListFilterSection | None" = Field(None, description="Filter options for simulations")
+    department_filter: "ListFilterSection | None" = Field(None, description="Filter options for departments")
+    flag_filter: "ListFilterSection | None" = Field(None, description="Filter options for flags")
+    total_count: int | None = Field(None, description="Total number of matching records")
 
 
 # =============================================================================
@@ -477,17 +477,17 @@ class ListScenarioApiResponse(BaseModel):
 class ScenarioFieldError(BaseModel):
     """Per-field error from value resolution."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Name of the field with the error")
+    message: str = Field(..., description="Human-readable error message")
 
 
 class ScenarioResultItem(BaseModel):
     """Per-item result within a bulk create/update response."""
 
-    success: bool
-    scenario_id: UUID | None = None
-    message: str
-    errors: list[ScenarioFieldError] | None = None
+    success: bool = Field(..., description="Whether the operation succeeded")
+    scenario_id: UUID | None = Field(None, description="UUID of the affected scenario")
+    message: str = Field(..., description="Human-readable result message")
+    errors: list[ScenarioFieldError] | None = Field(None, description="List of per-field errors")
 
 
 # =============================================================================
@@ -498,13 +498,13 @@ class ScenarioResultItem(BaseModel):
 class CreateScenarioApiRequest(BaseModel):
     """Request model for bulk create scenario endpoint."""
 
-    scenarios: list[CreateScenarioItem]
+    scenarios: list[CreateScenarioItem] = Field(..., description="List of scenarios to create")
 
 
 class CreateScenarioApiResponse(BaseModel):
     """Response model for bulk create scenario endpoint."""
 
-    results: list[ScenarioResultItem]
+    results: list[ScenarioResultItem] = Field(..., description="List of operation results")
 
 
 # =============================================================================
@@ -518,62 +518,62 @@ class UpdateScenarioItem(BaseModel):
     Only provided fields are updated (partial update).
     """
 
-    scenario_id: UUID  # Required — which scenario to update
+    scenario_id: UUID = Field(..., description="UUID of the scenario to update")
     # Dual-mode: provide ID or raw value
-    name_id: UUID | None = None
-    name: str | None = None
-    description_id: UUID | None = None
-    description: str | None = None
-    problem_statement_id: UUID | None = None
-    problem_statement: str | None = None
+    name_id: UUID | None = Field(None, description="UUID of the name resource")
+    name: str | None = Field(None, description="Display name value")
+    description_id: UUID | None = Field(None, description="UUID of the description resource")
+    description: str | None = Field(None, description="Description text value")
+    problem_statement_id: UUID | None = Field(None, description="UUID of the problem statement resource")
+    problem_statement: str | None = Field(None, description="Problem statement text value")
     # Flag IDs (individual typed flags)
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
+    active_flag_id: UUID | None = Field(None, description="UUID of the active flag option")
+    objectives_enabled_flag_id: UUID | None = Field(None, description="UUID of the objectives enabled flag option")
+    images_enabled_flag_id: UUID | None = Field(None, description="UUID of the images enabled flag option")
+    video_enabled_flag_id: UUID | None = Field(None, description="UUID of the video enabled flag option")
+    questions_enabled_flag_id: UUID | None = Field(None, description="UUID of the questions enabled flag option")
+    problem_statement_enabled_flag_id: UUID | None = Field(None, description="UUID of the problem statement enabled flag option")
     # Multi-select resource IDs
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = Field(None, description="Associated department UUIDs")
+    persona_ids: list[UUID] | None = Field(None, description="Associated persona UUIDs")
+    document_ids: list[UUID] | None = Field(None, description="Associated document UUIDs")
+    parameter_ids: list[UUID] | None = Field(None, description="Associated parameter UUIDs")
+    parameter_field_ids: list[UUID] | None = Field(None, description="Associated parameter field UUIDs")
+    image_ids: list[UUID] | None = Field(None, description="Associated image UUIDs")
+    objective_ids: list[UUID] | None = Field(None, description="Associated objective UUIDs")
+    video_ids: list[UUID] | None = Field(None, description="Associated video UUIDs")
+    question_ids: list[UUID] | None = Field(None, description="Associated question UUIDs")
+    option_ids: list[UUID] | None = Field(None, description="Associated option UUIDs")
     # Value-based fields for CSV import (resolved to IDs server-side)
-    active_flag: bool | None = None
-    departments: list[str] | None = None
-    personas: list[str] | None = None
-    documents: list[str] | None = None
-    parameter_fields: list[str] | None = None
-    objectives: list[str] | None = None
-    images: list[str] | None = None
-    videos: list[str] | None = None
-    questions: list[str] | None = None
-    options: list[str] | None = None
+    active_flag: bool | None = Field(None, description="Active flag boolean value")
+    departments: list[str] | None = Field(None, description="Department names for matching")
+    personas: list[str] | None = Field(None, description="Persona names for matching")
+    documents: list[str] | None = Field(None, description="Document names for matching")
+    parameter_fields: list[str] | None = Field(None, description="Parameter field names for matching")
+    objectives: list[str] | None = Field(None, description="Objective texts for matching")
+    images: list[str] | None = Field(None, description="Image names for matching")
+    videos: list[str] | None = Field(None, description="Video names for matching")
+    questions: list[str] | None = Field(None, description="Question texts for matching")
+    options: list[str] | None = Field(None, description="Option texts for matching")
 
 
 class UpdateScenarioApiRequest(BaseModel):
     """Request model for bulk update scenario endpoint."""
 
-    scenarios: list[UpdateScenarioItem]
+    scenarios: list[UpdateScenarioItem] = Field(..., description="List of scenarios to update")
 
 
 class UpdateScenarioApiResponse(BaseModel):
     """Response model for bulk update scenario endpoint."""
 
-    results: list[ScenarioResultItem]
+    results: list[ScenarioResultItem] = Field(..., description="List of operation results")
 
 
 class SaveScenarioFieldError(BaseModel):
     """Per-field validation error."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Name of the field with the error")
+    message: str = Field(..., description="Human-readable error message")
 
 
 # =============================================================================
@@ -584,21 +584,21 @@ class SaveScenarioFieldError(BaseModel):
 class ExportScenarioApiRequest(BaseModel):
     """Request model for export scenario endpoint."""
 
-    scenario_id: UUID | None = None
+    scenario_id: UUID | None = Field(None, description="UUID of the scenario to export")
 
-    search: str | None = None
-    persona_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    filter_department_ids: list[str] | None = None
+    search: str | None = Field(None, description="Search query text")
+    persona_ids: list[str] | None = Field(None, description="Filter by persona UUIDs")
+    simulation_ids: list[str] | None = Field(None, description="Filter by simulation UUIDs")
+    filter_department_ids: list[str] | None = Field(None, description="Filter by department UUIDs")
 
 
 class ExportScenarioApiResponse(BaseModel):
     """Response model for export scenario endpoint."""
 
-    content: str
-    file_name: str
-    mime_type: str
-    row_count: int
+    content: str = Field(..., description="Exported file content")
+    file_name: str = Field(..., description="Suggested file name for download")
+    mime_type: str = Field(..., description="MIME type of the exported content")
+    row_count: int = Field(..., description="Total number of exported rows")
 
 
 # =============================================================================
@@ -609,21 +609,21 @@ class ExportScenarioApiResponse(BaseModel):
 class DeleteScenarioApiRequest(BaseModel):
     """Bulk delete request."""
 
-    scenario_ids: list[UUID]
+    scenario_ids: list[UUID] = Field(..., description="UUIDs of scenarios to delete")
 
 
 class DeleteScenarioResult(BaseModel):
     """Per-item result from bulk delete."""
 
-    success: bool = False
-    scenario_id: UUID | None = None
-    message: str | None = None
+    success: bool = Field(False, description="Whether the operation succeeded")
+    scenario_id: UUID | None = Field(None, description="UUID of the deleted scenario")
+    message: str | None = Field(None, description="Human-readable result message")
 
 
 class DeleteScenarioApiResponse(BaseModel):
     """Bulk delete response."""
 
-    results: list[DeleteScenarioResult]
+    results: list[DeleteScenarioResult] = Field(..., description="List of operation results")
 
 
 # =============================================================================
@@ -634,15 +634,15 @@ class DeleteScenarioApiResponse(BaseModel):
 class DuplicateScenarioApiRequest(BaseModel):
     """Request for duplicating a scenario."""
 
-    scenario_id: UUID
+    scenario_id: UUID = Field(..., description="UUID of the scenario to duplicate")
 
 
 class DuplicateScenarioApiResponse(BaseModel):
     """Response for duplicating a scenario."""
 
-    success: bool
-    scenario_id: UUID
-    message: str
+    success: bool = Field(..., description="Whether the operation succeeded")
+    scenario_id: UUID = Field(..., description="UUID of the duplicated scenario")
+    message: str = Field(..., description="Human-readable result message")
 
 
 # =============================================================================
@@ -653,43 +653,43 @@ class DuplicateScenarioApiResponse(BaseModel):
 class DraftObjectiveValue(BaseModel):
     """Value for creating an objective via the draft endpoint."""
 
-    objective: str
+    objective: str = Field(..., description="Objective text")
 
 
 class DraftImageValue(BaseModel):
     """Value for creating an image via the draft endpoint."""
 
-    name: str
-    description: str
-    upload_id: UUID | None = (
-        None  # TODO: wire upload_id through create_image + create_image_upload
+    name: str = Field(..., description="Image name")
+    description: str = Field(..., description="Image description text")
+    upload_id: UUID | None = Field(
+        None, description="UUID of the associated upload"
     )
 
 
 class DraftVideoValue(BaseModel):
     """Value for creating a video via the draft endpoint."""
 
-    name: str
-    description: str
-    upload_id: UUID | None = (
-        None  # TODO: wire upload_id through create_video + create_video_upload
+    name: str = Field(..., description="Video name")
+    description: str = Field(..., description="Video description text")
+    upload_id: UUID | None = Field(
+        None, description="UUID of the associated upload"
     )
-    length_seconds: int = 0
+    length_seconds: int = Field(0, description="Video length in seconds")
 
 
 class DraftQuestionValue(BaseModel):
     """Value for creating a question via the draft endpoint."""
 
-    question_text: str
-    time: int = 30
-    allow_multiple: bool = False
+    question_text: str = Field(..., description="Question text content")
+    time: int = Field(30, description="Time limit in seconds")
+    allow_multiple: bool = Field(False, description="Whether multiple answers are allowed")
 
 
 class DraftOptionValue(BaseModel):
     """Value for creating an option via the draft endpoint."""
 
-    option_text: str
-    question_id: UUID | None = None
+    option_text: str = Field(..., description="Option text content")
+    question_id: UUID | None = Field(None, description="UUID of the parent question")
 
 
 class PatchScenarioDraftApiRequest(BaseModel):
@@ -708,35 +708,35 @@ class PatchScenarioDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    input_draft_id: UUID | None = None
-    expected_version: int = 0
+    input_draft_id: UUID | None = Field(None, description="UUID of the input draft")
+    expected_version: int = Field(0, description="Expected draft version for optimistic lock")
 
     # Creatable single-select — provide value or ID
-    name: str | None = None
-    name_id: UUID | None = None
-    description: str | None = None
-    description_id: UUID | None = None
-    problem_statement: str | None = None
-    problem_statement_id: UUID | None = None
+    name: str | None = Field(None, description="Display name value")
+    name_id: UUID | None = Field(None, description="UUID of the name resource")
+    description: str | None = Field(None, description="Description text value")
+    description_id: UUID | None = Field(None, description="UUID of the description resource")
+    problem_statement: str | None = Field(None, description="Problem statement text value")
+    problem_statement_id: UUID | None = Field(None, description="UUID of the problem statement resource")
 
     # Creatable multi-select — values merged with IDs
-    objectives: list[str] | None = None
-    objective_ids: list[UUID] | None = None
-    images: list[DraftImageValue] | None = None
-    image_ids: list[UUID] | None = None
-    videos: list[DraftVideoValue] | None = None
-    video_ids: list[UUID] | None = None
-    questions: list[DraftQuestionValue] | None = None
-    question_ids: list[UUID] | None = None
-    options: list[DraftOptionValue] | None = None
-    option_ids: list[UUID] | None = None
+    objectives: list[str] | None = Field(None, description="Objective texts to create")
+    objective_ids: list[UUID] | None = Field(None, description="Existing objective UUIDs")
+    images: list[DraftImageValue] | None = Field(None, description="Image values to create")
+    image_ids: list[UUID] | None = Field(None, description="Existing image UUIDs")
+    videos: list[DraftVideoValue] | None = Field(None, description="Video values to create")
+    video_ids: list[UUID] | None = Field(None, description="Existing video UUIDs")
+    questions: list[DraftQuestionValue] | None = Field(None, description="Question values to create")
+    question_ids: list[UUID] | None = Field(None, description="Existing question UUIDs")
+    options: list[DraftOptionValue] | None = Field(None, description="Option values to create")
+    option_ids: list[UUID] | None = Field(None, description="Existing option UUIDs")
 
     # Non-creatable — ID-only
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = Field(None, description="Associated flag UUIDs")
+    department_ids: list[UUID] | None = Field(None, description="Associated department UUIDs")
+    persona_ids: list[UUID] | None = Field(None, description="Associated persona UUIDs")
+    document_ids: list[UUID] | None = Field(None, description="Associated document UUIDs")
+    parameter_field_ids: list[UUID] | None = Field(None, description="Associated parameter field UUIDs")
 
 
 class ScenarioDraftFormState(BaseModel):
@@ -745,35 +745,35 @@ class ScenarioDraftFormState(BaseModel):
     Client replaces its local form state with this after every successful patch.
     """
 
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    flag_ids: list[UUID] = []
-    department_ids: list[UUID] = []
-    persona_ids: list[UUID] = []
-    document_ids: list[UUID] = []
-    parameter_field_ids: list[UUID] = []
-    objective_ids: list[UUID] = []
-    image_ids: list[UUID] = []
-    video_ids: list[UUID] = []
-    question_ids: list[UUID] = []
-    option_ids: list[UUID] = []
+    name_id: UUID | None = Field(None, description="UUID of the selected name resource")
+    description_id: UUID | None = Field(None, description="UUID of the selected description resource")
+    problem_statement_id: UUID | None = Field(None, description="UUID of the selected problem statement resource")
+    flag_ids: list[UUID] = Field([], description="Selected flag UUIDs")
+    department_ids: list[UUID] = Field([], description="Selected department UUIDs")
+    persona_ids: list[UUID] = Field([], description="Selected persona UUIDs")
+    document_ids: list[UUID] = Field([], description="Selected document UUIDs")
+    parameter_field_ids: list[UUID] = Field([], description="Selected parameter field UUIDs")
+    objective_ids: list[UUID] = Field([], description="Selected objective UUIDs")
+    image_ids: list[UUID] = Field([], description="Selected image UUIDs")
+    video_ids: list[UUID] = Field([], description="Selected video UUIDs")
+    question_ids: list[UUID] = Field([], description="Selected question UUIDs")
+    option_ids: list[UUID] = Field([], description="Selected option UUIDs")
 
 
 class PatchScenarioDraftApiResponse(BaseModel):
     """Response model for new-style scenario draft endpoint."""
 
-    success: bool
-    draft_id: UUID
-    new_version: int
-    message: str
-    form_state: ScenarioDraftFormState
+    success: bool = Field(..., description="Whether the operation succeeded")
+    draft_id: UUID = Field(..., description="UUID of the saved draft")
+    new_version: int = Field(..., description="New draft version number")
+    message: str = Field(..., description="Human-readable result message")
+    form_state: ScenarioDraftFormState = Field(..., description="Server-authoritative form state")
 
 
 class GetScenarioDraftsApiResponse(BaseModel):
     """Response model for scenario drafts list endpoint."""
 
-    entries: list[GetScenarioDraftResponse] | None = None
+    entries: list[GetScenarioDraftResponse] | None = Field(None, description="List of scenario draft entries")
 
 
 # =============================================================================
@@ -784,33 +784,33 @@ class GetScenarioDraftsApiResponse(BaseModel):
 class ListScenarioSqlScenario(BaseModel):
     """Raw scenario from SQL — permissions computed in Python."""
 
-    scenario_id: UUID | None = None
-    name: str | None = None
-    problem_statement: str | None = None
-    is_inactive: bool | None = None
-    generated: bool | None = None
-    mcp: bool | None = None
-    department_ids: list[str] | None = None
-    objective_ids: list[str] | None = None
-    persona_ids: list[str] | None = None
-    field_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    num_simulations: int | None = None
-    active_simulation_count: int | None = None
-    cohort_ids: list[str] | None = None
-    updated_at: datetime | None = None
+    scenario_id: UUID | None = Field(None, description="UUID of the scenario")
+    name: str | None = Field(None, description="Display name")
+    problem_statement: str | None = Field(None, description="Problem statement text")
+    is_inactive: bool | None = Field(None, description="Whether the scenario is inactive")
+    generated: bool | None = Field(None, description="Whether this was AI-generated")
+    mcp: bool | None = Field(None, description="Whether this is an MCP scenario")
+    department_ids: list[str] | None = Field(None, description="Associated department UUIDs")
+    objective_ids: list[str] | None = Field(None, description="Associated objective UUIDs")
+    persona_ids: list[str] | None = Field(None, description="Associated persona UUIDs")
+    field_ids: list[str] | None = Field(None, description="Associated field UUIDs")
+    simulation_ids: list[str] | None = Field(None, description="Associated simulation UUIDs")
+    num_simulations: int | None = Field(None, description="Total number of simulations")
+    active_simulation_count: int | None = Field(None, description="Number of active simulations")
+    cohort_ids: list[str] | None = Field(None, description="Associated cohort UUIDs")
+    updated_at: datetime | None = Field(None, description="Last updated timestamp")
 
 
 class ListScenarioSqlRow(BaseModel):
     """Raw SQL row for list scenarios (mapping arrays hydrated in Python)."""
 
-    actor_name: str | None = None
-    user_role: str | None = None
-    scenarios: list[ListScenarioSqlScenario] | None = None
-    persona_options: list[dict] | None = None
-    simulation_options: list[dict] | None = None
-    department_options: list[dict] | None = None
-    total_count: int | None = None
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    user_role: str | None = Field(None, description="Role of the current user")
+    scenarios: list[ListScenarioSqlScenario] | None = Field(None, description="List of raw scenario records")
+    persona_options: list[dict] | None = Field(None, description="Persona filter option data")
+    simulation_options: list[dict] | None = Field(None, description="Simulation filter option data")
+    department_options: list[dict] | None = Field(None, description="Department filter option data")
+    total_count: int | None = Field(None, description="Total number of matching records")
 
 
 # =============================================================================
@@ -821,32 +821,32 @@ class ListScenarioSqlRow(BaseModel):
 class GetScenarioSqlParams(BaseModel):
     """SQL parameters for get scenario."""
 
-    profile_id: UUID
-    scenario_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_persona_ids: list[UUID] | None = None
-    filter_document_ids: list[UUID] | None = None
-    filter_parameter_ids: list[UUID] | None = None
-    filter_field_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    document_search: str | None = None
-    parameter_search: str | None = None
-    description_search: str | None = None
-    problem_statement_search: str | None = None
-    image_search: str | None = None
-    video_search: str | None = None
-    question_search: str | None = None
-    option_search: str | None = None
-    persona_show_selected: bool | None = None
-    document_show_selected: bool | None = None
-    parameter_show_selected: bool | None = None
+    profile_id: UUID = Field(..., description="UUID of the requesting profile")
+    scenario_id: UUID | None = Field(None, description="UUID of the scenario")
+    document_ids: list[UUID] | None = Field(None, description="Filter by document UUIDs")
+    problem_statement_ids: list[UUID] | None = Field(None, description="Filter by problem statement UUIDs")
+    filter_department_ids: list[UUID] | None = Field(None, description="Filter by department UUIDs")
+    filter_persona_ids: list[UUID] | None = Field(None, description="Filter by persona UUIDs")
+    filter_document_ids: list[UUID] | None = Field(None, description="Filter by document UUIDs")
+    filter_parameter_ids: list[UUID] | None = Field(None, description="Filter by parameter UUIDs")
+    filter_field_ids: list[UUID] | None = Field(None, description="Filter by field UUIDs")
+    persona_search: str | None = Field(None, description="Search text to filter personas")
+    document_search: str | None = Field(None, description="Search text to filter documents")
+    parameter_search: str | None = Field(None, description="Search text to filter parameters")
+    description_search: str | None = Field(None, description="Search text to filter descriptions")
+    problem_statement_search: str | None = Field(None, description="Search text to filter problem statements")
+    image_search: str | None = Field(None, description="Search text to filter images")
+    video_search: str | None = Field(None, description="Search text to filter videos")
+    question_search: str | None = Field(None, description="Search text to filter questions")
+    option_search: str | None = Field(None, description="Search text to filter options")
+    persona_show_selected: bool | None = Field(None, description="Show only selected personas")
+    document_show_selected: bool | None = Field(None, description="Show only selected documents")
+    parameter_show_selected: bool | None = Field(None, description="Show only selected parameters")
     field_show_selected_by_param: list[ScenarioFieldParamFilter] | None = Field(
-        default_factory=list
+        default_factory=list, description="Field-level show_selected filters by parameter"
     )
-    draft_id: UUID | None = None
-    mcp: bool | None = False
+    draft_id: UUID | None = Field(None, description="UUID of the draft")
+    mcp: bool | None = Field(False, description="Whether this is an MCP request")
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert to tuple for SQL execution."""
@@ -884,127 +884,127 @@ class GetScenarioSqlParams(BaseModel):
 class GetScenarioSqlRow(BaseModel):
     """SQL row for get scenario."""
 
-    actor_name: str | None = None
-    scenario_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: ScenarioNameResource | None = None
-    show_name: bool | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[ScenarioNameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: ScenarioDescriptionResource | None = None
-    show_description: bool | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[ScenarioDescriptionResource] | None = None
-    problem_statement_id: UUID | None = None
-    problem_statement_resource: ScenarioProblemStatement | None = None
-    show_problem_statement: bool | None = None
-    problem_statement_required: bool | None = None
-    problem_statement_suggestions: list[UUID] | None = None
-    problem_statements: list[ScenarioProblemStatement] | None = None
-    active_flag_id: UUID | None = None
-    active_flag_resource: ScenarioFlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_required: bool | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    objectives_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_objectives_enabled_flag: bool | None = None
-    objectives_enabled_flag_required: bool | None = None
-    images_enabled_flag_id: UUID | None = None
-    images_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_images_enabled_flag: bool | None = None
-    images_enabled_flag_required: bool | None = None
-    video_enabled_flag_id: UUID | None = None
-    video_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_video_enabled_flag: bool | None = None
-    video_enabled_flag_required: bool | None = None
-    questions_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_questions_enabled_flag: bool | None = None
-    questions_enabled_flag_required: bool | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_resource: ScenarioFlagResource | None = None
-    show_problem_statement_enabled_flag: bool | None = None
-    problem_statement_enabled_flag_required: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[ScenarioDepartment] | None = None
-    show_departments: bool | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[ScenarioDepartment] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    parameter_field_resources: list[ScenarioField] | None = None
-    show_parameter_fields: bool | None = None
-    parameter_fields_required: bool | None = None
-    parameter_fields: list[ScenarioField] | None = None
-    objective_ids: list[UUID] | None = None
-    objective_resources: list[ScenarioObjective] | None = None
-    show_objectives: bool | None = None
-    objectives_required: bool | None = None
-    objective_suggestions: list[UUID] | None = None
-    objectives: list[ScenarioObjective] | None = None
-    image_ids: list[UUID] | None = None
-    image_resources: list[ScenarioImage] | None = None
-    show_images: bool | None = None
-    images_required: bool | None = None
-    image_suggestions: list[UUID] | None = None
-    images: list[ScenarioImage] | None = None
-    video_ids: list[UUID] | None = None
-    video_resources: list[ScenarioVideo] | None = None
-    show_videos: bool | None = None
-    videos_required: bool | None = None
-    video_suggestions: list[UUID] | None = None
-    videos: list[ScenarioVideo] | None = None
-    question_ids: list[UUID] | None = None
-    question_resources: list[ScenarioQuestion] | None = None
-    show_questions: bool | None = None
-    questions_required: bool | None = None
-    question_suggestions: list[UUID] | None = None
-    questions: list[ScenarioQuestion] | None = None
-    option_ids: list[UUID] | None = None
-    option_resources: list[ScenarioOption] | None = None
-    show_options: bool | None = None
-    options_required: bool | None = None
-    option_suggestions: list[UUID] | None = None
-    options: list[ScenarioOption] | None = None
-    persona_ids: list[UUID] | None = None
-    persona_resources: list[ScenarioPersona] | None = None
-    show_personas: bool | None = None
-    personas_required: bool | None = None
-    persona_suggestions: list[UUID] | None = None
-    personas: list[ScenarioPersona] | None = None
-    document_ids: list[UUID] | None = None
-    document_resources: list[ScenarioDocument] | None = None
-    show_documents: bool | None = None
-    documents_required: bool | None = None
-    document_suggestions: list[UUID] | None = None
-    documents: list[ScenarioDocument] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_resources: list[ScenarioParameter] | None = None
-    show_parameters: bool | None = None
-    parameters_required: bool | None = None
-    parameter_suggestions: list[UUID] | None = None
-    parameters: list[ScenarioParameter] | None = None
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    scenario_exists: bool | None = Field(None, description="Whether the scenario exists")
+    can_edit: bool | None = Field(None, description="Whether the current user can edit")
+    disabled_reason: str | None = Field(None, description="Reason the scenario is disabled")
+    group_id: UUID | None = Field(None, description="UUID of the owning group")
+    name_id: UUID | None = Field(None, description="UUID of the selected name resource")
+    name_resource: ScenarioNameResource | None = Field(None, description="Selected name resource")
+    show_name: bool | None = Field(None, description="Whether to show name section")
+    name_required: bool | None = Field(None, description="Whether name is required")
+    name_suggestions: list[UUID] | None = Field(None, description="Suggested name resource UUIDs")
+    names: list[ScenarioNameResource] | None = Field(None, description="Available name resources")
+    description_id: UUID | None = Field(None, description="UUID of the selected description resource")
+    description_resource: ScenarioDescriptionResource | None = Field(None, description="Selected description resource")
+    show_description: bool | None = Field(None, description="Whether to show description section")
+    description_required: bool | None = Field(None, description="Whether description is required")
+    description_suggestions: list[UUID] | None = Field(None, description="Suggested description resource UUIDs")
+    descriptions: list[ScenarioDescriptionResource] | None = Field(None, description="Available description resources")
+    problem_statement_id: UUID | None = Field(None, description="UUID of the selected problem statement")
+    problem_statement_resource: ScenarioProblemStatement | None = Field(None, description="Selected problem statement resource")
+    show_problem_statement: bool | None = Field(None, description="Whether to show problem statement section")
+    problem_statement_required: bool | None = Field(None, description="Whether problem statement is required")
+    problem_statement_suggestions: list[UUID] | None = Field(None, description="Suggested problem statement UUIDs")
+    problem_statements: list[ScenarioProblemStatement] | None = Field(None, description="Available problem statements")
+    active_flag_id: UUID | None = Field(None, description="UUID of the active flag option")
+    active_flag_resource: ScenarioFlagResource | None = Field(None, description="Active flag resource")
+    show_active_flag: bool | None = Field(None, description="Whether to show active flag")
+    active_flag_required: bool | None = Field(None, description="Whether active flag is required")
+    objectives_enabled_flag_id: UUID | None = Field(None, description="UUID of the objectives enabled flag")
+    objectives_enabled_flag_resource: ScenarioFlagResource | None = Field(None, description="Objectives enabled flag resource")
+    show_objectives_enabled_flag: bool | None = Field(None, description="Whether to show objectives enabled flag")
+    objectives_enabled_flag_required: bool | None = Field(None, description="Whether objectives enabled flag is required")
+    images_enabled_flag_id: UUID | None = Field(None, description="UUID of the images enabled flag")
+    images_enabled_flag_resource: ScenarioFlagResource | None = Field(None, description="Images enabled flag resource")
+    show_images_enabled_flag: bool | None = Field(None, description="Whether to show images enabled flag")
+    images_enabled_flag_required: bool | None = Field(None, description="Whether images enabled flag is required")
+    video_enabled_flag_id: UUID | None = Field(None, description="UUID of the video enabled flag")
+    video_enabled_flag_resource: ScenarioFlagResource | None = Field(None, description="Video enabled flag resource")
+    show_video_enabled_flag: bool | None = Field(None, description="Whether to show video enabled flag")
+    video_enabled_flag_required: bool | None = Field(None, description="Whether video enabled flag is required")
+    questions_enabled_flag_id: UUID | None = Field(None, description="UUID of the questions enabled flag")
+    questions_enabled_flag_resource: ScenarioFlagResource | None = Field(None, description="Questions enabled flag resource")
+    show_questions_enabled_flag: bool | None = Field(None, description="Whether to show questions enabled flag")
+    questions_enabled_flag_required: bool | None = Field(None, description="Whether questions enabled flag is required")
+    problem_statement_enabled_flag_id: UUID | None = Field(None, description="UUID of the problem statement enabled flag")
+    problem_statement_enabled_flag_resource: ScenarioFlagResource | None = Field(None, description="Problem statement enabled flag resource")
+    show_problem_statement_enabled_flag: bool | None = Field(None, description="Whether to show problem statement enabled flag")
+    problem_statement_enabled_flag_required: bool | None = Field(None, description="Whether problem statement enabled flag is required")
+    department_ids: list[UUID] | None = Field(None, description="Selected department UUIDs")
+    department_resources: list[ScenarioDepartment] | None = Field(None, description="Selected department resources")
+    show_departments: bool | None = Field(None, description="Whether to show departments section")
+    departments_required: bool | None = Field(None, description="Whether departments are required")
+    department_suggestions: list[UUID] | None = Field(None, description="Suggested department UUIDs")
+    departments: list[ScenarioDepartment] | None = Field(None, description="Available department resources")
+    parameter_field_ids: list[UUID] | None = Field(None, description="Selected parameter field UUIDs")
+    parameter_field_resources: list[ScenarioField] | None = Field(None, description="Selected parameter field resources")
+    show_parameter_fields: bool | None = Field(None, description="Whether to show parameter fields section")
+    parameter_fields_required: bool | None = Field(None, description="Whether parameter fields are required")
+    parameter_fields: list[ScenarioField] | None = Field(None, description="Available parameter field resources")
+    objective_ids: list[UUID] | None = Field(None, description="Selected objective UUIDs")
+    objective_resources: list[ScenarioObjective] | None = Field(None, description="Selected objective resources")
+    show_objectives: bool | None = Field(None, description="Whether to show objectives section")
+    objectives_required: bool | None = Field(None, description="Whether objectives are required")
+    objective_suggestions: list[UUID] | None = Field(None, description="Suggested objective UUIDs")
+    objectives: list[ScenarioObjective] | None = Field(None, description="Available objective resources")
+    image_ids: list[UUID] | None = Field(None, description="Selected image UUIDs")
+    image_resources: list[ScenarioImage] | None = Field(None, description="Selected image resources")
+    show_images: bool | None = Field(None, description="Whether to show images section")
+    images_required: bool | None = Field(None, description="Whether images are required")
+    image_suggestions: list[UUID] | None = Field(None, description="Suggested image UUIDs")
+    images: list[ScenarioImage] | None = Field(None, description="Available image resources")
+    video_ids: list[UUID] | None = Field(None, description="Selected video UUIDs")
+    video_resources: list[ScenarioVideo] | None = Field(None, description="Selected video resources")
+    show_videos: bool | None = Field(None, description="Whether to show videos section")
+    videos_required: bool | None = Field(None, description="Whether videos are required")
+    video_suggestions: list[UUID] | None = Field(None, description="Suggested video UUIDs")
+    videos: list[ScenarioVideo] | None = Field(None, description="Available video resources")
+    question_ids: list[UUID] | None = Field(None, description="Selected question UUIDs")
+    question_resources: list[ScenarioQuestion] | None = Field(None, description="Selected question resources")
+    show_questions: bool | None = Field(None, description="Whether to show questions section")
+    questions_required: bool | None = Field(None, description="Whether questions are required")
+    question_suggestions: list[UUID] | None = Field(None, description="Suggested question UUIDs")
+    questions: list[ScenarioQuestion] | None = Field(None, description="Available question resources")
+    option_ids: list[UUID] | None = Field(None, description="Selected option UUIDs")
+    option_resources: list[ScenarioOption] | None = Field(None, description="Selected option resources")
+    show_options: bool | None = Field(None, description="Whether to show options section")
+    options_required: bool | None = Field(None, description="Whether options are required")
+    option_suggestions: list[UUID] | None = Field(None, description="Suggested option UUIDs")
+    options: list[ScenarioOption] | None = Field(None, description="Available option resources")
+    persona_ids: list[UUID] | None = Field(None, description="Selected persona UUIDs")
+    persona_resources: list[ScenarioPersona] | None = Field(None, description="Selected persona resources")
+    show_personas: bool | None = Field(None, description="Whether to show personas section")
+    personas_required: bool | None = Field(None, description="Whether personas are required")
+    persona_suggestions: list[UUID] | None = Field(None, description="Suggested persona UUIDs")
+    personas: list[ScenarioPersona] | None = Field(None, description="Available persona resources")
+    document_ids: list[UUID] | None = Field(None, description="Selected document UUIDs")
+    document_resources: list[ScenarioDocument] | None = Field(None, description="Selected document resources")
+    show_documents: bool | None = Field(None, description="Whether to show documents section")
+    documents_required: bool | None = Field(None, description="Whether documents are required")
+    document_suggestions: list[UUID] | None = Field(None, description="Suggested document UUIDs")
+    documents: list[ScenarioDocument] | None = Field(None, description="Available document resources")
+    parameter_ids: list[UUID] | None = Field(None, description="Selected parameter UUIDs")
+    parameter_resources: list[ScenarioParameter] | None = Field(None, description="Selected parameter resources")
+    show_parameters: bool | None = Field(None, description="Whether to show parameters section")
+    parameters_required: bool | None = Field(None, description="Whether parameters are required")
+    parameter_suggestions: list[UUID] | None = Field(None, description="Suggested parameter UUIDs")
+    parameters: list[ScenarioParameter] | None = Field(None, description="Available parameter resources")
 
 
 class GetScenariosListSqlParams(BaseModel):
     """SQL parameters for list scenarios."""
 
-    profile_id: UUID
-    search: str | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    simulation_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 10
-    page_offset: int | None = 0
+    profile_id: UUID = Field(..., description="UUID of the requesting profile")
+    search: str | None = Field(None, description="Search query text")
+    persona_ids: list[UUID] | None = Field(None, description="Filter by persona UUIDs")
+    simulation_ids: list[UUID] | None = Field(None, description="Filter by simulation UUIDs")
+    filter_department_ids: list[UUID] | None = Field(None, description="Filter by department UUIDs")
+    persona_search: str | None = Field(None, description="Search text to filter personas")
+    simulation_search: str | None = Field(None, description="Search text to filter simulations")
+    department_search: str | None = Field(None, description="Search text to filter departments")
+    page_size: int | None = Field(10, description="Number of results per page")
+    page_offset: int | None = Field(0, description="Pagination offset")
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert to tuple for SQL execution."""
@@ -1025,23 +1025,23 @@ class GetScenariosListSqlParams(BaseModel):
 class GetScenariosListApiRequest(BaseModel):
     """Request for listing scenarios."""
 
-    search: str | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    simulation_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 10
-    page_offset: int | None = 0
+    search: str | None = Field(None, description="Search query text")
+    persona_ids: list[UUID] | None = Field(None, description="Filter by persona UUIDs")
+    simulation_ids: list[UUID] | None = Field(None, description="Filter by simulation UUIDs")
+    filter_department_ids: list[UUID] | None = Field(None, description="Filter by department UUIDs")
+    persona_search: str | None = Field(None, description="Search text to filter personas")
+    simulation_search: str | None = Field(None, description="Search text to filter simulations")
+    department_search: str | None = Field(None, description="Search text to filter departments")
+    page_size: int | None = Field(10, description="Number of results per page")
+    page_offset: int | None = Field(0, description="Pagination offset")
 
 
 class DuplicateScenarioSqlParams(BaseModel):
     """SQL parameters for duplicate scenario."""
 
-    scenario_id: UUID
-    profile_id: UUID
-    group_id: UUID | None = None
+    scenario_id: UUID = Field(..., description="UUID of the scenario to duplicate")
+    profile_id: UUID = Field(..., description="UUID of the requesting profile")
+    group_id: UUID | None = Field(None, description="UUID of the owning group")
 
     def to_tuple(self) -> tuple[Any, ...]:
         """Convert to tuple for SQL execution."""
@@ -1055,6 +1055,6 @@ class DuplicateScenarioSqlParams(BaseModel):
 class DuplicateScenarioSqlRow(BaseModel):
     """SQL row for duplicate scenario."""
 
-    scenario_id: UUID | None = None
-    scenario_name: str | None = None
-    actor_name: str | None = None
+    scenario_id: UUID | None = Field(None, description="UUID of the duplicated scenario")
+    scenario_name: str | None = Field(None, description="Name of the duplicated scenario")
+    actor_name: str | None = Field(None, description="Display name of the current actor")

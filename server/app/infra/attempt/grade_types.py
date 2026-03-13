@@ -4,54 +4,54 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AttemptGradeFeedbackEntry(BaseModel):
-    feedback: str
-    total: int | None = None
+    feedback: str = Field(..., description="Feedback text content")
+    total: int | None = Field(None, description="Total score for this feedback entry")
 
 
 class AttemptGradeStrengthEntry(BaseModel):
-    name: str
-    description: str
-    message_id: UUID | None = None
+    name: str = Field(..., description="Name of the identified strength")
+    description: str = Field(..., description="Description of the strength")
+    message_id: UUID | None = Field(None, description="UUID of the related message")
 
 
 class AttemptGradeImprovementEntry(BaseModel):
-    name: str
-    description: str
-    message_id: UUID | None = None
+    name: str = Field(..., description="Name of the identified improvement area")
+    description: str = Field(..., description="Description of the improvement")
+    message_id: UUID | None = Field(None, description="UUID of the related message")
 
 
 class AttemptGradeAnalysisEntry(BaseModel):
-    content: str
+    content: str = Field(..., description="Analysis text content")
 
 
 class AttemptGradeHighlightEntry(BaseModel):
-    strength_id: UUID | None = None
-    section: str
-    idx: int | None = None
+    strength_id: UUID | None = Field(None, description="UUID of the parent strength")
+    section: str = Field(..., description="Text section to highlight")
+    idx: int | None = Field(None, description="Index position of the highlight")
 
 
 class AttemptGradeReplacementEntry(BaseModel):
-    improvement_id: UUID | None = None
-    section: str
-    replace: str
-    idx: int | None = None
+    improvement_id: UUID | None = Field(None, description="UUID of the parent improvement")
+    section: str = Field(..., description="Original text section to replace")
+    replace: str = Field(..., description="Replacement text")
+    idx: int | None = Field(None, description="Index position of the replacement")
 
 
 class GradeAttemptRequest(BaseModel):
-    attempt_id: UUID
-    chat_id: UUID | None = None
-    resource_types: list[str] | None = None
-    user_instructions: list[str] | None = None
-    score: int | None = None
-    passed: bool | None = None
-    time_taken: int | None = None
-    feedbacks: list[AttemptGradeFeedbackEntry] | None = None
-    strengths: list[AttemptGradeStrengthEntry] | None = None
-    improvements: list[AttemptGradeImprovementEntry] | None = None
-    analyses: list[AttemptGradeAnalysisEntry] | None = None
-    highlights: list[AttemptGradeHighlightEntry] | None = None
-    replacements: list[AttemptGradeReplacementEntry] | None = None
+    attempt_id: UUID = Field(..., description="UUID of the attempt to grade")
+    chat_id: UUID | None = Field(None, description="UUID of the chat to grade")
+    resource_types: list[str] | None = Field(None, description="Resource types to include in grading")
+    user_instructions: list[str] | None = Field(None, description="Custom grading instructions")
+    score: int | None = Field(None, description="Overall score for the attempt")
+    passed: bool | None = Field(None, description="Whether the attempt passed")
+    time_taken: int | None = Field(None, description="Time taken in seconds")
+    feedbacks: list[AttemptGradeFeedbackEntry] | None = Field(None, description="Feedback entries from the grader")
+    strengths: list[AttemptGradeStrengthEntry] | None = Field(None, description="Strength entries from the grader")
+    improvements: list[AttemptGradeImprovementEntry] | None = Field(None, description="Improvement entries from the grader")
+    analyses: list[AttemptGradeAnalysisEntry] | None = Field(None, description="Analysis entries from the grader")
+    highlights: list[AttemptGradeHighlightEntry] | None = Field(None, description="Highlight entries for strengths")
+    replacements: list[AttemptGradeReplacementEntry] | None = Field(None, description="Replacement entries for improvements")

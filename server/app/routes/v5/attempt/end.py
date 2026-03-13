@@ -13,7 +13,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infra.attempt.grade_types import (
     AttemptGradeAnalysisEntry,
@@ -29,28 +29,28 @@ router = APIRouter()
 
 
 class EndAttemptApiRequest(BaseModel):
-    attempt_id: UUID
-    chat_id: UUID
-    grade: bool = True
+    attempt_id: UUID = Field(..., description="UUID of the attempt to end")
+    chat_id: UUID = Field(..., description="UUID of the chat to end")
+    grade: bool = Field(True, description="Whether to trigger grading after ending")
     # Optional — agent can provide these, otherwise internal AI generates them
     # Only used when grade=True
-    score: int | None = None
-    passed: bool | None = None
-    time_taken: int | None = None
-    feedbacks: list[AttemptGradeFeedbackEntry] | None = None
-    strengths: list[AttemptGradeStrengthEntry] | None = None
-    improvements: list[AttemptGradeImprovementEntry] | None = None
-    analyses: list[AttemptGradeAnalysisEntry] | None = None
-    highlights: list[AttemptGradeHighlightEntry] | None = None
-    replacements: list[AttemptGradeReplacementEntry] | None = None
+    score: int | None = Field(None, description="Pre-computed score from the agent")
+    passed: bool | None = Field(None, description="Pre-computed pass/fail from the agent")
+    time_taken: int | None = Field(None, description="Time taken in seconds")
+    feedbacks: list[AttemptGradeFeedbackEntry] | None = Field(None, description="Pre-computed feedback entries")
+    strengths: list[AttemptGradeStrengthEntry] | None = Field(None, description="Pre-computed strength entries")
+    improvements: list[AttemptGradeImprovementEntry] | None = Field(None, description="Pre-computed improvement entries")
+    analyses: list[AttemptGradeAnalysisEntry] | None = Field(None, description="Pre-computed analysis entries")
+    highlights: list[AttemptGradeHighlightEntry] | None = Field(None, description="Pre-computed highlight entries")
+    replacements: list[AttemptGradeReplacementEntry] | None = Field(None, description="Pre-computed replacement entries")
 
 
 class EndAttemptApiResponse(BaseModel):
-    chat_id: str
-    is_attempt_finished: bool | None = None
-    grade_id: str | None = None
-    score: int | None = None
-    passed: bool | None = None
+    chat_id: str = Field(..., description="ID of the ended chat")
+    is_attempt_finished: bool | None = Field(None, description="Whether the entire attempt is finished")
+    grade_id: str | None = Field(None, description="ID of the generated grade")
+    score: int | None = Field(None, description="Overall score")
+    passed: bool | None = Field(None, description="Whether the attempt passed")
 
 
 @router.post("/end", response_model=EndAttemptApiResponse)

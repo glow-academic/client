@@ -638,49 +638,49 @@ class PreviousChatOption(BaseModel):
 class ContinuationOption(BaseModel):
     """A bundle of consecutive scenarios that can be reused from previous attempts."""
 
-    scenarios: list[PreviousChatOption]
-    total_score: float
-    total_percentage: float | None = None
-    total_time: float
+    scenarios: list[PreviousChatOption] = Field(..., description="Scenarios in this continuation bundle")
+    total_score: float = Field(..., description="Combined score across scenarios")
+    total_percentage: float | None = Field(None, description="Combined score as a percentage")
+    total_time: float = Field(..., description="Combined time across scenarios")
 
 
 class AvailableContinuationOptions(BaseModel):
     """Available continuation options for an attempt."""
 
-    options: list[ContinuationOption]
+    options: list[ContinuationOption] = Field(..., description="Available continuation option bundles")
 
 
 class GetAttemptDetailResponse(BaseModel):
     """Client-facing API response for attempt detail."""
 
-    actor_name: str | None = None
-    attempt_exists: bool | None = None
-    access_denied: bool | None = None
-    attempt: AttemptData | None = None
-    simulation: SimulationData | None = None
-    timer: TimerData | None = None
-    aggregated_results: AggregatedResults | None = None
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    attempt_exists: bool | None = Field(None, description="Whether the attempt exists")
+    access_denied: bool | None = Field(None, description="Whether access was denied")
+    attempt: AttemptData | None = Field(None, description="Attempt-level data")
+    simulation: SimulationData | None = Field(None, description="Simulation metadata")
+    timer: TimerData | None = Field(None, description="Timer information")
+    aggregated_results: AggregatedResults | None = Field(None, description="Aggregated results across chats")
     # Navigation/UI control
-    current_chat_index: int | None = None
-    expected_chat_count: int | None = None
-    is_active: bool | None = None
-    is_lobby: bool | None = None
-    show_results: bool | None = None
-    should_show_controls: bool | None = None
-    is_own_attempt: bool | None = None
+    current_chat_index: int | None = Field(None, description="Index of the current chat")
+    expected_chat_count: int | None = Field(None, description="Expected total number of chats")
+    is_active: bool | None = Field(None, description="Whether the attempt is currently active")
+    is_lobby: bool | None = Field(None, description="Whether the attempt is in lobby state")
+    show_results: bool | None = Field(None, description="Whether to show results view")
+    should_show_controls: bool | None = Field(None, description="Whether to show UI controls")
+    is_own_attempt: bool | None = Field(None, description="Whether this is the actor's own attempt")
     # Inline controls data (replaces auth/group resolution for toolbar)
-    current_chat_id: str | None = None
-    has_messages: bool = False
+    current_chat_id: str | None = Field(None, description="ID of the current chat")
+    has_messages: bool = Field(False, description="Whether the chat has messages")
     # Continuation options for infinite mode
-    available_continuation_options: AvailableContinuationOptions | None = None
+    available_continuation_options: AvailableContinuationOptions | None = Field(None, description="Continuation options for infinite mode")
     # Extended data (scenario_documents removed - use chat.documents)
-    rubric_structure: RubricStructureData | None = None
+    rubric_structure: RubricStructureData | None = Field(None, description="Rubric structure data")
     # Training context (for lobby flow)
-    training_id: UUID | None = None
-    chat_entry_id: UUID | None = None
+    training_id: UUID | None = Field(None, description="UUID of the training")
+    chat_entry_id: UUID | None = Field(None, description="UUID of the chat entry")
     # New normalized maps
-    resources: AttemptResources | None = None
-    entries: AttemptEntries | None = None
+    resources: AttemptResources | None = Field(None, description="Resource maps keyed by ID")
+    entries: AttemptEntries | None = Field(None, description="Entry payloads by type")
 
 
 # =============================================================================
@@ -753,75 +753,75 @@ class AttemptInternalData:
 class AttemptListFilterOption(BaseModel):
     """Filter option for attempt history dropdowns."""
 
-    value: str
-    label: str | None = None
-    count: int | None = None
+    value: str = Field(..., description="Filter option value")
+    label: str | None = Field(None, description="Display label for the option")
+    count: int | None = Field(None, description="Number of items matching this option")
 
 
 class GetAttemptListRequest(BaseModel):
     """Request for unified attempt list/history fetch."""
 
-    practice: bool = False
-    target_profile_id: UUID | None = None
-    start_date: str | None = None
-    end_date: str | None = None
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    infinite_mode: bool | None = None
-    search: str | None = None
-    profile_search: str | None = None
-    simulation_search: str | None = None
-    scenario_search: str | None = None
-    sort_by: str | None = "date"
-    sort_order: str | None = "desc"
-    page: int = 0
-    page_size: int = 20
-    show_archived: bool = False
+    practice: bool = Field(False, description="Whether to fetch practice attempts")
+    target_profile_id: UUID | None = Field(None, description="UUID of the target profile to filter by")
+    start_date: str | None = Field(None, description="Start date filter (ISO format)")
+    end_date: str | None = Field(None, description="End date filter (ISO format)")
+    cohort_ids: list[UUID] | None = Field(default_factory=list, description="Cohort IDs to filter by")  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list, description="Department IDs to filter by")  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list, description="Simulation IDs to filter by")  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list, description="Scenario IDs to filter by")  # type: ignore[arg-type]
+    infinite_mode: bool | None = Field(None, description="Filter by infinite mode status")
+    search: str | None = Field(None, description="General search string")
+    profile_search: str | None = Field(None, description="Search string for profiles")
+    simulation_search: str | None = Field(None, description="Search string for simulations")
+    scenario_search: str | None = Field(None, description="Search string for scenarios")
+    sort_by: str | None = Field("date", description="Sort field name")
+    sort_order: str | None = Field("desc", description="Sort order: 'asc' or 'desc'")
+    page: int = Field(0, description="Page number (0-indexed)")
+    page_size: int = Field(20, description="Number of items per page")
+    show_archived: bool = Field(False, description="Whether to include archived attempts")
 
 
 class AttemptListItem(BaseModel):
     """Unified attempt history row shape."""
 
-    attempt_id: UUID
-    date: str | None = None
-    profile_id: UUID | None = None
-    profile_name: str | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    num_scenarios: int | None = None
-    num_scenarios_completed: int | None = None
-    infinite_mode: bool | None = None
-    time_limit: int | None = None
-    persona_names_junction: list[str] | None = None
-    persona_colors_junction: list[str] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_titles: list[str] | None = None
-    department_ids: list[str] | None = None
-    cohort_names_junction: list[str] | None = None
-    score: int | None = None
-    score_status: str | None = None
-    pass_pct: int | None = None
-    show_view: bool | None = None
-    show_continue: bool | None = None
-    is_archived: bool | None = None
-    practice_simulation: bool | None = None
-    practice_scenario_id: UUID | None = None
+    attempt_id: UUID = Field(..., description="UUID of the attempt")
+    date: str | None = Field(None, description="ISO timestamp of the attempt")
+    profile_id: UUID | None = Field(None, description="UUID of the user profile")
+    profile_name: str | None = Field(None, description="Display name of the user profile")
+    simulation_id: UUID | None = Field(None, description="UUID of the simulation")
+    simulation_name: str | None = Field(None, description="Name of the simulation")
+    num_scenarios: int | None = Field(None, description="Total number of scenarios")
+    num_scenarios_completed: int | None = Field(None, description="Number of scenarios completed")
+    infinite_mode: bool | None = Field(None, description="Whether infinite mode is enabled")
+    time_limit: int | None = Field(None, description="Time limit in seconds")
+    persona_names_junction: list[str] | None = Field(None, description="Persona names for display")
+    persona_colors_junction: list[str] | None = Field(None, description="Persona colors for display")
+    scenario_ids: list[UUID] | None = Field(None, description="UUIDs of associated scenarios")
+    scenario_titles: list[str] | None = Field(None, description="Titles of associated scenarios")
+    department_ids: list[str] | None = Field(None, description="IDs of associated departments")
+    cohort_names_junction: list[str] | None = Field(None, description="Cohort names for display")
+    score: int | None = Field(None, description="Attempt score")
+    score_status: str | None = Field(None, description="Score status indicator")
+    pass_pct: int | None = Field(None, description="Pass percentage threshold")
+    show_view: bool | None = Field(None, description="Whether to show the view action")
+    show_continue: bool | None = Field(None, description="Whether to show the continue action")
+    is_archived: bool | None = Field(None, description="Whether the attempt is archived")
+    practice_simulation: bool | None = Field(None, description="Whether this is a practice simulation")
+    practice_scenario_id: UUID | None = Field(None, description="UUID of the practice scenario")
 
 
 class GetAttemptListResponse(BaseModel):
     """Response for unified attempt list/history fetch."""
 
-    actor_name: str | None = None
-    data: list[AttemptListItem] = Field(default_factory=list)
-    total_count: int = 0
-    page: int = 0
-    page_size: int = 20
-    total_pages: int = 0
-    simulation_options: list[AttemptListFilterOption] | None = None
-    scenario_options: list[AttemptListFilterOption] | None = None
-    profile_options: list[AttemptListFilterOption] | None = None
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    data: list[AttemptListItem] = Field(default_factory=list, description="Attempt list items")
+    total_count: int = Field(0, description="Total number of matching attempts")
+    page: int = Field(0, description="Current page number")
+    page_size: int = Field(20, description="Number of items per page")
+    total_pages: int = Field(0, description="Total number of pages")
+    simulation_options: list[AttemptListFilterOption] | None = Field(None, description="Simulation filter options")
+    scenario_options: list[AttemptListFilterOption] | None = Field(None, description="Scenario filter options")
+    profile_options: list[AttemptListFilterOption] | None = Field(None, description="Profile filter options")
 
 
 # =============================================================================
@@ -832,29 +832,29 @@ class GetAttemptListResponse(BaseModel):
 class SearchAttemptItem(BaseModel):
     """Single attempt row in search results."""
 
-    attempt_id: UUID
-    date: str | None = None
-    profile_id: UUID | None = None
-    profile_name: str | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    department_id: UUID | None = None
-    cohort_id: UUID | None = None
-    practice: bool | None = None
-    infinite_mode: bool | None = None
-    num_chats: int | None = None
-    is_archived: bool | None = None
-    scenario_ids: list[UUID] | None = None
+    attempt_id: UUID = Field(..., description="UUID of the attempt")
+    date: str | None = Field(None, description="ISO timestamp of the attempt")
+    profile_id: UUID | None = Field(None, description="UUID of the user profile")
+    profile_name: str | None = Field(None, description="Display name of the user profile")
+    simulation_id: UUID | None = Field(None, description="UUID of the simulation")
+    simulation_name: str | None = Field(None, description="Name of the simulation")
+    department_id: UUID | None = Field(None, description="UUID of the department")
+    cohort_id: UUID | None = Field(None, description="UUID of the cohort")
+    practice: bool | None = Field(None, description="Whether this is a practice attempt")
+    infinite_mode: bool | None = Field(None, description="Whether infinite mode is enabled")
+    num_chats: int | None = Field(None, description="Number of chats in the attempt")
+    is_archived: bool | None = Field(None, description="Whether the attempt is archived")
+    scenario_ids: list[UUID] | None = Field(None, description="UUIDs of associated scenarios")
 
 
 class SearchAttemptApiResponse(BaseModel):
     """Response for attempt search endpoint."""
 
-    actor_name: str | None = None
-    attempts: list[SearchAttemptItem] | None = None
-    simulation_filter: ListFilterSection | None = None
-    department_filter: ListFilterSection | None = None
-    total_count: int | None = None
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    attempts: list[SearchAttemptItem] | None = Field(None, description="Search result attempt items")
+    simulation_filter: ListFilterSection | None = Field(None, description="Simulation filter section")
+    department_filter: ListFilterSection | None = Field(None, description="Department filter section")
+    total_count: int | None = Field(None, description="Total number of matching results")
 
 
 # =============================================================================
@@ -865,7 +865,7 @@ class SearchAttemptApiResponse(BaseModel):
 class ExportAttemptApiResponse(BaseModel):
     """Response model for attempt export."""
 
-    content: str
-    file_name: str
-    mime_type: str
-    row_count: int
+    content: str = Field(..., description="Exported file content")
+    file_name: str = Field(..., description="Name of the exported file")
+    mime_type: str = Field(..., description="MIME type of the exported file")
+    row_count: int = Field(..., description="Number of rows in the export")

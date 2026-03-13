@@ -14,7 +14,7 @@ from uuid import UUID
 
 import asyncpg
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
@@ -34,45 +34,45 @@ class CreateToolItem(BaseModel):
     Required fields (name): provide ID or value.
     """
 
-    id: UUID | None = None
+    id: UUID | None = Field(None, description="Optional pre-assigned identifier")
 
     # Dual-mode: name
-    name_id: UUID | None = None
-    name: str | None = None
+    name_id: UUID | None = Field(None, description="Name resource identifier")
+    name: str | None = Field(None, description="Display name value")
     # Dual-mode: description
-    description_id: UUID | None = None
-    description: str | None = None
+    description_id: UUID | None = Field(None, description="Description resource identifier")
+    description: str | None = Field(None, description="Description text value")
     # ID-only fields
-    department_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    arg_positions_ids: list[UUID] | None = None
-    args_ids: list[UUID] | None = None
-    args_outputs_ids: list[UUID] | None = None
-    artifact_ids: list[UUID] | None = None
-    operation_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = Field(None, description="Department identifiers")
+    flag_ids: list[UUID] | None = Field(None, description="Flag option identifiers")
+    arg_positions_ids: list[UUID] | None = Field(None, description="Argument position identifiers")
+    args_ids: list[UUID] | None = Field(None, description="Argument identifiers")
+    args_outputs_ids: list[UUID] | None = Field(None, description="Argument output identifiers")
+    artifact_ids: list[UUID] | None = Field(None, description="Artifact identifiers")
+    operation_ids: list[UUID] | None = Field(None, description="Operation identifiers")
+    tool_ids: list[UUID] | None = Field(None, description="Related tool identifiers")
 
 
 class ToolFieldError(BaseModel):
     """Per-field error from value resolution."""
 
-    field: str
-    message: str
+    field: str = Field(..., description="Field name that caused the error")
+    message: str = Field(..., description="Error message describing the issue")
 
 
 class ToolResultItem(BaseModel):
     """Per-item result within a bulk create/update response."""
 
-    success: bool
-    tool_id: UUID | None = None
-    message: str
-    errors: list[ToolFieldError] | None = None
+    success: bool = Field(..., description="Whether the operation succeeded")
+    tool_id: UUID | None = Field(None, description="Tool unique identifier")
+    message: str = Field(..., description="Result message")
+    errors: list[ToolFieldError] | None = Field(None, description="List of field-level errors")
 
 
 class CreateToolApiResponse(BaseModel):
     """Response model for bulk create tool endpoint."""
 
-    results: list[ToolResultItem]
+    results: list[ToolResultItem] = Field(..., description="List of operation results")
 
 
 async def create_tool_impl(

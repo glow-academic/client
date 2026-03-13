@@ -3,34 +3,34 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CreateInvocationDraftResponse(BaseModel):
-    id: UUID
+    id: UUID = Field(..., description="UUID of the created draft")
 
 
 class GetInvocationDraftResponse(BaseModel):
-    id: UUID
-    version: int
-    created_at: datetime
-    generated: bool
-    mcp: bool
-    active: bool
-    group_id: UUID
-    session_id: UUID
-    department_ids: list[UUID]
-    description_ids: list[UUID]
-    flag_ids: list[UUID]
-    key_ids: list[UUID]
-    model_flag_ids: list[UUID]
-    model_position_ids: list[UUID]
-    model_rubric_ids: list[UUID]
-    name_ids: list[UUID]
-    profile_ids: list[UUID]
-    reasoning_level_ids: list[UUID]
-    temperature_level_ids: list[UUID]
-    voice_ids: list[UUID]
-    value_ids: list[UUID]
-    pricing_ids: list[UUID]
-    endpoint_ids: list[UUID]
+    id: UUID = Field(..., description="UUID of the draft")
+    version: int = Field(..., description="Draft version number")
+    created_at: datetime = Field(..., description="Creation timestamp")
+    generated: bool = Field(..., description="Whether this was AI-generated")
+    mcp: bool = Field(..., description="Whether MCP tooling was used")
+    active: bool = Field(..., description="Whether this draft is active")
+    group_id: UUID = Field(..., description="Generation group UUID")
+    session_id: UUID = Field(..., description="Associated session UUID")
+    department_ids: list[UUID] = Field(..., description="Associated department UUIDs")
+    description_ids: list[UUID] = Field(..., description="Associated description UUIDs")
+    flag_ids: list[UUID] = Field(..., description="Associated flag UUIDs")
+    key_ids: list[UUID] = Field(..., description="Associated key UUIDs")
+    model_flag_ids: list[UUID] = Field(..., description="Associated model flag UUIDs")
+    model_position_ids: list[UUID] = Field(..., description="Associated model position UUIDs")
+    model_rubric_ids: list[UUID] = Field(..., description="Associated model rubric UUIDs")
+    name_ids: list[UUID] = Field(..., description="Associated name UUIDs")
+    profile_ids: list[UUID] = Field(..., description="Associated profile UUIDs")
+    reasoning_level_ids: list[UUID] = Field(..., description="Associated reasoning level UUIDs")
+    temperature_level_ids: list[UUID] = Field(..., description="Associated temperature level UUIDs")
+    voice_ids: list[UUID] = Field(..., description="Associated voice UUIDs")
+    value_ids: list[UUID] = Field(..., description="Associated value UUIDs")
+    pricing_ids: list[UUID] = Field(..., description="Associated pricing UUIDs")
+    endpoint_ids: list[UUID] = Field(..., description="Associated endpoint UUIDs")

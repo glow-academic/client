@@ -15,18 +15,18 @@ from app.tools.entries.metrics.types import GetMetricsSearchResponse
 class HealthRequest(BaseModel):
     """Request for getting health data."""
 
-    service: str | None = Field(default=None)
-    date_from: datetime | None = Field(default=None)
-    date_to: datetime | None = Field(default=None)
-    page_limit: int = Field(default=168, ge=1, le=744)
-    page_offset: int = Field(default=0, ge=0)
+    service: str | None = Field(default=None, description="Service name to filter by")
+    date_from: datetime | None = Field(default=None, description="Start date filter")
+    date_to: datetime | None = Field(default=None, description="End date filter")
+    page_limit: int = Field(default=168, ge=1, le=744, description="Maximum items per page")
+    page_offset: int = Field(default=0, ge=0, description="Offset for pagination")
 
 
 class HealthViews(BaseModel):
     """Health view data."""
 
-    service_hourly: list[GetHealthResponse] = Field(default_factory=list)
-    metrics_hourly: list[GetMetricsSearchResponse] = Field(default_factory=list)
+    service_hourly: list[GetHealthResponse] = Field(default_factory=list, description="Hourly service health entries")
+    metrics_hourly: list[GetMetricsSearchResponse] = Field(default_factory=list, description="Hourly metrics entries")
 
 
 class HealthResponse(BaseModel):
@@ -35,9 +35,9 @@ class HealthResponse(BaseModel):
     Includes inline analytics facets for SSR filter rendering.
     """
 
-    views: HealthViews = Field(default_factory=HealthViews)
-    total_count: int = Field(default=0)
-    analytics: AnalyticsFacets | None = None
+    views: HealthViews = Field(default_factory=HealthViews, description="Health view data")
+    total_count: int = Field(default=0, description="Total number of health entries")
+    analytics: AnalyticsFacets | None = Field(None, description="Analytics facets for filtering")
 
 
 @dataclass
@@ -68,7 +68,7 @@ class HealthInternalData:
 class ExportHealthApiResponse(BaseModel):
     """Response model for health export."""
 
-    content: str
-    file_name: str
-    mime_type: str
-    row_count: int
+    content: str = Field(..., description="Exported file content")
+    file_name: str = Field(..., description="Name of the exported file")
+    mime_type: str = Field(..., description="MIME type of the exported file")
+    row_count: int = Field(..., description="Number of rows in the export")

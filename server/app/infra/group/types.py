@@ -16,56 +16,56 @@ from app.tools.entries.runs.search import RunViewItem
 class GroupListItem(BaseModel):
     """Single group in the list response with hydrated metadata."""
 
-    group_id: UUID
-    session_id: UUID | None = None
-    profile_id: UUID | None = None
+    group_id: UUID = Field(..., description="UUID of the group")
+    session_id: UUID | None = Field(None, description="UUID of the parent session")
+    profile_id: UUID | None = Field(None, description="UUID of the user profile")
 
-    group_name: str | None = None
+    group_name: str | None = Field(None, description="Name of the group")
 
-    first_run_at: datetime | None = None
-    last_run_at: datetime | None = None
+    first_run_at: datetime | None = Field(None, description="Timestamp of the first run")
+    last_run_at: datetime | None = Field(None, description="Timestamp of the last run")
 
-    run_count: int = 0
-    unique_agents: int = 0
-    unique_models: int = 0
+    run_count: int = Field(0, description="Number of runs in the group")
+    unique_agents: int = Field(0, description="Number of unique agents used")
+    unique_models: int = Field(0, description="Number of unique models used")
 
-    total_input_tokens: int = 0
-    total_output_tokens: int = 0
-    total_tokens: int = 0
-    total_cost: Decimal = Decimal("0")
+    total_input_tokens: int = Field(0, description="Total input tokens consumed")
+    total_output_tokens: int = Field(0, description="Total output tokens generated")
+    total_tokens: int = Field(0, description="Total tokens used")
+    total_cost: Decimal = Field(Decimal("0"), description="Total cost of the group")
 
-    agent_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = Field(None, description="UUIDs of agents used")
+    model_ids: list[UUID] | None = Field(None, description="UUIDs of models used")
 
     # Hydrated metadata
-    profile_name: str | None = None
-    agent_names: list[str] | None = None
-    model_names: list[str] | None = None
+    profile_name: str | None = Field(None, description="Display name of the user profile")
+    agent_names: list[str] | None = Field(None, description="Names of agents used")
+    model_names: list[str] | None = Field(None, description="Names of models used")
 
 
 class GetGroupListRequest(BaseModel):
     """Request for group list endpoint."""
 
-    agent_id: UUID | None = Field(default=None)
-    model_id: UUID | None = Field(default=None)
-    date_from: datetime | None = Field(default=None)
-    date_to: datetime | None = Field(default=None)
+    agent_id: UUID | None = Field(default=None, description="Filter by agent UUID")
+    model_id: UUID | None = Field(default=None, description="Filter by model UUID")
+    date_from: datetime | None = Field(default=None, description="Start date filter")
+    date_to: datetime | None = Field(default=None, description="End date filter")
 
     sort_by: str = Field(
         default="date", description="'date' | 'cost' | 'tokens' | 'runs'"
     )
-    sort_order: str = Field(default="desc")
+    sort_order: str = Field(default="desc", description="Sort order: 'asc' or 'desc'")
 
-    page_limit: int = Field(default=50, ge=1, le=100)
-    page_offset: int = Field(default=0, ge=0)
+    page_limit: int = Field(default=50, ge=1, le=100, description="Maximum items per page")
+    page_offset: int = Field(default=0, ge=0, description="Offset for pagination")
 
 
 class GetGroupListResponse(BaseModel):
     """Response for group list endpoint."""
 
-    actor_name: str | None = None
-    items: list[GroupListItem] = Field(default_factory=list)
-    total_count: int = Field(default=0)
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    items: list[GroupListItem] = Field(default_factory=list, description="Group list items")
+    total_count: int = Field(default=0, description="Total number of matching groups")
 
 
 # ---- Group Detail types ----
@@ -74,76 +74,76 @@ class GetGroupListResponse(BaseModel):
 class GroupDetailCallItem(BaseModel):
     """A tool/function call made during the run."""
 
-    id: UUID
-    template_name: str | None = None
-    file_path: str | None = None
-    created_at: datetime
+    id: UUID = Field(..., description="UUID of the call")
+    template_name: str | None = Field(None, description="Name of the call template")
+    file_path: str | None = Field(None, description="File path associated with the call")
+    created_at: datetime = Field(..., description="Timestamp when the call was made")
 
 
 class GroupDetailMessageItem(BaseModel):
     """A message with upload IDs by media type."""
 
-    id: UUID | None = None
-    role: str | None = None
-    text_upload_ids: list[UUID] = Field(default_factory=list)
-    audio_upload_ids: list[UUID] = Field(default_factory=list)
-    image_upload_ids: list[UUID] = Field(default_factory=list)
-    video_upload_ids: list[UUID] = Field(default_factory=list)
-    file_upload_ids: list[UUID] = Field(default_factory=list)
-    call_upload_ids: list[UUID] = Field(default_factory=list)
-    calls: list[GroupDetailCallItem] = Field(default_factory=list)
+    id: UUID | None = Field(None, description="UUID of the message")
+    role: str | None = Field(None, description="Role of the message sender")
+    text_upload_ids: list[UUID] = Field(default_factory=list, description="Text upload UUIDs")
+    audio_upload_ids: list[UUID] = Field(default_factory=list, description="Audio upload UUIDs")
+    image_upload_ids: list[UUID] = Field(default_factory=list, description="Image upload UUIDs")
+    video_upload_ids: list[UUID] = Field(default_factory=list, description="Video upload UUIDs")
+    file_upload_ids: list[UUID] = Field(default_factory=list, description="File upload UUIDs")
+    call_upload_ids: list[UUID] = Field(default_factory=list, description="Call upload UUIDs")
+    calls: list[GroupDetailCallItem] = Field(default_factory=list, description="Tool calls in this message")
 
 
 class GroupDetailRunItem(BaseModel):
     """Run metadata for the detail response."""
 
-    id: UUID
-    created_at: datetime
-    input_tokens: int = 0
-    output_tokens: int = 0
-    cached_input_tokens: int = 0
-    cost: float = 0
-    model_id: UUID | None = None
-    agent_id: UUID | None = None
-    profile_id: UUID | None = None
+    id: UUID = Field(..., description="UUID of the run")
+    created_at: datetime = Field(..., description="Timestamp when the run was created")
+    input_tokens: int = Field(0, description="Number of input tokens consumed")
+    output_tokens: int = Field(0, description="Number of output tokens generated")
+    cached_input_tokens: int = Field(0, description="Number of cached input tokens")
+    cost: float = Field(0, description="Cost of the run")
+    model_id: UUID | None = Field(None, description="UUID of the model used")
+    agent_id: UUID | None = Field(None, description="UUID of the agent used")
+    profile_id: UUID | None = Field(None, description="UUID of the user profile")
 
 
 class GroupDetailRunWithMessages(BaseModel):
     """A run with its messages and context boundary."""
 
-    run: GroupDetailRunItem
-    messages: list[GroupDetailMessageItem] = Field(default_factory=list)
-    previous_context_start_index: int | None = None
+    run: GroupDetailRunItem = Field(..., description="Run metadata")
+    messages: list[GroupDetailMessageItem] = Field(default_factory=list, description="Messages in this run")
+    previous_context_start_index: int | None = Field(None, description="Index where previous context starts")
 
 
 class GroupDetailResourceItem(BaseModel):
     """A named resource (model, agent, or profile)."""
 
-    model_id: UUID | None = None
-    agent_id: UUID | None = None
-    profile_id: UUID | None = None
-    name: str | None = None
+    model_id: UUID | None = Field(None, description="UUID of the model")
+    agent_id: UUID | None = Field(None, description="UUID of the agent")
+    profile_id: UUID | None = Field(None, description="UUID of the profile")
+    name: str | None = Field(None, description="Display name of the resource")
 
 
 class GetGroupDetailRequest(BaseModel):
     """Request for group detail endpoint."""
 
-    group_id: UUID
-    message_limit: int | None = None
-    message_offset: int | None = None
+    group_id: UUID = Field(..., description="UUID of the group to fetch")
+    message_limit: int | None = Field(None, description="Maximum number of messages to return")
+    message_offset: int | None = Field(None, description="Offset for message pagination")
 
 
 class GetGroupDetailResponse(BaseModel):
     """Response for group detail endpoint."""
 
-    group_exists: bool = False
-    actor_name: str | None = None
-    group_name: str | None = None
-    total_message_count: int = 0
-    runs: list[GroupDetailRunWithMessages] = Field(default_factory=list)
-    models: list[GroupDetailResourceItem] = Field(default_factory=list)
-    agents: list[GroupDetailResourceItem] = Field(default_factory=list)
-    profiles: list[GroupDetailResourceItem] = Field(default_factory=list)
+    group_exists: bool = Field(False, description="Whether the group exists")
+    actor_name: str | None = Field(None, description="Display name of the current actor")
+    group_name: str | None = Field(None, description="Name of the group")
+    total_message_count: int = Field(0, description="Total number of messages in the group")
+    runs: list[GroupDetailRunWithMessages] = Field(default_factory=list, description="Runs with their messages")
+    models: list[GroupDetailResourceItem] = Field(default_factory=list, description="Models used in the group")
+    agents: list[GroupDetailResourceItem] = Field(default_factory=list, description="Agents used in the group")
+    profiles: list[GroupDetailResourceItem] = Field(default_factory=list, description="Profiles in the group")
 
 
 @dataclass
@@ -183,7 +183,7 @@ class GroupInternalData:
 class ExportGroupApiResponse(BaseModel):
     """Response model for group export."""
 
-    content: str
-    file_name: str
-    mime_type: str
-    row_count: int
+    content: str = Field(..., description="Exported file content")
+    file_name: str = Field(..., description="Name of the exported file")
+    mime_type: str = Field(..., description="MIME type of the exported file")
+    row_count: int = Field(..., description="Number of rows in the export")
