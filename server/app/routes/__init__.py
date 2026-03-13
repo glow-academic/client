@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.routes.default_idp import router as default_idp_router
 from app.routes.health import router as health_router
-from app.routes.v5.router import router as v5_router
+from app.routes.v5 import router as v5_router
 from app.routes.well_known import router as well_known_router
 
 router = APIRouter()
