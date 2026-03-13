@@ -1,4 +1,4 @@
-"""Focused tests for injectable export upload folders."""
+"""Focused tests for export responses using the current inline content contract."""
 
 from __future__ import annotations
 
@@ -29,11 +29,10 @@ def _ensure_export_type_packages(artifact_name: str) -> None:
         sys.modules[package_name] = package
 
 
-async def test_export_persona_impl_writes_to_injected_upload_folder(
+async def test_export_persona_impl_returns_inline_csv_content(
     pool,
     redis_client,
     setting_graph_factory,
-    tmp_path,
 ):
     _ensure_export_type_packages("persona")
     from app.infra.persona.export import export_persona_impl
@@ -61,22 +60,19 @@ async def test_export_persona_impl_writes_to_injected_upload_folder(
         pool,
         redis_client,
         profile_id=actor.profile_id,
-        session_id=actor.session_id,
         persona_id=persona.id,
-        upload_folder=tmp_path,
     )
 
-    exported = tmp_path / result.file_name
-    assert exported.exists()
-    assert exported.suffix == ".csv"
-    assert Path(exported).parent == tmp_path
+    assert result.file_name.endswith(".csv")
+    assert result.mime_type == "text/csv"
+    assert result.row_count == 1
+    assert result.content
 
 
-async def test_export_scenario_impl_writes_to_injected_upload_folder(
+async def test_export_scenario_impl_returns_inline_csv_content(
     pool,
     redis_client,
     setting_graph_factory,
-    tmp_path,
 ):
     _ensure_export_type_packages("scenario")
     from app.infra.scenario.export import export_scenario_impl
@@ -114,22 +110,19 @@ async def test_export_scenario_impl_writes_to_injected_upload_folder(
         pool,
         redis_client,
         profile_id=actor.profile_id,
-        session_id=actor.session_id,
         scenario_id=scenario.id,
-        upload_folder=tmp_path,
     )
 
-    exported = tmp_path / result.file_name
-    assert exported.exists()
-    assert exported.suffix == ".csv"
-    assert Path(exported).parent == tmp_path
+    assert result.file_name.endswith(".csv")
+    assert result.mime_type == "text/csv"
+    assert result.row_count == 1
+    assert result.content
 
 
-async def test_export_profile_impl_writes_to_injected_upload_folder(
+async def test_export_profile_impl_returns_inline_csv_content(
     pool,
     redis_client,
     setting_graph_factory,
-    tmp_path,
 ):
     _ensure_export_type_packages("profile")
     from app.infra.profile.export import export_profile_impl
@@ -176,12 +169,10 @@ async def test_export_profile_impl_writes_to_injected_upload_folder(
         pool,
         redis_client,
         profile_id=actor.profile_id,
-        session_id=actor.session_id,
         profile_export_id=profile.id,
-        upload_folder=tmp_path,
     )
 
-    exported = tmp_path / result.file_name
-    assert exported.exists()
-    assert exported.suffix == ".csv"
-    assert Path(exported).parent == tmp_path
+    assert result.file_name.endswith(".csv")
+    assert result.mime_type == "text/csv"
+    assert result.row_count == 1
+    assert result.content

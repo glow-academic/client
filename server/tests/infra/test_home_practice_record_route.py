@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from uuid import UUID
-
 import pytest
 import pytest_asyncio
 from tests.infra.route_helpers import create_admin_route_actor
@@ -226,14 +224,8 @@ class TestHomePracticeRecordRoutes:
         payload = response.json()
         assert payload["row_count"] >= 1
         assert payload["file_name"].endswith(".zip")
-
-        async with pool.acquire() as conn:
-            stored_upload = await conn.fetchval(
-                "SELECT id FROM uploads_entry WHERE id = $1",
-                UUID(payload["upload_id"]),
-            )
-
-        assert stored_upload == UUID(payload["upload_id"])
+        assert payload["content"]
+        assert payload["mime_type"] == "application/zip"
 
     async def test_export_practice_route_creates_zip_upload(
         self,
@@ -259,14 +251,8 @@ class TestHomePracticeRecordRoutes:
         payload = response.json()
         assert payload["row_count"] >= 1
         assert payload["file_name"].endswith(".zip")
-
-        async with pool.acquire() as conn:
-            stored_upload = await conn.fetchval(
-                "SELECT id FROM uploads_entry WHERE id = $1",
-                UUID(payload["upload_id"]),
-            )
-
-        assert stored_upload == UUID(payload["upload_id"])
+        assert payload["content"]
+        assert payload["mime_type"] == "application/zip"
 
     async def test_export_record_route_creates_zip_upload(
         self,
@@ -293,11 +279,5 @@ class TestHomePracticeRecordRoutes:
         payload = response.json()
         assert payload["row_count"] >= 1
         assert payload["file_name"].endswith(".zip")
-
-        async with pool.acquire() as conn:
-            stored_upload = await conn.fetchval(
-                "SELECT id FROM uploads_entry WHERE id = $1",
-                UUID(payload["upload_id"]),
-            )
-
-        assert stored_upload == UUID(payload["upload_id"])
+        assert payload["content"]
+        assert payload["mime_type"] == "application/zip"

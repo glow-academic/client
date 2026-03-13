@@ -158,6 +158,11 @@ class TestBenchmarkFilters:
                 _run,
                 early_call,
             ) = await _profile_session_run_call(conn, redis_client)
+            await create_profile_artifact(
+                conn,
+                department_ids=[department.id],
+                profile_ids=[profile.id],
+            )
             early_test = await create_test(
                 conn, call_id=early_call.id, profiles_id=profile.id
             )

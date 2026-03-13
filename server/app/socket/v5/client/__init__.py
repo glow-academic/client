@@ -10,8 +10,6 @@ Importing this module registers all client events with Socket.IO:
 from . import (
     attempt,  # noqa: F401 — registers attempt_* events
     connect,  # noqa: F401 — registers connect/disconnect
+    generation,  # noqa: F401 — registers generate event
     test,  # noqa: F401 — registers test_* events
-)
-from . import (
-    generate_new as generate,  # noqa: F401 — registers generate event
 )

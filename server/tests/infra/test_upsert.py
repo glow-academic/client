@@ -146,6 +146,7 @@ class TestResolveProfileUpsert:
             "department_ids": None,
             "flag_ids": [flag_id],
             "profile_ids": [snapshot_id],
+            "redis": None,
         }
         assert calls["session"] == snapshot_id
 

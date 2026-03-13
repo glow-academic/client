@@ -1,14 +1,3 @@
-"""Re-export from canonical location in infra/websocket/.
+"""Compatibility shim for canonical generation event types."""
 
-All models moved to app.infra.websocket.generation_types.
-This file re-exports for backwards compatibility.
-"""
-
-from app.infra.websocket.generation_types import (  # noqa: F401
-    GenerationCompleteData,
-    GenerationErrorData,
-    GenerationProgressData,
-    GenerationSavedData,
-    GenerationStartedData,
-    GenerationStartedEvent,
-)
+from app.socket.v5.internal.generation.generation_types import *  # noqa: F401,F403

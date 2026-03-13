@@ -1,92 +1,78 @@
-"""Behavioral tests for app.infra.sessions.get."""
-
 from __future__ import annotations
 
-from uuid import UUID
+from uuid import uuid4
 
 import pytest
-import pytest_asyncio
-from tests.infra.route_helpers import create_admin_route_actor
 
 from app.infra.sessions.get import get_session_impl
 from app.tools.entries.sessions.create import create_session
 from app.tools.entries.sessions.refresh import refresh_sessions
+from app.tools.resources.profiles.create import create_profile
 
 
-@pytest_asyncio.fixture
-async def sessions_get_actor(pool, redis_client, setting_graph_factory):
-    return await create_admin_route_actor(
-        pool,
-        redis_client,
-        setting_graph_factory,
-        tool_artifacts=["session"],
-        group_name="sessions-get",
-        role_name_prefix="Sessions Get Admin",
-    )
+pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.asyncio
-class TestGetSessionImpl:
-    async def test_returns_most_recent_active_session_for_profile(
-        self,
-        pool,
-        redis_client,
-        sessions_get_actor,
-    ):
-        async with pool.acquire() as conn:
-            newer_session = await create_session(
-                conn,
-                profile_id=sessions_get_actor.profiles_id,
-            )
-            await refresh_sessions(conn)
+async def test_get_session_impl_returns_latest_active_session(pool, redis_client):
+    async with pool.acquire() as conn:
+        profile = await create_profile(conn, redis_client)
+        older = await create_session(conn, profile_id=profile.id)
+        newer = await create_session(conn, profile_id=profile.id)
+        await conn.execute(
+            "UPDATE sessions_entry SET created_at = NOW() - interval '2 days' WHERE id = $1",
+            older.id,
+        )
+        await refresh_sessions(conn)
 
-            resolved = await get_session_impl(
-                conn,
-                sessions_get_actor.profiles_id,
-                redis=redis_client,
-                bypass_cache=True,
-            )
+    async with pool.acquire() as conn:
+        session_id = await get_session_impl(
+            conn,
+            profile.id,
+            redis=redis_client,
+            bypass_cache=True,
+        )
 
-        assert resolved == newer_session.id
+    assert session_id == newer.id
 
-    async def test_uses_cached_session_result(
-        self,
-        pool,
-        redis_client,
-        sessions_get_actor,
-    ):
-        async with pool.acquire() as conn:
-            newer_session = await create_session(
-                conn,
-                profile_id=sessions_get_actor.profiles_id,
-            )
-            await refresh_sessions(conn)
-            first = await get_session_impl(
-                conn,
-                sessions_get_actor.profiles_id,
-                redis=redis_client,
-                bypass_cache=False,
-            )
 
-            newest_session = await create_session(
-                conn,
-                profile_id=sessions_get_actor.profiles_id,
-            )
-            await refresh_sessions(conn)
-            cached = await get_session_impl(
-                conn,
-                sessions_get_actor.profiles_id,
-                redis=redis_client,
-                bypass_cache=False,
-            )
-            refreshed = await get_session_impl(
-                conn,
-                sessions_get_actor.profiles_id,
-                redis=redis_client,
-                bypass_cache=True,
-            )
+async def test_get_session_impl_returns_none_when_profile_has_no_sessions(
+    pool,
+    redis_client,
+):
+    async with pool.acquire() as conn:
+        session_id = await get_session_impl(
+            conn,
+            uuid4(),
+            redis=redis_client,
+            bypass_cache=True,
+        )
 
-        assert first == newer_session.id
-        assert cached == newer_session.id
-        assert refreshed == newest_session.id
-        assert isinstance(refreshed, UUID)
+    assert session_id is None
+
+
+async def test_get_session_impl_reads_from_cache_after_first_lookup(
+    pool,
+    redis_client,
+):
+    async with pool.acquire() as conn:
+        profile = await create_profile(conn, redis_client)
+        session = await create_session(conn, profile_id=profile.id)
+        await refresh_sessions(conn)
+        cached = await get_session_impl(
+            conn,
+            profile.id,
+            redis=redis_client,
+            bypass_cache=False,
+        )
+        assert cached == session.id
+
+        await conn.execute("DELETE FROM sessions_entry WHERE id = $1", session.id)
+
+        cached_again = await get_session_impl(
+            conn,
+            profile.id,
+            redis=redis_client,
+            bypass_cache=False,
+        )
+
+    assert cached_again == session.id

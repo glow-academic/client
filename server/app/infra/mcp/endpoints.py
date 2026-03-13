@@ -6,6 +6,7 @@ no dynamic discovery, no circular imports.
 
 import inspect
 import os
+from typing import get_type_hints
 from typing import Any, cast
 
 from fastapi import Response
@@ -737,7 +738,11 @@ def get_request_model_from_handler(handler: Any) -> Any | None:
         if params and len(params) > 0:
             first_param = params[0]
             if first_param.annotation != inspect.Parameter.empty:
-                return first_param.annotation
+                try:
+                    hints = get_type_hints(handler)
+                    return hints.get(first_param.name, first_param.annotation)
+                except Exception:
+                    return first_param.annotation
     except Exception:
         pass
     return None
@@ -822,10 +827,6 @@ async def call_handler(
 
     profile_id is automatically extracted from MCP request context.
     """
-    from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-    profile_id = get_mcp_profile_id()
-
     if name not in ARTIFACT_REGISTRY:
         suggestion = _suggest_item_name(name)
         return {
@@ -846,6 +847,9 @@ async def call_handler(
             "note": f"Available operations for '{name}': {', '.join(available_operations)}",
         }
 
+    from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+
+    profile_id = get_mcp_profile_id()
     handler = _get_handler(*ops[operation])
     return await call_endpoint_handler(handler, payload, profile_id)
 
@@ -880,6 +884,7 @@ async def call_endpoint_handler(
         }
         http_request = StarletteRequest(scope)
         http_request.state.profile_id = profile_id
+        http_request.state.session_id = None
         http_request.state.mcp = True
         http_response = Response()
 

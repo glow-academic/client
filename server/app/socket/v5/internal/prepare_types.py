@@ -1,14 +1,3 @@
-"""Re-export — canonical location is app.infra.websocket.prepare_types."""
+"""Compatibility shim for canonical generation prepare types."""
 
-from app.infra.websocket.prepare_types import (
-    AgentDispatch as AgentDispatch,
-)
-from app.infra.websocket.prepare_types import (
-    LLMConfig as LLMConfig,
-)
-from app.infra.websocket.prepare_types import (
-    MessageSpec as MessageSpec,
-)
-from app.infra.websocket.prepare_types import (
-    PreparedGeneration as PreparedGeneration,
-)
+from app.socket.v5.internal.generation.prepare_types import *  # noqa: F401,F403

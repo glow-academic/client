@@ -55,13 +55,13 @@ async def test_resolve_auths_for_department_follows_department_setting_auth_chai
     auth_id = uuid4()
     monkeypatch.setattr(
         resolvers,
-        "get_department_resources",
-        _async_result([_ns(setting_ids=[setting_id])]),
+        "get_department_artifacts",
+        _async_result([_ns(settings_ids=[setting_id])]),
     )
     monkeypatch.setattr(
         resolvers,
-        "get_setting_resources",
-        _async_result([_ns(active=True, auth_ids=[auth_id])]),
+        "get_setting_artifacts",
+        _async_result([_ns(auth_ids=[auth_id])]),
     )
     monkeypatch.setattr(
         resolvers,
@@ -93,8 +93,8 @@ async def test_resolve_auths_for_realm_filters_out_department_scoped_settings(
     monkeypatch.setattr(resolvers, "search_departments", _async_result(([dept_id], 1)))
     monkeypatch.setattr(
         resolvers,
-        "get_department_resources",
-        _async_result([_ns(id=dept_id, setting_ids=[dept_setting_id])]),
+        "get_department_artifacts",
+        _async_result([_ns(id=dept_id, settings_ids=[dept_setting_id])]),
     )
     monkeypatch.setattr(
         resolvers,
@@ -109,14 +109,10 @@ async def test_resolve_auths_for_realm_filters_out_department_scoped_settings(
                 _ns(
                     id=setting_artifact_id,
                     setting_ids=[dept_setting_id, realm_setting_id],
+                    auth_ids=[auth_id],
                 )
             ]
         ),
-    )
-    monkeypatch.setattr(
-        resolvers,
-        "get_setting_resources",
-        _async_result([_ns(active=True, auth_ids=[auth_id])]),
     )
     monkeypatch.setattr(
         resolvers,

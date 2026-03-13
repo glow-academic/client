@@ -4,6 +4,7 @@ Pytest configuration and shared fixtures for real database testing.
 
 import os
 import sys
+import asyncio
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from pathlib import Path
@@ -47,6 +48,25 @@ from app.utils.test_db import get_test_db_url  # noqa: E402
 
 # Store the test database URL for direct connections
 _test_db_url: str | None = None
+
+
+async def _wait_for_database(
+    admin_conn: asyncpg.Connection,
+    db_name: str,
+    *,
+    attempts: int = 20,
+    delay_s: float = 0.1,
+) -> None:
+    """Wait until Postgres reports the cloned database as visible."""
+    for _ in range(attempts):
+        exists = await admin_conn.fetchval(
+            "SELECT 1 FROM pg_database WHERE datname = $1",
+            db_name,
+        )
+        if exists:
+            return
+        await asyncio.sleep(delay_s)
+    raise RuntimeError(f"Cloned test database never became visible: {db_name}")
 
 
 def _filter_meta_commands(sql: str) -> str:
@@ -159,7 +179,8 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
     # 2. Compute content hash
     db_hash = compute_db_hash(database_dir)
     template_name = f"template_glow_{db_hash}"
-    clone_name = f"test_glow_{db_hash}"
+    worker_id = os.getenv("PYTEST_XDIST_WORKER", "main")
+    clone_name = f"test_glow_{db_hash}_{worker_id}_{os.getpid()}"
     admin_url = get_admin_url(base_url)
 
     print(f"🔑 Template hash: {db_hash}")
@@ -175,6 +196,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
             # --- WARM PATH: clone from template ---
             print(f"⚡ Template found: {template_name} — cloning to {clone_name}")
             await clone_from_template(admin_conn, template_name, clone_name)
+            await _wait_for_database(admin_conn, clone_name)
 
             # Reconnect pool to the cloned database
             parsed = urlparse(base_url)
@@ -253,6 +275,7 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
 
             # Clone from the freshly saved template for the test run
             await clone_from_template(admin_conn, template_name, clone_name)
+            await _wait_for_database(admin_conn, clone_name)
             clone_url = urlunparse(parsed._replace(path=f"/{clone_name}"))
 
             globals_mod._db_pool = await asyncpg.create_pool(

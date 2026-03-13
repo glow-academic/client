@@ -237,10 +237,45 @@ async def resolve_benchmark_filters(
     async def _fetch_date_range() -> tuple[str | None, str | None]:
         if not need_date_range:
             return None, None
-        async with pool.acquire() as c:
+        profile_resource_ids: list[UUID] | None = None
+        if department_ids:
+            async with pool.acquire() as c_profiles:
+                profile_artifact_ids, _ = await search_profiles(
+                    c_profiles,
+                    department_ids=department_ids,
+                    active_only=False,
+                    limit_count=100000,
+                    offset_count=0,
+                )
+                if profile_artifact_ids:
+                    artifacts = await get_profile_artifacts(
+                        c_profiles,
+                        profile_artifact_ids,
+                        active=None,
+                        profiles=True,
+                    )
+                    profile_resource_ids = [
+                        resource_id
+                        for artifact in artifacts
+                        for resource_id in (artifact.profile_ids or [])
+                    ]
+                else:
+                    profile_resource_ids = []
+
+        async with pool.acquire() as c_earliest, pool.acquire() as c_latest:
             # Fetch earliest and latest in parallel
-            earliest_items, _ = await search_tests(c, sort_order="asc", limit=1)
-            latest_items, _ = await search_tests(c, sort_order="desc", limit=1)
+            earliest_items, _ = await search_tests(
+                c_earliest,
+                profile_ids=profile_resource_ids,
+                sort_order="asc",
+                limit=1,
+            )
+            latest_items, _ = await search_tests(
+                c_latest,
+                profile_ids=profile_resource_ids,
+                sort_order="desc",
+                limit=1,
+            )
         earliest = (
             earliest_items[0].test_created_at.isoformat() if earliest_items else None
         )

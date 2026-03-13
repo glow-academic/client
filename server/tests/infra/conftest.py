@@ -42,9 +42,7 @@ def _build_artifact_router_for_tests(
     tags: list[str],
     module_names: list[str],
 ) -> APIRouter:
-    main_dir = (
-        Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
-    )
+    main_dir = Path(__file__).resolve().parents[2] / "app" / "routes" / "v5"
     artifact_dir = main_dir / artifact_name
     _ensure_package_stub("app.routes.v5", main_dir)
     _ensure_package_stub(f"app.routes.v5.{artifact_name}", artifact_dir)
@@ -81,6 +79,7 @@ def _build_v5_artifact_test_app(
     *,
     artifact_router: APIRouter,
     request_state: dict[str, str | None],
+    extra_routers: list[APIRouter] | None = None,
 ) -> FastAPI:
     """Mount a single v5 artifact router with test auth state overrides."""
     from app.infra.identity.middleware import require_auth
@@ -99,12 +98,12 @@ def _build_v5_artifact_test_app(
 
     app = FastAPI()
     root_router = APIRouter(
-        prefix="/api/v5",
+        prefix="/v5",
         dependencies=[Depends(require_auth), Depends(get_mcp)],
     )
-    artifacts_router = APIRouter(prefix="/artifacts")
-    artifacts_router.include_router(artifact_router)
-    root_router.include_router(artifacts_router)
+    root_router.include_router(artifact_router)
+    for extra_router in extra_routers or []:
+        root_router.include_router(extra_router)
     app.include_router(root_router)
     app.dependency_overrides[require_auth] = _require_auth_override
     app.dependency_overrides[get_mcp] = _get_mcp_override
@@ -1595,6 +1594,9 @@ async def v5_profile_route_client(
 ) -> AsyncGenerator[V5RouteClient, None]:
     """HTTP client mounted on the real profile v5 route stack."""
     import app.infra.globals as globals_mod
+    from app.routes.v5.context import router as context_router
+    from app.routes.v5.emulate import router as emulate_router
+    from app.routes.v5.unemulate import router as unemulate_router
 
     profile_router = _build_artifact_router_for_tests(
         artifact_name="profile",
@@ -1612,9 +1614,6 @@ async def v5_profile_route_client(
             "docs",
             "export",
             "refresh",
-            "context",
-            "emulate",
-            "unemulate",
         ],
     )
 
@@ -1622,6 +1621,7 @@ async def v5_profile_route_client(
     app = _build_v5_artifact_test_app(
         artifact_router=profile_router,
         request_state=request_state,
+        extra_routers=[context_router, emulate_router, unemulate_router],
     )
 
     prior_pool = globals_mod._db_pool

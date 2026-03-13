@@ -33,15 +33,13 @@ Attempt:
 
 from . import (
     attempt,  # noqa: F401 — registers attempt_* internal events
-    generate,  # noqa: F401 — registers generate (rate limit gate)
-    generate_artifact,  # noqa: F401 — registers generate_artifact internal event
+    generation,  # noqa: F401 — registers grouped generation workflow handlers
     generate_call_complete,  # noqa: F401 — registers generate_call_complete handler
     generate_call_progress,  # noqa: F401 — registers generate_call_progress handler
     generate_call_start,  # noqa: F401 — registers generate_call_start handler
     generate_image_complete,  # noqa: F401 — registers generate_image_complete handler
     generate_image_progress,  # noqa: F401 — registers generate_image_progress handler
     generate_image_start,  # noqa: F401 — registers generate_image_start handler
-    generate_prepare,  # noqa: F401 — registers generate_prepare handler
     generate_run_complete,  # noqa: F401 — registers generate_run_complete handler
     generate_text_complete,  # noqa: F401 — registers generate_text_complete handler
     generate_text_progress,  # noqa: F401 — registers generate_text_progress handler
@@ -49,8 +47,5 @@ from . import (
     generate_video_complete,  # noqa: F401 — registers generate_video_complete handler
     generate_video_progress,  # noqa: F401 — registers generate_video_progress handler
     generate_video_start,  # noqa: F401 — registers generate_video_start handler
-    generation_ended,  # noqa: F401 — registers test_ended handler for generation resolution
-    generation_error,  # noqa: F401 — registers error handler
-    generation_progress,  # noqa: F401 — registers generate_call_complete progress handler
     test,  # noqa: F401 — registers test_* internal events
 )
