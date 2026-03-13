@@ -77,7 +77,7 @@ async def export_practice_client(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.practice.types import ExportPracticeApiResponse
+    from app.routes.v5.practice.types import ExportPracticeApiResponse
 
     # -- Step 1: Profile context --
 

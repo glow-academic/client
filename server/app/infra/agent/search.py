@@ -24,11 +24,11 @@ from app.infra.agent.permissions import (
     compute_list_can_edit,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.agent.types import (
+from app.routes.v5.agent.types import (
     ListAgentApiAgent,
     ListAgentApiResponse,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.agent.get import get_agents
 from app.routes.v5.tools.artifacts.agent.search import search_agents
 from app.routes.v5.tools.resources.departments.search import search_departments

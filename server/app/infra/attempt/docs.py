@@ -87,9 +87,9 @@ async def docs_attempt_impl(
         compute_total_possible_points,
         compute_total_time_limit,
     )
-    from app.routes.v5.api.main.attempt.archive import archive_attempts
-    from app.routes.v5.api.main.attempt.export import export_attempt
-    from app.routes.v5.api.main.attempt.get import attempt_get
+    from app.routes.v5.attempt.archive import archive_attempts
+    from app.routes.v5.attempt.export import export_attempt
+    from app.routes.v5.attempt.get import attempt_get
 
     return ComposedDocsResponse(
         name="attempt",

@@ -19,7 +19,7 @@ from redis.asyncio import Redis
 
 from app.infra.auth.permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.auth.types import (
+from app.routes.v5.auth.types import (
     AuthDraftFormState,
     PatchAuthDraftApiRequest,
     PatchAuthDraftApiResponse,

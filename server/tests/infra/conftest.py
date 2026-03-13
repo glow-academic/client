@@ -46,13 +46,13 @@ def _build_artifact_router_for_tests(
         Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
     )
     artifact_dir = main_dir / artifact_name
-    _ensure_package_stub("app.routes.v5.api.main", main_dir)
-    _ensure_package_stub(f"app.routes.v5.api.main.{artifact_name}", artifact_dir)
+    _ensure_package_stub("app.routes.v5", main_dir)
+    _ensure_package_stub(f"app.routes.v5.{artifact_name}", artifact_dir)
 
     router = APIRouter(prefix=prefix, tags=tags)
     for module_name in module_names:
         module = importlib.import_module(
-            f"app.routes.v5.api.main.{artifact_name}.{module_name}"
+            f"app.routes.v5.{artifact_name}.{module_name}"
         )
         router.include_router(module.router)
     return router
@@ -130,7 +130,7 @@ def _build_v5_events_test_app(
         request.state.mcp = False
         return False
 
-    from app.routes.v5.api.events import get_router
+    from app.routes.v5.events import get_router
 
     app = FastAPI()
     root_router = APIRouter(

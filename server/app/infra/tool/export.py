@@ -62,7 +62,7 @@ async def export_tool_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.tool.types import ExportToolApiResponse
+    from app.routes.v5.tool.types import ExportToolApiResponse
 
     # -- Step 1: Profile context --
 

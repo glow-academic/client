@@ -7,11 +7,11 @@ data fetched from the Pass 1 SQL query.
 
 from uuid import UUID
 
-from app.routes.v5.api.permissions import (
+from app.routes.v5.permissions import (
     select_agents_for_artifact,
     select_multi_resource_agent,
 )
-from app.routes.v5.api.types import CandidateAgent
+from app.routes.v5.types import CandidateAgent
 
 # Re-export for backwards compatibility
 __all__ = [
@@ -280,7 +280,7 @@ def build_domain_data(
 
     Delegates to shared build_domain_data with tool-specific metadata.
     """
-    from app.routes.v5.api.types import build_domain_data as _build_domain_data
+    from app.routes.v5.types import build_domain_data as _build_domain_data
 
     return _build_domain_data(
         domain_ids, show_flags, required_flags, TOOL_DOMAIN_METADATA

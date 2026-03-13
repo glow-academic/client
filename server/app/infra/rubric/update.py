@@ -51,7 +51,7 @@ async def update_rubric_impl(
       5. invalidate_tags
     """
     from app.infra.rubric.permissions import compute_can_edit
-    from app.routes.v5.api.main.rubric.types import (
+    from app.routes.v5.rubric.types import (
         RubricResultItem,
         UpdateRubricApiResponse,
     )

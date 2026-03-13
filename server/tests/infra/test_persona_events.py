@@ -1,14 +1,14 @@
 """Tests for persona event declarations."""
 
 from app.events.types import OperationErrorEvent, build_default_lifecycle_event_types
-from app.routes.v5.api.main.persona.events import (
+from app.routes.v5.persona.events import (
     PERSONA_EVENT_CONFIGS,
     PERSONA_EVENT_TYPES,
     _persona_draft_entity_ids,
     _persona_result_entity_ids,
     get_persona_event_config,
 )
-from app.routes.v5.api.main.persona.types import (
+from app.routes.v5.persona.types import (
     CreatePersonaApiResponse,
     GetPersonaApiRequest,
     GetPersonaApiResponse,

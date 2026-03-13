@@ -20,7 +20,7 @@ from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.scenario.permissions import compute_can_duplicate
-from app.routes.v5.api.main.scenario.types import (
+from app.routes.v5.scenario.types import (
     DuplicateScenarioApiResponse,
 )
 from app.routes.v5.tools.artifacts.scenario.create import (

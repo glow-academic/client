@@ -28,11 +28,11 @@ from app.infra.auth.permissions_context import (
     resolve_auth_permissions_context,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.auth.types import (
+from app.routes.v5.auth.types import (
     ListAuthApiAuth,
     ListAuthApiResponse,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.auth.get import get_auths
 from app.routes.v5.tools.artifacts.auth.search import (
     search_auths as search_auth_artifacts,

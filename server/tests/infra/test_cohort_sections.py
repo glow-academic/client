@@ -17,14 +17,14 @@ def _ensure_cohort_type_packages() -> None:
         Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
     )
     artifact_dir = main_dir / "cohort"
-    if "app.routes.v5.api.main" not in sys.modules:
-        package = ModuleType("app.routes.v5.api.main")
+    if "app.routes.v5" not in sys.modules:
+        package = ModuleType("app.routes.v5")
         package.__path__ = [str(main_dir)]  # type: ignore[attr-defined]
-        sys.modules["app.routes.v5.api.main"] = package
-    if "app.routes.v5.api.main.cohort" not in sys.modules:
-        package = ModuleType("app.routes.v5.api.main.cohort")
+        sys.modules["app.routes.v5"] = package
+    if "app.routes.v5.cohort" not in sys.modules:
+        package = ModuleType("app.routes.v5.cohort")
         package.__path__ = [str(artifact_dir)]  # type: ignore[attr-defined]
-        sys.modules["app.routes.v5.api.main.cohort"] = package
+        sys.modules["app.routes.v5.cohort"] = package
 
 
 def test_build_cohort_get_result_builds_canonical_response():

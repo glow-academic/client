@@ -59,7 +59,7 @@ async def update_cohort_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.cohort.types import (
+    from app.routes.v5.cohort.types import (
         CohortResultItem,
         UpdateCohortApiResponse,
     )

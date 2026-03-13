@@ -38,7 +38,7 @@ if TYPE_CHECKING:
         CreateDepartmentItem,
         DepartmentFieldError,
     )
-    from app.routes.v5.api.main.department.types import (
+    from app.routes.v5.department.types import (
         UpdateDepartmentItem,
     )
 

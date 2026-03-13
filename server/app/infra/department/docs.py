@@ -151,14 +151,14 @@ async def docs_department_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.department.create import create_department
-    from app.routes.v5.api.main.department.delete import delete_department
-    from app.routes.v5.api.main.department.draft import patch_department_draft
-    from app.routes.v5.api.main.department.duplicate import duplicate_department
-    from app.routes.v5.api.main.department.export import export_departments
-    from app.routes.v5.api.main.department.get import get_department
-    from app.routes.v5.api.main.department.search import search_department
-    from app.routes.v5.api.main.department.update import update_department
+    from app.routes.v5.department.create import create_department
+    from app.routes.v5.department.delete import delete_department
+    from app.routes.v5.department.draft import patch_department_draft
+    from app.routes.v5.department.duplicate import duplicate_department
+    from app.routes.v5.department.export import export_departments
+    from app.routes.v5.department.get import get_department
+    from app.routes.v5.department.search import search_department
+    from app.routes.v5.department.update import update_department
 
     return ComposedDocsResponse(
         name="department",

@@ -50,7 +50,7 @@ from app.routes.v5.tools.resources.videos.search import search_videos
 
 if TYPE_CHECKING:
     from app.infra.scenario.create import CreateScenarioItem, ScenarioFieldError
-    from app.routes.v5.api.main.scenario.types import (
+    from app.routes.v5.scenario.types import (
         UpdateScenarioItem,
     )
 

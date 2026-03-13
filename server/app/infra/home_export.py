@@ -29,7 +29,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.home.types import ExportHomeApiResponse
+from app.routes.v5.home.types import ExportHomeApiResponse
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments

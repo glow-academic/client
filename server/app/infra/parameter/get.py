@@ -41,7 +41,7 @@ from app.infra.parameter.permissions_context import (
     resolve_parameter_permissions_context,
 )
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.parameter.types import (
+from app.routes.v5.parameter.types import (
     GetParameterApiResponse,
     ParameterDepartmentSection,
     ParameterDescriptionSection,

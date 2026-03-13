@@ -6,11 +6,11 @@ following the two-pass architecture pattern.
 
 from uuid import UUID
 
-from app.routes.v5.api.permissions import (
+from app.routes.v5.permissions import (
     select_agents_for_artifact,
     select_multi_resource_agent,
 )
-from app.routes.v5.api.types import CandidateAgent
+from app.routes.v5.types import CandidateAgent
 
 # Re-export for backwards compatibility
 __all__ = [

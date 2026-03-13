@@ -60,7 +60,7 @@ async def export_setting_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.setting.types import ExportSettingApiResponse
+    from app.routes.v5.setting.types import ExportSettingApiResponse
 
     # -- Step 1: Profile context --
 

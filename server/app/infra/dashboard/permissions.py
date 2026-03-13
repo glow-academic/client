@@ -6,7 +6,7 @@ from statistics import mean
 from typing import Any
 
 from app.infra.dashboard.context import RubricScoreItem
-from app.routes.v5.api.main.dashboard.types import (
+from app.routes.v5.dashboard.types import (
     DashboardBundleResponse,
     DashboardFooterMetrics,
     DashboardHeaderMetric,

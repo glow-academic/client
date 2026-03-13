@@ -1,88 +1,59 @@
-"""V4 API router - DHH-style architecture with SQL files and utility functions.
+"""V5 API router — flat URL hierarchy under /v5.
 
-This router aggregates all API v4 endpoints following the agents-style architecture pattern:
-- PostgreSQL functions with RETURNS TABLE instead of raw SQL queries
-- Composite types in the `types` schema for strongly typed nested structures
-- Auto-generated Pydantic models from SQL introspection
-- Single SQL file per route with idempotent drop/recreate pattern
-
-See `server/app/api/v5/STANDARDS.md` for complete API standards.
-See `AGENTS.md` for overall architecture principles.
+All artifact endpoints mount directly (no /artifacts intermediary).
+Event delivery is SSE-only at /v5/stream with schema at /v5/stream/schema/*.
 """
 # mypy: ignore-errors
 
-# ============================================================================
-# Imports
-# ============================================================================
 from fastapi import APIRouter, Depends
 
-# ============================================================================
-# Resources (removed — resource CRUD flows through draft endpoints)
-# ============================================================================
 from app.infra.identity.middleware import require_auth
-
-# ============================================================================
-# Docs
-# ============================================================================
-from app.routes.v5.api.docs import router as docs_router
-from app.routes.v5.api.events.polling import router as poll_router
-from app.routes.v5.api.events.stream import router as stream_router
-from app.routes.v5.api.events.webhooks import router as webhooks_router
-from app.routes.v5.api.main.activity import router as activity_artifact_router
-from app.routes.v5.api.main.activity.problem import router as problem_router
-
-# ============================================================================
-# Artifacts (19 total)
-# ============================================================================
-from app.routes.v5.api.main.agent import router as agents_router
-from app.routes.v5.api.main.attempt import router as attempt_artifact_router
-from app.routes.v5.api.main.auth import router as auth_router
-from app.routes.v5.api.main.benchmark import router as benchmark_artifact_router
-from app.routes.v5.api.main.chat import router as chat_artifact_router
-from app.routes.v5.api.main.cohort import router as cohorts_router
-
-# View-based artifact handlers (aggregated data for UI sections)
-from app.routes.v5.api.main.dashboard.router import (
-    router as dashboard_artifact_router,
-)
-from app.routes.v5.api.main.department import router as departments_router
-from app.routes.v5.api.main.document import router as documents_router
-from app.routes.v5.api.main.eval import router as evals_router
-from app.routes.v5.api.main.field import router as fields_router
-from app.routes.v5.api.main.group import router as group_router
-from app.routes.v5.api.main.group.generate import router as generate_router
-from app.routes.v5.api.main.health import router as health_artifact_router
-from app.routes.v5.api.main.home import router as home_artifact_router
-from app.routes.v5.api.main.leaderboard import router as leaderboard_artifact_router
-from app.routes.v5.api.main.model import router as models_router
-from app.routes.v5.api.main.parameter import router as parameters_router
-from app.routes.v5.api.main.persona import router as personas_router
-from app.routes.v5.api.main.practice import router as practice_artifact_router
-from app.routes.v5.api.main.pricing import router as pricing_artifact_router
-from app.routes.v5.api.main.profile import router as profile_router
-from app.routes.v5.api.main.profile.context import router as context_router
-from app.routes.v5.api.main.profile.emulate import router as emulate_router
-from app.routes.v5.api.main.profile.unemulate import router as unemulate_router
-from app.routes.v5.api.main.provider import router as providers_router
-from app.routes.v5.api.main.record import router as record_artifact_router
-from app.routes.v5.api.main.reports import router as reports_artifact_router
-from app.routes.v5.api.main.rubric import router as rubrics_router
-from app.routes.v5.api.main.scenario import router as scenarios_router
-from app.routes.v5.api.main.session import router as session_router
-from app.routes.v5.api.main.setting import router as settings_router
-from app.routes.v5.api.main.simulation import router as simulations_router
-from app.routes.v5.api.main.test import router as test_artifact_router
-from app.routes.v5.api.main.tool import router as tools_router
+from app.routes.v5.activity import router as activity_artifact_router
+from app.routes.v5.activity.problem import router as problem_router
+from app.routes.v5.agent import router as agents_router
+from app.routes.v5.attempt import router as attempt_artifact_router
+from app.routes.v5.auth import router as auth_router
+from app.routes.v5.benchmark import router as benchmark_artifact_router
+from app.routes.v5.chat import router as chat_artifact_router
+from app.routes.v5.cohort import router as cohorts_router
+from app.routes.v5.dashboard.router import router as dashboard_artifact_router
+from app.routes.v5.department import router as departments_router
+from app.routes.v5.docs import router as docs_router
+from app.routes.v5.document import router as documents_router
+from app.routes.v5.eval import router as evals_router
+from app.routes.v5.events import get_router as get_stream_router
+from app.routes.v5.field import router as fields_router
+from app.routes.v5.group import router as group_router
+from app.routes.v5.group.generate import router as generate_router
+from app.routes.v5.health import router as health_artifact_router
+from app.routes.v5.home import router as home_artifact_router
+from app.routes.v5.leaderboard import router as leaderboard_artifact_router
+from app.routes.v5.model import router as models_router
+from app.routes.v5.parameter import router as parameters_router
+from app.routes.v5.persona import router as personas_router
+from app.routes.v5.practice import router as practice_artifact_router
+from app.routes.v5.pricing import router as pricing_artifact_router
+from app.routes.v5.profile import router as profile_router
+from app.routes.v5.profile.context import router as context_router
+from app.routes.v5.profile.emulate import router as emulate_router
+from app.routes.v5.profile.unemulate import router as unemulate_router
+from app.routes.v5.provider import router as providers_router
+from app.routes.v5.record import router as record_artifact_router
+from app.routes.v5.reports import router as reports_artifact_router
+from app.routes.v5.rubric import router as rubrics_router
+from app.routes.v5.scenario import router as scenarios_router
+from app.routes.v5.session import router as session_router
+from app.routes.v5.setting import router as settings_router
+from app.routes.v5.simulation import router as simulations_router
+from app.routes.v5.test import router as test_artifact_router
+from app.routes.v5.tool import router as tools_router
 from app.utils.mcp.get_mcp import get_mcp
 
 # ============================================================================
-# Main Router Configuration
+# Main Router — /v5
 # ============================================================================
-# require_auth validates X-Api-Key + Authorization Bearer JWT, then sets
-# request.state.profile_id and request.state.session_id automatically.
-# The client no longer needs to send X-Profile-Id or X-Session-Id headers.
 router: APIRouter = APIRouter(
-    prefix="/api/v5",
+    prefix="/v5",
     tags=["v5"],
     dependencies=[
         Depends(require_auth),
@@ -91,61 +62,59 @@ router: APIRouter = APIRouter(
 )
 
 # ============================================================================
-# Artifacts — all under /api/v5/artifacts/ to match folder structure
+# Artifacts — directly under /v5 (no /artifacts prefix)
 # ============================================================================
-artifacts_router = APIRouter(prefix="/artifacts", tags=["artifacts"])
-
 # Core content artifacts
-artifacts_router.include_router(personas_router)
-artifacts_router.include_router(scenarios_router)
-artifacts_router.include_router(simulations_router)
-artifacts_router.include_router(documents_router)
-artifacts_router.include_router(departments_router)
-artifacts_router.include_router(cohorts_router)
-artifacts_router.include_router(evals_router)
-artifacts_router.include_router(rubrics_router)
-artifacts_router.include_router(settings_router)
-artifacts_router.include_router(agents_router)
-artifacts_router.include_router(models_router)
-artifacts_router.include_router(providers_router)
-artifacts_router.include_router(parameters_router)
-artifacts_router.include_router(fields_router)
-artifacts_router.include_router(profile_router)
-artifacts_router.include_router(auth_router)
-artifacts_router.include_router(tools_router)
-artifacts_router.include_router(group_router)
-artifacts_router.include_router(session_router)
-artifacts_router.include_router(chat_artifact_router)
-artifacts_router.include_router(home_artifact_router)
-artifacts_router.include_router(practice_artifact_router)
-artifacts_router.include_router(attempt_artifact_router)
+router.include_router(personas_router)
+router.include_router(scenarios_router)
+router.include_router(simulations_router)
+router.include_router(documents_router)
+router.include_router(departments_router)
+router.include_router(cohorts_router)
+router.include_router(evals_router)
+router.include_router(rubrics_router)
+router.include_router(settings_router)
+router.include_router(agents_router)
+router.include_router(models_router)
+router.include_router(providers_router)
+router.include_router(parameters_router)
+router.include_router(fields_router)
+router.include_router(profile_router)
+router.include_router(auth_router)
+router.include_router(tools_router)
+router.include_router(group_router)
+router.include_router(session_router)
+router.include_router(chat_artifact_router)
+router.include_router(home_artifact_router)
+router.include_router(practice_artifact_router)
+router.include_router(attempt_artifact_router)
 
 # View-based artifacts
-artifacts_router.include_router(record_artifact_router)
-artifacts_router.include_router(dashboard_artifact_router)
-artifacts_router.include_router(reports_artifact_router)
-artifacts_router.include_router(leaderboard_artifact_router)
-artifacts_router.include_router(pricing_artifact_router)
-artifacts_router.include_router(activity_artifact_router)
-artifacts_router.include_router(health_artifact_router)
-artifacts_router.include_router(benchmark_artifact_router)
-artifacts_router.include_router(test_artifact_router)
-
-router.include_router(artifacts_router)
+router.include_router(record_artifact_router)
+router.include_router(dashboard_artifact_router)
+router.include_router(reports_artifact_router)
+router.include_router(leaderboard_artifact_router)
+router.include_router(pricing_artifact_router)
+router.include_router(activity_artifact_router)
+router.include_router(health_artifact_router)
+router.include_router(benchmark_artifact_router)
+router.include_router(test_artifact_router)
 
 # ============================================================================
-# Root-level actions
+# Root-level actions — /v5/context, /v5/generate, etc.
 # ============================================================================
 router.include_router(context_router)
 router.include_router(problem_router)
 router.include_router(emulate_router)
 router.include_router(unemulate_router)
 router.include_router(generate_router)
-router.include_router(poll_router)
-router.include_router(stream_router)
-router.include_router(webhooks_router)
 
 # ============================================================================
-# Docs
+# Stream — SSE at /v5/stream, schema at /v5/stream/schema/*
+# ============================================================================
+router.include_router(get_stream_router())
+
+# ============================================================================
+# Docs — /v5/docs
 # ============================================================================
 router.include_router(docs_router)

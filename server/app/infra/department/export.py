@@ -58,7 +58,7 @@ async def export_department_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.department.types import ExportDepartmentApiResponse
+    from app.routes.v5.department.types import ExportDepartmentApiResponse
 
     # -- Step 1: Profile context --
 

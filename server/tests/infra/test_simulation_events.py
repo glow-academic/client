@@ -1,7 +1,7 @@
 """Tests for simulation event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.api.main.simulation.events import (
+from app.routes.v5.simulation.events import (
     SIMULATION_EVENT_CONFIGS,
     _simulation_draft_entity_ids,
     _simulation_result_entity_ids,

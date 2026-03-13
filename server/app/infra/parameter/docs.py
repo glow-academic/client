@@ -158,14 +158,14 @@ async def docs_parameter_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.parameter.create import create_parameter
-    from app.routes.v5.api.main.parameter.delete import delete_parameter
-    from app.routes.v5.api.main.parameter.draft import patch_parameter_draft
-    from app.routes.v5.api.main.parameter.duplicate import duplicate_parameter
-    from app.routes.v5.api.main.parameter.export import export_parameters
-    from app.routes.v5.api.main.parameter.get import get_parameter
-    from app.routes.v5.api.main.parameter.search import search_parameter
-    from app.routes.v5.api.main.parameter.update import update_parameter
+    from app.routes.v5.parameter.create import create_parameter
+    from app.routes.v5.parameter.delete import delete_parameter
+    from app.routes.v5.parameter.draft import patch_parameter_draft
+    from app.routes.v5.parameter.duplicate import duplicate_parameter
+    from app.routes.v5.parameter.export import export_parameters
+    from app.routes.v5.parameter.get import get_parameter
+    from app.routes.v5.parameter.search import search_parameter
+    from app.routes.v5.parameter.update import update_parameter
 
     return ComposedDocsResponse(
         name="parameter",

@@ -67,10 +67,10 @@ async def docs_dashboard_impl(
         compute_primary_metrics,
         compute_secondary_metrics,
     )
-    from app.routes.v5.api.main.dashboard.export import export_dashboard
-    from app.routes.v5.api.main.dashboard.get import get_dashboard
-    from app.routes.v5.api.main.dashboard.refresh import dashboard_refresh
-    from app.routes.v5.api.main.dashboard.search import search_dashboard
+    from app.routes.v5.dashboard.export import export_dashboard
+    from app.routes.v5.dashboard.get import get_dashboard
+    from app.routes.v5.dashboard.refresh import dashboard_refresh
+    from app.routes.v5.dashboard.search import search_dashboard
 
     return ComposedDocsResponse(
         name="dashboard",

@@ -20390,7 +20390,7 @@ export interface components {
             /** Images */
             images?: components["schemas"]["DraftImageValue"][] | null;
             /** Videos */
-            videos?: components["schemas"]["app__routes__v5__api__main__chat__types__DraftVideoValue"][] | null;
+            videos?: components["schemas"]["app__routes__v5__chat__types__DraftVideoValue"][] | null;
             /** Questions */
             questions?: components["schemas"]["DraftQuestionValue"][] | null;
             /** Options */
@@ -21134,7 +21134,7 @@ export interface components {
             /** Image Ids */
             image_ids?: string[] | null;
             /** Videos */
-            videos?: components["schemas"]["app__routes__v5__api__main__scenario__types__DraftVideoValue"][] | null;
+            videos?: components["schemas"]["app__routes__v5__scenario__types__DraftVideoValue"][] | null;
             /** Video Ids */
             video_ids?: string[] | null;
             /** Questions */
@@ -28233,7 +28233,7 @@ export interface components {
          * DraftVideoValue
          * @description Value for creating a video via the draft endpoint.
          */
-        app__routes__v5__api__main__chat__types__DraftVideoValue: {
+        app__routes__v5__chat__types__DraftVideoValue: {
             /** Name */
             name: string;
             /** Description */
@@ -28245,7 +28245,7 @@ export interface components {
          * DraftVideoValue
          * @description Value for creating a video via the draft endpoint.
          */
-        app__routes__v5__api__main__scenario__types__DraftVideoValue: {
+        app__routes__v5__scenario__types__DraftVideoValue: {
             /** Name */
             name: string;
             /** Description */

@@ -15,11 +15,11 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.attempt.types import (
+from app.routes.v5.attempt.types import (
     SearchAttemptApiResponse,
     SearchAttemptItem,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.simulations.search import search_simulations

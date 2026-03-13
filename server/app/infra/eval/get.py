@@ -45,7 +45,7 @@ from app.infra.eval.permissions import (
 from app.infra.eval.permissions_context import resolve_eval_permissions_context
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.eval.types import (
+from app.routes.v5.eval.types import (
     EvalDepartmentSection,
     EvalDescriptionSection,
     EvalFlagConfig,

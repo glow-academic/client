@@ -1,7 +1,7 @@
 """Tests for provider event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.api.main.provider.events import (
+from app.routes.v5.provider.events import (
     PROVIDER_EVENT_CONFIGS,
     _provider_draft_entity_ids,
     _provider_result_entity_ids,

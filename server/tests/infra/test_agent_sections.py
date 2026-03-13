@@ -17,14 +17,14 @@ def _ensure_agent_type_packages() -> None:
         Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
     )
     artifact_dir = main_dir / "agent"
-    if "app.routes.v5.api.main" not in sys.modules:
-        package = ModuleType("app.routes.v5.api.main")
+    if "app.routes.v5" not in sys.modules:
+        package = ModuleType("app.routes.v5")
         package.__path__ = [str(main_dir)]  # type: ignore[attr-defined]
-        sys.modules["app.routes.v5.api.main"] = package
-    if "app.routes.v5.api.main.agent" not in sys.modules:
-        package = ModuleType("app.routes.v5.api.main.agent")
+        sys.modules["app.routes.v5"] = package
+    if "app.routes.v5.agent" not in sys.modules:
+        package = ModuleType("app.routes.v5.agent")
         package.__path__ = [str(artifact_dir)]  # type: ignore[attr-defined]
-        sys.modules["app.routes.v5.api.main.agent"] = package
+        sys.modules["app.routes.v5.agent"] = package
 
 
 def test_build_agent_get_result_builds_canonical_response():

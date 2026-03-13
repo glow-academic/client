@@ -37,7 +37,7 @@ from app.routes.v5.tools.resources.simulations.create import (
 
 if TYPE_CHECKING:
     from app.infra.simulation.create import CreateSimulationItem, SimulationFieldError
-    from app.routes.v5.api.main.simulation.types import UpdateSimulationItem
+    from app.routes.v5.simulation.types import UpdateSimulationItem
 
 
 @dataclass(frozen=True)

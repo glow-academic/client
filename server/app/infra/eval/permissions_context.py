@@ -32,7 +32,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
     from app.infra.eval.create import CreateEvalItem, EvalFieldError
-    from app.routes.v5.api.main.eval.types import (
+    from app.routes.v5.eval.types import (
         UpdateEvalItem,
     )
 

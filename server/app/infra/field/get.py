@@ -38,7 +38,7 @@ from app.infra.field.permissions import (
 from app.infra.field.permissions_context import resolve_field_permissions_context
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.field.types import (
+from app.routes.v5.field.types import (
     FieldConditionalParameterSection,
     FieldDepartmentSection,
     FieldDescriptionSection,

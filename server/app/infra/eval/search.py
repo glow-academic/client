@@ -24,11 +24,11 @@ from app.infra.eval.permissions import (
     compute_can_edit,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.eval.types import (
+from app.routes.v5.eval.types import (
     ListEvalApiEval,
     ListEvalApiResponse,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.eval.get import get_evals
 from app.routes.v5.tools.artifacts.eval.search import (
     search_evals as search_eval_artifacts,

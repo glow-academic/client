@@ -1,7 +1,7 @@
 """Tests for cohort event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.api.main.cohort.events import (
+from app.routes.v5.cohort.events import (
     COHORT_EVENT_CONFIGS,
     _cohort_draft_entity_ids,
     _cohort_result_entity_ids,

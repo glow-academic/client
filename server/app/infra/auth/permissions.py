@@ -10,11 +10,11 @@ no scenario constraints. Just role-based (admin/superadmin).
 
 from uuid import UUID
 
-from app.routes.v5.api.permissions import (
+from app.routes.v5.permissions import (
     select_agents_for_artifact,
     select_multi_resource_agent,
 )
-from app.routes.v5.api.types import CandidateAgent
+from app.routes.v5.types import CandidateAgent
 
 # Re-export for backwards compatibility
 __all__ = [
@@ -194,7 +194,7 @@ def build_domain_data(
     required_flags: dict[str, bool],
 ) -> list:
     """Build rich domain metadata for client display."""
-    from app.routes.v5.api.types import build_domain_data as _build_domain_data
+    from app.routes.v5.types import build_domain_data as _build_domain_data
 
     return _build_domain_data(
         domain_ids, show_flags, required_flags, AUTH_DOMAIN_METADATA

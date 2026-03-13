@@ -45,7 +45,7 @@ from app.infra.tool.permissions_context import (
     resolve_tool_permissions_context,
 )
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.tool.types import (
+from app.routes.v5.tool.types import (
     GetToolApiResponse,
     ToolArgOutputSection,
     ToolArgPositionSection,

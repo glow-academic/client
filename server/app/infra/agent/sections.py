@@ -43,7 +43,7 @@ from app.infra.common_context import CommonContext
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import ArtifactToolScores
 from app.infra.types import ArtifactContext
-from app.routes.v5.api.main.agent.types import (
+from app.routes.v5.agent.types import (
     AgentDepartmentSection,
     AgentDescriptionSection,
     AgentFlagConfig,

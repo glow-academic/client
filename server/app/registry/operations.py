@@ -502,7 +502,7 @@ RESOURCE_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   attempt_responses → get_simulation_responses_internal
 # ---------------------------------------------------------------------------
 
-_E = "app.routes.v5.api.entries"
+_E = "app.routes.v5.tools.entries"
 
 
 def _ent(

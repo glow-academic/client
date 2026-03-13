@@ -74,9 +74,9 @@ async def docs_invocation_impl(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.invocation.draft import patch_invocation_draft
-    from app.routes.v5.api.main.invocation.export import export_invocation
-    from app.routes.v5.api.main.invocation.get import invocation_get
+    from app.routes.v5.invocation.draft import patch_invocation_draft
+    from app.routes.v5.invocation.export import export_invocation
+    from app.routes.v5.invocation.get import invocation_get
 
     return ComposedDocsResponse(
         name="invocation",

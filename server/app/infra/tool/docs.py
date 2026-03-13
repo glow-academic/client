@@ -161,14 +161,14 @@ async def docs_tool_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.tool.create import create_tool
-    from app.routes.v5.api.main.tool.delete import delete_tool
-    from app.routes.v5.api.main.tool.draft import patch_tool_draft
-    from app.routes.v5.api.main.tool.duplicate import duplicate_tool
-    from app.routes.v5.api.main.tool.export import export_tools
-    from app.routes.v5.api.main.tool.get import get_tool
-    from app.routes.v5.api.main.tool.search import search_tool
-    from app.routes.v5.api.main.tool.update import update_tool
+    from app.routes.v5.tool.create import create_tool
+    from app.routes.v5.tool.delete import delete_tool
+    from app.routes.v5.tool.draft import patch_tool_draft
+    from app.routes.v5.tool.duplicate import duplicate_tool
+    from app.routes.v5.tool.export import export_tools
+    from app.routes.v5.tool.get import get_tool
+    from app.routes.v5.tool.search import search_tool
+    from app.routes.v5.tool.update import update_tool
 
     return ComposedDocsResponse(
         name="tool",

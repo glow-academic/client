@@ -207,14 +207,14 @@ async def docs_model_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.model.create import create_model
-    from app.routes.v5.api.main.model.delete import delete_model
-    from app.routes.v5.api.main.model.draft import patch_model_draft
-    from app.routes.v5.api.main.model.duplicate import duplicate_model
-    from app.routes.v5.api.main.model.export import export_models
-    from app.routes.v5.api.main.model.get import get_model
-    from app.routes.v5.api.main.model.search import search_model
-    from app.routes.v5.api.main.model.update import update_model
+    from app.routes.v5.model.create import create_model
+    from app.routes.v5.model.delete import delete_model
+    from app.routes.v5.model.draft import patch_model_draft
+    from app.routes.v5.model.duplicate import duplicate_model
+    from app.routes.v5.model.export import export_models
+    from app.routes.v5.model.get import get_model
+    from app.routes.v5.model.search import search_model
+    from app.routes.v5.model.update import update_model
 
     return ComposedDocsResponse(
         name="model",

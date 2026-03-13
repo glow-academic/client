@@ -59,7 +59,7 @@ async def export_document_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.document.types import ExportDocumentApiResponse
+    from app.routes.v5.document.types import ExportDocumentApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

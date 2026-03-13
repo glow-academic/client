@@ -394,15 +394,15 @@ async def test_register_endpoints_resource_entry_docs_and_discovery_tools(monkey
                 "get_profiles",
             ): fake_resource_get,
             (
-                "app.routes.v5.api.entries.problems.get",
+                "app.routes.v5.tools.entries.problems.get",
                 "get_problems_entries",
             ): fake_entry_get,
             (
-                "app.routes.v5.api.entries.problems.search",
+                "app.routes.v5.tools.entries.problems.search",
                 "search_problems_entries",
             ): fake_entry_search,
             (
-                "app.routes.v5.api.entries.problems.create",
+                "app.routes.v5.tools.entries.problems.create",
                 "create_problems_entry",
             ): fake_entry_create,
             ("app.infra.persona.docs", "docs_persona_impl"): lambda: {
@@ -412,7 +412,7 @@ async def test_register_endpoints_resource_entry_docs_and_discovery_tools(monkey
                 "app.routes.v5.tools.resources.personas.docs",
                 "get_personas_docs",
             ): lambda: {"personas": "docs"},
-            ("app.routes.v5.api.docs", "get_glow_docs"): lambda: {"glow": True},
+            ("app.routes.v5.docs", "get_glow_docs"): lambda: {"glow": True},
         }
         return table[(module_path, func_name)]
 

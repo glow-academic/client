@@ -1,7 +1,7 @@
 """Tests for department event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.api.main.department.events import (
+from app.routes.v5.department.events import (
     DEPARTMENT_EVENT_CONFIGS,
     _department_draft_entity_ids,
     _department_result_entity_ids,

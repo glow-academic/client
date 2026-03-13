@@ -18,11 +18,11 @@ def _ensure_export_type_packages(artifact_name: str) -> None:
         Path(__file__).resolve().parents[2] / "app" / "routes" / "v5" / "api" / "main"
     )
     artifact_dir = main_dir / artifact_name
-    if "app.routes.v5.api.main" not in sys.modules:
-        package = ModuleType("app.routes.v5.api.main")
+    if "app.routes.v5" not in sys.modules:
+        package = ModuleType("app.routes.v5")
         package.__path__ = [str(main_dir)]  # type: ignore[attr-defined]
-        sys.modules["app.routes.v5.api.main"] = package
-    package_name = f"app.routes.v5.api.main.{artifact_name}"
+        sys.modules["app.routes.v5"] = package
+    package_name = f"app.routes.v5.{artifact_name}"
     if package_name not in sys.modules:
         package = ModuleType(package_name)
         package.__path__ = [str(artifact_dir)]  # type: ignore[attr-defined]

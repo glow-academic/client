@@ -26,12 +26,12 @@ from app.infra.persona.permissions import (
     compute_can_edit,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.persona.types import (
+from app.routes.v5.persona.types import (
     ImportField,
     ListPersonaApiPersona,
     ListPersonaApiResponse,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.persona.get import get_personas
 from app.routes.v5.tools.artifacts.persona.search import search_personas
 from app.routes.v5.tools.resources.colors.get import get_colors

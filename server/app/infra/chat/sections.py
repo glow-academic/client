@@ -6,7 +6,7 @@ from uuid import UUID
 
 from app.infra.tool_graph import ArtifactToolScores
 from app.infra.types import ArtifactContext
-from app.routes.v5.api.main.chat.types import (
+from app.routes.v5.chat.types import (
     BaseChatSection,
     ChatDepartmentSection,
     ChatDescriptionSection,

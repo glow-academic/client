@@ -76398,7 +76398,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/app__routes__v5__api__main__chat__types__DraftVideoValue"
+                  "$ref": "#/components/schemas/app__routes__v5__chat__types__DraftVideoValue"
                 },
                 "type": "array"
               },
@@ -79024,7 +79024,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/app__routes__v5__api__main__scenario__types__DraftVideoValue"
+                  "$ref": "#/components/schemas/app__routes__v5__scenario__types__DraftVideoValue"
                 },
                 "type": "array"
               },
@@ -102616,7 +102616,7 @@
         ],
         "title": "VideoUploadResponse"
       },
-      "app__routes__v5__api__main__chat__types__DraftVideoValue": {
+      "app__routes__v5__chat__types__DraftVideoValue": {
         "properties": {
           "name": {
             "type": "string",
@@ -102647,7 +102647,7 @@
         "title": "DraftVideoValue",
         "description": "Value for creating a video via the draft endpoint."
       },
-      "app__routes__v5__api__main__scenario__types__DraftVideoValue": {
+      "app__routes__v5__scenario__types__DraftVideoValue": {
         "properties": {
           "name": {
             "type": "string",

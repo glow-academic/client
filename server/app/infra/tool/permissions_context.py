@@ -36,7 +36,7 @@ from app.routes.v5.tools.resources.tools.create import (
 
 if TYPE_CHECKING:
     from app.infra.tool.create import CreateToolItem, ToolFieldError
-    from app.routes.v5.api.main.tool.types import (
+    from app.routes.v5.tool.types import (
         UpdateToolItem,
     )
 

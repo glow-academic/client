@@ -1,7 +1,7 @@
 """Tests for scenario event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.api.main.scenario.events import (
+from app.routes.v5.scenario.events import (
     SCENARIO_EVENT_CONFIGS,
     _scenario_draft_entity_ids,
     _scenario_result_entity_ids,

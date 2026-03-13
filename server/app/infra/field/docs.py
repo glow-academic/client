@@ -163,14 +163,14 @@ async def docs_field_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.field.create import create_field
-    from app.routes.v5.api.main.field.delete import delete_field
-    from app.routes.v5.api.main.field.draft import patch_field_draft
-    from app.routes.v5.api.main.field.duplicate import duplicate_field
-    from app.routes.v5.api.main.field.export import export_fields
-    from app.routes.v5.api.main.field.get import get_field
-    from app.routes.v5.api.main.field.search import search_field
-    from app.routes.v5.api.main.field.update import update_field
+    from app.routes.v5.field.create import create_field
+    from app.routes.v5.field.delete import delete_field
+    from app.routes.v5.field.draft import patch_field_draft
+    from app.routes.v5.field.duplicate import duplicate_field
+    from app.routes.v5.field.export import export_fields
+    from app.routes.v5.field.get import get_field
+    from app.routes.v5.field.search import search_field
+    from app.routes.v5.field.update import update_field
 
     return ComposedDocsResponse(
         name="field",

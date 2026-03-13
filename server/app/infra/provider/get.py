@@ -44,7 +44,7 @@ from app.infra.provider.permissions_context import (
     resolve_provider_permissions_context,
 )
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.provider.types import (
+from app.routes.v5.provider.types import (
     GetProviderApiResponse,
     ProviderDepartmentSection,
     ProviderDescriptionSection,

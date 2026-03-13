@@ -62,7 +62,7 @@ async def export_provider_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.provider.types import ExportProviderApiResponse
+    from app.routes.v5.provider.types import ExportProviderApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

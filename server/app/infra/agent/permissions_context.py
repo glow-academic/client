@@ -35,7 +35,7 @@ from app.routes.v5.tools.resources.voices.get import get_voices
 
 if TYPE_CHECKING:
     from app.infra.agent.create import AgentFieldError, CreateAgentItem
-    from app.routes.v5.api.main.agent.types import (
+    from app.routes.v5.agent.types import (
         UpdateAgentItem,
     )
 

@@ -1,7 +1,7 @@
 """Tests for profile event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.api.main.profile.events import (
+from app.routes.v5.profile.events import (
     PROFILE_EVENT_CONFIGS,
     _profile_draft_entity_ids,
     _profile_result_entity_ids,

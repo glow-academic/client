@@ -63,7 +63,7 @@ async def export_invocation_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.invocation.types import ExportInvocationApiResponse
+    from app.routes.v5.invocation.types import ExportInvocationApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

@@ -210,14 +210,14 @@ async def docs_persona_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.persona.create import create_persona
-    from app.routes.v5.api.main.persona.delete import delete_persona
-    from app.routes.v5.api.main.persona.draft import patch_persona_draft
-    from app.routes.v5.api.main.persona.duplicate import duplicate_persona
-    from app.routes.v5.api.main.persona.export import export_personas
-    from app.routes.v5.api.main.persona.get import get_persona
-    from app.routes.v5.api.main.persona.search import search_persona
-    from app.routes.v5.api.main.persona.update import update_persona
+    from app.routes.v5.persona.create import create_persona
+    from app.routes.v5.persona.delete import delete_persona
+    from app.routes.v5.persona.draft import patch_persona_draft
+    from app.routes.v5.persona.duplicate import duplicate_persona
+    from app.routes.v5.persona.export import export_personas
+    from app.routes.v5.persona.get import get_persona
+    from app.routes.v5.persona.search import search_persona
+    from app.routes.v5.persona.update import update_persona
 
     return ComposedDocsResponse(
         name="persona",

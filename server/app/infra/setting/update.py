@@ -54,7 +54,7 @@ async def update_setting_impl(
       5. invalidate_tags
     """
     from app.infra.setting.permissions import compute_can_edit
-    from app.routes.v5.api.main.setting.types import (
+    from app.routes.v5.setting.types import (
         SettingResultItem,
         UpdateSettingApiResponse,
     )

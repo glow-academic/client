@@ -12,7 +12,7 @@ from statistics import mean
 from typing import Any
 from uuid import UUID
 
-from app.routes.v5.api.main.leaderboard.types import (
+from app.routes.v5.leaderboard.types import (
     LeaderboardAccoladeWinner,
     LeaderboardAccoladeWinners,
     LeaderboardDataRow,

@@ -69,7 +69,7 @@ async def export_persona_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.persona.types import ExportPersonaApiResponse
+    from app.routes.v5.persona.types import ExportPersonaApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

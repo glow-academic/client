@@ -25,11 +25,11 @@ from app.infra.field.permissions import (
 )
 from app.infra.field.permissions_context import resolve_field_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.field.types import (
+from app.routes.v5.field.types import (
     ListFieldApiField,
     ListFieldApiResponse,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.field.get import get_fields
 from app.routes.v5.tools.artifacts.field.search import search_fields
 from app.routes.v5.tools.resources.departments.search import search_departments

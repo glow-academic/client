@@ -37,7 +37,7 @@ from app.routes.v5.tools.resources.simulations.search import search_simulations
 
 if TYPE_CHECKING:
     from app.infra.cohort.create import CohortFieldError, CreateCohortItem
-    from app.routes.v5.api.main.cohort.types import UpdateCohortItem
+    from app.routes.v5.cohort.types import UpdateCohortItem
 
 
 @dataclass(frozen=True)

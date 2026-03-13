@@ -51,7 +51,7 @@ async def update_persona_impl(
       5. invalidate_tags
     """
     from app.infra.persona.permissions import compute_can_edit
-    from app.routes.v5.api.main.persona.types import (
+    from app.routes.v5.persona.types import (
         PersonaResultItem,
         UpdatePersonaApiResponse,
     )

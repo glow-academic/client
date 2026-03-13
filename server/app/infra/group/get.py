@@ -13,7 +13,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.group.context import resolve_group_context
 from app.infra.pricing import compute_costs_from_runs
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.group.types import (
+from app.routes.v5.group.types import (
     GetGroupDetailResponse,
     GroupDetailCallItem,
     GroupDetailMessageItem,

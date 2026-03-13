@@ -25,11 +25,11 @@ from app.infra.provider.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.api.main.provider.types import (
+from app.routes.v5.provider.types import (
     ListProviderApiProvider,
     ListProviderApiResponse,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.provider.get import get_providers
 from app.routes.v5.tools.artifacts.provider.search import search_providers
 from app.routes.v5.tools.resources.departments.search import search_departments

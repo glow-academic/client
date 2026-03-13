@@ -60,7 +60,7 @@ async def export_profile_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.profile.types import ExportProfileApiResponse
+    from app.routes.v5.profile.types import ExportProfileApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

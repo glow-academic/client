@@ -93,7 +93,7 @@ async def export_attempt_impl(
       5. Parallel resource hydration -> human-readable values
       6. Generate ZIP (attempts.csv + chats.csv + messages.csv) and return base64-encoded content
     """
-    from app.routes.v5.api.main.attempt.types import ExportAttemptApiResponse
+    from app.routes.v5.attempt.types import ExportAttemptApiResponse
 
     # -- Step 1: Profile context --
 

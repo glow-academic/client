@@ -35,7 +35,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
     from app.infra.field.create import CreateFieldItem, FieldFieldError
-    from app.routes.v5.api.main.field.types import (
+    from app.routes.v5.field.types import (
         UpdateFieldItem,
     )
 

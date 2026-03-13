@@ -50,7 +50,7 @@ from app.routes.v5.tools.resources.voices.search import search_voices
 
 if TYPE_CHECKING:
     from app.infra.persona.create import CreatePersonaItem, PersonaFieldError
-    from app.routes.v5.api.main.persona.types import (
+    from app.routes.v5.persona.types import (
         UpdatePersonaItem,
     )
 

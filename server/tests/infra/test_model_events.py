@@ -1,7 +1,7 @@
 """Tests for model event declarations."""
 
 from app.events.types import build_default_lifecycle_event_types
-from app.routes.v5.api.main.model.events import (
+from app.routes.v5.model.events import (
     MODEL_EVENT_CONFIGS,
     _model_draft_entity_ids,
     _model_result_entity_ids,

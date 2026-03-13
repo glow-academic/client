@@ -21,7 +21,7 @@ from app.infra.parameter.permissions_context import (
     resolve_parameter_permissions_context,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.parameter.types import (
+from app.routes.v5.parameter.types import (
     DeleteParameterApiResponse,
     DeleteParameterResult,
 )

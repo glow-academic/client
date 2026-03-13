@@ -172,14 +172,14 @@ async def docs_rubric_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.rubric.create import create_rubric
-    from app.routes.v5.api.main.rubric.delete import delete_rubric
-    from app.routes.v5.api.main.rubric.draft import patch_rubric_draft
-    from app.routes.v5.api.main.rubric.duplicate import duplicate_rubric
-    from app.routes.v5.api.main.rubric.export import export_rubrics
-    from app.routes.v5.api.main.rubric.get import get_rubric
-    from app.routes.v5.api.main.rubric.search import search_rubric
-    from app.routes.v5.api.main.rubric.update import update_rubric
+    from app.routes.v5.rubric.create import create_rubric
+    from app.routes.v5.rubric.delete import delete_rubric
+    from app.routes.v5.rubric.draft import patch_rubric_draft
+    from app.routes.v5.rubric.duplicate import duplicate_rubric
+    from app.routes.v5.rubric.export import export_rubrics
+    from app.routes.v5.rubric.get import get_rubric
+    from app.routes.v5.rubric.search import search_rubric
+    from app.routes.v5.rubric.update import update_rubric
 
     return ComposedDocsResponse(
         name="rubric",

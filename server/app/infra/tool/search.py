@@ -25,11 +25,11 @@ from app.infra.tool.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.api.main.tool.types import (
+from app.routes.v5.tool.types import (
     ListToolApiResponse,
     ListToolApiTool,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.tool.get import get_tools
 from app.routes.v5.tools.artifacts.tool.search import search_tools
 from app.routes.v5.tools.resources.agents.search import (

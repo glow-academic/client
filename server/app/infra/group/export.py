@@ -60,7 +60,7 @@ async def export_group_impl(
     """Group export using composable infra functions."""
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.group.types import ExportGroupApiResponse
+    from app.routes.v5.group.types import ExportGroupApiResponse
 
     # -- Step 1: Profile context --
 

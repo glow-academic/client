@@ -70,7 +70,7 @@ async def export_cohort_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.cohort.types import ExportCohortApiResponse
+    from app.routes.v5.cohort.types import ExportCohortApiResponse
 
     # -- Step 1: Profile context --
 

@@ -23,11 +23,11 @@ from app.infra.profile.permissions import (
     compute_can_edit,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.profile.types import (
+from app.routes.v5.profile.types import (
     ListProfilesApiProfile,
     ListProfilesApiResponse,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.profile.get import get_profiles
 from app.routes.v5.tools.artifacts.profile.search import search_profiles
 from app.routes.v5.tools.resources.departments.get import get_departments

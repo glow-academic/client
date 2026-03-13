@@ -26,14 +26,14 @@ from app.infra.cohort.permissions import (
     compute_can_leave,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.cohort.types import (
+from app.routes.v5.cohort.types import (
     ListCohortApiCohort,
     ListCohortApiDepartment,
     ListCohortApiProfile,
     ListCohortApiResponse,
     ListCohortApiSimulation,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.cohort.get import get_cohorts
 from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments

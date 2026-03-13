@@ -62,7 +62,7 @@ async def export_rubric_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.rubric.types import ExportRubricApiResponse
+    from app.routes.v5.rubric.types import ExportRubricApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

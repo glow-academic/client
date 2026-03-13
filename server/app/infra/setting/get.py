@@ -49,7 +49,7 @@ from app.infra.setting.permissions import (
 )
 from app.infra.setting.permissions_context import resolve_setting_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.setting.types import (
+from app.routes.v5.setting.types import (
     GetSettingApiResponse,
     SettingAuthItemKeySection,
     SettingAuthSection,

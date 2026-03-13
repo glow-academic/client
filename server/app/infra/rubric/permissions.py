@@ -281,7 +281,7 @@ def build_domain_data(
 
     Delegates to shared build_domain_data with rubric-specific metadata.
     """
-    from app.routes.v5.api.types import build_domain_data as _build_domain_data
+    from app.routes.v5.types import build_domain_data as _build_domain_data
 
     return _build_domain_data(
         domain_ids, show_flags, required_flags, RUBRIC_DOMAIN_METADATA

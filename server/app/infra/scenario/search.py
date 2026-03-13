@@ -24,8 +24,8 @@ from app.infra.scenario.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.api.main.persona.types import ImportField
-from app.routes.v5.api.main.scenario.types import (
+from app.routes.v5.persona.types import ImportField
+from app.routes.v5.scenario.types import (
     ListScenarioApiCohort,
     ListScenarioApiDepartment,
     ListScenarioApiField,
@@ -35,7 +35,7 @@ from app.routes.v5.api.main.scenario.types import (
     ListScenarioApiScenario,
     ListScenarioApiSimulation,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.scenario.get import get_scenarios
 from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
 from app.routes.v5.tools.resources.departments.get import get_departments

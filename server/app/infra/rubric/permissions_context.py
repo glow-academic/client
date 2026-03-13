@@ -35,7 +35,7 @@ from app.routes.v5.tools.resources.rubrics.create import (
 
 if TYPE_CHECKING:
     from app.infra.rubric.create import CreateRubricItem, RubricFieldError
-    from app.routes.v5.api.main.rubric.types import (
+    from app.routes.v5.rubric.types import (
         UpdateRubricItem,
     )
 

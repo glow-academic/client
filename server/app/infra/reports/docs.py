@@ -67,9 +67,9 @@ async def docs_reports_impl(
         compute_reports_header_metrics,
         compute_trends_section,
     )
-    from app.routes.v5.api.main.reports.export import export_reports
-    from app.routes.v5.api.main.reports.refresh import reports_refresh
-    from app.routes.v5.api.main.reports.search import get_reports
+    from app.routes.v5.reports.export import export_reports
+    from app.routes.v5.reports.refresh import reports_refresh
+    from app.routes.v5.reports.search import get_reports
 
     return ComposedDocsResponse(
         name="reports",

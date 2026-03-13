@@ -35,7 +35,7 @@ from app.routes.v5.tools.resources.parameters.create import (
 
 if TYPE_CHECKING:
     from app.infra.parameter.create import CreateParameterItem, ParameterFieldError
-    from app.routes.v5.api.main.parameter.types import UpdateParameterItem
+    from app.routes.v5.parameter.types import UpdateParameterItem
 
 
 @dataclass(frozen=True)

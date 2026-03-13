@@ -25,13 +25,13 @@ from app.infra.rubric.permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.routes.v5.api.main.rubric.types import (
+from app.routes.v5.rubric.types import (
     ListRubricApiResponse,
     ListRubricApiRubric,
     ListRubricApiStandard,
     ListRubricApiStandardGroup,
 )
-from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.rubric.get import get_rubrics
 from app.routes.v5.tools.artifacts.rubric.search import search_rubrics
 from app.routes.v5.tools.resources.departments.search import search_departments

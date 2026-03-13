@@ -51,7 +51,7 @@ async def update_model_impl(
       5. invalidate_tags
     """
     from app.infra.model.permissions import compute_can_edit
-    from app.routes.v5.api.main.model.types import (
+    from app.routes.v5.model.types import (
         ModelResultItem,
         UpdateModelApiResponse,
     )

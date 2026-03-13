@@ -54,7 +54,7 @@ async def update_agent_impl(
         compute_can_edit,
         has_access,
     )
-    from app.routes.v5.api.main.agent.types import (
+    from app.routes.v5.agent.types import (
         AgentResultItem,
         UpdateAgentApiResponse,
     )

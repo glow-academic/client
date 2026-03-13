@@ -58,7 +58,7 @@ async def export_eval_impl(
     """
     from fastapi import HTTPException
 
-    from app.routes.v5.api.main.eval.types import ExportEvalApiResponse
+    from app.routes.v5.eval.types import ExportEvalApiResponse
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

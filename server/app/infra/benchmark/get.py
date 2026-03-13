@@ -26,7 +26,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.test.permissions import compute_test_status
 from app.infra.types import ArtifactContext
 from app.routes.auth.types import AnalyticsFilterFields
-from app.routes.v5.api.main.benchmark.types import (
+from app.routes.v5.benchmark.types import (
     BenchmarkDepartmentItem,
     BenchmarkEvalOperational,
     BenchmarkHistoryItem,
@@ -34,7 +34,7 @@ from app.routes.v5.api.main.benchmark.types import (
     BenchmarkRequest,
     BenchmarkResponse,
 )
-from app.routes.v5.api.main.types import FilterOption
+from app.routes.v5.types import FilterOption
 
 BENCHMARK_FACETS_CONFIG = AnalyticsFacetsConfig(
     fields=AnalyticsFilterFields(
