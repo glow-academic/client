@@ -390,9 +390,9 @@ import app.socket.v5  # noqa: E402, F401 — registers socket handlers on import
 # ---------------------------------------------------------------------------
 # MCP mount
 # ---------------------------------------------------------------------------
-from app.routes.mcp import mcp_app  # noqa: E402
+from app.routes.v5.mcp import mcp_app  # noqa: E402
 
-fastapi_app.mount("/", mcp_app, name="Artifacts-Resources-MCP")
+fastapi_app.mount("/v5", mcp_app, name="Artifacts-Resources-MCP")
 
 
 # ---------------------------------------------------------------------------
