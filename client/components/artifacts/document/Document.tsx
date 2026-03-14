@@ -155,11 +155,7 @@ export interface DocumentProps {
   ) => Promise<CreateDraftTextsOut>;
   // Artifact-scoped upload props
   uploadBasePath?: string;
-  finalizeUploadAction?: (
-    uploadId: string,
-  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
   uploadFileAction?: (
-    modality: "file" | "image" | "text",
     formData: FormData,
   ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
 }
@@ -178,7 +174,6 @@ function DocumentComponent({
   createImagesAction,
   createTextsAction,
   uploadBasePath,
-  finalizeUploadAction,
   uploadFileAction,
 }: DocumentProps) {
   const router = useRouter();
@@ -1186,7 +1181,7 @@ function DocumentComponent({
                 }
                 createUploadsAction={createUploadsAction}
                 uploadBasePath={uploadBasePath}
-                finalizeUploadAction={finalizeUploadAction}
+                uploadFileAction={uploadFileAction}
                 searchTerm={uploadSearchTerm}
                 registerFlush={registerFlushCallbacks["uploads"]}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -1247,7 +1242,7 @@ function DocumentComponent({
                 }
                 createImagesAction={createImagesAction}
                 uploadBasePath={uploadBasePath}
-                finalizeUploadAction={finalizeUploadAction}
+                uploadFileAction={uploadFileAction}
                 registerFlush={registerFlushCallbacks["images"]}
                 isAutosaveEnabled={isAutosaveEnabled}
               />

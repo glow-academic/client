@@ -19,12 +19,10 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { inferMimeFromName } from "@/utils/mime-map";
 import { Check, Loader2, Sparkles, UploadCloud, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
 type FlushResult = { files_id: string | null } | void;
@@ -62,7 +60,8 @@ export interface UploadsProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** Artifact-scoped base path for upload/download URLs (e.g., "/artifacts/documents") */
   uploadBasePath?: string;
-  finalizeUploadAction?: (uploadId: string) => Promise<{
+  /** Server action to upload a file — receives FormData, returns upload_id */
+  uploadFileAction?: (formData: FormData) => Promise<{
     success: boolean;
     upload_id?: string;
     message?: string;
@@ -96,7 +95,7 @@ export function Uploads({
   onGenerate,
   showAiGenerate = false,
   uploadBasePath,
-  finalizeUploadAction,
+  uploadFileAction,
   searchTerm = "",
   isAutosaveEnabled = true,
   registerFlush,
@@ -192,17 +191,17 @@ export function Uploads({
     [suggestionsList]
   );
 
-  // Handle file upload
+  // Handle file upload via server action
   const uploadFile = useCallback(
     async (file: File) => {
-      if (!finalizeUploadAction || !createUploadsAction || !group_id) {
+      if (!uploadFileAction || !createUploadsAction || !group_id) {
         toast.error("Upload functionality not available");
         return;
       }
 
       const fileId = uuidv4();
-      const toastId = toast.loading(`Preparing upload: ${file.name}`, {
-        description: "0% complete",
+      const toastId = toast.loading(`Uploading ${file.name}...`, {
+        description: `${Math.round((file.size / 1024 / 1024) * 100) / 100} MB`,
         dismissible: true,
       });
 
@@ -215,150 +214,64 @@ export function Uploads({
         })
       );
 
-      let tusUploadInstance: tus.Upload | null = null;
       try {
-        tusUploadInstance = new tus.Upload(file, {
-          endpoint: `/api/v5${uploadBasePath}/file`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
-          metadata: {
-            filename: file.name,
-            filetype: file.type || inferMimeFromName(file.name),
-            fileId: fileId,
-          },
-          onError: (error) => {
-            toast.error(`Upload failed: ${file.name}`, {
-              description: error.message || "An error occurred during upload",
-              id: toastId,
-            });
-            setActiveUploads((prev) => {
-              const newMap = new Map(prev);
-              newMap.delete(fileId);
-              return newMap;
-            });
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            const progress = Math.round((bytesUploaded / bytesTotal) * 100);
-            setActiveUploads((prev) => {
-              const newMap = new Map(prev);
-              const upload = newMap.get(fileId);
-              if (upload) {
-                newMap.set(fileId, {
-                  ...upload,
-                  progress,
-                });
-              }
-              return newMap;
-            });
+        const formData = new FormData();
+        formData.append("file", file);
 
-            toast.loading(`Uploading ${file.name}... ${progress}%`, {
-              description: `${Math.round((bytesUploaded / 1024 / 1024) * 100) / 100} MB / ${Math.round((bytesTotal / 1024 / 1024) * 100) / 100} MB`,
-              id: toastId,
-              dismissible: true,
-            });
-          },
-          onSuccess: async () => {
-            setActiveUploads((prev) => {
-              const newMap = new Map(prev);
-              const upload = newMap.get(fileId);
-              if (upload) {
-                newMap.set(fileId, {
-                  ...upload,
-                  status: "finalizing",
-                });
-              }
-              return newMap;
-            });
+        const result = await uploadFileAction(formData);
 
-            try {
-              const uploadUrl = tusUploadInstance?.url || "";
-              const tusUploadIdMatch = uploadUrl.match(/([^\/]+)$/);
-              if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
-                throw new Error("Failed to extract upload ID from upload URL");
-              }
-              const tusUploadId = tusUploadIdMatch[1];
+        if (!result.success || !result.upload_id) {
+          throw new Error(result.message || "Upload failed");
+        }
 
-              // Finalize upload to get database upload_id
-              const finalizeResult = await finalizeUploadAction(tusUploadId);
+        const databaseUploadId = result.upload_id;
 
-              if (!finalizeResult.success || !finalizeResult.upload_id) {
-                throw new Error(
-                  finalizeResult.message || "Failed to finalize upload"
-                );
-              }
+        if (isAutosaveEnabled && onFileUploadComplete) {
+          onFileUploadComplete(databaseUploadId);
+        } else if (createUploadsAction) {
+          const createResult = await createUploadsAction({
+            body: {
+              agent_id: "",
+              upload_id: databaseUploadId,
+              mcp: false,
+              tool_id: create_tool_id ?? undefined,
+            },
+          });
 
-              const databaseUploadId = finalizeResult.upload_id;
+          if (!createResult.files_id) {
+            throw new Error("Failed to create files resource");
+          }
 
-              if (isAutosaveEnabled && onFileUploadComplete) {
-                // In autosave mode, report upload_id to parent for server-side chain creation
-                onFileUploadComplete(databaseUploadId);
-              } else if (createUploadsAction) {
-                // Manual save mode: create files_resource entry client-side
-                const createResult = await createUploadsAction({
-                  body: {
-                    agent_id: "",
-                    upload_id: databaseUploadId,
-                    mcp: false,
-                    tool_id: create_tool_id ?? undefined,
-                  },
-                });
+          const uploadsResourceId = createResult.files_id;
+          createdUploadIdsRef.current.add(uploadsResourceId);
+          onChange([...ids, uploadsResourceId]);
+        }
 
-                if (!createResult.files_id) {
-                  throw new Error("Failed to create files resource");
-                }
-
-                const uploadsResourceId = createResult.files_id;
-                createdUploadIdsRef.current.add(uploadsResourceId);
-
-                // Add to selection
-                onChange([...ids, uploadsResourceId]);
-              }
-
-              toast.success(`Upload completed: ${file.name}!`, {
-                description: "File uploaded successfully",
-                id: toastId,
-              });
-
-              setActiveUploads((prev) => {
-                const newMap = new Map(prev);
-                const upload = newMap.get(fileId);
-                if (upload) {
-                  newMap.set(fileId, {
-                    ...upload,
-                    status: "completed",
-                  });
-                }
-                return newMap;
-              });
-
-              // Remove completed upload from state after delay
-              setTimeout(() => {
-                setActiveUploads((prev) => {
-                  const newMap = new Map(prev);
-                  newMap.delete(fileId);
-                  return newMap;
-                });
-              }, 2000);
-            } catch (error) {
-              toast.error(`Upload processing failed: ${file.name}`, {
-                description:
-                  error instanceof Error
-                    ? error.message
-                    : "Failed to process uploaded file",
-                id: toastId,
-              });
-              setActiveUploads((prev) => {
-                const newMap = new Map(prev);
-                newMap.delete(fileId);
-                return newMap;
-              });
-            }
-          },
+        toast.success(`Upload completed: ${file.name}!`, {
+          description: "File uploaded successfully",
+          id: toastId,
         });
 
-        await tusUploadInstance.start();
-      } catch {
+        setActiveUploads((prev) => {
+          const newMap = new Map(prev);
+          const upload = newMap.get(fileId);
+          if (upload) {
+            newMap.set(fileId, { ...upload, status: "completed" });
+          }
+          return newMap;
+        });
+
+        setTimeout(() => {
+          setActiveUploads((prev) => {
+            const newMap = new Map(prev);
+            newMap.delete(fileId);
+            return newMap;
+          });
+        }, 2000);
+      } catch (error) {
         toast.error(`Upload failed: ${file.name}`, {
-          description: "An error occurred during upload",
+          description:
+            error instanceof Error ? error.message : "An error occurred",
           id: toastId,
         });
         setActiveUploads((prev) => {
@@ -369,7 +282,7 @@ export function Uploads({
       }
     },
     [
-      finalizeUploadAction,
+      uploadFileAction,
       createUploadsAction,
       group_id,
       ids,

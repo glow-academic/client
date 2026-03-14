@@ -47,40 +47,32 @@ async function patchScenarioDraft(
   return api.patch("/artifacts/scenarios/draft", input);
 }
 
-async function finalizeUpload(uploadId: string): Promise<UploadResult> {
-  "use server";
-  try {
-    const result = await api.post(
-      "/artifacts/scenarios/video/{upload_id}/finalize",
-      { path: { upload_id: uploadId } } as InputOf<"/api/v5/artifacts/scenarios/video/{upload_id}/finalize", "post">,
-    );
-    return { success: true, upload_id: result.upload_id };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Finalize failed";
-    return { success: false, message };
-  }
-}
-
-async function uploadFile(
-  modality: "file" | "image" | "text" | "video",
-  formData: FormData,
-): Promise<UploadResult> {
+async function uploadFile(formData: FormData): Promise<UploadResult> {
   "use server";
   try {
     const file = formData.get("file") as File | null;
     if (!file) return { success: false, message: "No file provided" };
 
-    let result: { upload_id: string };
-    switch (modality) {
-      case "image":
-        result = await api.post("/artifacts/scenarios/image/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/scenarios/image/upload", "post">);
-        break;
-      case "video":
-        result = await api.post("/artifacts/scenarios/video/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/scenarios/video/upload", "post">);
-        break;
-      default:
-        return { success: false, message: `Upload not supported for ${modality} in scenarios` };
+    const { getAuthHeaders } = await import("@/lib/api/auth-headers");
+    const { INTERNAL_HTTP_BASE } = await import("@/lib/api/config");
+    const authHeaders = await getAuthHeaders();
+
+    const response = await fetch(`${INTERNAL_HTTP_BASE}/v5/scenarios/upload`, {
+      method: "POST",
+      headers: {
+        ...authHeaders,
+        "Content-Type": file.type || "application/octet-stream",
+        "X-Filename": file.name,
+      },
+      body: Buffer.from(await file.arrayBuffer()),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      return { success: false, message: text || "Upload failed" };
     }
+
+    const result = await response.json();
     return { success: true, upload_id: result.upload_id };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed";
@@ -184,7 +176,6 @@ export default async function NewScenarioPage({
           createScenarioAction={createScenario}
           patchScenarioDraftAction={patchScenarioDraft}
           uploadBasePath="/artifacts/scenarios"
-          finalizeUploadAction={finalizeUpload}
           uploadFileAction={uploadFile}
         />
       </div>

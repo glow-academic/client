@@ -19,8 +19,8 @@ from app.routes.v5.attempt.response import router as response_router
 from app.routes.v5.attempt.search import router as search_router
 from app.routes.v5.attempt.start import router as start_router
 from app.routes.v5.attempt.stop import router as stop_router
+from app.routes.v5.attempt.audio import router as audio_router
 from app.routes.v5.attempt.use_previous import router as use_previous_router
-from app.routes.v5.attempt.voice import router as voice_router
 
 router = APIRouter(prefix="/attempt", tags=["attempt"])
 
@@ -41,7 +41,7 @@ router.include_router(grade_router)
 router.include_router(stop_router)
 router.include_router(response_router)
 router.include_router(use_previous_router)
-router.include_router(voice_router)
+router.include_router(audio_router)
 router.include_router(search_router)
 
 # Unified download

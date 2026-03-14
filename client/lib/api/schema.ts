@@ -5044,7 +5044,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/voice/start": {
+    "/v5/attempt/audio/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -5054,17 +5054,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Audio Start
+         * Audio Start
          * @description Start an audio session for an attempt chat.
          */
-        post: operations["attempt_audio_start_v5_attempt_voice_start_post"];
+        post: operations["audio_start_v5_attempt_audio_start_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/voice/frame": {
+    "/v5/attempt/audio/frame": {
         parameters: {
             query?: never;
             header?: never;
@@ -5074,17 +5074,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Audio Frame
-         * @description Push audio bytes from an uploaded file into the session queue.
+         * Audio Frame
+         * @description Push audio bytes into the session inbound queue.
          */
-        post: operations["attempt_audio_frame_v5_attempt_voice_frame_post"];
+        post: operations["audio_frame_v5_attempt_audio_frame_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/voice/stop": {
+    "/v5/attempt/audio/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -5094,10 +5094,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Audio Stop
+         * Audio Stop
          * @description Stop an audio session for an attempt chat.
          */
-        post: operations["attempt_audio_stop_v5_attempt_voice_stop_post"];
+        post: operations["audio_stop_v5_attempt_audio_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v5/attempt/audio/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Audio Mute
+         * @description Toggle microphone mute for an audio session.
+         */
+        post: operations["audio_mute_v5_attempt_audio_mute_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14758,14 +14778,31 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
+            /** Upload Id */
+            upload_id?: string | null;
+            /** Audio */
+            audio?: string | null;
         };
         /** AudioFrameResponse */
         AudioFrameResponse: {
+            /** Accepted */
+            accepted: boolean;
+        };
+        /** AudioMutePayload */
+        AudioMutePayload: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Muted
+             * @default false
+             */
+            muted: boolean;
+        };
+        /** AudioMuteResponse */
+        AudioMuteResponse: {
             /** Accepted */
             accepted: boolean;
         };
@@ -61357,7 +61394,7 @@ export interface operations {
             };
         };
     };
-    attempt_audio_start_v5_attempt_voice_start_post: {
+    audio_start_v5_attempt_audio_start_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61394,7 +61431,7 @@ export interface operations {
             };
         };
     };
-    attempt_audio_frame_v5_attempt_voice_frame_post: {
+    audio_frame_v5_attempt_audio_frame_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61431,7 +61468,7 @@ export interface operations {
             };
         };
     };
-    attempt_audio_stop_v5_attempt_voice_stop_post: {
+    audio_stop_v5_attempt_audio_stop_post: {
         parameters: {
             query?: never;
             header?: {
@@ -61455,6 +61492,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AudioStopInternalResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    audio_mute_v5_attempt_audio_mute_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioMutePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AudioMuteResponse"];
                 };
             };
             /** @description Validation Error */

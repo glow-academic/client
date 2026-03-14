@@ -23888,15 +23888,16 @@
         ]
       }
     },
-    "/v5/attempt/voice/start": {
+    "/v5/attempt/audio/start": {
       "post": {
         "tags": [
           "v5",
-          "attempt"
+          "attempt",
+          "audio"
         ],
-        "summary": "Attempt Audio Start",
+        "summary": "Audio Start",
         "description": "Start an audio session for an attempt chat.",
-        "operationId": "attempt_audio_start_v5_attempt_voice_start_post",
+        "operationId": "audio_start_v5_attempt_audio_start_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -23981,19 +23982,21 @@
         },
         "x-cache-tags": [
           "v5",
-          "attempt"
+          "attempt",
+          "audio"
         ]
       }
     },
-    "/v5/attempt/voice/frame": {
+    "/v5/attempt/audio/frame": {
       "post": {
         "tags": [
           "v5",
-          "attempt"
+          "attempt",
+          "audio"
         ],
-        "summary": "Attempt Audio Frame",
-        "description": "Push audio bytes from an uploaded file into the session queue.",
-        "operationId": "attempt_audio_frame_v5_attempt_voice_frame_post",
+        "summary": "Audio Frame",
+        "description": "Push audio bytes into the session inbound queue.",
+        "operationId": "audio_frame_v5_attempt_audio_frame_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -24078,19 +24081,21 @@
         },
         "x-cache-tags": [
           "v5",
-          "attempt"
+          "attempt",
+          "audio"
         ]
       }
     },
-    "/v5/attempt/voice/stop": {
+    "/v5/attempt/audio/stop": {
       "post": {
         "tags": [
           "v5",
-          "attempt"
+          "attempt",
+          "audio"
         ],
-        "summary": "Attempt Audio Stop",
+        "summary": "Audio Stop",
         "description": "Stop an audio session for an attempt chat.",
-        "operationId": "attempt_audio_stop_v5_attempt_voice_stop_post",
+        "operationId": "audio_stop_v5_attempt_audio_stop_post",
         "parameters": [
           {
             "name": "X-Api-Key",
@@ -24175,7 +24180,107 @@
         },
         "x-cache-tags": [
           "v5",
-          "attempt"
+          "attempt",
+          "audio"
+        ]
+      }
+    },
+    "/v5/attempt/audio/mute": {
+      "post": {
+        "tags": [
+          "v5",
+          "attempt",
+          "audio"
+        ],
+        "summary": "Audio Mute",
+        "description": "Toggle microphone mute for an audio session.",
+        "operationId": "audio_mute_v5_attempt_audio_mute_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudioMutePayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioMuteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt",
+          "audio"
         ]
       }
     },
@@ -70099,15 +70204,32 @@
             "title": "Chat Id"
           },
           "upload_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Upload Id"
+          },
+          "audio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audio"
           }
         },
         "type": "object",
         "required": [
-          "chat_id",
-          "upload_id"
+          "chat_id"
         ],
         "title": "AudioFramePayload"
       },
@@ -70123,6 +70245,38 @@
           "accepted"
         ],
         "title": "AudioFrameResponse"
+      },
+      "AudioMutePayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          },
+          "muted": {
+            "type": "boolean",
+            "title": "Muted",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id"
+        ],
+        "title": "AudioMutePayload"
+      },
+      "AudioMuteResponse": {
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accepted"
+        ],
+        "title": "AudioMuteResponse"
       },
       "AudioStartInternalResult": {
         "properties": {

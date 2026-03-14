@@ -89,12 +89,12 @@ const formatCost = (cost: number): string => {
   return `$${cost.toFixed(6)}`;
 };
 
-/** Artifact-scoped download base URLs for group content. */
-const GROUP_DOWNLOAD_BASE = "/api/group";
+/** Artifact-scoped download base URL for group content. */
+const GROUP_DOWNLOAD_BASE = "/api/group/download";
 
-/** Fetch text content for a single upload ID via the group text download proxy. */
+/** Fetch text content for a single upload ID via the group download proxy. */
 async function fetchGroupTextContent(uploadId: string): Promise<string> {
-  const res = await fetch(`${GROUP_DOWNLOAD_BASE}/text/${uploadId}/download`);
+  const res = await fetch(`${GROUP_DOWNLOAD_BASE}/${uploadId}`);
   if (!res.ok) return "";
   return res.text();
 }
@@ -182,7 +182,7 @@ function MessageContent({
         msg.image_upload_ids!.map((uploadId) => (
           <img
             key={uploadId}
-            src={`${GROUP_DOWNLOAD_BASE}/image/${uploadId}/download`}
+            src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
             alt="Message image"
             className="max-w-full rounded-md"
             loading="lazy"
@@ -199,7 +199,7 @@ function MessageContent({
             className="w-full"
           >
             <source
-              src={`${GROUP_DOWNLOAD_BASE}/audio/${uploadId}/download`}
+              src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
             />
           </audio>
         ))}
@@ -214,7 +214,7 @@ function MessageContent({
             className="max-w-full rounded-md"
           >
             <source
-              src={`${GROUP_DOWNLOAD_BASE}/video/${uploadId}/download`}
+              src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
             />
           </video>
         ))}
@@ -224,7 +224,7 @@ function MessageContent({
         msg.file_upload_ids!.map((uploadId) => (
           <a
             key={uploadId}
-            href={`${GROUP_DOWNLOAD_BASE}/file/${uploadId}/download`}
+            href={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm underline"
@@ -244,7 +244,7 @@ function MessageContent({
             className="w-full"
           >
             <source
-              src={`${GROUP_DOWNLOAD_BASE}/call/${uploadId}/download`}
+              src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
             />
           </audio>
         ))}

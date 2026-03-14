@@ -132,41 +132,32 @@ async function createDraftTexts(
   return api.post("/resources/texts", input);
 }
 
-async function finalizeUpload(uploadId: string): Promise<UploadResult> {
-  "use server";
-  try {
-    const result = await api.post(
-      "/artifacts/documents/file/{upload_id}/finalize",
-      { path: { upload_id: uploadId } } as InputOf<"/api/v5/artifacts/documents/file/{upload_id}/finalize", "post">,
-    );
-    return { success: true, upload_id: result.upload_id };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Finalize failed";
-    return { success: false, message };
-  }
-}
-
-async function uploadFile(
-  modality: "file" | "image" | "text",
-  formData: FormData,
-): Promise<UploadResult> {
+async function uploadFile(formData: FormData): Promise<UploadResult> {
   "use server";
   try {
     const file = formData.get("file") as File | null;
     if (!file) return { success: false, message: "No file provided" };
 
-    let result: { upload_id: string };
-    switch (modality) {
-      case "file":
-        result = await api.post("/artifacts/documents/file/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/documents/file/upload", "post">);
-        break;
-      case "image":
-        result = await api.post("/artifacts/documents/image/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/documents/image/upload", "post">);
-        break;
-      case "text":
-        result = await api.post("/artifacts/documents/text/upload", { formData: { file } } as InputOf<"/api/v5/artifacts/documents/text/upload", "post">);
-        break;
+    const { getAuthHeaders } = await import("@/lib/api/auth-headers");
+    const { INTERNAL_HTTP_BASE } = await import("@/lib/api/config");
+    const authHeaders = await getAuthHeaders();
+
+    const response = await fetch(`${INTERNAL_HTTP_BASE}/v5/documents/upload`, {
+      method: "POST",
+      headers: {
+        ...authHeaders,
+        "Content-Type": file.type || "application/octet-stream",
+        "X-Filename": file.name,
+      },
+      body: Buffer.from(await file.arrayBuffer()),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      return { success: false, message: text || "Upload failed" };
     }
+
+    const result = await response.json();
     return { success: true, upload_id: result.upload_id };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed";
@@ -253,7 +244,6 @@ export default async function DocumentEditPage({
             createImagesAction={createDraftImages}
             createTextsAction={createDraftTexts}
             uploadBasePath="/artifacts/documents"
-            finalizeUploadAction={finalizeUpload}
             uploadFileAction={uploadFile}
           />
         </div>

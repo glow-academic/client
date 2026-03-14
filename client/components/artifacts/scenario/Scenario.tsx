@@ -125,11 +125,7 @@ export interface ScenarioProps {
   ) => Promise<PatchScenarioDraftOut>;
   // Artifact-scoped upload props
   uploadBasePath?: string;
-  finalizeUploadAction?: (
-    uploadId: string,
-  ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
   uploadFileAction?: (
-    modality: "file" | "image" | "text" | "video",
     formData: FormData,
   ) => Promise<{ success: boolean; upload_id?: string; message?: string }>;
 }
@@ -214,7 +210,6 @@ function ScenarioComponent({
   updateScenarioAction,
   patchScenarioDraftAction,
   uploadBasePath,
-  finalizeUploadAction,
   uploadFileAction,
 }: ScenarioProps) {
   const router = useRouter();
@@ -1688,7 +1683,7 @@ function ScenarioComponent({
                     maxImages={3}
                     isAutosaveEnabled={isAutosaveEnabled}
                     uploadBasePath={uploadBasePath}
-                    finalizeUploadAction={finalizeUploadAction}
+                    uploadFileAction={uploadFileAction}
                   />
                 )}
                 {showProblemStatementSection && (
@@ -1999,7 +1994,7 @@ function ScenarioComponent({
                     showAiGenerate={s?.videos?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                     uploadBasePath={uploadBasePath}
-                    finalizeUploadAction={finalizeUploadAction}
+                    uploadFileAction={uploadFileAction}
                   />
                 )}
                 {showQuestionsSection && (
@@ -2142,7 +2137,6 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
     prevProps.updateScenarioAction !== nextProps.updateScenarioAction ||
     prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction ||
     prevProps.uploadBasePath !== nextProps.uploadBasePath ||
-    prevProps.finalizeUploadAction !== nextProps.finalizeUploadAction ||
     prevProps.uploadFileAction !== nextProps.uploadFileAction
   ) {
     return false;

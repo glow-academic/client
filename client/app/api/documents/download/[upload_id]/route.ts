@@ -1,23 +1,18 @@
 import { INTERNAL_HTTP_BASE } from "@/lib/api/config";
 import { NextRequest, NextResponse } from "next/server";
 
-const VALID_MODALITIES = new Set(["audio", "call", "file", "image", "video", "text"]);
-
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ modality: string; upload_id: string }> },
+  { params }: { params: Promise<{ upload_id: string }> },
 ) {
   try {
-    const { modality, upload_id } = await params;
+    const { upload_id } = await params;
 
-    if (!VALID_MODALITIES.has(modality)) {
-      return NextResponse.json(
-        { error: `Invalid modality: ${modality}` },
-        { status: 400 },
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const preview = searchParams.get("preview") === "true";
 
-    const endpoint = `${INTERNAL_HTTP_BASE}/api/v5/artifacts/group/${modality}/${upload_id}/download`;
+    const action = preview ? "preview" : "download";
+    const endpoint = `${INTERNAL_HTTP_BASE}/v5/documents/${action}/${upload_id}`;
 
     const headers: HeadersInit = {
       Cookie: request.headers.get("cookie") || "",
