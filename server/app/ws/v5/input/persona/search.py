@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.persona.search import search_persona_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
@@ -49,16 +50,18 @@ async def persona_search(sid: str, data: dict[str, Any]) -> None:
         })
         return
 
-    await internal_sio.emit("persona.search.started", {
-        "sid": sid,
-        "rooms": [sid],
-    })
+    pool = get_pool()
+    redis = get_redis_client()
 
-    try:
-        pool = get_pool()
-        redis = get_redis_client()
-
-        result = await search_persona_impl(
+    await run_artifact_operation_with_audit(
+        pool,
+        redis,
+        artifact="persona",
+        operation="search",
+        profile_id=profile_id,
+        sid=sid,
+        rooms=[sid],
+        runner=lambda: search_persona_impl(
             pool,
             redis,
             profile_id=profile_id,
@@ -75,17 +78,6 @@ async def persona_search(sid: str, data: dict[str, Any]) -> None:
             instruction_search=payload.instruction_search,
             page_size=payload.page_size,
             page_offset=payload.page_offset,
-        )
-
-        await internal_sio.emit("persona.search.completed", {
-            "sid": sid,
-            "rooms": [sid],
-            **result.model_dump(mode="json"),
-        })
-    except Exception as e:
-        await internal_sio.emit("persona.search.failed", {
-            "sid": sid,
-            "rooms": [sid],
-            "message": str(e),
-            "error_type": type(e).__name__,
-        })
+        ),
+        arguments=payload.model_dump(mode="json"),
+    )

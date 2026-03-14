@@ -3,6 +3,7 @@
 from typing import Any
 from uuid import UUID
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.persona.get import get_persona_impl
 from app.infra.persona.types import GetPersonaApiRequest
@@ -33,17 +34,20 @@ async def persona_get(sid: str, data: dict[str, Any]) -> None:
         })
         return
 
-    await internal_sio.emit("persona.get.started", {
-        "sid": sid,
-        "rooms": [sid],
-        **payload.model_dump(mode="json"),
-    })
+    pool = get_pool()
+    redis = get_redis_client()
 
-    try:
-        pool = get_pool()
-        redis = get_redis_client()
-
-        result = await get_persona_impl(
+    await run_artifact_operation_with_audit(
+        pool,
+        redis,
+        artifact="persona",
+        operation="get",
+        profile_id=profile_id,
+        session_id=session_id,
+        draft_id=payload.draft_id,
+        sid=sid,
+        rooms=[sid],
+        runner=lambda: get_persona_impl(
             pool,
             redis,
             profile_id=profile_id,
@@ -59,17 +63,6 @@ async def persona_get(sid: str, data: dict[str, Any]) -> None:
             instructions_search=payload.instructions_search,
             color_show_selected=payload.color_show_selected,
             icon_show_selected=payload.icon_show_selected,
-        )
-
-        await internal_sio.emit("persona.get.completed", {
-            "sid": sid,
-            "rooms": [sid],
-            **result.model_dump(mode="json"),
-        })
-    except Exception as e:
-        await internal_sio.emit("persona.get.failed", {
-            "sid": sid,
-            "rooms": [sid],
-            "message": str(e),
-            "error_type": type(e).__name__,
-        })
+        ),
+        arguments=payload.model_dump(mode="json"),
+    )

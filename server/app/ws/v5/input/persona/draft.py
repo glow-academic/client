@@ -3,6 +3,7 @@
 from typing import Any
 from uuid import UUID
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.persona.draft import patch_persona_draft_impl
 from app.infra.persona.types import PatchPersonaDraftApiRequest
@@ -33,35 +34,33 @@ async def persona_draft(sid: str, data: dict[str, Any]) -> None:
         })
         return
 
-    await internal_sio.emit("persona.draft.started", {
-        "sid": sid,
-        "rooms": [sid],
-    })
+    if session_id is None:
+        await internal_sio.emit("persona.draft.failed", {
+            "sid": sid,
+            "rooms": [sid],
+            "message": "Session ID is required for draft operations",
+            "error_type": "ValueError",
+        })
+        return
 
-    try:
-        pool = get_pool()
-        redis = get_redis_client()
+    pool = get_pool()
+    redis = get_redis_client()
 
-        if session_id is None:
-            raise ValueError("Session ID is required for draft operations")
-
-        result = await patch_persona_draft_impl(
+    await run_artifact_operation_with_audit(
+        pool,
+        redis,
+        artifact="persona",
+        operation="draft",
+        profile_id=profile_id,
+        session_id=session_id,
+        sid=sid,
+        rooms=[sid],
+        runner=lambda: patch_persona_draft_impl(
             pool,
             redis,
             profile_id=profile_id,
             session_id=session_id,
             request=payload,
-        )
-
-        await internal_sio.emit("persona.draft.completed", {
-            "sid": sid,
-            "rooms": [sid],
-            **result.model_dump(mode="json"),
-        })
-    except Exception as e:
-        await internal_sio.emit("persona.draft.failed", {
-            "sid": sid,
-            "rooms": [sid],
-            "message": str(e),
-            "error_type": type(e).__name__,
-        })
+        ),
+        arguments=payload.model_dump(mode="json"),
+    )

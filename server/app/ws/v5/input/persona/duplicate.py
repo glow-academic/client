@@ -3,6 +3,7 @@
 from typing import Any
 from uuid import UUID
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.persona.duplicate import duplicate_persona_impl
 from app.infra.persona.types import DuplicatePersonaApiRequest
@@ -33,32 +34,24 @@ async def persona_duplicate(sid: str, data: dict[str, Any]) -> None:
         })
         return
 
-    await internal_sio.emit("persona.duplicate.started", {
-        "sid": sid,
-        "rooms": [sid],
-    })
+    pool = get_pool()
+    redis = get_redis_client()
 
-    try:
-        pool = get_pool()
-        redis = get_redis_client()
-
-        result = await duplicate_persona_impl(
+    await run_artifact_operation_with_audit(
+        pool,
+        redis,
+        artifact="persona",
+        operation="duplicate",
+        profile_id=profile_id,
+        session_id=session_id,
+        sid=sid,
+        rooms=[sid],
+        runner=lambda: duplicate_persona_impl(
             pool,
             redis,
             profile_id=profile_id,
             persona_id=payload.persona_id,
             session_id=session_id,
-        )
-
-        await internal_sio.emit("persona.duplicate.completed", {
-            "sid": sid,
-            "rooms": [sid],
-            **result.model_dump(mode="json"),
-        })
-    except Exception as e:
-        await internal_sio.emit("persona.duplicate.failed", {
-            "sid": sid,
-            "rooms": [sid],
-            "message": str(e),
-            "error_type": type(e).__name__,
-        })
+        ),
+        arguments=payload.model_dump(mode="json"),
+    )

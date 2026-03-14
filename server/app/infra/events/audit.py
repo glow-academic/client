@@ -8,15 +8,16 @@ from typing import Any, TypeVar
 from uuid import UUID
 
 import asyncpg
-from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import UPLOAD_FOLDER
+from app.infra.globals import UPLOAD_FOLDER, get_internal_sio
 from app.infra.tool_graph import SettingsToolGraph
 from app.infra.tools.entries.create_tool_call import create_tool_call
 
 T = TypeVar("T")
+
+internal_sio = get_internal_sio()
 
 
 def resolve_artifact_operation_tool(
@@ -49,6 +50,8 @@ async def run_artifact_operation_with_audit(
     operation: str,
     runner: Callable[[], Awaitable[T]],
     arguments: dict[str, Any],
+    sid: str = "",
+    rooms: list[str] | None = None,
     session_id: UUID | None = None,
     draft_id: UUID | None = None,
     group_id: UUID | None = None,
@@ -61,10 +64,19 @@ async def run_artifact_operation_with_audit(
     mcp: bool = False,
     upload_folder: Path | None = None,
 ) -> T:
-    """Execute an artifact operation and persist a tool-call audit receipt when possible.
+    """Execute an artifact operation with lifecycle emission and optional audit.
 
-    TODO: Add typed progress entry emission once call lifecycle progress exists.
+    Emits to internal_sio:
+      - {artifact}.{operation}.started
+      - {artifact}.{operation}.completed (on success)
+      - {artifact}.{operation}.failed (on error)
+
+    Output handlers in ws/v5/output/ pick these up and forward to clients.
+    When the tool graph has a matching tool, a tool-call audit record is persisted.
     """
+    effective_rooms = rooms or ([sid] if sid else [])
+    event_prefix = f"{artifact}.{operation}"
+
     common = await resolve_common_context(
         pool,
         redis,
@@ -78,10 +90,7 @@ async def run_artifact_operation_with_audit(
         bypass_cache=bypass_cache,
     )
     if common is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Profile not found. Please sign in again.",
-        )
+        raise PermissionError("Profile not found. Please sign in again.")
 
     tool_id = resolve_artifact_operation_tool(
         common.tool_graph,
@@ -90,123 +99,76 @@ async def run_artifact_operation_with_audit(
     )
     effective_session_id = session_id or common.profile.session_id
     effective_group_id = group_id or common.profile.group_id
-
     effective_profiles_id = common.profile.profiles_id
     effective_upload_folder = upload_folder or UPLOAD_FOLDER
 
-    if (
-        tool_id is None
-        or effective_session_id is None
-        or effective_group_id is None
-        or effective_profiles_id is None
-    ):
-        from app.infra.stream.emitter import (
-            emit_artifact_operation_finished,
-            emit_artifact_operation_started,
-            emit_artifact_operation_failure,
-        )
+    # --- Started ---
+    await internal_sio.emit(f"{event_prefix}.started", {
+        "sid": sid,
+        "rooms": effective_rooms,
+        **arguments,
+    })
 
-        await emit_artifact_operation_started(
-            artifact=artifact,
-            operation=operation,
-            arguments=arguments,
-            entity_id=entity_id or attempt_id or test_id,
-            tool_id=tool_id,
-        )
+    can_audit = all([
+        tool_id,
+        effective_session_id,
+        effective_group_id,
+        effective_profiles_id,
+    ])
 
-        try:
-            result = await runner()
-        except Exception as exc:
-            await emit_artifact_operation_failure(
-                artifact=artifact,
-                operation=operation,
-                arguments=arguments,
-                message=str(exc),
-                error_type=type(exc).__name__,
-                entity_id=entity_id or attempt_id or test_id,
-                tool_id=tool_id,
-            )
-            raise
-
-        output = result.model_dump(mode="json") if hasattr(result, "model_dump") else result
-        if isinstance(output, dict):
-            await emit_artifact_operation_finished(
-                artifact=artifact,
-                operation=operation,
-                arguments=arguments,
-                output=output,
-                entity_id=entity_id or attempt_id or test_id,
-                call_id=None,
-                tool_id=tool_id,
-            )
-        return result
-
-    async def _tool_fn(_conn: asyncpg.Connection, **_arguments: Any) -> Any:
-        result = await runner()
-        if hasattr(result, "model_dump"):
-            return result.model_dump(mode="json")
-        return result
-
+    # --- Execute ---
     try:
-        from app.infra.stream.emitter import (
-            emit_artifact_operation_finished,
-            emit_artifact_operation_started,
-            emit_artifact_operation_failure,
-        )
+        if can_audit:
+            async def _tool_fn(_conn: asyncpg.Connection, **_arguments: Any) -> Any:
+                result = await runner()
+                if hasattr(result, "model_dump"):
+                    return result.model_dump(mode="json")
+                return result
 
-        await emit_artifact_operation_started(
-            artifact=artifact,
-            operation=operation,
-            arguments=arguments,
-            entity_id=entity_id or attempt_id or test_id,
-            tool_id=tool_id,
-        )
-
-        async with pool.acquire() as conn:
-            result = await create_tool_call(
-                conn,
-                group_id=effective_group_id,
-                session_id=effective_session_id,
-                profile_id=effective_profiles_id,
-                upload_folder=effective_upload_folder,
-                tool_fn=_tool_fn,
-                arguments=arguments,
-                tool_id=tool_id,
-                role=role,
-                mcp=mcp,
-                raise_on_error=True,
-            )
+            async with pool.acquire() as conn:
+                audit_result = await create_tool_call(
+                    conn,
+                    group_id=effective_group_id,  # type: ignore[arg-type]
+                    session_id=effective_session_id,  # type: ignore[arg-type]
+                    profile_id=effective_profiles_id,  # type: ignore[arg-type]
+                    upload_folder=effective_upload_folder,
+                    tool_fn=_tool_fn,
+                    arguments=arguments,
+                    tool_id=tool_id,
+                    role=role,
+                    mcp=mcp,
+                    raise_on_error=True,
+                )
+            result_data = audit_result.result
+        else:
+            result_data = await runner()
     except Exception as exc:
-        await emit_artifact_operation_failure(
-            artifact=artifact,
-            operation=operation,
-            arguments=arguments,
-            message=str(exc),
-            error_type=type(exc).__name__,
-            entity_id=entity_id or attempt_id or test_id,
-            tool_id=tool_id,
-        )
+        await internal_sio.emit(f"{event_prefix}.failed", {
+            "sid": sid,
+            "rooms": effective_rooms,
+            "message": str(exc),
+            "error_type": type(exc).__name__,
+        })
         raise
 
-    emitted_output = (
-        result.result.model_dump(mode="json")
-        if hasattr(result.result, "model_dump")
-        else result.result
+    # --- Completed ---
+    output = (
+        result_data.model_dump(mode="json")
+        if hasattr(result_data, "model_dump")
+        else result_data
+        if isinstance(result_data, dict)
+        else {}
     )
-    if isinstance(emitted_output, dict):
-        await emit_artifact_operation_finished(
-            artifact=artifact,
-            operation=operation,
-            arguments=arguments,
-            output=emitted_output,
-            entity_id=entity_id or attempt_id or test_id,
-            call_id=result.call_id,
-            tool_id=tool_id,
-        )
+
+    await internal_sio.emit(f"{event_prefix}.completed", {
+        "sid": sid,
+        "rooms": effective_rooms,
+        **output,
+    })
 
     if response_model is not None:
-        return response_model.model_validate(result.result)
-    return result.result
+        return response_model.model_validate(result_data)
+    return result_data
 
 
 def build_audit_arguments(data: dict[str, Any]) -> dict[str, Any]:

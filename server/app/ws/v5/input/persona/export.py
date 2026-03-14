@@ -3,6 +3,7 @@
 from typing import Any
 from uuid import UUID
 
+from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.persona.export import export_persona_impl
 from app.infra.persona.types import ExportPersonaApiRequest
@@ -30,33 +31,22 @@ async def persona_export(sid: str, data: dict[str, Any]) -> None:
         })
         return
 
-    await internal_sio.emit("persona.export.started", {
-        "sid": sid,
-        "rooms": [sid],
-    })
+    pool = get_pool()
+    redis = get_redis_client()
 
-    try:
-        pool = get_pool()
-        redis = get_redis_client()
-
-        result = await export_persona_impl(
+    await run_artifact_operation_with_audit(
+        pool,
+        redis,
+        artifact="persona",
+        operation="export",
+        profile_id=profile_id,
+        sid=sid,
+        rooms=[sid],
+        runner=lambda: export_persona_impl(
             pool,
             redis,
             profile_id=profile_id,
             persona_id=payload.persona_id,
-        )
-
-        output = result if isinstance(result, dict) else result.model_dump(mode="json") if hasattr(result, "model_dump") else {"content": result}
-
-        await internal_sio.emit("persona.export.completed", {
-            "sid": sid,
-            "rooms": [sid],
-            **output,
-        })
-    except Exception as e:
-        await internal_sio.emit("persona.export.failed", {
-            "sid": sid,
-            "rooms": [sid],
-            "message": str(e),
-            "error_type": type(e).__name__,
-        })
+        ),
+        arguments=payload.model_dump(mode="json"),
+    )
