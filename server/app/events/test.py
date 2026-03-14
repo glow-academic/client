@@ -67,9 +67,9 @@ TEST_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
             "failed": OperationErrorEvent,
         },
         domain_events={
-            "artifacts.test.run.started": TestRunStartEvent,
+            "artifacts.test.run.replay_started": TestRunStartEvent,
             "artifacts.test.run.progress": TestProgressEvent,
-            "artifacts.test.run.completed": TestRunCompleteEvent,
+            "artifacts.test.run.replay_completed": TestRunCompleteEvent,
         },
         filter_events=default_filter_events,
     ),

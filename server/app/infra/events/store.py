@@ -88,6 +88,10 @@ def build_operation_events(
     else:
         domain_entity_ids = []
 
+    lifecycle_entity_id = entity_id
+    if lifecycle_entity_id is None and len(domain_entity_ids) == 1:
+        lifecycle_entity_id = domain_entity_ids[0]
+
     if operation_config.include_call_lifecycle:
         event_root = str(call_id or uuid4())
         started_event_type = build_lifecycle_event_type(artifact, operation, "started")
@@ -98,7 +102,7 @@ def build_operation_events(
                 artifact=artifact,
                 operation=operation,
                 created_at=created_at,
-                entity_id=entity_id,
+                entity_id=lifecycle_entity_id,
                 call_id=call_id,
                 tool_id=tool_id,
                 payload={"arguments": arguments},
@@ -116,7 +120,7 @@ def build_operation_events(
                 artifact=artifact,
                 operation=operation,
                 created_at=created_at,
-                entity_id=entity_id,
+                entity_id=lifecycle_entity_id,
                 call_id=call_id,
                 tool_id=tool_id,
                 payload={"output": output},

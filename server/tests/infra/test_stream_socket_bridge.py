@@ -82,6 +82,52 @@ async def test_wrap_emit_with_stream_bridge_publishes_test_run_progress_event() 
 
 
 @pytest.mark.asyncio
+async def test_wrap_emit_with_stream_bridge_uses_distinct_test_run_domain_names() -> None:
+    emit, recorded = recording_emit()
+    bridged = wrap_emit_with_stream_bridge(
+        artifact="test",
+        operation="run",
+        emit=emit,
+        entity_id=UUID("66666666-6666-6666-6666-666666666666"),
+    )
+    queue = subscribe(
+        artifact="test",
+        operation="run",
+        entity_id=UUID("66666666-6666-6666-6666-666666666666"),
+    )
+    try:
+        await bridged(
+            [
+                internal_event(
+                    "test_run_started",
+                    {
+                        "invocation_id": "66666666-6666-6666-6666-666666666666",
+                        "run_id": "77777777-7777-7777-7777-777777777777",
+                    },
+                ),
+                internal_event(
+                    "test_run_complete",
+                    {
+                        "invocation_id": "66666666-6666-6666-6666-666666666666",
+                        "run_id": "77777777-7777-7777-7777-777777777777",
+                    },
+                ),
+            ]
+        )
+
+        assert [event.event for event in recorded] == [
+            "test_run_started",
+            "test_run_complete",
+        ]
+        first = await queue.get()
+        second = await queue.get()
+        assert first.event_type == "artifacts.test.run.replay_started"
+        assert second.event_type == "artifacts.test.run.replay_completed"
+    finally:
+        unsubscribe(queue)
+
+
+@pytest.mark.asyncio
 async def test_wrap_emit_with_stream_bridge_skips_attempt_server_owned_domain_events() -> None:
     emit, recorded = recording_emit()
     bridged = wrap_emit_with_stream_bridge(

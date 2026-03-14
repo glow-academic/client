@@ -37,6 +37,15 @@ from app.socket.v5.client.types import (
     AttemptStoppedEvent,
 )
 
+
+def _resolve_attempt_start_entity_ids(arguments: dict, output: dict) -> list:
+    attempt_id = output.get("attempt_id")
+    if not attempt_id:
+        return []
+    from uuid import UUID
+
+    return [UUID(str(attempt_id))]
+
 ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
     "get": OperationEventConfig(
         operation="get",
@@ -58,6 +67,7 @@ ATTEMPT_EVENT_CONFIGS: dict[str, OperationEventConfig] = {
         entity_key=None,
         can_subscribe=require_authenticated_profile,
         project_domain_from_audit=False,
+        resolve_entity_ids=_resolve_attempt_start_entity_ids,
         lifecycle_models={
             "started": AttemptStartPayload,
             "completed": AttemptStartedEvent,

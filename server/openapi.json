@@ -2,6 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
+    "description": "Auto-generated OpenAPI schema from FastAPI v5 API",
     "version": "0.1.0"
   },
   "paths": {
@@ -95,7 +96,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/search": {
@@ -188,7 +193,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/create": {
@@ -281,7 +290,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/csv": {
@@ -374,7 +387,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/update": {
@@ -467,7 +484,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/duplicate": {
@@ -560,7 +581,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/delete": {
@@ -653,7 +678,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/draft": {
@@ -746,7 +775,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/drafts": {
@@ -829,7 +862,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/docs": {
@@ -922,7 +959,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/export": {
@@ -1015,7 +1056,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/personas/refresh": {
@@ -1098,7 +1143,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "personas"
+        ]
       }
     },
     "/v5/scenarios/get": {
@@ -1191,7 +1240,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/search": {
@@ -1284,7 +1337,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/create": {
@@ -1377,7 +1434,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/csv": {
@@ -1470,7 +1531,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/update": {
@@ -1563,7 +1628,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/duplicate": {
@@ -1656,7 +1725,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/delete": {
@@ -1749,7 +1822,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/draft": {
@@ -1842,7 +1919,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/drafts": {
@@ -1925,7 +2006,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/export": {
@@ -2018,7 +2103,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/docs": {
@@ -2111,7 +2200,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/refresh": {
@@ -2194,7 +2287,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios"
+        ]
       }
     },
     "/v5/scenarios/file/{upload_id}/download": {
@@ -2285,7 +2382,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "file"
+        ]
       }
     },
     "/v5/scenarios/file/{upload_id}/preview": {
@@ -2376,7 +2478,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "file"
+        ]
       }
     },
     "/v5/scenarios/image/upload": {
@@ -2470,7 +2577,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "image"
+        ]
       }
     },
     "/v5/scenarios/image/{upload_id}/download": {
@@ -2561,7 +2673,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "image"
+        ]
       }
     },
     "/v5/scenarios/text/{upload_id}/download": {
@@ -2652,7 +2769,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "text"
+        ]
       }
     },
     "/v5/scenarios/video/upload": {
@@ -2746,7 +2868,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/scenarios/video/discover": {
@@ -2828,7 +2955,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/scenarios/video/discover/{upload_id}": {
@@ -2919,7 +3051,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/scenarios/video/create": {
@@ -3001,7 +3138,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/scenarios/video/{upload_id}/status": {
@@ -3092,7 +3234,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/scenarios/video/{upload_id}/chunk": {
@@ -3183,7 +3330,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/scenarios/video/{upload_id}/finalize": {
@@ -3276,7 +3428,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/scenarios/video/{upload_id}/download": {
@@ -3367,7 +3524,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "scenarios",
+          "video"
+        ]
       }
     },
     "/v5/simulations/get": {
@@ -3460,7 +3622,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/search": {
@@ -3553,7 +3719,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/create": {
@@ -3646,7 +3816,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/csv": {
@@ -3739,7 +3913,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/update": {
@@ -3832,7 +4010,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/duplicate": {
@@ -3925,7 +4107,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/delete": {
@@ -4018,7 +4204,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/draft": {
@@ -4111,7 +4301,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/drafts": {
@@ -4194,7 +4388,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/export": {
@@ -4287,7 +4485,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/docs": {
@@ -4380,7 +4582,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/simulations/refresh": {
@@ -4463,7 +4669,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "simulations"
+        ]
       }
     },
     "/v5/documents/search": {
@@ -4556,7 +4766,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/get": {
@@ -4649,7 +4863,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/create": {
@@ -4742,7 +4960,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/update": {
@@ -4835,7 +5057,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/duplicate": {
@@ -4928,7 +5154,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/delete": {
@@ -5021,7 +5251,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/draft": {
@@ -5114,7 +5348,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/drafts": {
@@ -5197,7 +5435,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/docs": {
@@ -5290,7 +5532,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/refresh": {
@@ -5373,7 +5619,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/export": {
@@ -5466,7 +5716,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/csv": {
@@ -5559,7 +5813,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents"
+        ]
       }
     },
     "/v5/documents/file/upload": {
@@ -5653,7 +5911,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/discover": {
@@ -5735,7 +5998,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/discover/{upload_id}": {
@@ -5826,7 +6094,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/create": {
@@ -5908,7 +6181,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/{upload_id}/status": {
@@ -5999,7 +6277,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/{upload_id}/chunk": {
@@ -6090,7 +6373,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/{upload_id}/finalize": {
@@ -6183,7 +6471,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/{upload_id}/download": {
@@ -6274,7 +6567,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/file/{upload_id}/preview": {
@@ -6365,7 +6663,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "file"
+        ]
       }
     },
     "/v5/documents/image/upload": {
@@ -6459,7 +6762,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "image"
+        ]
       }
     },
     "/v5/documents/image/{upload_id}/download": {
@@ -6550,7 +6858,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "image"
+        ]
       }
     },
     "/v5/documents/text/upload": {
@@ -6644,7 +6957,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "text"
+        ]
       }
     },
     "/v5/documents/text/{upload_id}/download": {
@@ -6735,7 +7053,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "documents",
+          "text"
+        ]
       }
     },
     "/v5/departments/get": {
@@ -6828,7 +7151,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/search": {
@@ -6921,7 +7248,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/create": {
@@ -7014,7 +7345,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/update": {
@@ -7107,7 +7442,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/duplicate": {
@@ -7200,7 +7539,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/delete": {
@@ -7293,7 +7636,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/draft": {
@@ -7386,7 +7733,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/drafts": {
@@ -7469,7 +7820,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/docs": {
@@ -7562,7 +7917,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/export": {
@@ -7655,7 +8014,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/csv": {
@@ -7748,7 +8111,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/departments/refresh": {
@@ -7831,7 +8198,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "departments"
+        ]
       }
     },
     "/v5/cohorts/search": {
@@ -7924,7 +8295,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/get": {
@@ -8017,7 +8392,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/create": {
@@ -8110,7 +8489,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/update": {
@@ -8203,7 +8586,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/duplicate": {
@@ -8296,7 +8683,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/delete": {
@@ -8389,7 +8780,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/draft": {
@@ -8482,7 +8877,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/drafts": {
@@ -8565,7 +8964,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/export": {
@@ -8658,7 +9061,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/csv": {
@@ -8751,7 +9158,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/docs": {
@@ -8844,7 +9255,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/cohorts/refresh": {
@@ -8927,7 +9342,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "cohorts"
+        ]
       }
     },
     "/v5/evals/search": {
@@ -9020,7 +9439,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/get": {
@@ -9113,7 +9536,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/create": {
@@ -9206,7 +9633,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/update": {
@@ -9299,7 +9730,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/duplicate": {
@@ -9392,7 +9827,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/delete": {
@@ -9485,7 +9924,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/draft": {
@@ -9578,7 +10021,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/drafts": {
@@ -9661,7 +10108,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/docs": {
@@ -9754,7 +10205,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/refresh": {
@@ -9837,7 +10292,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/export": {
@@ -9930,7 +10389,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/evals/csv": {
@@ -10023,7 +10486,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "evals"
+        ]
       }
     },
     "/v5/rubrics/get": {
@@ -10116,7 +10583,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/search": {
@@ -10209,7 +10680,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/create": {
@@ -10302,7 +10777,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/update": {
@@ -10395,7 +10874,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/duplicate": {
@@ -10488,7 +10971,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/delete": {
@@ -10581,7 +11068,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/draft": {
@@ -10674,7 +11165,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/drafts": {
@@ -10757,7 +11252,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/docs": {
@@ -10850,7 +11349,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/export": {
@@ -10943,7 +11446,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/csv": {
@@ -11036,7 +11543,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/rubrics/refresh": {
@@ -11119,7 +11630,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "rubrics"
+        ]
       }
     },
     "/v5/settings/search": {
@@ -11212,7 +11727,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/get": {
@@ -11305,7 +11824,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/create": {
@@ -11398,7 +11921,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/update": {
@@ -11491,7 +12018,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/duplicate": {
@@ -11584,7 +12115,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/delete": {
@@ -11677,7 +12212,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/draft": {
@@ -11770,7 +12309,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/drafts": {
@@ -11853,7 +12396,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/export": {
@@ -11946,7 +12493,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/csv": {
@@ -12039,7 +12590,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/docs": {
@@ -12132,7 +12687,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/refresh": {
@@ -12215,7 +12774,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/settings/decrypt": {
@@ -12308,7 +12871,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "settings"
+        ]
       }
     },
     "/v5/agents/get": {
@@ -12401,7 +12968,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/search": {
@@ -12494,7 +13065,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/create": {
@@ -12587,7 +13162,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/update": {
@@ -12680,7 +13259,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/duplicate": {
@@ -12773,7 +13356,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/delete": {
@@ -12866,7 +13453,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/draft": {
@@ -12959,7 +13550,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/drafts": {
@@ -13042,7 +13637,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/docs": {
@@ -13135,7 +13734,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/export": {
@@ -13228,7 +13831,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/csv": {
@@ -13321,7 +13928,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/agents/refresh": {
@@ -13404,7 +14015,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "agents"
+        ]
       }
     },
     "/v5/models/get": {
@@ -13497,7 +14112,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/search": {
@@ -13590,7 +14209,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/create": {
@@ -13683,7 +14306,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/update": {
@@ -13776,7 +14403,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/duplicate": {
@@ -13869,7 +14500,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/delete": {
@@ -13962,7 +14597,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/draft": {
@@ -14055,7 +14694,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/drafts": {
@@ -14138,7 +14781,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/docs": {
@@ -14231,7 +14878,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/export": {
@@ -14324,7 +14975,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/csv": {
@@ -14417,7 +15072,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/models/refresh": {
@@ -14500,7 +15159,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "models"
+        ]
       }
     },
     "/v5/providers/search": {
@@ -14593,7 +15256,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/get": {
@@ -14686,7 +15353,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/create": {
@@ -14779,7 +15450,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/update": {
@@ -14872,7 +15547,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/duplicate": {
@@ -14965,7 +15644,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/delete": {
@@ -15058,7 +15741,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/draft": {
@@ -15151,7 +15838,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/drafts": {
@@ -15234,7 +15925,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/docs": {
@@ -15327,7 +16022,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/export": {
@@ -15420,7 +16119,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/csv": {
@@ -15513,7 +16216,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/refresh": {
@@ -15596,7 +16303,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/providers/decrypt": {
@@ -15689,7 +16400,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "providers"
+        ]
       }
     },
     "/v5/parameters/get": {
@@ -15782,7 +16497,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/search": {
@@ -15875,7 +16594,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/create": {
@@ -15968,7 +16691,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/update": {
@@ -16061,7 +16788,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/duplicate": {
@@ -16154,7 +16885,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/delete": {
@@ -16247,7 +16982,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/draft": {
@@ -16340,7 +17079,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/drafts": {
@@ -16423,7 +17166,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/docs": {
@@ -16516,7 +17263,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/export": {
@@ -16609,7 +17360,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/csv": {
@@ -16702,7 +17457,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/parameters/refresh": {
@@ -16785,7 +17544,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "parameters"
+        ]
       }
     },
     "/v5/fields/get": {
@@ -16878,7 +17641,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/search": {
@@ -16971,7 +17738,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/create": {
@@ -17064,7 +17835,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/update": {
@@ -17157,7 +17932,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/duplicate": {
@@ -17250,7 +18029,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/delete": {
@@ -17343,7 +18126,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/draft": {
@@ -17436,7 +18223,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/drafts": {
@@ -17519,7 +18310,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/docs": {
@@ -17612,7 +18407,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/export": {
@@ -17705,7 +18504,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/csv": {
@@ -17798,7 +18601,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/fields/refresh": {
@@ -17881,7 +18688,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "fields"
+        ]
       }
     },
     "/v5/profiles/get": {
@@ -17974,7 +18785,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/search": {
@@ -18067,7 +18882,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/create": {
@@ -18160,7 +18979,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/update": {
@@ -18253,7 +19076,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/duplicate": {
@@ -18346,7 +19173,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/draft": {
@@ -18439,7 +19270,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/drafts": {
@@ -18522,7 +19357,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/delete": {
@@ -18615,7 +19454,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/docs": {
@@ -18708,7 +19551,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/export": {
@@ -18801,7 +19648,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/profiles/refresh": {
@@ -18884,7 +19735,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "profiles"
+        ]
       }
     },
     "/v5/auths/get": {
@@ -18977,7 +19832,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/search": {
@@ -19070,7 +19929,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/create": {
@@ -19163,7 +20026,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/update": {
@@ -19256,7 +20123,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/duplicate": {
@@ -19349,7 +20220,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/delete": {
@@ -19442,7 +20317,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/draft": {
@@ -19535,7 +20414,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/drafts": {
@@ -19618,7 +20501,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/docs": {
@@ -19711,7 +20598,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/export": {
@@ -19804,7 +20695,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/auths/refresh": {
@@ -19887,7 +20782,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "auths"
+        ]
       }
     },
     "/v5/tools/search": {
@@ -19980,7 +20879,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/get": {
@@ -20073,7 +20976,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/create": {
@@ -20166,7 +21073,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/update": {
@@ -20259,7 +21170,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/duplicate": {
@@ -20352,7 +21267,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/delete": {
@@ -20445,7 +21364,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/draft": {
@@ -20538,7 +21461,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/drafts": {
@@ -20621,7 +21548,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/export": {
@@ -20714,7 +21645,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/csv": {
@@ -20807,7 +21742,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/docs": {
@@ -20900,7 +21839,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/tools/refresh": {
@@ -20983,7 +21926,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "tools"
+        ]
       }
     },
     "/v5/group/get": {
@@ -21076,7 +22023,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group"
+        ]
       }
     },
     "/v5/group/refresh": {
@@ -21159,7 +22110,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group"
+        ]
       }
     },
     "/v5/group/docs": {
@@ -21252,7 +22207,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group"
+        ]
       }
     },
     "/v5/group/export": {
@@ -21345,7 +22304,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group"
+        ]
       }
     },
     "/v5/group/audio/{upload_id}/download": {
@@ -21436,7 +22399,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group",
+          "audio"
+        ]
       }
     },
     "/v5/group/call/{upload_id}/download": {
@@ -21527,7 +22495,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group",
+          "call"
+        ]
       }
     },
     "/v5/group/file/{upload_id}/download": {
@@ -21618,7 +22591,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group",
+          "file"
+        ]
       }
     },
     "/v5/group/image/{upload_id}/download": {
@@ -21709,7 +22687,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group",
+          "image"
+        ]
       }
     },
     "/v5/group/text/{upload_id}/download": {
@@ -21800,7 +22783,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group",
+          "text"
+        ]
       }
     },
     "/v5/group/video/{upload_id}/download": {
@@ -21891,7 +22879,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "group",
+          "video"
+        ]
       }
     },
     "/v5/session/get": {
@@ -21984,7 +22977,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "session"
+        ]
       }
     },
     "/v5/session/refresh": {
@@ -22067,7 +23064,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "session"
+        ]
       }
     },
     "/v5/session/docs": {
@@ -22160,7 +23161,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "session"
+        ]
       }
     },
     "/v5/session/export": {
@@ -22253,7 +23258,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "session"
+        ]
       }
     },
     "/v5/chat/get": {
@@ -22346,7 +23355,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "chat"
+        ]
       }
     },
     "/v5/chat/draft": {
@@ -22439,7 +23452,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "chat"
+        ]
       }
     },
     "/v5/chat/drafts": {
@@ -22522,7 +23539,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "chat"
+        ]
       }
     },
     "/v5/chat/export": {
@@ -22615,7 +23636,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "chat"
+        ]
       }
     },
     "/v5/chat/refresh": {
@@ -22698,7 +23723,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "chat"
+        ]
       }
     },
     "/v5/chat/docs": {
@@ -22791,7 +23820,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "chat"
+        ]
       }
     },
     "/v5/home/get": {
@@ -22884,7 +23917,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "home"
+        ]
       }
     },
     "/v5/home/search": {
@@ -22977,7 +24014,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "home"
+        ]
       }
     },
     "/v5/home/refresh": {
@@ -23060,7 +24101,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "home"
+        ]
       }
     },
     "/v5/home/export": {
@@ -23143,7 +24188,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "home"
+        ]
       }
     },
     "/v5/home/docs": {
@@ -23236,7 +24285,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "home"
+        ]
       }
     },
     "/v5/practice/get": {
@@ -23329,7 +24382,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "practice"
+        ]
       }
     },
     "/v5/practice/search": {
@@ -23422,7 +24479,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "practice"
+        ]
       }
     },
     "/v5/practice/refresh": {
@@ -23505,7 +24566,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "practice"
+        ]
       }
     },
     "/v5/practice/export": {
@@ -23588,7 +24653,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "practice"
+        ]
       }
     },
     "/v5/practice/docs": {
@@ -23681,7 +24750,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "practice"
+        ]
       }
     },
     "/v5/attempt/get": {
@@ -23774,7 +24847,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/archive": {
@@ -23867,7 +24944,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/refresh": {
@@ -23950,7 +25031,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/docs": {
@@ -24043,7 +25128,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/export": {
@@ -24136,7 +25225,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/start": {
@@ -24229,7 +25322,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/next": {
@@ -24322,7 +25419,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/end": {
@@ -24415,7 +25516,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/end-all": {
@@ -24508,7 +25613,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/message": {
@@ -24601,7 +25710,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/grade": {
@@ -24694,7 +25807,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/stop": {
@@ -24787,7 +25904,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/response": {
@@ -24880,7 +26001,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/use-previous": {
@@ -24973,7 +26098,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/voice/start": {
@@ -25066,7 +26195,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/voice/frame": {
@@ -25159,7 +26292,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/voice/stop": {
@@ -25252,7 +26389,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/search": {
@@ -25345,7 +26486,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
       }
     },
     "/v5/attempt/audio/{upload_id}/download": {
@@ -25436,7 +26581,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt",
+          "audio"
+        ]
       }
     },
     "/v5/attempt/file/{upload_id}/download": {
@@ -25527,7 +26677,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt",
+          "file"
+        ]
       }
     },
     "/v5/attempt/image/{upload_id}/download": {
@@ -25618,7 +26773,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt",
+          "image"
+        ]
       }
     },
     "/v5/attempt/video/{upload_id}/download": {
@@ -25709,7 +26869,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt",
+          "video"
+        ]
       }
     },
     "/v5/attempt/text/{upload_id}/download": {
@@ -25800,7 +26965,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt",
+          "text"
+        ]
       }
     },
     "/v5/record/get": {
@@ -25893,7 +27063,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "record"
+        ]
       }
     },
     "/v5/record/search": {
@@ -25986,7 +27160,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "record"
+        ]
       }
     },
     "/v5/record/refresh": {
@@ -26069,7 +27247,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "record"
+        ]
       }
     },
     "/v5/record/export": {
@@ -26162,7 +27344,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "record"
+        ]
       }
     },
     "/v5/record/docs": {
@@ -26255,7 +27441,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "record"
+        ]
       }
     },
     "/v5/dashboard/get": {
@@ -26347,7 +27537,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "dashboard"
+        ]
       }
     },
     "/v5/dashboard/search": {
@@ -26440,7 +27634,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "dashboard"
+        ]
       }
     },
     "/v5/dashboard/refresh": {
@@ -26523,7 +27721,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "dashboard"
+        ]
       }
     },
     "/v5/dashboard/export": {
@@ -26606,7 +27808,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "dashboard"
+        ]
       }
     },
     "/v5/dashboard/docs": {
@@ -26699,7 +27905,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "dashboard"
+        ]
       }
     },
     "/v5/reports/export": {
@@ -26782,7 +27992,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "reports"
+        ]
       }
     },
     "/v5/reports/search": {
@@ -26875,7 +28089,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "reports"
+        ]
       }
     },
     "/v5/reports/refresh": {
@@ -26958,7 +28176,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "reports"
+        ]
       }
     },
     "/v5/reports/docs": {
@@ -27051,7 +28273,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "reports"
+        ]
       }
     },
     "/v5/leaderboard/get": {
@@ -27143,7 +28369,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "leaderboard"
+        ]
       }
     },
     "/v5/leaderboard/search": {
@@ -27236,7 +28466,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "leaderboard"
+        ]
       }
     },
     "/v5/leaderboard/refresh": {
@@ -27319,7 +28553,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "leaderboard"
+        ]
       }
     },
     "/v5/leaderboard/export": {
@@ -27402,7 +28640,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "leaderboard"
+        ]
       }
     },
     "/v5/leaderboard/docs": {
@@ -27495,7 +28737,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "leaderboard"
+        ]
       }
     },
     "/v5/pricing/get": {
@@ -27588,7 +28834,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "pricing"
+        ]
       }
     },
     "/v5/pricing/search": {
@@ -27681,7 +28931,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "pricing"
+        ]
       }
     },
     "/v5/pricing/refresh": {
@@ -27764,7 +29018,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "pricing"
+        ]
       }
     },
     "/v5/pricing/export": {
@@ -27847,7 +29105,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "pricing"
+        ]
       }
     },
     "/v5/pricing/docs": {
@@ -27940,7 +29202,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "pricing"
+        ]
       }
     },
     "/v5/activity/get": {
@@ -28032,7 +29298,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "activity"
+        ]
       }
     },
     "/v5/activity/search": {
@@ -28125,7 +29395,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "activity"
+        ]
       }
     },
     "/v5/activity/refresh": {
@@ -28208,7 +29482,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "activity"
+        ]
       }
     },
     "/v5/activity/resolve": {
@@ -28301,7 +29579,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "activity"
+        ]
       }
     },
     "/v5/activity/export": {
@@ -28384,7 +29666,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "activity"
+        ]
       }
     },
     "/v5/activity/docs": {
@@ -28477,7 +29763,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "activity"
+        ]
       }
     },
     "/v5/health/get": {
@@ -28570,7 +29860,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "health"
+        ]
       }
     },
     "/v5/health/refresh": {
@@ -28653,7 +29947,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "health"
+        ]
       }
     },
     "/v5/health/export": {
@@ -28736,7 +30034,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "health"
+        ]
       }
     },
     "/v5/health/docs": {
@@ -28829,7 +30131,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "health"
+        ]
       }
     },
     "/v5/benchmark/get": {
@@ -28922,7 +30228,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "benchmark"
+        ]
       }
     },
     "/v5/benchmark/search": {
@@ -29015,7 +30325,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "benchmark"
+        ]
       }
     },
     "/v5/benchmark/refresh": {
@@ -29098,7 +30412,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "benchmark"
+        ]
       }
     },
     "/v5/benchmark/export": {
@@ -29181,7 +30499,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "benchmark"
+        ]
       }
     },
     "/v5/benchmark/docs": {
@@ -29274,7 +30596,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "benchmark"
+        ]
       }
     },
     "/v5/test/get": {
@@ -29367,7 +30693,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/archive": {
@@ -29460,7 +30790,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/refresh": {
@@ -29543,7 +30877,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/export": {
@@ -29636,7 +30974,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/docs": {
@@ -29729,7 +31071,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/start": {
@@ -29822,7 +31168,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/next": {
@@ -29915,7 +31265,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/run": {
@@ -30008,7 +31362,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/end": {
@@ -30101,7 +31459,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/stop": {
@@ -30194,7 +31556,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/test/search": {
@@ -30287,7 +31653,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
       }
     },
     "/v5/context": {
@@ -30379,7 +31749,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5"
+        ]
       }
     },
     "/v5/problem": {
@@ -30471,7 +31844,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5"
+        ]
       }
     },
     "/v5/emulate": {
@@ -30563,7 +31939,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5"
+        ]
       }
     },
     "/v5/unemulate": {
@@ -30645,7 +32024,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5"
+        ]
       }
     },
     "/v5/generate": {
@@ -30737,7 +32119,10 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5"
+        ]
       }
     },
     "/v5/stream/": {
@@ -30900,7 +32285,11 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream"
+        ]
       }
     },
     "/v5/stream/ActivityRequest": {
@@ -30997,7 +32386,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "activity"
+        ]
       }
     },
     "/v5/stream/ActivityResponse": {
@@ -31094,7 +32488,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "activity"
+        ]
       }
     },
     "/v5/stream/AttemptAssistantCompleteEvent": {
@@ -31191,7 +32590,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptAssistantHintsEvent": {
@@ -31288,7 +32692,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptAssistantProgressEvent": {
@@ -31385,7 +32794,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptAssistantStartEvent": {
@@ -31482,7 +32896,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptAudioEndedEvent": {
@@ -31579,7 +32998,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptAudioReadyEvent": {
@@ -31676,7 +33100,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptAudioStartPayload": {
@@ -31773,7 +33202,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptAudioStopPayload": {
@@ -31870,7 +33304,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptChatEndedEvent": {
@@ -31967,7 +33406,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptChatStartedEvent": {
@@ -32064,7 +33508,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptEndAllPayload": {
@@ -32161,7 +33610,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptEndPayload": {
@@ -32258,7 +33712,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptEndedEvent": {
@@ -32355,7 +33814,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptErrorEvent": {
@@ -32452,7 +33916,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptGradeCompleteEvent": {
@@ -32549,7 +34018,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptGradePayload": {
@@ -32646,7 +34120,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptGradeProgressEvent": {
@@ -32743,7 +34222,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptGradeStartEvent": {
@@ -32840,7 +34324,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptJoinPayload": {
@@ -32937,7 +34426,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptJoinedEvent": {
@@ -33034,7 +34528,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptLeavePayload": {
@@ -33131,7 +34630,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptMessagePayload": {
@@ -33228,7 +34732,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptNextPayload": {
@@ -33325,7 +34834,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptResponsePayload": {
@@ -33422,7 +34936,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptResponseResultEvent": {
@@ -33519,7 +35038,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptStartPayload": {
@@ -33616,7 +35140,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptStartedEvent": {
@@ -33713,7 +35242,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptStopPayload": {
@@ -33810,7 +35344,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptStoppedEvent": {
@@ -33907,7 +35446,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptUsePreviousPayload": {
@@ -34004,7 +35548,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptUserCompleteEvent": {
@@ -34101,7 +35650,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptUserDeltaEvent": {
@@ -34198,7 +35752,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptUserProgressEvent": {
@@ -34295,7 +35854,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/AttemptUserStartEvent": {
@@ -34392,7 +35956,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/BenchmarkRequest": {
@@ -34489,7 +36058,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "benchmark"
+        ]
       }
     },
     "/v5/stream/BenchmarkResponse": {
@@ -34586,7 +36160,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "benchmark"
+        ]
       }
     },
     "/v5/stream/ComposedDocsResponse": {
@@ -34683,7 +36262,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/ConnectionConfirmedPayload": {
@@ -34780,7 +36364,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "session"
+        ]
       }
     },
     "/v5/stream/CreateAgentApiRequest": {
@@ -34877,7 +36466,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/CreateAgentApiResponse": {
@@ -34974,7 +36568,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/CreateAuthApiRequest": {
@@ -35071,7 +36670,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/CreateAuthApiResponse": {
@@ -35168,7 +36772,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/CreateCohortApiRequest": {
@@ -35265,7 +36874,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/CreateCohortApiResponse": {
@@ -35362,7 +36976,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/CreateDepartmentApiRequest": {
@@ -35459,7 +37078,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/CreateDepartmentApiResponse": {
@@ -35556,7 +37180,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/CreateDocumentApiRequest": {
@@ -35653,7 +37282,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/CreateDocumentApiResponse": {
@@ -35750,7 +37384,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/CreateEvalApiRequest": {
@@ -35847,7 +37486,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/CreateEvalApiResponse": {
@@ -35944,7 +37588,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/CreateFieldApiRequest": {
@@ -36041,7 +37690,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/CreateFieldApiResponse": {
@@ -36138,7 +37792,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/CreateModelApiRequest": {
@@ -36235,7 +37894,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/CreateModelApiResponse": {
@@ -36332,7 +37996,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/CreateParameterApiRequest": {
@@ -36429,7 +38098,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/CreateParameterApiResponse": {
@@ -36526,7 +38200,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/CreatePersonaApiRequest": {
@@ -36623,7 +38302,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/CreatePersonaApiResponse": {
@@ -36720,7 +38404,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/CreateProfileApiRequest": {
@@ -36817,7 +38506,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/CreateProfileApiResponse": {
@@ -36914,7 +38608,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/CreateProviderApiRequest": {
@@ -37011,7 +38710,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/CreateProviderApiResponse": {
@@ -37108,7 +38812,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/CreateRubricApiRequest": {
@@ -37205,7 +38914,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/CreateRubricApiResponse": {
@@ -37302,7 +39016,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/CreateScenarioApiRequest": {
@@ -37399,7 +39118,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/CreateScenarioApiResponse": {
@@ -37496,7 +39220,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/CreateSettingApiRequest": {
@@ -37593,7 +39322,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/CreateSettingApiResponse": {
@@ -37690,7 +39424,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/CreateSimulationApiRequest": {
@@ -37787,7 +39526,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/CreateSimulationApiResponse": {
@@ -37884,7 +39628,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/CreateToolApiRequest": {
@@ -37981,7 +39730,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/CreateToolApiResponse": {
@@ -38078,7 +39832,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/DashboardBundleResponse": {
@@ -38175,7 +39934,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "dashboard"
+        ]
       }
     },
     "/v5/stream/DashboardRequest": {
@@ -38272,7 +40036,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "dashboard"
+        ]
       }
     },
     "/v5/stream/DeleteAgentApiRequest": {
@@ -38369,7 +40138,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/DeleteAgentApiResponse": {
@@ -38466,7 +40240,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/DeleteAuthApiRequest": {
@@ -38563,7 +40342,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/DeleteAuthApiResponse": {
@@ -38660,7 +40444,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/DeleteCohortApiRequest": {
@@ -38757,7 +40546,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/DeleteCohortApiResponse": {
@@ -38854,7 +40648,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/DeleteDepartmentApiRequest": {
@@ -38951,7 +40750,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/DeleteDepartmentApiResponse": {
@@ -39048,7 +40852,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/DeleteDocumentApiRequest": {
@@ -39145,7 +40954,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/DeleteDocumentApiResponse": {
@@ -39242,7 +41056,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/DeleteEvalApiRequest": {
@@ -39339,7 +41158,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/DeleteEvalApiResponse": {
@@ -39436,7 +41260,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/DeleteFieldApiRequest": {
@@ -39533,7 +41362,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/DeleteFieldApiResponse": {
@@ -39630,7 +41464,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/DeleteModelApiRequest": {
@@ -39727,7 +41566,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/DeleteModelApiResponse": {
@@ -39824,7 +41668,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/DeleteParameterApiRequest": {
@@ -39921,7 +41770,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/DeleteParameterApiResponse": {
@@ -40018,7 +41872,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/DeletePersonaApiRequest": {
@@ -40115,7 +41974,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/DeletePersonaApiResponse": {
@@ -40212,7 +42076,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/DeleteProfileApiRequest": {
@@ -40309,7 +42178,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/DeleteProfileApiResponse": {
@@ -40406,7 +42280,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/DeleteProviderApiRequest": {
@@ -40503,7 +42382,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/DeleteProviderApiResponse": {
@@ -40600,7 +42484,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/DeleteRubricApiRequest": {
@@ -40697,7 +42586,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/DeleteRubricApiResponse": {
@@ -40794,7 +42688,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/DeleteScenarioApiRequest": {
@@ -40891,7 +42790,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/DeleteScenarioApiResponse": {
@@ -40988,7 +42892,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/DeleteSettingApiRequest": {
@@ -41085,7 +42994,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/DeleteSettingApiResponse": {
@@ -41182,7 +43096,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/DeleteSimulationApiRequest": {
@@ -41279,7 +43198,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/DeleteSimulationApiResponse": {
@@ -41376,7 +43300,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/DeleteToolApiRequest": {
@@ -41473,7 +43402,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/DeleteToolApiResponse": {
@@ -41570,7 +43504,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/DuplicateAgentApiRequest": {
@@ -41667,7 +43606,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/DuplicateAgentApiResponse": {
@@ -41764,7 +43708,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/DuplicateAuthApiRequest": {
@@ -41861,7 +43810,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/DuplicateAuthApiResponse": {
@@ -41958,7 +43912,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/DuplicateCohortApiRequest": {
@@ -42055,7 +44014,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/DuplicateCohortApiResponse": {
@@ -42152,7 +44116,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/DuplicateDepartmentApiRequest": {
@@ -42249,7 +44218,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/DuplicateDepartmentApiResponse": {
@@ -42346,7 +44320,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/DuplicateDocumentApiRequest": {
@@ -42443,7 +44422,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/DuplicateDocumentApiResponse": {
@@ -42540,7 +44524,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/DuplicateEvalApiRequest": {
@@ -42637,7 +44626,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/DuplicateEvalApiResponse": {
@@ -42734,7 +44728,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/DuplicateFieldApiRequest": {
@@ -42831,7 +44830,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/DuplicateFieldApiResponse": {
@@ -42928,7 +44932,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/DuplicateModelApiRequest": {
@@ -43025,7 +45034,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/DuplicateModelApiResponse": {
@@ -43122,7 +45136,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/DuplicateParameterApiRequest": {
@@ -43219,7 +45238,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/DuplicateParameterApiResponse": {
@@ -43316,7 +45340,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/DuplicatePersonaApiRequest": {
@@ -43413,7 +45442,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/DuplicatePersonaApiResponse": {
@@ -43510,7 +45544,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/DuplicateProfileApiRequest": {
@@ -43607,7 +45646,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/DuplicateProfileApiResponse": {
@@ -43704,7 +45748,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/DuplicateProviderApiRequest": {
@@ -43801,7 +45850,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/DuplicateProviderApiResponse": {
@@ -43898,7 +45952,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/DuplicateRubricApiRequest": {
@@ -43995,7 +46054,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/DuplicateRubricApiResponse": {
@@ -44092,7 +46156,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/DuplicateScenarioApiRequest": {
@@ -44189,7 +46258,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/DuplicateScenarioApiResponse": {
@@ -44286,7 +46360,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/DuplicateSettingApiRequest": {
@@ -44383,7 +46462,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/DuplicateSettingApiResponse": {
@@ -44480,7 +46564,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/DuplicateSimulationApiRequest": {
@@ -44577,7 +46666,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/DuplicateSimulationApiResponse": {
@@ -44674,7 +46768,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/DuplicateToolApiRequest": {
@@ -44771,7 +46870,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/DuplicateToolApiResponse": {
@@ -44868,7 +46972,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/EmulateProfileApiRequest": {
@@ -44965,7 +47074,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/EmulateProfileApiResponse": {
@@ -45062,7 +47176,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/ExportAgentApiRequest": {
@@ -45159,7 +47278,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/ExportAgentApiResponse": {
@@ -45256,7 +47380,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/ExportAuthApiRequest": {
@@ -45353,7 +47482,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/ExportAuthApiResponse": {
@@ -45450,7 +47584,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/ExportCohortApiRequest": {
@@ -45547,7 +47686,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/ExportCohortApiResponse": {
@@ -45644,7 +47788,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/ExportDepartmentApiRequest": {
@@ -45741,7 +47890,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/ExportDepartmentApiResponse": {
@@ -45838,7 +47992,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/ExportDocumentApiRequest": {
@@ -45935,7 +48094,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/ExportDocumentApiResponse": {
@@ -46032,7 +48196,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/ExportEvalApiResponse": {
@@ -46129,7 +48298,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/ExportFieldApiRequest": {
@@ -46226,7 +48400,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/ExportFieldApiResponse": {
@@ -46323,7 +48502,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/ExportModelApiRequest": {
@@ -46420,7 +48604,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/ExportModelApiResponse": {
@@ -46517,7 +48706,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/ExportParameterApiRequest": {
@@ -46614,7 +48808,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/ExportParameterApiResponse": {
@@ -46711,7 +48910,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/ExportPersonaApiRequest": {
@@ -46808,7 +49012,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/ExportPersonaApiResponse": {
@@ -46905,7 +49114,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/ExportProfileApiRequest": {
@@ -47002,7 +49216,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/ExportProfileApiResponse": {
@@ -47099,7 +49318,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/ExportProviderApiRequest": {
@@ -47196,7 +49420,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/ExportProviderApiResponse": {
@@ -47293,7 +49522,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/ExportRubricApiResponse": {
@@ -47390,7 +49624,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/ExportScenarioApiRequest": {
@@ -47487,7 +49726,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/ExportScenarioApiResponse": {
@@ -47584,7 +49828,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/ExportSettingApiRequest": {
@@ -47681,7 +49930,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/ExportSettingApiResponse": {
@@ -47778,7 +50032,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/ExportSimulationApiRequest": {
@@ -47875,7 +50134,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/ExportSimulationApiResponse": {
@@ -47972,7 +50236,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/ExportToolApiRequest": {
@@ -48069,7 +50338,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/ExportToolApiResponse": {
@@ -48166,7 +50440,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/GeneratePayload": {
@@ -48263,7 +50542,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GenerationCompleteEvent": {
@@ -48360,7 +50644,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GenerationErrorEvent": {
@@ -48457,7 +50746,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GenerationMediaCompleteEvent": {
@@ -48554,7 +50848,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GenerationMediaProgressEvent": {
@@ -48651,7 +50950,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GenerationProgressEvent": {
@@ -48748,7 +51052,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GenerationSavedEvent": {
@@ -48845,7 +51154,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GetAgentApiRequest": {
@@ -48942,7 +51256,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/GetAgentApiResponse": {
@@ -49039,7 +51358,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/GetAgentDraftsApiResponse": {
@@ -49136,7 +51460,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/GetAttemptDetailRequest": {
@@ -49233,7 +51562,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/GetAttemptDetailResponse": {
@@ -49330,7 +51664,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "attempt"
+        ]
       }
     },
     "/v5/stream/GetAuthApiRequest": {
@@ -49427,7 +51766,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/GetAuthApiResponse": {
@@ -49524,7 +51868,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/GetAuthDraftsApiResponse": {
@@ -49621,7 +51970,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/GetChatRequest": {
@@ -49718,7 +52072,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "chat"
+        ]
       }
     },
     "/v5/stream/GetChatResponse": {
@@ -49815,7 +52174,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "chat"
+        ]
       }
     },
     "/v5/stream/GetCohortApiRequest": {
@@ -49912,7 +52276,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/GetCohortApiResponse": {
@@ -50009,7 +52378,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/GetCohortDraftsApiResponse": {
@@ -50106,7 +52480,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/GetDepartmentApiRequest": {
@@ -50203,7 +52582,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/GetDepartmentApiResponse": {
@@ -50300,7 +52684,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/GetDepartmentDraftsApiResponse": {
@@ -50397,7 +52786,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/GetDocumentApiRequest": {
@@ -50494,7 +52888,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/GetDocumentApiResponse": {
@@ -50591,7 +52990,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/GetDocumentDraftsApiResponse": {
@@ -50688,7 +53092,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/GetEvalApiRequest": {
@@ -50785,7 +53194,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/GetEvalApiResponse": {
@@ -50882,7 +53296,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/GetEvalDraftsApiResponse": {
@@ -50979,7 +53398,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/GetFieldApiRequest": {
@@ -51076,7 +53500,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/GetFieldApiResponse": {
@@ -51173,7 +53602,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/GetFieldDraftsApiResponse": {
@@ -51270,7 +53704,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/GetGroupDetailRequest": {
@@ -51367,7 +53806,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GetGroupDetailResponse": {
@@ -51464,7 +53908,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "group"
+        ]
       }
     },
     "/v5/stream/GetHomeRequest": {
@@ -51561,7 +54010,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "home"
+        ]
       }
     },
     "/v5/stream/GetHomeResponse": {
@@ -51658,7 +54112,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "home"
+        ]
       }
     },
     "/v5/stream/GetModelApiRequest": {
@@ -51755,7 +54214,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/GetModelApiResponse": {
@@ -51852,7 +54316,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/GetModelDraftsApiResponse": {
@@ -51949,7 +54418,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/GetParameterApiRequest": {
@@ -52046,7 +54520,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/GetParameterApiResponse": {
@@ -52143,7 +54622,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/GetParameterDraftsApiResponse": {
@@ -52240,7 +54724,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/GetPersonaApiRequest": {
@@ -52337,7 +54826,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/GetPersonaApiResponse": {
@@ -52434,7 +54928,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/GetPersonaDraftsApiResponse": {
@@ -52531,7 +55030,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/GetPracticeRequest": {
@@ -52628,7 +55132,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "practice"
+        ]
       }
     },
     "/v5/stream/GetPracticeResponse": {
@@ -52725,7 +55234,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "practice"
+        ]
       }
     },
     "/v5/stream/GetProfileApiRequest": {
@@ -52822,7 +55336,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/GetProfileApiResponse": {
@@ -52919,7 +55438,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/GetProfileDraftsApiResponse": {
@@ -53016,7 +55540,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/GetProviderApiRequest": {
@@ -53113,7 +55642,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/GetProviderApiResponse": {
@@ -53210,7 +55744,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/GetProviderDraftsApiResponse": {
@@ -53307,7 +55846,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/GetRubricApiRequest": {
@@ -53404,7 +55948,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/GetRubricApiResponse": {
@@ -53501,7 +56050,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/GetRubricDraftsApiResponse": {
@@ -53598,7 +56152,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/GetScenarioApiRequest": {
@@ -53695,7 +56254,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/GetScenarioApiResponse": {
@@ -53792,7 +56356,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/GetScenarioDraftsApiResponse": {
@@ -53889,7 +56458,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/GetSessionDetailRequest": {
@@ -53986,7 +56560,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "session"
+        ]
       }
     },
     "/v5/stream/GetSessionDetailResponse": {
@@ -54083,7 +56662,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "session"
+        ]
       }
     },
     "/v5/stream/GetSettingApiRequest": {
@@ -54180,7 +56764,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/GetSettingApiResponse": {
@@ -54277,7 +56866,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/GetSettingDraftsApiResponse": {
@@ -54374,7 +56968,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/GetSimulationApiRequest": {
@@ -54471,7 +57070,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/GetSimulationApiResponse": {
@@ -54568,7 +57172,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/GetSimulationDraftsApiResponse": {
@@ -54665,7 +57274,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/GetSuiteRequest": {
@@ -54762,7 +57376,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "invocation"
+        ]
       }
     },
     "/v5/stream/GetSuiteResponse": {
@@ -54859,7 +57478,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "invocation"
+        ]
       }
     },
     "/v5/stream/GetTestArtifactRequest": {
@@ -54956,7 +57580,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/GetTestArtifactResponse": {
@@ -55053,7 +57682,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/GetToolApiRequest": {
@@ -55150,7 +57784,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/GetToolApiResponse": {
@@ -55247,7 +57886,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/GetToolDraftsApiResponse": {
@@ -55344,7 +57988,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/HealthRequest": {
@@ -55441,7 +58090,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "health"
+        ]
       }
     },
     "/v5/stream/HealthResponse": {
@@ -55538,7 +58192,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "health"
+        ]
       }
     },
     "/v5/stream/LeaderboardRequest": {
@@ -55635,7 +58294,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "leaderboard"
+        ]
       }
     },
     "/v5/stream/LeaderboardResponse": {
@@ -55732,7 +58396,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "leaderboard"
+        ]
       }
     },
     "/v5/stream/OperationErrorEvent": {
@@ -55829,7 +58498,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "activity"
+        ]
       }
     },
     "/v5/stream/PatchAgentDraftApiRequest": {
@@ -55926,7 +58600,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/PatchAgentDraftApiResponse": {
@@ -56023,7 +58702,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/PatchAuthDraftApiRequest": {
@@ -56120,7 +58804,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/PatchAuthDraftApiResponse": {
@@ -56217,7 +58906,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/PatchCohortDraftApiRequest": {
@@ -56314,7 +59008,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/PatchCohortDraftApiResponse": {
@@ -56411,7 +59110,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/PatchDepartmentDraftApiRequest": {
@@ -56508,7 +59212,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/PatchDepartmentDraftApiResponse": {
@@ -56605,7 +59314,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/PatchDocumentDraftApiRequest": {
@@ -56702,7 +59416,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/PatchDocumentDraftApiResponse": {
@@ -56799,7 +59518,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/PatchEvalDraftApiRequest": {
@@ -56896,7 +59620,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/PatchEvalDraftApiResponse": {
@@ -56993,7 +59722,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/PatchFieldDraftApiRequest": {
@@ -57090,7 +59824,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/PatchFieldDraftApiResponse": {
@@ -57187,7 +59926,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/PatchModelDraftApiRequest": {
@@ -57284,7 +60028,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/PatchModelDraftApiResponse": {
@@ -57381,7 +60130,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/PatchParameterDraftApiRequest": {
@@ -57478,7 +60232,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/PatchParameterDraftApiResponse": {
@@ -57575,7 +60334,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/PatchPersonaDraftApiRequest": {
@@ -57672,7 +60436,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/PatchPersonaDraftApiResponse": {
@@ -57769,7 +60538,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/PatchProfileDraftApiRequest": {
@@ -57866,7 +60640,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/PatchProfileDraftApiResponse": {
@@ -57963,7 +60742,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/PatchProviderDraftApiRequest": {
@@ -58060,7 +60844,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/PatchProviderDraftApiResponse": {
@@ -58157,7 +60946,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/PatchRubricDraftApiRequest": {
@@ -58254,7 +61048,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/PatchRubricDraftApiResponse": {
@@ -58351,7 +61150,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/PatchScenarioDraftApiRequest": {
@@ -58448,7 +61252,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/PatchScenarioDraftApiResponse": {
@@ -58545,7 +61354,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/PatchSettingDraftApiRequest": {
@@ -58642,7 +61456,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/PatchSettingDraftApiResponse": {
@@ -58739,7 +61558,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/PatchSimulationDraftApiRequest": {
@@ -58836,7 +61660,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/PatchSimulationDraftApiResponse": {
@@ -58933,7 +61762,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/PatchToolDraftApiRequest": {
@@ -59030,7 +61864,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/PatchToolDraftApiResponse": {
@@ -59127,7 +61966,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/PersonaGenerationProgressEvent": {
@@ -59224,7 +62068,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/PricingRequest": {
@@ -59321,7 +62170,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "pricing"
+        ]
       }
     },
     "/v5/stream/PricingResponse": {
@@ -59418,7 +62272,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "pricing"
+        ]
       }
     },
     "/v5/stream/ProfileContextApiResponse": {
@@ -59515,7 +62374,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/RecordRequest": {
@@ -59612,7 +62476,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "record"
+        ]
       }
     },
     "/v5/stream/TestAllCompleteEvent": {
@@ -59709,7 +62578,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestEndAllPayload": {
@@ -59806,7 +62680,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestEndPayload": {
@@ -59903,7 +62782,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestGroupPayload": {
@@ -60000,7 +62884,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestJoinPayload": {
@@ -60097,7 +62986,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestJoinedEvent": {
@@ -60194,7 +63088,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestLeavePayload": {
@@ -60291,7 +63190,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestNextPayload": {
@@ -60388,7 +63292,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestProgressEvent": {
@@ -60485,7 +63394,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestRunCompleteEvent": {
@@ -60582,7 +63496,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestRunDeltaEvent": {
@@ -60679,7 +63598,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestRunPayload": {
@@ -60776,7 +63700,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestRunStartEvent": {
@@ -60873,7 +63802,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestStartPayload": {
@@ -60970,7 +63904,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestStartedEvent": {
@@ -61067,7 +64006,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestStopPayload": {
@@ -61164,7 +64108,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/TestStoppedEvent": {
@@ -61261,7 +64210,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "test"
+        ]
       }
     },
     "/v5/stream/UnemulateProfileApiResponse": {
@@ -61358,7 +64312,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/UpdateAgentApiRequest": {
@@ -61455,7 +64414,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/UpdateAgentApiResponse": {
@@ -61552,7 +64516,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "agents"
+        ]
       }
     },
     "/v5/stream/UpdateAuthApiRequest": {
@@ -61649,7 +64618,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/UpdateAuthApiResponse": {
@@ -61746,7 +64720,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "auths"
+        ]
       }
     },
     "/v5/stream/UpdateCohortApiRequest": {
@@ -61843,7 +64822,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/UpdateCohortApiResponse": {
@@ -61940,7 +64924,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "cohorts"
+        ]
       }
     },
     "/v5/stream/UpdateDepartmentApiRequest": {
@@ -62037,7 +65026,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/UpdateDepartmentApiResponse": {
@@ -62134,7 +65128,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "departments"
+        ]
       }
     },
     "/v5/stream/UpdateDocumentApiRequest": {
@@ -62231,7 +65230,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/UpdateDocumentApiResponse": {
@@ -62328,7 +65332,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "documents"
+        ]
       }
     },
     "/v5/stream/UpdateEvalApiRequest": {
@@ -62425,7 +65434,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/UpdateEvalApiResponse": {
@@ -62522,7 +65536,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "evals"
+        ]
       }
     },
     "/v5/stream/UpdateFieldApiRequest": {
@@ -62619,7 +65638,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/UpdateFieldApiResponse": {
@@ -62716,7 +65740,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "fields"
+        ]
       }
     },
     "/v5/stream/UpdateModelApiRequest": {
@@ -62813,7 +65842,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/UpdateModelApiResponse": {
@@ -62910,7 +65944,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "models"
+        ]
       }
     },
     "/v5/stream/UpdateParameterApiRequest": {
@@ -63007,7 +66046,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/UpdateParameterApiResponse": {
@@ -63104,7 +66148,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "parameters"
+        ]
       }
     },
     "/v5/stream/UpdatePersonaApiRequest": {
@@ -63201,7 +66250,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/UpdatePersonaApiResponse": {
@@ -63298,7 +66352,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "personas"
+        ]
       }
     },
     "/v5/stream/UpdateProfileApiRequest": {
@@ -63395,7 +66454,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/UpdateProfileApiResponse": {
@@ -63492,7 +66556,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "profiles"
+        ]
       }
     },
     "/v5/stream/UpdateProviderApiRequest": {
@@ -63589,7 +66658,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/UpdateProviderApiResponse": {
@@ -63686,7 +66760,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "providers"
+        ]
       }
     },
     "/v5/stream/UpdateRubricApiRequest": {
@@ -63783,7 +66862,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/UpdateRubricApiResponse": {
@@ -63880,7 +66964,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "rubrics"
+        ]
       }
     },
     "/v5/stream/UpdateScenarioApiRequest": {
@@ -63977,7 +67066,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/UpdateScenarioApiResponse": {
@@ -64074,7 +67168,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "scenarios"
+        ]
       }
     },
     "/v5/stream/UpdateSettingApiRequest": {
@@ -64171,7 +67270,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/UpdateSettingApiResponse": {
@@ -64268,7 +67372,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "settings"
+        ]
       }
     },
     "/v5/stream/UpdateSimulationApiRequest": {
@@ -64365,7 +67474,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/UpdateSimulationApiResponse": {
@@ -64462,7 +67576,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "simulations"
+        ]
       }
     },
     "/v5/stream/UpdateToolApiRequest": {
@@ -64559,7 +67678,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/v5/stream/UpdateToolApiResponse": {
@@ -64656,7 +67780,12 @@
               }
             }
           }
-        }
+        },
+        "x-cache-tags": [
+          "v5",
+          "stream",
+          "tools"
+        ]
       }
     },
     "/health": {

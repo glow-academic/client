@@ -146,6 +146,7 @@ async def _create_attempt_route_graph(pool, actor, redis_client=None):
 
 async def _create_attempt_start_home(pool, redis_client, actor) -> dict[str, str]:
     from app.tools.entries.chat.create import create_chat
+    from app.tools.entries.chat.refresh import refresh_chat
     from app.tools.entries.home.create import create_home
     from app.tools.entries.home.refresh import refresh_home
     from app.tools.entries.home_chat.create import create_home_chat
@@ -190,6 +191,7 @@ async def _create_attempt_start_home(pool, redis_client, actor) -> dict[str, str
             chat_id=chat.id,
             session_id=actor.session_id,
         )
+        await refresh_chat(conn)
         await refresh_home_chat(conn)
         await refresh_home(conn)
 

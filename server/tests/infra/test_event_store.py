@@ -107,6 +107,33 @@ def test_project_call_receipt_skips_multi_domain_workflow_projection() -> None:
     ]
 
 
+def test_project_call_receipt_attaches_attempt_start_entity_to_lifecycle() -> None:
+    attempt_id = uuid4()
+    events = _project_call_receipt(
+        artifact="attempt",
+        operation="start",
+        entity_id=None,
+        created_at=datetime(2026, 3, 10, 12, 0, 0),
+        call_id=uuid4(),
+        tool_id=uuid4(),
+        receipt={
+            "arguments": {"home_id": str(uuid4()), "infinite_mode": False},
+            "output": {
+                "attempt_id": str(attempt_id),
+                "chat_entry_id": None,
+                "attempt_chat_id": None,
+            },
+        },
+    )
+
+    assert [event.event_type for event in events] == [
+        "artifacts.attempt.start.started",
+        "artifacts.attempt.start.completed",
+    ]
+    assert events[0].entity_id == attempt_id
+    assert events[1].entity_id == attempt_id
+
+
 def test_project_call_receipt_skips_domain_projection_for_bridged_stop_workflow() -> None:
     invocation_id = uuid4()
     events = _project_call_receipt(

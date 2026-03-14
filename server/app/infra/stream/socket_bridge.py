@@ -36,10 +36,10 @@ _SOCKET_EVENT_TO_PUBLIC: dict[tuple[str, str], dict[str, str]] = {
         "test_started": "artifacts.test.started",
     },
     ("test", "run"): {
-        "test_run_started": "artifacts.test.run.started",
+        "test_run_started": "artifacts.test.run.replay_started",
         "test_grade_start": "artifacts.test.run.progress",
         "test_grade_progress": "artifacts.test.run.progress",
-        "test_run_complete": "artifacts.test.run.completed",
+        "test_run_complete": "artifacts.test.run.replay_completed",
     },
     ("test", "end"): {
         "test_ended": "artifacts.test.ended",
