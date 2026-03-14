@@ -484,7 +484,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/file/{upload_id}/download": {
+    "/v5/scenarios/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload
+         * @description Stream-upload any file.
+         *
+         *     Headers:
+         *       Content-Type: the file's actual MIME type
+         *       X-Filename: original filename (for extension + display)
+         *     Body: raw file bytes (streamed).
+         */
+        post: operations["upload_v5_scenarios_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v5/scenarios/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -492,10 +517,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Download File
-         * @description Download a document file by upload ID.
+         * Download
+         * @description Download any file by upload ID with range support.
          */
-        get: operations["download_file_v5_scenarios_file__upload_id__download_get"];
+        get: operations["download_v5_scenarios_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -504,7 +529,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/file/{upload_id}/preview": {
+    "/v5/scenarios/preview/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -512,230 +537,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Preview File
+         * Preview
          * @description Return a PNG preview of the first page of a PDF upload.
          */
-        get: operations["preview_file_v5_scenarios_file__upload_id__preview_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/image/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Image
-         * @description Upload an image file via multipart form-data.
-         */
-        post: operations["upload_image_v5_scenarios_image_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/image/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Image
-         * @description Download an image file by upload ID.
-         */
-        get: operations["download_image_v5_scenarios_image__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/text/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Text
-         * @description Download a text file by upload ID.
-         */
-        get: operations["download_text_v5_scenarios_text__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/video/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Video
-         * @description Upload a video file via multipart form-data.
-         */
-        post: operations["upload_video_v5_scenarios_video_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/video/discover": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Discover
-         * @description TUS protocol discovery.
-         */
-        options: operations["tus_discover_v5_scenarios_video_discover_options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/video/discover/{upload_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Discover Upload
-         * @description TUS protocol discovery for a specific upload.
-         */
-        options: operations["tus_discover_upload_v5_scenarios_video_discover__upload_id__options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/video/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Tus Create
-         * @description Create a TUS upload session.
-         */
-        post: operations["tus_create_v5_scenarios_video_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/video/{upload_id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        /**
-         * Tus Status
-         * @description Get current upload offset and length.
-         */
-        head: operations["tus_status_v5_scenarios_video__upload_id__status_head"];
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/video/{upload_id}/chunk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Tus Chunk
-         * @description Append a chunk to an in-progress upload.
-         */
-        patch: operations["tus_chunk_v5_scenarios_video__upload_id__chunk_patch"];
-        trace?: never;
-    };
-    "/v5/scenarios/video/{upload_id}/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Finalize Upload
-         * @description Finalize a TUS upload — move to permanent storage and create DB record.
-         */
-        post: operations["finalize_upload_v5_scenarios_video__upload_id__finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/scenarios/video/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Video
-         * @description Download a video file by upload ID with range support for seeking.
-         */
-        get: operations["download_video_v5_scenarios_video__upload_id__download_get"];
+        get: operations["preview_v5_scenarios_preview__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1224,7 +1029,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/file/upload": {
+    "/v5/documents/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -1234,137 +1039,23 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload File
-         * @description Upload a document file via multipart form-data.
+         * Upload
+         * @description Stream-upload any file.
+         *
+         *     Headers:
+         *       Content-Type: the file's actual MIME type
+         *       X-Filename: original filename (for extension + display)
+         *       Content-Length: file size in bytes (optional but recommended)
+         *     Body: raw file bytes (streamed, not multipart).
          */
-        post: operations["upload_file_v5_documents_file_upload_post"];
+        post: operations["upload_v5_documents_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/file/discover": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Discover
-         * @description TUS protocol discovery.
-         */
-        options: operations["tus_discover_v5_documents_file_discover_options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/file/discover/{upload_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        /**
-         * Tus Discover Upload
-         * @description TUS protocol discovery for a specific upload.
-         */
-        options: operations["tus_discover_upload_v5_documents_file_discover__upload_id__options"];
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/file/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Tus Create
-         * @description Create a TUS upload session.
-         */
-        post: operations["tus_create_v5_documents_file_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/file/{upload_id}/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        /**
-         * Tus Status
-         * @description Get current upload offset and length.
-         */
-        head: operations["tus_status_v5_documents_file__upload_id__status_head"];
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/file/{upload_id}/chunk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Tus Chunk
-         * @description Append a chunk to an in-progress upload.
-         */
-        patch: operations["tus_chunk_v5_documents_file__upload_id__chunk_patch"];
-        trace?: never;
-    };
-    "/v5/documents/file/{upload_id}/finalize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Finalize Upload
-         * @description Finalize a TUS upload — move to permanent storage and create DB record.
-         */
-        post: operations["finalize_upload_v5_documents_file__upload_id__finalize_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/file/{upload_id}/download": {
+    "/v5/documents/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1372,10 +1063,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Download File
-         * @description Download a document file by upload ID.
+         * Download
+         * @description Download any file by upload ID with range support.
          */
-        get: operations["download_file_v5_documents_file__upload_id__download_get"];
+        get: operations["download_v5_documents_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1384,7 +1075,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/file/{upload_id}/preview": {
+    "/v5/documents/preview/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1392,90 +1083,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Preview File
+         * Preview
          * @description Return a PNG preview of the first page of a PDF upload.
          */
-        get: operations["preview_file_v5_documents_file__upload_id__preview_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/image/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Image
-         * @description Upload an image file via multipart form-data.
-         */
-        post: operations["upload_image_v5_documents_image_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/image/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Image
-         * @description Download an image file by upload ID.
-         */
-        get: operations["download_image_v5_documents_image__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/text/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload Text
-         * @description Upload a text file via multipart form-data.
-         */
-        post: operations["upload_text_v5_documents_text_upload_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/documents/text/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Text
-         * @description Download a text file by upload ID.
-         */
-        get: operations["download_text_v5_documents_text__upload_id__download_get"];
+        get: operations["preview_v5_documents_preview__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4684,7 +4295,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/group/audio/{upload_id}/download": {
+    "/v5/group/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4692,110 +4303,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Download Audio
-         * @description Download an audio file by upload ID.
+         * Download
+         * @description Download any file by upload ID with range support.
          */
-        get: operations["download_audio_v5_group_audio__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/group/call/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Call
-         * @description Download a call recording by upload ID.
-         */
-        get: operations["download_call_v5_group_call__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/group/file/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download File
-         * @description Download a file by upload ID.
-         */
-        get: operations["download_file_v5_group_file__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/group/image/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Image
-         * @description Download an image file by upload ID.
-         */
-        get: operations["download_image_v5_group_image__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/group/text/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Text
-         * @description Download a text file by upload ID.
-         */
-        get: operations["download_text_v5_group_text__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/group/video/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Video
-         * @description Download a video file by upload ID with range support for seeking.
-         */
-        get: operations["download_video_v5_group_video__upload_id__download_get"];
+        get: operations["download_v5_group_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5613,7 +5124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/audio/{upload_id}/download": {
+    "/v5/attempt/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5621,90 +5132,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Download Audio
-         * @description Download an audio file by upload ID.
+         * Download
+         * @description Download any file by upload ID with range support.
          */
-        get: operations["download_audio_v5_attempt_audio__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/attempt/file/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download File
-         * @description Download a file by upload ID.
-         */
-        get: operations["download_file_v5_attempt_file__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/attempt/image/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Image
-         * @description Download an image file by upload ID.
-         */
-        get: operations["download_image_v5_attempt_image__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/attempt/video/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Video
-         * @description Download a video file by upload ID with range support for seeking.
-         */
-        get: operations["download_video_v5_attempt_video__upload_id__download_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v5/attempt/text/{upload_id}/download": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Download Text
-         * @description Download a text file by upload ID.
-         */
-        get: operations["download_text_v5_attempt_text__upload_id__download_get"];
+        get: operations["download_v5_attempt_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -16340,46 +15771,6 @@ export interface components {
             /** Client Secret */
             client_secret?: string;
         };
-        /** Body_upload_file_v5_documents_file_upload_post */
-        Body_upload_file_v5_documents_file_upload_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-        };
-        /** Body_upload_image_v5_documents_image_upload_post */
-        Body_upload_image_v5_documents_image_upload_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-        };
-        /** Body_upload_image_v5_scenarios_image_upload_post */
-        Body_upload_image_v5_scenarios_image_upload_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-        };
-        /** Body_upload_text_v5_documents_text_upload_post */
-        Body_upload_text_v5_documents_text_upload_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-        };
-        /** Body_upload_video_v5_scenarios_video_upload_post */
-        Body_upload_video_v5_scenarios_video_upload_post: {
-            /**
-             * File
-             * Format: binary
-             */
-            file: string;
-        };
         /**
          * ChatData
          * @description Chat view data with IDs for related resources.
@@ -25941,14 +25332,6 @@ export interface components {
              */
             errors?: components["schemas"]["FieldFieldError"][] | null;
         };
-        /** FileUploadResponse */
-        FileUploadResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
         /**
          * FilterOption
          * @description A single filter option for dropdown selectors.
@@ -25969,14 +25352,6 @@ export interface components {
              * @description Number of matching records
              */
             count?: number | null;
-        };
-        /** FinalizeUploadResponse */
-        FinalizeUploadResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
         };
         /** FooterNumericAttemptFact */
         FooterNumericAttemptFact: {
@@ -33385,14 +32760,6 @@ export interface components {
              * @description Description of the image
              */
             description?: string | null;
-        };
-        /** ImageUploadResponse */
-        ImageUploadResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
         };
         /**
          * LeaderboardAccoladeWinner
@@ -49996,14 +49363,6 @@ export interface components {
              */
             message?: string | null;
         };
-        /** TextUploadResponse */
-        TextUploadResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
-        };
         /**
          * ThemePrimitives
          * @description Raw theme color primitives (hex values) from settings.
@@ -52569,6 +51928,14 @@ export interface components {
              */
             tool_ids?: string[] | null;
         };
+        /** UploadResponse */
+        UploadResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
         /** UsePreviousAttemptApiResponse */
         UsePreviousAttemptApiResponse: {
             /** Success */
@@ -52610,14 +51977,6 @@ export interface components {
              * @description Description of the video
              */
             description?: string | null;
-        };
-        /** VideoUploadResponse */
-        VideoUploadResponse: {
-            /**
-             * Upload Id
-             * Format: uuid
-             */
-            upload_id: string;
         };
         /**
          * ContentEntry
@@ -53773,221 +53132,7 @@ export interface operations {
             };
         };
     };
-    download_file_v5_scenarios_file__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    preview_file_v5_scenarios_file__upload_id__preview_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_image_v5_scenarios_image_upload_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_image_v5_scenarios_image_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImageUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_image_v5_scenarios_image__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_text_v5_scenarios_text__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_video_v5_scenarios_video_upload_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_video_v5_scenarios_video_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_discover_v5_scenarios_video_discover_options: {
+    upload_v5_scenarios_upload_post: {
         parameters: {
             query?: never;
             header?: {
@@ -54006,7 +53151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54020,7 +53165,7 @@ export interface operations {
             };
         };
     };
-    tus_discover_upload_v5_scenarios_video_discover__upload_id__options: {
+    download_v5_scenarios_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: {
@@ -54055,145 +53200,7 @@ export interface operations {
             };
         };
     };
-    tus_create_v5_scenarios_video_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_status_v5_scenarios_video__upload_id__status_head: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_chunk_v5_scenarios_video__upload_id__chunk_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    finalize_upload_v5_scenarios_video__upload_id__finalize_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinalizeUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_video_v5_scenarios_video__upload_id__download_get: {
+    preview_v5_scenarios_preview__upload_id__get: {
         parameters: {
             query?: never;
             header?: {
@@ -55100,44 +54107,7 @@ export interface operations {
             };
         };
     };
-    upload_file_v5_documents_file_upload_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_file_v5_documents_file_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_discover_v5_documents_file_discover_options: {
+    upload_v5_documents_upload_post: {
         parameters: {
             query?: never;
             header?: {
@@ -55156,7 +54126,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["UploadResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55170,7 +54140,7 @@ export interface operations {
             };
         };
     };
-    tus_discover_upload_v5_documents_file_discover__upload_id__options: {
+    download_v5_documents_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: {
@@ -55205,324 +54175,7 @@ export interface operations {
             };
         };
     };
-    tus_create_v5_documents_file_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_status_v5_documents_file__upload_id__status_head: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    tus_chunk_v5_documents_file__upload_id__chunk_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    finalize_upload_v5_documents_file__upload_id__finalize_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinalizeUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_file_v5_documents_file__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    preview_file_v5_documents_file__upload_id__preview_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_image_v5_documents_image_upload_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_image_v5_documents_image_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImageUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_image_v5_documents_image__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_text_v5_documents_text_upload_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_text_v5_documents_text_upload_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TextUploadResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_text_v5_documents_text__upload_id__download_get: {
+    preview_v5_documents_preview__upload_id__get: {
         parameters: {
             query?: never;
             header?: {
@@ -61369,182 +60022,7 @@ export interface operations {
             };
         };
     };
-    download_audio_v5_group_audio__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_call_v5_group_call__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_file_v5_group_file__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_image_v5_group_image__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_text_v5_group_text__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_video_v5_group_video__upload_id__download_get: {
+    download_v5_group_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: {
@@ -63027,147 +61505,7 @@ export interface operations {
             };
         };
     };
-    download_audio_v5_attempt_audio__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_file_v5_attempt_file__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_image_v5_attempt_image__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_video_v5_attempt_video__upload_id__download_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path: {
-                upload_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    download_text_v5_attempt_text__upload_id__download_get: {
+    download_v5_attempt_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: {

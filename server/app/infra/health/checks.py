@@ -7,7 +7,6 @@ from typing import Any
 
 import asyncpg  # type: ignore
 import httpx  # type: ignore
-from fastapi import status  # type: ignore
 
 from app.infra.globals import get_pool, get_redis_client, get_sio_instance
 
@@ -124,67 +123,6 @@ async def check_websocket() -> ServiceCheckResult:
         return ServiceCheckResult(False, latency, str(e))
 
 
-async def check_tus_workflow() -> ServiceCheckResult:
-    """Check TUS upload workflow via HTTP canary upload."""
-    start = time.perf_counter()
-    base_url = os.getenv("HEALTH_BASE_URL", "http://localhost:8000").rstrip("/")
-    url = f"{base_url}/uploads/create"
-
-    body = b"healthcheck"
-    upload_length = str(len(body))
-
-    headers = {
-        "Tus-Resumable": "1.0.0",
-        "Upload-Length": upload_length,
-        "Content-Type": "application/offset+octet-stream",
-    }
-
-    try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            r = await client.post(url, headers=headers, content=body)
-            if r.status_code != status.HTTP_201_CREATED:
-                latency = (time.perf_counter() - start) * 1000
-                return ServiceCheckResult(
-                    False, latency, f"POST /uploads/create -> {r.status_code}"
-                )
-
-            location = r.headers.get("Location")
-            if not location:
-                latency = (time.perf_counter() - start) * 1000
-                return ServiceCheckResult(False, latency, "no Location header")
-
-            if location.startswith("/"):
-                status_url = f"{base_url}{location}/status"
-            else:
-                status_url = f"{location}/status"
-
-            r_head = await client.head(
-                status_url, headers={"Tus-Resumable": "1.0.0"}
-            )
-            if r_head.status_code != status.HTTP_200_OK:
-                latency = (time.perf_counter() - start) * 1000
-                return ServiceCheckResult(
-                    False, latency, f"HEAD {status_url} -> {r_head.status_code}"
-                )
-
-            offset = r_head.headers.get("Upload-Offset")
-            length = r_head.headers.get("Upload-Length")
-
-            if offset != upload_length or length != upload_length:
-                latency = (time.perf_counter() - start) * 1000
-                return ServiceCheckResult(
-                    False,
-                    latency,
-                    f"offset/length mismatch offset={offset}, length={length}, expected={upload_length}",
-                )
-
-        latency = (time.perf_counter() - start) * 1000
-        return ServiceCheckResult(True, latency)
-    except Exception as e:
-        latency = (time.perf_counter() - start) * 1000
-        return ServiceCheckResult(False, latency, str(e))
-
-
 async def run_service_checks() -> dict[str, ServiceCheckResult]:
     """Run all service health checks and return results."""
     pool = get_pool()
@@ -194,12 +132,10 @@ async def run_service_checks() -> dict[str, ServiceCheckResult]:
     redis = await check_redis(redis_client)
     keycloak = await check_keycloak()
     websocket = await check_websocket()
-    tus = await check_tus_workflow()
 
     return {
         "database": db,
         "redis": redis,
         "keycloak": keycloak,
         "websocket": websocket,
-        "tus": tus,
     }

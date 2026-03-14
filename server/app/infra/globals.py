@@ -64,8 +64,6 @@ VIDEO_FOLDER.mkdir(parents=True, exist_ok=True)
 CALL_FOLDER = UPLOAD_FOLDER / "call"
 CALL_FOLDER.mkdir(parents=True, exist_ok=True)
 
-TUS_UPLOADS_DIR = UPLOAD_FOLDER / "tus_uploads"
-TUS_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Internal event bus
