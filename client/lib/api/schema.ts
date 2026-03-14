@@ -52300,11 +52300,7 @@ export interface operations {
     get_persona_v5_personas_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52337,11 +52333,7 @@ export interface operations {
     search_persona_v5_personas_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52374,11 +52366,7 @@ export interface operations {
     create_persona_v5_personas_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52411,11 +52399,7 @@ export interface operations {
     parse_persona_csv_v5_personas_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52448,11 +52432,7 @@ export interface operations {
     update_persona_v5_personas_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52485,11 +52465,7 @@ export interface operations {
     duplicate_persona_v5_personas_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52522,11 +52498,7 @@ export interface operations {
     delete_persona_v5_personas_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52559,11 +52531,7 @@ export interface operations {
     patch_persona_draft_v5_personas_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52596,11 +52564,7 @@ export interface operations {
     get_persona_drafts_v5_personas_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52615,25 +52579,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetPersonaDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_persona_docs_endpoint_v5_personas_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52666,11 +52617,7 @@ export interface operations {
     export_personas_v5_personas_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52703,11 +52650,7 @@ export interface operations {
     persona_refresh_v5_personas_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52722,25 +52665,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_scenario_v5_scenarios_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52773,11 +52703,7 @@ export interface operations {
     search_scenario_v5_scenarios_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52810,11 +52736,7 @@ export interface operations {
     create_scenario_v5_scenarios_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52847,11 +52769,7 @@ export interface operations {
     parse_scenario_csv_v5_scenarios_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52884,11 +52802,7 @@ export interface operations {
     update_scenario_v5_scenarios_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52921,11 +52835,7 @@ export interface operations {
     duplicate_scenario_v5_scenarios_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52958,11 +52868,7 @@ export interface operations {
     delete_scenario_v5_scenarios_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -52995,11 +52901,7 @@ export interface operations {
     patch_scenario_draft_v5_scenarios_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53032,11 +52934,7 @@ export interface operations {
     get_scenario_drafts_v5_scenarios_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53051,25 +52949,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetScenarioDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_scenarios_v5_scenarios_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53102,11 +52987,7 @@ export interface operations {
     get_scenario_docs_endpoint_v5_scenarios_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53139,11 +53020,7 @@ export interface operations {
     scenario_refresh_v5_scenarios_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53158,25 +53035,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     upload_v5_scenarios_upload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53191,25 +53055,12 @@ export interface operations {
                     "application/json": components["schemas"]["UploadResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     download_v5_scenarios_download__upload_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path: {
                 upload_id: string;
             };
@@ -53240,11 +53091,7 @@ export interface operations {
     preview_v5_scenarios_preview__upload_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path: {
                 upload_id: string;
             };
@@ -53275,11 +53122,7 @@ export interface operations {
     get_simulation_v5_simulations_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53312,11 +53155,7 @@ export interface operations {
     search_simulation_v5_simulations_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53349,11 +53188,7 @@ export interface operations {
     create_simulation_v5_simulations_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53386,11 +53221,7 @@ export interface operations {
     parse_simulation_csv_v5_simulations_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53423,11 +53254,7 @@ export interface operations {
     update_simulation_v5_simulations_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53460,11 +53287,7 @@ export interface operations {
     duplicate_simulation_v5_simulations_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53497,11 +53320,7 @@ export interface operations {
     delete_simulation_v5_simulations_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53534,11 +53353,7 @@ export interface operations {
     patch_simulation_draft_v5_simulations_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53571,11 +53386,7 @@ export interface operations {
     get_simulation_drafts_v5_simulations_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53590,25 +53401,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetSimulationDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_simulations_v5_simulations_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53641,11 +53439,7 @@ export interface operations {
     get_simulation_docs_endpoint_v5_simulations_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53678,11 +53472,7 @@ export interface operations {
     simulation_refresh_v5_simulations_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53697,25 +53487,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     search_document_v5_documents_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53748,11 +53525,7 @@ export interface operations {
     get_document_v5_documents_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53785,11 +53558,7 @@ export interface operations {
     create_document_v5_documents_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53822,11 +53591,7 @@ export interface operations {
     update_document_v5_documents_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53859,11 +53624,7 @@ export interface operations {
     duplicate_document_v5_documents_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53896,11 +53657,7 @@ export interface operations {
     delete_document_v5_documents_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53933,11 +53690,7 @@ export interface operations {
     patch_document_draft_v5_documents_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53970,11 +53723,7 @@ export interface operations {
     get_document_drafts_v5_documents_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -53989,25 +53738,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetDocumentDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_document_docs_endpoint_v5_documents_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54040,11 +53776,7 @@ export interface operations {
     document_refresh_v5_documents_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54059,25 +53791,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_documents_v5_documents_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54110,11 +53829,7 @@ export interface operations {
     parse_document_csv_v5_documents_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54147,11 +53862,7 @@ export interface operations {
     upload_v5_documents_upload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54166,25 +53877,12 @@ export interface operations {
                     "application/json": components["schemas"]["UploadResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     download_v5_documents_download__upload_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path: {
                 upload_id: string;
             };
@@ -54215,11 +53913,7 @@ export interface operations {
     preview_v5_documents_preview__upload_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path: {
                 upload_id: string;
             };
@@ -54250,11 +53944,7 @@ export interface operations {
     get_department_v5_departments_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54287,11 +53977,7 @@ export interface operations {
     search_department_v5_departments_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54324,11 +54010,7 @@ export interface operations {
     create_department_v5_departments_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54361,11 +54043,7 @@ export interface operations {
     update_department_v5_departments_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54398,11 +54076,7 @@ export interface operations {
     duplicate_department_v5_departments_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54435,11 +54109,7 @@ export interface operations {
     delete_department_v5_departments_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54472,11 +54142,7 @@ export interface operations {
     patch_department_draft_v5_departments_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54509,11 +54175,7 @@ export interface operations {
     get_department_drafts_v5_departments_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54528,25 +54190,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetDepartmentDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_department_docs_endpoint_v5_departments_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54579,11 +54228,7 @@ export interface operations {
     export_departments_v5_departments_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54616,11 +54261,7 @@ export interface operations {
     parse_department_csv_v5_departments_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54653,11 +54294,7 @@ export interface operations {
     department_refresh_v5_departments_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54672,25 +54309,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     search_cohort_v5_cohorts_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54723,11 +54347,7 @@ export interface operations {
     get_cohort_v5_cohorts_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54760,11 +54380,7 @@ export interface operations {
     create_cohort_v5_cohorts_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54797,11 +54413,7 @@ export interface operations {
     update_cohort_v5_cohorts_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54834,11 +54446,7 @@ export interface operations {
     duplicate_cohort_v5_cohorts_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54871,11 +54479,7 @@ export interface operations {
     delete_cohort_v5_cohorts_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54908,11 +54512,7 @@ export interface operations {
     patch_cohort_draft_v5_cohorts_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54945,11 +54545,7 @@ export interface operations {
     get_cohort_drafts_v5_cohorts_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -54964,25 +54560,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetCohortDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_cohorts_v5_cohorts_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55015,11 +54598,7 @@ export interface operations {
     parse_cohort_csv_v5_cohorts_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55052,11 +54631,7 @@ export interface operations {
     get_cohort_docs_endpoint_v5_cohorts_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55089,11 +54664,7 @@ export interface operations {
     cohort_refresh_v5_cohorts_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55108,25 +54679,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     search_eval_v5_evals_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55159,11 +54717,7 @@ export interface operations {
     get_eval_v5_evals_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55196,11 +54750,7 @@ export interface operations {
     create_eval_v5_evals_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55233,11 +54783,7 @@ export interface operations {
     update_eval_v5_evals_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55270,11 +54816,7 @@ export interface operations {
     duplicate_eval_v5_evals_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55307,11 +54849,7 @@ export interface operations {
     delete_eval_v5_evals_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55344,11 +54882,7 @@ export interface operations {
     patch_eval_draft_v5_evals_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55381,11 +54915,7 @@ export interface operations {
     get_eval_drafts_v5_evals_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55400,25 +54930,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetEvalDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_eval_docs_endpoint_v5_evals_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55451,11 +54968,7 @@ export interface operations {
     eval_refresh_v5_evals_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55470,25 +54983,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_evals_v5_evals_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55521,11 +55021,7 @@ export interface operations {
     parse_eval_csv_v5_evals_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55558,11 +55054,7 @@ export interface operations {
     get_rubric_v5_rubrics_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55595,11 +55087,7 @@ export interface operations {
     search_rubric_v5_rubrics_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55632,11 +55120,7 @@ export interface operations {
     create_rubric_v5_rubrics_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55669,11 +55153,7 @@ export interface operations {
     update_rubric_v5_rubrics_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55706,11 +55186,7 @@ export interface operations {
     duplicate_rubric_v5_rubrics_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55743,11 +55219,7 @@ export interface operations {
     delete_rubric_v5_rubrics_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55780,11 +55252,7 @@ export interface operations {
     patch_rubric_draft_v5_rubrics_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55817,11 +55285,7 @@ export interface operations {
     get_rubric_drafts_v5_rubrics_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55836,25 +55300,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetRubricDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_rubric_docs_endpoint_v5_rubrics_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55887,11 +55338,7 @@ export interface operations {
     export_rubrics_v5_rubrics_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55924,11 +55371,7 @@ export interface operations {
     parse_rubric_csv_v5_rubrics_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55961,11 +55404,7 @@ export interface operations {
     rubric_refresh_v5_rubrics_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -55980,25 +55419,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     search_setting_v5_settings_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56031,11 +55457,7 @@ export interface operations {
     get_setting_v5_settings_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56068,11 +55490,7 @@ export interface operations {
     create_setting_v5_settings_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56105,11 +55523,7 @@ export interface operations {
     update_setting_v5_settings_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56142,11 +55556,7 @@ export interface operations {
     duplicate_setting_v5_settings_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56179,11 +55589,7 @@ export interface operations {
     delete_setting_v5_settings_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56216,11 +55622,7 @@ export interface operations {
     patch_setting_draft_v5_settings_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56253,11 +55655,7 @@ export interface operations {
     get_setting_drafts_v5_settings_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56272,25 +55670,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetSettingDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_settings_v5_settings_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56323,11 +55708,7 @@ export interface operations {
     parse_setting_csv_v5_settings_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56360,11 +55741,7 @@ export interface operations {
     get_setting_docs_endpoint_v5_settings_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56397,11 +55774,7 @@ export interface operations {
     setting_refresh_v5_settings_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56416,25 +55789,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     decrypt_setting_key_v5_settings_decrypt_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56467,11 +55827,7 @@ export interface operations {
     get_agent_v5_agents_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56504,11 +55860,7 @@ export interface operations {
     search_agent_v5_agents_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56541,11 +55893,7 @@ export interface operations {
     create_agent_v5_agents_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56578,11 +55926,7 @@ export interface operations {
     update_agent_v5_agents_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56615,11 +55959,7 @@ export interface operations {
     duplicate_agent_v5_agents_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56652,11 +55992,7 @@ export interface operations {
     delete_agent_v5_agents_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56689,11 +56025,7 @@ export interface operations {
     patch_agent_draft_v5_agents_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56726,11 +56058,7 @@ export interface operations {
     get_agent_drafts_v5_agents_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56745,25 +56073,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetAgentDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_agent_docs_endpoint_v5_agents_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56796,11 +56111,7 @@ export interface operations {
     export_agents_v5_agents_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56833,11 +56144,7 @@ export interface operations {
     parse_agent_csv_v5_agents_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56870,11 +56177,7 @@ export interface operations {
     agent_refresh_v5_agents_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56889,25 +56192,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_model_v5_models_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56940,11 +56230,7 @@ export interface operations {
     search_model_v5_models_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -56977,11 +56263,7 @@ export interface operations {
     create_model_v5_models_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57014,11 +56296,7 @@ export interface operations {
     update_model_v5_models_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57051,11 +56329,7 @@ export interface operations {
     duplicate_model_v5_models_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57088,11 +56362,7 @@ export interface operations {
     delete_model_v5_models_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57125,11 +56395,7 @@ export interface operations {
     patch_model_draft_v5_models_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57162,11 +56428,7 @@ export interface operations {
     get_model_drafts_v5_models_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57181,25 +56443,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetModelDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_model_docs_endpoint_v5_models_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57232,11 +56481,7 @@ export interface operations {
     export_models_v5_models_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57269,11 +56514,7 @@ export interface operations {
     parse_model_csv_v5_models_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57306,11 +56547,7 @@ export interface operations {
     model_refresh_v5_models_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57325,25 +56562,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     search_provider_v5_providers_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57376,11 +56600,7 @@ export interface operations {
     get_provider_v5_providers_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57413,11 +56633,7 @@ export interface operations {
     create_provider_v5_providers_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57450,11 +56666,7 @@ export interface operations {
     update_provider_v5_providers_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57487,11 +56699,7 @@ export interface operations {
     duplicate_provider_v5_providers_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57524,11 +56732,7 @@ export interface operations {
     delete_provider_v5_providers_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57561,11 +56765,7 @@ export interface operations {
     patch_provider_draft_v5_providers_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57598,11 +56798,7 @@ export interface operations {
     get_provider_drafts_v5_providers_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57617,25 +56813,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetProviderDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_provider_docs_endpoint_v5_providers_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57668,11 +56851,7 @@ export interface operations {
     export_providers_v5_providers_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57705,11 +56884,7 @@ export interface operations {
     parse_provider_csv_v5_providers_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57742,11 +56917,7 @@ export interface operations {
     provider_refresh_v5_providers_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57761,25 +56932,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     decrypt_provider_key_v5_providers_decrypt_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57812,11 +56970,7 @@ export interface operations {
     get_parameter_v5_parameters_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57849,11 +57003,7 @@ export interface operations {
     search_parameter_v5_parameters_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57886,11 +57036,7 @@ export interface operations {
     create_parameter_v5_parameters_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57923,11 +57069,7 @@ export interface operations {
     update_parameter_v5_parameters_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57960,11 +57102,7 @@ export interface operations {
     duplicate_parameter_v5_parameters_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -57997,11 +57135,7 @@ export interface operations {
     delete_parameter_v5_parameters_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58034,11 +57168,7 @@ export interface operations {
     patch_parameter_draft_v5_parameters_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58071,11 +57201,7 @@ export interface operations {
     get_parameter_drafts_v5_parameters_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58090,25 +57216,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetParameterDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_parameter_docs_endpoint_v5_parameters_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58141,11 +57254,7 @@ export interface operations {
     export_parameters_v5_parameters_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58178,11 +57287,7 @@ export interface operations {
     parse_parameter_csv_v5_parameters_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58215,11 +57320,7 @@ export interface operations {
     parameter_refresh_v5_parameters_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58234,25 +57335,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_field_v5_fields_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58285,11 +57373,7 @@ export interface operations {
     search_field_v5_fields_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58322,11 +57406,7 @@ export interface operations {
     create_field_v5_fields_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58359,11 +57439,7 @@ export interface operations {
     update_field_v5_fields_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58396,11 +57472,7 @@ export interface operations {
     duplicate_field_v5_fields_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58433,11 +57505,7 @@ export interface operations {
     delete_field_v5_fields_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58470,11 +57538,7 @@ export interface operations {
     patch_field_draft_v5_fields_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58507,11 +57571,7 @@ export interface operations {
     get_field_drafts_v5_fields_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58526,25 +57586,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetFieldDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_field_docs_endpoint_v5_fields_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58577,11 +57624,7 @@ export interface operations {
     export_fields_v5_fields_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58614,11 +57657,7 @@ export interface operations {
     parse_field_csv_v5_fields_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58651,11 +57690,7 @@ export interface operations {
     field_refresh_v5_fields_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58670,25 +57705,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_profile_v5_profiles_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58721,11 +57743,7 @@ export interface operations {
     search_profile_v5_profiles_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58758,11 +57776,7 @@ export interface operations {
     create_profile_v5_profiles_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58795,11 +57809,7 @@ export interface operations {
     update_profile_v5_profiles_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58832,11 +57842,7 @@ export interface operations {
     duplicate_profile_v5_profiles_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58869,11 +57875,7 @@ export interface operations {
     patch_profile_draft_v5_profiles_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58906,11 +57908,7 @@ export interface operations {
     get_profile_drafts_v5_profiles_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58925,25 +57923,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetProfileDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     delete_profile_v5_profiles_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -58976,11 +57961,7 @@ export interface operations {
     get_profile_docs_endpoint_v5_profiles_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59013,11 +57994,7 @@ export interface operations {
     export_profiles_v5_profiles_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59050,11 +58027,7 @@ export interface operations {
     profile_refresh_v5_profiles_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59069,25 +58042,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_auth_v5_auths_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59120,11 +58080,7 @@ export interface operations {
     search_auth_v5_auths_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59157,11 +58113,7 @@ export interface operations {
     create_auth_v5_auths_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59194,11 +58146,7 @@ export interface operations {
     update_auth_v5_auths_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59231,11 +58179,7 @@ export interface operations {
     duplicate_auth_v5_auths_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59268,11 +58212,7 @@ export interface operations {
     delete_auth_v5_auths_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59305,11 +58245,7 @@ export interface operations {
     patch_auth_draft_v5_auths_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59342,11 +58278,7 @@ export interface operations {
     get_auth_drafts_v5_auths_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59361,25 +58293,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetAuthDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_auth_docs_endpoint_v5_auths_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59412,11 +58331,7 @@ export interface operations {
     export_auths_v5_auths_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59449,11 +58364,7 @@ export interface operations {
     auth_refresh_v5_auths_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59468,25 +58379,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     search_tool_v5_tools_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59519,11 +58417,7 @@ export interface operations {
     get_tool_v5_tools_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59556,11 +58450,7 @@ export interface operations {
     create_tool_v5_tools_create_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59593,11 +58483,7 @@ export interface operations {
     update_tool_v5_tools_update_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59630,11 +58516,7 @@ export interface operations {
     duplicate_tool_v5_tools_duplicate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59667,11 +58549,7 @@ export interface operations {
     delete_tool_v5_tools_delete_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59704,11 +58582,7 @@ export interface operations {
     patch_tool_draft_v5_tools_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59741,11 +58615,7 @@ export interface operations {
     get_tool_drafts_v5_tools_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59760,25 +58630,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetToolDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_tools_v5_tools_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59811,11 +58668,7 @@ export interface operations {
     parse_tool_csv_v5_tools_csv_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59848,11 +58701,7 @@ export interface operations {
     get_tool_docs_endpoint_v5_tools_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59885,11 +58734,7 @@ export interface operations {
     tool_refresh_v5_tools_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59904,25 +58749,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_group_v5_group_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59955,11 +58787,7 @@ export interface operations {
     group_refresh_v5_group_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -59974,25 +58802,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_group_docs_endpoint_v5_group_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60025,11 +58840,7 @@ export interface operations {
     export_group_v5_group_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60062,11 +58873,7 @@ export interface operations {
     download_v5_group_download__upload_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path: {
                 upload_id: string;
             };
@@ -60097,11 +58904,7 @@ export interface operations {
     get_session_v5_session_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60134,11 +58937,7 @@ export interface operations {
     session_refresh_v5_session_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60153,25 +58952,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_session_docs_endpoint_v5_session_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60204,11 +58990,7 @@ export interface operations {
     export_session_v5_session_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60241,11 +59023,7 @@ export interface operations {
     chat_get_v5_chat_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60278,11 +59056,7 @@ export interface operations {
     patch_chat_draft_v5_chat_draft_patch: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60315,11 +59089,7 @@ export interface operations {
     get_chat_drafts_v5_chat_drafts_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60334,25 +59104,12 @@ export interface operations {
                     "application/json": components["schemas"]["GetChatDraftsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_chat_v5_chat_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60385,11 +59142,7 @@ export interface operations {
     chat_refresh_v5_chat_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60404,25 +59157,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_chat_docs_endpoint_v5_chat_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60455,11 +59195,7 @@ export interface operations {
     home_get_v5_home_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60492,11 +59228,7 @@ export interface operations {
     search_home_v5_home_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60529,11 +59261,7 @@ export interface operations {
     home_refresh_v5_home_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60548,25 +59276,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_home_v5_home_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60581,25 +59296,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportHomeApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_home_docs_endpoint_v5_home_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60632,11 +59334,7 @@ export interface operations {
     practice_get_v5_practice_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60669,11 +59367,7 @@ export interface operations {
     search_practice_v5_practice_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60706,11 +59400,7 @@ export interface operations {
     practice_refresh_v5_practice_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60725,25 +59415,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_practice_v5_practice_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60758,25 +59435,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportPracticeApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_practice_docs_endpoint_v5_practice_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60809,11 +59473,7 @@ export interface operations {
     attempt_get_v5_attempt_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60846,11 +59506,7 @@ export interface operations {
     attempt_join_v5_attempt_join_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60883,11 +59539,7 @@ export interface operations {
     attempt_leave_v5_attempt_leave_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60920,11 +59572,7 @@ export interface operations {
     archive_attempts_v5_attempt_archive_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60957,11 +59605,7 @@ export interface operations {
     attempt_refresh_v5_attempt_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -60976,25 +59620,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_attempt_docs_endpoint_v5_attempt_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61027,11 +59658,7 @@ export interface operations {
     export_attempt_v5_attempt_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61064,11 +59691,7 @@ export interface operations {
     start_attempt_v5_attempt_start_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61101,11 +59724,7 @@ export interface operations {
     next_attempt_v5_attempt_next_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61138,11 +59757,7 @@ export interface operations {
     end_attempt_v5_attempt_end_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61175,11 +59790,7 @@ export interface operations {
     end_all_attempt_v5_attempt_end_all_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61212,11 +59823,7 @@ export interface operations {
     attempt_message_v5_attempt_message_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61249,11 +59856,7 @@ export interface operations {
     attempt_grade_v5_attempt_grade_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61286,11 +59889,7 @@ export interface operations {
     attempt_stop_v5_attempt_stop_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61323,11 +59922,7 @@ export interface operations {
     attempt_response_v5_attempt_response_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61360,11 +59955,7 @@ export interface operations {
     attempt_use_previous_v5_attempt_use_previous_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61397,11 +59988,7 @@ export interface operations {
     audio_start_v5_attempt_audio_start_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61434,11 +60021,7 @@ export interface operations {
     audio_frame_v5_attempt_audio_frame_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61471,11 +60054,7 @@ export interface operations {
     audio_stop_v5_attempt_audio_stop_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61508,11 +60087,7 @@ export interface operations {
     audio_mute_v5_attempt_audio_mute_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61545,11 +60120,7 @@ export interface operations {
     search_attempt_v5_attempt_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61582,11 +60153,7 @@ export interface operations {
     download_v5_attempt_download__upload_id__get: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path: {
                 upload_id: string;
             };
@@ -61617,11 +60184,7 @@ export interface operations {
     get_record_v5_record_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61654,11 +60217,7 @@ export interface operations {
     search_record_v5_record_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61691,11 +60250,7 @@ export interface operations {
     record_refresh_v5_record_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61710,25 +60265,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_record_v5_record_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61761,11 +60303,7 @@ export interface operations {
     get_record_docs_endpoint_v5_record_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61798,11 +60336,7 @@ export interface operations {
     get_dashboard_v5_dashboard_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61835,11 +60369,7 @@ export interface operations {
     search_dashboard_v5_dashboard_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61872,11 +60402,7 @@ export interface operations {
     dashboard_refresh_v5_dashboard_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61891,25 +60417,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_dashboard_v5_dashboard_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61924,25 +60437,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportDashboardApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_dashboard_docs_endpoint_v5_dashboard_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61975,11 +60475,7 @@ export interface operations {
     export_reports_v5_reports_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -61994,25 +60490,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportReportsApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_reports_v5_reports_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62045,11 +60528,7 @@ export interface operations {
     reports_refresh_v5_reports_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62064,25 +60543,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_reports_docs_endpoint_v5_reports_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62115,11 +60581,7 @@ export interface operations {
     get_leaderboard_v5_leaderboard_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62152,11 +60614,7 @@ export interface operations {
     search_leaderboard_v5_leaderboard_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62189,11 +60647,7 @@ export interface operations {
     leaderboard_refresh_v5_leaderboard_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62208,25 +60662,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_leaderboard_v5_leaderboard_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62241,25 +60682,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportLeaderboardApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_leaderboard_docs_endpoint_v5_leaderboard_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62292,11 +60720,7 @@ export interface operations {
     get_pricing_v5_pricing_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62329,11 +60753,7 @@ export interface operations {
     search_pricing_v5_pricing_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62366,11 +60786,7 @@ export interface operations {
     pricing_refresh_v5_pricing_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62385,25 +60801,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_pricing_v5_pricing_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62418,25 +60821,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportPricingApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_pricing_docs_endpoint_v5_pricing_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62469,11 +60859,7 @@ export interface operations {
     get_activity_v5_activity_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62506,11 +60892,7 @@ export interface operations {
     search_activity_v5_activity_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62543,11 +60925,7 @@ export interface operations {
     activity_refresh_v5_activity_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62562,25 +60940,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     resolve_problem_v5_activity_resolve_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62613,11 +60978,7 @@ export interface operations {
     export_activity_v5_activity_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62632,25 +60993,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportActivityApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_activity_docs_endpoint_v5_activity_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62683,11 +61031,7 @@ export interface operations {
     get_health_v5_health_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62720,11 +61064,7 @@ export interface operations {
     health_refresh_v5_health_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62739,25 +61079,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_health_v5_health_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62772,25 +61099,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportHealthApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_health_docs_endpoint_v5_health_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62823,11 +61137,7 @@ export interface operations {
     get_benchmark_v5_benchmark_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62860,11 +61170,7 @@ export interface operations {
     search_benchmark_history_v5_benchmark_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62897,11 +61203,7 @@ export interface operations {
     benchmark_refresh_v5_benchmark_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62916,25 +61218,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_benchmark_v5_benchmark_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -62949,25 +61238,12 @@ export interface operations {
                     "application/json": components["schemas"]["ExportBenchmarkApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     get_benchmark_docs_endpoint_v5_benchmark_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63000,11 +61276,7 @@ export interface operations {
     get_test_artifact_v5_test_get_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63037,11 +61309,7 @@ export interface operations {
     test_join_v5_test_join_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63074,11 +61342,7 @@ export interface operations {
     test_leave_v5_test_leave_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63111,11 +61375,7 @@ export interface operations {
     archive_test_artifacts_v5_test_archive_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63148,11 +61408,7 @@ export interface operations {
     test_refresh_v5_test_refresh_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63167,25 +61423,12 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     export_test_v5_test_export_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63218,11 +61461,7 @@ export interface operations {
     get_test_docs_endpoint_v5_test_docs_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63255,11 +61494,7 @@ export interface operations {
     start_test_v5_test_start_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63292,11 +61527,7 @@ export interface operations {
     next_test_v5_test_next_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63329,11 +61560,7 @@ export interface operations {
     run_test_v5_test_run_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63366,11 +61593,7 @@ export interface operations {
     end_test_v5_test_end_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63403,11 +61626,7 @@ export interface operations {
     stop_test_v5_test_stop_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63440,11 +61659,7 @@ export interface operations {
     search_test_v5_test_search_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63477,11 +61692,7 @@ export interface operations {
     connect_v5_connect_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63496,25 +61707,12 @@ export interface operations {
                     "application/json": components["schemas"]["ConnectResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     disconnect_v5_disconnect_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63547,11 +61745,7 @@ export interface operations {
     get_profile_context_v5_context_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63584,11 +61778,7 @@ export interface operations {
     create_problem_v5_problem_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63621,11 +61811,7 @@ export interface operations {
     emulate_profile_v5_emulate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63658,11 +61844,7 @@ export interface operations {
     unemulate_profile_v5_unemulate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63677,25 +61859,12 @@ export interface operations {
                     "application/json": components["schemas"]["UnemulateProfileApiResponse"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     generate_v5_generate_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63733,11 +61902,7 @@ export interface operations {
                 types?: string[] | null;
                 limit?: number;
             };
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63766,11 +61931,7 @@ export interface operations {
     ActivityRequest_schema_v5_stream_ActivityRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63805,11 +61966,7 @@ export interface operations {
     ActivityResponse_schema_v5_stream_ActivityResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63844,11 +62001,7 @@ export interface operations {
     AttemptAssistantCompleteEvent_schema_v5_stream_AttemptAssistantCompleteEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63883,11 +62036,7 @@ export interface operations {
     AttemptAssistantHintsEvent_schema_v5_stream_AttemptAssistantHintsEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63922,11 +62071,7 @@ export interface operations {
     AttemptAssistantProgressEvent_schema_v5_stream_AttemptAssistantProgressEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -63961,11 +62106,7 @@ export interface operations {
     AttemptAssistantStartEvent_schema_v5_stream_AttemptAssistantStartEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64000,11 +62141,7 @@ export interface operations {
     AttemptAudioEndedEvent_schema_v5_stream_AttemptAudioEndedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64039,11 +62176,7 @@ export interface operations {
     AttemptAudioReadyEvent_schema_v5_stream_AttemptAudioReadyEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64078,11 +62211,7 @@ export interface operations {
     AttemptAudioStartPayload_schema_v5_stream_AttemptAudioStartPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64117,11 +62246,7 @@ export interface operations {
     AttemptAudioStopPayload_schema_v5_stream_AttemptAudioStopPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64156,11 +62281,7 @@ export interface operations {
     AttemptChatEndedEvent_schema_v5_stream_AttemptChatEndedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64195,11 +62316,7 @@ export interface operations {
     AttemptChatStartedEvent_schema_v5_stream_AttemptChatStartedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64234,11 +62351,7 @@ export interface operations {
     AttemptEndAllPayload_schema_v5_stream_AttemptEndAllPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64273,11 +62386,7 @@ export interface operations {
     AttemptEndPayload_schema_v5_stream_AttemptEndPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64312,11 +62421,7 @@ export interface operations {
     AttemptEndedEvent_schema_v5_stream_AttemptEndedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64351,11 +62456,7 @@ export interface operations {
     AttemptErrorEvent_schema_v5_stream_AttemptErrorEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64390,11 +62491,7 @@ export interface operations {
     AttemptGradeCompleteEvent_schema_v5_stream_AttemptGradeCompleteEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64429,11 +62526,7 @@ export interface operations {
     AttemptGradePayload_schema_v5_stream_AttemptGradePayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64468,11 +62561,7 @@ export interface operations {
     AttemptGradeProgressEvent_schema_v5_stream_AttemptGradeProgressEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64507,11 +62596,7 @@ export interface operations {
     AttemptGradeStartEvent_schema_v5_stream_AttemptGradeStartEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64546,11 +62631,7 @@ export interface operations {
     AttemptJoinPayload_schema_v5_stream_AttemptJoinPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64585,11 +62666,7 @@ export interface operations {
     AttemptJoinedEvent_schema_v5_stream_AttemptJoinedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64624,11 +62701,7 @@ export interface operations {
     AttemptLeavePayload_schema_v5_stream_AttemptLeavePayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64663,11 +62736,7 @@ export interface operations {
     AttemptMessagePayload_schema_v5_stream_AttemptMessagePayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64702,11 +62771,7 @@ export interface operations {
     AttemptNextPayload_schema_v5_stream_AttemptNextPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64741,11 +62806,7 @@ export interface operations {
     AttemptResponsePayload_schema_v5_stream_AttemptResponsePayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64780,11 +62841,7 @@ export interface operations {
     AttemptResponseResultEvent_schema_v5_stream_AttemptResponseResultEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64819,11 +62876,7 @@ export interface operations {
     AttemptStartPayload_schema_v5_stream_AttemptStartPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64858,11 +62911,7 @@ export interface operations {
     AttemptStartedEvent_schema_v5_stream_AttemptStartedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64897,11 +62946,7 @@ export interface operations {
     AttemptStopPayload_schema_v5_stream_AttemptStopPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64936,11 +62981,7 @@ export interface operations {
     AttemptStoppedEvent_schema_v5_stream_AttemptStoppedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -64975,11 +63016,7 @@ export interface operations {
     AttemptUsePreviousPayload_schema_v5_stream_AttemptUsePreviousPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65014,11 +63051,7 @@ export interface operations {
     AttemptUserCompleteEvent_schema_v5_stream_AttemptUserCompleteEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65053,11 +63086,7 @@ export interface operations {
     AttemptUserDeltaEvent_schema_v5_stream_AttemptUserDeltaEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65092,11 +63121,7 @@ export interface operations {
     AttemptUserProgressEvent_schema_v5_stream_AttemptUserProgressEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65131,11 +63156,7 @@ export interface operations {
     AttemptUserStartEvent_schema_v5_stream_AttemptUserStartEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65170,11 +63191,7 @@ export interface operations {
     BenchmarkRequest_schema_v5_stream_BenchmarkRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65209,11 +63226,7 @@ export interface operations {
     BenchmarkResponse_schema_v5_stream_BenchmarkResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65248,11 +63261,7 @@ export interface operations {
     ComposedDocsResponse_schema_v5_stream_ComposedDocsResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65287,11 +63296,7 @@ export interface operations {
     ConnectionConfirmedPayload_schema_v5_stream_ConnectionConfirmedPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65326,11 +63331,7 @@ export interface operations {
     CreateAgentApiRequest_schema_v5_stream_CreateAgentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65365,11 +63366,7 @@ export interface operations {
     CreateAgentApiResponse_schema_v5_stream_CreateAgentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65404,11 +63401,7 @@ export interface operations {
     CreateAuthApiRequest_schema_v5_stream_CreateAuthApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65443,11 +63436,7 @@ export interface operations {
     CreateAuthApiResponse_schema_v5_stream_CreateAuthApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65482,11 +63471,7 @@ export interface operations {
     CreateCohortApiRequest_schema_v5_stream_CreateCohortApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65521,11 +63506,7 @@ export interface operations {
     CreateCohortApiResponse_schema_v5_stream_CreateCohortApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65560,11 +63541,7 @@ export interface operations {
     CreateDepartmentApiRequest_schema_v5_stream_CreateDepartmentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65599,11 +63576,7 @@ export interface operations {
     CreateDepartmentApiResponse_schema_v5_stream_CreateDepartmentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65638,11 +63611,7 @@ export interface operations {
     CreateDocumentApiRequest_schema_v5_stream_CreateDocumentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65677,11 +63646,7 @@ export interface operations {
     CreateDocumentApiResponse_schema_v5_stream_CreateDocumentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65716,11 +63681,7 @@ export interface operations {
     CreateEvalApiRequest_schema_v5_stream_CreateEvalApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65755,11 +63716,7 @@ export interface operations {
     CreateEvalApiResponse_schema_v5_stream_CreateEvalApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65794,11 +63751,7 @@ export interface operations {
     CreateFieldApiRequest_schema_v5_stream_CreateFieldApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65833,11 +63786,7 @@ export interface operations {
     CreateFieldApiResponse_schema_v5_stream_CreateFieldApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65872,11 +63821,7 @@ export interface operations {
     CreateModelApiRequest_schema_v5_stream_CreateModelApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65911,11 +63856,7 @@ export interface operations {
     CreateModelApiResponse_schema_v5_stream_CreateModelApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65950,11 +63891,7 @@ export interface operations {
     CreateParameterApiRequest_schema_v5_stream_CreateParameterApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -65989,11 +63926,7 @@ export interface operations {
     CreateParameterApiResponse_schema_v5_stream_CreateParameterApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66028,11 +63961,7 @@ export interface operations {
     CreatePersonaApiRequest_schema_v5_stream_CreatePersonaApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66067,11 +63996,7 @@ export interface operations {
     CreatePersonaApiResponse_schema_v5_stream_CreatePersonaApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66106,11 +64031,7 @@ export interface operations {
     CreateProfileApiRequest_schema_v5_stream_CreateProfileApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66145,11 +64066,7 @@ export interface operations {
     CreateProfileApiResponse_schema_v5_stream_CreateProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66184,11 +64101,7 @@ export interface operations {
     CreateProviderApiRequest_schema_v5_stream_CreateProviderApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66223,11 +64136,7 @@ export interface operations {
     CreateProviderApiResponse_schema_v5_stream_CreateProviderApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66262,11 +64171,7 @@ export interface operations {
     CreateRubricApiRequest_schema_v5_stream_CreateRubricApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66301,11 +64206,7 @@ export interface operations {
     CreateRubricApiResponse_schema_v5_stream_CreateRubricApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66340,11 +64241,7 @@ export interface operations {
     CreateScenarioApiRequest_schema_v5_stream_CreateScenarioApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66379,11 +64276,7 @@ export interface operations {
     CreateScenarioApiResponse_schema_v5_stream_CreateScenarioApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66418,11 +64311,7 @@ export interface operations {
     CreateSettingApiRequest_schema_v5_stream_CreateSettingApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66457,11 +64346,7 @@ export interface operations {
     CreateSettingApiResponse_schema_v5_stream_CreateSettingApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66496,11 +64381,7 @@ export interface operations {
     CreateSimulationApiRequest_schema_v5_stream_CreateSimulationApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66535,11 +64416,7 @@ export interface operations {
     CreateSimulationApiResponse_schema_v5_stream_CreateSimulationApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66574,11 +64451,7 @@ export interface operations {
     CreateToolApiRequest_schema_v5_stream_CreateToolApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66613,11 +64486,7 @@ export interface operations {
     CreateToolApiResponse_schema_v5_stream_CreateToolApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66652,11 +64521,7 @@ export interface operations {
     DashboardBundleResponse_schema_v5_stream_DashboardBundleResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66691,11 +64556,7 @@ export interface operations {
     DashboardRequest_schema_v5_stream_DashboardRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66730,11 +64591,7 @@ export interface operations {
     DeleteAgentApiRequest_schema_v5_stream_DeleteAgentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66769,11 +64626,7 @@ export interface operations {
     DeleteAgentApiResponse_schema_v5_stream_DeleteAgentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66808,11 +64661,7 @@ export interface operations {
     DeleteAuthApiRequest_schema_v5_stream_DeleteAuthApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66847,11 +64696,7 @@ export interface operations {
     DeleteAuthApiResponse_schema_v5_stream_DeleteAuthApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66886,11 +64731,7 @@ export interface operations {
     DeleteCohortApiRequest_schema_v5_stream_DeleteCohortApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66925,11 +64766,7 @@ export interface operations {
     DeleteCohortApiResponse_schema_v5_stream_DeleteCohortApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -66964,11 +64801,7 @@ export interface operations {
     DeleteDepartmentApiRequest_schema_v5_stream_DeleteDepartmentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67003,11 +64836,7 @@ export interface operations {
     DeleteDepartmentApiResponse_schema_v5_stream_DeleteDepartmentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67042,11 +64871,7 @@ export interface operations {
     DeleteDocumentApiRequest_schema_v5_stream_DeleteDocumentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67081,11 +64906,7 @@ export interface operations {
     DeleteDocumentApiResponse_schema_v5_stream_DeleteDocumentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67120,11 +64941,7 @@ export interface operations {
     DeleteEvalApiRequest_schema_v5_stream_DeleteEvalApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67159,11 +64976,7 @@ export interface operations {
     DeleteEvalApiResponse_schema_v5_stream_DeleteEvalApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67198,11 +65011,7 @@ export interface operations {
     DeleteFieldApiRequest_schema_v5_stream_DeleteFieldApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67237,11 +65046,7 @@ export interface operations {
     DeleteFieldApiResponse_schema_v5_stream_DeleteFieldApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67276,11 +65081,7 @@ export interface operations {
     DeleteModelApiRequest_schema_v5_stream_DeleteModelApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67315,11 +65116,7 @@ export interface operations {
     DeleteModelApiResponse_schema_v5_stream_DeleteModelApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67354,11 +65151,7 @@ export interface operations {
     DeleteParameterApiRequest_schema_v5_stream_DeleteParameterApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67393,11 +65186,7 @@ export interface operations {
     DeleteParameterApiResponse_schema_v5_stream_DeleteParameterApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67432,11 +65221,7 @@ export interface operations {
     DeletePersonaApiRequest_schema_v5_stream_DeletePersonaApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67471,11 +65256,7 @@ export interface operations {
     DeletePersonaApiResponse_schema_v5_stream_DeletePersonaApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67510,11 +65291,7 @@ export interface operations {
     DeleteProfileApiRequest_schema_v5_stream_DeleteProfileApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67549,11 +65326,7 @@ export interface operations {
     DeleteProfileApiResponse_schema_v5_stream_DeleteProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67588,11 +65361,7 @@ export interface operations {
     DeleteProviderApiRequest_schema_v5_stream_DeleteProviderApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67627,11 +65396,7 @@ export interface operations {
     DeleteProviderApiResponse_schema_v5_stream_DeleteProviderApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67666,11 +65431,7 @@ export interface operations {
     DeleteRubricApiRequest_schema_v5_stream_DeleteRubricApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67705,11 +65466,7 @@ export interface operations {
     DeleteRubricApiResponse_schema_v5_stream_DeleteRubricApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67744,11 +65501,7 @@ export interface operations {
     DeleteScenarioApiRequest_schema_v5_stream_DeleteScenarioApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67783,11 +65536,7 @@ export interface operations {
     DeleteScenarioApiResponse_schema_v5_stream_DeleteScenarioApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67822,11 +65571,7 @@ export interface operations {
     DeleteSettingApiRequest_schema_v5_stream_DeleteSettingApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67861,11 +65606,7 @@ export interface operations {
     DeleteSettingApiResponse_schema_v5_stream_DeleteSettingApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67900,11 +65641,7 @@ export interface operations {
     DeleteSimulationApiRequest_schema_v5_stream_DeleteSimulationApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67939,11 +65676,7 @@ export interface operations {
     DeleteSimulationApiResponse_schema_v5_stream_DeleteSimulationApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -67978,11 +65711,7 @@ export interface operations {
     DeleteToolApiRequest_schema_v5_stream_DeleteToolApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68017,11 +65746,7 @@ export interface operations {
     DeleteToolApiResponse_schema_v5_stream_DeleteToolApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68056,11 +65781,7 @@ export interface operations {
     DuplicateAgentApiRequest_schema_v5_stream_DuplicateAgentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68095,11 +65816,7 @@ export interface operations {
     DuplicateAgentApiResponse_schema_v5_stream_DuplicateAgentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68134,11 +65851,7 @@ export interface operations {
     DuplicateAuthApiRequest_schema_v5_stream_DuplicateAuthApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68173,11 +65886,7 @@ export interface operations {
     DuplicateAuthApiResponse_schema_v5_stream_DuplicateAuthApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68212,11 +65921,7 @@ export interface operations {
     DuplicateCohortApiRequest_schema_v5_stream_DuplicateCohortApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68251,11 +65956,7 @@ export interface operations {
     DuplicateCohortApiResponse_schema_v5_stream_DuplicateCohortApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68290,11 +65991,7 @@ export interface operations {
     DuplicateDepartmentApiRequest_schema_v5_stream_DuplicateDepartmentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68329,11 +66026,7 @@ export interface operations {
     DuplicateDepartmentApiResponse_schema_v5_stream_DuplicateDepartmentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68368,11 +66061,7 @@ export interface operations {
     DuplicateDocumentApiRequest_schema_v5_stream_DuplicateDocumentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68407,11 +66096,7 @@ export interface operations {
     DuplicateDocumentApiResponse_schema_v5_stream_DuplicateDocumentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68446,11 +66131,7 @@ export interface operations {
     DuplicateEvalApiRequest_schema_v5_stream_DuplicateEvalApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68485,11 +66166,7 @@ export interface operations {
     DuplicateEvalApiResponse_schema_v5_stream_DuplicateEvalApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68524,11 +66201,7 @@ export interface operations {
     DuplicateFieldApiRequest_schema_v5_stream_DuplicateFieldApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68563,11 +66236,7 @@ export interface operations {
     DuplicateFieldApiResponse_schema_v5_stream_DuplicateFieldApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68602,11 +66271,7 @@ export interface operations {
     DuplicateModelApiRequest_schema_v5_stream_DuplicateModelApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68641,11 +66306,7 @@ export interface operations {
     DuplicateModelApiResponse_schema_v5_stream_DuplicateModelApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68680,11 +66341,7 @@ export interface operations {
     DuplicateParameterApiRequest_schema_v5_stream_DuplicateParameterApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68719,11 +66376,7 @@ export interface operations {
     DuplicateParameterApiResponse_schema_v5_stream_DuplicateParameterApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68758,11 +66411,7 @@ export interface operations {
     DuplicatePersonaApiRequest_schema_v5_stream_DuplicatePersonaApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68797,11 +66446,7 @@ export interface operations {
     DuplicatePersonaApiResponse_schema_v5_stream_DuplicatePersonaApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68836,11 +66481,7 @@ export interface operations {
     DuplicateProfileApiRequest_schema_v5_stream_DuplicateProfileApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68875,11 +66516,7 @@ export interface operations {
     DuplicateProfileApiResponse_schema_v5_stream_DuplicateProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68914,11 +66551,7 @@ export interface operations {
     DuplicateProviderApiRequest_schema_v5_stream_DuplicateProviderApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68953,11 +66586,7 @@ export interface operations {
     DuplicateProviderApiResponse_schema_v5_stream_DuplicateProviderApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -68992,11 +66621,7 @@ export interface operations {
     DuplicateRubricApiRequest_schema_v5_stream_DuplicateRubricApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69031,11 +66656,7 @@ export interface operations {
     DuplicateRubricApiResponse_schema_v5_stream_DuplicateRubricApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69070,11 +66691,7 @@ export interface operations {
     DuplicateScenarioApiRequest_schema_v5_stream_DuplicateScenarioApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69109,11 +66726,7 @@ export interface operations {
     DuplicateScenarioApiResponse_schema_v5_stream_DuplicateScenarioApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69148,11 +66761,7 @@ export interface operations {
     DuplicateSettingApiRequest_schema_v5_stream_DuplicateSettingApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69187,11 +66796,7 @@ export interface operations {
     DuplicateSettingApiResponse_schema_v5_stream_DuplicateSettingApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69226,11 +66831,7 @@ export interface operations {
     DuplicateSimulationApiRequest_schema_v5_stream_DuplicateSimulationApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69265,11 +66866,7 @@ export interface operations {
     DuplicateSimulationApiResponse_schema_v5_stream_DuplicateSimulationApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69304,11 +66901,7 @@ export interface operations {
     DuplicateToolApiRequest_schema_v5_stream_DuplicateToolApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69343,11 +66936,7 @@ export interface operations {
     DuplicateToolApiResponse_schema_v5_stream_DuplicateToolApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69382,11 +66971,7 @@ export interface operations {
     EmulateProfileApiRequest_schema_v5_stream_EmulateProfileApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69421,11 +67006,7 @@ export interface operations {
     EmulateProfileApiResponse_schema_v5_stream_EmulateProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69460,11 +67041,7 @@ export interface operations {
     ExportAgentApiRequest_schema_v5_stream_ExportAgentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69499,11 +67076,7 @@ export interface operations {
     ExportAgentApiResponse_schema_v5_stream_ExportAgentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69538,11 +67111,7 @@ export interface operations {
     ExportAuthApiRequest_schema_v5_stream_ExportAuthApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69577,11 +67146,7 @@ export interface operations {
     ExportAuthApiResponse_schema_v5_stream_ExportAuthApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69616,11 +67181,7 @@ export interface operations {
     ExportCohortApiRequest_schema_v5_stream_ExportCohortApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69655,11 +67216,7 @@ export interface operations {
     ExportCohortApiResponse_schema_v5_stream_ExportCohortApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69694,11 +67251,7 @@ export interface operations {
     ExportDepartmentApiRequest_schema_v5_stream_ExportDepartmentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69733,11 +67286,7 @@ export interface operations {
     ExportDepartmentApiResponse_schema_v5_stream_ExportDepartmentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69772,11 +67321,7 @@ export interface operations {
     ExportDocumentApiRequest_schema_v5_stream_ExportDocumentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69811,11 +67356,7 @@ export interface operations {
     ExportDocumentApiResponse_schema_v5_stream_ExportDocumentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69850,11 +67391,7 @@ export interface operations {
     ExportEvalApiResponse_schema_v5_stream_ExportEvalApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69889,11 +67426,7 @@ export interface operations {
     ExportFieldApiRequest_schema_v5_stream_ExportFieldApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69928,11 +67461,7 @@ export interface operations {
     ExportFieldApiResponse_schema_v5_stream_ExportFieldApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -69967,11 +67496,7 @@ export interface operations {
     ExportModelApiRequest_schema_v5_stream_ExportModelApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70006,11 +67531,7 @@ export interface operations {
     ExportModelApiResponse_schema_v5_stream_ExportModelApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70045,11 +67566,7 @@ export interface operations {
     ExportParameterApiRequest_schema_v5_stream_ExportParameterApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70084,11 +67601,7 @@ export interface operations {
     ExportParameterApiResponse_schema_v5_stream_ExportParameterApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70123,11 +67636,7 @@ export interface operations {
     ExportPersonaApiRequest_schema_v5_stream_ExportPersonaApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70162,11 +67671,7 @@ export interface operations {
     ExportPersonaApiResponse_schema_v5_stream_ExportPersonaApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70201,11 +67706,7 @@ export interface operations {
     ExportProfileApiRequest_schema_v5_stream_ExportProfileApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70240,11 +67741,7 @@ export interface operations {
     ExportProfileApiResponse_schema_v5_stream_ExportProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70279,11 +67776,7 @@ export interface operations {
     ExportProviderApiRequest_schema_v5_stream_ExportProviderApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70318,11 +67811,7 @@ export interface operations {
     ExportProviderApiResponse_schema_v5_stream_ExportProviderApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70357,11 +67846,7 @@ export interface operations {
     ExportRubricApiResponse_schema_v5_stream_ExportRubricApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70396,11 +67881,7 @@ export interface operations {
     ExportScenarioApiRequest_schema_v5_stream_ExportScenarioApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70435,11 +67916,7 @@ export interface operations {
     ExportScenarioApiResponse_schema_v5_stream_ExportScenarioApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70474,11 +67951,7 @@ export interface operations {
     ExportSettingApiRequest_schema_v5_stream_ExportSettingApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70513,11 +67986,7 @@ export interface operations {
     ExportSettingApiResponse_schema_v5_stream_ExportSettingApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70552,11 +68021,7 @@ export interface operations {
     ExportSimulationApiRequest_schema_v5_stream_ExportSimulationApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70591,11 +68056,7 @@ export interface operations {
     ExportSimulationApiResponse_schema_v5_stream_ExportSimulationApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70630,11 +68091,7 @@ export interface operations {
     ExportToolApiRequest_schema_v5_stream_ExportToolApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70669,11 +68126,7 @@ export interface operations {
     ExportToolApiResponse_schema_v5_stream_ExportToolApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70708,11 +68161,7 @@ export interface operations {
     GeneratePayload_schema_v5_stream_GeneratePayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70747,11 +68196,7 @@ export interface operations {
     GenerationCompleteEvent_schema_v5_stream_GenerationCompleteEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70786,11 +68231,7 @@ export interface operations {
     GenerationErrorEvent_schema_v5_stream_GenerationErrorEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70825,11 +68266,7 @@ export interface operations {
     GenerationMediaCompleteEvent_schema_v5_stream_GenerationMediaCompleteEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70864,11 +68301,7 @@ export interface operations {
     GenerationMediaProgressEvent_schema_v5_stream_GenerationMediaProgressEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70903,11 +68336,7 @@ export interface operations {
     GenerationProgressEvent_schema_v5_stream_GenerationProgressEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70942,11 +68371,7 @@ export interface operations {
     GenerationSavedEvent_schema_v5_stream_GenerationSavedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -70981,11 +68406,7 @@ export interface operations {
     GetAgentApiRequest_schema_v5_stream_GetAgentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71020,11 +68441,7 @@ export interface operations {
     GetAgentApiResponse_schema_v5_stream_GetAgentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71059,11 +68476,7 @@ export interface operations {
     GetAgentDraftsApiResponse_schema_v5_stream_GetAgentDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71098,11 +68511,7 @@ export interface operations {
     GetAttemptDetailRequest_schema_v5_stream_GetAttemptDetailRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71137,11 +68546,7 @@ export interface operations {
     GetAttemptDetailResponse_schema_v5_stream_GetAttemptDetailResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71176,11 +68581,7 @@ export interface operations {
     GetAuthApiRequest_schema_v5_stream_GetAuthApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71215,11 +68616,7 @@ export interface operations {
     GetAuthApiResponse_schema_v5_stream_GetAuthApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71254,11 +68651,7 @@ export interface operations {
     GetAuthDraftsApiResponse_schema_v5_stream_GetAuthDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71293,11 +68686,7 @@ export interface operations {
     GetChatRequest_schema_v5_stream_GetChatRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71332,11 +68721,7 @@ export interface operations {
     GetChatResponse_schema_v5_stream_GetChatResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71371,11 +68756,7 @@ export interface operations {
     GetCohortApiRequest_schema_v5_stream_GetCohortApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71410,11 +68791,7 @@ export interface operations {
     GetCohortApiResponse_schema_v5_stream_GetCohortApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71449,11 +68826,7 @@ export interface operations {
     GetCohortDraftsApiResponse_schema_v5_stream_GetCohortDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71488,11 +68861,7 @@ export interface operations {
     GetDepartmentApiRequest_schema_v5_stream_GetDepartmentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71527,11 +68896,7 @@ export interface operations {
     GetDepartmentApiResponse_schema_v5_stream_GetDepartmentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71566,11 +68931,7 @@ export interface operations {
     GetDepartmentDraftsApiResponse_schema_v5_stream_GetDepartmentDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71605,11 +68966,7 @@ export interface operations {
     GetDocumentApiRequest_schema_v5_stream_GetDocumentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71644,11 +69001,7 @@ export interface operations {
     GetDocumentApiResponse_schema_v5_stream_GetDocumentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71683,11 +69036,7 @@ export interface operations {
     GetDocumentDraftsApiResponse_schema_v5_stream_GetDocumentDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71722,11 +69071,7 @@ export interface operations {
     GetEvalApiRequest_schema_v5_stream_GetEvalApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71761,11 +69106,7 @@ export interface operations {
     GetEvalApiResponse_schema_v5_stream_GetEvalApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71800,11 +69141,7 @@ export interface operations {
     GetEvalDraftsApiResponse_schema_v5_stream_GetEvalDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71839,11 +69176,7 @@ export interface operations {
     GetFieldApiRequest_schema_v5_stream_GetFieldApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71878,11 +69211,7 @@ export interface operations {
     GetFieldApiResponse_schema_v5_stream_GetFieldApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71917,11 +69246,7 @@ export interface operations {
     GetFieldDraftsApiResponse_schema_v5_stream_GetFieldDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71956,11 +69281,7 @@ export interface operations {
     GetGroupDetailRequest_schema_v5_stream_GetGroupDetailRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -71995,11 +69316,7 @@ export interface operations {
     GetGroupDetailResponse_schema_v5_stream_GetGroupDetailResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72034,11 +69351,7 @@ export interface operations {
     GetHomeRequest_schema_v5_stream_GetHomeRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72073,11 +69386,7 @@ export interface operations {
     GetHomeResponse_schema_v5_stream_GetHomeResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72112,11 +69421,7 @@ export interface operations {
     GetModelApiRequest_schema_v5_stream_GetModelApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72151,11 +69456,7 @@ export interface operations {
     GetModelApiResponse_schema_v5_stream_GetModelApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72190,11 +69491,7 @@ export interface operations {
     GetModelDraftsApiResponse_schema_v5_stream_GetModelDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72229,11 +69526,7 @@ export interface operations {
     GetParameterApiRequest_schema_v5_stream_GetParameterApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72268,11 +69561,7 @@ export interface operations {
     GetParameterApiResponse_schema_v5_stream_GetParameterApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72307,11 +69596,7 @@ export interface operations {
     GetParameterDraftsApiResponse_schema_v5_stream_GetParameterDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72346,11 +69631,7 @@ export interface operations {
     GetPersonaApiRequest_schema_v5_stream_GetPersonaApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72385,11 +69666,7 @@ export interface operations {
     GetPersonaApiResponse_schema_v5_stream_GetPersonaApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72424,11 +69701,7 @@ export interface operations {
     GetPersonaDraftsApiResponse_schema_v5_stream_GetPersonaDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72463,11 +69736,7 @@ export interface operations {
     GetPracticeRequest_schema_v5_stream_GetPracticeRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72502,11 +69771,7 @@ export interface operations {
     GetPracticeResponse_schema_v5_stream_GetPracticeResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72541,11 +69806,7 @@ export interface operations {
     GetProfileApiRequest_schema_v5_stream_GetProfileApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72580,11 +69841,7 @@ export interface operations {
     GetProfileApiResponse_schema_v5_stream_GetProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72619,11 +69876,7 @@ export interface operations {
     GetProfileDraftsApiResponse_schema_v5_stream_GetProfileDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72658,11 +69911,7 @@ export interface operations {
     GetProviderApiRequest_schema_v5_stream_GetProviderApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72697,11 +69946,7 @@ export interface operations {
     GetProviderApiResponse_schema_v5_stream_GetProviderApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72736,11 +69981,7 @@ export interface operations {
     GetProviderDraftsApiResponse_schema_v5_stream_GetProviderDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72775,11 +70016,7 @@ export interface operations {
     GetRubricApiRequest_schema_v5_stream_GetRubricApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72814,11 +70051,7 @@ export interface operations {
     GetRubricApiResponse_schema_v5_stream_GetRubricApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72853,11 +70086,7 @@ export interface operations {
     GetRubricDraftsApiResponse_schema_v5_stream_GetRubricDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72892,11 +70121,7 @@ export interface operations {
     GetScenarioApiRequest_schema_v5_stream_GetScenarioApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72931,11 +70156,7 @@ export interface operations {
     GetScenarioApiResponse_schema_v5_stream_GetScenarioApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -72970,11 +70191,7 @@ export interface operations {
     GetScenarioDraftsApiResponse_schema_v5_stream_GetScenarioDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73009,11 +70226,7 @@ export interface operations {
     GetSessionDetailRequest_schema_v5_stream_GetSessionDetailRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73048,11 +70261,7 @@ export interface operations {
     GetSessionDetailResponse_schema_v5_stream_GetSessionDetailResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73087,11 +70296,7 @@ export interface operations {
     GetSettingApiRequest_schema_v5_stream_GetSettingApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73126,11 +70331,7 @@ export interface operations {
     GetSettingApiResponse_schema_v5_stream_GetSettingApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73165,11 +70366,7 @@ export interface operations {
     GetSettingDraftsApiResponse_schema_v5_stream_GetSettingDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73204,11 +70401,7 @@ export interface operations {
     GetSimulationApiRequest_schema_v5_stream_GetSimulationApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73243,11 +70436,7 @@ export interface operations {
     GetSimulationApiResponse_schema_v5_stream_GetSimulationApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73282,11 +70471,7 @@ export interface operations {
     GetSimulationDraftsApiResponse_schema_v5_stream_GetSimulationDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73321,11 +70506,7 @@ export interface operations {
     GetSuiteRequest_schema_v5_stream_GetSuiteRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73360,11 +70541,7 @@ export interface operations {
     GetSuiteResponse_schema_v5_stream_GetSuiteResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73399,11 +70576,7 @@ export interface operations {
     GetTestArtifactRequest_schema_v5_stream_GetTestArtifactRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73438,11 +70611,7 @@ export interface operations {
     GetTestArtifactResponse_schema_v5_stream_GetTestArtifactResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73477,11 +70646,7 @@ export interface operations {
     GetToolApiRequest_schema_v5_stream_GetToolApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73516,11 +70681,7 @@ export interface operations {
     GetToolApiResponse_schema_v5_stream_GetToolApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73555,11 +70716,7 @@ export interface operations {
     GetToolDraftsApiResponse_schema_v5_stream_GetToolDraftsApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73594,11 +70751,7 @@ export interface operations {
     HealthRequest_schema_v5_stream_HealthRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73633,11 +70786,7 @@ export interface operations {
     HealthResponse_schema_v5_stream_HealthResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73672,11 +70821,7 @@ export interface operations {
     LeaderboardRequest_schema_v5_stream_LeaderboardRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73711,11 +70856,7 @@ export interface operations {
     LeaderboardResponse_schema_v5_stream_LeaderboardResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73750,11 +70891,7 @@ export interface operations {
     OperationErrorEvent_schema_v5_stream_OperationErrorEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73789,11 +70926,7 @@ export interface operations {
     PatchAgentDraftApiRequest_schema_v5_stream_PatchAgentDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73828,11 +70961,7 @@ export interface operations {
     PatchAgentDraftApiResponse_schema_v5_stream_PatchAgentDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73867,11 +70996,7 @@ export interface operations {
     PatchAuthDraftApiRequest_schema_v5_stream_PatchAuthDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73906,11 +71031,7 @@ export interface operations {
     PatchAuthDraftApiResponse_schema_v5_stream_PatchAuthDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73945,11 +71066,7 @@ export interface operations {
     PatchCohortDraftApiRequest_schema_v5_stream_PatchCohortDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -73984,11 +71101,7 @@ export interface operations {
     PatchCohortDraftApiResponse_schema_v5_stream_PatchCohortDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74023,11 +71136,7 @@ export interface operations {
     PatchDepartmentDraftApiRequest_schema_v5_stream_PatchDepartmentDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74062,11 +71171,7 @@ export interface operations {
     PatchDepartmentDraftApiResponse_schema_v5_stream_PatchDepartmentDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74101,11 +71206,7 @@ export interface operations {
     PatchDocumentDraftApiRequest_schema_v5_stream_PatchDocumentDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74140,11 +71241,7 @@ export interface operations {
     PatchDocumentDraftApiResponse_schema_v5_stream_PatchDocumentDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74179,11 +71276,7 @@ export interface operations {
     PatchEvalDraftApiRequest_schema_v5_stream_PatchEvalDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74218,11 +71311,7 @@ export interface operations {
     PatchEvalDraftApiResponse_schema_v5_stream_PatchEvalDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74257,11 +71346,7 @@ export interface operations {
     PatchFieldDraftApiRequest_schema_v5_stream_PatchFieldDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74296,11 +71381,7 @@ export interface operations {
     PatchFieldDraftApiResponse_schema_v5_stream_PatchFieldDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74335,11 +71416,7 @@ export interface operations {
     PatchModelDraftApiRequest_schema_v5_stream_PatchModelDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74374,11 +71451,7 @@ export interface operations {
     PatchModelDraftApiResponse_schema_v5_stream_PatchModelDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74413,11 +71486,7 @@ export interface operations {
     PatchParameterDraftApiRequest_schema_v5_stream_PatchParameterDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74452,11 +71521,7 @@ export interface operations {
     PatchParameterDraftApiResponse_schema_v5_stream_PatchParameterDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74491,11 +71556,7 @@ export interface operations {
     PatchPersonaDraftApiRequest_schema_v5_stream_PatchPersonaDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74530,11 +71591,7 @@ export interface operations {
     PatchPersonaDraftApiResponse_schema_v5_stream_PatchPersonaDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74569,11 +71626,7 @@ export interface operations {
     PatchProfileDraftApiRequest_schema_v5_stream_PatchProfileDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74608,11 +71661,7 @@ export interface operations {
     PatchProfileDraftApiResponse_schema_v5_stream_PatchProfileDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74647,11 +71696,7 @@ export interface operations {
     PatchProviderDraftApiRequest_schema_v5_stream_PatchProviderDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74686,11 +71731,7 @@ export interface operations {
     PatchProviderDraftApiResponse_schema_v5_stream_PatchProviderDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74725,11 +71766,7 @@ export interface operations {
     PatchRubricDraftApiRequest_schema_v5_stream_PatchRubricDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74764,11 +71801,7 @@ export interface operations {
     PatchRubricDraftApiResponse_schema_v5_stream_PatchRubricDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74803,11 +71836,7 @@ export interface operations {
     PatchScenarioDraftApiRequest_schema_v5_stream_PatchScenarioDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74842,11 +71871,7 @@ export interface operations {
     PatchScenarioDraftApiResponse_schema_v5_stream_PatchScenarioDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74881,11 +71906,7 @@ export interface operations {
     PatchSettingDraftApiRequest_schema_v5_stream_PatchSettingDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74920,11 +71941,7 @@ export interface operations {
     PatchSettingDraftApiResponse_schema_v5_stream_PatchSettingDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74959,11 +71976,7 @@ export interface operations {
     PatchSimulationDraftApiRequest_schema_v5_stream_PatchSimulationDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -74998,11 +72011,7 @@ export interface operations {
     PatchSimulationDraftApiResponse_schema_v5_stream_PatchSimulationDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75037,11 +72046,7 @@ export interface operations {
     PatchToolDraftApiRequest_schema_v5_stream_PatchToolDraftApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75076,11 +72081,7 @@ export interface operations {
     PatchToolDraftApiResponse_schema_v5_stream_PatchToolDraftApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75115,11 +72116,7 @@ export interface operations {
     PersonaGenerationProgressEvent_schema_v5_stream_PersonaGenerationProgressEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75154,11 +72151,7 @@ export interface operations {
     PricingRequest_schema_v5_stream_PricingRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75193,11 +72186,7 @@ export interface operations {
     PricingResponse_schema_v5_stream_PricingResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75232,11 +72221,7 @@ export interface operations {
     ProfileContextApiResponse_schema_v5_stream_ProfileContextApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75271,11 +72256,7 @@ export interface operations {
     RecordRequest_schema_v5_stream_RecordRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75310,11 +72291,7 @@ export interface operations {
     TestAllCompleteEvent_schema_v5_stream_TestAllCompleteEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75349,11 +72326,7 @@ export interface operations {
     TestEndAllPayload_schema_v5_stream_TestEndAllPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75388,11 +72361,7 @@ export interface operations {
     TestEndPayload_schema_v5_stream_TestEndPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75427,11 +72396,7 @@ export interface operations {
     TestGroupPayload_schema_v5_stream_TestGroupPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75466,11 +72431,7 @@ export interface operations {
     TestJoinPayload_schema_v5_stream_TestJoinPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75505,11 +72466,7 @@ export interface operations {
     TestJoinedEvent_schema_v5_stream_TestJoinedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75544,11 +72501,7 @@ export interface operations {
     TestLeavePayload_schema_v5_stream_TestLeavePayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75583,11 +72536,7 @@ export interface operations {
     TestNextPayload_schema_v5_stream_TestNextPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75622,11 +72571,7 @@ export interface operations {
     TestProgressEvent_schema_v5_stream_TestProgressEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75661,11 +72606,7 @@ export interface operations {
     TestRunCompleteEvent_schema_v5_stream_TestRunCompleteEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75700,11 +72641,7 @@ export interface operations {
     TestRunDeltaEvent_schema_v5_stream_TestRunDeltaEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75739,11 +72676,7 @@ export interface operations {
     TestRunPayload_schema_v5_stream_TestRunPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75778,11 +72711,7 @@ export interface operations {
     TestRunStartEvent_schema_v5_stream_TestRunStartEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75817,11 +72746,7 @@ export interface operations {
     TestStartPayload_schema_v5_stream_TestStartPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75856,11 +72781,7 @@ export interface operations {
     TestStartedEvent_schema_v5_stream_TestStartedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75895,11 +72816,7 @@ export interface operations {
     TestStopPayload_schema_v5_stream_TestStopPayload_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75934,11 +72851,7 @@ export interface operations {
     TestStoppedEvent_schema_v5_stream_TestStoppedEvent_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -75973,11 +72886,7 @@ export interface operations {
     UnemulateProfileApiResponse_schema_v5_stream_UnemulateProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76012,11 +72921,7 @@ export interface operations {
     UpdateAgentApiRequest_schema_v5_stream_UpdateAgentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76051,11 +72956,7 @@ export interface operations {
     UpdateAgentApiResponse_schema_v5_stream_UpdateAgentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76090,11 +72991,7 @@ export interface operations {
     UpdateAuthApiRequest_schema_v5_stream_UpdateAuthApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76129,11 +73026,7 @@ export interface operations {
     UpdateAuthApiResponse_schema_v5_stream_UpdateAuthApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76168,11 +73061,7 @@ export interface operations {
     UpdateCohortApiRequest_schema_v5_stream_UpdateCohortApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76207,11 +73096,7 @@ export interface operations {
     UpdateCohortApiResponse_schema_v5_stream_UpdateCohortApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76246,11 +73131,7 @@ export interface operations {
     UpdateDepartmentApiRequest_schema_v5_stream_UpdateDepartmentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76285,11 +73166,7 @@ export interface operations {
     UpdateDepartmentApiResponse_schema_v5_stream_UpdateDepartmentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76324,11 +73201,7 @@ export interface operations {
     UpdateDocumentApiRequest_schema_v5_stream_UpdateDocumentApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76363,11 +73236,7 @@ export interface operations {
     UpdateDocumentApiResponse_schema_v5_stream_UpdateDocumentApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76402,11 +73271,7 @@ export interface operations {
     UpdateEvalApiRequest_schema_v5_stream_UpdateEvalApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76441,11 +73306,7 @@ export interface operations {
     UpdateEvalApiResponse_schema_v5_stream_UpdateEvalApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76480,11 +73341,7 @@ export interface operations {
     UpdateFieldApiRequest_schema_v5_stream_UpdateFieldApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76519,11 +73376,7 @@ export interface operations {
     UpdateFieldApiResponse_schema_v5_stream_UpdateFieldApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76558,11 +73411,7 @@ export interface operations {
     UpdateModelApiRequest_schema_v5_stream_UpdateModelApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76597,11 +73446,7 @@ export interface operations {
     UpdateModelApiResponse_schema_v5_stream_UpdateModelApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76636,11 +73481,7 @@ export interface operations {
     UpdateParameterApiRequest_schema_v5_stream_UpdateParameterApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76675,11 +73516,7 @@ export interface operations {
     UpdateParameterApiResponse_schema_v5_stream_UpdateParameterApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76714,11 +73551,7 @@ export interface operations {
     UpdatePersonaApiRequest_schema_v5_stream_UpdatePersonaApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76753,11 +73586,7 @@ export interface operations {
     UpdatePersonaApiResponse_schema_v5_stream_UpdatePersonaApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76792,11 +73621,7 @@ export interface operations {
     UpdateProfileApiRequest_schema_v5_stream_UpdateProfileApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76831,11 +73656,7 @@ export interface operations {
     UpdateProfileApiResponse_schema_v5_stream_UpdateProfileApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76870,11 +73691,7 @@ export interface operations {
     UpdateProviderApiRequest_schema_v5_stream_UpdateProviderApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76909,11 +73726,7 @@ export interface operations {
     UpdateProviderApiResponse_schema_v5_stream_UpdateProviderApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76948,11 +73761,7 @@ export interface operations {
     UpdateRubricApiRequest_schema_v5_stream_UpdateRubricApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -76987,11 +73796,7 @@ export interface operations {
     UpdateRubricApiResponse_schema_v5_stream_UpdateRubricApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77026,11 +73831,7 @@ export interface operations {
     UpdateScenarioApiRequest_schema_v5_stream_UpdateScenarioApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77065,11 +73866,7 @@ export interface operations {
     UpdateScenarioApiResponse_schema_v5_stream_UpdateScenarioApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77104,11 +73901,7 @@ export interface operations {
     UpdateSettingApiRequest_schema_v5_stream_UpdateSettingApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77143,11 +73936,7 @@ export interface operations {
     UpdateSettingApiResponse_schema_v5_stream_UpdateSettingApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77182,11 +73971,7 @@ export interface operations {
     UpdateSimulationApiRequest_schema_v5_stream_UpdateSimulationApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77221,11 +74006,7 @@ export interface operations {
     UpdateSimulationApiResponse_schema_v5_stream_UpdateSimulationApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77260,11 +74041,7 @@ export interface operations {
     UpdateToolApiRequest_schema_v5_stream_UpdateToolApiRequest_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -77299,11 +74076,7 @@ export interface operations {
     UpdateToolApiResponse_schema_v5_stream_UpdateToolApiResponse_post: {
         parameters: {
             query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
