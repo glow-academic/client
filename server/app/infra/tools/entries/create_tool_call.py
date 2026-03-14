@@ -162,6 +162,7 @@ async def create_tool_call(
         result=raw_result,
         run_id=run.id,
         call_id=call_id,
+        call_upload_id=call_upload_id if tool_id is not None else None,
         message_id=msg.message_id,
         text_id=msg.text_id,
         text_upload_junction_id=msg.text_upload_junction_id,

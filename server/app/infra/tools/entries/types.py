@@ -11,6 +11,7 @@ class CreateToolSetupResponse(BaseModel):
     result: Any | None = None
     run_id: UUID
     call_id: UUID | None
+    call_upload_id: UUID | None = None  # Receipt file UUID (filename for the .json)
     message_id: UUID
     text_id: UUID
     text_upload_junction_id: UUID

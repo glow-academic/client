@@ -102,13 +102,6 @@ async def run_artifact_operation_with_audit(
     effective_profiles_id = common.profile.profiles_id
     effective_upload_folder = upload_folder or UPLOAD_FOLDER
 
-    # --- Started ---
-    await internal_sio.emit(f"{event_prefix}.started", {
-        "sid": sid,
-        "rooms": effective_rooms,
-        **arguments,
-    })
-
     can_audit = all([
         tool_id,
         effective_session_id,
@@ -117,39 +110,66 @@ async def run_artifact_operation_with_audit(
     ])
 
     # --- Execute ---
-    try:
-        if can_audit:
-            async def _tool_fn(_conn: asyncpg.Connection, **_arguments: Any) -> Any:
-                result = await runner()
-                if hasattr(result, "model_dump"):
-                    return result.model_dump(mode="json")
-                return result
+    call_upload_id: UUID | None = None
+    tool_error: Exception | None = None
 
-            async with pool.acquire() as conn:
-                audit_result = await create_tool_call(
-                    conn,
-                    group_id=effective_group_id,  # type: ignore[arg-type]
-                    session_id=effective_session_id,  # type: ignore[arg-type]
-                    profile_id=effective_profiles_id,  # type: ignore[arg-type]
-                    upload_folder=effective_upload_folder,
-                    tool_fn=_tool_fn,
-                    arguments=arguments,
-                    tool_id=tool_id,
-                    role=role,
-                    mcp=mcp,
-                    raise_on_error=True,
-                )
-            result_data = audit_result.result
-        else:
+    if can_audit:
+        async def _tool_fn(_conn: asyncpg.Connection, **_arguments: Any) -> Any:
+            result = await runner()
+            if hasattr(result, "model_dump"):
+                return result.model_dump(mode="json")
+            return result
+
+        async with pool.acquire() as conn:
+            audit_result = await create_tool_call(
+                conn,
+                group_id=effective_group_id,  # type: ignore[arg-type]
+                session_id=effective_session_id,  # type: ignore[arg-type]
+                profile_id=effective_profiles_id,  # type: ignore[arg-type]
+                upload_folder=effective_upload_folder,
+                tool_fn=_tool_fn,
+                arguments=arguments,
+                tool_id=tool_id,
+                role=role,
+                mcp=mcp,
+                raise_on_error=False,
+            )
+        result_data = audit_result.result
+        call_upload_id = audit_result.call_upload_id
+
+        # Check if the runner failed (captured by create_tool_call)
+        if isinstance(result_data, dict) and result_data.get("success") is False:
+            tool_error = Exception(result_data.get("message", "Unknown error"))
+    else:
+        try:
             result_data = await runner()
-    except Exception as exc:
+        except Exception as exc:
+            await internal_sio.emit(f"{event_prefix}.failed", {
+                "sid": sid,
+                "rooms": effective_rooms,
+                "message": str(exc),
+                "error_type": type(exc).__name__,
+            })
+            raise
+
+    # --- Started (call_id always available when audited) ---
+    await internal_sio.emit(f"{event_prefix}.started", {
+        "sid": sid,
+        "rooms": effective_rooms,
+        "call_id": str(call_upload_id) if call_upload_id else None,
+        **arguments,
+    })
+
+    # --- Failed ---
+    if tool_error is not None:
         await internal_sio.emit(f"{event_prefix}.failed", {
             "sid": sid,
             "rooms": effective_rooms,
-            "message": str(exc),
-            "error_type": type(exc).__name__,
+            "call_id": str(call_upload_id) if call_upload_id else None,
+            "message": str(tool_error),
+            "error_type": type(tool_error).__name__,
         })
-        raise
+        raise tool_error
 
     # --- Completed ---
     output = (
@@ -163,6 +183,7 @@ async def run_artifact_operation_with_audit(
     await internal_sio.emit(f"{event_prefix}.completed", {
         "sid": sid,
         "rooms": effective_rooms,
+        "call_id": str(call_upload_id) if call_upload_id else None,
         **output,
     })
 
