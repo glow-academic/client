@@ -4,30 +4,12 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
-from starlette.requests import Request
 
 from app.utils.logging.db_logger import profile_id_context
-from app.utils.mcp.get_mcp import get_mcp, parse_mcp_header
 from app.utils.mcp.get_mcp_profile_id import (
     get_mcp_profile_id,
     resolve_mcp_profile_id,
 )
-
-
-@pytest.mark.parametrize(
-    ("raw_value", "expected"),
-    [
-        ("true", True),
-        ("TRUE", True),
-        ("1", True),
-        (" yes ", True),
-        ("false", False),
-        ("0", False),
-        (None, False),
-    ],
-)
-def test_parse_mcp_header(raw_value, expected):
-    assert parse_mcp_header(raw_value) is expected
 
 
 def test_resolve_mcp_profile_id_prefers_request_state():
@@ -54,23 +36,6 @@ def test_resolve_mcp_profile_id_raises_when_nothing_available():
         resolve_mcp_profile_id(None)
 
     assert exc_info.value.status_code == 500
-
-
-@pytest.mark.asyncio
-async def test_get_mcp_sets_request_state_and_returns_boolean():
-    request = Request(
-        {
-            "type": "http",
-            "method": "GET",
-            "path": "/",
-            "headers": [],
-        }
-    )
-
-    result = await get_mcp(request, x_mcp="yes")
-
-    assert result is True
-    assert request.state.mcp is True
 
 
 def test_get_mcp_profile_id_uses_injected_request_getter():

@@ -83,7 +83,6 @@ def _build_v5_artifact_test_app(
 ) -> FastAPI:
     """Mount a single v5 artifact router with test auth state overrides."""
     from app.infra.identity.middleware import require_auth
-    from app.utils.mcp.get_mcp import get_mcp
 
     async def _require_auth_override(request: Request) -> None:
         profile_id = request_state["profile_id"]
@@ -92,21 +91,16 @@ def _build_v5_artifact_test_app(
         request.state.profile_id = profile_id
         request.state.session_id = request_state["session_id"]
 
-    async def _get_mcp_override(request: Request) -> bool:
-        request.state.mcp = False
-        return False
-
     app = FastAPI()
     root_router = APIRouter(
         prefix="/v5",
-        dependencies=[Depends(require_auth), Depends(get_mcp)],
+        dependencies=[Depends(require_auth)],
     )
     root_router.include_router(artifact_router)
     for extra_router in extra_routers or []:
         root_router.include_router(extra_router)
     app.include_router(root_router)
     app.dependency_overrides[require_auth] = _require_auth_override
-    app.dependency_overrides[get_mcp] = _get_mcp_override
     return app
 
 
@@ -116,7 +110,6 @@ def _build_v5_events_test_app(
 ) -> FastAPI:
     """Mount the centralized v5 events router with test auth state overrides."""
     from app.infra.identity.middleware import require_auth
-    from app.utils.mcp.get_mcp import get_mcp
 
     async def _require_auth_override(request: Request) -> None:
         profile_id = request_state["profile_id"]
@@ -125,21 +118,16 @@ def _build_v5_events_test_app(
         request.state.profile_id = profile_id
         request.state.session_id = request_state["session_id"]
 
-    async def _get_mcp_override(request: Request) -> bool:
-        request.state.mcp = False
-        return False
-
     from app.routes.v5.stream import router as stream_router
 
     app = FastAPI()
     root_router = APIRouter(
         prefix="/v5",
-        dependencies=[Depends(require_auth), Depends(get_mcp)],
+        dependencies=[Depends(require_auth)],
     )
     root_router.include_router(stream_router)
     app.include_router(root_router)
     app.dependency_overrides[require_auth] = _require_auth_override
-    app.dependency_overrides[get_mcp] = _get_mcp_override
     return app
 
 

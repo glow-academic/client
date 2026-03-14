@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 
-from .endpoints import register_endpoints
+from .register import register_tools
+from .tool_graph import get_mcp_tool_graph
 
 load_dotenv()
 
@@ -51,7 +52,8 @@ mcp_server = FastMCP(
     transport_security=transport_security,
 )
 
-# Register all endpoints
-register_endpoints(mcp_server)
+# Register tools from the tool graph (introspection-based)
+tool_graph = get_mcp_tool_graph()
+register_tools(mcp_server, tool_graph)
 
 __all__ = ["mcp_server"]

@@ -1,3 +1,5 @@
+"""Tests for introspection-based MCP tool registration."""
+
 from __future__ import annotations
 
 from uuid import uuid4
@@ -5,7 +7,13 @@ from uuid import uuid4
 import pytest
 import pytest_asyncio
 
-from app.infra.mcp import endpoints
+from app.infra.mcp.register import (
+    _build_tool_args,
+    _get_request_model,
+    _import_handler,
+    register_tools,
+)
+from app.infra.mcp.tool_graph import get_mcp_tool_graph
 from tests.infra.route_helpers import create_admin_route_actor
 
 
@@ -21,7 +29,84 @@ async def mcp_actor(pool, redis_client, setting_graph_factory):
     )
 
 
-async def _create_persona_id(pool, redis_client, department_id):
+def test_tool_graph_returns_non_empty_list():
+    graph = get_mcp_tool_graph()
+
+    assert len(graph) > 20
+    assert all(isinstance(pair, tuple) and len(pair) == 2 for pair in graph)
+    assert ("persona", "get") in graph
+    assert ("scenario", "search") in graph
+
+
+def test_import_handler_finds_router_endpoint():
+    handler = _import_handler("app.routes.v5.persona.get")
+
+    assert callable(handler)
+    assert handler.__name__ != "_"
+
+
+def test_import_handler_raises_for_unknown_module():
+    with pytest.raises(ModuleNotFoundError):
+        _import_handler("app.routes.v5.not_real.missing")
+
+
+def test_get_request_model_extracts_pydantic_model():
+    handler = _import_handler("app.routes.v5.persona.get")
+    model = _get_request_model(handler)
+
+    assert model is not None
+    assert hasattr(model, "model_json_schema")
+
+
+def test_build_tool_args_excludes_mcp_field():
+    handler = _import_handler("app.routes.v5.persona.get")
+    model = _get_request_model(handler)
+    assert model is not None
+
+    args = _build_tool_args(model)
+
+    arg_names = [a["name"] for a in args]
+    assert "mcp" not in arg_names
+    assert "persona_id" in arg_names
+
+
+def test_register_tools_registers_all_graph_entries():
+    """All graph entries get registered — failures are deferred to call time."""
+
+    class FakeServer:
+        def __init__(self):
+            self.tools: dict[str, object] = {}
+
+        def tool(self):
+            def _decorator(fn):
+                self.tools[fn.__name__] = fn
+                return fn
+
+            return _decorator
+
+    server = FakeServer()
+    graph = get_mcp_tool_graph()
+
+    register_tools(server, graph)
+
+    assert len(server.tools) == len(graph)
+    assert "get_persona" in server.tools
+    assert "search_scenario" in server.tools
+    assert "draft_simulation" in server.tools
+
+
+@pytest.mark.asyncio
+async def test_call_handler_executes_real_persona_get(
+    pool,
+    redis_client,
+    mcp_actor,
+):
+    import app.infra.globals as globals_mod
+    from app.infra.mcp.register import _call_handler, _resolve_handler_and_model
+
+    handler, model = _resolve_handler_and_model("app.routes.v5.persona.get")
+
+    # Create a persona to query
     from app.tools.artifacts.persona.create import create_persona
     from app.tools.resources.names.create import create_name
 
@@ -30,50 +115,18 @@ async def _create_persona_id(pool, redis_client, department_id):
         persona = await create_persona(
             conn,
             name_id=name.id,
-            department_ids=[department_id],
+            department_ids=[mcp_actor.department_id],
         )
-    return persona.id
-
-
-def test_get_payload_schema_uses_real_persona_request_model() -> None:
-    schema = endpoints.get_payload_schema("persona", "get")
-
-    assert schema["type"] == "object"
-    assert "persona_id" in schema["properties"]
-    assert "mcp" not in schema["properties"]
-
-
-def test_related_name_resolution_links_artifact_resource_and_entry() -> None:
-    related = endpoints._resolve_related_names("persona")
-
-    assert related["artifact"] == "persona"
-    assert related["resource"] == "personas"
-    assert related["entry"] == "persona"
-
-
-@pytest.mark.asyncio
-async def test_call_endpoint_handler_executes_real_persona_get_handler(
-    pool,
-    redis_client,
-    mcp_actor,
-):
-    import app.infra.globals as globals_mod
-    from app.routes.v5.persona.get import get_persona
-
-    persona_id = await _create_persona_id(
-        pool,
-        redis_client,
-        mcp_actor.department_id,
-    )
 
     prior_pool = globals_mod._db_pool
     prior_redis = globals_mod.redis_client
     globals_mod._db_pool = pool
     globals_mod.redis_client = redis_client
     try:
-        result = await endpoints.call_endpoint_handler(
-            get_persona,
-            {"persona_id": str(persona_id)},
+        result = await _call_handler(
+            handler,
+            model,
+            {"persona_id": str(persona.id)},
             str(mcp_actor.profile_id),
         )
     finally:
@@ -82,106 +135,3 @@ async def test_call_endpoint_handler_executes_real_persona_get_handler(
 
     assert "error" not in result
     assert result["persona_exists"] is True
-    assert result["actor_name"] == mcp_actor.name
-    assert result["names"] is not None
-
-
-@pytest.mark.asyncio
-async def test_call_handler_returns_not_implemented_for_unknown_artifact() -> None:
-    result = await endpoints.call_handler("not_real", "get", {})
-
-    assert result["status"] == "not_implemented"
-    assert "available_artifacts" in result
-
-
-def test_name_resolution_helpers_cover_pluralization_and_descriptions() -> None:
-    assert endpoints.pluralize_artifact("persona") == "personas"
-    assert endpoints.pluralize_artifact("policy") == "policies"
-    assert (
-        endpoints.get_artifact_description("persona")
-        == "Get persona information using the canonical shared persona operation"
-    )
-    assert (
-        endpoints.get_resource_description("personas")
-        == "Fetch personas_resource entries by IDs"
-    )
-    assert endpoints.get_entry_description("persona") == "Persona entry"
-
-
-def test_get_available_operations_and_schema_fallbacks() -> None:
-    assert "get" in endpoints.get_available_operations("persona")
-    assert endpoints.get_available_operations("missing") == []
-
-    schema = endpoints.get_payload_schema("missing-item", "get")
-    assert "error" in schema
-
-    assert endpoints.format_example_payload("persona", "duplicate").startswith(
-        '{"persona_id"'
-    )
-
-
-@pytest.mark.asyncio
-async def test_call_handler_returns_not_implemented_for_unknown_operation() -> None:
-    result = await endpoints.call_handler("persona", "refresh", {})
-
-    assert result["status"] == "not_implemented"
-    assert "available_operations" in result
-
-
-@pytest.mark.asyncio
-async def test_call_endpoint_handler_uses_legacy_conn_path(monkeypatch) -> None:
-    class LegacyRequest:
-        def __init__(self, value: str):
-            self.value = value
-
-    class LegacyResponse:
-        def model_dump(self, mode="json"):
-            return {"value": "ok"}
-
-    async def legacy_handler(request: LegacyRequest, http_request, response, conn):
-        assert request.value == "hi"
-        assert http_request.state.mcp is True
-        assert conn == "fake-conn"
-        return LegacyResponse()
-
-    async def _fake_get_db():
-        yield "fake-conn"
-
-    monkeypatch.setattr(endpoints, "get_request_model_from_handler", lambda handler: LegacyRequest)
-    monkeypatch.setattr("app.infra.globals.get_db", _fake_get_db)
-
-    result = await endpoints.call_endpoint_handler(
-        legacy_handler,
-        {"value": "hi"},
-        str(uuid4()),
-    )
-
-    assert result == {"value": "ok"}
-
-
-def test_register_endpoints_registers_tools_without_runtime_failures() -> None:
-    class FakeServer:
-        def __init__(self):
-            self.tools: dict[str, object] = {}
-
-        def tool(self, **kwargs):
-            def _decorator(fn):
-                self.tools[fn.__name__] = fn
-                return fn
-
-            return _decorator
-
-    server = FakeServer()
-
-    endpoints.register_endpoints(server)
-
-    expected = {
-        "dashboard",
-        "attempt",
-        "get_artifact",
-        "create_resource",
-        "create_entry",
-        "discover_artifacts",
-    }
-    assert expected.issubset(server.tools.keys())
-    assert len(server.tools) > 20

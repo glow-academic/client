@@ -81,6 +81,7 @@ class Identity:
     is_emulation: bool = False
     actor_profile_id: UUID | None = None
     emulation_depth: int = 0
+    is_mcp: bool = False
 
 
 # ---------------------------------------------------------------------------

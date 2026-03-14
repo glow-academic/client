@@ -49,8 +49,6 @@ from app.routes.v5.stream import router as stream_router
 from app.routes.v5.test import router as test_artifact_router
 from app.routes.v5.tool import router as tools_router
 from app.routes.v5.unemulate import router as unemulate_router
-from app.utils.mcp.get_mcp import get_mcp
-
 # ============================================================================
 # Main Router — /v5
 # ============================================================================
@@ -59,7 +57,6 @@ router: APIRouter = APIRouter(
     tags=["v5"],
     dependencies=[
         Depends(require_auth),
-        Depends(get_mcp),
     ],
 )
 
