@@ -298,7 +298,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     ("record", "export"): None,
     ("record", "refresh"): None,
     # reports (view-only)
-    ("reports", "get"): (f"{_A}.reports.get", "get_reports_websocket"),
+    ("reports", "search"): (f"{_A}.reports.search", "get_reports"),
     ("reports", "list"): None,
     ("reports", "save"): None,
     ("reports", "delete"): None,

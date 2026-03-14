@@ -49,10 +49,8 @@ ROUTE_TO_ARTIFACT: dict[str, str] = {}
 # View endpoint overrides (when convention doesn't hold)
 # ---------------------------------------------------------------------------
 VIEW_ENDPOINT_OVERRIDES: dict[str, frozenset[str]] = {
-    "dashboard": frozenset(
-        {"get", "header", "primary", "secondary", "footer", "refresh", "docs"}
-    ),
-    "reports": frozenset({"get", "export", "refresh", "docs"}),
+    "dashboard": frozenset({"get", "refresh", "docs"}),
+    "reports": frozenset({"search", "export", "refresh", "docs"}),
     "activity": frozenset({"get", "problem", "refresh", "resolve", "docs"}),
     "attempt": frozenset({"get", "archive", "certifficate", "docs"}),
     "record": frozenset(),

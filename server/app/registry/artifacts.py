@@ -78,21 +78,10 @@ _VIEWS: dict[str, tuple[str, frozenset[str]]] = {
     # Full panel views
     "dashboard": (
         "analytics",
-        frozenset(
-            {
-                "get",
-                "header",
-                "primary",
-                "secondary",
-                "footer",
-                "refresh",
-                "docs",
-                "export",
-            }
-        ),
+        frozenset({"get", "refresh", "docs", "export"}),
     ),
     # Analytics views with refresh
-    "reports": ("analytics", frozenset({"get", "export", "refresh", "docs"})),
+    "reports": ("analytics", frozenset({"search", "export", "refresh", "docs"})),
     "leaderboard": ("leaderboard", frozenset({"get", "refresh", "docs", "export"})),
     "activity": (
         "analytics",

@@ -44,7 +44,7 @@ def _get_handler(module_path: str, func_name: str) -> Any:
 ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "activity": {
         "get": ("app.routes.v5.activity.get", "get_activity"),
-        "docs": ("app.infra.activity.docs", "docs_activity_impl"),
+        "docs": ("app.routes.v5.activity.docs", "get_activity_docs_endpoint"),
         "refresh": ("app.routes.v5.activity.refresh", "activity_refresh"),
     },
     # "agent": {
@@ -58,7 +58,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "attempt": {
         "get": ("app.routes.v5.attempt.get", "attempt_get"),
-        "docs": ("app.infra.attempt.docs", "docs_attempt_impl"),
+        "docs": ("app.routes.v5.attempt.docs", "get_attempt_docs_endpoint"),
     },
     # "auth": {
     #     "get": ("app.routes.v5.auth.get", "get_auth"),
@@ -72,7 +72,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "benchmark": {
         "get": ("app.routes.v5.benchmark.get", "get_benchmark"),
         "refresh": ("app.routes.v5.benchmark.refresh", "benchmark_refresh"),
-        "docs": ("app.infra.benchmark.docs", "docs_benchmark_impl"),
+        "docs": ("app.routes.v5.benchmark.docs", "get_benchmark_docs_endpoint"),
     },
     "cohort": {
         "get": ("app.routes.v5.cohort.get", "get_cohort"),
@@ -80,22 +80,12 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "delete": ("app.routes.v5.cohort.delete", "delete_cohort"),
         "duplicate": ("app.routes.v5.cohort.duplicate", "duplicate_cohort"),
         "draft": ("app.routes.v5.cohort.draft", "patch_cohort_draft"),
-        "docs": ("app.infra.cohort.docs", "docs_cohort_impl"),
+        "docs": ("app.routes.v5.cohort.docs", "get_cohort_docs_endpoint"),
     },
     "dashboard": {
         "get": ("app.routes.v5.dashboard.get", "get_dashboard"),
-        "header": ("app.routes.v5.dashboard.header", "get_dashboard_header"),
-        "footer": ("app.routes.v5.dashboard.footer", "get_dashboard_footer"),
-        "primary": (
-            "app.routes.v5.dashboard.primary",
-            "get_dashboard_primary",
-        ),
-        "secondary": (
-            "app.routes.v5.dashboard.secondary",
-            "get_dashboard_secondary",
-        ),
         "refresh": ("app.routes.v5.dashboard.refresh", "dashboard_refresh"),
-        "docs": ("app.infra.dashboard.docs", "docs_dashboard_impl"),
+        "docs": ("app.routes.v5.dashboard.docs", "get_dashboard_docs_endpoint"),
     },
     # "department": {
     #     "get": ("app.routes.v5.department.get", "get_department"),
@@ -138,7 +128,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "group": {
         "get": ("app.routes.v5.group.get", "get_group"),
-        "docs": ("app.infra.group.docs", "docs_group_impl"),
+        "docs": ("app.routes.v5.group.docs", "get_group_docs_endpoint"),
     },
     # "health": {
     #     "get": ("app.routes.v5.health.get", "get_health"),
@@ -151,7 +141,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "app.routes.v5.leaderboard.refresh",
             "leaderboard_refresh",
         ),
-        "docs": ("app.infra.leaderboard.docs", "docs_leaderboard_impl"),
+        "docs": ("app.routes.v5.leaderboard.docs", "get_leaderboard_docs_endpoint"),
     },
     # "model": {
     #     "get": ("app.routes.v5.model.get", "get_model"),
@@ -180,12 +170,12 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "delete": ("app.routes.v5.persona.delete", "delete_persona"),
         "duplicate": ("app.routes.v5.persona.duplicate", "duplicate_persona"),
         "draft": ("app.routes.v5.persona.draft", "patch_persona_draft"),
-        "docs": ("app.infra.persona.docs", "docs_persona_impl"),
+        "docs": ("app.routes.v5.persona.docs", "get_persona_docs_endpoint"),
     },
     "pricing": {
         "get": ("app.routes.v5.pricing.get", "get_pricing"),
         "refresh": ("app.routes.v5.pricing.refresh", "pricing_refresh"),
-        "docs": ("app.infra.pricing.docs", "docs_pricing_impl"),
+        "docs": ("app.routes.v5.pricing.docs", "get_pricing_docs_endpoint"),
     },
     # "profile": {
     #     "get": ("app.routes.v5.profile.get", "get_profile"),
@@ -206,9 +196,9 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     #     "docs": ("app.infra.provider_docs", "docs_provider_client"),
     # },
     "reports": {
-        "get": ("app.routes.v5.reports.search", "get_reports"),
+        "search": ("app.routes.v5.reports.search", "get_reports"),
         "refresh": ("app.routes.v5.reports.refresh", "reports_refresh"),
-        "docs": ("app.infra.reports.docs", "docs_reports_impl"),
+        "docs": ("app.routes.v5.reports.docs", "get_reports_docs_endpoint"),
     },
     # "rubric": {
     #     "get": ("app.routes.v5.rubric.get", "get_rubric"),
@@ -228,11 +218,11 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "duplicate_scenario",
         ),
         "draft": ("app.routes.v5.scenario.draft", "patch_scenario_draft"),
-        "docs": ("app.infra.scenario.docs", "docs_scenario_impl"),
+        "docs": ("app.routes.v5.scenario.docs", "get_scenario_docs_endpoint"),
     },
     "session": {
         "get": ("app.routes.v5.session.get", "get_session"),
-        "docs": ("app.infra.session.docs", "docs_session_impl"),
+        "docs": ("app.routes.v5.session.docs", "get_session_docs_endpoint"),
     },
     # "setting": {
     #     "get": ("app.routes.v5.setting.get", "get_setting"),
@@ -252,7 +242,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "duplicate_simulation",
         ),
         "draft": ("app.routes.v5.simulation.draft", "patch_simulation_draft"),
-        "docs": ("app.infra.simulation.docs", "docs_simulation_impl"),
+        "docs": ("app.routes.v5.simulation.docs", "get_simulation_docs_endpoint"),
     },
     # "test": {
     #     "get": ("app.routes.v5.test.get", "get_test_artifact"),
@@ -272,7 +262,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "list": ("app.routes.v5.chat.list", "chat_get"),
         "draft": ("app.routes.v5.chat.draft", "patch_chat_draft"),
         "refresh": ("app.routes.v5.chat.refresh", "chat_refresh"),
-        "docs": ("app.infra.chat.docs", "docs_chat_impl"),
+        "docs": ("app.routes.v5.chat.docs", "get_chat_docs_endpoint"),
     },
 }
 
@@ -1097,7 +1087,7 @@ def register_endpoints(server: FastMCP) -> None:
         }
         if kwargs:
             payload.update(kwargs)
-        return await call_handler("reports", "get", payload)
+        return await call_handler("reports", "search", payload)
 
     # --- health tool temporarily commented out ---
     # @server.tool()
@@ -1654,8 +1644,11 @@ def register_endpoints(server: FastMCP) -> None:
             registry = registry_map[label]
             if "docs" in registry[key]:
                 try:
-                    handler = _get_handler(*registry[key]["docs"])
-                    collected[label] = handler()
+                    if label == "artifact":
+                        collected[label] = await call_handler(key, "docs", {})
+                    else:
+                        handler = _get_handler(*registry[key]["docs"])
+                        collected[label] = handler()
                 except Exception:
                     pass
             ops = [op for op in registry[key] if op != "docs"]
