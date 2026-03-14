@@ -6,6 +6,7 @@ Handles profile-based socket management, guest connections, and cleanup.
 import uuid
 
 from app.infra.globals import get_internal_sio, get_pool, sio
+from app.infra.identity.socket import remove_socket_identity, store_socket_identity
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -88,9 +89,7 @@ async def connect(
       3. Guest connections use guestId query param (no auth required)
     """
 
-    profile_id: str | None = None
-    guest_id: str | None = None
-    session_id: str | None = None
+    identity = None
 
     # Primary: resolve identity from auth token
     if auth and auth.get("token"):
@@ -113,15 +112,19 @@ async def connect(
             if token:
                 pool = get_pool()
                 identity = await resolve_identity(token, pool)
-                profile_id = str(identity.profile_id)
-                session_id = str(identity.session_id)
         except Exception:
             logger.warning("Failed to resolve identity from auth token for sid %s", sid)
 
     # Reject unauthenticated connections
-    if not profile_id:
+    if not identity:
         logger.warning("Rejected unauthenticated socket connection for sid %s", sid)
         return False
+
+    profile_id = str(identity.profile_id)
+    session_id = str(identity.session_id)
+
+    # Store full Identity in Redis for input handlers
+    await store_socket_identity(sid, identity)
 
     # Evict old socket for this profile
     old_sid = await get_socket_owner(profile_id)
@@ -155,6 +158,7 @@ async def disconnect(sid: str) -> None:
     if profile_to_cleanup:
         await remove_socket_owner(profile_to_cleanup)
         await _mark_profile_inactive(profile_to_cleanup, sid)
+    await remove_socket_identity(sid)
 
     # Guest cleanup
     if await is_guest_socket(sid):

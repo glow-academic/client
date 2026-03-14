@@ -5,23 +5,18 @@ from uuid import UUID
 
 from app.infra.events.audit import run_artifact_operation_with_audit
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
+from app.infra.identity.socket import resolve_socket_identity
 from app.infra.persona.get import get_persona_impl
 from app.infra.persona.types import GetPersonaApiRequest
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.websocket.find_session_by_socket import find_session_by_socket
 
 internal_sio = get_internal_sio()
 
 
 @sio.on("persona.get")  # type: ignore
 async def persona_get(sid: str, data: dict[str, Any]) -> None:
-    profile_id_str = await find_profile_by_socket(sid)
-    if not profile_id_str:
+    identity = await resolve_socket_identity(sid)
+    if not identity:
         return
-    session_id_str = await find_session_by_socket(sid)
-
-    profile_id = UUID(profile_id_str)
-    session_id = UUID(session_id_str) if session_id_str else None
 
     try:
         payload = GetPersonaApiRequest(**data)
@@ -42,16 +37,16 @@ async def persona_get(sid: str, data: dict[str, Any]) -> None:
         redis,
         artifact="persona",
         operation="get",
-        profile_id=profile_id,
-        session_id=session_id,
+        profile_id=identity.profile_id,
+        session_id=identity.session_id,
         draft_id=payload.draft_id,
         sid=sid,
         rooms=[sid],
         runner=lambda: get_persona_impl(
             pool,
             redis,
-            profile_id=profile_id,
-            session_id=session_id,
+            profile_id=identity.profile_id,
+            session_id=identity.session_id,
             persona_id=payload.persona_id,
             draft_id=payload.draft_id,
             parameter_ids=[UUID(pid) for pid in payload.parameter_ids]
