@@ -1,6 +1,11 @@
 """Stream delivery — GET /v5/stream (SSE) + POST /v5/stream/{Type} (OpenAPI schema).
 
 The SSE endpoint streams artifact events to clients.
+Authorization is handled by the stream session: callers must first
+POST /v5/connect to obtain an ``sid``, then POST /v5/attempt/join (or
+/v5/test/join) to subscribe to specific entities.  The SSE endpoint
+only delivers events matching joined entities.
+
 The schema routes are dummy POST endpoints so ``openapi-typescript``
 generates strongly-typed client payloads from EVENT_REGISTRY.
 """
@@ -8,11 +13,11 @@ generates strongly-typed client payloads from EVENT_REGISTRY.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -21,7 +26,7 @@ from app.infra.globals import get_pool, get_redis_client
 from app.infra.stream.hub import subscribe as subscribe_live_events
 from app.infra.stream.hub import unsubscribe as unsubscribe_live_events
 from app.infra.stream.registry import EVENT_REGISTRY
-from app.infra.stream.shared import resolve_subscription
+from app.infra.stream.session import get_joined_entities, get_session_profile
 
 # --- Socket types not yet modeled as artifact operations ----------------
 from app.socket.v5.client.types import (
@@ -66,75 +71,119 @@ router = APIRouter(prefix="/stream", tags=["stream"])
 @router.get("/")
 async def stream_events(
     http_request: Request,
-    artifact: str = Query(...),
-    operation: str = Query(...),
-    entity_id: UUID | None = Query(default=None),
+    sid: str = Query(...),
     cursor: str | None = Query(default=None),
     types: list[str] | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> StreamingResponse:
-    """Stream artifact events via SSE using the centralized declaration registry."""
-    _, operation_config = await resolve_subscription(
-        artifact=artifact,
-        operation=operation,
-        entity_id=entity_id,
-        profile_id=http_request.state.profile_id,
-        session_id=http_request.state.session_id,
-        event_types=types,
-    )
+    """Stream artifact events via SSE, scoped to the session's joined entities.
 
-    profile_id = http_request.state.profile_id
-    live_queue = subscribe_live_events(
-        artifact=artifact,
-        operation=operation,
-        entity_id=entity_id,
-        event_types=types,
-    )
+    Callers must first obtain an ``sid`` via POST /v5/connect, then join
+    entities via POST /v5/attempt/join or POST /v5/test/join.  Only events
+    matching joined entities are delivered.
+    """
+    profile_id: UUID | None = getattr(http_request.state, "profile_id", None)
+    if not profile_id:
+        raise HTTPException(status_code=401, detail="Profile ID is required.")
 
-    async def _gen():
+    profile_id = UUID(str(profile_id))
+
+    # Validate session ownership
+    session_profile = await get_session_profile(sid)
+    if not session_profile or session_profile != profile_id:
+        raise HTTPException(status_code=403, detail="Session not found or not owned.")
+
+    # Resolve joined entities for this session
+    joined = await get_joined_entities(sid)
+    if not joined:
+        raise HTTPException(
+            status_code=400,
+            detail="No entities joined. Use /v5/attempt/join or /v5/test/join first.",
+        )
+
+    # Subscribe to live events for each joined entity
+    type_filter = set(types) if types else None
+    queues = []
+    for key in joined:
+        artifact, entity_id_str = key.split(":", 1)
+        entity_id = UUID(entity_id_str)
+        queue = subscribe_live_events(
+            artifact=artifact,
+            operation="*",
+            entity_id=entity_id,
+            event_types=types,
+        )
+        queues.append(queue)
+
+    async def _gen() -> AsyncIterator[str]:
         current_cursor = cursor
         try:
             while True:
-                events = await read_artifact_events(
-                    get_pool(),
-                    get_redis_client(),
-                    artifact=artifact,
-                    operation=operation,
-                    entity_id=entity_id,
-                    cursor=current_cursor,
-                    event_types=types,
-                    limit=limit,
-                )
-                if operation_config.filter_events is not None:
-                    events = await operation_config.filter_events(profile_id, events)
+                # Read persisted events for all joined entities across all operations
+                all_events = []
+                pool = get_pool()
+                redis = get_redis_client()
+                for key in await get_joined_entities(sid):
+                    artifact, entity_id_str = key.split(":", 1)
+                    entity_id = UUID(entity_id_str)
+                    config = EVENT_REGISTRY.get(artifact)
+                    if not config:
+                        continue
+                    for operation in config.operations:
+                        events = await read_artifact_events(
+                            pool,
+                            redis,
+                            artifact=artifact,
+                            operation=operation,
+                            entity_id=entity_id,
+                            cursor=current_cursor,
+                            event_types=types,
+                            limit=limit,
+                        )
+                        all_events.extend(events)
 
-                if events:
-                    for event in events:
+                # Sort by created_at for consistent ordering
+                all_events.sort(key=lambda e: e.created_at)
+
+                if all_events:
+                    for event in all_events[:limit]:
                         current_cursor = build_event_cursor(event)
                         yield f"id: {event.id}\n"
                         yield f"event: {event.event_type}\n"
                         yield f"data: {event.model_dump_json()}\n\n"
                     continue
 
+                # Wait for live events from any joined entity
+                done = set()
                 try:
-                    live_event = await asyncio.wait_for(live_queue.get(), timeout=1.0)
+                    wait_tasks = [
+                        asyncio.ensure_future(q.get()) for q in queues
+                    ]
+                    done, pending = await asyncio.wait(
+                        wait_tasks,
+                        timeout=1.0,
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
+                    for task in pending:
+                        task.cancel()
                 except TimeoutError:
+                    pass
+
+                if not done:
                     yield ": keep-alive\n\n"
                     continue
 
-                filtered_events = [live_event]
-                if operation_config.filter_events is not None:
-                    filtered_events = await operation_config.filter_events(
-                        profile_id, filtered_events
-                    )
-
-                for event in filtered_events:
+                for task in done:
+                    event = task.result()
+                    if type_filter and event.event_type not in type_filter:
+                        continue
                     current_cursor = build_event_cursor(event)
                     yield f"id: {event.id}\n"
                     yield f"event: {event.event_type}\n"
                     yield f"data: {event.model_dump_json()}\n\n"
         finally:
-            unsubscribe_live_events(live_queue)
+            for q in queues:
+                unsubscribe_live_events(q)
 
     return StreamingResponse(_gen(), media_type="text/event-stream")
 

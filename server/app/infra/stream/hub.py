@@ -22,7 +22,7 @@ from app.infra.stream.types import EventEnvelope
 class _Subscription:
     queue: asyncio.Queue[EventEnvelope]
     artifact: str
-    operation: str
+    operation: str | None
     entity_id: UUID | None
     event_types: set[str] | None
 
@@ -33,17 +33,22 @@ _SUBSCRIPTIONS: Final[list[_Subscription]] = []
 def subscribe(
     *,
     artifact: str,
-    operation: str,
+    operation: str | None = None,
     entity_id: UUID | None = None,
     event_types: list[str] | None = None,
 ) -> asyncio.Queue[EventEnvelope]:
-    """Create a queue subscription for live artifact events."""
+    """Create a queue subscription for live artifact events.
+
+    When ``operation`` is ``None`` or ``"*"``, the subscription matches
+    all operations for the given artifact.
+    """
+    resolved_operation = None if operation == "*" else operation
     queue: asyncio.Queue[EventEnvelope] = asyncio.Queue()
     _SUBSCRIPTIONS.append(
         _Subscription(
             queue=queue,
             artifact=artifact,
-            operation=operation,
+            operation=resolved_operation,
             entity_id=entity_id,
             event_types=set(event_types) if event_types else None,
         )
@@ -61,7 +66,10 @@ async def publish(event: EventEnvelope) -> None:
     for subscription in list(_SUBSCRIPTIONS):
         if event.artifact != subscription.artifact:
             continue
-        if event.operation != subscription.operation:
+        if (
+            subscription.operation is not None
+            and event.operation != subscription.operation
+        ):
             continue
         if (
             subscription.entity_id is not None

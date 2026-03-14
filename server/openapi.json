@@ -24854,6 +24854,200 @@
         ]
       }
     },
+    "/v5/attempt/join": {
+      "post": {
+        "tags": [
+          "v5",
+          "attempt"
+        ],
+        "summary": "Attempt Join",
+        "description": "Join a chat room for real-time attempt updates.",
+        "operationId": "attempt_join_v5_attempt_join_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptJoinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptJoinResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
+      }
+    },
+    "/v5/attempt/leave": {
+      "post": {
+        "tags": [
+          "v5",
+          "attempt"
+        ],
+        "summary": "Attempt Leave",
+        "description": "Leave a chat room, stopping real-time attempt updates.",
+        "operationId": "attempt_leave_v5_attempt_leave_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptLeaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptLeaveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "attempt"
+        ]
+      }
+    },
     "/v5/attempt/archive": {
       "post": {
         "tags": [
@@ -30700,6 +30894,200 @@
         ]
       }
     },
+    "/v5/test/join": {
+      "post": {
+        "tags": [
+          "v5",
+          "test"
+        ],
+        "summary": "Test Join",
+        "description": "Join a test invocation room for real-time updates.",
+        "operationId": "test_join_v5_test_join_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestJoinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestJoinResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
+      }
+    },
+    "/v5/test/leave": {
+      "post": {
+        "tags": [
+          "v5",
+          "test"
+        ],
+        "summary": "Test Leave",
+        "description": "Leave a test invocation room, stopping real-time updates.",
+        "operationId": "test_leave_v5_test_leave_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestLeaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestLeaveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5",
+          "test"
+        ]
+      }
+    },
     "/v5/test/archive": {
       "post": {
         "tags": [
@@ -31660,6 +32048,186 @@
         ]
       }
     },
+    "/v5/connect": {
+      "post": {
+        "tags": [
+          "v5"
+        ],
+        "summary": "Connect",
+        "description": "Create a stream session for the authenticated profile.",
+        "operationId": "connect_v5_connect_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5"
+        ]
+      }
+    },
+    "/v5/disconnect": {
+      "post": {
+        "tags": [
+          "v5"
+        ],
+        "summary": "Disconnect",
+        "description": "Destroy a stream session.",
+        "operationId": "disconnect_v5_disconnect_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisconnectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisconnectResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v5"
+        ]
+      }
+    },
     "/v5/context": {
       "post": {
         "tags": [
@@ -32132,42 +32700,16 @@
           "stream"
         ],
         "summary": "Stream Events",
-        "description": "Stream artifact events via SSE using the centralized declaration registry.",
+        "description": "Stream artifact events via SSE, scoped to the session's joined entities.\n\nCallers must first obtain an ``sid`` via POST /v5/connect, then join\nentities via POST /v5/attempt/join or POST /v5/test/join.  Only events\nmatching joined entities are delivered.",
         "operationId": "stream_events_v5_stream__get",
         "parameters": [
           {
-            "name": "artifact",
+            "name": "sid",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "title": "Artifact"
-            }
-          },
-          {
-            "name": "operation",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Operation"
-            }
-          },
-          {
-            "name": "entity_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Entity Id"
+              "title": "Sid"
             }
           },
           {
@@ -71438,6 +71980,38 @@
         "title": "AttemptJoinPayload",
         "description": "Client-to-server: join a chat room for real-time updates."
       },
+      "AttemptJoinRequest": {
+        "properties": {
+          "sid": {
+            "type": "string",
+            "title": "Sid"
+          },
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sid",
+          "chat_id"
+        ],
+        "title": "AttemptJoinRequest"
+      },
+      "AttemptJoinResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "AttemptJoinResponse"
+      },
       "AttemptJoinedEvent": {
         "properties": {
           "chat_id": {
@@ -71474,6 +72048,38 @@
         ],
         "title": "AttemptLeavePayload",
         "description": "Client-to-server: leave a chat room."
+      },
+      "AttemptLeaveRequest": {
+        "properties": {
+          "sid": {
+            "type": "string",
+            "title": "Sid"
+          },
+          "chat_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Chat Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sid",
+          "chat_id"
+        ],
+        "title": "AttemptLeaveRequest"
+      },
+      "AttemptLeaveResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "AttemptLeaveResponse"
       },
       "AttemptMessagePayload": {
         "properties": {
@@ -78227,6 +78833,19 @@
         ],
         "title": "ComposedDocsResponse",
         "description": "Composed documentation for a full artifact endpoint.\n\nAggregates the artifact tool docs, entry docs, resource docs,\npermission functions, and infra operations into one response."
+      },
+      "ConnectResponse": {
+        "properties": {
+          "sid": {
+            "type": "string",
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sid"
+        ],
+        "title": "ConnectResponse"
       },
       "ConnectionConfirmedPayload": {
         "properties": {
@@ -86329,6 +86948,32 @@
         },
         "type": "object",
         "title": "DepartmentSettingSection"
+      },
+      "DisconnectRequest": {
+        "properties": {
+          "sid": {
+            "type": "string",
+            "title": "Sid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sid"
+        ],
+        "title": "DisconnectRequest"
+      },
+      "DisconnectResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "DisconnectResponse"
       },
       "DocsApiRequest": {
         "properties": {
@@ -145380,6 +146025,38 @@
         "title": "TestJoinPayload",
         "description": "Client-to-server: join a test room for real-time updates."
       },
+      "TestJoinRequest": {
+        "properties": {
+          "sid": {
+            "type": "string",
+            "title": "Sid"
+          },
+          "invocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Invocation Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sid",
+          "invocation_id"
+        ],
+        "title": "TestJoinRequest"
+      },
+      "TestJoinResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "TestJoinResponse"
+      },
       "TestJoinedEvent": {
         "properties": {
           "invocation_id": {
@@ -145416,6 +146093,38 @@
         ],
         "title": "TestLeavePayload",
         "description": "Client-to-server: leave a test room."
+      },
+      "TestLeaveRequest": {
+        "properties": {
+          "sid": {
+            "type": "string",
+            "title": "Sid"
+          },
+          "invocation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Invocation Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sid",
+          "invocation_id"
+        ],
+        "title": "TestLeaveRequest"
+      },
+      "TestLeaveResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "TestLeaveResponse"
       },
       "TestNextPayload": {
         "properties": {

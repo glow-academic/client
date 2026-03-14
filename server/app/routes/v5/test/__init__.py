@@ -7,6 +7,8 @@ from app.routes.v5.test.docs import router as docs_router
 from app.routes.v5.test.end import router as end_router
 from app.routes.v5.test.export import router as export_router
 from app.routes.v5.test.get import router as get_router
+from app.routes.v5.test.join import router as join_router
+from app.routes.v5.test.leave import router as leave_router
 from app.routes.v5.test.next import router as next_router
 from app.routes.v5.test.refresh import router as refresh_router
 from app.routes.v5.test.run import router as run_router
@@ -17,6 +19,8 @@ from app.routes.v5.test.stop import router as stop_router
 router = APIRouter(prefix="/test", tags=["test"])
 
 router.include_router(get_router)
+router.include_router(join_router)
+router.include_router(leave_router)
 router.include_router(archive_router)
 router.include_router(refresh_router)
 router.include_router(export_router)

@@ -16,15 +16,18 @@ from app.routes.v5.auth import router as auth_router
 from app.routes.v5.benchmark import router as benchmark_artifact_router
 from app.routes.v5.chat import router as chat_artifact_router
 from app.routes.v5.cohort import router as cohorts_router
+from app.routes.v5.connect import router as connect_router
+from app.routes.v5.context import router as context_router
 from app.routes.v5.dashboard import router as dashboard_artifact_router
 from app.routes.v5.department import router as departments_router
+from app.routes.v5.disconnect import router as disconnect_router
 from app.routes.v5.docs import router as docs_router
 from app.routes.v5.document import router as documents_router
+from app.routes.v5.emulate import router as emulate_router
 from app.routes.v5.eval import router as evals_router
-from app.routes.v5.stream import router as stream_router
 from app.routes.v5.field import router as fields_router
-from app.routes.v5.group import router as group_router
 from app.routes.v5.generate import router as generate_router
+from app.routes.v5.group import router as group_router
 from app.routes.v5.health import router as health_artifact_router
 from app.routes.v5.home import router as home_artifact_router
 from app.routes.v5.leaderboard import router as leaderboard_artifact_router
@@ -34,9 +37,6 @@ from app.routes.v5.persona import router as personas_router
 from app.routes.v5.practice import router as practice_artifact_router
 from app.routes.v5.pricing import router as pricing_artifact_router
 from app.routes.v5.profile import router as profile_router
-from app.routes.v5.context import router as context_router
-from app.routes.v5.emulate import router as emulate_router
-from app.routes.v5.unemulate import router as unemulate_router
 from app.routes.v5.provider import router as providers_router
 from app.routes.v5.record import router as record_artifact_router
 from app.routes.v5.reports import router as reports_artifact_router
@@ -45,8 +45,10 @@ from app.routes.v5.scenario import router as scenarios_router
 from app.routes.v5.session import router as session_router
 from app.routes.v5.setting import router as settings_router
 from app.routes.v5.simulation import router as simulations_router
+from app.routes.v5.stream import router as stream_router
 from app.routes.v5.test import router as test_artifact_router
 from app.routes.v5.tool import router as tools_router
+from app.routes.v5.unemulate import router as unemulate_router
 from app.utils.mcp.get_mcp import get_mcp
 
 # ============================================================================
@@ -101,8 +103,10 @@ router.include_router(benchmark_artifact_router)
 router.include_router(test_artifact_router)
 
 # ============================================================================
-# Root-level actions — /v5/context, /v5/generate, etc.
+# Root-level actions — /v5/connect, /v5/disconnect, /v5/context, /v5/generate
 # ============================================================================
+router.include_router(connect_router)
+router.include_router(disconnect_router)
 router.include_router(context_router)
 router.include_router(problem_router)
 router.include_router(emulate_router)

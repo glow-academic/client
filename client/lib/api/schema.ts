@@ -5224,6 +5224,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v5/attempt/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Join
+         * @description Join a chat room for real-time attempt updates.
+         */
+        post: operations["attempt_join_v5_attempt_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v5/attempt/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Leave
+         * @description Leave a chat room, stopping real-time attempt updates.
+         */
+        post: operations["attempt_leave_v5_attempt_leave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v5/attempt/archive": {
         parameters: {
             query?: never;
@@ -6464,6 +6504,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v5/test/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Join
+         * @description Join a test invocation room for real-time updates.
+         */
+        post: operations["test_join_v5_test_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v5/test/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Leave
+         * @description Leave a test invocation room, stopping real-time updates.
+         */
+        post: operations["test_leave_v5_test_leave_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v5/test/archive": {
         parameters: {
             query?: never;
@@ -6667,6 +6747,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v5/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connect
+         * @description Create a stream session for the authenticated profile.
+         */
+        post: operations["connect_v5_connect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v5/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Disconnect
+         * @description Destroy a stream session.
+         */
+        post: operations["disconnect_v5_disconnect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v5/context": {
         parameters: {
             query?: never;
@@ -6776,7 +6896,11 @@ export interface paths {
         };
         /**
          * Stream Events
-         * @description Stream artifact events via SSE using the centralized declaration registry.
+         * @description Stream artifact events via SSE, scoped to the session's joined entities.
+         *
+         *     Callers must first obtain an ``sid`` via POST /v5/connect, then join
+         *     entities via POST /v5/attempt/join or POST /v5/test/join.  Only events
+         *     matching joined entities are delivered.
          */
         get: operations["stream_events_v5_stream__get"];
         put?: never;
@@ -14673,6 +14797,21 @@ export interface components {
              */
             chat_id: string;
         };
+        /** AttemptJoinRequest */
+        AttemptJoinRequest: {
+            /** Sid */
+            sid: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /** AttemptJoinResponse */
+        AttemptJoinResponse: {
+            /** Success */
+            success: boolean;
+        };
         /**
          * AttemptJoinedEvent
          * @description Server-to-client: successfully joined a chat room.
@@ -14700,6 +14839,21 @@ export interface components {
              * @description UUID of the chat to leave
              */
             chat_id: string;
+        };
+        /** AttemptLeaveRequest */
+        AttemptLeaveRequest: {
+            /** Sid */
+            sid: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
+        /** AttemptLeaveResponse */
+        AttemptLeaveResponse: {
+            /** Success */
+            success: boolean;
         };
         /**
          * AttemptMessagePayload
@@ -18145,6 +18299,11 @@ export interface components {
             api_operations: components["schemas"]["OperationInfo"][];
             /** @description Page-level metadata from docs API */
             page_metadata?: components["schemas"]["DocsApiResponse"] | null;
+        };
+        /** ConnectResponse */
+        ConnectResponse: {
+            /** Sid */
+            sid: string;
         };
         /**
          * ConnectionConfirmedPayload
@@ -21979,6 +22138,16 @@ export interface components {
              * @description Available setting resources
              */
             resources?: unknown[] | null;
+        };
+        /** DisconnectRequest */
+        DisconnectRequest: {
+            /** Sid */
+            sid: string;
+        };
+        /** DisconnectResponse */
+        DisconnectResponse: {
+            /** Success */
+            success: boolean;
         };
         /** DocsApiRequest */
         DocsApiRequest: {
@@ -49335,6 +49504,21 @@ export interface components {
              */
             invocation_id: string;
         };
+        /** TestJoinRequest */
+        TestJoinRequest: {
+            /** Sid */
+            sid: string;
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+        };
+        /** TestJoinResponse */
+        TestJoinResponse: {
+            /** Success */
+            success: boolean;
+        };
         /**
          * TestJoinedEvent
          * @description Server-to-client: successfully joined a test room.
@@ -49363,6 +49547,21 @@ export interface components {
              * @description UUID of the test invocation to leave
              */
             invocation_id: string;
+        };
+        /** TestLeaveRequest */
+        TestLeaveRequest: {
+            /** Sid */
+            sid: string;
+            /**
+             * Invocation Id
+             * Format: uuid
+             */
+            invocation_id: string;
+        };
+        /** TestLeaveResponse */
+        TestLeaveResponse: {
+            /** Success */
+            success: boolean;
         };
         /**
          * TestNextPayload
@@ -62129,6 +62328,80 @@ export interface operations {
             };
         };
     };
+    attempt_join_v5_attempt_join_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptJoinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptJoinResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_leave_v5_attempt_leave_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptLeaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptLeaveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     archive_attempts_v5_attempt_archive_post: {
         parameters: {
             query?: never;
@@ -64349,6 +64622,80 @@ export interface operations {
             };
         };
     };
+    test_join_v5_test_join_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestJoinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestJoinResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_leave_v5_test_leave_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestLeaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestLeaveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     archive_test_artifacts_v5_test_archive_post: {
         parameters: {
             query?: never;
@@ -64715,6 +65062,76 @@ export interface operations {
             };
         };
     };
+    connect_v5_connect_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_v5_disconnect_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DisconnectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisconnectResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_context_v5_context_post: {
         parameters: {
             query?: never;
@@ -64899,9 +65316,7 @@ export interface operations {
     stream_events_v5_stream__get: {
         parameters: {
             query: {
-                artifact: string;
-                operation: string;
-                entity_id?: string | null;
+                sid: string;
                 cursor?: string | null;
                 types?: string[] | null;
                 limit?: number;

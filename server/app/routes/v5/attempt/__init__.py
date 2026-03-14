@@ -12,6 +12,8 @@ from app.routes.v5.attempt.file import router as file_download_router
 from app.routes.v5.attempt.get import router as get_router
 from app.routes.v5.attempt.grade import router as grade_router
 from app.routes.v5.attempt.image import router as image_download_router
+from app.routes.v5.attempt.join import router as join_router
+from app.routes.v5.attempt.leave import router as leave_router
 from app.routes.v5.attempt.message import router as message_router
 from app.routes.v5.attempt.next import router as next_router
 from app.routes.v5.attempt.refresh import router as refresh_router
@@ -27,6 +29,8 @@ from app.routes.v5.attempt.voice import router as voice_router
 router = APIRouter(prefix="/attempt", tags=["attempt"])
 
 router.include_router(get_router)
+router.include_router(join_router)
+router.include_router(leave_router)
 router.include_router(archive_router)
 router.include_router(refresh_router)
 router.include_router(docs_router)
