@@ -1,3 +1,3 @@
 """Input events — what the client sends."""
 
-from . import persona  # noqa: F401
+from . import attempt, persona  # noqa: F401
