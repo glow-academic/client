@@ -7,7 +7,7 @@ Listens to internal `generation_started` and emits to client:
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
-from app.socket.v5.internal.generation_types import GenerationStartedEvent
+from app.socket.v5.internal.generation.generation_types import GenerationStartedEvent
 
 internal_sio = get_internal_sio()
 

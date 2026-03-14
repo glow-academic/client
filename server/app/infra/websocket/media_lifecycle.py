@@ -21,7 +21,9 @@ def get_media_adapter(
     global _media_adapter
     if _media_adapter is None:
         if emitter is None:
-            from app.socket.v5.internal.media_events import get_media_emitter
+            from app.socket.v5.internal.generation.media_events import (
+                get_media_emitter,
+            )
 
             emitter = get_media_emitter()
         _media_adapter = (adapter_factory or LitellmMediaAdapter)(emitter=emitter)

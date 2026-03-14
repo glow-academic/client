@@ -3,9 +3,9 @@
 Importing this module registers all internal event handlers with the internal Socket.IO bus:
 
 Generation pipeline:
-- generate (rate limit gate — checks daily limit, then emits generate_prepare)
-- generate_prepare (fetch resources, render instructions, dispatch generate_artifact)
-- generate_artifact (token factory — LLM agentic loop)
+- generation.generate (rate limit gate — checks daily limit, then emits generate_prepare)
+- generation.generate_prepare (fetch resources, render instructions, dispatch generate_artifact)
+- generation.generate_artifact (token factory — LLM agentic loop)
 
 Canonical event handlers (one per generate_* event):
 - generate_text_start (placeholder)
@@ -24,28 +24,24 @@ Canonical event handlers (one per generate_* event):
 - generate_run_complete (tokens, auto-save, multi-agent, cleanup + audio continuation)
 
 Generation side-effects:
-- generation_progress (resource progress tracking)
-- generation_error (error passthrough to generation_channel)
+- generation.generation_progress (resource progress tracking)
+- generation.generation_error (error passthrough to generation_channel)
 Attempt:
 - attempt_start (auto-proceed after chat completes)
 - attempt_proceed (shared core: completion marking, prepare → check → link/generate)
 """
 
-from . import (
-    attempt,  # noqa: F401 — registers attempt_* internal events
-    generation,  # noqa: F401 — registers grouped generation workflow handlers
-    generate_call_complete,  # noqa: F401 — registers generate_call_complete handler
-    generate_call_progress,  # noqa: F401 — registers generate_call_progress handler
-    generate_call_start,  # noqa: F401 — registers generate_call_start handler
-    generate_image_complete,  # noqa: F401 — registers generate_image_complete handler
-    generate_image_progress,  # noqa: F401 — registers generate_image_progress handler
-    generate_image_start,  # noqa: F401 — registers generate_image_start handler
-    generate_run_complete,  # noqa: F401 — registers generate_run_complete handler
-    generate_text_complete,  # noqa: F401 — registers generate_text_complete handler
-    generate_text_progress,  # noqa: F401 — registers generate_text_progress handler
-    generate_text_start,  # noqa: F401 — registers generate_text_start handler
-    generate_video_complete,  # noqa: F401 — registers generate_video_complete handler
-    generate_video_progress,  # noqa: F401 — registers generate_video_progress handler
-    generate_video_start,  # noqa: F401 — registers generate_video_start handler
-    test,  # noqa: F401 — registers test_* internal events
-)
+from . import attempt, generation, test  # noqa: F401
+from .generate_call_complete import *  # noqa: F401,F403
+from .generate_call_progress import *  # noqa: F401,F403
+from .generate_call_start import *  # noqa: F401,F403
+from .generate_image_complete import *  # noqa: F401,F403
+from .generate_image_progress import *  # noqa: F401,F403
+from .generate_image_start import *  # noqa: F401,F403
+from .generate_run_complete import *  # noqa: F401,F403
+from .generate_text_complete import *  # noqa: F401,F403
+from .generate_text_progress import *  # noqa: F401,F403
+from .generate_text_start import *  # noqa: F401,F403
+from .generate_video_complete import *  # noqa: F401,F403
+from .generate_video_progress import *  # noqa: F401,F403
+from .generate_video_start import *  # noqa: F401,F403
