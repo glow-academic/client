@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, TypeVar
@@ -48,7 +49,7 @@ async def run_artifact_operation_with_audit(
     artifact: str,
     profile_id: UUID,
     operation: str,
-    runner: Callable[[], Awaitable[T]],
+    runner: Callable[..., Awaitable[T]],
     arguments: dict[str, Any],
     sid: str = "",
     rooms: list[str] | None = None,
@@ -113,9 +114,19 @@ async def run_artifact_operation_with_audit(
     call_upload_id: UUID | None = None
     tool_error: Exception | None = None
 
+    # Check if runner accepts call_id (orchestration runners do, CRUD lambdas don't)
+    _runner_accepts_call_id = "call_id" in inspect.signature(runner).parameters
+
+    async def _invoke_runner(call_id: UUID | None = None) -> Any:
+        if _runner_accepts_call_id:
+            return await runner(call_id=call_id)
+        return await runner()
+
     if can_audit:
-        async def _tool_fn(_conn: asyncpg.Connection, **_arguments: Any) -> Any:
-            result = await runner()
+        async def _tool_fn(
+            _conn: asyncpg.Connection, *, call_id: UUID | None = None, **_arguments: Any
+        ) -> Any:
+            result = await _invoke_runner(call_id=call_id)
             if hasattr(result, "model_dump"):
                 return result.model_dump(mode="json")
             return result
@@ -142,7 +153,7 @@ async def run_artifact_operation_with_audit(
             tool_error = Exception(result_data.get("message", "Unknown error"))
     else:
         try:
-            result_data = await runner()
+            result_data = await _invoke_runner()
         except Exception as exc:
             await internal_sio.emit(f"{event_prefix}.failed", {
                 "sid": sid,

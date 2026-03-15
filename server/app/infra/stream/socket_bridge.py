@@ -57,15 +57,29 @@ def wrap_emit_with_stream_bridge(
     operation: str,
     emit: EmitFn,
     entity_id: UUID | None = None,
+    call_id: UUID | None = None,
 ) -> EmitFn:
-    """Wrap an EmitFn so matching socket events are also published live."""
+    """Wrap an EmitFn so matching socket events are also published live.
+
+    When call_id is provided, it is injected into every event's data dict
+    so output handlers can append to the call receipt.
+    """
 
     event_map = _SOCKET_EVENT_TO_PUBLIC.get((artifact, operation))
-    if not event_map:
+    if not event_map and not call_id:
         return emit
 
     async def _emit(events: list[SocketEvent]) -> None:
+        # Inject call_id into event data if available
+        if call_id:
+            for event in events:
+                if isinstance(event.data, dict):
+                    event.data["call_id"] = str(call_id)
+
         await emit(events)
+
+        if not event_map:
+            return
 
         created_at = datetime.now(UTC)
         published: set[tuple[str, UUID | None, str]] = set()

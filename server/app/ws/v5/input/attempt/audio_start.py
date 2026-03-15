@@ -1,29 +1,31 @@
-"""Input: attempt.grade"""
+"""Input: attempt.audio_start"""
 
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
 from app.infra.identity.socket import resolve_socket_identity
-from app.socket.v5.internal.attempt.grade import attempt_grade_internal_impl
+from app.socket.v5.client.attempt.audio.start_impl import (
+    attempt_audio_start_internal_impl,
+)
 
 internal_sio = get_internal_sio()
 
 
-@sio.on("attempt.grade")  # type: ignore
-async def attempt_grade(sid: str, data: dict[str, Any]) -> None:
+@sio.on("attempt.audio_start")  # type: ignore
+async def attempt_audio_start(sid: str, data: dict[str, Any]) -> None:
     identity = await resolve_socket_identity(sid)
     if not identity:
         return
 
     try:
-        await attempt_grade_internal_impl({
+        await attempt_audio_start_internal_impl({
             **data,
             "sid": sid,
             "profile_id": str(identity.profile_id),
             "session_id": str(identity.session_id),
         })
     except Exception as e:
-        await internal_sio.emit("attempt.grade.failed", {
+        await internal_sio.emit("attempt.audio_start.failed", {
             "sid": sid,
             "rooms": [sid],
             "message": str(e),

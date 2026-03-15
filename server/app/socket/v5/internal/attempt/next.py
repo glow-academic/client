@@ -9,6 +9,7 @@ from app.infra.events.audit import (
     run_artifact_operation_with_audit,
 )
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.stream.socket_bridge import wrap_emit_with_stream_bridge
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
@@ -47,8 +48,13 @@ async def attempt_next_internal_impl(
     if not session_id:
         raise ValueError("Missing session_id for attempt_next")
 
-    async def _run() -> AttemptStartInternalResult:
-        downstream_emit = emit or make_emit()
+    async def _run(*, call_id: UUID | None = None) -> AttemptStartInternalResult:
+        downstream_emit = wrap_emit_with_stream_bridge(
+            artifact="attempt",
+            operation="next",
+            emit=emit or make_emit(),
+            call_id=call_id,
+        )
         recorded: list[SocketEvent] = []
         workflow_sid = sid or f"http-attempt-next:{session_id}"
 

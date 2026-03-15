@@ -35,15 +35,35 @@ async def create_tool_call(
 ) -> CreateToolSetupResponse:
     """Execute a tool and persist the full entry chain + files.
 
-    1. Executes tool_fn(conn, **arguments) to get output.
-    2. Writes .txt (always) and .json receipt (when tool_id is provided).
-    3. Creates upload DB rows for each file.
-    4. Creates run + message entry chain.
+    1. Creates run + call entry chain (so call_id is available to tool_fn).
+    2. Executes tool_fn(conn, call_id=call_id, **arguments) to get output.
+    3. Writes .txt (always) and .json receipt (when tool_id is provided).
+    4. Creates upload DB rows + junctions.
     """
-    # 1. Execute — call tool_fn and capture both raw result + serialized output
+    # 1. Create run + call upfront (call_id available before execution)
+    run = await create_run(
+        conn,
+        group_id=group_id,
+        session_id=session_id,
+        profiles_id=profile_id,
+        mcp=mcp,
+    )
+
+    call_id: UUID | None = None
+    if tool_id is not None:
+        call_result = await create_call(
+            conn,
+            run_id=run.id,
+            session_id=session_id,
+            tool_id=tool_id,
+            mcp=mcp,
+        )
+        call_id = call_result.id
+
+    # 2. Execute — call tool_fn with call_id available
     tool_error: Exception | None = None
     try:
-        raw_result = await tool_fn(conn, **arguments)
+        raw_result = await tool_fn(conn, call_id=call_id, **arguments)
     except Exception as exc:
         tool_error = exc
         raw_result = {"success": False, "message": str(exc)}
@@ -61,16 +81,17 @@ async def create_tool_call(
         rid = raw_result["id"]
         result_id = rid if isinstance(rid, UUID) else UUID(str(rid))
 
-    # 2. Write .txt (always)
+    # 3. Write .txt (always)
     text_upload_id = uuid4()
     text_rel_path = save_text_upload(output, text_upload_id, upload_folder)
     text_full_path = upload_folder / text_rel_path
     text_size = text_full_path.stat().st_size
 
-    # 3. Write .json receipt (only with tool_id)
+    # 4. Write .json receipt (only with tool_id)
+    call_upload_id: UUID | None = None
     call_upload_db_id: UUID | None = None
     if tool_id is not None:
-        call_upload_id = uuid4()
+        call_upload_id = call_id
         output_dict = json.loads(output) if isinstance(output, str) else output
         payload = build_call_payload(
             call_id=call_upload_id,
@@ -82,7 +103,7 @@ async def create_tool_call(
         call_full_path = upload_folder / call_rel_path
         call_size = call_full_path.stat().st_size
 
-    # 4. Create upload DB rows
+    # 5. Create upload DB rows
     text_upload = await create_upload(
         conn,
         session_id=session_id,
@@ -103,31 +124,7 @@ async def create_tool_call(
         )
         call_upload_db_id = call_upload.id
 
-    # 5. Create run
-    run = await create_run(
-        conn,
-        group_id=group_id,
-        session_id=session_id,
-        profiles_id=profile_id,
-        mcp=mcp,
-    )
-
-    # 6. Call path (only when tool_id is provided)
-    call_id: UUID | None = None
-    call_upload_junction_id: UUID | None = None
-    message_call_upload_junction_id: UUID | None = None
-
-    if tool_id is not None:
-        call_result = await create_call(
-            conn,
-            run_id=run.id,
-            session_id=session_id,
-            tool_id=tool_id,
-            mcp=mcp,
-        )
-        call_id = call_result.id
-
-    # 7. Text message path (always) — uses create_run_message building block
+    # 6. Text message path (always)
     msg = await create_run_message(
         conn,
         run_id=run.id,
@@ -137,7 +134,10 @@ async def create_tool_call(
         mcp=mcp,
     )
 
-    # 8. Call upload junctions (only when tool_id is provided)
+    # 7. Call upload junctions (only when tool_id is provided)
+    call_upload_junction_id: UUID | None = None
+    message_call_upload_junction_id: UUID | None = None
+
     if call_id is not None and call_upload_db_id is not None:
         call_upload_junction = await create_call_upload(
             conn,
@@ -162,7 +162,7 @@ async def create_tool_call(
         result=raw_result,
         run_id=run.id,
         call_id=call_id,
-        call_upload_id=call_upload_id if tool_id is not None else None,
+        call_upload_id=call_upload_id,
         message_id=msg.message_id,
         text_id=msg.text_id,
         text_upload_junction_id=msg.text_upload_junction_id,

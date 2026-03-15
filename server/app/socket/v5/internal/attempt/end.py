@@ -78,12 +78,13 @@ async def attempt_end_internal_impl(
     profile_uuid = UUID(str(profile_id))
     session_uuid = UUID(str(session_id))
 
-    async def _run() -> AttemptEndInternalResult:
+    async def _run(*, call_id: UUID | None = None) -> AttemptEndInternalResult:
         downstream_emit = wrap_emit_with_stream_bridge(
             artifact="attempt",
             operation="end",
             emit=emit or make_emit(),
             entity_id=payload.attempt_id,
+            call_id=call_id,
         )
         recorded: list[SocketEvent] = []
 

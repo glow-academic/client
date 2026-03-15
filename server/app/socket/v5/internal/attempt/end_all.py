@@ -13,6 +13,7 @@ from app.infra.events.audit import (
 )
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.infra.stream.socket_bridge import wrap_emit_with_stream_bridge
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.socket_event import EmitFn, SocketEvent, make_emit
@@ -62,8 +63,13 @@ async def attempt_end_all_internal_impl(
     if group_id is None:
         raise ValueError(f"Group not found for attempt {payload.attempt_id}")
 
-    async def _run() -> AttemptEndAllInternalResult:
-        downstream_emit = emit or make_emit()
+    async def _run(*, call_id: UUID | None = None) -> AttemptEndAllInternalResult:
+        downstream_emit = wrap_emit_with_stream_bridge(
+            artifact="attempt",
+            operation="end_all",
+            emit=emit or make_emit(),
+            call_id=call_id,
+        )
         recorded: list[SocketEvent] = []
 
         async def _emit(events: list[SocketEvent]) -> None:

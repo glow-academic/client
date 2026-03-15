@@ -49,12 +49,13 @@ async def attempt_start_internal_impl(
     if not session_id:
         raise ValueError("Missing session_id for attempt_start")
 
-    async def _run() -> AttemptStartInternalResult:
+    async def _run(*, call_id: UUID | None = None) -> AttemptStartInternalResult:
         pool = get_pool()
         downstream_emit = wrap_emit_with_stream_bridge(
             artifact="attempt",
             operation="start",
             emit=emit or make_emit(),
+            call_id=call_id,
         )
         recorded: list[SocketEvent] = []
 
