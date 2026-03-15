@@ -45,7 +45,6 @@ from app.routes.v5.scenario import router as scenarios_router
 from app.routes.v5.session import router as session_router
 from app.routes.v5.setting import router as settings_router
 from app.routes.v5.simulation import router as simulations_router
-from app.routes.v5.stream import router as stream_router
 from app.routes.v5.test import router as test_artifact_router
 from app.routes.v5.tool import router as tools_router
 from app.routes.v5.unemulate import router as unemulate_router
@@ -109,11 +108,6 @@ router.include_router(problem_router)
 router.include_router(emulate_router)
 router.include_router(unemulate_router)
 router.include_router(generate_router)
-
-# ============================================================================
-# Stream — SSE at /v5/stream, schema at /v5/stream/schema/*
-# ============================================================================
-router.include_router(stream_router)
 
 # ============================================================================
 # Docs — /v5/docs

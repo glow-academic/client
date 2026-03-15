@@ -16114,7 +16114,6 @@
     "/v5/stream/": {
       "get": {
         "tags": [
-          "v5",
           "stream"
         ],
         "summary": "Stream Events",
@@ -16207,7 +16206,6 @@
           }
         },
         "x-cache-tags": [
-          "v5",
           "stream"
         ]
       }
@@ -16215,7 +16213,6 @@
     "/v5/stream/ActivityRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "activity"
         ],
@@ -16266,7 +16263,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "activity"
         ]
@@ -16275,7 +16271,6 @@
     "/v5/stream/ActivityResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "activity"
         ],
@@ -16326,7 +16321,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "activity"
         ]
@@ -16335,7 +16329,6 @@
     "/v5/stream/AttemptAssistantCompleteEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16386,7 +16379,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16395,7 +16387,6 @@
     "/v5/stream/AttemptAssistantHintsEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16446,7 +16437,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16455,7 +16445,6 @@
     "/v5/stream/AttemptAssistantProgressEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16506,7 +16495,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16515,7 +16503,6 @@
     "/v5/stream/AttemptAssistantStartEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16566,7 +16553,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16575,7 +16561,6 @@
     "/v5/stream/AttemptAudioEndedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16626,7 +16611,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16635,7 +16619,6 @@
     "/v5/stream/AttemptAudioReadyEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16686,7 +16669,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16695,7 +16677,6 @@
     "/v5/stream/AttemptAudioStartPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16746,7 +16727,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16755,7 +16735,6 @@
     "/v5/stream/AttemptAudioStopPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16806,7 +16785,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16815,7 +16793,6 @@
     "/v5/stream/AttemptChatEndedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16866,7 +16843,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16875,7 +16851,6 @@
     "/v5/stream/AttemptChatStartedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16926,7 +16901,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16935,7 +16909,6 @@
     "/v5/stream/AttemptEndAllPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -16986,7 +16959,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -16995,7 +16967,6 @@
     "/v5/stream/AttemptEndPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17046,7 +17017,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17055,7 +17025,6 @@
     "/v5/stream/AttemptEndedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17106,7 +17075,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17115,7 +17083,6 @@
     "/v5/stream/AttemptErrorEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17166,7 +17133,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17175,7 +17141,6 @@
     "/v5/stream/AttemptGradeCompleteEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17226,7 +17191,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17235,7 +17199,6 @@
     "/v5/stream/AttemptGradePayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17286,7 +17249,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17295,7 +17257,6 @@
     "/v5/stream/AttemptGradeProgressEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17346,7 +17307,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17355,7 +17315,6 @@
     "/v5/stream/AttemptGradeStartEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17406,7 +17365,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17415,7 +17373,6 @@
     "/v5/stream/AttemptJoinPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17466,7 +17423,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17475,7 +17431,6 @@
     "/v5/stream/AttemptJoinedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17526,7 +17481,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17535,7 +17489,6 @@
     "/v5/stream/AttemptLeavePayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17586,7 +17539,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17595,7 +17547,6 @@
     "/v5/stream/AttemptMessagePayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17646,7 +17597,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17655,7 +17605,6 @@
     "/v5/stream/AttemptNextPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17706,7 +17655,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17715,7 +17663,6 @@
     "/v5/stream/AttemptResponsePayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17766,7 +17713,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17775,7 +17721,6 @@
     "/v5/stream/AttemptResponseResultEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17826,7 +17771,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17835,7 +17779,6 @@
     "/v5/stream/AttemptStartPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17886,7 +17829,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17895,7 +17837,6 @@
     "/v5/stream/AttemptStartedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -17946,7 +17887,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -17955,7 +17895,6 @@
     "/v5/stream/AttemptStopPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -18006,7 +17945,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -18015,7 +17953,6 @@
     "/v5/stream/AttemptStoppedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -18066,7 +18003,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -18075,7 +18011,6 @@
     "/v5/stream/AttemptUsePreviousPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -18126,7 +18061,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -18135,7 +18069,6 @@
     "/v5/stream/AttemptUserCompleteEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -18186,7 +18119,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -18195,7 +18127,6 @@
     "/v5/stream/AttemptUserDeltaEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -18246,7 +18177,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -18255,7 +18185,6 @@
     "/v5/stream/AttemptUserProgressEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -18306,7 +18235,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -18315,7 +18243,6 @@
     "/v5/stream/AttemptUserStartEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -18366,7 +18293,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -18375,7 +18301,6 @@
     "/v5/stream/BenchmarkRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "benchmark"
         ],
@@ -18426,7 +18351,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "benchmark"
         ]
@@ -18435,7 +18359,6 @@
     "/v5/stream/BenchmarkResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "benchmark"
         ],
@@ -18486,7 +18409,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "benchmark"
         ]
@@ -18495,7 +18417,6 @@
     "/v5/stream/ComposedDocsResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -18546,7 +18467,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -18555,7 +18475,6 @@
     "/v5/stream/ConnectionConfirmedPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "session"
         ],
@@ -18606,7 +18525,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "session"
         ]
@@ -18615,7 +18533,6 @@
     "/v5/stream/CreateAgentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -18666,7 +18583,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -18675,7 +18591,6 @@
     "/v5/stream/CreateAgentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -18726,7 +18641,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -18735,7 +18649,6 @@
     "/v5/stream/CreateAuthApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -18786,7 +18699,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -18795,7 +18707,6 @@
     "/v5/stream/CreateAuthApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -18846,7 +18757,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -18855,7 +18765,6 @@
     "/v5/stream/CreateCohortApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -18906,7 +18815,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -18915,7 +18823,6 @@
     "/v5/stream/CreateCohortApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -18966,7 +18873,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -18975,7 +18881,6 @@
     "/v5/stream/CreateDepartmentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -19026,7 +18931,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -19035,7 +18939,6 @@
     "/v5/stream/CreateDepartmentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -19086,7 +18989,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -19095,7 +18997,6 @@
     "/v5/stream/CreateDocumentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -19146,7 +19047,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -19155,7 +19055,6 @@
     "/v5/stream/CreateDocumentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -19206,7 +19105,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -19215,7 +19113,6 @@
     "/v5/stream/CreateEvalApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -19266,7 +19163,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -19275,7 +19171,6 @@
     "/v5/stream/CreateEvalApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -19326,7 +19221,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -19335,7 +19229,6 @@
     "/v5/stream/CreateFieldApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -19386,7 +19279,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -19395,7 +19287,6 @@
     "/v5/stream/CreateFieldApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -19446,7 +19337,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -19455,7 +19345,6 @@
     "/v5/stream/CreateModelApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -19506,7 +19395,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -19515,7 +19403,6 @@
     "/v5/stream/CreateModelApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -19566,7 +19453,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -19575,7 +19461,6 @@
     "/v5/stream/CreateParameterApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -19626,7 +19511,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -19635,7 +19519,6 @@
     "/v5/stream/CreateParameterApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -19686,7 +19569,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -19695,7 +19577,6 @@
     "/v5/stream/CreatePersonaApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -19746,7 +19627,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -19755,7 +19635,6 @@
     "/v5/stream/CreatePersonaApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -19806,7 +19685,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -19815,7 +19693,6 @@
     "/v5/stream/CreateProfileApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -19866,7 +19743,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -19875,7 +19751,6 @@
     "/v5/stream/CreateProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -19926,7 +19801,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -19935,7 +19809,6 @@
     "/v5/stream/CreateProviderApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -19986,7 +19859,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -19995,7 +19867,6 @@
     "/v5/stream/CreateProviderApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -20046,7 +19917,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -20055,7 +19925,6 @@
     "/v5/stream/CreateRubricApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -20106,7 +19975,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -20115,7 +19983,6 @@
     "/v5/stream/CreateRubricApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -20166,7 +20033,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -20175,7 +20041,6 @@
     "/v5/stream/CreateScenarioApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -20226,7 +20091,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -20235,7 +20099,6 @@
     "/v5/stream/CreateScenarioApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -20286,7 +20149,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -20295,7 +20157,6 @@
     "/v5/stream/CreateSettingApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -20346,7 +20207,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -20355,7 +20215,6 @@
     "/v5/stream/CreateSettingApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -20406,7 +20265,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -20415,7 +20273,6 @@
     "/v5/stream/CreateSimulationApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -20466,7 +20323,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -20475,7 +20331,6 @@
     "/v5/stream/CreateSimulationApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -20526,7 +20381,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -20535,7 +20389,6 @@
     "/v5/stream/CreateToolApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -20586,7 +20439,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -20595,7 +20447,6 @@
     "/v5/stream/CreateToolApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -20646,7 +20497,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -20655,7 +20505,6 @@
     "/v5/stream/DashboardBundleResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "dashboard"
         ],
@@ -20706,7 +20555,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "dashboard"
         ]
@@ -20715,7 +20563,6 @@
     "/v5/stream/DashboardRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "dashboard"
         ],
@@ -20766,7 +20613,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "dashboard"
         ]
@@ -20775,7 +20621,6 @@
     "/v5/stream/DeleteAgentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -20826,7 +20671,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -20835,7 +20679,6 @@
     "/v5/stream/DeleteAgentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -20886,7 +20729,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -20895,7 +20737,6 @@
     "/v5/stream/DeleteAuthApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -20946,7 +20787,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -20955,7 +20795,6 @@
     "/v5/stream/DeleteAuthApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -21006,7 +20845,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -21015,7 +20853,6 @@
     "/v5/stream/DeleteCohortApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -21066,7 +20903,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -21075,7 +20911,6 @@
     "/v5/stream/DeleteCohortApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -21126,7 +20961,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -21135,7 +20969,6 @@
     "/v5/stream/DeleteDepartmentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -21186,7 +21019,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -21195,7 +21027,6 @@
     "/v5/stream/DeleteDepartmentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -21246,7 +21077,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -21255,7 +21085,6 @@
     "/v5/stream/DeleteDocumentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -21306,7 +21135,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -21315,7 +21143,6 @@
     "/v5/stream/DeleteDocumentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -21366,7 +21193,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -21375,7 +21201,6 @@
     "/v5/stream/DeleteEvalApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -21426,7 +21251,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -21435,7 +21259,6 @@
     "/v5/stream/DeleteEvalApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -21486,7 +21309,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -21495,7 +21317,6 @@
     "/v5/stream/DeleteFieldApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -21546,7 +21367,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -21555,7 +21375,6 @@
     "/v5/stream/DeleteFieldApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -21606,7 +21425,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -21615,7 +21433,6 @@
     "/v5/stream/DeleteModelApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -21666,7 +21483,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -21675,7 +21491,6 @@
     "/v5/stream/DeleteModelApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -21726,7 +21541,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -21735,7 +21549,6 @@
     "/v5/stream/DeleteParameterApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -21786,7 +21599,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -21795,7 +21607,6 @@
     "/v5/stream/DeleteParameterApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -21846,7 +21657,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -21855,7 +21665,6 @@
     "/v5/stream/DeletePersonaApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -21906,7 +21715,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -21915,7 +21723,6 @@
     "/v5/stream/DeletePersonaApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -21966,7 +21773,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -21975,7 +21781,6 @@
     "/v5/stream/DeleteProfileApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -22026,7 +21831,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -22035,7 +21839,6 @@
     "/v5/stream/DeleteProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -22086,7 +21889,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -22095,7 +21897,6 @@
     "/v5/stream/DeleteProviderApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -22146,7 +21947,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -22155,7 +21955,6 @@
     "/v5/stream/DeleteProviderApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -22206,7 +22005,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -22215,7 +22013,6 @@
     "/v5/stream/DeleteRubricApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -22266,7 +22063,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -22275,7 +22071,6 @@
     "/v5/stream/DeleteRubricApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -22326,7 +22121,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -22335,7 +22129,6 @@
     "/v5/stream/DeleteScenarioApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -22386,7 +22179,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -22395,7 +22187,6 @@
     "/v5/stream/DeleteScenarioApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -22446,7 +22237,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -22455,7 +22245,6 @@
     "/v5/stream/DeleteSettingApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -22506,7 +22295,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -22515,7 +22303,6 @@
     "/v5/stream/DeleteSettingApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -22566,7 +22353,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -22575,7 +22361,6 @@
     "/v5/stream/DeleteSimulationApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -22626,7 +22411,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -22635,7 +22419,6 @@
     "/v5/stream/DeleteSimulationApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -22686,7 +22469,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -22695,7 +22477,6 @@
     "/v5/stream/DeleteToolApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -22746,7 +22527,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -22755,7 +22535,6 @@
     "/v5/stream/DeleteToolApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -22806,7 +22585,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -22815,7 +22593,6 @@
     "/v5/stream/DuplicateAgentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -22866,7 +22643,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -22875,7 +22651,6 @@
     "/v5/stream/DuplicateAgentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -22926,7 +22701,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -22935,7 +22709,6 @@
     "/v5/stream/DuplicateAuthApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -22986,7 +22759,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -22995,7 +22767,6 @@
     "/v5/stream/DuplicateAuthApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -23046,7 +22817,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -23055,7 +22825,6 @@
     "/v5/stream/DuplicateCohortApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -23106,7 +22875,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -23115,7 +22883,6 @@
     "/v5/stream/DuplicateCohortApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -23166,7 +22933,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -23175,7 +22941,6 @@
     "/v5/stream/DuplicateDepartmentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -23226,7 +22991,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -23235,7 +22999,6 @@
     "/v5/stream/DuplicateDepartmentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -23286,7 +23049,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -23295,7 +23057,6 @@
     "/v5/stream/DuplicateDocumentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -23346,7 +23107,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -23355,7 +23115,6 @@
     "/v5/stream/DuplicateDocumentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -23406,7 +23165,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -23415,7 +23173,6 @@
     "/v5/stream/DuplicateEvalApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -23466,7 +23223,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -23475,7 +23231,6 @@
     "/v5/stream/DuplicateEvalApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -23526,7 +23281,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -23535,7 +23289,6 @@
     "/v5/stream/DuplicateFieldApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -23586,7 +23339,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -23595,7 +23347,6 @@
     "/v5/stream/DuplicateFieldApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -23646,7 +23397,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -23655,7 +23405,6 @@
     "/v5/stream/DuplicateModelApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -23706,7 +23455,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -23715,7 +23463,6 @@
     "/v5/stream/DuplicateModelApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -23766,7 +23513,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -23775,7 +23521,6 @@
     "/v5/stream/DuplicateParameterApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -23826,7 +23571,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -23835,7 +23579,6 @@
     "/v5/stream/DuplicateParameterApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -23886,7 +23629,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -23895,7 +23637,6 @@
     "/v5/stream/DuplicatePersonaApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -23946,7 +23687,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -23955,7 +23695,6 @@
     "/v5/stream/DuplicatePersonaApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -24006,7 +23745,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -24015,7 +23753,6 @@
     "/v5/stream/DuplicateProfileApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -24066,7 +23803,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -24075,7 +23811,6 @@
     "/v5/stream/DuplicateProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -24126,7 +23861,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -24135,7 +23869,6 @@
     "/v5/stream/DuplicateProviderApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -24186,7 +23919,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -24195,7 +23927,6 @@
     "/v5/stream/DuplicateProviderApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -24246,7 +23977,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -24255,7 +23985,6 @@
     "/v5/stream/DuplicateRubricApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -24306,7 +24035,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -24315,7 +24043,6 @@
     "/v5/stream/DuplicateRubricApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -24366,7 +24093,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -24375,7 +24101,6 @@
     "/v5/stream/DuplicateScenarioApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -24426,7 +24151,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -24435,7 +24159,6 @@
     "/v5/stream/DuplicateScenarioApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -24486,7 +24209,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -24495,7 +24217,6 @@
     "/v5/stream/DuplicateSettingApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -24546,7 +24267,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -24555,7 +24275,6 @@
     "/v5/stream/DuplicateSettingApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -24606,7 +24325,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -24615,7 +24333,6 @@
     "/v5/stream/DuplicateSimulationApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -24666,7 +24383,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -24675,7 +24391,6 @@
     "/v5/stream/DuplicateSimulationApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -24726,7 +24441,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -24735,7 +24449,6 @@
     "/v5/stream/DuplicateToolApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -24786,7 +24499,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -24795,7 +24507,6 @@
     "/v5/stream/DuplicateToolApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -24846,7 +24557,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -24855,7 +24565,6 @@
     "/v5/stream/EmulateProfileApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -24906,7 +24615,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -24915,7 +24623,6 @@
     "/v5/stream/EmulateProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -24966,7 +24673,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -24975,7 +24681,6 @@
     "/v5/stream/ExportAgentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -25026,7 +24731,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -25035,7 +24739,6 @@
     "/v5/stream/ExportAgentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -25086,7 +24789,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -25095,7 +24797,6 @@
     "/v5/stream/ExportAuthApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -25146,7 +24847,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -25155,7 +24855,6 @@
     "/v5/stream/ExportAuthApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -25206,7 +24905,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -25215,7 +24913,6 @@
     "/v5/stream/ExportCohortApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -25266,7 +24963,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -25275,7 +24971,6 @@
     "/v5/stream/ExportCohortApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -25326,7 +25021,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -25335,7 +25029,6 @@
     "/v5/stream/ExportDepartmentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -25386,7 +25079,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -25395,7 +25087,6 @@
     "/v5/stream/ExportDepartmentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -25446,7 +25137,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -25455,7 +25145,6 @@
     "/v5/stream/ExportDocumentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -25506,7 +25195,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -25515,7 +25203,6 @@
     "/v5/stream/ExportDocumentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -25566,7 +25253,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -25575,7 +25261,6 @@
     "/v5/stream/ExportEvalApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -25626,7 +25311,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -25635,7 +25319,6 @@
     "/v5/stream/ExportFieldApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -25686,7 +25369,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -25695,7 +25377,6 @@
     "/v5/stream/ExportFieldApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -25746,7 +25427,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -25755,7 +25435,6 @@
     "/v5/stream/ExportModelApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -25806,7 +25485,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -25815,7 +25493,6 @@
     "/v5/stream/ExportModelApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -25866,7 +25543,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -25875,7 +25551,6 @@
     "/v5/stream/ExportParameterApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -25926,7 +25601,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -25935,7 +25609,6 @@
     "/v5/stream/ExportParameterApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -25986,7 +25659,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -25995,7 +25667,6 @@
     "/v5/stream/ExportPersonaApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -26046,7 +25717,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -26055,7 +25725,6 @@
     "/v5/stream/ExportPersonaApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -26106,7 +25775,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -26115,7 +25783,6 @@
     "/v5/stream/ExportProfileApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -26166,7 +25833,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -26175,7 +25841,6 @@
     "/v5/stream/ExportProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -26226,7 +25891,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -26235,7 +25899,6 @@
     "/v5/stream/ExportProviderApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -26286,7 +25949,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -26295,7 +25957,6 @@
     "/v5/stream/ExportProviderApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -26346,7 +26007,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -26355,7 +26015,6 @@
     "/v5/stream/ExportRubricApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -26406,7 +26065,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -26415,7 +26073,6 @@
     "/v5/stream/ExportScenarioApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -26466,7 +26123,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -26475,7 +26131,6 @@
     "/v5/stream/ExportScenarioApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -26526,7 +26181,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -26535,7 +26189,6 @@
     "/v5/stream/ExportSettingApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -26586,7 +26239,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -26595,7 +26247,6 @@
     "/v5/stream/ExportSettingApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -26646,7 +26297,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -26655,7 +26305,6 @@
     "/v5/stream/ExportSimulationApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -26706,7 +26355,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -26715,7 +26363,6 @@
     "/v5/stream/ExportSimulationApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -26766,7 +26413,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -26775,7 +26421,6 @@
     "/v5/stream/ExportToolApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -26826,7 +26471,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -26835,7 +26479,6 @@
     "/v5/stream/ExportToolApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -26886,7 +26529,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -26895,7 +26537,6 @@
     "/v5/stream/GeneratePayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -26946,7 +26587,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -26955,7 +26595,6 @@
     "/v5/stream/GenerationCompleteEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -27006,7 +26645,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -27015,7 +26653,6 @@
     "/v5/stream/GenerationErrorEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -27066,7 +26703,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -27075,7 +26711,6 @@
     "/v5/stream/GenerationMediaCompleteEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -27126,7 +26761,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -27135,7 +26769,6 @@
     "/v5/stream/GenerationMediaProgressEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -27186,7 +26819,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -27195,7 +26827,6 @@
     "/v5/stream/GenerationProgressEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -27246,7 +26877,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -27255,7 +26885,6 @@
     "/v5/stream/GenerationSavedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -27306,7 +26935,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -27315,7 +26943,6 @@
     "/v5/stream/GetAgentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -27366,7 +26993,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -27375,7 +27001,6 @@
     "/v5/stream/GetAgentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -27426,7 +27051,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -27435,7 +27059,6 @@
     "/v5/stream/GetAgentDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -27486,7 +27109,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -27495,7 +27117,6 @@
     "/v5/stream/GetAttemptDetailRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -27546,7 +27167,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -27555,7 +27175,6 @@
     "/v5/stream/GetAttemptDetailResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "attempt"
         ],
@@ -27606,7 +27225,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "attempt"
         ]
@@ -27615,7 +27233,6 @@
     "/v5/stream/GetAuthApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -27666,7 +27283,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -27675,7 +27291,6 @@
     "/v5/stream/GetAuthApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -27726,7 +27341,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -27735,7 +27349,6 @@
     "/v5/stream/GetAuthDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -27786,7 +27399,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -27795,7 +27407,6 @@
     "/v5/stream/GetChatRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "chat"
         ],
@@ -27846,7 +27457,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "chat"
         ]
@@ -27855,7 +27465,6 @@
     "/v5/stream/GetChatResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "chat"
         ],
@@ -27906,7 +27515,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "chat"
         ]
@@ -27915,7 +27523,6 @@
     "/v5/stream/GetCohortApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -27966,7 +27573,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -27975,7 +27581,6 @@
     "/v5/stream/GetCohortApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -28026,7 +27631,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -28035,7 +27639,6 @@
     "/v5/stream/GetCohortDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -28086,7 +27689,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -28095,7 +27697,6 @@
     "/v5/stream/GetDepartmentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -28146,7 +27747,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -28155,7 +27755,6 @@
     "/v5/stream/GetDepartmentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -28206,7 +27805,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -28215,7 +27813,6 @@
     "/v5/stream/GetDepartmentDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -28266,7 +27863,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -28275,7 +27871,6 @@
     "/v5/stream/GetDocumentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -28326,7 +27921,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -28335,7 +27929,6 @@
     "/v5/stream/GetDocumentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -28386,7 +27979,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -28395,7 +27987,6 @@
     "/v5/stream/GetDocumentDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -28446,7 +28037,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -28455,7 +28045,6 @@
     "/v5/stream/GetEvalApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -28506,7 +28095,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -28515,7 +28103,6 @@
     "/v5/stream/GetEvalApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -28566,7 +28153,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -28575,7 +28161,6 @@
     "/v5/stream/GetEvalDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -28626,7 +28211,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -28635,7 +28219,6 @@
     "/v5/stream/GetFieldApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -28686,7 +28269,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -28695,7 +28277,6 @@
     "/v5/stream/GetFieldApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -28746,7 +28327,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -28755,7 +28335,6 @@
     "/v5/stream/GetFieldDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -28806,7 +28385,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -28815,7 +28393,6 @@
     "/v5/stream/GetGroupDetailRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -28866,7 +28443,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -28875,7 +28451,6 @@
     "/v5/stream/GetGroupDetailResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "group"
         ],
@@ -28926,7 +28501,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "group"
         ]
@@ -28935,7 +28509,6 @@
     "/v5/stream/GetHomeRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "home"
         ],
@@ -28986,7 +28559,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "home"
         ]
@@ -28995,7 +28567,6 @@
     "/v5/stream/GetHomeResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "home"
         ],
@@ -29046,7 +28617,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "home"
         ]
@@ -29055,7 +28625,6 @@
     "/v5/stream/GetModelApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -29106,7 +28675,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -29115,7 +28683,6 @@
     "/v5/stream/GetModelApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -29166,7 +28733,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -29175,7 +28741,6 @@
     "/v5/stream/GetModelDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -29226,7 +28791,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -29235,7 +28799,6 @@
     "/v5/stream/GetParameterApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -29286,7 +28849,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -29295,7 +28857,6 @@
     "/v5/stream/GetParameterApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -29346,7 +28907,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -29355,7 +28915,6 @@
     "/v5/stream/GetParameterDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -29406,7 +28965,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -29415,7 +28973,6 @@
     "/v5/stream/GetPersonaApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -29466,7 +29023,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -29475,7 +29031,6 @@
     "/v5/stream/GetPersonaApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -29526,7 +29081,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -29535,7 +29089,6 @@
     "/v5/stream/GetPersonaDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -29586,7 +29139,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -29595,7 +29147,6 @@
     "/v5/stream/GetPracticeRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "practice"
         ],
@@ -29646,7 +29197,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "practice"
         ]
@@ -29655,7 +29205,6 @@
     "/v5/stream/GetPracticeResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "practice"
         ],
@@ -29706,7 +29255,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "practice"
         ]
@@ -29715,7 +29263,6 @@
     "/v5/stream/GetProfileApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -29766,7 +29313,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -29775,7 +29321,6 @@
     "/v5/stream/GetProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -29826,7 +29371,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -29835,7 +29379,6 @@
     "/v5/stream/GetProfileDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -29886,7 +29429,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -29895,7 +29437,6 @@
     "/v5/stream/GetProviderApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -29946,7 +29487,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -29955,7 +29495,6 @@
     "/v5/stream/GetProviderApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -30006,7 +29545,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -30015,7 +29553,6 @@
     "/v5/stream/GetProviderDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -30066,7 +29603,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -30075,7 +29611,6 @@
     "/v5/stream/GetRubricApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -30126,7 +29661,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -30135,7 +29669,6 @@
     "/v5/stream/GetRubricApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -30186,7 +29719,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -30195,7 +29727,6 @@
     "/v5/stream/GetRubricDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -30246,7 +29777,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -30255,7 +29785,6 @@
     "/v5/stream/GetScenarioApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -30306,7 +29835,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -30315,7 +29843,6 @@
     "/v5/stream/GetScenarioApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -30366,7 +29893,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -30375,7 +29901,6 @@
     "/v5/stream/GetScenarioDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -30426,7 +29951,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -30435,7 +29959,6 @@
     "/v5/stream/GetSessionDetailRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "session"
         ],
@@ -30486,7 +30009,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "session"
         ]
@@ -30495,7 +30017,6 @@
     "/v5/stream/GetSessionDetailResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "session"
         ],
@@ -30546,7 +30067,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "session"
         ]
@@ -30555,7 +30075,6 @@
     "/v5/stream/GetSettingApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -30606,7 +30125,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -30615,7 +30133,6 @@
     "/v5/stream/GetSettingApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -30666,7 +30183,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -30675,7 +30191,6 @@
     "/v5/stream/GetSettingDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -30726,7 +30241,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -30735,7 +30249,6 @@
     "/v5/stream/GetSimulationApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -30786,7 +30299,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -30795,7 +30307,6 @@
     "/v5/stream/GetSimulationApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -30846,7 +30357,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -30855,7 +30365,6 @@
     "/v5/stream/GetSimulationDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -30906,7 +30415,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -30915,7 +30423,6 @@
     "/v5/stream/GetSuiteRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "invocation"
         ],
@@ -30966,7 +30473,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "invocation"
         ]
@@ -30975,7 +30481,6 @@
     "/v5/stream/GetSuiteResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "invocation"
         ],
@@ -31026,7 +30531,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "invocation"
         ]
@@ -31035,7 +30539,6 @@
     "/v5/stream/GetTestArtifactRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -31086,7 +30589,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -31095,7 +30597,6 @@
     "/v5/stream/GetTestArtifactResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -31146,7 +30647,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -31155,7 +30655,6 @@
     "/v5/stream/GetToolApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -31206,7 +30705,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -31215,7 +30713,6 @@
     "/v5/stream/GetToolApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -31266,7 +30763,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -31275,7 +30771,6 @@
     "/v5/stream/GetToolDraftsApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -31326,7 +30821,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -31335,7 +30829,6 @@
     "/v5/stream/HealthRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "health"
         ],
@@ -31386,7 +30879,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "health"
         ]
@@ -31395,7 +30887,6 @@
     "/v5/stream/HealthResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "health"
         ],
@@ -31446,7 +30937,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "health"
         ]
@@ -31455,7 +30945,6 @@
     "/v5/stream/LeaderboardRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "leaderboard"
         ],
@@ -31506,7 +30995,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "leaderboard"
         ]
@@ -31515,7 +31003,6 @@
     "/v5/stream/LeaderboardResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "leaderboard"
         ],
@@ -31566,7 +31053,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "leaderboard"
         ]
@@ -31575,7 +31061,6 @@
     "/v5/stream/OperationErrorEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "activity"
         ],
@@ -31626,7 +31111,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "activity"
         ]
@@ -31635,7 +31119,6 @@
     "/v5/stream/PatchAgentDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -31686,7 +31169,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -31695,7 +31177,6 @@
     "/v5/stream/PatchAgentDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -31746,7 +31227,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -31755,7 +31235,6 @@
     "/v5/stream/PatchAuthDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -31806,7 +31285,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -31815,7 +31293,6 @@
     "/v5/stream/PatchAuthDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -31866,7 +31343,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -31875,7 +31351,6 @@
     "/v5/stream/PatchCohortDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -31926,7 +31401,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -31935,7 +31409,6 @@
     "/v5/stream/PatchCohortDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -31986,7 +31459,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -31995,7 +31467,6 @@
     "/v5/stream/PatchDepartmentDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -32046,7 +31517,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -32055,7 +31525,6 @@
     "/v5/stream/PatchDepartmentDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -32106,7 +31575,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -32115,7 +31583,6 @@
     "/v5/stream/PatchDocumentDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -32166,7 +31633,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -32175,7 +31641,6 @@
     "/v5/stream/PatchDocumentDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -32226,7 +31691,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -32235,7 +31699,6 @@
     "/v5/stream/PatchEvalDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -32286,7 +31749,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -32295,7 +31757,6 @@
     "/v5/stream/PatchEvalDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -32346,7 +31807,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -32355,7 +31815,6 @@
     "/v5/stream/PatchFieldDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -32406,7 +31865,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -32415,7 +31873,6 @@
     "/v5/stream/PatchFieldDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -32466,7 +31923,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -32475,7 +31931,6 @@
     "/v5/stream/PatchModelDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -32526,7 +31981,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -32535,7 +31989,6 @@
     "/v5/stream/PatchModelDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -32586,7 +32039,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -32595,7 +32047,6 @@
     "/v5/stream/PatchParameterDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -32646,7 +32097,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -32655,7 +32105,6 @@
     "/v5/stream/PatchParameterDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -32706,7 +32155,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -32715,7 +32163,6 @@
     "/v5/stream/PatchPersonaDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -32766,7 +32213,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -32775,7 +32221,6 @@
     "/v5/stream/PatchPersonaDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -32826,7 +32271,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -32835,7 +32279,6 @@
     "/v5/stream/PatchProfileDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -32886,7 +32329,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -32895,7 +32337,6 @@
     "/v5/stream/PatchProfileDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -32946,7 +32387,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -32955,7 +32395,6 @@
     "/v5/stream/PatchProviderDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -33006,7 +32445,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -33015,7 +32453,6 @@
     "/v5/stream/PatchProviderDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -33066,7 +32503,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -33075,7 +32511,6 @@
     "/v5/stream/PatchRubricDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -33126,7 +32561,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -33135,7 +32569,6 @@
     "/v5/stream/PatchRubricDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -33186,7 +32619,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -33195,7 +32627,6 @@
     "/v5/stream/PatchScenarioDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -33246,7 +32677,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -33255,7 +32685,6 @@
     "/v5/stream/PatchScenarioDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -33306,7 +32735,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -33315,7 +32743,6 @@
     "/v5/stream/PatchSettingDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -33366,7 +32793,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -33375,7 +32801,6 @@
     "/v5/stream/PatchSettingDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -33426,7 +32851,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -33435,7 +32859,6 @@
     "/v5/stream/PatchSimulationDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -33486,7 +32909,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -33495,7 +32917,6 @@
     "/v5/stream/PatchSimulationDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -33546,7 +32967,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -33555,7 +32975,6 @@
     "/v5/stream/PatchToolDraftApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -33606,7 +33025,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -33615,7 +33033,6 @@
     "/v5/stream/PatchToolDraftApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -33666,7 +33083,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -33675,7 +33091,6 @@
     "/v5/stream/PersonaGenerationProgressEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -33726,7 +33141,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -33735,7 +33149,6 @@
     "/v5/stream/PricingRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "pricing"
         ],
@@ -33786,7 +33199,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "pricing"
         ]
@@ -33795,7 +33207,6 @@
     "/v5/stream/PricingResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "pricing"
         ],
@@ -33846,7 +33257,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "pricing"
         ]
@@ -33855,7 +33265,6 @@
     "/v5/stream/ProfileContextApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -33906,7 +33315,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -33915,7 +33323,6 @@
     "/v5/stream/RecordRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "record"
         ],
@@ -33966,7 +33373,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "record"
         ]
@@ -33975,7 +33381,6 @@
     "/v5/stream/TestAllCompleteEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34026,7 +33431,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34035,7 +33439,6 @@
     "/v5/stream/TestEndAllPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34086,7 +33489,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34095,7 +33497,6 @@
     "/v5/stream/TestEndPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34146,7 +33547,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34155,7 +33555,6 @@
     "/v5/stream/TestGroupPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34206,7 +33605,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34215,7 +33613,6 @@
     "/v5/stream/TestJoinPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34266,7 +33663,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34275,7 +33671,6 @@
     "/v5/stream/TestJoinedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34326,7 +33721,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34335,7 +33729,6 @@
     "/v5/stream/TestLeavePayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34386,7 +33779,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34395,7 +33787,6 @@
     "/v5/stream/TestNextPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34446,7 +33837,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34455,7 +33845,6 @@
     "/v5/stream/TestProgressEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34506,7 +33895,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34515,7 +33903,6 @@
     "/v5/stream/TestRunCompleteEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34566,7 +33953,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34575,7 +33961,6 @@
     "/v5/stream/TestRunDeltaEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34626,7 +34011,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34635,7 +34019,6 @@
     "/v5/stream/TestRunPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34686,7 +34069,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34695,7 +34077,6 @@
     "/v5/stream/TestRunStartEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34746,7 +34127,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34755,7 +34135,6 @@
     "/v5/stream/TestStartPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34806,7 +34185,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34815,7 +34193,6 @@
     "/v5/stream/TestStartedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34866,7 +34243,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34875,7 +34251,6 @@
     "/v5/stream/TestStopPayload": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34926,7 +34301,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34935,7 +34309,6 @@
     "/v5/stream/TestStoppedEvent": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "test"
         ],
@@ -34986,7 +34359,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "test"
         ]
@@ -34995,7 +34367,6 @@
     "/v5/stream/UnemulateProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -35046,7 +34417,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -35055,7 +34425,6 @@
     "/v5/stream/UpdateAgentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -35106,7 +34475,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -35115,7 +34483,6 @@
     "/v5/stream/UpdateAgentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "agents"
         ],
@@ -35166,7 +34533,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "agents"
         ]
@@ -35175,7 +34541,6 @@
     "/v5/stream/UpdateAuthApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -35226,7 +34591,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -35235,7 +34599,6 @@
     "/v5/stream/UpdateAuthApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "auths"
         ],
@@ -35286,7 +34649,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "auths"
         ]
@@ -35295,7 +34657,6 @@
     "/v5/stream/UpdateCohortApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -35346,7 +34707,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -35355,7 +34715,6 @@
     "/v5/stream/UpdateCohortApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "cohorts"
         ],
@@ -35406,7 +34765,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "cohorts"
         ]
@@ -35415,7 +34773,6 @@
     "/v5/stream/UpdateDepartmentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -35466,7 +34823,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -35475,7 +34831,6 @@
     "/v5/stream/UpdateDepartmentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "departments"
         ],
@@ -35526,7 +34881,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "departments"
         ]
@@ -35535,7 +34889,6 @@
     "/v5/stream/UpdateDocumentApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -35586,7 +34939,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -35595,7 +34947,6 @@
     "/v5/stream/UpdateDocumentApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "documents"
         ],
@@ -35646,7 +34997,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "documents"
         ]
@@ -35655,7 +35005,6 @@
     "/v5/stream/UpdateEvalApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -35706,7 +35055,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -35715,7 +35063,6 @@
     "/v5/stream/UpdateEvalApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "evals"
         ],
@@ -35766,7 +35113,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "evals"
         ]
@@ -35775,7 +35121,6 @@
     "/v5/stream/UpdateFieldApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -35826,7 +35171,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -35835,7 +35179,6 @@
     "/v5/stream/UpdateFieldApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "fields"
         ],
@@ -35886,7 +35229,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "fields"
         ]
@@ -35895,7 +35237,6 @@
     "/v5/stream/UpdateModelApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -35946,7 +35287,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -35955,7 +35295,6 @@
     "/v5/stream/UpdateModelApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "models"
         ],
@@ -36006,7 +35345,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "models"
         ]
@@ -36015,7 +35353,6 @@
     "/v5/stream/UpdateParameterApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -36066,7 +35403,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -36075,7 +35411,6 @@
     "/v5/stream/UpdateParameterApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "parameters"
         ],
@@ -36126,7 +35461,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "parameters"
         ]
@@ -36135,7 +35469,6 @@
     "/v5/stream/UpdatePersonaApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -36186,7 +35519,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -36195,7 +35527,6 @@
     "/v5/stream/UpdatePersonaApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "personas"
         ],
@@ -36246,7 +35577,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "personas"
         ]
@@ -36255,7 +35585,6 @@
     "/v5/stream/UpdateProfileApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -36306,7 +35635,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -36315,7 +35643,6 @@
     "/v5/stream/UpdateProfileApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "profiles"
         ],
@@ -36366,7 +35693,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "profiles"
         ]
@@ -36375,7 +35701,6 @@
     "/v5/stream/UpdateProviderApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -36426,7 +35751,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -36435,7 +35759,6 @@
     "/v5/stream/UpdateProviderApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "providers"
         ],
@@ -36486,7 +35809,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "providers"
         ]
@@ -36495,7 +35817,6 @@
     "/v5/stream/UpdateRubricApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -36546,7 +35867,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -36555,7 +35875,6 @@
     "/v5/stream/UpdateRubricApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "rubrics"
         ],
@@ -36606,7 +35925,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "rubrics"
         ]
@@ -36615,7 +35933,6 @@
     "/v5/stream/UpdateScenarioApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -36666,7 +35983,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -36675,7 +35991,6 @@
     "/v5/stream/UpdateScenarioApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "scenarios"
         ],
@@ -36726,7 +36041,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "scenarios"
         ]
@@ -36735,7 +36049,6 @@
     "/v5/stream/UpdateSettingApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -36786,7 +36099,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -36795,7 +36107,6 @@
     "/v5/stream/UpdateSettingApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "settings"
         ],
@@ -36846,7 +36157,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "settings"
         ]
@@ -36855,7 +36165,6 @@
     "/v5/stream/UpdateSimulationApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -36906,7 +36215,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -36915,7 +36223,6 @@
     "/v5/stream/UpdateSimulationApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "simulations"
         ],
@@ -36966,7 +36273,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "simulations"
         ]
@@ -36975,7 +36281,6 @@
     "/v5/stream/UpdateToolApiRequest": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -37026,7 +36331,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]
@@ -37035,7 +36339,6 @@
     "/v5/stream/UpdateToolApiResponse": {
       "post": {
         "tags": [
-          "v5",
           "stream",
           "tools"
         ],
@@ -37086,7 +36389,6 @@
           }
         ],
         "x-cache-tags": [
-          "v5",
           "stream",
           "tools"
         ]

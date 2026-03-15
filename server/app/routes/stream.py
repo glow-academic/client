@@ -1,5 +1,7 @@
 """Stream delivery — GET /v5/stream (SSE) + POST /v5/stream/{Type} (OpenAPI schema).
 
+Root-level transport route (not a v5 business action).
+
 The SSE endpoint streams artifact events to clients.
 Authorization is handled by the stream session: callers must first
 POST /v5/connect to obtain an ``sid``, then POST /v5/attempt/join (or
@@ -17,11 +19,12 @@ from collections.abc import AsyncIterator, Callable
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.infra.events.store import build_event_cursor, read_artifact_events
+from app.infra.identity.middleware import require_auth
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.stream.hub import subscribe as subscribe_live_events
 from app.infra.stream.hub import unsubscribe as unsubscribe_live_events
@@ -61,7 +64,11 @@ from app.socket.v5.client.types import (
     TestRunPayload,
 )
 
-router = APIRouter(prefix="/stream", tags=["stream"])
+router = APIRouter(
+    prefix="/v5/stream",
+    tags=["stream"],
+    dependencies=[Depends(require_auth)],
+)
 
 # ---------------------------------------------------------------------------
 # SSE endpoint — GET /v5/stream

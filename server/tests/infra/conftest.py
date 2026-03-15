@@ -118,15 +118,13 @@ def _build_v5_events_test_app(
         request.state.profile_id = profile_id
         request.state.session_id = request_state["session_id"]
 
-    from app.routes.v5.stream import router as stream_router
+    from app.routes.stream import router as stream_router
 
     app = FastAPI()
-    root_router = APIRouter(
-        prefix="/v5",
+    app.include_router(
+        stream_router,
         dependencies=[Depends(require_auth)],
     )
-    root_router.include_router(stream_router)
-    app.include_router(root_router)
     app.dependency_overrides[require_auth] = _require_auth_override
     return app
 

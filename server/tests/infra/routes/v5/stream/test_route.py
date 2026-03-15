@@ -14,7 +14,7 @@ from tests.infra.route_helpers import create_admin_route_actor
 from app.infra.stream.types import EventEnvelope
 from app.infra.stream.emitter import emit_artifact_operation_events
 from app.infra.stream.registry import get_artifact_events_config
-from app.routes.v5.stream import stream_events
+from app.routes.stream import stream_events
 
 
 @pytest_asyncio.fixture
@@ -163,7 +163,7 @@ class TestEventsRoutes:
             return expected_events
 
         monkeypatch.setattr(
-            "app.routes.v5.stream.read_artifact_events",
+            "app.routes.stream.read_artifact_events",
             _read_artifact_events,
         )
 
@@ -222,7 +222,7 @@ class TestEventsRoutes:
             return expected_events
 
         monkeypatch.setattr(
-            "app.routes.v5.stream.read_artifact_events",
+            "app.routes.stream.read_artifact_events",
             _read_artifact_events,
         )
 
@@ -256,7 +256,7 @@ class TestEventsRoutes:
             return []
 
         monkeypatch.setattr(
-            "app.routes.v5.stream.read_artifact_events",
+            "app.routes.stream.read_artifact_events",
             _read_artifact_events,
         )
         persona_config = get_artifact_events_config("persona")
@@ -266,7 +266,7 @@ class TestEventsRoutes:
         async def _resolve_subscription(**_kwargs):
             return persona_config, operation_config
         monkeypatch.setattr(
-            "app.routes.v5.stream.resolve_subscription",
+            "app.routes.stream.resolve_subscription",
             _resolve_subscription,
         )
 
