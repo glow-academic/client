@@ -216,3 +216,83 @@ class GenerateArtifactPayload(BaseModel):
     draft_id: str | None = None
     developer_instruction_templates: list[str] | None = None
     agent_id: str | None = None
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Client-facing generation event types (server → client)
+# ═══════════════════════════════════════════════════════════════════════════
+
+from pydantic import Field
+
+
+class GenerationProgressEvent(BaseModel):
+    """Server-to-client: generation resource progress."""
+
+    artifact_type: str = Field(..., description="Type of artifact being generated")
+    group_id: str = Field(..., description="UUID of the generation group")
+    run_id: str = Field(..., description="UUID of the generation run")
+    completed_resources: int = Field(..., description="Number of resources completed so far")
+    total_resources: int = Field(..., description="Total number of resources to generate")
+    percentage: int = Field(..., description="Progress percentage (0-100)")
+    last_completed_resource: str = Field(..., description="Name of the last completed resource")
+
+
+class GenerationCompleteEvent(BaseModel):
+    """Server-to-client: generation complete (all agents finished)."""
+
+    artifact_type: str = Field(..., description="Type of artifact generated")
+    group_id: str = Field(..., description="UUID of the generation group")
+    run_id: str = Field(..., description="UUID of the generation run")
+    success: bool = Field(True, description="Whether generation succeeded")
+    message: str = Field("", description="Completion message")
+    artifact_id: str | None = Field(None, description="UUID of the generated artifact")
+
+
+class GenerationSavedEvent(BaseModel):
+    """Server-to-client: artifact persisted after generation."""
+
+    artifact_type: str = Field(..., description="Type of artifact saved")
+    group_id: str = Field(..., description="UUID of the generation group")
+    run_id: str = Field(..., description="UUID of the generation run")
+    artifact_id: str | None = Field(None, description="UUID of the saved artifact")
+
+
+class GenerationErrorEvent(BaseModel):
+    """Server-to-client: generation error."""
+
+    artifact_type: str = Field(..., description="Type of artifact that failed")
+    group_id: str | None = Field(None, description="UUID of the generation group")
+    resource_type: str | None = Field(None, description="Type of resource that failed")
+    resource_types: list[str] | None = Field(None, description="List of resource types that failed")
+    resource_id: str | None = Field(None, description="UUID of the failed resource")
+    run_id: str | None = Field(None, description="UUID of the generation run")
+    success: bool = Field(False, description="Always False for error events")
+    message: str = Field(..., description="Error message")
+
+
+class GenerationMediaProgressEvent(BaseModel):
+    """Server-to-client: media generation progress (image/video)."""
+
+    modality: str = Field(..., description="Media modality: 'image' or 'video'")
+    artifact_type: str = Field(..., description="Type of artifact being generated")
+    group_id: str | None = Field(None, description="UUID of the generation group")
+    run_id: str | None = Field(None, description="UUID of the generation run")
+    resource_type: str | None = Field(None, description="Type of resource being generated")
+    resource_id: str | None = Field(None, description="UUID of the resource")
+    status: str = Field(..., description="Current status: 'started' or 'in_progress'")
+    message: str = Field(..., description="Progress message")
+
+
+class GenerationMediaCompleteEvent(BaseModel):
+    """Server-to-client: media generation complete (image/video)."""
+
+    modality: str = Field(..., description="Media modality: 'image' or 'video'")
+    artifact_type: str = Field(..., description="Type of artifact generated")
+    group_id: str | None = Field(None, description="UUID of the generation group")
+    run_id: str | None = Field(None, description="UUID of the generation run")
+    resource_type: str | None = Field(None, description="Type of resource generated")
+    resource_id: str | None = Field(None, description="UUID of the resource")
+    file_path: str | None = Field(None, description="Path to the generated media file")
+    mime_type: str | None = Field(None, description="MIME type of the media file")
+    file_size: int | None = Field(None, description="File size in bytes")
+    upload_id: str | None = Field(None, description="UUID of the upload record")

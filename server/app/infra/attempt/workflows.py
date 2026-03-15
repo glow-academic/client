@@ -745,7 +745,7 @@ async def attempt_start_impl(
 ) -> None:
     """Create attempt via black boxes, then delegate to attempt_proceed."""
     from app.infra.profile_identity_context import resolve_profile_identity_context
-    from app.socket.v5.client.types import AttemptStartPayload
+    from app.infra.attempt.client_types import AttemptStartPayload
     from app.tools.entries.attempt.create import create_attempt
     from app.tools.entries.attempt.refresh import refresh_attempt
     from app.tools.entries.attempt_chat.refresh import refresh_attempt_chat

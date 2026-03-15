@@ -10,8 +10,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.typed_emit import emit_to_internal
-from app.socket.v5.client.types import GeneratePayload
-from app.socket.v5.types import GenerateErrorApiRequest
+from app.infra.websocket.generation_types import GenerateErrorApiRequest, GeneratePayload
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

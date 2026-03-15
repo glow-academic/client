@@ -7,7 +7,7 @@ Listens to generation_channel(type=error) and emits to client:
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
-from app.socket.v5.client.types import GenerationErrorEvent
+from app.infra.websocket.generation_types import GenerationErrorEvent
 
 internal_sio = get_internal_sio()
 

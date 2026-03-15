@@ -11,7 +11,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.socket.v5.client.types import AttemptResponsePayload
+from app.infra.attempt.client_types import AttemptResponsePayload
 from app.socket.v5.internal.attempt.response import (
     attempt_response_internal_impl,
 )

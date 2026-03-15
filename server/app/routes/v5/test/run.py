@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.socket.v5.client.types import TestRunPayload
+from app.infra.test.client_types import TestRunPayload
 from app.socket.v5.internal.test.run import test_run_internal_impl
 
 router = APIRouter()

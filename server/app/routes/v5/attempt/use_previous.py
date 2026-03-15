@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.socket.v5.client.types import AttemptUsePreviousPayload
+from app.infra.attempt.client_types import AttemptUsePreviousPayload
 from app.socket.v5.internal.attempt.use_previous import (
     attempt_use_previous_internal_impl,
 )

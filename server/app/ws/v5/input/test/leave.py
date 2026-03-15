@@ -3,7 +3,7 @@
 from typing import Any
 
 from app.infra.globals import sio
-from app.socket.v5.client.types import TestLeavePayload
+from app.infra.test.client_types import TestLeavePayload
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

@@ -5,7 +5,7 @@ from typing import Any
 from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.socket.v5.client.types import TestEndPayload
+from app.infra.test.client_types import TestEndPayload
 from app.infra.websocket.test_types import TestErrorData
 from app.utils.logging.db_logger import get_logger
 

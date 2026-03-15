@@ -32,7 +32,17 @@ from app.infra.stream.registry import EVENT_REGISTRY
 from app.infra.stream.session import get_joined_entities, get_session_profile
 
 # --- Socket types not yet modeled as artifact operations ----------------
-from app.socket.v5.client.types import (
+from app.infra.test.client_types import (
+    TestEndAllPayload,
+    TestGroupPayload,
+    TestJoinedEvent,
+    TestJoinPayload,
+    TestLeavePayload,
+    TestNextPayload,
+    TestRunDeltaEvent,
+    TestRunPayload,
+)
+from app.infra.attempt.client_types import (
     AttemptAssistantHintsEvent,
     AttemptAudioStopPayload,
     AttemptEndAllPayload,
@@ -46,7 +56,9 @@ from app.socket.v5.client.types import (
     AttemptUserDeltaEvent,
     AttemptUserProgressEvent,
     AttemptUserStartEvent,
-    ConnectionConfirmedPayload,
+)
+from app.infra.session.client_types import ConnectionConfirmedPayload
+from app.infra.websocket.generation_types import (
     GeneratePayload,
     GenerationCompleteEvent,
     GenerationErrorEvent,
@@ -54,14 +66,6 @@ from app.socket.v5.client.types import (
     GenerationMediaProgressEvent,
     GenerationProgressEvent,
     GenerationSavedEvent,
-    TestEndAllPayload,
-    TestGroupPayload,
-    TestJoinedEvent,
-    TestJoinPayload,
-    TestLeavePayload,
-    TestNextPayload,
-    TestRunDeltaEvent,
-    TestRunPayload,
 )
 
 router = APIRouter(

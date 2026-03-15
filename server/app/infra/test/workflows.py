@@ -246,7 +246,7 @@ async def test_group_impl(
 ) -> None:
     """Orchestrate sequential runs within a group."""
     from app.infra.websocket.test_types import TestErrorData
-    from app.socket.v5.client.types import TestGroupPayload
+    from app.infra.test.client_types import TestGroupPayload
     from app.tools.entries.runs.search import search_runs
     from app.utils.logging.db_logger import get_logger
 
@@ -841,7 +841,7 @@ async def test_run_impl(
 ) -> None:
     """Copy conversation from original run, create new run, emit generate_artifact."""
     from app.infra.websocket.test_types import TestErrorData
-    from app.socket.v5.client.types import TestRunPayload
+    from app.infra.test.client_types import TestRunPayload
     from app.tools.entries.messages.create import create_message
     from app.tools.entries.messages.search import search_messages
     from app.tools.entries.runs.create import create_run
@@ -1002,3 +1002,87 @@ async def test_run_impl(
                 )
             ]
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Test domain utilities (moved from app.socket.v5.types)
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def determine_next_run(
+    invocation_run_ids: list[uuid.UUID],
+    run_ids: list[uuid.UUID],
+) -> tuple[uuid.UUID | None, int, int]:
+    """Determine the next pending template run to replay.
+
+    Compares configured template runs (run_ids) against completed runs
+    (invocation_run_ids) to find the next unexecuted template.
+
+    Returns:
+        (next_run_resource_id, current_run_number, total_runs)
+    """
+    total_runs = len(run_ids)
+    completed_runs = len(invocation_run_ids)
+
+    if completed_runs >= total_runs:
+        return None, total_runs, total_runs
+
+    next_run_resource_id = (
+        run_ids[completed_runs] if completed_runs < total_runs else None
+    )
+    current_run = completed_runs + 1
+
+    return next_run_resource_id, current_run, total_runs
+
+
+def build_messages_from_conversation(
+    system_prompt: str | None,
+    developer_instructions: list[str],
+    original_conversation: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Build messages array from original conversation.
+
+    Auto-regressive replay pattern:
+    1. Add system prompt
+    2. Add developer instructions
+    3. Add all messages EXCEPT remove tool_calls from last assistant message
+
+    Args:
+        system_prompt: System prompt from group config
+        developer_instructions: Rendered developer instructions
+        original_conversation: Original conversation from previous run
+
+    Returns:
+        Messages array ready for LLM completion
+    """
+    messages: list[dict[str, Any]] = []
+
+    # Add system prompt
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+
+    # Add developer instructions
+    for instruction in developer_instructions:
+        messages.append({"role": "developer", "content": instruction})
+
+    # Add original conversation with truncation
+    if original_conversation:
+        for i, msg in enumerate(original_conversation):
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+
+            # For last assistant message, remove tool_calls to force regeneration
+            is_last = i == len(original_conversation) - 1
+            if is_last and role == "assistant":
+                # Only include the content, not the tool_calls
+                messages.append({"role": role, "content": content})
+            else:
+                # Include everything as-is
+                message_dict: dict[str, Any] = {"role": role, "content": content}
+                if "tool_calls" in msg:
+                    message_dict["tool_calls"] = msg["tool_calls"]
+                if "tool_call_id" in msg:
+                    message_dict["tool_call_id"] = msg["tool_call_id"]
+                messages.append(message_dict)
+
+    return messages

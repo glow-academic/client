@@ -7,7 +7,7 @@ Listens to internal `connection_progress` and emits to client:
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
-from app.socket.v5.client.types import ConnectionConfirmedPayload
+from app.infra.session.client_types import ConnectionConfirmedPayload
 
 internal_sio = get_internal_sio()
 

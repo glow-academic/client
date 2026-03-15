@@ -7,7 +7,7 @@ Listens to generation_channel(type=complete) and emits to client:
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
-from app.socket.v5.client.types import GenerationCompleteEvent
+from app.infra.websocket.generation_types import GenerationCompleteEvent
 
 internal_sio = get_internal_sio()
 

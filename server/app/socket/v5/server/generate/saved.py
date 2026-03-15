@@ -9,7 +9,7 @@ Separate from complete — tells client the artifact was persisted with its new 
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
-from app.socket.v5.client.types import GenerationSavedEvent
+from app.infra.websocket.generation_types import GenerationSavedEvent
 
 internal_sio = get_internal_sio()
 

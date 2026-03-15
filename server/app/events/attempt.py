@@ -11,7 +11,7 @@ from app.infra.attempt.types import (
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
 )
-from app.socket.v5.client.types import (
+from app.infra.attempt.client_types import (
     # Attempt domain event payloads (server → client)
     AttemptAssistantCompleteEvent,
     AttemptAssistantProgressEvent,

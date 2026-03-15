@@ -6,7 +6,7 @@ Delegates to test_proceed(complete_all=True).
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
-from app.socket.v5.client.types import TestEndAllPayload
+from app.infra.test.client_types import TestEndAllPayload
 from app.infra.websocket.test_types import TestErrorData, TestProceedData
 from app.utils.logging.db_logger import get_logger
 

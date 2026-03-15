@@ -11,7 +11,7 @@ from app.infra.test.types import (
     GetTestArtifactRequest,
     GetTestArtifactResponse,
 )
-from app.socket.v5.client.types import (
+from app.infra.test.client_types import (
     # Test domain event payloads (server → client)
     TestAllCompleteEvent,
     # Test lifecycle input payloads (client → server)

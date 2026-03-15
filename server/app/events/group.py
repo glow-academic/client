@@ -11,7 +11,7 @@ from app.infra.group.types import (
     GetGroupDetailRequest,
     GetGroupDetailResponse,
 )
-from app.socket.v5.client.types import (
+from app.infra.websocket.generation_types import (
     # Generation lifecycle input payload (client → server)
     GeneratePayload,
     # Generation domain event payloads (server → client)
