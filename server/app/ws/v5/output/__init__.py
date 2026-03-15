@@ -1,10 +1,70 @@
 """Output events — what the server sends."""
 
 from . import (  # noqa: F401
+    # Activity (namespaced)
+    activity,
+    # Agent (namespaced)
+    agent,
     # Attempt (namespaced)
     attempt,
+    # Auth (namespaced)
+    auth,
+    # Benchmark (namespaced)
+    benchmark,
+    # Chat (namespaced)
+    chat,
+    # Cohort (namespaced)
+    cohort,
+    # Dashboard (namespaced)
+    dashboard,
+    # Department (namespaced)
+    department,
+    # Document (namespaced)
+    document,
+    # Eval (namespaced)
+    eval,
+    # Field (namespaced)
+    field,
+    # Group (namespaced)
+    group,
+    # Health (namespaced)
+    health,
+    # Home (namespaced)
+    home,
+    # Invocation (namespaced)
+    invocation,
+    # Leaderboard (namespaced)
+    leaderboard,
+    # Model (namespaced)
+    model,
+    # Parameter (namespaced)
+    parameter,
     # Persona (namespaced)
     persona,
+    # Practice (namespaced)
+    practice,
+    # Pricing (namespaced)
+    pricing,
+    # Profile (namespaced)
+    profile,
+    # Provider (namespaced)
+    provider,
+    # Record (namespaced)
+    record,
+    # Reports (namespaced)
+    reports,
+    # Rubric (namespaced)
+    rubric,
+    # Scenario (namespaced)
+    scenario,
+    # Session (namespaced)
+    session,
+    # Setting (namespaced)
+    setting,
+    # Simulation (namespaced)
+    simulation,
+    # Tool (namespaced)
+    tool,
     # Connect/disconnect (top-level)
     connected,
     disconnected,
