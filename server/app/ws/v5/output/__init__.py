@@ -50,4 +50,6 @@ from . import (  # noqa: F401
     generation_channel_saved,
     generation_channel_media_progress,
     generation_channel_media_complete,
+    # Test (namespaced)
+    test,
 )
