@@ -1,3 +1,15 @@
 """Input events — what the client sends."""
 
-from . import attempt, connect, disconnect, generate, persona, test  # noqa: F401
+from . import (  # noqa: F401
+    attempt,
+    connect,
+    context,
+    disconnect,
+    docs,
+    emulate,
+    generate,
+    persona,
+    problem,
+    test,
+    unemulate,
+)
