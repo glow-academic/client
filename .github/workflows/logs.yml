@@ -1,0 +1,40 @@
+name: Container Logs
+
+on:
+  workflow_dispatch:
+
+env:
+  LIVE_DIR: /srv/deploy/live
+
+jobs:
+  logs:
+    runs-on: self-hosted
+    steps:
+      - name: glow-client container logs
+        run: |
+          DEST="${LIVE_DIR}/glow-client"
+          cd "$DEST"
+          echo "=== Container status ==="
+          docker compose ps -a
+          echo ""
+          echo "=== App logs (last 100) ==="
+          docker compose logs --tail=100 2>&1
+
+      - name: Test connectivity from container
+        run: |
+          DEST="${LIVE_DIR}/glow-client"
+          cd "$DEST"
+          APP_CONTAINER=$(docker compose ps -q app 2>/dev/null)
+          if [ -n "$APP_CONTAINER" ]; then
+            echo "=== Resolve glow-api.learn-loop.org ==="
+            docker exec "$APP_CONTAINER" sh -c 'getent hosts glow-api.learn-loop.org 2>/dev/null || cat /etc/hosts | grep glow' 2>&1 || echo "Can't resolve"
+            echo ""
+            echo "=== Test OIDC discovery from container ==="
+            docker exec "$APP_CONTAINER" sh -c 'wget -qO- https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration 2>&1 | head -5' 2>&1 || echo "wget failed, trying node..."
+            docker exec "$APP_CONTAINER" sh -c 'node -e "fetch(\"https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration\").then(r=>r.text()).then(console.log).catch(e=>console.error(e.message))"' 2>&1 || echo "Node fetch also failed"
+          fi
+
+      - name: Show docker-compose.yml
+        run: |
+          DEST="${LIVE_DIR}/glow-client"
+          cat "$DEST/docker-compose.yml"
