@@ -46,15 +46,17 @@ jobs:
           VERSION="${{ inputs.version }}"
 
           AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
-          AUTH_ISSUER="${{ secrets.AUTH_ISSUER }}"
-          AUTH_CLIENT_ID="${{ secrets.AUTH_CLIENT_ID }}"
-          AUTH_CLIENT_SECRET="${{ secrets.AUTH_CLIENT_SECRET }}"
+          AUTH_KEYCLOAK_ID="${{ secrets.AUTH_KEYCLOAK_ID }}"
+          AUTH_KEYCLOAK_SECRET="${{ secrets.AUTH_KEYCLOAK_SECRET }}"
           DOMAIN="${{ inputs.subdomain }}.${{ inputs.base_domain }}"
+
+          # KEYCLOAK_PUBLIC_URL = api_url + /auth (auth.ts appends /realms/master)
+          KEYCLOAK_PUBLIC_URL="${API_URL}/auth"
 
           # Extract API hostname for extra_hosts (container needs to reach it via Docker host)
           API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
 
-          printf 'services:\n  app:\n    image: "%s"\n    restart: unless-stopped\n    extra_hosts:\n      - "%s:host-gateway"\n    environment:\n      - HOSTNAME=0.0.0.0\n      - DEPLOYMENT_NAME=%s\n      - NEXT_PUBLIC_API_URL=%s\n      - DEPLOYMENT_VERSION=%s\n      - AUTH_SECRET=%s\n      - AUTH_ISSUER=%s\n      - AUTH_CLIENT_ID=%s\n      - AUTH_CLIENT_SECRET=%s\n      - AUTH_TRUST_HOST=true\n      - NEXTAUTH_URL=https://%s\n    healthcheck:\n      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]\n      interval: 10s\n      timeout: 5s\n      retries: 3\n      start_period: 15s\n' "$IMAGE" "$API_HOST" "$NAME" "$API_URL" "$VERSION" "$AUTH_SECRET" "$AUTH_ISSUER" "$AUTH_CLIENT_ID" "$AUTH_CLIENT_SECRET" "$DOMAIN" > "$DEST/docker-compose.yml"
+          printf 'services:\n  app:\n    image: "%s"\n    restart: unless-stopped\n    extra_hosts:\n      - "%s:host-gateway"\n    environment:\n      - HOSTNAME=0.0.0.0\n      - DEPLOYMENT_NAME=%s\n      - NEXT_PUBLIC_API_URL=%s\n      - DEPLOYMENT_VERSION=%s\n      - AUTH_SECRET=%s\n      - KEYCLOAK_PUBLIC_URL=%s\n      - AUTH_KEYCLOAK_ID=%s\n      - AUTH_KEYCLOAK_SECRET=%s\n      - AUTH_TRUST_HOST=true\n      - NEXTAUTH_URL=https://%s\n    healthcheck:\n      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]\n      interval: 10s\n      timeout: 5s\n      retries: 3\n      start_period: 15s\n' "$IMAGE" "$API_HOST" "$NAME" "$API_URL" "$VERSION" "$AUTH_SECRET" "$KEYCLOAK_PUBLIC_URL" "$AUTH_KEYCLOAK_ID" "$AUTH_KEYCLOAK_SECRET" "$DOMAIN" > "$DEST/docker-compose.yml"
 
       - name: Provision via provisioner
         run: |
