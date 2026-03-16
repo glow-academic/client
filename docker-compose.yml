@@ -1,0 +1,23 @@
+# Local development – single app service.
+# Deploy workflow generates blue-green compose on the server.
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
+      - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
+      - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_API_BASE=${NEXT_PUBLIC_API_BASE:-${NEXT_PUBLIC_API_URL}}
+      - INTERNAL_API_BASE=${INTERNAL_API_BASE:-${NEXT_PUBLIC_API_URL}}
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

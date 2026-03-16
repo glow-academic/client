@@ -12,6 +12,7 @@ on:
       - 'scripts/**'
       - 'Dockerfile'
       - 'package.json'
+      - 'bun.lock'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 

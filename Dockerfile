@@ -3,15 +3,15 @@
 ############################
 # 1️⃣  deps  – install once
 ############################
-FROM node:20-alpine AS deps
+FROM oven/bun:1-alpine AS deps
 WORKDIR /app
 
 RUN apk add --no-cache libc6-compat
-COPY package.json yarn.lock ./
+COPY package.json bun.lock* ./
 
 # cache Yarn’s global folder – survives between builds
-RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
-    yarn install --frozen-lockfile
+RUN --mount=type=cache,id=bun,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 ############################
 # 2️⃣  builder – Next.js
@@ -44,7 +44,7 @@ ENV \
 
 # Build with cache for the Next.js compiler
 RUN --mount=type=cache,id=nextjs,target=/app/.next/cache \
-    yarn build --no-lint
+    bun run build --no-lint
 
 ############################
 # 4️⃣  runtime – 17 MB 😎

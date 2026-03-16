@@ -9,29 +9,29 @@ ENV        ?= green
 
 # ── Development ────────────────────────────────────────────
 setup: ## Install dependencies
-	yarn install
+	bun install
 
 dev: ## Start dev server
-	yarn dev
+	bun dev
 
 build: ## Production build
-	NODE_ENV=production yarn build
+	NODE_ENV=production bun run build
 
 start: ## Start production server
-	yarn start
+	bun start
 
 # ── Code Quality ───────────────────────────────────────────
 lint: ## Run ESLint
-	yarn lint
+	bun run lint
 
 lint-fix: ## Fix ESLint issues
-	yarn lint:fix
+	bun run lint:fix
 
 typecheck: ## TypeScript type check
-	yarn typecheck
+	bun run typecheck
 
 format: ## Format code with Prettier
-	yarn format
+	bun run format
 
 # ── Docker ─────────────────────────────────────────────────
 docker-build: ## Build Docker image
