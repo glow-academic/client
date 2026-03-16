@@ -26,12 +26,30 @@ jobs:
           cd "$DEST"
           APP_CONTAINER=$(docker compose ps -q app 2>/dev/null)
           if [ -n "$APP_CONTAINER" ]; then
-            echo "=== Resolve glow-api.learn-loop.org ==="
-            docker exec "$APP_CONTAINER" sh -c 'getent hosts glow-api.learn-loop.org 2>/dev/null || cat /etc/hosts | grep glow' 2>&1 || echo "Can't resolve"
+            echo "=== /etc/hosts ==="
+            docker exec "$APP_CONTAINER" cat /etc/hosts 2>&1 | grep glow || echo "No glow in hosts"
+
             echo ""
-            echo "=== Test OIDC discovery from container ==="
-            docker exec "$APP_CONTAINER" sh -c 'wget -qO- https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration 2>&1 | head -5' 2>&1 || echo "wget failed, trying node..."
-            docker exec "$APP_CONTAINER" sh -c 'node -e "fetch(\"https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration\").then(r=>r.text()).then(console.log).catch(e=>console.error(e.message))"' 2>&1 || echo "Node fetch also failed"
+            echo "=== Node.js fetch (with SSL) ==="
+            docker exec "$APP_CONTAINER" node -e "
+              fetch('https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration')
+                .then(r => { console.log('Status:', r.status); return r.text(); })
+                .then(t => console.log('Body (first 100):', t.substring(0, 100)))
+                .catch(e => { console.error('FETCH ERROR:', e.message); console.error('Cause:', e.cause?.message || 'none'); })
+            " 2>&1 || echo "Node.js not available"
+
+            echo ""
+            echo "=== Node.js fetch (skip SSL) ==="
+            docker exec -e NODE_TLS_REJECT_UNAUTHORIZED=0 "$APP_CONTAINER" node -e "
+              fetch('https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration')
+                .then(r => { console.log('Status:', r.status); return r.text(); })
+                .then(t => console.log('Body (first 100):', t.substring(0, 100)))
+                .catch(e => console.error('STILL FAILED:', e.message))
+            " 2>&1 || echo "Node.js not available"
+
+            echo ""
+            echo "=== Container env (auth) ==="
+            docker exec "$APP_CONTAINER" sh -c 'env | grep -E "AUTH|KEYCLOAK|NODE" | sort' 2>&1
           fi
 
       - name: Show docker-compose.yml
