@@ -1,36 +1,50 @@
-config.yaml
-install-config.yaml
-keys.txt
-.env
-.env.prod
-.env.beta
-.env.alpha
-.cursorignore
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-history/
-database/seeds/seed_modules.sql
-database/schema.sql
-server/tests/test-schema.sql
-.venv/
-uploads/tus_uploads/
-server/uploads/tus_uploads/
-uploads/audio/
-uploads/image
-uploads/video/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Python bytecode
-__pycache__/
-*.pyc
+# testing
+/coverage
 
-# Server cache and coverage files
-server/.mypy_cache/
-server/.pytest_cache/
-server/.ruff_cache/
-server/.coverage
-server/htmlcov/
-server/dump.rdb
+# next.js
+/.next/
+/out/
 
-# SQL types compilation flag file
-.sql-types-checked
-# Allow theme files to be tracked
-!uploads/themes/
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+
+cypress/screenshots
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

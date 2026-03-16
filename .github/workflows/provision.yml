@@ -1,0 +1,80 @@
+name: Provision
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_name:
+        description: Unique name for this deployment
+        required: true
+      subdomain:
+        description: Subdomain
+        required: true
+      base_domain:
+        description: Base domain
+        required: true
+        default: learn-loop.org
+      version:
+        description: Image version tag (e.g. v1.0.0)
+        required: true
+      api_url:
+        description: Backend API URL
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: learnloopllc/glow-client
+  PROVISION_BIN: /srv/deploy/provisioner/.venv/bin/provision
+  LIVE_DIR: /srv/deploy/live
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Pull image
+        run: docker pull "$REGISTRY/$IMAGE_NAME:${{ inputs.version }}"
+
+      - name: Generate docker-compose.yml
+        run: |
+          DEST="${LIVE_DIR}/${{ inputs.deployment_name }}"
+          mkdir -p "$DEST"
+          IMAGE="${REGISTRY}/${IMAGE_NAME}:${{ inputs.version }}"
+          NAME="${{ inputs.deployment_name }}"
+          API_URL="${{ inputs.api_url }}"
+          VERSION="${{ inputs.version }}"
+
+          AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
+          AUTH_ISSUER="${{ secrets.AUTH_ISSUER }}"
+          AUTH_CLIENT_ID="${{ secrets.AUTH_CLIENT_ID }}"
+          AUTH_CLIENT_SECRET="${{ secrets.AUTH_CLIENT_SECRET }}"
+          DOMAIN="${{ inputs.subdomain }}.${{ inputs.base_domain }}"
+
+          # Extract API hostname for extra_hosts (container needs to reach it via Docker host)
+          API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+
+          printf 'services:\n  app:\n    image: "%s"\n    restart: unless-stopped\n    extra_hosts:\n      - "%s:host-gateway"\n    environment:\n      - HOSTNAME=0.0.0.0\n      - DEPLOYMENT_NAME=%s\n      - NEXT_PUBLIC_API_URL=%s\n      - DEPLOYMENT_VERSION=%s\n      - AUTH_SECRET=%s\n      - AUTH_ISSUER=%s\n      - AUTH_CLIENT_ID=%s\n      - AUTH_CLIENT_SECRET=%s\n      - AUTH_TRUST_HOST=true\n      - NEXTAUTH_URL=https://%s\n    healthcheck:\n      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]\n      interval: 10s\n      timeout: 5s\n      retries: 3\n      start_period: 15s\n' "$IMAGE" "$API_HOST" "$NAME" "$API_URL" "$VERSION" "$AUTH_SECRET" "$AUTH_ISSUER" "$AUTH_CLIENT_ID" "$AUTH_CLIENT_SECRET" "$DOMAIN" > "$DEST/docker-compose.yml"
+
+      - name: Provision via provisioner
+        run: |
+          $PROVISION_BIN deploy \
+            --name "${{ inputs.deployment_name }}" \
+            --subdomain "${{ inputs.subdomain }}" \
+            --base-domain "${{ inputs.base_domain }}" \
+            --compose-dir "${LIVE_DIR}/${{ inputs.deployment_name }}" \
+            --entry-service app \
+            --entry-port 3000
+
+      - name: Verify deployment
+        run: |
+          DOMAIN="${{ inputs.subdomain }}.${{ inputs.base_domain }}"
+          echo "Checking https://${DOMAIN}/ ..."
+          for i in $(seq 1 30); do
+            if curl -sf "https://${DOMAIN}/" 2>/dev/null | head -c 100 | grep -q '<'; then
+              echo "Deployment verified!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Warning: Health check did not pass within 60s (may still be starting)"
