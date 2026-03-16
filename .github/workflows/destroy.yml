@@ -8,16 +8,20 @@ on:
         required: true
 
 env:
-  PROVISION_BIN: /srv/deploy/provisioner/.venv/bin/provision
   LIVE_DIR: /srv/deploy/live
 
 jobs:
   teardown:
     runs-on: self-hosted
     steps:
+      - name: Checkout scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
       - name: Teardown via provisioner
         run: |
-          ${{ env.PROVISION_BIN }} teardown \
+          bash scripts/provision.sh teardown \
             --name "${{ inputs.deployment_name }}" \
             --compose-dir "${{ env.LIVE_DIR }}/${{ inputs.deployment_name }}"
 

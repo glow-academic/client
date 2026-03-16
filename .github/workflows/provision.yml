@@ -23,7 +23,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: learnloopllc/glow-client
-  PROVISION_BIN: /srv/deploy/provisioner/.venv/bin/provision
   LIVE_DIR: /srv/deploy/live
 
 jobs:
@@ -85,9 +84,14 @@ jobs:
           COMPEOF
           sed -i 's/^          //' "$DEST/docker-compose.yml"
 
+      - name: Checkout scripts
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+
       - name: Provision via provisioner
         run: |
-          $PROVISION_BIN deploy \
+          bash scripts/provision.sh deploy \
             --name "${{ inputs.deployment_name }}" \
             --subdomain "${{ inputs.subdomain }}" \
             --base-domain "${{ inputs.base_domain }}" \
