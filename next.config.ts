@@ -8,10 +8,7 @@ module.exports = {
   output: "standalone",
   devIndicators: false,
   trailingSlash: false,
-  // TODO: Re-enable linting and type checking after fixing all ESLint and TypeScript errors
-  // eslint: { ignoreDuringBuilds: false },
-  // typescript: { ignoreBuildErrors: false, tsconfigPath: "./tsconfig.json" },
-  eslint: { ignoreDuringBuilds: true },
+  // TODO: Re-enable type checking after fixing all TypeScript errors
   typescript: { ignoreBuildErrors: true, tsconfigPath: "./tsconfig.json" },
 
   reactStrictMode: false,
