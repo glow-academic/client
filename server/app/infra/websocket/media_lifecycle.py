@@ -21,7 +21,7 @@ def get_media_adapter(
     global _media_adapter
     if _media_adapter is None:
         if emitter is None:
-            from app.socket.v5.internal.generation.media_events import (
+            from app.infra.websocket.generation_media_events import (
                 get_media_emitter,
             )
 

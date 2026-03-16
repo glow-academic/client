@@ -5,7 +5,7 @@ from uuid import UUID
 
 from app.infra.globals import UPLOAD_FOLDER, get_internal_sio
 from app.infra.tools.entries.append_call_event import append_call_event
-from app.socket.v5.internal.test.group import test_group_internal_impl
+from app.infra.test.group import test_group_internal_impl
 
 internal_sio = get_internal_sio()
 

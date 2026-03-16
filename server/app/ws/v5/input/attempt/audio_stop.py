@@ -3,7 +3,7 @@
 from typing import Any
 
 from app.infra.globals import sio
-from app.socket.v5.client.attempt.audio.stop_impl import (
+from app.infra.websocket.attempt.audio_stop import (
     attempt_audio_stop_internal_impl,
 )
 

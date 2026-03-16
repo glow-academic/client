@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.infra.attempt.client_types import AttemptStartPayload
-from app.socket.v5.internal.attempt.start import attempt_start_internal_impl
+from app.infra.attempt.start import attempt_start_internal_impl
 
 router = APIRouter()
 

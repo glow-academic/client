@@ -1,8 +1,6 @@
 """Pydantic models for attempt_* internal events.
 
-Canonical location — importable without triggering the socket tree.
-Re-exported from app.socket.v5.internal.attempt.types for
-backwards compatibility.
+Canonical location for attempt internal event data types.
 """
 
 from __future__ import annotations

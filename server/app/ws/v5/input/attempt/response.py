@@ -4,7 +4,7 @@ from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
 from app.infra.identity.socket import resolve_socket_identity
-from app.socket.v5.internal.attempt.response import attempt_response_internal_impl
+from app.infra.attempt.response import attempt_response_internal_impl
 
 internal_sio = get_internal_sio()
 

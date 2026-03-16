@@ -23,7 +23,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.socket.v5.internal.attempt.message import attempt_message_internal_impl
+from app.infra.attempt.message import attempt_message_internal_impl
 
 router = APIRouter()
 

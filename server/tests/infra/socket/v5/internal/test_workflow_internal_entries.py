@@ -8,13 +8,13 @@ from uuid import uuid4
 import pytest
 
 from app.infra.websocket.socket_event import internal_event, recording_emit
-from app.socket.v5.internal.attempt.start import (
+from app.infra.attempt.start import (
     attempt_start_internal_impl as run_attempt_start_internal,
 )
-from app.socket.v5.internal.attempt.grade import (
+from app.infra.attempt.grade import (
     attempt_grade_internal_impl as run_attempt_grade_internal,
 )
-from app.socket.v5.internal.test.start import (
+from app.infra.test.start import (
     test_start_internal_impl as run_test_start_internal,
 )
 
@@ -59,19 +59,19 @@ async def test_attempt_start_internal_impl_returns_terminal_result(monkeypatch) 
         )
 
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.start.attempt_start_impl",
+        "app.infra.attempt.start.attempt_start_impl",
         _start_impl,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.start.attempt_proceed_internal_impl",
+        "app.infra.attempt.proceed.attempt_proceed_internal_impl",
         _proceed_impl,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.start.get_pool",
+        "app.infra.attempt.start.get_pool",
         lambda: object(),
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.start.get_redis_client",
+        "app.infra.attempt.start.get_redis_client",
         lambda: object(),
     )
 
@@ -203,31 +203,31 @@ async def test_attempt_grade_internal_impl_emits_grade_complete(monkeypatch) -> 
         return SimpleNamespace(id=uuid4())
 
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.grade.resolve_profile_identity_context",
+        "app.infra.attempt.grade.resolve_profile_identity_context",
         _resolve_identity,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.grade.create_group",
+        "app.infra.attempt.grade.create_group",
         _create_group,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.grade.create_run",
+        "app.infra.attempt.grade.create_run",
         _create_run,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.grade.create_call",
+        "app.infra.attempt.grade.create_call",
         _create_call,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.grade.create_attempt_grade",
+        "app.infra.attempt.grade.create_attempt_grade",
         _create_attempt_grade,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.grade.get_pool",
+        "app.infra.attempt.grade.get_pool",
         lambda: _Pool(),
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.attempt.grade.get_redis_client",
+        "app.infra.attempt.grade.get_redis_client",
         lambda: object(),
     )
 

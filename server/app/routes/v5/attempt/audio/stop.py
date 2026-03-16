@@ -10,7 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.socket.v5.client.attempt.audio.stop_impl import (
+from app.infra.websocket.attempt.audio_stop import (
     AudioStopInternalResult,
     attempt_audio_stop_internal_impl,
 )

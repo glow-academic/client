@@ -4,7 +4,7 @@ from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
 from app.infra.identity.socket import resolve_socket_identity
-from app.socket.v5.client.attempt.audio.start_impl import (
+from app.infra.websocket.attempt.audio_start import (
     attempt_audio_start_internal_impl,
 )
 

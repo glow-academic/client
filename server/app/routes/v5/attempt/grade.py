@@ -20,7 +20,7 @@ from pydantic import BaseModel
 from app.infra.attempt.grade_types import (
     GradeAttemptRequest,
 )
-from app.socket.v5.internal.attempt.grade import attempt_grade_internal_impl
+from app.infra.attempt.grade import attempt_grade_internal_impl
 
 router = APIRouter()
 

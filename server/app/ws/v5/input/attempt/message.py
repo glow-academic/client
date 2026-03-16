@@ -5,7 +5,7 @@ from typing import Any
 from app.infra.globals import get_internal_sio, sio
 from app.infra.identity.socket import resolve_socket_identity
 from app.infra.websocket.session_store import get_session_by_chat_id
-from app.socket.v5.internal.attempt.message import attempt_message_internal_impl
+from app.infra.attempt.message import attempt_message_internal_impl
 
 internal_sio = get_internal_sio()
 

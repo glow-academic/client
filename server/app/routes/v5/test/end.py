@@ -15,7 +15,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.socket.v5.internal.test.end import test_end_internal_impl
+from app.infra.test.end import test_end_internal_impl
 
 router = APIRouter()
 

@@ -12,7 +12,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.infra.attempt.client_types import AttemptResponsePayload
-from app.socket.v5.internal.attempt.response import (
+from app.infra.attempt.response import (
     attempt_response_internal_impl,
 )
 

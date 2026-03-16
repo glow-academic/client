@@ -19,7 +19,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, model_validator
 
 from app.infra.globals import get_pool, get_upload_folder
-from app.socket.v5.client.attempt.audio.frame_impl import (
+from app.infra.websocket.attempt.audio_frame import (
     attempt_audio_frame_internal_impl,
 )
 from app.tools.entries.uploads.get import get_upload
