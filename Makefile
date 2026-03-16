@@ -1,8 +1,11 @@
 .PHONY: dev build start lint typecheck format setup clean help
+.PHONY: docker-build docker-run up down logs
+.PHONY: detect-env deploy-target switch-traffic monitor
 
 # ── Configuration ──────────────────────────────────────────
 NODE_BIN   = node_modules/.bin
 PORT       ?= 3000
+ENV        ?= green
 
 # ── Development ────────────────────────────────────────────
 setup: ## Install dependencies
@@ -36,6 +39,28 @@ docker-build: ## Build Docker image
 
 docker-run: docker-build ## Run Docker container
 	docker run -p $(PORT):3000 --env-file .env.local glow-client
+
+up: ## Start docker compose stack
+	docker compose up -d
+
+down: ## Stop docker compose stack
+	docker compose down
+
+logs: ## Tail docker compose logs
+	docker compose logs -f
+
+# ── Deployment (Blue-Green) ───────────────────────────────
+detect-env: ## Show active/target environment
+	@bash scripts/detect-env.sh
+
+deploy-target: ## Deploy target env (ENV=blue|green)
+	bash scripts/deploy-target.sh $(ENV)
+
+switch-traffic: ## Switch traffic to env (ENV=blue|green)
+	bash scripts/switch-traffic.sh $(ENV)
+
+monitor: ## Monitor deployment (ENV=blue|green ROLLBACK=blue|green)
+	bash scripts/monitor.sh $(ENV) $(ROLLBACK) 45
 
 # ── Cleanup ────────────────────────────────────────────────
 clean: ## Remove build artifacts
