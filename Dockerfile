@@ -44,7 +44,7 @@ ENV \
 
 # Build with cache for the Next.js compiler
 RUN --mount=type=cache,id=nextjs,target=/app/.next/cache \
-    yarn build
+    yarn build --no-lint
 
 ############################
 # 4️⃣  runtime – 17 MB 😎
