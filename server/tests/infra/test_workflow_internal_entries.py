@@ -129,23 +129,23 @@ async def test_test_start_internal_impl_returns_terminal_result(monkeypatch) -> 
         )
 
     monkeypatch.setattr(
-        "app.socket.v5.internal.test.start.resolve_profile_identity_context",
+        "app.infra.test.start.resolve_profile_identity_context",
         _resolve_identity,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.test.start.test_start_impl",
+        "app.infra.test.start.test_start_impl",
         _start_impl,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.test.start.test_proceed_internal_impl",
+        "app.infra.test.start.test_proceed_internal_impl",
         _proceed_impl,
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.test.start.get_pool",
+        "app.infra.test.start.get_pool",
         lambda: object(),
     )
     monkeypatch.setattr(
-        "app.socket.v5.internal.test.start.get_redis_client",
+        "app.infra.test.start.get_redis_client",
         lambda: object(),
     )
 

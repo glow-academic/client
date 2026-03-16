@@ -385,7 +385,6 @@ from app.routes import router as root_router  # noqa: E402
 
 fastapi_app.include_router(root_router)
 
-import app.socket.v5  # noqa: E402, F401 — registers legacy socket handlers (shims)
 import app.ws  # noqa: E402, F401 — registers ws/v5 input/output handlers
 
 # ---------------------------------------------------------------------------
