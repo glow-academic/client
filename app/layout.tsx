@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { VersionBanner } from "@/components/VersionBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,10 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <Providers session={session}>{children}</Providers>
+        <Providers session={session}>
+          {children}
+          <VersionBanner />
+        </Providers>
       </body>
     </html>
   );

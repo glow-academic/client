@@ -5,8 +5,7 @@ on:
     inputs:
       deployment_name:
         description: 'Deployment name'
-        required: false
-        default: glow-client
+        required: true
 
 env:
   LIVE_DIR: /srv/deploy/live
@@ -15,49 +14,35 @@ jobs:
   logs:
     runs-on: self-hosted
     steps:
-      - name: Container logs
+      - name: Container status
         run: |
-          DEST="${LIVE_DIR}/${{ inputs.deployment_name }}"
-          cd "$DEST"
+          cd "${LIVE_DIR}/${{ inputs.deployment_name }}"
           echo "=== Container status ==="
           docker compose ps -a
           echo ""
-          echo "=== App logs (last 100) ==="
-          docker compose logs --tail=100 2>&1
+          echo "=== docker-compose.override.yml ==="
+          cat docker-compose.override.yml 2>/dev/null || echo "No override file"
 
-      - name: Test connectivity from container
+      - name: Nginx logs
         run: |
-          DEST="${LIVE_DIR}/${{ inputs.deployment_name }}"
-          cd "$DEST"
-          APP_CONTAINER=$(docker compose ps -q app 2>/dev/null)
-          if [ -n "$APP_CONTAINER" ]; then
-            echo "=== /etc/hosts ==="
-            docker exec "$APP_CONTAINER" cat /etc/hosts 2>&1 | grep glow || echo "No glow in hosts"
+          cd "${LIVE_DIR}/${{ inputs.deployment_name }}"
+          echo "=== Nginx logs ==="
+          docker compose logs nginx --tail=50 2>&1
 
-            echo ""
-            echo "=== Node.js fetch (with SSL) ==="
-            docker exec "$APP_CONTAINER" node -e "
-              fetch('https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration')
-                .then(r => { console.log('Status:', r.status); return r.text(); })
-                .then(t => console.log('Body (first 100):', t.substring(0, 100)))
-                .catch(e => { console.error('FETCH ERROR:', e.message); console.error('Cause:', e.cause?.message || 'none'); })
-            " 2>&1 || echo "Node.js not available"
-
-            echo ""
-            echo "=== Node.js fetch (skip SSL) ==="
-            docker exec -e NODE_TLS_REJECT_UNAUTHORIZED=0 "$APP_CONTAINER" node -e "
-              fetch('https://glow-api.learn-loop.org/auth/realms/master/.well-known/openid-configuration')
-                .then(r => { console.log('Status:', r.status); return r.text(); })
-                .then(t => console.log('Body (first 100):', t.substring(0, 100)))
-                .catch(e => console.error('STILL FAILED:', e.message))
-            " 2>&1 || echo "Node.js not available"
-
-            echo ""
-            echo "=== Container env (auth) ==="
-            docker exec "$APP_CONTAINER" sh -c 'env | grep -E "AUTH|KEYCLOAK|NODE" | sort' 2>&1
-          fi
-
-      - name: Show docker-compose.yml
+      - name: App-blue logs
         run: |
-          DEST="${LIVE_DIR}/${{ inputs.deployment_name }}"
-          cat "$DEST/docker-compose.yml"
+          cd "${LIVE_DIR}/${{ inputs.deployment_name }}"
+          echo "=== App-blue logs ==="
+          docker compose logs app-blue --tail=50 2>&1
+
+      - name: App-green logs
+        run: |
+          cd "${LIVE_DIR}/${{ inputs.deployment_name }}"
+          echo "=== App-green logs ==="
+          docker compose logs app-green --tail=50 2>&1
+
+      - name: Current .env
+        run: |
+          cd "${LIVE_DIR}/${{ inputs.deployment_name }}"
+          echo "=== ACTIVE_ENV ==="
+          grep ACTIVE_ENV .env 2>/dev/null || echo "No .env file"
