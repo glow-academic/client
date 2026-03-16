@@ -1,0 +1,234 @@
+name: Deploy Glow Client
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'public/**'
+      - 'web/**'
+      - 'scripts/**'
+      - 'Dockerfile'
+      - 'package.json'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: learnloopllc/glow-client
+
+jobs:
+  detect-active-environment:
+    runs-on: [self-hosted, linux, x64, deploy]
+    outputs:
+      active-env: ${{ steps.detect.outputs.active-env }}
+      target-env: ${{ steps.detect.outputs.target-env }}
+    steps:
+      - name: Detect active environment
+        id: detect
+        run: |
+          DEPLOY_DIR="/srv/deploy/live/glow-client"
+          if [ -d "$DEPLOY_DIR" ] && [ -f "$DEPLOY_DIR/scripts/detect-env.sh" ]; then
+            cd "$DEPLOY_DIR"
+            eval $(bash scripts/detect-env.sh)
+          fi
+          ACTIVE_ENV="${ACTIVE_ENV:-blue}"
+          [ -z "$ACTIVE_ENV" ] && ACTIVE_ENV="blue"
+          if [ "$ACTIVE_ENV" = "green" ]; then TARGET_ENV="blue"; else TARGET_ENV="green"; fi
+          echo "Active environment: $ACTIVE_ENV"
+          echo "Target environment: $TARGET_ENV"
+          echo "active-env=$ACTIVE_ENV" >> $GITHUB_OUTPUT
+          echo "target-env=$TARGET_ENV" >> $GITHUB_OUTPUT
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { clean: true }
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=main-
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            APP_VERSION=${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: [self-hosted, linux, x64, deploy]
+    needs: [detect-active-environment, build]
+    concurrency:
+      group: deploy-glow-client
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          clean: true
+
+      - name: Login GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Stage release
+        run: |
+          DEST="/srv/deploy/live/glow-client"
+          mkdir -p "$DEST/web" "$DEST/scripts"
+          cp web/default.conf.template "$DEST/web/"
+          cp scripts/*.sh "$DEST/scripts/"
+          chmod +x "$DEST/scripts/"*.sh
+
+      - name: Generate docker-compose.yml
+        run: |
+          DEST="/srv/deploy/live/glow-client"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          NAME="glow-client"
+          API_URL="${{ secrets.API_URL }}"
+          DOMAIN="${{ secrets.DOMAIN }}"
+
+          AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
+          AUTH_KEYCLOAK_ID="${{ secrets.AUTH_KEYCLOAK_ID }}"
+          AUTH_KEYCLOAK_SECRET="${{ secrets.AUTH_KEYCLOAK_SECRET }}"
+
+          KEYCLOAK_PUBLIC_URL="${API_URL}/auth"
+          API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+
+          cat > "$DEST/docker-compose.yml" <<COMPEOF
+          services:
+            app-blue:
+              image: "${IMAGE}"
+              restart: unless-stopped
+              extra_hosts:
+                - "${API_HOST}:host-gateway"
+              environment:
+                - HOSTNAME=0.0.0.0
+                - DEPLOYMENT_NAME=${NAME}
+                - NEXT_PUBLIC_API_URL=${API_URL}
+                - INTERNAL_API_BASE=${API_URL}
+                - NEXT_PUBLIC_API_BASE=${API_URL}
+                - AUTH_SECRET=${AUTH_SECRET}
+                - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
+                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
+                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
+                - AUTH_TRUST_HOST=true
+                - NEXTAUTH_URL=https://${DOMAIN}
+              healthcheck:
+                test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
+                interval: 10s
+                timeout: 5s
+                retries: 3
+                start_period: 15s
+
+            app-green:
+              image: "${IMAGE}"
+              restart: unless-stopped
+              extra_hosts:
+                - "${API_HOST}:host-gateway"
+              environment:
+                - HOSTNAME=0.0.0.0
+                - DEPLOYMENT_NAME=${NAME}
+                - NEXT_PUBLIC_API_URL=${API_URL}
+                - INTERNAL_API_BASE=${API_URL}
+                - NEXT_PUBLIC_API_BASE=${API_URL}
+                - AUTH_SECRET=${AUTH_SECRET}
+                - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
+                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
+                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
+                - AUTH_TRUST_HOST=true
+                - NEXTAUTH_URL=https://${DOMAIN}
+              healthcheck:
+                test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
+                interval: 10s
+                timeout: 5s
+                retries: 3
+                start_period: 15s
+
+            nginx:
+              image: nginx:alpine
+              restart: unless-stopped
+              depends_on:
+                - app-blue
+                - app-green
+              environment:
+                - ACTIVE_ENV=\${ACTIVE_ENV:-blue}
+              volumes:
+                - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+          COMPEOF
+          sed -i 's/^          //' "$DEST/docker-compose.yml"
+
+      - name: Write .env
+        run: |
+          DEST="/srv/deploy/live/glow-client"
+          if [ ! -f "$DEST/.env" ]; then
+            echo "ACTIVE_ENV=blue" > "$DEST/.env"
+          fi
+
+      - name: Pull images
+        run: |
+          cd /srv/deploy/live/glow-client
+          docker compose pull app-blue app-green 2>/dev/null || true
+
+      - name: Deploy target environment
+        run: |
+          cd /srv/deploy/live/glow-client
+          bash scripts/deploy-target.sh "${{ needs.detect-active-environment.outputs.target-env }}"
+
+      - name: Provision Traefik labels
+        run: |
+          DEST="/srv/deploy/live/glow-client"
+          bash "$DEST/scripts/provision.sh" deploy \
+            --name "glow-client" \
+            --subdomain "${{ secrets.SUBDOMAIN }}" \
+            --base-domain "learn-loop.org" \
+            --compose-dir "$DEST" \
+            --entry-service nginx \
+            --entry-port 80
+
+      - name: Switch traffic
+        run: |
+          cd /srv/deploy/live/glow-client
+          bash scripts/switch-traffic.sh "${{ needs.detect-active-environment.outputs.target-env }}"
+
+      - name: Monitor deployment
+        run: |
+          cd /srv/deploy/live/glow-client
+          bash scripts/monitor.sh "${{ needs.detect-active-environment.outputs.target-env }}" "${{ needs.detect-active-environment.outputs.active-env }}" 45
+
+      - name: Verify deployment
+        run: |
+          DOMAIN="${{ secrets.DOMAIN }}"
+          echo "Checking https://${DOMAIN}/ ..."
+          for i in $(seq 1 30); do
+            if curl -sf "https://${DOMAIN}/" 2>/dev/null | head -c 100 | grep -q '<'; then
+              echo "Deployment verified!"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Warning: Health check did not pass within 60s (may still be starting)"
