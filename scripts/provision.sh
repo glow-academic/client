@@ -46,7 +46,8 @@ case "$COMMAND" in
       [ "$svc" = "$ENTRY_SERVICE" ] && continue
       EXTRA_HOSTS="${EXTRA_HOSTS}
   ${svc}:
-    extra_hosts: *id001"
+    extra_hosts:
+    - ${DOMAIN}:host-gateway"
     done
 
     cat > "$COMPOSE_DIR/docker-compose.override.yml" <<OVERRIDE
@@ -70,7 +71,7 @@ services:
         limits:
           memory: 2G
           cpus: '2.0'
-    extra_hosts: &id001
+    extra_hosts:
     - ${DOMAIN}:host-gateway${EXTRA_HOSTS}
 networks:
   traefik_routing:

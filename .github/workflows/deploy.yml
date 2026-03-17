@@ -195,11 +195,6 @@ jobs:
           cd /srv/deploy/live/glow-client
           docker compose pull app-blue app-green 2>/dev/null || true
 
-      - name: Deploy target environment
-        run: |
-          cd /srv/deploy/live/glow-client
-          bash scripts/deploy-target.sh "${{ needs.detect-active-environment.outputs.target-env }}"
-
       - name: Provision Traefik labels
         run: |
           DEST="/srv/deploy/live/glow-client"
@@ -210,6 +205,11 @@ jobs:
             --compose-dir "$DEST" \
             --entry-service nginx \
             --entry-port 80
+
+      - name: Deploy target environment
+        run: |
+          cd /srv/deploy/live/glow-client
+          bash scripts/deploy-target.sh "${{ needs.detect-active-environment.outputs.target-env }}"
 
       - name: Switch traffic
         run: |
