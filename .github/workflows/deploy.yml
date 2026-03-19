@@ -1,93 +1,46 @@
-name: Deploy Glow Client
+name: Deploy (New)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'app/**'
-      - 'components/**'
-      - 'lib/**'
-      - 'public/**'
-      - 'web/**'
-      - 'scripts/**'
-      - 'Dockerfile'
-      - 'package.json'
-      - 'bun.lock'
-      - '.github/workflows/deploy.yml'
   workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: 'Deployment UUID from LearnLoop API'
+        required: true
+      origin:
+        description: 'Client origin URL (e.g. https://app-glow-demo.learn-loop.org)'
+        required: true
+      api_url:
+        description: 'API URL this client connects to (e.g. https://glow-demo.learn-loop.org)'
+        required: true
+      version:
+        description: 'Image version (e.g. v0.1.0 or latest)'
+        required: true
+        default: 'latest'
+      provision_token:
+        description: 'One-time token to claim DEPLOYMENT_TOKEN from LearnLoop'
+        required: true
+      learnloop_api_url:
+        description: 'LearnLoop API URL'
+        required: false
+        default: 'https://api.learn-loop.org'
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: learnloopllc/glow-client
 
 jobs:
-  detect-active-environment:
-    runs-on: [self-hosted, linux, x64, deploy]
-    outputs:
-      active-env: ${{ steps.detect.outputs.active-env }}
-      target-env: ${{ steps.detect.outputs.target-env }}
-    steps:
-      - name: Detect active environment
-        id: detect
-        run: |
-          DEPLOY_DIR="/srv/deploy/live/glow-client"
-          if [ -d "$DEPLOY_DIR" ] && [ -f "$DEPLOY_DIR/scripts/detect-env.sh" ]; then
-            cd "$DEPLOY_DIR"
-            eval $(bash scripts/detect-env.sh)
-          fi
-          ACTIVE_ENV="${ACTIVE_ENV:-blue}"
-          [ -z "$ACTIVE_ENV" ] && ACTIVE_ENV="blue"
-          if [ "$ACTIVE_ENV" = "green" ]; then TARGET_ENV="blue"; else TARGET_ENV="green"; fi
-          echo "Active environment: $ACTIVE_ENV"
-          echo "Target environment: $TARGET_ENV"
-          echo "active-env=$ACTIVE_ENV" >> $GITHUB_OUTPUT
-          echo "target-env=$TARGET_ENV" >> $GITHUB_OUTPUT
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with: { clean: true }
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      - name: Meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix=main-
-
-      - name: Build & push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          build-args: |
-            APP_VERSION=${{ github.sha }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
   deploy:
     runs-on: [self-hosted, linux, x64, deploy]
-    needs: [detect-active-environment, build]
     concurrency:
-      group: deploy-glow-client
+      group: deploy-${{ inputs.deployment_id }}
       cancel-in-progress: true
+    env:
+      DEPLOY_DIR: /srv/deploy/live/glow-client/${{ inputs.deployment_id }}
+      COMPOSE_PROJECT_NAME: ${{ inputs.deployment_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,48 +50,69 @@ jobs:
       - name: Login GHCR
         run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
+      - name: Claim DEPLOYMENT_TOKEN from LearnLoop
+        run: |
+          HOST=$(echo "${{ inputs.learnloop_api_url }}" | sed 's|https\?://||' | sed 's|/.*||')
+          RESP=$(curl -sfk -X POST "https://localhost/provision/claim" \
+            -H "Host: $HOST" \
+            -H "Content-Type: application/json" \
+            -d '{"token": "${{ inputs.provision_token }}"}')
+          DEPLOYMENT_TOKEN=$(echo "$RESP" | jq -r '.deployment_token')
+          if [ -z "$DEPLOYMENT_TOKEN" ] || [ "$DEPLOYMENT_TOKEN" = "null" ]; then
+            echo "::error::Failed to claim deployment token"
+            echo "::error::Response: $RESP"
+            exit 1
+          fi
+          echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
+          echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
+          echo "Deployment token claimed successfully"
+
+      - name: Parse subdomain from ORIGIN
+        id: parse-origin
+        run: |
+          DOMAIN=$(echo "${{ inputs.origin }}" | sed 's|https://||' | sed 's|http://||')
+          SUBDOMAIN=$(echo "$DOMAIN" | cut -d. -f1)
+          BASE_DOMAIN=$(echo "$DOMAIN" | cut -d. -f2-)
+          echo "subdomain=$SUBDOMAIN" >> $GITHUB_OUTPUT
+          echo "base-domain=$BASE_DOMAIN" >> $GITHUB_OUTPUT
+          echo "domain=$DOMAIN" >> $GITHUB_OUTPUT
+
       - name: Stage release
         run: |
-          DEST="/srv/deploy/live/glow-client"
-          mkdir -p "$DEST/web" "$DEST/scripts"
-          cp web/default.conf.template "$DEST/web/"
-          cp scripts/*.sh "$DEST/scripts/"
-          chmod +x "$DEST/scripts/"*.sh
+          mkdir -p "$DEPLOY_DIR/web" "$DEPLOY_DIR/scripts"
+          cp web/default.conf.template "$DEPLOY_DIR/web/"
+          cp scripts/*.sh "$DEPLOY_DIR/scripts/"
+          chmod +x "$DEPLOY_DIR/scripts/"*.sh
 
       - name: Generate docker-compose.yml
         run: |
-          DEST="/srv/deploy/live/glow-client"
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          NAME="glow-client"
-          API_URL="${{ secrets.API_URL }}"
-          DOMAIN="${{ secrets.DOMAIN }}"
-
-          AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
-          AUTH_KEYCLOAK_ID="${{ secrets.AUTH_KEYCLOAK_ID }}"
-          AUTH_KEYCLOAK_SECRET="${{ secrets.AUTH_KEYCLOAK_SECRET }}"
-
-          KEYCLOAK_PUBLIC_URL="${API_URL}/auth"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}"
+          API_URL="${{ inputs.api_url }}"
           API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+          KEYCLOAK_PUBLIC_URL="${API_URL}/auth"
+          DOMAIN="${{ steps.parse-origin.outputs.domain }}"
 
-          cat > "$DEST/docker-compose.yml" <<COMPEOF
+          cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
           services:
             app-blue:
               image: "${IMAGE}"
               restart: unless-stopped
               extra_hosts:
                 - "${API_HOST}:host-gateway"
+                - "${DOMAIN}:host-gateway"
               environment:
                 - HOSTNAME=0.0.0.0
-                - DEPLOYMENT_NAME=${NAME}
                 - NEXT_PUBLIC_API_URL=${API_URL}
                 - INTERNAL_API_BASE=${API_URL}
                 - NEXT_PUBLIC_API_BASE=${API_URL}
-                - AUTH_SECRET=${AUTH_SECRET}
+                - AUTH_SECRET=${{ secrets.AUTH_SECRET }}
                 - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
-                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
-                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
+                - AUTH_KEYCLOAK_ID=${{ secrets.AUTH_KEYCLOAK_ID }}
+                - AUTH_KEYCLOAK_SECRET=${{ secrets.AUTH_KEYCLOAK_SECRET }}
                 - AUTH_TRUST_HOST=true
                 - NEXTAUTH_URL=https://${DOMAIN}
+                - DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}
+                - LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}
               healthcheck:
                 test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
                 interval: 10s
@@ -151,18 +125,20 @@ jobs:
               restart: unless-stopped
               extra_hosts:
                 - "${API_HOST}:host-gateway"
+                - "${DOMAIN}:host-gateway"
               environment:
                 - HOSTNAME=0.0.0.0
-                - DEPLOYMENT_NAME=${NAME}
                 - NEXT_PUBLIC_API_URL=${API_URL}
                 - INTERNAL_API_BASE=${API_URL}
                 - NEXT_PUBLIC_API_BASE=${API_URL}
-                - AUTH_SECRET=${AUTH_SECRET}
+                - AUTH_SECRET=${{ secrets.AUTH_SECRET }}
                 - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
-                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
-                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
+                - AUTH_KEYCLOAK_ID=${{ secrets.AUTH_KEYCLOAK_ID }}
+                - AUTH_KEYCLOAK_SECRET=${{ secrets.AUTH_KEYCLOAK_SECRET }}
                 - AUTH_TRUST_HOST=true
                 - NEXTAUTH_URL=https://${DOMAIN}
+                - DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}
+                - LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}
               healthcheck:
                 test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
                 interval: 10s
@@ -180,56 +156,60 @@ jobs:
                 - ACTIVE_ENV=\${ACTIVE_ENV:-blue}
               volumes:
                 - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
-          COMPEOF
-          sed -i 's/^          //' "$DEST/docker-compose.yml"
+          COMPOSE
+          sed -i 's/^          //' "$DEPLOY_DIR/docker-compose.yml"
 
       - name: Write .env
         run: |
-          DEST="/srv/deploy/live/glow-client"
-          if [ ! -f "$DEST/.env" ]; then
-            echo "ACTIVE_ENV=blue" > "$DEST/.env"
+          if [ ! -f "$DEPLOY_DIR/.env" ]; then
+            echo "ACTIVE_ENV=blue" > "$DEPLOY_DIR/.env"
           fi
 
       - name: Pull images
         run: |
-          cd /srv/deploy/live/glow-client
+          cd "$DEPLOY_DIR"
           docker compose pull app-blue app-green 2>/dev/null || true
 
       - name: Provision Traefik labels
         run: |
-          DEST="/srv/deploy/live/glow-client"
-          bash "$DEST/scripts/provision.sh" deploy \
-            --name "glow-client" \
-            --subdomain "${{ secrets.SUBDOMAIN }}" \
-            --base-domain "learn-loop.org" \
-            --compose-dir "$DEST" \
+          bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
+            --name "${{ inputs.deployment_id }}" \
+            --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
+            --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \
+            --compose-dir "$DEPLOY_DIR" \
             --entry-service nginx \
             --entry-port 80
 
       - name: Deploy target environment
         run: |
-          cd /srv/deploy/live/glow-client
-          bash scripts/deploy-target.sh "${{ needs.detect-active-environment.outputs.target-env }}"
+          cd "$DEPLOY_DIR"
+          bash scripts/deploy-target.sh blue
 
       - name: Switch traffic
         run: |
-          cd /srv/deploy/live/glow-client
-          bash scripts/switch-traffic.sh "${{ needs.detect-active-environment.outputs.target-env }}"
+          cd "$DEPLOY_DIR"
+          bash scripts/switch-traffic.sh blue
 
       - name: Monitor deployment
         run: |
-          cd /srv/deploy/live/glow-client
-          bash scripts/monitor.sh "${{ needs.detect-active-environment.outputs.target-env }}" "${{ needs.detect-active-environment.outputs.active-env }}" 45
+          cd "$DEPLOY_DIR"
+          bash scripts/monitor.sh blue blue 45
 
-      - name: Verify deployment
+      - name: Notify LearnLoop
+        if: always()
         run: |
-          DOMAIN="${{ secrets.DOMAIN }}"
-          echo "Checking https://${DOMAIN}/ ..."
-          for i in $(seq 1 30); do
-            if curl -sf "https://${DOMAIN}/" 2>/dev/null | head -c 100 | grep -q '<'; then
-              echo "Deployment verified!"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Warning: Health check did not pass within 60s (may still be starting)"
+          if [ "$JOB_STATUS" = "success" ]; then
+            STATUS="running"
+          else
+            STATUS="failed"
+          fi
+          HOST=$(echo "$LEARNLOOP_API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+          curl -sfk -X POST "https://localhost/deploy/${{ inputs.deployment_id }}/callback" \
+            -H "Host: $HOST" \
+            -H "Authorization: Bearer $DEPLOYMENT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"status\": \"$STATUS\"}" || echo "Callback failed (non-fatal)"
+        env:
+          JOB_STATUS: ${{ job.status }}
+          LEARNLOOP_API_URL: ${{ env.LEARNLOOP_API_URL }}
+          DEPLOYMENT_TOKEN: ${{ env.DEPLOYMENT_TOKEN }}
