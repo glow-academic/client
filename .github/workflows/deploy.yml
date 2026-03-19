@@ -67,6 +67,24 @@ jobs:
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
           echo "Deployment token claimed successfully"
 
+      - name: Fetch auth credentials from API server
+        run: |
+          API_URL="${{ inputs.api_url }}"
+          API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+          RESP=$(curl -sfk "https://localhost/auth/client-config" \
+            -H "Host: $API_HOST" \
+            -H "Authorization: Bearer $DEPLOYMENT_TOKEN")
+          if [ -z "$RESP" ] || echo "$RESP" | jq -e '.detail' >/dev/null 2>&1; then
+            echo "::error::Failed to fetch auth credentials from API server"
+            echo "::error::Response: $RESP"
+            exit 1
+          fi
+          echo "AUTH_KEYCLOAK_ID=$(echo "$RESP" | jq -r '.client_id')" >> $GITHUB_ENV
+          echo "AUTH_KEYCLOAK_SECRET=$(echo "$RESP" | jq -r '.client_secret')" >> $GITHUB_ENV
+          echo "AUTH_SECRET=$(echo "$RESP" | jq -r '.auth_secret')" >> $GITHUB_ENV
+          echo "KEYCLOAK_PUBLIC_URL=$(echo "$RESP" | jq -r '.keycloak_url')" >> $GITHUB_ENV
+          echo "Auth credentials fetched from API server"
+
       - name: Parse subdomain from ORIGIN
         id: parse-origin
         run: |
@@ -89,7 +107,6 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}"
           API_URL="${{ inputs.api_url }}"
           API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
-          KEYCLOAK_PUBLIC_URL="${API_URL}/auth"
           DOMAIN="${{ steps.parse-origin.outputs.domain }}"
 
           cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
@@ -105,10 +122,10 @@ jobs:
                 - NEXT_PUBLIC_API_URL=${API_URL}
                 - INTERNAL_API_BASE=${API_URL}
                 - NEXT_PUBLIC_API_BASE=${API_URL}
-                - AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+                - AUTH_SECRET=${AUTH_SECRET}
                 - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
-                - AUTH_KEYCLOAK_ID=${{ secrets.AUTH_KEYCLOAK_ID }}
-                - AUTH_KEYCLOAK_SECRET=${{ secrets.AUTH_KEYCLOAK_SECRET }}
+                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
+                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
                 - AUTH_TRUST_HOST=true
                 - NEXTAUTH_URL=https://${DOMAIN}
                 - DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}
@@ -133,10 +150,10 @@ jobs:
                 - NEXT_PUBLIC_API_URL=${API_URL}
                 - INTERNAL_API_BASE=${API_URL}
                 - NEXT_PUBLIC_API_BASE=${API_URL}
-                - AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+                - AUTH_SECRET=${AUTH_SECRET}
                 - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
-                - AUTH_KEYCLOAK_ID=${{ secrets.AUTH_KEYCLOAK_ID }}
-                - AUTH_KEYCLOAK_SECRET=${{ secrets.AUTH_KEYCLOAK_SECRET }}
+                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
+                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
                 - AUTH_TRUST_HOST=true
                 - NEXTAUTH_URL=https://${DOMAIN}
                 - DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}
