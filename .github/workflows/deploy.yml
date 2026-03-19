@@ -67,15 +67,14 @@ jobs:
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
           echo "Deployment token claimed successfully"
 
-      - name: Fetch auth credentials from API server
+      - name: Fetch auth credentials from LearnLoop
         run: |
-          API_URL="${{ inputs.api_url }}"
-          API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
-          RESP=$(curl -sfk "https://localhost/auth/client-config" \
-            -H "Host: $API_HOST" \
+          HOST=$(echo "$LEARNLOOP_API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+          RESP=$(curl -sfk "https://localhost/deploy/${{ inputs.deployment_id }}/credentials" \
+            -H "Host: $HOST" \
             -H "Authorization: Bearer $DEPLOYMENT_TOKEN")
           if [ -z "$RESP" ] || echo "$RESP" | jq -e '.detail' >/dev/null 2>&1; then
-            echo "::error::Failed to fetch auth credentials from API server"
+            echo "::error::Failed to fetch credentials from LearnLoop"
             echo "::error::Response: $RESP"
             exit 1
           fi
@@ -83,7 +82,7 @@ jobs:
           echo "AUTH_KEYCLOAK_SECRET=$(echo "$RESP" | jq -r '.client_secret')" >> $GITHUB_ENV
           echo "AUTH_SECRET=$(echo "$RESP" | jq -r '.auth_secret')" >> $GITHUB_ENV
           echo "KEYCLOAK_PUBLIC_URL=$(echo "$RESP" | jq -r '.keycloak_url')" >> $GITHUB_ENV
-          echo "Auth credentials fetched from API server"
+          echo "Auth credentials fetched from LearnLoop"
 
       - name: Parse subdomain from ORIGIN
         id: parse-origin
