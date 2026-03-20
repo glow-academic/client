@@ -39,3 +39,25 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/learnloopllc/glow-client:${{ steps.meta.outputs.version }}
             ${{ env.REGISTRY }}/learnloopllc/glow-client:latest
+
+      - name: Generate GitHub App token
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DEPLOY_APP_ID }}
+          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
+          owner: learnloopllc
+
+      - name: Dispatch compat-update
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          MIN_API=$(grep 'min_glow_api' compat.yml | cut -d'"' -f2)
+          gh api repos/learnloopllc/api/dispatches \
+            -f event_type=compat-update \
+            -f 'client_payload[component]=glow-client' \
+            -f "client_payload[version]=$VERSION" \
+            -f "client_payload[min_glow_api]=$MIN_API"
