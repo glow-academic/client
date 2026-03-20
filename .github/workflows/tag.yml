@@ -36,8 +36,19 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Generate GitHub App token
+        if: steps.check.outputs.exists == 'false'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DEPLOY_APP_ID }}
+          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
+          owner: learnloopllc
+
       - name: Create tag
         if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           git tag "${{ steps.version.outputs.tag }}"
-          git push origin "${{ steps.version.outputs.tag }}"
+          git push https://x-access-token:${GH_TOKEN}@github.com/learnloopllc/glow-client.git "${{ steps.version.outputs.tag }}"
