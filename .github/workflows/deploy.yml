@@ -12,6 +12,9 @@ on:
       api_url:
         description: 'API URL this client connects to (e.g. https://glow-demo.learn-loop.org)'
         required: true
+      parent_deployment_id:
+        description: 'Parent API deployment UUID (for Docker network connectivity)'
+        required: true
       version:
         description: 'Image version (e.g. v0.1.0 or latest)'
         required: true
@@ -107,6 +110,7 @@ jobs:
           API_URL="${{ inputs.api_url }}"
           API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
           DOMAIN="${{ steps.parse-origin.outputs.domain }}"
+          PARENT_NETWORK="glow-${{ inputs.parent_deployment_id }}"
 
           cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
           services:
@@ -119,7 +123,7 @@ jobs:
               environment:
                 - HOSTNAME=0.0.0.0
                 - NEXT_PUBLIC_API_URL=${API_URL}
-                - INTERNAL_API_BASE=${API_URL}
+                - INTERNAL_API_BASE=http://glow-api:8000
                 - NEXT_PUBLIC_API_BASE=${API_URL}
                 - AUTH_SECRET=${AUTH_SECRET}
                 - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
@@ -137,6 +141,7 @@ jobs:
                 start_period: 15s
               networks:
                 - internal
+                - server
 
             app-green:
               image: "${IMAGE}"
@@ -147,7 +152,7 @@ jobs:
               environment:
                 - HOSTNAME=0.0.0.0
                 - NEXT_PUBLIC_API_URL=${API_URL}
-                - INTERNAL_API_BASE=${API_URL}
+                - INTERNAL_API_BASE=http://glow-api:8000
                 - NEXT_PUBLIC_API_BASE=${API_URL}
                 - AUTH_SECRET=${AUTH_SECRET}
                 - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
@@ -165,6 +170,7 @@ jobs:
                 start_period: 15s
               networks:
                 - internal
+                - server
 
             nginx:
               image: nginx:alpine
@@ -183,6 +189,9 @@ jobs:
           networks:
             internal:
             public_net:
+            server:
+              external: true
+              name: ${PARENT_NETWORK}
           COMPOSE
           sed -i 's/^          //' "$DEPLOY_DIR/docker-compose.yml"
 
