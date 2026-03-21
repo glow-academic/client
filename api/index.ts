@@ -3,9 +3,10 @@
 export type { paths as Paths_v0_2_0, components as Components_v0_2_0 } from './v0.2.0'
 export type { paths as Paths_v0_3_0, components as Components_v0_3_0 } from './v0.3.0'
 export type { paths as Paths_v0_4_0, components as Components_v0_4_0 } from './v0.4.0'
+export type { paths as Paths_v2_0_0, components as Components_v2_0_0 } from './v2.0.0'
 
 // Latest
-export type { paths, components } from './v0.4.0'
-export const LATEST_API_VERSION = 'v0.4.0' as const
-export const SUPPORTED_VERSIONS = ['v0.2.0', 'v0.3.0', 'v0.4.0'] as const
+export type { paths, components } from './v2.0.0'
+export const LATEST_API_VERSION = 'v2.0.0' as const
+export const SUPPORTED_VERSIONS = ['v0.2.0', 'v0.3.0', 'v0.4.0', 'v2.0.0'] as const
 export type SupportedVersion = typeof SUPPORTED_VERSIONS[number]
