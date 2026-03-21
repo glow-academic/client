@@ -2,7 +2,7 @@ name: Tag, Build & Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, v1]
     paths: ['package.json']
   workflow_dispatch:
 
@@ -59,7 +59,7 @@ jobs:
             APP_VERSION=${{ steps.version.outputs.tag }}
           tags: |
             ${{ env.REGISTRY }}/learnloopllc/glow-client:${{ steps.version.outputs.tag }}
-            ${{ env.REGISTRY }}/learnloopllc/glow-client:latest
+            ${{ github.ref == 'refs/heads/main' && format('{0}/learnloopllc/glow-client:latest', env.REGISTRY) || '' }}
 
       - name: Create GitHub Release
         if: steps.check.outputs.exists == 'false'
