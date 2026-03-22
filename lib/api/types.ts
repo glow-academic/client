@@ -1,19 +1,11 @@
 // lib/api/types.ts
 import type { paths } from "@/lib/api/schema";
-import type { Version } from "./config";
 
 type M = "get" | "post" | "put" | "patch" | "delete";
 export type PathKey = Extract<keyof paths, string>;
 
-// Version-aware full path union: "/api/v5/..."
-export type VersionedPath<V extends Version> = Extract<
-  PathKey,
-  `/api/${V}/${string}`
->;
-
-// App-level short path: "/personas/list"
-export type ShortPath<V extends Version> =
-  VersionedPath<V> extends `/api/${V}/${infer R}` ? `/${R}` : never;
+// Short path is now the same as PathKey (no version prefix to strip)
+export type ShortPath = PathKey;
 
 // If the method is missing on this path, resolve to undefined (not never)
 type Op<P extends PathKey, Meth extends M> = P extends keyof paths
@@ -88,5 +80,5 @@ type PickSuccess<R> =
 export type OutputOf<P extends PathKey, Meth extends M> = [
   Responses<P, Meth>,
 ] extends [never]
-  ? unknown // if we couldn’t see responses at all, don’t collapse to never
+  ? unknown // if we couldn't see responses at all, don't collapse to never
   : Content<Responses<P, Meth>[PickSuccess<Responses<P, Meth>>]>;

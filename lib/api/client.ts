@@ -1,22 +1,19 @@
 // lib/api/client.ts
-import { API_VERSION, INTERNAL_HTTP_BASE, type Version } from "./config";
-import { toFull, type ToFull } from "./path";
+import { INTERNAL_HTTP_BASE } from "./config";
+import { toFull } from "./path";
 import { doRequest } from "./request-core";
 import type { InputOf, OutputOf, PathKey, ShortPath } from "./types";
 
-export function createApi<V extends Version>(ver: V) {
-  const full = <P extends ShortPath<V>>(p: P) => toFull(ver, p) as ToFull<V, P>;
+function createApi() {
+  const full = (p: ShortPath) => toFull(p);
   const pickBase = () => INTERNAL_HTTP_BASE;
 
-  // Helper type: the exact OpenAPI key for this short path
-  type KeyFor<P extends ShortPath<V>> = Extract<PathKey, ToFull<V, P>>;
-
-  function get<P extends ShortPath<V>>(
+  function get<P extends ShortPath>(
     p: P,
-    a?: InputOf<KeyFor<P>, "get">,
+    a?: InputOf<Extract<PathKey, P>, "get">,
     i?: RequestInit,
   ) {
-    return doRequest<OutputOf<KeyFor<P>, "get">>(
+    return doRequest<OutputOf<Extract<PathKey, P>, "get">>(
       pickBase(),
       "GET",
       full(p),
@@ -25,12 +22,12 @@ export function createApi<V extends Version>(ver: V) {
     );
   }
 
-  function post<P extends ShortPath<V>>(
+  function post<P extends ShortPath>(
     p: P,
-    a: InputOf<KeyFor<P>, "post">,
+    a: InputOf<Extract<PathKey, P>, "post">,
     i?: RequestInit,
   ) {
-    return doRequest<OutputOf<KeyFor<P>, "post">>(
+    return doRequest<OutputOf<Extract<PathKey, P>, "post">>(
       pickBase(),
       "POST",
       full(p),
@@ -39,12 +36,12 @@ export function createApi<V extends Version>(ver: V) {
     );
   }
 
-  function put<P extends ShortPath<V>>(
+  function put<P extends ShortPath>(
     p: P,
-    a: InputOf<KeyFor<P>, "put">,
+    a: InputOf<Extract<PathKey, P>, "put">,
     i?: RequestInit,
   ) {
-    return doRequest<OutputOf<KeyFor<P>, "put">>(
+    return doRequest<OutputOf<Extract<PathKey, P>, "put">>(
       pickBase(),
       "PUT",
       full(p),
@@ -53,12 +50,12 @@ export function createApi<V extends Version>(ver: V) {
     );
   }
 
-  function patch<P extends ShortPath<V>>(
+  function patch<P extends ShortPath>(
     p: P,
-    a: InputOf<KeyFor<P>, "patch">,
+    a: InputOf<Extract<PathKey, P>, "patch">,
     i?: RequestInit,
   ) {
-    return doRequest<OutputOf<KeyFor<P>, "patch">>(
+    return doRequest<OutputOf<Extract<PathKey, P>, "patch">>(
       pickBase(),
       "PATCH",
       full(p),
@@ -67,12 +64,12 @@ export function createApi<V extends Version>(ver: V) {
     );
   }
 
-  function del<P extends ShortPath<V>>(
+  function del<P extends ShortPath>(
     p: P,
-    a?: InputOf<KeyFor<P>, "delete">,
+    a?: InputOf<Extract<PathKey, P>, "delete">,
     i?: RequestInit,
   ) {
-    return doRequest<OutputOf<KeyFor<P>, "delete">>(
+    return doRequest<OutputOf<Extract<PathKey, P>, "delete">>(
       pickBase(),
       "DELETE",
       full(p),
@@ -84,4 +81,4 @@ export function createApi<V extends Version>(ver: V) {
   return { get, post, put, patch, delete: del } as const;
 }
 
-export const api = createApi(API_VERSION);
+export const api = createApi();
