@@ -1,4 +1,4 @@
-resolver 127.0.0.11 valid=10s;
+resolver 127.0.0.11 valid=10s ipv6=off;
 
 map "${ACTIVE_ENV}" $app_backend {
     "green"   app-green:3000;
@@ -10,7 +10,8 @@ server {
     server_name _;
 
     location / {
-        proxy_pass http://$app_backend;
+        set $backend $app_backend;
+        proxy_pass http://$backend;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
