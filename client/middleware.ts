@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
   // Inject pathname into headers so server components can access it
-  const pathname = request.nextUrl.pathname;
   const response = NextResponse.next();
-  response.headers.set("x-pathname", pathname);
+  response.headers.set("x-pathname", path);
   return response;
 }
 

@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run run-test test test-unit test-integration test-cov cleanup generate-tests generate-test-schema stop install-client install-e2e start-db migrate-db connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types ws-gen gen-ws-types
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db typecheck-client build-client openapi-gen gen-client-types configure deploy deploy-clean seed-gen
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -12,6 +12,7 @@ SERVER_PORT := 8000
 CLIENT_PORT := 3000
 REDIS_PORT := 6379
 DATABASE_PORT := 5432
+KEYCLOAK_PORT := 8080
 
 # Check if Python 3.11 is available
 PY311 := $(shell which python3.11 || true)
@@ -26,12 +27,34 @@ check-python:
 		exit 1; \
 	fi
 
+# Setup: copy .env.example to .env
+setup:
+	@if [ ! -f .env ]; then cp .env.example .env && echo "Created .env from .env.example — edit it with your values"; else echo ".env already exists"; fi
+
 # Create virtual environment
-setup: check-python
+setup-venv: check-python
 	@echo "Creating virtual environment at $(VENV)..."
 	@$(PYTHON) -m venv $(VENV)
 	@echo "✅ Virtual environment created at $(VENV)"
 	@echo "To activate: source $(VENV_BIN)/activate"
+
+# Alias for setup
+configure: setup
+
+# Deploy: build seed SQL, start services
+deploy:
+	@echo "🚀 Deploying Glow..."
+	@bash database/scripts/load-modules.sh --output database/seeds/seed_modules.sql
+	@docker compose up -d --build
+	@echo "✅ Deploy complete"
+
+# Deploy clean: wipe volumes, build seed SQL, start fresh
+deploy-clean:
+	@echo "🚀 Deploying Glow (clean)..."
+	@bash database/scripts/load-modules.sh --output database/seeds/seed_modules.sql
+	@docker compose down -v
+	@docker compose up -d --build
+	@echo "✅ Clean deploy complete"
 
 # Install all dependencies
 install: check-venv
@@ -75,7 +98,7 @@ lint: check-venv
 # Run MyPy for static type checking
 typecheck: check-venv
 	@echo "Type checking..."
-	@$(VENV_PYTHON) -m mypy server/app
+	@$(VENV_PYTHON) -m mypy server/app server/utils
 	@echo "✅ Type checking complete"
 
 
@@ -85,77 +108,28 @@ generate-tests: check-venv
 	@$(VENV_PYTHON) server/scripts/generate_pytest_tests.py
 	@echo "✅ Tests generated"
 
-# Generate consolidated test schema SQL file
-generate-test-schema:
-	@echo "Generating test schema with seed data..."
-	@cd database && yarn generate-test-schema
-	@echo "✅ Test schema generated at server/tests/test-schema.sql"
 
-# Test paths (DRY)
-UNIT_TEST_PATH = server/tests/unit
-INTEGRATION_TEST_PATH = server/tests/integration
-E2E_TEST_PATH = server/tests/e2e
-
-# Run unit tests
-test-unit: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running unit tests on: $(ARGS)"; \
-		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
-	else \
-		echo "Running unit tests..."; \
-		$(VENV_PYTHON) -m pytest $(UNIT_TEST_PATH) -v; \
-	fi
-
-# Run integration tests
-test-integration: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running integration tests on: $(ARGS)"; \
-		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
-	else \
-		echo "Running integration tests..."; \
-		$(VENV_PYTHON) -m pytest $(INTEGRATION_TEST_PATH) -v; \
-	fi
-
-# Run all tests (unit + integration)
+# Run all tests
 test: check-venv
 	@if [ -n "$(ARGS)" ]; then \
-		echo "Running pytest on specific file(s): $(ARGS)"; \
+		echo "Running tests: $(ARGS)"; \
 		$(VENV_PYTHON) -m pytest $(ARGS) -v; \
 	else \
-		$(MAKE) test-unit; \
-		$(MAKE) test-integration; \
+		echo "Running tests..."; \
+		$(VENV_PYTHON) -m pytest server/tests/ -v; \
 	fi
 
-# Run tests with coverage (unit + integration only, excludes e2e)
+# Run tests with coverage
 test-cov: check-venv
 	@if [ -n "$(ARGS)" ]; then \
-		echo "Running pytest with coverage on: $(ARGS)"; \
-		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov -m "not e2e"; \
+		echo "Running tests with coverage: $(ARGS)"; \
+		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(ARGS) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
 	else \
-		echo "Running unit and integration tests with coverage..."; \
-		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest $(UNIT_TEST_PATH) $(INTEGRATION_TEST_PATH) --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
+		echo "Running tests with coverage..."; \
+		COVERAGE_FILE=server/.coverage $(VENV_PYTHON) -m pytest server/tests/ --cov=server/app --cov-report=term-missing --cov-report=html:server/htmlcov; \
 	fi
 	@echo "✅ Coverage report generated at server/htmlcov/index.html"
 
-test-e2e: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running E2E tests (headless) on: $(ARGS)"; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q; \
-	else \
-		echo "Running E2E tests (headless)..."; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(VENV_PYTHON) -m pytest $(E2E_TEST_PATH) -m e2e -q; \
-	fi
-	@echo "✅ E2E tests complete"
-
-test-e2e-headed: check-venv
-	@if [ -n "$(ARGS)" ]; then \
-		echo "Running E2E tests (headed) on: $(ARGS)"; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest $(ARGS) -m e2e -q --headed; \
-	else \
-		echo "Running E2E tests (headed)..."; \
-		ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests E2E_HEADED=1 $(VENV_PYTHON) -m pytest $(E2E_TEST_PATH) -m e2e -q --headed; \
-	fi
-	@echo "✅ E2E tests complete"
 # Run client typecheck
 typecheck-client:
 	@echo "Running client typecheck..."
@@ -167,11 +141,6 @@ build-client:
 	@echo "Building client for production..."
 	@cd client && yarn build
 	@echo "✅ Client build complete"
-
-install-e2e: check-venv
-	@echo "Installing Playwright browsers..."
-	@$(VENV_BIN)/playwright install
-	@echo "✅ Playwright browsers installed"
 
 # Generate OpenAPI schema manually
 openapi-gen: check-venv
@@ -190,22 +159,6 @@ gen-client-types:
 	@cd client && yarn gen:types
 	@echo "✅ Client types updated in lib/api/schema.ts"
 
-# Generate WebSocket contract manually
-ws-gen: check-venv
-	@echo "📝 Generating WebSocket contract..."
-	@cd server && $(PWD)/$(VENV_PYTHON) -c "import asyncio; \
-from app.main import lifespan, fastapi_app; \
-async def run(): \
-	async with lifespan(fastapi_app): \
-		pass; \
-asyncio.run(run())"
-	@echo "✅ ws.json written to server/ws.json"
-
-# Generate client TypeScript types from WebSocket contract
-gen-ws-types:
-	@echo "📝 Generating client TypeScript types from WebSocket contract..."
-	@cd client && yarn gen:ws-types
-	@echo "✅ Client WebSocket types updated in lib/ws-types.ts"
 
 # Start all services in foreground with combined logs
 run: check-venv
@@ -214,22 +167,61 @@ run: check-venv
 	@echo "  Server:   http://localhost:$(SERVER_PORT)"
 	@echo "  Client:   http://localhost:$(CLIENT_PORT)"
 	@echo "  Database: localhost:$(DATABASE_PORT)"
+	@echo "  Keycloak: http://localhost:$(KEYCLOAK_PORT)"
 	@echo ""
 	@echo "Press Ctrl+C to stop all services"
 	@echo "----------------------------------------"
-	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "chokidar.*ws.json" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; echo "✅ All services stopped"; exit 0' INT; \
+	@trap 'echo ""; echo "🛑 Stopping all services..."; pkill -f "redis-server.*$(REDIS_PORT)" 2>/dev/null || true; pkill -f "uvicorn.*$(SERVER_PORT)" 2>/dev/null || true; pkill -f "next dev" 2>/dev/null || true; pkill -f "chokidar.*openapi.json" 2>/dev/null || true; pkill -f "chokidar.*sql" 2>/dev/null || true; pkill -f "stream-logs.js" 2>/dev/null || true; pkill -f "docker logs.*glow-keycloak" 2>/dev/null || true; docker stop glow-keycloak 2>/dev/null; docker rm glow-keycloak 2>/dev/null; echo "✅ All services stopped"; exit 0' INT; \
 	exec 2>/dev/null; \
+	if docker ps --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
+		echo "✅ Keycloak already running, attaching to logs..."; \
+		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
+	elif docker ps -a --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
+		echo "🔄 Starting existing Keycloak container..."; \
+		docker start glow-keycloak >/dev/null 2>&1; \
+		sleep 1; \
+		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
+	else \
+		echo "🚀 Creating new Keycloak container..."; \
+		DB_USER=$${DB_USER:-myuser}; \
+		DB_PASSWORD=$${DB_PASSWORD:-mypassword}; \
+		CLIENT_PORT=$${CLIENT_PORT:-3000}; \
+		APP_PREFIX=$${APP_PREFIX:-}; \
+		docker run -d --name glow-keycloak -p $(KEYCLOAK_PORT):8080 \
+			-v "$(PWD)/uploads/themes:/opt/keycloak/themes:ro" \
+			-e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+			-e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+			-e KC_DB=postgres \
+			-e KC_DB_URL=jdbc:postgresql://host.docker.internal:5432/mydb?currentSchema=keycloak \
+			-e KC_DB_USERNAME=$$DB_USER \
+			-e KC_DB_PASSWORD=$$DB_PASSWORD \
+		-e KC_DB_SCHEMA=keycloak \
+		-e KC_PROXY=none \
+		-e KC_HTTP_ENABLED=true \
+		-e KC_HTTP_RELATIVE_PATH=/auth \
+		-e KC_HOSTNAME=http://localhost:$(KEYCLOAK_PORT)/auth \
+		-e KC_HOSTNAME_STRICT=false \
+		-e KC_HOSTNAME_STRICT_BACKCHANNEL=false \
+			quay.io/keycloak/keycloak:26.0 start-dev >/dev/null 2>&1; \
+		sleep 1; \
+		(docker logs --tail 0 -f glow-keycloak 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;34m[KEYCLOAK]\033[0m %s' "$$line")"; done) & \
+	fi; \
+	echo "⏳ Waiting for Keycloak to be ready..."; \
+	for i in $$(seq 1 60); do \
+		if docker exec glow-keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin 2>/dev/null; then \
+			echo "✅ Keycloak is ready"; \
+			docker exec glow-keycloak /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE 2>/dev/null && echo "✅ Keycloak SSL requirement disabled" || echo "⚠️  Keycloak SSL already configured"; \
+			break; \
+		fi; \
+		sleep 2; \
+	done; \
 	(cd server && redis-server --port $(REDIS_PORT) --dir . --dbfilename dump.rdb 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;31m[REDIS]\033[0m %s' "$$line")"; done) & \
-	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json --reload-exclude server/ws.json) 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
+	(cd server && ( $(PWD)/$(VENV_PYTHON) -m uvicorn app.main:app --reload --host 0.0.0.0 --port $(SERVER_PORT) --reload-exclude server/openapi.json --reload-exclude 'app/sql/types.py' --reload-exclude 'tests/sql/types.py') 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;32m[SERVER]\033[0m %s' "$$line")"; done) & \
 	(cd client && yarn watch:openapi 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[OPENAPI]\033[0m %s' "$$line")"; done) & \
-	(cd client && yarn watch:ws 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[WS]\033[0m %s' "$$line")"; done) & \
-	(cd client && yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
+	(cd client && yarn watch:sql-types 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;36m[SQL-TYPES]\033[0m %s' "$$line")"; done) & \
+	(cd client && APP_PREFIX=$${APP_PREFIX:-}; KEYCLOAK_PUBLIC_URL=http://localhost:8080/auth NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:8080/auth NODE_OPTIONS='--dns-result-order=ipv4first' yarn dev 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;35m[CLIENT]\033[0m %s' "$$line")"; done) & \
 	(cd database && READS=1 MIN_MS=0 SAMPLE_MS=150 DEBUG_READS=1 yarn logs 2>&1 | while IFS= read -r line; do echo "$$(printf '\033[0;33m[DATABASE]\033[0m %s' "$$line")"; done) & \
 	wait
-
-run-test:
-	@echo "🚀 Starting all GLOW services in TEST mode..."
-	@ENV=test AUTH_SECRET=test_secret_key_for_integration_tests SECRET_KEY=test_secret_key_for_integration_tests $(MAKE) run
 
 # Stop all services (for cleanup)
 stop:
@@ -254,8 +246,16 @@ stop:
 	fi
 	@echo "Stopping Database logs..."
 	@pkill -f "stream-logs.js" 2>/dev/null && echo "✅ Database logs stopped" || echo "⚠️  Database logs process not found"
+	@echo "Stopping SQL types watcher..."
+	@pkill -f "chokidar.*sql" 2>/dev/null && echo "✅ SQL types watcher stopped" || echo "⚠️  SQL types watcher process not found"
+	@echo "Stopping Keycloak..."
+	@if docker ps -a --filter name=glow-keycloak --format "{{.Names}}" | grep -q "^glow-keycloak$$"; then \
+		docker stop glow-keycloak >/dev/null 2>&1 && echo "✅ Keycloak stopped" || echo "⚠️  Failed to stop Keycloak"; \
+		docker rm glow-keycloak >/dev/null 2>&1 && echo "✅ Keycloak container removed" || echo "⚠️  Failed to remove Keycloak container"; \
+	else \
+		echo "⚠️  Keycloak container not found"; \
+	fi
 	@echo "✅ All services stopped"
-
 
 # Clean up generated files and cache
 cleanup:
@@ -276,17 +276,69 @@ install-client:
 	@cd client && yarn install
 	@echo "✅ Client dependencies installed"
 
-# Start database service
-start-db:
-	@echo "Starting database service..."
+# Restore database from latest backup
+restore-db:
+	@echo "Restoring database from latest backup..."
 	@cd database && yarn start
-	@echo "✅ Database started"
+	@echo "✅ Database restored"
 
-# Migrate database
+# Migrate database (most recent migration only) + regenerate everything
 migrate-db:
-	@echo "Running database migrations..."
-	@cd database && yarn migrate
+	@echo "Running database migrations (most recent only)..."
+	@cd database && bash scripts/start.sh --migrate
 	@echo "✅ Database migrations completed"
+	@echo ""
+	@$(MAKE) split-schema
+	@echo ""
+	@echo "✅ Migration + schema split complete"
+
+# Migrate database (most recent migration only, no regeneration)
+migrate-db-only:
+	@echo "Running database migrations (most recent only)..."
+	@cd database && bash scripts/start.sh --migrate
+	@echo "✅ Database migrations completed"
+
+# Migrate database (all migrations)
+migrate-db-all:
+	@echo "Running all database migrations..."
+	@cd database && yarn migrate:all
+	@echo "✅ All database migrations completed"
+
+# Split schema.sql into structured files
+split-schema:
+	@echo "Splitting schema.sql into structured files..."
+	@python3 database/scripts/split_schema.py
+	@echo "✅ Schema split complete"
+
+# Concatenate split schema files back into schema.sql
+concat-schema:
+	@echo "Concatenating schema files..."
+	@bash database/scripts/concat_schema.sh
+	@echo "✅ Schema concatenated"
+
+
+# Generate registry files from DB introspection + filesystem scanning
+registry: check-venv
+	@echo "Generating registry files..."
+	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
+	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
+	 DB_NAME="$${DB_NAME:-mydb}" \
+	 DB_HOST="$${DB_HOST:-localhost}" \
+	 DB_PORT="$${DB_PORT:-5432}" \
+	 $(VENV_PYTHON) server/scripts/generate_registry.py all
+	@echo "✅ Registry generation complete"
+
+# Validate registry files match DB state
+registry-validate: check-venv
+	@echo "Validating registry files..."
+	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
+	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
+	 DB_NAME="$${DB_NAME:-mydb}" \
+	 DB_HOST="$${DB_HOST:-localhost}" \
+	 DB_PORT="$${DB_PORT:-5432}" \
+	 $(VENV_PYTHON) server/scripts/generate_registry.py validate
+	@echo "✅ Registry validation complete"
+
 
 # Connect to database
 connect-db:
@@ -294,19 +346,48 @@ connect-db:
 	@cd database && yarn connect
 	@echo "✅ Connected to database"
 
-# Start database with fresh data (clean start)
+# Regenerate all seed SQL files (base + all setups) via testcontainers
+seed-gen: check-venv
+	@echo "Regenerating all seed SQL files..."
+	@PYTHONPATH=server $(VENV_PYTHON) -m database.scripts.runner --all
+
+# Load seed data into local database
+load-seeds:
+	@echo "Loading seed data..."
+	@bash database/scripts/load-modules.sh
+
+# Build fresh database from schema + modules + bootstrap keys
 fresh-db:
-	@echo "Starting database with fresh data..."
-	@cd database && yarn start:clean
-	@echo "✅ Fresh database started"
+	@cd database && bash scripts/start.sh --clean-modules
+	@echo ""
+	@echo "To start services, run: make run"
+
+
+# MCP setup for Cursor IDE
+mcp: check-venv
+	@echo "Setting up MCP for Cursor IDE..."
+	@echo "1. Configuring Keycloak token lifespan..."
+	@$(VENV_PYTHON) server/scripts/configure-mcp-token-lifespan.py || echo "⚠️  Could not configure token lifespan (Keycloak may not be running)"
+	@echo "2. Getting token and updating Cursor config..."
+	@$(VENV_PYTHON) scripts/setup-cursor-mcp.py
+	@echo ""
+	@echo "✅ MCP setup complete!"
+	@echo "   - Token lifetime: $(shell $(VENV_PYTHON) -c 'import os; from dotenv import load_dotenv; load_dotenv(); print(f\"{int(os.getenv(\"MCP_TOKEN_LIFESPAN\", \"86400\")) // 3600} hours\")' 2>/dev/null || echo '24 hours') (configurable via MCP_TOKEN_LIFESPAN)"
+	@echo "   - Cursor config updated at ~/.cursor/mcp.json"
+	@echo "   - Restart Cursor IDE to use the new configuration"
 
 
 # Show help
 help:
 	@echo "GLOW - Graduate Learning Orientation Workshop"
 	@echo ""
+	@echo "Getting started:"
+	@echo "  setup          - Copy .env.example to .env"
+	@echo "  deploy         - Build seed SQL, start all Docker services"
+	@echo "  deploy-clean   - Same as deploy but wipes volumes first (fresh start)"
+	@echo ""
 	@echo "Environment setup:"
-	@echo "  setup        - Create virtual environment at .venv"
+	@echo "  setup-venv   - Create virtual environment at .venv"
 	@echo "  install      - Install all dependencies in venv"
 	@echo "  clean        - Remove virtual environment"
 	@echo ""
@@ -314,14 +395,17 @@ help:
 	@echo "  install-client - Install client dependencies with yarn"
 	@echo ""
 	@echo "Database:"
-	@echo "  start-db     - Start database service"
-	@echo "  migrate-db   - Run database migrations"
-	@echo "  connect-db   - Connect to database"
-	@echo "  fresh-db     - Start database with fresh data"
+	@echo "  restore-db       - Restore database from latest backup"
+	@echo "  migrate-db       - Run most recent database migration"
+	@echo "  migrate-db-all   - Run all database migrations"
+	@echo "  connect-db       - Connect to database"
+	@echo "  seed-gen         - Regenerate all seed SQL files (base + all setups)"
+	@echo "  fresh-db         - Build fresh DB from schema + modules + keys"
+	@echo "  load-seeds       - Load seed data into local database"
 	@echo ""
 	@echo "Services:"
 	@echo "  run          - Start all services in foreground (Ctrl+C to stop)"
-	@echo "  stop         - Stop all services (cleanup)"
+	@echo "  stop         - Stop all services including Keycloak"
 	@echo ""
 	@echo "Code quality:"
 	@echo "  format       - Format code with Ruff"
@@ -338,19 +422,19 @@ help:
 	@echo ""
 	@echo "Utilities:"
 	@echo "  cleanup      - Clean up generated files and cache"
+	@echo "  mcp          - Setup MCP for Cursor IDE (configure Keycloak token lifespan and update Cursor config)"
 	@echo ""
 	@echo "Code generation:"
 	@echo "  generate-tests  - Generate pytest tests"
 	@echo "  openapi-gen      - Generate OpenAPI schema manually"
 	@echo "  gen-client-types - Generate client TypeScript types from OpenAPI"
-	@echo "  ws-gen           - Generate WebSocket contract manually"
-	@echo "  gen-ws-types     - Generate client TypeScript types from WebSocket contract"
 	@echo ""
 	@echo "Service URLs:"
 	@echo "  Redis:     localhost:$(REDIS_PORT)"
 	@echo "  Server:    http://localhost:$(SERVER_PORT)"
 	@echo "  Client:    http://localhost:$(CLIENT_PORT)"
 	@echo "  Database:  localhost:$(DATABASE_PORT)"
+	@echo "  Keycloak:  http://localhost:$(KEYCLOAK_PORT)"
 	@echo ""
 	@echo "Virtual environment location: $(VENV)"
 	@echo "To activate manually: source $(VENV_BIN)/activate"

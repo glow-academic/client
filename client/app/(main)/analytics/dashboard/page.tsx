@@ -1,186 +1,56 @@
 /**
  * app/(main)/analytics/dashboard/page.tsx
  * Dashboard page for the analytics section.
+ * Uses a single /dashboard/get endpoint that returns all sections at once.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
-import SimulationHistory from "@/components/common/history/SimulationHistory";
-import Dashboard from "@/components/dashboard/Dashboard";
+import Dashboard from "@/components/artifacts/dashboard/Dashboard";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { searchParamsToFilters } from "@/utils/analytics-filters";
+import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
-import { revalidatePath, unstable_cache } from "next/cache";
-import { headers } from "next/headers";
-import { Suspense } from "react";
+import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/api/v3/dashboard/overview", "post">;
-type DashboardOut = OutputOf<"/api/v3/dashboard/overview", "post">;
-type DashboardHistoryIn = InputOf<"/api/v3/dashboard/history", "post">;
-type DashboardHistoryOut = OutputOf<"/api/v3/dashboard/history", "post">;
-type BulkArchiveAttemptsIn = InputOf<"/api/v3/attempts/bulk-archive", "post">;
-type BulkArchiveAttemptsOut = OutputOf<"/api/v3/attempts/bulk-archive", "post">;
+type DashboardIn = InputOf<"/api/v5/artifacts/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
+type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
+type BulkArchiveAttemptsIn = InputOf<
+  "/api/v5/attempts/simulation/archive",
+  "post"
+>;
+type BulkArchiveAttemptsOut = OutputOf<
+  "/api/v5/attempts/simulation/archive",
+  "post"
+>;
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Dashboard overview responses exceed Next.js 2MB cache limit (~12.9MB).
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getDashboardOverview = async (
-  input: DashboardIn
-): Promise<DashboardOut> => {
+/** ---- Fetch function ---- */
+const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-
-  return api.post("/dashboard/overview", input, {
+  return api.post("/artifacts/dashboard/get", input, {
     cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
+    ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
 };
 
-/** ---- Helper to detect hard refresh ----
- * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
- * Returns true if hard refresh detected, false otherwise.
- */
-async function isHardRefresh(): Promise<boolean> {
-  try {
-    const headersList = await headers();
-    const cacheControl = headersList.get("cache-control");
-    const pragma = headersList.get("pragma");
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v5/artifacts/dashboard/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/dashboard/docs", "post">;
 
-    // Hard refresh indicators:
-    // - Cache-Control: no-cache or max-age=0
-    // - Pragma: no-cache
-    return (
-      cacheControl?.toLowerCase().includes("no-cache") ||
-      cacheControl?.includes("max-age=0") ||
-      pragma?.toLowerCase() === "no-cache"
-    );
-  } catch {
-    // If headers() fails, default to false (use cache)
-    return false;
-  }
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/dashboard/docs", input);
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
 }
-
-/** ---- Direct fetch (no Next.js cache) ----
- * Dashboard history responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getDashboardHistory = async (
-  input: DashboardHistoryIn
-): Promise<DashboardHistoryOut> => {
-  const bypassCache = await isHardRefresh();
-
-  return api.post("/dashboard/history", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-const getProfileContext = unstable_cache(
-  async (input: {
-    body: {
-      actualProfileId: string;
-      effectiveProfileId: string;
-      pathname: string;
-    };
-  }) => {
-    return api.post("/profile/context", input);
-  },
-  ["profile:context"],
-  { tags: ["profile:context"] }
-);
-
-/** ---- Inline filters function for dashboard page ---- */
-async function getDashboardFilters(searchParams?: URLSearchParams) {
-  const session = await getSession();
-
-  // Fetch profile context to get earliestAttemptDate
-  const profileContext = await getProfileContext({
-    body: {
-      actualProfileId: session?.user?.profileId || "",
-      effectiveProfileId: session?.effectiveProfileId || "",
-      pathname: "/",
-    },
-  });
-
-  // Compute startDate using same logic as analytics context
-  let startDate: Date;
-  if (profileContext.earliestAttemptDate) {
-    startDate = new Date(profileContext.earliestAttemptDate);
-    startDate.setHours(0, 0, 0, 0);
-  } else {
-    // Fallback to 30 days ago (matching analytics context)
-    startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    startDate.setHours(0, 0, 0, 0);
-  }
-
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
-
-  const defaults = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: [] as string[],
-    roles: [] as string[],
-    simulationFilters: ["general" as const, "practice" as const, "archived" as const],
-    departmentIds: [] as string[],
-  };
-
-  // If search params are provided, merge them with defaults
-  let filters = defaults;
-  if (searchParams) {
-    const parsedFilters = searchParamsToFilters(searchParams, defaults);
-    filters = {
-      startDate: parsedFilters.startDate || defaults.startDate,
-      endDate: parsedFilters.endDate || defaults.endDate,
-      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
-      roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters ||
-        defaults.simulationFilters) as typeof defaults.simulationFilters,
-      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
-    };
-  }
-
-  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
-  const cohortIds =
-    filters.cohortIds && filters.cohortIds.length > 0
-      ? filters.cohortIds
-      : profileContext.cohortIds || [];
-  const departmentIds =
-    filters.departmentIds && filters.departmentIds.length > 0
-      ? filters.departmentIds
-      : profileContext.departmentIds || [];
-  const roles =
-    filters.roles && filters.roles.length > 0
-      ? filters.roles
-      : profileContext.scopedRoles || [];
-
-  return {
-    ...filters,
-    cohortIds,
-    departmentIds,
-    roles,
-  };
-}
-
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: `Dashboard in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-};
 
 interface DashboardPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -189,139 +59,141 @@ interface DashboardPageProps {
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
-  // Parse search params
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
+  // Parse search params via nuqs loader
+  const q = loadDashboardSearchParams(await searchParams);
+
+  // Section picker params (canonical — shared across charts in each section)
+  const rubricIds = q.rubricIds ?? undefined;
+  const rubricSearch = q.rubricSearch ?? undefined;
+  const rubricIndex = q.rubricIndex ?? 0;
+  const simulationPickerIds = q.simulationPickerIds ?? undefined;
+  const simulationPickerSearch = q.simulationPickerSearch ?? undefined;
+  const simulationIndex = q.simulationIndex ?? 0;
+  const parameterIds = q.parameterIds ?? undefined;
+  const parameterSearch = q.parameterSearch ?? undefined;
+  const parameterIndex = q.parameterIndex ?? 0;
+  const scenarioIds = q.scenarioIds ?? undefined;
+  const scenarioSearch = q.scenarioSearch ?? undefined;
+  const scenarioIndex = q.scenarioIndex ?? 0;
+
+  // History params with defaults
+  const historyPage = q.historyPage ?? 0;
+  const historyPageSize = q.historyPageSize ?? 10;
+  const historySearch = q.historySearch ?? undefined;
+  const historyProfileIds = q.historyProfileIds ?? undefined;
+  const historySimulationIds = q.historySimulationIds ?? undefined;
+  const historyScenarioIds = q.historyScenarioIds ?? undefined;
+  const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
+  const historySortBy = q.historySortBy ?? "date";
+  const historySortOrder = q.historySortOrder ?? "desc";
+  const historyProfileSearch = q.historyProfileSearch ?? undefined;
+  const historySimulationSearch = q.historySimulationSearch ?? undefined;
+  const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
+
+  // Single API call returning all dashboard data
+  const data = await getDashboard({
+    body: {
+      ...(q.startDate && { start_date: q.startDate }),
+      ...(q.endDate && { end_date: q.endDate }),
+      ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+      ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+      ...(q.roles?.length && { roles: q.roles }),
+      ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
+      page_limit: 50,
+      page_offset: 0,
+      // Section pickers (canonical)
+      ...(rubricIds?.length && { rubric_ids: rubricIds }),
+      ...(rubricSearch && { rubric_search: rubricSearch }),
+      ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
+      ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
+      ...(parameterIds?.length && { parameter_ids: parameterIds }),
+      ...(parameterSearch && { parameter_search: parameterSearch }),
+      ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
+      ...(scenarioSearch && { scenario_search: scenarioSearch }),
+      // History
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+      ...(historySearch && { history_simulation_search: historySearch }),
+      ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
+      ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
+      ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
+      ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
+      ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
+    },
+  });
+
+  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+  const facets = data.analytics;
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    if (facets?.date_range_earliest) {
+      const d = new Date(facets.date_range_earliest);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
     }
-  });
-
-  // Get filters from search params or defaults
-  const filters = await getDashboardFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
-  );
-
-  // Dashboard bundle no longer uses profileId - removed from request
-  const dashboardRequestBody = {
-    ...filters,
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
+  const defaultFilters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? [],
+    departmentIds: q.departmentIds ?? [],
+    roles: q.roles ?? [],
   };
 
-  // Extract pagination and filter params from search params
-  const historyPage = searchParamsObj.get("historyPage")
-    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
-    : 0;
-  const historyPageSize = searchParamsObj.get("historyPageSize")
-    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
-    : 10;
-  const historySearch = searchParamsObj.get("historySearch") || undefined;
-  const historyProfileIds = searchParamsObj.get("historyProfileIds")
-    ? searchParamsObj.get("historyProfileIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historySimulationIds = searchParamsObj.get("historySimulationIds")
-    ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyScenarioIds = searchParamsObj.get("historyScenarioIds")
-    ? searchParamsObj.get("historyScenarioIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyInfiniteMode =
-    searchParamsObj.get("historyInfiniteMode") === "true"
-      ? true
-      : searchParamsObj.get("historyInfiniteMode") === "false"
-        ? false
-        : undefined;
-  const historySortBy = searchParamsObj.get("historySortBy") || "date";
-  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
-
-  // Fetch dashboard data server-side (without history - history will be fetched separately)
-  const dashboardData = await getDashboardOverview({
-    body: dashboardRequestBody,
-  });
-
-  // Remove history from response for server-driven pagination
-  const dashboardDataWithoutHistory = {
-    ...dashboardData,
-    history: [],
-  };
-
-  // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include _refresh param if present to force re-render after mutations (archive/unarchive)
-  // Include analytics filter params so history re-fetches when filters change
-  const refreshParam = searchParamsObj.get("_refresh") || "";
-  const historyKey = [
-    historyPage,
-    historyPageSize,
-    historySearch || "",
-    (historyProfileIds || []).join(","),
-    (historySimulationIds || []).join(","),
-    (historyScenarioIds || []).join(","),
-    historyInfiniteMode === undefined
-      ? "all"
-      : historyInfiniteMode
-        ? "inf"
-        : "std",
-    historySortBy,
-    historySortOrder,
-    refreshParam, // Include refresh param to force re-render after archive/unarchive
-    filters.startDate, // Include analytics filters to trigger re-fetch when filters change
-    filters.endDate,
-    filters.cohortIds.join(","),
-    filters.departmentIds.join(","),
-    filters.roles.join(","),
-    filters.simulationFilters.join(","),
-  ].join("|");
+  const initialHistoryVisibility = await readViewCookie("history");
 
   return (
-    <div className="space-y-6" data-page="dashboard-index">
-      <Dashboard dashboardData={dashboardDataWithoutHistory} />
-
-      {/* History section moved out of Dashboard, fully server-driven */}
-      <div className="">
-        <Suspense
-          key={historyKey}
-          fallback={
-            <SimulationHistory
-              data={[]}
-              totalCount={0}
-              archivedCount={0}
-              unarchivedCount={0}
-              pageIndex={historyPage}
-              pageSize={historyPageSize}
-              showExport={false}
-              showArchive={true}
-              singleProfile={false}
-              revalidateAttemptAction={revalidateAttempt}
-              initialFilters={filters}
-              profileOptions={[]}
-              simulationOptions={[]}
-              scenarioOptions={[]}
-              isLoading={true}
-            />
-          }
-        >
-          <DashboardHistorySection
-            defaultFilters={filters}
-            simulationFilters={filters.simulationFilters}
-            historyPage={historyPage}
-            historyPageSize={historyPageSize}
-            historySearch={historySearch}
-            historyProfileIds={historyProfileIds}
-            historySimulationIds={historySimulationIds}
-            historyScenarioIds={historyScenarioIds}
-            historyInfiniteMode={historyInfiniteMode}
-            historySortBy={historySortBy}
-            historySortOrder={historySortOrder}
-            revalidateAttemptAction={revalidateAttempt}
-            bulkArchiveAttemptsAction={bulkArchiveAttempts}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Dashboard" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
           />
-        </Suspense>
+        }
+      />
+      <div className="px-4">
+        <Dashboard
+          data={data}
+          initialColumnVisibility={initialHistoryVisibility}
+          rubricIds={rubricIds}
+          rubricSearch={rubricSearch}
+          rubricIndex={rubricIndex}
+          simulationPickerIds={simulationPickerIds}
+          simulationPickerSearch={simulationPickerSearch}
+          simulationIndex={simulationIndex}
+          parameterIds={parameterIds}
+          parameterSearch={parameterSearch}
+          parameterIndex={parameterIndex}
+          scenarioIds={scenarioIds}
+          scenarioSearch={scenarioSearch}
+          scenarioIndex={scenarioIndex}
+          historyPage={historyPage}
+          historyPageSize={historyPageSize}
+          defaultFilters={defaultFilters}
+          bulkArchiveAttemptsAction={bulkArchiveAttempts}
+          historyProfileSearch={historyProfileSearch}
+          historySimulationSearch={historySimulationSearch}
+          historyScenarioSearch={historyScenarioSearch}
+        />
       </div>
-    </div>
+    </>
   );
 }
 
@@ -330,152 +202,13 @@ async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
-  const result = await api.post("/attempts/bulk-archive", input);
-  // Server invalidates Redis cache with "dashboard" and "history" tags
-  // Revalidate path to trigger page re-render and fresh data fetch
-  // Note: revalidateTag is not needed since dashboard data uses cache: "no-store" (not unstable_cache)
-  revalidatePath("/analytics/dashboard");
-  return result;
-}
-
-/** ---- Server action to revalidate attempt cache when simulation starts ---- */
-async function revalidateAttempt(_attemptId: string): Promise<void> {
-  "use server";
-  // Server invalidates Redis cache with "dashboard", "history", and "attempts" tags
-  // Revalidate path to trigger page re-render and fresh data fetch
-  // Note: revalidateTag is not needed since dashboard data uses cache: "no-store" (not unstable_cache)
-  revalidatePath("/analytics/dashboard");
-}
-
-/** ---- Inline history section component (only used here) ---- */
-async function DashboardHistorySection({
-  defaultFilters,
-  simulationFilters,
-  historyPage,
-  historyPageSize,
-  historySearch,
-  historyProfileIds,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
-  revalidateAttemptAction,
-  bulkArchiveAttemptsAction,
-}: {
-  defaultFilters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-  };
-  simulationFilters: string[];
-  historyPage: number;
-  historyPageSize: number;
-  historySearch?: string | undefined;
-  historyProfileIds?: string[] | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-  revalidateAttemptAction: (attemptId: string) => Promise<void>;
-  bulkArchiveAttemptsAction?: (
-    input: BulkArchiveAttemptsIn
-  ) => Promise<BulkArchiveAttemptsOut>;
-}) {
-  // Build history filters matching logic from dashboard page
-  // Use the provided simulationFilters as-is - don't override it
-  // This allows filtering to specific types (e.g., ["general"] excludes archived, ["archived"] shows only archived)
-  const historySimulationFilters = simulationFilters;
-
-  const historyFilters: DashboardHistoryIn = {
-    body: {
-      startDate: defaultFilters.startDate,
-      endDate: defaultFilters.endDate,
-      cohortIds: defaultFilters.cohortIds,
-      departmentIds: defaultFilters.departmentIds,
-      roles: defaultFilters.roles,
-      simulationFilters: historySimulationFilters,
-      page: historyPage,
-      pageSize: historyPageSize,
-      ...(historySearch && { search: historySearch }),
-      ...(historyProfileIds &&
-        historyProfileIds.length > 0 && {
-          profileIds: historyProfileIds,
-        }),
-      ...(historySimulationIds &&
-        historySimulationIds.length > 0 && {
-          simulationIds: historySimulationIds,
-        }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          scenarioIds: historyScenarioIds,
-        }),
-      ...(historyInfiniteMode !== undefined && {
-        infiniteMode: historyInfiniteMode,
-      }),
-      sortBy: historySortBy,
-      sortOrder: historySortOrder,
-    },
-  };
-
-  const historyData = await getDashboardHistory(historyFilters);
-
-  // Use server-provided data directly (no transformation needed)
-  // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profileOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
-  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
-  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
-
-  return (
-    <SimulationHistory
-      data={historyData.data}
-      totalCount={historyData.totalCount}
-      archivedCount={historyData.archivedCount}
-      unarchivedCount={historyData.unarchivedCount}
-      pageIndex={historyPage}
-      pageSize={historyPageSize}
-      showExport={false}
-      showArchive={!!bulkArchiveAttemptsAction}
-      singleProfile={false}
-      revalidateAttemptAction={revalidateAttemptAction}
-      initialFilters={defaultFilters}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-      {...(bulkArchiveAttemptsAction && { bulkArchiveAttemptsAction })}
-    />
-  );
+  return api.post("/attempts/simulation/archive", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
   BulkArchiveAttemptsIn,
   BulkArchiveAttemptsOut,
-  DashboardHistoryIn,
   DashboardHistoryOut,
   DashboardIn,
   DashboardOut,

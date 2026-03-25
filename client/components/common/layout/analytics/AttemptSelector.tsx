@@ -21,7 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { SimulationFilter } from "@/contexts/analytics-context";
+import { SimulationFilter } from "@/hooks/use-analytics-params";
 import { cn } from "@/lib/utils";
 
 export interface AttemptSelectorProps {
@@ -139,7 +139,7 @@ export default function AttemptSelector({
                         <Check
                           className={cn(
                             "ml-auto",
-                            isSelected ? "opacity-100" : "opacity-0"
+                            isSelected ? "opacity-100" : "opacity-0",
                           )}
                         />
                       </div>

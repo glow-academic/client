@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
-import { PricingSkeleton } from "@/components/pricing/Pricing";
+import { PricingSkeleton } from "@/components/artifacts/pricing/Pricing";
 
 export default function Loading() {
   return <PricingSkeleton />;

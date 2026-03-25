@@ -1,118 +1,91 @@
 # Database Management
 
-This directory contains all database-related operations for the Glow project. All Drizzle operations now run from this folder, with generated files automatically copied to the client.
+This directory contains all database-related operations for the Glow project.
+
+## Source of Truth
+
+- **Schema**: `schema/` — structured SQL files (extensions, functions, enums, tables, indexes, views, etc.)
+- **Seed data**: `seeds/` — static Python data definitions, `output/` — generated SQL from runner
+- **Migrations**: `migrate/` — incremental DDL changes
 
 ## Workflow
 
-### 1. Default Start (Latest Backup + Migrations)
+### 1. Default Start (Latest Backup)
 ```bash
-npm run start
-# or
-yarn start
+make restore-db
 ```
 - Finds the latest backup from `history/` folder
 - Restores the backup to a fresh database
-- Applies any pending migrations using `npx drizzle-kit migrate`
-- Generates and copies schema, types, queries, and mutations to client
-- Keeps running until interrupted (creates backup on exit)
 
-### 2. Clean Start (Fresh Database)
+### 2. Fresh Start
 ```bash
-npm run start:clean
-# or
-yarn start:clean
+make fresh-db
 ```
-- Creates a fresh database from `init.sql`
-- Generates and copies schema, types, queries, and mutations to client
-- Exits after setup is complete
+Builds a fresh database from schema + seed modules + bootstrap keys.
 
-### 3. Migration Mode (Generate New Migrations)
+### 3. Load Seeds
 ```bash
-npm run migrate
-# or
-yarn migrate
+make load-seeds
 ```
-- Starts with a clean database from `init.sql`
-- Runs `npx drizzle-kit generate` to show interactive diff
-- Generates migration files based on schema changes
-- Does NOT automatically apply migrations (use default start for that)
+Loads seed data into the local database using `load-modules.sh`.
 
-### 4. Connect to Database
+### 4. Migration Mode
 ```bash
-npm run connect
-# or
-yarn connect
+make migrate-db       # Apply + regenerate schema
+make migrate-db-only  # Apply only, no regeneration
 ```
-- Opens an interactive psql session to the existing database
 
-## File Generation
-
-When any of the start commands run, the following files are automatically generated and copied to the client:
-
-### Generated Files:
-- **Schema**: `client/utils/drizzle/schema.ts` (cleaned version from `database/drizzle/schema.ts`)
-- **Types**: `client/types.ts` (TypeScript types for all tables and enums)
-- **Queries**: `client/utils/queries/[table]/` (GET operations for each table)
-- **Mutations**: `client/utils/mutations/[table]/` (CREATE, UPDATE, DELETE operations)
-
-### Manual Generation:
-You can also run the generation scripts individually:
+### 5. Connect to Database
 ```bash
-npm run generate:schema    # Clean and copy schema
-npm run generate:types     # Generate TypeScript types
-npm run generate:queries   # Generate queries and mutations
-npm run generate:all       # Run all generation scripts
+make connect-db
 ```
 
 ## Directory Structure
 
 ```
 database/
-├── drizzle/              # Drizzle files (schema, migrations, relations)
-├── scripts/              # Generation scripts
-├── history/              # Database backups (auto-created)
-├── init.sql              # Initial database schema
-├── scripts/start.sh      # Main database management script
-├── drizzle.config.ts     # Drizzle configuration
-└── package.json          # Database-specific dependencies
+├── schema/                 # Structured DDL schema files
+│   ├── extensions.sql
+│   ├── functions.sql
+│   ├── enums/
+│   ├── tables/
+│   ├── indexes/
+│   ├── foreign_keys/
+│   └── views/
+├── seeds/                  # Static seed data (Python)
+│   ├── tools.py            # Tool definitions (regenerate with scripts/generate_tools.py)
+│   ├── auths.py            # Auth provider definitions
+│   └── setups/             # Setup-specific seed data
+│       ├── organization/
+│       └── university/
+├── scripts/                # Runtime utilities
+│   ├── runner.py           # Seed runner orchestrator
+│   ├── generate_tools.py   # Tool definition generator
+│   ├── load-modules.sh     # Assembled seed SQL loader
+│   ├── bootstrap-keys.sh   # API key encryption and injection
+│   └── start.sh            # Database management (start/migrate/backup)
+├── output/                 # Generated pg_dump seed files
+│   ├── base-seed.sql
+│   └── setups/
+├── migrate/                # Migration SQL files
+├── history/                # Database backups (auto-created)
+└── package.json
 ```
 
-## Client Integration
+## Migration Workflow
 
-The client no longer needs drizzle-kit or generation scripts. It simply uses:
-- `@/utils/drizzle/schema` - Database schema
-- `@/utils/drizzle/db` - Database connection
-- `@/types` - TypeScript types
-- `@/utils/queries/[table]/` - Query functions
-- `@/utils/mutations/[table]/` - Mutation functions
-
-## Backup System
-
-- Backups are automatically created in `history/` folder with timestamp
-- Backups are created:
-  - Before any database operation
-  - When the database process exits
-- Latest backup is used when starting without `--clean` flag
+1. Find next migration number: `ls database/migrate/ | sort -n | tail -1`
+2. Create migration file: `database/migrate/{next_number}_{desc}.sql`
+3. Apply: `make migrate-db`
 
 ## Environment Variables
 
-Required environment variables:
-- `DB_USER` - Database user (default: myuser)
-- `DB_PASSWORD` - Database password (default: mypassword)
-- `DB_NAME` - Database name (default: glow-prod)
-- `DB_HOST` - Database host (default: localhost)
-- `DB_PORT` - Database port (default: 5432)
+All configuration is via `.env` (copy from `.env.example`):
 
-## Development Workflow
-
-1. **Making Schema Changes**: Edit `database/drizzle/schema.ts`
-2. **Generate Migrations**: Run `npm run migrate` to see changes and generate migration files
-3. **Apply Changes**: Run `npm run start` to apply migrations and update client files
-4. **Fresh Start**: Use `npm run start:clean` when you want to start completely fresh
-
-## Notes
-
-- All drizzle-kit operations run from the database folder
-- Client automatically gets updated files when database starts
-- Migration files are stored in `database/drizzle/`
-- The system preserves data through backups during migrations 
+- `DB_USER` — Database user (default: myuser)
+- `DB_PASSWORD` — Database password (default: mypassword)
+- `DB_NAME` — Database name (default: mydb)
+- `DB_HOST` — Database host (default: localhost)
+- `DB_PORT` — Database port (default: 5432)
+- `SECRET_KEY` — Required for encrypting API keys and secrets
+- `SEED_SETUP` — Setup to load: "university" (default) or "organization"

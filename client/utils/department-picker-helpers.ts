@@ -11,7 +11,7 @@
  */
 export function getDefaultDepartmentIds(
   isSuperadmin: boolean,
-  primaryDepartmentId: string | null
+  primaryDepartmentId: string | null,
 ): string[] {
   if (isSuperadmin) return []; // Empty = all departments (default object)
   return primaryDepartmentId ? [primaryDepartmentId] : [];
@@ -29,7 +29,7 @@ export function getDefaultDepartmentIds(
 export function transformDepartmentIdsForSubmit(
   departmentIds: string[],
   isSuperadmin: boolean,
-  validDepartmentIds: string[]
+  validDepartmentIds: string[],
 ): string[] | null {
   if (isSuperadmin) {
     // Superadmin can use empty array for default objects
@@ -41,4 +41,3 @@ export function transformDepartmentIdsForSubmit(
   }
   return departmentIds;
 }
-

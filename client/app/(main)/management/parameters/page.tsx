@@ -4,101 +4,101 @@
  * @AshokSaravanan222 & @siladiea
  * 07/21/2025
  */
-import { getSession } from "@/auth";
-
-import Parameters from "@/components/parameters/Parameters";
+import Parameters from "@/components/artifacts/parameter/Parameters";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
-import { revalidateTag, unstable_cache } from "next/cache";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParametersListOut = OutputOf<"/api/v3/parameters/list", "post">;
-type DuplicateParameterIn = InputOf<"/api/v3/parameters/duplicate", "post">;
-type DuplicateParameterOut = OutputOf<"/api/v3/parameters/duplicate", "post">;
-type DeleteParameterIn = InputOf<"/api/v3/parameters/delete", "post">;
-type DeleteParameterOut = OutputOf<"/api/v3/parameters/delete", "post">;
-type CreateParameterItemIn = InputOf<"/api/v3/parameters/items/create", "post">;
-type CreateParameterItemOut = OutputOf<
-  "/api/v3/parameters/items/create",
-  "post"
->;
+type ParametersListOut = OutputOf<"/api/v5/artifacts/parameters/search", "post">;
+type DuplicateParameterIn = InputOf<"/api/v5/artifacts/parameters/duplicate", "post">;
+type DuplicateParameterOut = OutputOf<"/api/v5/artifacts/parameters/duplicate", "post">;
+type DeleteParameterIn = InputOf<"/api/v5/artifacts/parameters/delete", "post">;
+type DeleteParameterOut = OutputOf<"/api/v5/artifacts/parameters/delete", "post">;
 
-/** ---- Cached fetch with Next tags ----
- * Cache key includes profileId so entries are per-user.
- * Tags allow revalidateTag("parameters") to invalidate.
+/** ---- Direct fetch (no Next.js cache) ----
+ * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
+ * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
-const getParametersList = unstable_cache(
-  async (profileId: string): Promise<ParametersListOut> => {
-    return api.post("/parameters/list", { body: { profileId } });
-  },
-  ["parameters:list"],
-  { tags: ["parameters"] }
-);
+const getParametersList = async (): Promise<ParametersListOut> => {
+  const bypassCache = await isHardRefresh();
+  return api.post(
+    "/artifacts/parameters/search",
+    { body: {} },
+    {
+      cache: "no-store",
+      ...(bypassCache && {
+        headers: {
+          "X-Bypass-Cache": "1",
+        },
+      }),
+    },
+  );
+};
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function duplicateParameter(
-  input: DuplicateParameterIn
+  input: DuplicateParameterIn,
 ): Promise<DuplicateParameterOut> {
   "use server";
-  const out = await api.post("/parameters/duplicate", input);
-  revalidateTag("parameters");
-  const parameterId = input.body?.parameterId;
-  if (parameterId) {
-    revalidateTag(`parameter:${parameterId}`);
-  }
-  return out;
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/artifacts/parameters/duplicate", input);
 }
 
 async function deleteParameter(
-  input: DeleteParameterIn
+  input: DeleteParameterIn,
 ): Promise<DeleteParameterOut> {
   "use server";
-  const out = await api.post("/parameters/delete", input);
-  revalidateTag("parameters");
-  const parameterId = input.body?.parameterId;
-  if (parameterId) {
-    revalidateTag(`parameter:${parameterId}`);
-  }
-  return out;
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/artifacts/parameters/delete", input);
 }
 
-export async function createParameterItem(
-  input: CreateParameterItemIn
-): Promise<CreateParameterItemOut> {
-  "use server";
-  const out = await api.post("/parameters/items/create", input);
-  revalidateTag("parameters");
-  return out;
-}
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v5/artifacts/parameters/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/parameters/docs", "post">;
 
-export const metadata: Metadata = {
-  title: "Parameters",
-  description: `Manage parameters in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/parameters/docs", input);
 };
 
-export default async function ContextPage() {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
+export async function generateMetadata(): Promise<Metadata> {
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
+}
 
+export default async function ContextPage() {
+  // Access control handled server-side in layout
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // Fetch list data server-side
-  const listData = await getParametersList(profileId);
+  const listData = await getParametersList();
 
   return (
-    <div className="space-y-6" data-page="parameters-index">
-      <Parameters
-        listData={listData}
-        duplicateParameterAction={duplicateParameter}
-        deleteParameterAction={deleteParameter}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Parameters" },
+        ]}
+        toolbar={<NewArtifactButton label="New Parameter" href="/management/parameters/new" />}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="parameters-index">
+        <Parameters
+          listData={listData}
+          duplicateParameterAction={duplicateParameter}
+          deleteParameterAction={deleteParameter}
+        />
+      </div>
+    </>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateParameterItemIn,
-  CreateParameterItemOut,
   DeleteParameterIn,
   DeleteParameterOut,
   DuplicateParameterIn,

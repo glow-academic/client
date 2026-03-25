@@ -1,80 +1,100 @@
 /**
  * app/(main)/layout.tsx
- * Layout for the main section.
+ * Layout for the main section — provides sidebar + global providers (profile, socket, theme).
+ * Page-level concerns (drafts, group, analytics filters, toolbars) are owned by each page.
+ * Pages render their own headers via <PageHeader>.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 import { getSession } from "@/auth";
 import { AppShell } from "@/components/common/layout/AppShell";
-import { headers } from "next/headers";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { cookies, headers } from "next/headers";
 import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
-  bulkCreateOrUpdateStaff,
   createFeedback,
-  getAssistantChatFull,
-  getAssistantChatList,
-  getCreateStaffData,
+  exitEmulation,
   getLayoutContextData,
-  markChatComplete,
-  markIntroComplete,
-  processCSV,
-  refreshAnalytics,
-  searchSimulatableProfiles,
+  searchProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
+import { LogoutGuard } from "./logout-guard";
+
+const SIDEBAR_COOKIE = "glow_sidebar";
+
+// Force dynamic rendering to ensure layout re-renders on route changes
+// This fixes the issue where children don't update on client-side navigation
+export const dynamic = "force-dynamic";
 
 export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { initial, snapshot, attemptData } = await getLayoutContextData();
-
-  // Check if we're on the staff page and fetch initial data if needed
   const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-
-  // Read pathname from headers to check if we're on staff page
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
-  const isStaffPage = pathname === "/system/staff";
 
-  let initialCreateStaffData = null;
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
 
-  if (isStaffPage) {
-    try {
-      initialCreateStaffData = await getCreateStaffData({
-        body: {
-          departmentIds: [],
-          profileId,
-        },
-      });
-    } catch {
-      // If fetch fails, continue without staff data
-      // This can happen if user doesn't have access
-    }
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie
+    ? sidebarCookie.value === "true"
+    : undefined;
+
+  // No session → full-width access denied (no sidebar)
+  if (!session?.id_token) {
+    return (
+      <LogoutGuard>
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname={pathname}
+          fullWidth={true}
+        />
+      </LogoutGuard>
+    );
+  }
+
+  // Fetch global layout data (single call — profile context includes theme)
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
+  // Profile resolution failed → full-width access denied
+  if (!profileData?.id) {
+    return (
+      <LogoutGuard>
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname={pathname}
+          fullWidth={true}
+        />
+      </LogoutGuard>
+    );
   }
 
   return (
-    <MainLayoutClient
-      initial={initial}
-      sessionSnapshot={snapshot}
-      attemptData={attemptData}
-      markIntroCompleteAction={markIntroComplete}
-      markChatCompleteAction={markChatComplete}
-      getAssistantChatListAction={getAssistantChatList}
-      getAssistantChatFullAction={getAssistantChatFull}
-      switchEffectiveProfileAction={switchEffectiveProfile}
-      createFeedbackAction={createFeedback}
-      refreshAnalyticsAction={refreshAnalytics}
-      searchSimulatableProfilesAction={searchSimulatableProfiles}
-      processCSVAction={processCSV}
-      bulkCreateOrUpdateStaffAction={bulkCreateOrUpdateStaff}
-      initialCreateStaffData={initialCreateStaffData}
+    <div
+      key={`layout-wrapper-${pathname}`}
+      data-route-pathname={pathname}
     >
-      {/* Only the PAGE AREA suspends */}
-      <Suspense fallback={<AppShell.ContentSkeleton />}>{children}</Suspense>
-    </MainLayoutClient>
+      <MainLayoutClient
+        key={`layout-${pathname}`}
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        switchEffectiveProfileAction={switchEffectiveProfile}
+        exitEmulationAction={exitEmulation}
+        createFeedbackAction={createFeedback}
+        searchProfilesAction={searchProfiles}
+      >
+        <Suspense
+          key={`suspense-${pathname}`}
+          fallback={<AppShell.ContentSkeleton />}
+        >
+          {children}
+        </Suspense>
+      </MainLayoutClient>
+    </div>
   );
 }

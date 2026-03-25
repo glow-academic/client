@@ -1,3 +1,5 @@
+"use client";
+
 import { Column } from "@tanstack/react-table";
 import { Check, PlusCircle } from "lucide-react";
 import * as React from "react";
@@ -23,15 +25,17 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 export interface DataTableFacetedFilterProps<TData, TValue> {
-  column?: Column<TData, TValue>;
-  title?: string;
+  column?: Column<TData, TValue> | undefined;
+  title?: string | undefined;
   options: {
     label: string;
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
     count?: number;
   }[];
-  isServerDriven?: boolean;
+  isServerDriven?: boolean | undefined;
+  onSearchChange?: ((term: string) => void) | undefined;
+  searchValue?: string | undefined;
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
@@ -39,6 +43,8 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
   isServerDriven = false,
+  onSearchChange,
+  searchValue,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const isMobile = useIsMobile();
 
@@ -108,8 +114,16 @@ export function DataTableFacetedFilter<TData, TValue>({
         className="w-[280px] max-h-[320px] overflow-y-auto p-0"
         align="start"
       >
-        <Command>
-          <CommandInput placeholder={title} />
+        <Command shouldFilter={!onSearchChange}>
+          <CommandInput
+            placeholder={title}
+            {...(onSearchChange
+              ? {
+                  value: searchValue ?? "",
+                  onValueChange: onSearchChange,
+                }
+              : {})}
+          />
           <CommandList className="max-h-[280px] overflow-y-auto">
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
@@ -126,7 +140,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                       }
                       const filterValues = Array.from(selectedValues);
                       column.setFilterValue(
-                        filterValues.length ? filterValues : undefined
+                        filterValues.length ? filterValues : undefined,
                       );
                     }}
                   >
@@ -135,7 +149,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
                         isSelected
                           ? "bg-primary text-primary-foreground"
-                          : "opacity-50 [&_svg]:invisible"
+                          : "opacity-50 [&_svg]:invisible",
                       )}
                     >
                       <Check />

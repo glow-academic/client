@@ -1,4 +1,6 @@
 // lib/api/request-core.ts
+import { getAuthHeaders } from "@/lib/api/auth-headers";
+
 function encodePath(
   path: string,
   params: Record<string, string | number | boolean> = {}
@@ -44,6 +46,17 @@ export async function doRequest<T>(
 
   let body: BodyInit | null = null;
   let headers: HeadersInit = init?.headers ?? {};
+
+  // Inject auth headers (X-Api-Key + Authorization Bearer JWT)
+  // Server resolves profile_id and session_id from the JWT — no X-Profile-Id needed
+  if (typeof window === "undefined") {
+    try {
+      const authHeaders = await getAuthHeaders();
+      headers = { ...headers, ...authHeaders };
+    } catch {
+      // If auth header resolution fails, continue without headers
+    }
+  }
 
   if (bag.formData instanceof FormData) {
     body = bag.formData;

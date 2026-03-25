@@ -1,27 +1,26 @@
 // auth.ts
-import { api } from "@/lib/api/client";
-import { createTestSession, validateTestHeaders } from "@/lib/auth-helpers";
+//
+// Profile creation and resolution are handled entirely server-side by
+// resolve_identity() in the API middleware. The client just stores the
+// Keycloak id_token and passes it as Bearer token on every request.
+// The server auto-creates guest profiles on first login.
+
 import NextAuth from "next-auth";
-import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
-import { headers } from "next/headers";
+import Keycloak from "next-auth/providers/keycloak";
+import { cache } from "react";
 
 const appPrefix = process.env["APP_PREFIX"] || "";
-const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
-const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
-/** Derive a unique alias from an email.
- *  Purdue emails (*.purdue.edu) → just the username prefix (e.g. "ashok")
- *  Other emails → reversible encoding (e.g. "john.doe_at_gmail.com")
- *  To recover email: alias.replace("_at_", "@") */
-function emailToAlias(email: string): string {
-  const lower = email.toLowerCase();
-  const [prefix = "", domain] = lower.split("@");
-  if (domain?.endsWith("purdue.edu")) {
-    return prefix;
-  }
-  return lower.replace("@", "_at_");
-}
+// Keycloak configuration - read from environment (pre-shared secret strategy)
+// Use localhost (Node.js will resolve to IPv4 via NODE_OPTIONS in Makefile)
+const keycloakPublicUrl =
+  process.env["KEYCLOAK_PUBLIC_URL"] || "http://localhost:8080";
+const keycloakClientId = process.env["AUTH_KEYCLOAK_ID"] || "glow-client";
+const keycloakClientSecret = process.env["AUTH_KEYCLOAK_SECRET"] || "";
+
+// Default issuer (master realm) - used as fallback
+const defaultIssuer = `${keycloakPublicUrl}/realms/master`;
 
 // NOTE: also export `unstable_update` as `update` for server-side session mutation
 export const {
@@ -33,218 +32,102 @@ export const {
 } = NextAuth({
   basePath: `${appPrefix}/api/auth`,
   providers: [
-    MicrosoftEntraID({
-      clientId,
-      clientSecret,
+    // Single Keycloak provider - frontend controls which identity provider via kc_idp_hint
+    // Always use master realm (organizations replace multi-realm architecture)
+    Keycloak({
+      clientId: keycloakClientId,
+      clientSecret: keycloakClientSecret,
+      issuer: defaultIssuer, // Always use master realm
+      allowDangerousEmailAccountLinking: true, // Allow merging Google/MS accounts with same email
+      authorization: async ({
+        params,
+      }: {
+        params: Record<string, string | undefined>;
+      }) => {
+        // Always use master realm (organizations replace multi-realm architecture)
+        const realmIssuer = `${keycloakPublicUrl}/realms/master`;
+        const authorizationUrl = new URL(
+          `${realmIssuer}/protocol/openid-connect/auth`
+        );
+
+        // Always use single glow-client for all OAuth flows
+        // Department filtering is handled by Keycloak theme via ?department URL parameter
+        authorizationUrl.searchParams.set("client_id", keycloakClientId);
+
+        const redirectUri = params["redirect_uri"];
+        if (redirectUri) {
+          authorizationUrl.searchParams.set("redirect_uri", redirectUri);
+        }
+        authorizationUrl.searchParams.set("response_type", "code");
+        authorizationUrl.searchParams.set(
+          "scope",
+          params["scope"] || "openid profile email"
+        );
+        const state = params["state"];
+        if (state) {
+          authorizationUrl.searchParams.set("state", state);
+        }
+        const codeChallenge = params["code_challenge"];
+        if (codeChallenge) {
+          authorizationUrl.searchParams.set("code_challenge", codeChallenge);
+          authorizationUrl.searchParams.set("code_challenge_method", "S256");
+        }
+
+        // Preserve department parameter if present (passed from frontend redirect)
+        const department = params["department"];
+        if (department) {
+          authorizationUrl.searchParams.set("department", department);
+        }
+
+        const idpHint = params["kc_idp_hint"];
+        if (idpHint) {
+          authorizationUrl.searchParams.set("kc_idp_hint", idpHint);
+        }
+        const loginHint = params["login_hint"];
+        if (loginHint) {
+          authorizationUrl.searchParams.set("login_hint", loginHint);
+          // Force re-authentication when emulating (login_hint indicates emulation grant)
+          // Without this, Keycloak reuses existing session and skips IdP flow
+          authorizationUrl.searchParams.set("prompt", "login");
+        }
+
+        return authorizationUrl.toString();
+      },
     }),
   ],
   secret,
   trustHost: true,
-  // ✨ Use JWT strategy - no database adapter needed
+  // Use JWT strategy - no database adapter needed
   session: { strategy: "jwt" },
-  events: {
-    async createUser({ user }) {
-      try {
-        if (!user.email) {
-          return;
-        }
-        const alias = emailToAlias(user.email);
-
-        // V3 API - fetch profile by alias
-        let existingProfile = null;
-        try {
-          const profileResponse = await api.post("/profile/by-alias", {
-            body: { alias: alias || "" },
-          });
-          existingProfile = profileResponse.profile;
-        } catch {
-          // Profile not found, will create new one
-          existingProfile = null;
-        }
-
-        if (existingProfile) {
-          // V3 API - update existing profile lastLogin
-          await api.post("/profile/update", {
-            body: {
-              profileId: existingProfile.id,
-              lastLogin: new Date().toISOString(),
-            },
-          });
-        } else {
-          const nameParts = user.name?.split(" ") || [];
-          const firstName = nameParts[0] || "Unknown";
-          const lastName = nameParts[nameParts.length - 1] || "User";
-
-          // V3 API - create new profile via staff endpoint
-          await api.post("/profile/staff/create", {
-            body: {
-              firstName,
-              lastName,
-              alias: alias || "",
-              role: "guest",
-            },
-          });
-        }
-      } catch {
-        // Server handles logging - no client-side logging needed
-      }
-    },
-    async signIn({ user, profile, isNewUser }) {
-      try {
-        if (!user.email) {
-          return;
-        }
-
-        if (!isNewUser) {
-          const nameParts =
-            profile?.name?.split(" ") || user.name?.split(" ") || [];
-          const firstName = nameParts[0] || "Unknown";
-          const lastName = nameParts[nameParts.length - 1] || "User";
-          const alias = emailToAlias(user.email);
-          if (!alias) {
-            return;
-          }
-
-          // V3 API - fetch profile by alias
-          let existingProfile = null;
-          try {
-            const profileResponse = await api.post("/profile/by-alias", {
-              body: { alias },
-            });
-            existingProfile = profileResponse.profile;
-          } catch {
-            // Profile not found
-            existingProfile = null;
-          }
-
-          if (existingProfile) {
-            // V3 API - update profile
-            await api.post("/profile/update", {
-              body: {
-                profileId: existingProfile.id,
-                firstName,
-                lastName,
-                lastLogin: new Date().toISOString(),
-              },
-            });
-          } else {
-            // Profile not found - create new one (handles non-campus emails)
-            await api.post("/profile/staff/create", {
-              body: {
-                firstName,
-                lastName,
-                alias: alias || "",
-                role: "guest",
-              },
-            });
-          }
-        }
-      } catch {
-        // Server handles logging - no client-side logging needed
-      }
-    },
-  },
   callbacks: {
-    // 🔑 Put identity & emulation into the JWT
-    async jwt({ token, user, trigger, session }) {
-      // On initial sign in, attach canonical profileId/role from email → alias lookup
-      if (user?.email) {
-        const alias = emailToAlias(user.email);
-        if (alias.length > 0) {
-          // V3 API - fetch profile by alias
-          let profile = null;
-          try {
-            const profileResponse = await api.post("/profile/by-alias", {
-              body: { alias },
-            });
-            profile = profileResponse.profile;
-          } catch {
-            // Profile not found - create it now so the token gets populated
-          }
-
-          if (!profile) {
-            try {
-              const nameParts = user.name?.split(" ") || [];
-              const firstName = nameParts[0] || "Unknown";
-              const lastName = nameParts[nameParts.length - 1] || "User";
-              const createResponse = await api.post("/profile/staff/create", {
-                body: { firstName, lastName, alias, role: "guest" },
-              });
-              if (createResponse.profileId) {
-                profile = { id: createResponse.profileId, role: "guest" };
-              }
-            } catch {
-              // Creation may fail if another callback already created it
-            }
-          }
-
-          if (profile) {
-            token["profileId"] = profile.id;
-            token["role"] = profile.role;
-            // initialize effectiveProfileId to self
-            token["effectiveProfileId"] =
-              token["effectiveProfileId"] ?? profile.id;
-          }
-        }
+    // Store id_token in JWT — server resolves identity from it on every request
+    async jwt({ token, account }) {
+      if (account?.id_token) {
+        token["id_token"] = account.id_token;
       }
-
-      // Accept client/server updates (trigger: "update")
-      if (trigger === "update" && session) {
-        if (typeof session.effectiveProfileId === "string") {
-          token["effectiveProfileId"] = session.effectiveProfileId;
-        }
-        if ("emulationTTL" in session) {
-          token["emulationTTL"] =
-            (session.emulationTTL as number | null) ?? null;
-        }
-        if ("fullEmulation" in session) {
-          token["fullEmulation"] = !!session.fullEmulation;
-        }
-      }
-
-      // TTL auto-revert (hardening)
-      if (token["emulationTTL"] && Date.now() > Number(token["emulationTTL"])) {
-        token["effectiveProfileId"] = token["profileId"] ?? null;
-        token["fullEmulation"] = false; // also clear fullEmulation
-        token["emulationTTL"] = null;
-      }
-
       return token;
     },
 
-    // 🌐 Expose to client session
+    // Expose id_token to client session (needed for API auth + federated logout)
     async session({ session, token }) {
       if (session.user) {
         session.user.id = session.user.id ?? (token.sub as string);
-        session.user.role = (token["role"] as string) || "guest";
-        const profileId = token["profileId"] as string | undefined;
-        if (profileId) {
-          session.user.profileId = profileId;
-        }
       }
 
-      session.effectiveProfileId =
-        (token["effectiveProfileId"] as string) ??
-        (token["profileId"] as string) ??
-        null;
-      session.emulationTTL = (token["emulationTTL"] as number | null) ?? null;
-      session.fullEmulation = !!(token["fullEmulation"] as boolean);
+      if (token["id_token"]) {
+        session.id_token = token["id_token"] as string;
+      }
 
       return session;
     },
   },
 });
 
-export async function getSession() {
-  try {
-    const headerList = await headers();
-    const override = validateTestHeaders(headerList);
-    if (override) {
-      return createTestSession(override);
-    }
-  } catch {
-    // Ignore header access errors and fall back to real auth.
-  }
-
-  return auth();
-}
+/**
+ * Unified session getter — returns the NextAuth session.
+ * Profile resolution happens server-side in resolve_identity middleware.
+ * Wrapped with React cache() to deduplicate calls within the same request.
+ */
+export const getSession = cache(async () => {
+  return await auth();
+});

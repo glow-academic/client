@@ -7,15 +7,18 @@
 
 "use client";
 
-import type {
-  RefreshAnalyticsIn,
-  RefreshAnalyticsOut,
-} from "@/app/(main)/layout-server";
-import { ProfileRolePicker } from "@/components/common/forms/ProfileRolePicker";
+import type { RefreshPageFn } from "@/app/(main)/layout-server";
+import {
+  PROFILE_ROLES,
+  type ProfileRole,
+} from "@/components/common/forms/profile-roles";
 import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
-import { SimulationFilter, useAnalytics } from "@/contexts/analytics-context";
 import { useProfile } from "@/contexts/profile-context";
+import {
+  type SimulationFilter,
+  useAnalyticsParams,
+} from "@/hooks/use-analytics-params";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { RefreshCw, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -28,25 +31,53 @@ import {
   Cohort as CohortSelectorCohort,
 } from "./analytics/CohortSelector";
 import { DepartmentSelector } from "./analytics/DepartmentSelector";
+import { RoleSelector } from "./analytics/RoleSelector";
 
-type ProfileRole = "superadmin" | "admin" | "instructional" | "ta" | "guest";
-export interface AnalyticsFiltersProps {
-  homePage?: boolean;
-  reportPage?: boolean;
-  practicePage?: boolean;
-  refreshAnalytics: (input: RefreshAnalyticsIn) => Promise<RefreshAnalyticsOut>;
+/** Map pathname prefix to the refresh page key */
+function getRefreshPageFromPathname(pathname: string): string {
+  if (pathname.startsWith("/analytics/dashboard")) return "dashboard";
+  if (pathname.startsWith("/analytics/reports")) return "reports";
+  if (pathname.startsWith("/record/")) return "reports";
+  if (pathname.startsWith("/analytics/pricing")) return "pricing";
+  if (pathname.startsWith("/group/")) return "pricing";
+  if (pathname.startsWith("/analytics/activity")) return "activity";
+  if (pathname.startsWith("/session/")) return "activity";
+  if (pathname.startsWith("/leaderboard")) return "leaderboard";
+  if (pathname.startsWith("/benchmark")) return "benchmark";
+  if (pathname.startsWith("/health")) return "health";
+  // Home and practice pages use the training refresh
+  return "training";
 }
 
-export function AnalyticsFilters({
-  homePage = false,
-  reportPage = false,
-  practicePage = false,
-  refreshAnalytics,
-}: AnalyticsFiltersProps) {
+/** Inline analytics facets from the artifact endpoint response */
+export interface AnalyticsFacetsData {
+  fields?: {
+    date_range?: { visible?: boolean } | null;
+    departments?: { visible?: boolean } | null;
+    cohorts?: { visible?: boolean } | null;
+    roles?: { visible?: boolean } | null;
+    attempts?: { visible?: boolean } | null;
+  } | null;
+  department_options?: Array<{ value: string; label?: string | null }>;
+  cohort_options?: Array<{ value: string; label?: string | null }>;
+  role_options?: string[];
+  attempt_options?: string[];
+  date_range_earliest?: string | null;
+  date_range_latest?: string | null;
+}
+
+export interface AnalyticsFiltersProps {
+  refreshPage: RefreshPageFn;
+  /** Inline facets from the page's artifact endpoint */
+  analyticsFilters: AnalyticsFacetsData | null | undefined;
+}
+
+export function AnalyticsFilters({ refreshPage, analyticsFilters }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const {
     startDate,
     endDate,
@@ -59,12 +90,18 @@ export function AnalyticsFilters({
     setSelectedRoles,
     simulationFilters,
     setSimulationFilters,
-  } = useAnalytics();
+  } = useAnalyticsParams({
+    dateRangeEarliest: analyticsFilters?.date_range_earliest,
+  });
 
-  const { cohorts, cohortMemberCounts, departments, scopedRoles } =
-    useProfile();
-  const getCohortMemberCount = (cohortId: string) =>
-    cohortMemberCounts[cohortId] ?? 0;
+  const { scopedRoles } = useProfile();
+
+  // Server-driven field visibility
+  const filterFields = analyticsFilters?.fields;
+  const showAttempts = filterFields?.attempts?.visible ?? false;
+  const showRoles = filterFields?.roles?.visible ?? false;
+  const showCohorts = filterFields?.cohorts?.visible ?? false;
+  const showDepartments = filterFields?.departments?.visible ?? false;
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -87,9 +124,8 @@ export function AnalyticsFilters({
 
     setIsRefreshing(true);
     try {
-      await refreshAnalytics({ body: {} });
-      // Note: Analytics pages using server actions will revalidate automatically
-      // via Next.js cache revalidation, so no manual query invalidation needed
+      const page = getRefreshPageFromPathname(pathname);
+      await refreshPage(page);
     } catch {
       toast.error("Failed to refresh analytics data");
     } finally {
@@ -182,16 +218,12 @@ export function AnalyticsFilters({
     }
   };
 
-  // Filter to only active cohorts and convert to the format expected by CohortPicker
-  const activeCohorts = cohorts.filter((cohort) => cohort.active);
-
-  const cohortOptions = activeCohorts.map((cohort) => ({
-    id: cohort.id,
-    title: cohort.title,
-    description:
-      cohort.description ||
-      `Cohort with ${getCohortMemberCount(cohort.id)} members`,
-    memberCount: getCohortMemberCount(cohort.id),
+  // Use analytics filters for cohort options (MV-backed)
+  const cohortOptions = (analyticsFilters?.cohort_options ?? []).map((o) => ({
+    id: o.value,
+    title: o.label || o.value,
+    description: "",
+    memberCount: 0,
   }));
 
   // Get selected cohorts for the picker
@@ -202,10 +234,10 @@ export function AnalyticsFilters({
   // Automatically filter available roles and remove invalid selections when cohorts are selected
   useEffect(() => {
     if (selectedCohortIds.length > 0) {
-      // When cohorts are selected, only allow "ta" and "instructional" roles
-      // Remove any existing selections that aren't "ta" or "instructional"
+      // When cohorts are selected, only allow "member" and "instructional" roles
+      // Remove any existing selections that aren't "member" or "instructional"
       const validRoles = selectedRoles.filter(
-        (role) => role === "ta" || role === "instructional"
+        (role) => role === "member" || role === "instructional"
       );
       if (validRoles.length !== selectedRoles.length) {
         setSelectedRoles(validRoles);
@@ -218,20 +250,21 @@ export function AnalyticsFilters({
     setSelectedCohortIds(cohorts.map((c) => c.id));
   };
 
-  // Convert departments to the format expected by DepartmentSelector
-  const departmentOptions = departments.map((department) => ({
-    id: department.id,
-    title: department.title,
-    ...(department.description && { description: department.description }),
-  }));
+  // Use analytics filters for department options (MV-backed)
+  const departmentOptions = (analyticsFilters?.department_options ?? []).map(
+    (o) => ({
+      id: o.value,
+      title: o.label || o.value,
+    })
+  );
 
   // Get selected departments for the picker
   const selectedDepartments = departmentOptions.filter((department) =>
     selectedDepartmentIds.includes(department.id)
   );
 
-  const handleDepartmentSelect = (departments: typeof departmentOptions) => {
-    setSelectedDepartmentIds(departments.map((d) => d.id));
+  const handleDepartmentSelect = (selectedDepts: typeof departmentOptions) => {
+    setSelectedDepartmentIds(selectedDepts.map((d) => d.id));
   };
 
   const handleRoleSelect = (roles: ProfileRole[]) => {
@@ -248,7 +281,7 @@ export function AnalyticsFilters({
   };
 
   return (
-    <div className={practicePage ? "" : "pr-4"}>
+    <div className="pr-0">
       <div className="flex items-center gap-2">
         {/* On mobile, only show refresh button and date picker */}
         {isMobile ? (
@@ -266,45 +299,41 @@ export function AnalyticsFilters({
               </Button>
             )}
 
-            {/* Date Range Picker - hide on practice page */}
-            {!practicePage && (
-              <DatePickerWithRange
-                dateRange={dateRange}
-                setDateRange={handleDateRangeChange}
-                className="w-auto"
-              />
-            )}
+            {/* Date Range Picker */}
+            <DatePickerWithRange
+              dateRange={dateRange}
+              setDateRange={handleDateRangeChange}
+              className="w-auto"
+            />
 
-            {/* Refresh Button - hide on practice page */}
-            {!practicePage && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                title="Refresh analytics data"
-              >
-                <RefreshCw
-                  ref={iconRef}
-                  aria-hidden
-                  onAnimationIteration={() => {
-                    if (requestStop) {
-                      // clear fallback
-                      if (iconRef.current?.__fallbackStop) {
-                        clearTimeout(iconRef.current.__fallbackStop);
-                        iconRef.current.__fallbackStop = undefined;
-                      }
-                      setSpinning(false); // remove animate-spin at a lap boundary
-                      setRequestStop(false);
-                      spinStartRef.current = null;
+            {/* Refresh Button */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh analytics data"
+            >
+              <RefreshCw
+                ref={iconRef}
+                aria-hidden
+                onAnimationIteration={() => {
+                  if (requestStop) {
+                    // clear fallback
+                    if (iconRef.current?.__fallbackStop) {
+                      clearTimeout(iconRef.current.__fallbackStop);
+                      iconRef.current.__fallbackStop = undefined;
                     }
-                  }}
-                  className={`h-4 w-4 will-change-transform ${
-                    spinning ? "animate-spin" : ""
-                  }`}
-                />
-              </Button>
-            )}
+                    setSpinning(false); // remove animate-spin at a lap boundary
+                    setRequestStop(false);
+                    spinStartRef.current = null;
+                  }
+                }}
+                className={`h-4 w-4 will-change-transform ${
+                  spinning ? "animate-spin" : ""
+                }`}
+              />
+            </Button>
           </>
         ) : (
           <>
@@ -321,16 +350,29 @@ export function AnalyticsFilters({
               </Button>
             )}
 
-            {/* General/Practice/Archived Selector - hide on home and practice pages */}
-            {!homePage && !practicePage && (
+            {/* General/Practice/Archived Selector - server-driven visibility */}
+            {showAttempts && (
               <AttemptSelector
+                options={
+                  (analyticsFilters?.attempt_options as SimulationFilter[]) ?? [
+                    "general",
+                    "practice",
+                    "archived",
+                  ]
+                }
                 selected={attemptSelected}
                 onChange={(vals) => {
                   // Update UI state first
                   setAttemptSelected(vals);
-                  // Empty selection means all attempts (all three modes on)
+                  // Empty selection means all attempts (all available modes on)
                   if (vals.length === 0) {
-                    setSimulationFilters(["general", "practice", "archived"]);
+                    setSimulationFilters(
+                      (analyticsFilters?.attempt_options as SimulationFilter[]) ?? [
+                        "general",
+                        "practice",
+                        "archived",
+                      ]
+                    );
                     return;
                   }
                   setSimulationFilters(vals);
@@ -339,24 +381,25 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Role Picker - hide on home, report, and practice pages */}
-            {!homePage && !reportPage && !practicePage && (
-              <ProfileRolePicker
+            {/* Role Picker - server-driven visibility */}
+            {showRoles && (
+              <RoleSelector
                 roles={
                   selectedCohortIds.length > 0
-                    ? (scopedRoles.filter(
-                        (role) => role === "instructional" || role === "ta"
-                      ) as ProfileRole[]) // Intersection of scoped roles and cohort-allowed roles
-                    : (scopedRoles as ProfileRole[]) // Show scoped roles when no cohorts selected
+                    ? PROFILE_ROLES.filter(
+                        (role) => role === "instructional" || role === "member"
+                      )
+                    : PROFILE_ROLES.filter((role) => scopedRoles.includes(role))
                 }
                 selectedRoles={selectedRoles}
-                onChange={handleRoleSelect}
+                onSelect={handleRoleSelect}
                 placeholder="Roles"
+                hideSelectedChips={true}
               />
             )}
 
-            {/* Cohort Picker - hide on practice page */}
-            {!practicePage && activeCohorts.length > 1 && (
+            {/* Cohort Picker - server-driven visibility */}
+            {showCohorts && cohortOptions.length > 0 && (
               <CohortSelector
                 cohorts={cohortOptions}
                 selectedCohorts={selectedCohorts}
@@ -366,8 +409,8 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Department Picker - only show if more than 1 department */}
-            {departments.length > 1 && (
+            {/* Department Picker - server-driven visibility */}
+            {showDepartments && departmentOptions.length > 0 && (
               <DepartmentSelector
                 departments={departmentOptions}
                 selectedDepartments={selectedDepartments}
@@ -377,45 +420,41 @@ export function AnalyticsFilters({
               />
             )}
 
-            {/* Date Range Picker - hide on practice page */}
-            {!practicePage && (
-              <DatePickerWithRange
-                dateRange={dateRange}
-                setDateRange={handleDateRangeChange}
-                className="w-auto"
-              />
-            )}
+            {/* Date Range Picker */}
+            <DatePickerWithRange
+              dateRange={dateRange}
+              setDateRange={handleDateRangeChange}
+              className="w-auto"
+            />
 
-            {/* Refresh Button - hide on practice page */}
-            {!practicePage && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                title="Refresh analytics data"
-              >
-                <RefreshCw
-                  ref={iconRef}
-                  aria-hidden
-                  onAnimationIteration={() => {
-                    if (requestStop) {
-                      // clear fallback
-                      if (iconRef.current?.__fallbackStop) {
-                        clearTimeout(iconRef.current.__fallbackStop);
-                        iconRef.current.__fallbackStop = undefined;
-                      }
-                      setSpinning(false); // remove animate-spin at a lap boundary
-                      setRequestStop(false);
-                      spinStartRef.current = null;
+            {/* Refresh Button */}
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              title="Refresh analytics data"
+            >
+              <RefreshCw
+                ref={iconRef}
+                aria-hidden
+                onAnimationIteration={() => {
+                  if (requestStop) {
+                    // clear fallback
+                    if (iconRef.current?.__fallbackStop) {
+                      clearTimeout(iconRef.current.__fallbackStop);
+                      iconRef.current.__fallbackStop = undefined;
                     }
-                  }}
-                  className={`h-4 w-4 will-change-transform ${
-                    spinning ? "animate-spin" : ""
-                  }`}
-                />
-              </Button>
-            )}
+                    setSpinning(false); // remove animate-spin at a lap boundary
+                    setRequestStop(false);
+                    spinStartRef.current = null;
+                  }
+                }}
+                className={`h-4 w-4 will-change-transform ${
+                  spinning ? "animate-spin" : ""
+                }`}
+              />
+            </Button>
           </>
         )}
       </div>

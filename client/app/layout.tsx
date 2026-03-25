@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     default: "GLOW",
   },
   description: "Graduate Learning Orientation Workshop",
+  // Favicon is handled by icon.tsx which uses GlowIconComponent
 };
 
 export default async function RootLayout({

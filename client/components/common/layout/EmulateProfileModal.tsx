@@ -1,16 +1,19 @@
 "use client";
 
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
-  SearchSimulatableProfilesIn,
-  SearchSimulatableProfilesOut,
+  SearchProfilesIn,
+  SearchProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
-import { STAFF_ROLES } from "@/components/common/forms/StaffRolePicker";
+import {
+  PROFILE_ROLES,
+  generateGradientFromHex,
+} from "@/components/common/forms/profile-roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +23,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -31,52 +32,99 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
+import { ICON_MAP } from "@/utils/icons";
 
 export interface EmulateProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn
-  ) => Promise<SearchSimulatableProfilesOut>;
+  searchProfiles: (
+    input: SearchProfilesIn,
+  ) => Promise<SearchProfilesOut>;
   switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams
+    input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
 }
 
 export function EmulateProfileModal({
   open,
   onOpenChange,
-  searchSimulatableProfiles,
+  searchProfiles,
   switchEffectiveProfile,
 }: EmulateProfileModalProps) {
-  const { activeProfile } = useProfile();
+  const { profile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
-    null
+    null,
   );
   const [searchData, setSearchData] =
-    useState<SearchSimulatableProfilesOut | null>(null);
+    useState<SearchProfilesOut | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEmulating, setIsEmulating] = useState(false);
-  const [fullEmulation, setFullEmulation] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const roleResourceMap = useMemo(() => {
+    if (!roleResources || roleResources.length === 0) return null;
+    const map = new Map<
+      string,
+      {
+        name: string;
+        description: string;
+        icon: typeof User;
+        color: string;
+      }
+    >();
+    roleResources.forEach((resource) => {
+      if (!resource?.role) return;
+      const iconKey = resource.icon_value ?? "";
+      const IconComponent = ICON_MAP[iconKey] ?? User;
+      map.set(resource.role, {
+        name: resource.name ?? resource.role ?? "Role",
+        description: resource.description ?? "",
+        icon: IconComponent,
+        color: resource.color_hex ?? "#64748b",
+      });
+    });
+    return map;
+  }, [roleResources]);
 
-  // Check if user is superadmin
-  const isSuperadmin = activeProfile?.role === "superadmin";
+  const getRoleDisplay = useCallback(
+    (roleId?: string | null) => {
+      if (!roleId) return null;
+      const resource = roleResourceMap?.get(roleId);
+      if (resource) {
+        return resource;
+      }
+      const fallback = PROFILE_ROLES.find((role) => role.id === roleId);
+      if (fallback) {
+        return {
+          name: fallback.name,
+          description: fallback.description ?? "",
+          icon: fallback.icon,
+          color: fallback.color ?? "#64748b",
+        };
+      }
+      return {
+        name: roleId,
+        description: "",
+        icon: User,
+        color: "#64748b",
+      };
+    },
+    [roleResourceMap],
+  );
 
   // Search when user types (debounced)
   const handleSearch = useCallback(
     async (query: string) => {
-      if (!activeProfile?.id) return;
+      if (!profile?.id) return;
       setIsLoading(true);
       try {
-        const data = await searchSimulatableProfiles({
+        const data = await searchProfiles({
           body: {
-            query: query || null,
-            limit: 200,
-            profileId: activeProfile.id,
+            search: query || null,
+            page_size: 200,
           },
         });
+        // profileId comes from X-Profile-Id header automatically
         setSearchData(data);
       } catch {
         toast.error("Failed to search profiles");
@@ -84,7 +132,7 @@ export function EmulateProfileModal({
         setIsLoading(false);
       }
     },
-    [activeProfile?.id, searchSimulatableProfiles]
+    [profile?.id, searchProfiles],
   );
 
   // Handle search input change with debounce
@@ -105,7 +153,7 @@ export function EmulateProfileModal({
         handleSearch(value);
       }, 500);
     },
-    [handleSearch]
+    [handleSearch],
   );
 
   // Get search results from API response
@@ -125,7 +173,6 @@ export function EmulateProfileModal({
       setSearchQuery("");
       setSelectedProfileId(null);
       setSearchData(null);
-      setFullEmulation(false);
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
@@ -139,7 +186,7 @@ export function EmulateProfileModal({
 
   // Handle emulation
   const handleEmulate = useCallback(async () => {
-    if (!selectedProfileId || !activeProfile?.id) {
+    if (!selectedProfileId || !profile?.id) {
       toast.error("Please select a profile to emulate");
       return;
     }
@@ -148,8 +195,6 @@ export function EmulateProfileModal({
     try {
       const result = await switchEffectiveProfile({
         targetProfileId: selectedProfileId,
-        fullEmulation: fullEmulation && isSuperadmin,
-        emulationTTL: Date.now() + 120 * 60 * 1000, // 2 hours TTL
       });
 
       if (!result.ok) {
@@ -157,28 +202,18 @@ export function EmulateProfileModal({
         return;
       }
 
-      toast.success(
-        fullEmulation && isSuperadmin
-          ? "Full emulation enabled. You must log out to exit."
-          : "Emulation enabled successfully"
-      );
-
-      // Close modal and refresh page
+      toast.success("Emulation enabled. Reloading...");
       onOpenChange(false);
+
+      // Reload page — resolve_identity() picks up the active grant
+      // and swaps the effective profile_id on the next request
       window.location.reload();
     } catch {
       toast.error("Failed to emulate profile");
     } finally {
       setIsEmulating(false);
     }
-  }, [
-    selectedProfileId,
-    activeProfile?.id,
-    fullEmulation,
-    isSuperadmin,
-    switchEffectiveProfile,
-    onOpenChange,
-  ]);
+  }, [selectedProfileId, profile?.id, switchEffectiveProfile, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -193,7 +228,7 @@ export function EmulateProfileModal({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="search"
-              placeholder="Search by name or alias"
+              placeholder="Search by name or email"
               value={searchQuery}
               onChange={(e) => handleSearchQueryChange(e.target.value)}
               className="pl-10"
@@ -228,15 +263,18 @@ export function EmulateProfileModal({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {searchResults.map((profile) => {
-                    const isSelected = selectedProfileId === profile.id;
+                  {searchResults
+                    .filter((profile) => profile.profile_id !== null)
+                    .map((profile) => {
+                      const profileId = String(profile.profile_id!);
+                      const isSelected = selectedProfileId === profileId;
                     return (
                       <TableRow
-                        key={profile.id}
+                        key={profileId}
                         className={`cursor-pointer hover:bg-muted/50 transition-colors ${
                           isSelected ? "bg-muted" : ""
                         }`}
-                        onClick={() => handleSelectProfile(profile.id)}
+                        onClick={() => handleSelectProfile(profileId)}
                       >
                         <TableCell className="w-[50px]">
                           <div
@@ -252,43 +290,37 @@ export function EmulateProfileModal({
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">
-                          {profile.firstName} {profile.lastName}
+                          {profile.name || ""}
                         </TableCell>
-                        <TableCell>{profile.alias}</TableCell>
+                        <TableCell>
+                          {profile.emails && profile.emails.length > 0
+                            ? profile.emails.join(", ")
+                            : profile.primary_email || "No email"}
+                        </TableCell>
                         <TableCell>
                           {(() => {
-                            const roleData = STAFF_ROLES.find(
-                              (r) => r.id === profile.role
-                            );
-                            if (!roleData) {
+                            const roleInfo = getRoleDisplay(profile.role);
+                            if (!roleInfo) {
                               return (
                                 <Badge variant="outline">{profile.role}</Badge>
                               );
                             }
-                            const IconComponent = roleData.icon;
-                            const hexColor = roleData.color || "#64748b";
-                            // Generate gradient from hex color
-                            const cleanHex = hexColor.replace("#", "");
-                            const r = parseInt(cleanHex.substr(0, 2), 16);
-                            const g = parseInt(cleanHex.substr(2, 2), 16);
-                            const b = parseInt(cleanHex.substr(4, 2), 16);
-                            const lighterR = Math.min(255, r + 60);
-                            const lighterG = Math.min(255, g + 60);
-                            const lighterB = Math.min(255, b + 60);
-                            const lighterHex = `#${lighterR.toString(16).padStart(2, "0")}${lighterG.toString(16).padStart(2, "0")}${lighterB.toString(16).padStart(2, "0")}`;
-                            const gradientStyle = `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
+                            const IconComponent = roleInfo.icon;
+                            const gradientStyle = generateGradientFromHex(
+                              roleInfo.color,
+                            );
 
                             return (
                               <div className="flex items-center gap-2">
                                 <div
                                   className="p-1.5 rounded-md shadow-sm flex-shrink-0"
-                                  style={{
-                                    background: gradientStyle,
-                                  }}
+                                  style={{ background: gradientStyle }}
                                 >
                                   <IconComponent className="h-3.5 w-3.5 text-white" />
                                 </div>
-                                <span className="text-sm">{roleData.name}</span>
+                                <span className="text-sm">
+                                  {roleInfo.name}
+                                </span>
                               </div>
                             );
                           })()}
@@ -301,23 +333,13 @@ export function EmulateProfileModal({
             )}
           </div>
 
-          {/* Full Emulation Switch (Superadmin only) */}
-          {isSuperadmin && (
-            <div className="flex items-center justify-between p-4 border rounded-md bg-muted/50">
-              <div className="space-y-0.5">
-                <Label htmlFor="full-emulation" className="text-sm font-medium">
-                  Full Emulation
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  When enabled, you must log out to exit emulation. This mode
-                  prevents accidental exits.
-                </p>
-              </div>
-              <Switch
-                id="full-emulation"
-                checked={fullEmulation}
-                onCheckedChange={setFullEmulation}
-              />
+          {/* Emulation Warning */}
+          {selectedProfileId && (
+            <div className="p-4 border border-yellow-500/50 rounded-md bg-yellow-50 dark:bg-yellow-950/20">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                Emulation can be destructive if you take actions on behalf of
+                this user. You can exit emulation from the profile menu.
+              </p>
             </div>
           )}
 
@@ -329,7 +351,7 @@ export function EmulateProfileModal({
             <Button
               onClick={handleEmulate}
               disabled={!selectedProfileId || isEmulating}
-              className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              className="group text-white hover:text-white focus:text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-600"
             >
               {isEmulating ? "Emulating..." : "Emulate"}
             </Button>

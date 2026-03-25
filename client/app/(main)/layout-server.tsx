@@ -2,197 +2,134 @@
  * Server component that fetches profile context data
  */
 "use server";
-import { getSession, update } from "@/auth";
+import { getSession } from "@/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { revalidateTag, unstable_cache } from "next/cache";
+import type { Session } from "next-auth";
 import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type LayoutContextIn = InputOf<"/api/v3/profile/context", "post">;
-type LayoutContextOut = OutputOf<"/api/v3/profile/context", "post">;
-type MarkIntroCompleteIn = InputOf<
-  "/api/v3/profile/mark-intro-complete",
-  "post"
->;
-type MarkIntroCompleteOut = OutputOf<
-  "/api/v3/profile/mark-intro-complete",
-  "post"
->;
-type MarkChatCompleteIn = InputOf<"/api/v3/profile/mark-chat-complete", "post">;
-type MarkChatCompleteOut = OutputOf<
-  "/api/v3/profile/mark-chat-complete",
-  "post"
->;
-type AssistantChatListIn = InputOf<"/api/v3/assistant/chats/list", "post">;
-type AssistantChatListOut = OutputOf<"/api/v3/assistant/chats/list", "post">;
-type AssistantChatFullIn = InputOf<"/api/v3/assistant/chats/full", "post">;
-type AssistantChatFullOut = OutputOf<"/api/v3/assistant/chats/full", "post">;
-type AuthorizeEmulationIn = InputOf<
-  "/api/v3/profile/authorize-emulation",
-  "post"
->;
-type AuthorizeEmulationOut = OutputOf<
-  "/api/v3/profile/authorize-emulation",
-  "post"
->;
-type CreateFeedbackIn = InputOf<"/api/v3/feedback/create", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v3/feedback/create", "post">;
-type RefreshAnalyticsIn = InputOf<"/api/v3/analytics/refresh", "post">;
-type RefreshAnalyticsOut = OutputOf<"/api/v3/analytics/refresh", "post">;
-type AttemptFullIn = InputOf<"/api/v3/attempts/full", "post">;
-type AttemptFullOut = OutputOf<"/api/v3/attempts/full", "post">;
-type SearchSimulatableProfilesIn = InputOf<
-  "/api/v3/profile/search-simulatable-profiles",
-  "post"
->;
-type SearchSimulatableProfilesOut = OutputOf<
-  "/api/v3/profile/search-simulatable-profiles",
-  "post"
->;
-type SearchStaffIn = InputOf<"/api/v3/profile/staff/search-staff", "post">;
-type SearchStaffOut = OutputOf<"/api/v3/profile/staff/search-staff", "post">;
-type CreateStaffDataIn = InputOf<
-  "/api/v3/profile/staff/create-staff-data",
-  "post"
->;
-type CreateStaffDataOut = OutputOf<
-  "/api/v3/profile/staff/create-staff-data",
-  "post"
->;
-type ProcessCSVIn = InputOf<"/api/v3/profile/staff/process-csv", "post">;
-type ProcessCSVOut = OutputOf<"/api/v3/profile/staff/process-csv", "post">;
-type BulkCreateOrUpdateStaffIn = InputOf<
-  "/api/v3/profile/staff/bulk-create-or-update-staff",
-  "post"
->;
-type BulkCreateOrUpdateStaffOut = OutputOf<
-  "/api/v3/profile/staff/bulk-create-or-update-staff",
-  "post"
->;
+type ProfileContextIn = InputOf<"/api/v5/context", "post">;
+type ProfileContextOut = OutputOf<"/api/v5/context", "post">;
 
-/** ---- Cached fetch ---- */
-const getLayoutContext = cache(
-  async (input: LayoutContextIn): Promise<LayoutContextOut> => {
-    return api.post("/profile/context", input);
-  }
-);
-
-/** ---- Cached fetch for attempt data ----
- * Cache key includes attemptId for per-attempt caching.
- * Tags allow revalidateTag("attempts") and revalidateTag(`attempt:${attemptId}`) to invalidate.
- * Uses same pattern as page component to ensure cache synchronization.
- */
-const getAttemptFull = (attemptId: string) =>
-  unstable_cache(
-    async (input: AttemptFullIn): Promise<AttemptFullOut> => {
-      return api.post("/attempts/full", input);
-    },
-    ["attempts:full", attemptId],
-    { tags: ["attempts", `attempt:${attemptId}`] }
-  );
-
-/** ---- Export type for client (type-only imports) ---- */
-export type LayoutContextResponse = LayoutContextOut;
-
-export type SafeSessionSnapshot = {
-  effectiveProfileId: string | null;
-  fullEmulation: boolean;
-  emulationTTL: number | null;
+type EmulateProfileIn = InputOf<"/api/v5/emulate", "post">;
+type CreateFeedbackIn = InputOf<"/api/v5/problem", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v5/problem", "post">;
+/** Page-specific refresh endpoint mapping */
+const REFRESH_ENDPOINT_MAP: Record<string, string> = {
+  chat: "/artifacts/chat/refresh",
+  dashboard: "/artifacts/dashboard/refresh",
+  leaderboard: "/artifacts/leaderboard/refresh",
+  reports: "/artifacts/reports/refresh",
+  pricing: "/artifacts/pricing/refresh",
+  benchmark: "/artifacts/benchmark/refresh",
+  activity: "/artifacts/activity/refresh",
+  health: "/artifacts/health/refresh",
 };
+type AttemptFullIn = InputOf<"/api/v5/artifacts/attempt/get", "post">;
+type AttemptFullOut = OutputOf<"/api/v5/artifacts/attempt/get", "post">;
+type SearchProfilesIn = InputOf<"/api/v5/artifacts/profiles/search", "post">;
+type SearchProfilesOut = OutputOf<"/api/v5/artifacts/profiles/search", "post">;
+/** ---- Response type alias ---- */
+export type AuthProfileResponse = ProfileContextOut;
 
-export async function getLayoutContextData() {
-  const session = await getSession();
-
-  const snapshot: SafeSessionSnapshot = {
-    effectiveProfileId: session?.effectiveProfileId ?? null,
-    fullEmulation: !!session?.fullEmulation,
-    emulationTTL: session?.emulationTTL ?? null,
-  };
-
-  const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
-  const actualProfileId = session?.user?.profileId || "guest-profile-id";
-
-  // IMPORTANT: server overrides IDs internally; you still pass something for typing parity
-  const initial = await getLayoutContext({
-    body: {
-      actualProfileId,
-      effectiveProfileId,
-      pathname: "/", // layout-level; pages can still supply their own on demand
-    },
-  });
-
-  // Read pathname from headers to check if we're on an attempt page
+/** ---- Shared header builder ---- */
+async function buildAuthHeaders(): Promise<Record<string, string>> {
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
 
-  // Extract attemptId from pathname if we're on an attempt page
-  const attemptMatch =
-    pathname.match(/\/home\/a\/([^/]+)/) ||
-    pathname.match(/\/practice\/a\/([^/]+)/);
-  const attemptId = attemptMatch ? attemptMatch[1] : null;
+  const extraHeaders: Record<string, string> = {};
+  extraHeaders["X-Pathname"] = pathname;
+  return extraHeaders;
+}
 
-  // Fetch attempt data if we have an attemptId
-  let attemptData: AttemptFullOut | null = null;
-  if (attemptId) {
-    try {
-      attemptData = await getAttemptFull(attemptId)({
-        body: { attemptId, profileId: effectiveProfileId },
-      });
-    } catch {
-      // If attempt fetch fails, just continue without attempt data
-      // This can happen if the attempt doesn't exist or user doesn't have access
-      attemptData = null;
-    }
+/** ---- Profile context fetch (canonical: /artifacts/profiles/context) ---- */
+export const getProfileContext = cache(
+  async (): Promise<ProfileContextOut> => {
+    const extraHeaders = await buildAuthHeaders();
+    return api.post("/context", { body: {} } as ProfileContextIn, { headers: extraHeaders });
+  }
+);
+
+
+/** ---- Group messages server action (canonical: /artifacts/group/get) ---- */
+type GroupMessagesIn = InputOf<"/api/v5/artifacts/group/get", "post">;
+type GroupMessagesOut = OutputOf<"/api/v5/artifacts/group/get", "post">;
+
+export async function getGroupMessages(
+  input: GroupMessagesIn
+): Promise<GroupMessagesOut> {
+  return api.post("/artifacts/group/get", input);
+}
+
+
+/** ---- Helper to get validated profile ID (reusable for API calls) ----
+ * @param session - Optional session to reuse. If not provided, will fetch session.
+ * @returns Object with profileId (can be null)
+ */
+export async function getValidatedProfileId(): Promise<{
+  profileId: string | null;
+}> {
+  try {
+    const profile = await getProfileContext();
+    return { profileId: profile?.id ?? null };
+  } catch {
+    return { profileId: null };
+  }
+}
+
+// Export ProfileItem type derived from server response
+export type ProfileItem = Pick<
+  ProfileContextOut,
+  | "id"
+  | "name"
+  | "role"
+  | "active"
+>;
+
+export type SafeSessionSnapshot = {
+  profileId: string | null;
+  isAuthenticated: boolean; // true if user has real NextAuth session
+  idToken: string | null; // JWT for API auth (server resolves identity from this)
+};
+
+/**
+ * Fetches layout context data for the main layout.
+ * Single call — profile context includes identity, permissions, and theme primitives.
+ */
+export async function getLayoutContextData(session?: Session | null) {
+  const resolvedSession = session ?? (await getSession());
+
+  const isAuthenticated = !!resolvedSession?.id_token;
+  const idToken = resolvedSession?.id_token ?? null;
+
+  let profileData: ProfileContextOut | null = null;
+
+  try {
+    profileData = await getProfileContext();
+  } catch {
+    const snapshot: SafeSessionSnapshot = { profileId: null, isAuthenticated, idToken };
+    return { profileData: null, snapshot };
   }
 
-  return { initial, snapshot, attemptData };
-}
+  if (!profileData?.id) {
+    const snapshot: SafeSessionSnapshot = { profileId: null, isAuthenticated, idToken };
+    return { profileData: null, snapshot };
+  }
 
-/** ---- Strongly-typed server actions for TATour (single source of truth) ---- */
-export async function markIntroComplete(
-  input: MarkIntroCompleteIn
-): Promise<MarkIntroCompleteOut> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-  const out = await api.post("/profile/mark-intro-complete", {
-    body: { ...input.body, profileId },
-  });
-  revalidateTag("profile");
-  return out;
-}
+  const snapshot: SafeSessionSnapshot = {
+    profileId: profileData.id,
+    isAuthenticated,
+    idToken,
+  };
 
-export async function markChatComplete(
-  input: MarkChatCompleteIn
-): Promise<MarkChatCompleteOut> {
-  const session = await getSession();
-  const profileId = session?.effectiveProfileId || "";
-  const out = await api.post("/profile/mark-chat-complete", {
-    body: { ...input.body, profileId },
-  });
-  revalidateTag("profile");
-  return out;
-}
-
-/** ---- Strongly-typed server actions for Assistant (single source of truth) ---- */
-export async function getAssistantChatList(
-  input: AssistantChatListIn
-): Promise<AssistantChatListOut> {
-  return api.post("/assistant/chats/list", input);
-}
-
-export async function getAssistantChatFull(
-  input: AssistantChatFullIn
-): Promise<AssistantChatFullOut> {
-  return api.post("/assistant/chats/full", input);
+  return { profileData, snapshot };
 }
 
 /** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */
 type SwitchEffectiveProfileParams = {
   targetProfileId: string;
-  fullEmulation?: boolean;
-  emulationTTL?: number | null;
 };
 
 type SwitchEffectiveProfileResult = {
@@ -200,49 +137,24 @@ type SwitchEffectiveProfileResult = {
   reason?: string;
 };
 
-async function authorizeEmulation(
-  input: AuthorizeEmulationIn
-): Promise<AuthorizeEmulationOut> {
-  return api.post("/profile/authorize-emulation", input);
-}
-
 /**
- * Server action to switch the effective profile in the session.
- * This replaces client-side useSession().update() calls.
- * Uses server-side session mutation via NextAuth's unstable_update.
+ * Server action to start emulation.
+ * Creates a grant in the DB — resolve_identity() picks it up on next request.
+ * Client just needs to reload the page after this succeeds.
  */
 export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
   try {
-    const session = await getSession();
-    if (!session?.user?.profileId) {
-      return { ok: false, reason: "Unauthorized" };
+    const res = await api.post("/emulate", {
+      body: {
+        target_profile_id: input.targetProfileId,
+      },
+    } as EmulateProfileIn);
+
+    if (!res.allowed) {
+      return { ok: false, reason: res.reason ?? "Emulation not allowed" };
     }
-
-    const isSelf = input.targetProfileId === session.user.profileId;
-
-    if (!isSelf) {
-      const res = await authorizeEmulation({
-        body: {
-          requesterProfileId: session.user.profileId,
-          targetProfileId: input.targetProfileId,
-        },
-      });
-
-      if (!res.allowed) {
-        return { ok: false, reason: res.reason ?? "Emulation not allowed" };
-      }
-    }
-
-    // Update session server-side
-    await update({
-      effectiveProfileId: input.targetProfileId,
-      fullEmulation: !!input.fullEmulation && !isSelf,
-      emulationTTL: isSelf
-        ? null
-        : (input.emulationTTL ?? Date.now() + 2 * 60 * 60 * 1000),
-    });
 
     return { ok: true };
   } catch (error) {
@@ -252,85 +164,103 @@ export async function switchEffectiveProfile(
   }
 }
 
+type ExitEmulationResult = {
+  ok: boolean;
+  reason?: string;
+};
+
+/**
+ * Server action to exit the innermost emulation layer.
+ * Consumes the innermost grant — resolve_identity() peels one layer on next request.
+ * Client just needs to reload the page after this succeeds.
+ */
+export async function exitEmulation(): Promise<ExitEmulationResult> {
+  try {
+    const res = await api.post("/unemulate", {
+      body: {},
+    });
+
+    if (!res.ok) {
+      return { ok: false, reason: res.reason ?? "Failed to exit emulation" };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return { ok: false, reason: errorMessage };
+  }
+}
+
+/** Server action to clear session state. */
+export async function clearSessionCookies(): Promise<void> {
+  "use server";
+}
+
 /** ---- Strongly-typed server actions for Feedback (single source of truth) ---- */
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  return api.post("/feedback/create", input);
+  return api.post("/problem", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
-export async function refreshAnalytics(
-  input: RefreshAnalyticsIn
-): Promise<RefreshAnalyticsOut> {
-  return api.post("/analytics/refresh", input);
+/** Page-targeted refresh: calls the correct /refresh endpoint for the given page. */
+export async function refreshPage(page: string): Promise<void> {
+  "use server";
+  const endpoint = REFRESH_ENDPOINT_MAP[page];
+  if (!endpoint) {
+    throw new Error(`Unknown refresh page: ${page}`);
+  }
+  await api.post(endpoint as Parameters<typeof api.post>[0], { body: {} });
+}
+
+/** Page-specific export endpoint mapping */
+const EXPORT_ENDPOINT_MAP: Record<string, string> = {
+  home: "/artifacts/home/export",
+  dashboard: "/artifacts/dashboard/export",
+  leaderboard: "/artifacts/leaderboard/export",
+  reports: "/artifacts/reports/export",
+  pricing: "/artifacts/pricing/export",
+  practice: "/artifacts/practice/export",
+  personas: "/artifacts/personas/export",
+  scenarios: "/artifacts/scenarios/export",
+  simulations: "/artifacts/simulations/export",
+  cohorts: "/artifacts/cohorts/export",
+};
+
+/** Page-targeted export: calls the correct /export endpoint for the given page. */
+export async function exportPage(
+  page: string,
+  filters: Record<string, unknown>,
+): Promise<{ content: string; file_name: string; mime_type: string; row_count: number }> {
+  "use server";
+  const endpoint = EXPORT_ENDPOINT_MAP[page];
+  if (!endpoint) throw new Error(`No export for page: ${page}`);
+  return api.post(endpoint as Parameters<typeof api.post>[0], { body: filters }) as Promise<{ content: string; file_name: string; mime_type: string; row_count: number }>;
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
-export async function searchSimulatableProfiles(
-  input: SearchSimulatableProfilesIn
-): Promise<SearchSimulatableProfilesOut> {
-  return api.post("/profile/search-simulatable-profiles", input);
-}
-
-/** ---- Strongly-typed server actions for Staff (single source of truth) ---- */
-export async function searchStaff(
-  input: SearchStaffIn
-): Promise<SearchStaffOut> {
-  "use server";
-  return api.post("/profile/staff/search-staff", input);
-}
-
-export async function getCreateStaffData(
-  input: CreateStaffDataIn
-): Promise<CreateStaffDataOut> {
-  "use server";
-  return api.post("/profile/staff/create-staff-data", input);
-}
-
-export async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
-  "use server";
-  return api.post("/profile/staff/process-csv", input);
-}
-
-export async function bulkCreateOrUpdateStaff(
-  input: BulkCreateOrUpdateStaffIn
-): Promise<BulkCreateOrUpdateStaffOut> {
-  "use server";
-  const out = await api.post(
-    "/profile/staff/bulk-create-or-update-staff",
-    input
-  );
-  revalidateTag("staff");
-  return out;
+export async function searchProfiles(
+  input: SearchProfilesIn
+): Promise<SearchProfilesOut> {
+  return api.post("/artifacts/profiles/search", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
+export type RefreshPageFn = (page: string) => Promise<void>;
+export type ExportPageFn = typeof exportPage;
+
 export type {
-  AssistantChatFullIn,
-  AssistantChatFullOut,
-  AssistantChatListIn,
-  AssistantChatListOut,
   AttemptFullIn,
   AttemptFullOut,
-  BulkCreateOrUpdateStaffIn,
-  BulkCreateOrUpdateStaffOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  CreateStaffDataIn,
-  CreateStaffDataOut,
-  MarkChatCompleteIn,
-  MarkChatCompleteOut,
-  MarkIntroCompleteIn,
-  MarkIntroCompleteOut,
-  ProcessCSVIn,
-  ProcessCSVOut,
-  RefreshAnalyticsIn,
-  RefreshAnalyticsOut,
-  SearchSimulatableProfilesIn,
-  SearchSimulatableProfilesOut,
-  SearchStaffIn,
-  SearchStaffOut,
+  ExitEmulationResult,
+  GroupMessagesIn,
+  GroupMessagesOut,
+  SearchProfilesIn,
+  SearchProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 };

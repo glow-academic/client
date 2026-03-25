@@ -5,13 +5,15 @@
  * 06/08/2025
  */
 import { redirect } from "next/navigation";
-
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "Analytics",
-  description: `Analytics in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Analytics",
+    description:
+      "Comprehensive learning analytics and performance metrics for teaching assistant training. Track simulation-based practice sessions, review pedagogical assessments, analyze teaching effectiveness, and monitor professional development progress.",
+  };
+}
 
 export default function AnalyticsPage() {
   return redirect("/analytics/dashboard");

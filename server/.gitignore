@@ -1,9 +1,7 @@
 __pycache__/
 **/__pycache__/
 
-uploads/tus_uploads/
-audio/
-sketches/
 htmlcov/
 
 dump.rdb
+.mypy_cache/

@@ -5,39 +5,20 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
-import Reports from "@/components/reports/Reports";
+import Reports from "@/components/artifacts/reports/Reports";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { searchParamsToFilters } from "@/utils/analytics-filters";
+import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
-import { unstable_cache } from "next/cache";
-import { headers } from "next/headers";
-import { Suspense } from "react";
+import { loadReportsSearchParams } from "@/lib/search-params/reports";
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/api/v3/reports", "post">;
-type ReportsOut = OutputOf<"/api/v3/reports", "post">;
-
-/** ---- Helper to detect hard refresh ----
- * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
- */
-async function isHardRefresh(): Promise<boolean> {
-  try {
-    const headersList = await headers();
-    const cacheControl = headersList.get("cache-control");
-    const pragma = headersList.get("pragma");
-
-    return (
-      cacheControl?.toLowerCase().includes("no-cache") ||
-      cacheControl?.includes("max-age=0") ||
-      pragma?.toLowerCase() === "no-cache"
-    );
-  } catch {
-    return false;
-  }
-}
+type ReportsIn = InputOf<"/api/v5/artifacts/reports/get", "post">;
+type ReportsOut = OutputOf<"/api/v5/artifacts/reports/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -47,7 +28,7 @@ async function isHardRefresh(): Promise<boolean> {
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/reports", input, {
+  return api.post("/artifacts/reports/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -57,98 +38,18 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   });
 };
 
-const getProfileContext = unstable_cache(
-  async (input: {
-    body: {
-      actualProfileId: string;
-      effectiveProfileId: string;
-      pathname: string;
-    };
-  }) => {
-    return api.post("/profile/context", input);
-  },
-  ["profile:context"],
-  { tags: ["profile:context"] }
-);
+/** ---- Docs types for page metadata ---- */
+type DocsIn = InputOf<"/api/v5/artifacts/reports/docs", "post">;
+type DocsOut = OutputOf<"/api/v5/artifacts/reports/docs", "post">;
 
-/** ---- Inline filters function for reports page ---- */
-async function getReportsFilters(searchParams?: URLSearchParams) {
-  const session = await getSession();
-
-  // Fetch profile context to get earliestAttemptDate
-  const profileContext = await getProfileContext({
-    body: {
-      actualProfileId: session?.user?.profileId || "",
-      effectiveProfileId: session?.effectiveProfileId || "",
-      pathname: "/",
-    },
-  });
-
-  // Compute startDate using same logic as analytics context
-  let startDate: Date;
-  if (profileContext.earliestAttemptDate) {
-    startDate = new Date(profileContext.earliestAttemptDate);
-    startDate.setHours(0, 0, 0, 0);
-  } else {
-    // Fallback to 30 days ago (matching analytics context)
-    startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    startDate.setHours(0, 0, 0, 0);
-  }
-
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
-
-  const defaults = {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    cohortIds: [] as string[],
-    roles: [] as string[],
-    simulationFilters: ["general" as const],
-    departmentIds: [] as string[],
-  };
-
-  // If search params are provided, merge them with defaults
-  let filters = defaults;
-  if (searchParams) {
-    const parsedFilters = searchParamsToFilters(searchParams, defaults);
-    filters = {
-      startDate: parsedFilters.startDate || defaults.startDate,
-      endDate: parsedFilters.endDate || defaults.endDate,
-      cohortIds: parsedFilters.cohortIds || defaults.cohortIds,
-      roles: parsedFilters.roles || defaults.roles,
-      simulationFilters: (parsedFilters.simulationFilters ||
-        defaults.simulationFilters) as typeof defaults.simulationFilters,
-      departmentIds: parsedFilters.departmentIds || defaults.departmentIds,
-    };
-  }
-
-  // Always use non-empty arrays: if selected filters are empty, use all IDs from profile context
-  const cohortIds =
-    filters.cohortIds && filters.cohortIds.length > 0
-      ? filters.cohortIds
-      : profileContext.cohortIds || [];
-  const departmentIds =
-    filters.departmentIds && filters.departmentIds.length > 0
-      ? filters.departmentIds
-      : profileContext.departmentIds || [];
-  const roles =
-    filters.roles && filters.roles.length > 0
-      ? filters.roles
-      : profileContext.scopedRoles || [];
-
-  return {
-    ...filters,
-    cohortIds,
-    departmentIds,
-    roles,
-  };
-}
-
-export const metadata: Metadata = {
-  title: "Reports",
-  description: `Reports in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
+const getDocs = async (input: DocsIn): Promise<DocsOut> => {
+  return api.post("/artifacts/reports/docs", input);
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const docs = await getDocs({ body: {} });
+  return { title: docs.list.title, description: docs.list.description };
+}
 
 interface ReportsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -157,193 +58,149 @@ interface ReportsPageProps {
 export default async function ReportsFullPage({
   searchParams,
 }: ReportsPageProps) {
-  // Parse search params
-  const params = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // Parse search params via nuqs loader
+  const q = loadReportsSearchParams(await searchParams);
 
-  // Get filters from search params or defaults
-  const filters = await getReportsFilters(
-    searchParamsObj.toString() ? searchParamsObj : undefined
-  );
+  // Compute initial date range from search params (with 30-day fallback)
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
 
-  // Extract pagination and filter params from search params for reports table
-  const reportsPage = searchParamsObj.get("reportsPage")
-    ? parseInt(searchParamsObj.get("reportsPage") || "0", 10)
-    : 0;
-  const reportsPageSize = searchParamsObj.get("reportsPageSize")
-    ? parseInt(searchParamsObj.get("reportsPageSize") || "100", 10)
-    : 100;
-  const reportsSearch = searchParamsObj.get("reportsSearch") || undefined;
-  const reportsProfileIds = searchParamsObj.get("reportsProfileIds")
-    ? searchParamsObj.get("reportsProfileIds")?.split(",").filter(Boolean)
-    : undefined;
-  const reportsSimulationIds = searchParamsObj.get("reportsSimulationIds")
-    ? searchParamsObj.get("reportsSimulationIds")?.split(",").filter(Boolean)
-    : undefined;
-  const reportsScenarioIds = searchParamsObj.get("reportsScenarioIds")
-    ? searchParamsObj.get("reportsScenarioIds")?.split(",").filter(Boolean)
-    : undefined;
-  const reportsSortBy = searchParamsObj.get("reportsSortBy") || "averageScore";
-  const reportsSortOrder = searchParamsObj.get("reportsSortOrder") || "desc";
-
-  // Create reportsKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include analytics filter params so reports re-fetch when filters change
-  const reportsKey = [
-    reportsPage,
-    reportsPageSize,
-    reportsSearch || "",
-    (reportsProfileIds || []).join(","),
-    (reportsSimulationIds || []).join(","),
-    (reportsScenarioIds || []).join(","),
-    reportsSortBy,
-    reportsSortOrder,
-    filters.startDate, // Include analytics filters to trigger re-fetch when filters change
-    filters.endDate,
-    filters.cohortIds.join(","),
-    filters.departmentIds.join(","),
-    filters.roles.join(","),
-    (filters as typeof filters & { simulationFilters?: string[] }).simulationFilters?.join(",") || "general",
-  ].join("|");
-
-  // Create empty reports data for loading state
-  const emptyReportsData: ReportsOut = {
-    data: [],
-    totalCount: 0,
-    page: reportsPage,
-    pageSize: reportsPageSize,
-    totalPages: 0,
-    profileOptions: [],
-    simulationOptions: [],
-    scenarioOptions: [],
-    scenario_mapping: {},
-    simulation_mapping: {},
+  // Build filters from search params (replaces computeAnalyticsDefaults + resolveAnalyticsFilters)
+  const filters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? ([] as string[]),
+    departmentIds: q.departmentIds ?? ([] as string[]),
+    roles: q.roles ?? ([] as string[]),
+    simulationFilters: q.simulationFilters ?? (["general"] as string[]),
   };
 
+  // Reports-specific params with defaults
+  const reportsPage = q.reportsPage ?? 0;
+  const reportsPageSize = q.reportsPageSize ?? 100;
+  const reportsSearch = q.reportsSearch ?? undefined;
+  const reportsProfileIds = q.reportsProfileIds ?? undefined;
+  const reportsSimulationIds = q.reportsSimulationIds ?? undefined;
+  const reportsScenarioIds = q.reportsScenarioIds ?? undefined;
+  const reportsSortBy = q.reportsSortBy ?? "averageScore";
+  const reportsSortOrder = q.reportsSortOrder ?? "desc";
+
+  // Single API call returning all reports data (with inline analytics facets)
+  const reportsData = await getReports({
+    body: {
+      start_date: filters.startDate,
+      end_date: filters.endDate,
+      ...(filters.cohortIds.length > 0 && { cohort_ids: filters.cohortIds }),
+      ...(filters.departmentIds.length > 0 && { department_ids: filters.departmentIds }),
+      ...(filters.roles.length > 0 && { roles: filters.roles }),
+      ...(filters.simulationFilters.length > 0 && { simulation_filters: filters.simulationFilters }),
+      page_limit: reportsPageSize,
+      page_offset: reportsPage * reportsPageSize,
+      ...(reportsSearch && { search: reportsSearch }),
+      sort_by: reportsSortBy,
+      sort_order: reportsSortOrder,
+      ...(reportsProfileIds &&
+        reportsProfileIds.length > 0 && {
+          profile_ids: reportsProfileIds,
+        }),
+      ...(reportsSimulationIds &&
+        reportsSimulationIds.length > 0 && {
+          simulation_ids: reportsSimulationIds,
+        }),
+      ...(reportsScenarioIds &&
+        reportsScenarioIds.length > 0 && {
+          scenario_ids: reportsScenarioIds,
+        }),
+    },
+  });
+
+  // Extract inline analytics facets from response (replaces computeAnalyticsDefaults)
+  const facets = reportsData.analytics;
+
+  // Extract filter options from API response (snake_case from server)
+  const profileOptions =
+    reportsData && "profile_options" in reportsData
+      ? (reportsData.profile_options || []).map(
+          (opt: {
+            value?: string | null;
+            label?: string | null;
+            count?: number | null;
+          }) => ({
+            value: String(opt.value || ""),
+            label: String(opt.label || ""),
+            count: typeof opt.count === "number" ? opt.count : 0,
+          })
+        )
+      : [];
+  const simulationOptions =
+    reportsData && "simulation_options" in reportsData
+      ? (reportsData.simulation_options || []).map(
+          (opt: {
+            value?: string | null;
+            label?: string | null;
+            count?: number | null;
+          }) => ({
+            value: String(opt.value || ""),
+            label: String(opt.label || ""),
+            count: typeof opt.count === "number" ? opt.count : 0,
+          })
+        )
+      : [];
+  const scenarioOptions =
+    reportsData && "scenario_options" in reportsData
+      ? (reportsData.scenario_options || []).map(
+          (opt: {
+            value?: string | null;
+            label?: string | null;
+            count?: number | null;
+          }) => ({
+            value: String(opt.value || ""),
+            label: String(opt.label || ""),
+            count: typeof opt.count === "number" ? opt.count : 0,
+          })
+        )
+      : [];
+
+  // Read view cookie for column visibility
+  const initialColumnVisibility = await readViewCookie("reports");
+
   return (
-    <div className="space-y-6" data-page="reports-index">
-      <Suspense
-        key={reportsKey}
-        fallback={
-          <Reports
-            reportsData={emptyReportsData}
-            filters={filters}
-            isLoading={true}
-            profileOptions={[]}
-            simulationOptions={[]}
-            scenarioOptions={[]}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Reports" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
           />
         }
-      >
-        <ReportsSection
+      />
+      <div className="space-y-6 px-4" data-page="reports-index">
+        <Reports
+          reportsData={reportsData}
           filters={filters}
-          reportsPage={reportsPage}
-          reportsPageSize={reportsPageSize}
-          reportsSearch={reportsSearch}
-          reportsProfileIds={reportsProfileIds}
-          reportsSimulationIds={reportsSimulationIds}
-          reportsScenarioIds={reportsScenarioIds}
-          reportsSortBy={reportsSortBy}
-          reportsSortOrder={reportsSortOrder}
+          isLoading={false}
+          profileOptions={profileOptions}
+          simulationOptions={simulationOptions}
+          scenarioOptions={scenarioOptions}
+          initialColumnVisibility={initialColumnVisibility}
         />
-      </Suspense>
-    </div>
-  );
-}
-
-/** ---- Inline reports section component (only used here) ---- */
-async function ReportsSection({
-  filters,
-  reportsPage,
-  reportsPageSize,
-  reportsSearch,
-  reportsProfileIds,
-  reportsSimulationIds,
-  reportsScenarioIds,
-  reportsSortBy,
-  reportsSortOrder,
-}: {
-  filters: {
-    startDate: string;
-    endDate: string;
-    cohortIds: string[];
-    departmentIds: string[];
-    roles: string[];
-  };
-  reportsPage: number;
-  reportsPageSize: number;
-  reportsSearch?: string | undefined;
-  reportsProfileIds?: string[] | undefined;
-  reportsSimulationIds?: string[] | undefined;
-  reportsScenarioIds?: string[] | undefined;
-  reportsSortBy: string;
-  reportsSortOrder: string;
-}) {
-  // Build reports filters with pagination/search/sorting/filtering params
-  const reportsFilters = {
-    ...filters,
-    page: reportsPage,
-    pageSize: reportsPageSize,
-    ...(reportsSearch && { search: reportsSearch }),
-    sortBy: reportsSortBy,
-    sortOrder: reportsSortOrder,
-    ...(reportsProfileIds &&
-      reportsProfileIds.length > 0 && {
-        profileIds: reportsProfileIds,
-      }),
-    ...(reportsSimulationIds &&
-      reportsSimulationIds.length > 0 && {
-        simulationIds: reportsSimulationIds,
-      }),
-    ...(reportsScenarioIds &&
-      reportsScenarioIds.length > 0 && {
-        scenarioIds: reportsScenarioIds,
-      }),
-  };
-
-  // Fetch reports data server-side
-  const reportsData = await getReports({
-    body: reportsFilters,
-  });
-
-  // Extract and map filter options from API response
-  const profileOptions = (reportsData?.profileOptions || []).map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-    count: opt.count,
-  }));
-
-  const simulationOptions = (reportsData?.simulationOptions || []).map(
-    (opt) => ({
-      value: opt.value,
-      label: opt.label,
-      count: opt.count,
-    })
-  );
-
-  const scenarioOptions = (reportsData?.scenarioOptions || []).map((opt) => ({
-    value: opt.value,
-    label: opt.label,
-    count: opt.count,
-  }));
-
-  return (
-    <Reports
-      reportsData={reportsData}
-      filters={filters}
-      isLoading={false}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-    />
+      </div>
+    </>
   );
 }
 

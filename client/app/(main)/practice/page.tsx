@@ -5,34 +5,28 @@
  * 06/08/2025
  */
 
-import { getSession } from "@/auth";
-
-import SimulationHistory from "@/components/common/history/SimulationHistory";
-import Practice from "@/components/practice/Practice";
+import SimulationHistory from "@/components/common/SimulationHistory";
+import Practice from "@/components/artifacts/practice/Practice";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import { isHardRefresh } from "@/lib/cache-utils";
+import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
-import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
-import { headers } from "next/headers";
-import { Suspense } from "react";
+import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v3/practice/overview", "post">;
-type PracticeOut = OutputOf<"/api/v3/practice/overview", "post">;
-type PracticeHistoryIn = InputOf<"/api/v3/practice/history", "post">;
-type PracticeHistoryOut = OutputOf<"/api/v3/practice/history", "post">;
+type PracticeIn = InputOf<"/api/v5/artifacts/practice/get", "post">;
+type PracticeOut = OutputOf<"/api/v5/artifacts/practice/get", "post">;
+type PracticeHistoryOut = NonNullable<PracticeOut["history"]>;
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Practice overview responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
-const getPractice = async (
-  input: PracticeIn
-): Promise<PracticeOut> => {
+/** ---- Direct fetch for practice data (cards + embedded history) ---- */
+const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
-  
-  return api.post("/practice/overview", input, {
+
+  return api.post("/artifacts/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -42,76 +36,12 @@ const getPractice = async (
   });
 };
 
-/** ---- Helper to detect hard refresh ----
- * Checks for Cache-Control or Pragma headers that browsers send on hard refresh.
- */
-async function isHardRefresh(): Promise<boolean> {
-  try {
-    const headersList = await headers();
-    const cacheControl = headersList.get("cache-control");
-    const pragma = headersList.get("pragma");
-    
-    return (
-      (cacheControl?.toLowerCase().includes("no-cache") || 
-       cacheControl?.includes("max-age=0")) ||
-      pragma?.toLowerCase() === "no-cache"
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** ---- Direct fetch (no Next.js cache) ----
- * Practice history responses can get large and exceed Next.js 2MB cache limit.
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- * Note: Practice history endpoint doesn't use Redis cache, but header is sent for consistency.
- */
-const getPracticeHistory = async (
-  input: PracticeHistoryIn
-): Promise<PracticeHistoryOut> => {
-  const bypassCache = await isHardRefresh();
-  
-  return api.post("/practice/history", input, {
-    cache: "no-store",
-    ...(bypassCache && {
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }),
-  });
-};
-
-const getProfileContext = unstable_cache(
-  async (input: {
-    body: {
-      actualProfileId: string;
-      effectiveProfileId: string;
-      pathname: string;
-    };
-  }) => {
-    return api.post("/profile/context", input);
-  },
-  ["profile:context"],
-  { tags: ["profile:context"] }
-);
-
-export const metadata: Metadata = {
-  title: "Practice",
-  description: `Practice page for GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-};
-
-/** ---- Server action to revalidate attempt cache when simulation starts ---- */
-async function revalidateAttempt(attemptId: string): Promise<void> {
-  "use server";
-  // Invalidate attempt-level cache
-  revalidateTag("attempts");
-  revalidateTag(`attempt:${attemptId}`);
-  // Invalidate practice page cache so data refreshes when user returns
-  revalidateTag("practice");
-  revalidatePath("/practice");
-  // Note: Chat-specific tags can be added here if chat IDs are known
-  // For now, invalidating attempt-level cache ensures all chats refresh
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Practice",
+    description:
+      "Simulation-based practice sessions for teaching assistant training. Engage in realistic student interaction scenarios to practice pedagogical techniques, improve communication skills, and enhance teaching effectiveness through hands-on learning experiences.",
+  };
 }
 
 interface PracticePageProps {
@@ -121,275 +51,152 @@ interface PracticePageProps {
 export default async function PracticePage({
   searchParams,
 }: PracticePageProps) {
-  const session = await getSession();
+  // Parse search params via nuqs loader
+  const q = loadPracticeSearchParams(await searchParams);
 
-  // Parse search params
-  const paramsObj = await searchParams;
-  const searchParamsObj = new URLSearchParams();
-  Object.entries(paramsObj).forEach(([key, value]) => {
-    if (value) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParamsObj.append(key, v));
-      } else {
-        searchParamsObj.set(key, value);
-      }
-    }
-  });
+  // History params with defaults
+  const historyPage = q.historyPage ?? 0;
+  const historyPageSize = q.historyPageSize ?? 10;
+  const historySearch = q.historySearch ?? undefined;
+  const historySimulationIds = q.historySimulationIds ?? undefined;
+  const historyScenarioIds = q.historyScenarioIds ?? undefined;
+  const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
+  const historySortBy = q.historySortBy ?? "date";
+  const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Get profileId and departmentIds from profile context
-  const profileContext = await getProfileContext({
+  // Single fetch: cards + embedded history
+  const practiceData = await getPracticeData({
     body: {
-      actualProfileId: session?.user?.profileId || "guest-profile-id",
-      effectiveProfileId: session?.effectiveProfileId || "guest-profile-id",
-      pathname: "/practice",
-    },
-  });
-
-  // Build practice filters (only profileId and departmentIds)
-  // Always pass departmentIds (never empty array) - use all IDs from profile context
-  const practiceFiltersBody: PracticeIn["body"] = {
-    profileId: session?.effectiveProfileId || "guest-profile-id",
-    departmentIds: profileContext.departmentIds || [], // Always pass (non-empty from profile context)
-  };
-
-  const practiceFilters: PracticeIn = {
-    body: practiceFiltersBody,
-  };
-
-  // Extract pagination and filter params from search params
-  const historyPage = searchParamsObj.get("historyPage")
-    ? parseInt(searchParamsObj.get("historyPage") || "0", 10)
-    : 0;
-  const historyPageSize = searchParamsObj.get("historyPageSize")
-    ? parseInt(searchParamsObj.get("historyPageSize") || "10", 10)
-    : 10;
-  const historySearch = searchParamsObj.get("historySearch") || undefined;
-  const historyProfileIds = searchParamsObj.get("historyProfileIds")
-    ? searchParamsObj.get("historyProfileIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historySimulationIds = searchParamsObj.get("historySimulationIds")
-    ? searchParamsObj.get("historySimulationIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyScenarioIds = searchParamsObj.get("historyScenarioIds")
-    ? searchParamsObj.get("historyScenarioIds")?.split(",").filter(Boolean)
-    : undefined;
-  const historyInfiniteMode =
-    searchParamsObj.get("historyInfiniteMode") === "true"
-      ? true
-      : searchParamsObj.get("historyInfiniteMode") === "false"
-        ? false
-        : undefined;
-  const historySortBy = searchParamsObj.get("historySortBy") || "date";
-  const historySortOrder = searchParamsObj.get("historySortOrder") || "desc";
-
-  // Fetch practice data server-side (without history - history will be fetched separately)
-  const practiceData = await getPractice(practiceFilters);
-
-  // Remove history from response for server-driven pagination
-  const practiceDataWithoutHistory = {
-    ...practiceData,
-    history: [],
-  };
-
-  // Check if user is a guest
-  const effectiveProfileId = session?.effectiveProfileId || "guest-profile-id";
-  // Default guest = unauthenticated user using the shared default guest profile
-  const isDefaultGuest = effectiveProfileId === "guest-profile-id";
-  // Any guest role (including authenticated guests) — used to gate features like infinite mode
-  const isGuest = isDefaultGuest || profileContext.effectiveProfile?.role === "guest";
-
-  // Create historyKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include analytics filter params so history re-fetches when filters change
-  const analyticsStartDate = searchParamsObj.get("startDate") || "";
-  const analyticsEndDate = searchParamsObj.get("endDate") || "";
-  const analyticsCohortIds = searchParamsObj.get("cohortIds") || "";
-  const analyticsDepartmentIds = searchParamsObj.get("departmentIds") || "";
-  const analyticsRoles = searchParamsObj.get("roles") || "";
-  const analyticsSimulationFilters = searchParamsObj.get("simulationFilters") || "general";
-  const historyKey = [
-    historyPage,
-    historyPageSize,
-    historySearch || "",
-    (historyProfileIds || []).join(","),
-    (historySimulationIds || []).join(","),
-    (historyScenarioIds || []).join(","),
-    historyInfiniteMode === undefined
-      ? "all"
-      : historyInfiniteMode
-        ? "inf"
-        : "std",
-    historySortBy,
-    historySortOrder,
-    analyticsStartDate, // Include analytics filters to trigger re-fetch when filters change
-    analyticsEndDate,
-    analyticsCohortIds,
-    analyticsDepartmentIds,
-    analyticsRoles,
-    analyticsSimulationFilters,
-  ].join("|");
-
-  return (
-    <div className="space-y-6">
-      <Practice
-        practiceData={practiceDataWithoutHistory}
-        revalidateAttemptAction={revalidateAttempt}
-        isGuest={isGuest}
-      />
-
-      {/* History section - show for any authenticated user (hide only for default guest) */}
-      {!isDefaultGuest && (
-        <div className="mt-12">
-          <Suspense
-            key={historyKey}
-            fallback={
-              <SimulationHistory
-                data={[]}
-                totalCount={0}
-                archivedCount={0}
-                unarchivedCount={0}
-                pageIndex={historyPage}
-                pageSize={historyPageSize}
-                showExport={false}
-                showArchive={false}
-                singleProfile={true}
-                revalidateAttemptAction={revalidateAttempt}
-                profileOptions={[]}
-                simulationOptions={[]}
-                scenarioOptions={[]}
-                isLoading={true}
-                showModeFilter={true}
-              />
-            }
-          >
-            <PracticeHistorySection
-              historyPage={historyPage}
-              historyPageSize={historyPageSize}
-              historySearch={historySearch}
-              historyProfileIds={historyProfileIds}
-              historySimulationIds={historySimulationIds}
-              historyScenarioIds={historyScenarioIds}
-              historyInfiniteMode={historyInfiniteMode}
-              historySortBy={historySortBy}
-              historySortOrder={historySortOrder}
-              effectiveProfileId={effectiveProfileId}
-              departmentIds={profileContext.departmentIds || []}
-              revalidateAttemptAction={revalidateAttempt}
-            />
-          </Suspense>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** ---- Inline history section component (only used here) ---- */
-async function PracticeHistorySection({
-  historyPage,
-  historyPageSize,
-  historySearch,
-  historyProfileIds,
-  historySimulationIds,
-  historyScenarioIds,
-  historyInfiniteMode,
-  historySortBy,
-  historySortOrder,
-  effectiveProfileId,
-  departmentIds,
-  revalidateAttemptAction,
-}: {
-  historyPage: number;
-  historyPageSize: number;
-  historySearch?: string | undefined;
-  historyProfileIds?: string[] | undefined;
-  historySimulationIds?: string[] | undefined;
-  historyScenarioIds?: string[] | undefined;
-  historyInfiniteMode?: boolean | undefined;
-  historySortBy: string;
-  historySortOrder: string;
-  effectiveProfileId: string;
-  departmentIds: string[];
-  revalidateAttemptAction: (attemptId: string) => Promise<void>;
-}) {
-  // Build history filters for practice (simplified: profileId and departmentIds only)
-  const historyFilters: PracticeHistoryIn = {
-    body: {
-      profileId: effectiveProfileId,
-      departmentIds: departmentIds,
-      page: historyPage,
-      pageSize: historyPageSize,
-      ...(historySearch && { search: historySearch }),
-      ...(historyProfileIds &&
-        historyProfileIds.length > 0 && {
-          profileIds: historyProfileIds,
-        }),
-      ...(historySimulationIds &&
-        historySimulationIds.length > 0 && {
-          simulationIds: historySimulationIds,
-        }),
+      history_page: historyPage,
+      history_page_size: historyPageSize,
+      history_sort_by: historySortBy,
+      history_sort_order: historySortOrder,
+      ...(historySearch && { history_simulation_search: historySearch }),
       ...(historyScenarioIds &&
         historyScenarioIds.length > 0 && {
-          scenarioIds: historyScenarioIds,
+          history_scenario_ids: historyScenarioIds,
         }),
       ...(historyInfiniteMode !== undefined && {
-        infiniteMode: historyInfiniteMode,
+        history_infinite_mode: historyInfiniteMode,
       }),
-      sortBy: historySortBy,
-      sortOrder: historySortOrder,
     },
+  });
+
+  // Check if user is a guest (no items means no access / guest)
+  const isGuest = !practiceData.items || practiceData.items.length === 0;
+
+  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+  const facets = practiceData.analytics;
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    if (facets?.date_range_earliest) {
+      const d = new Date(facets.date_range_earliest);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    }
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
+  const initialFilters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? [],
+    departmentIds: q.departmentIds ?? [],
+    roles: q.roles ?? [],
   };
 
-  const historyData = await getPracticeHistory(historyFilters);
+  // Extract history from embedded response
+  const historyData: PracticeHistoryOut = practiceData.history || {
+    data: [],
+    total_count: 0,
+    page: 0,
+    page_size: historyPageSize,
+    total_pages: 0,
+  };
 
-  // Calculate archived/unarchived counts from data (practice history API doesn't provide these)
-  const archivedCount = historyData.data.filter((item) => item.isArchived).length;
-  const unarchivedCount = historyData.data.filter((item) => !item.isArchived).length;
+  // Calculate archived/unarchived counts from data
+  const dataArray = historyData.data || [];
+  const archivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => item.is_archived).length;
+  const unarchivedCount = dataArray.filter((item: { is_archived?: boolean | null }) => !item.is_archived).length;
 
-  // Use server-provided data directly (no transformation needed)
-  // Extract options from API response and cast to expected format
-  const profileOptions = (historyData.profileOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  // Extract options from embedded history response
+  const profileOptions = (historyData.profile_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulationOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+      const count = typeof opt.count === "number" ? opt.count : undefined;
+      return {
+        value: String(opt.value || ""),
+        label: String(opt.label || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
+  const scenarioOptions = (historyData.scenario_options || []).map((opt: { value?: string | null; label?: string | null; count?: number | null }) => {
+    const count = typeof opt.count === "number" ? opt.count : undefined;
     return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
-  const scenarioOptions = (historyData.scenarioOptions || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
+      value: String(opt.value || ""),
+      label: String(opt.label || ""),
       ...(count !== undefined && { count }),
     };
   });
 
   return (
-    <SimulationHistory
-      data={historyData.data}
-      totalCount={historyData.totalCount}
-      archivedCount={archivedCount}
-      unarchivedCount={unarchivedCount}
-      pageIndex={historyPage}
-      pageSize={historyPageSize}
-      showExport={false}
-      showArchive={false}
-      singleProfile={true}
-      revalidateAttemptAction={revalidateAttemptAction}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-      showModeFilter={true}
-    />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Practice", section: "practice", url: "/practice" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
+      />
+      <div className="space-y-6 px-4">
+        <Practice practiceData={practiceData} isGuest={isGuest} />
+
+        {/* History section — data from embedded practice/get response, only show for non-guests */}
+        {!isGuest && (
+          <div className="mt-12">
+            <SimulationHistory
+              data={dataArray}
+              totalCount={historyData.total_count || 0}
+              archivedCount={archivedCount}
+              unarchivedCount={unarchivedCount}
+              pageIndex={historyPage}
+              pageSize={historyPageSize}
+              showArchive={false}
+              singleProfile={true}
+              initialFilters={initialFilters}
+              profileOptions={profileOptions}
+              simulationOptions={simulationOptions}
+              scenarioOptions={scenarioOptions}
+              showModeFilter={true}
+              showCustomize={true}
+              initialColumnVisibility={await readViewCookie("history")}
+            />
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { PracticeHistoryIn, PracticeHistoryOut, PracticeIn, PracticeOut };
+export type { PracticeHistoryOut, PracticeOut };

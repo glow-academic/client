@@ -26,7 +26,7 @@ const columnMap = {
   scenarios: "Scenarios",
   search: "Search",
   // Reports page columns
-  firstName: "Name",
+  name: "Name",
   username: "Alias",
   avgScore: "Score",
   totalSessions: "Sessions",
@@ -52,7 +52,7 @@ const columnMap = {
   sessionEfficiency: "Efficiency",
   stagnationRate: "Stagnation",
   timeSpent: "Time Spent",
-  // Staff page columns
+  // Profile page columns
   active: "Status",
   lastActive: "Last Active",
   cohortNames: "Cohorts",
@@ -74,15 +74,30 @@ const columnMap = {
   simulationName: "Simulation",
   numScenariosCompleted: "Scenarios",
   personaNames: "Personas",
-  first_name: "Staff Member",
-  last_active: "Last Active",
-  requests: "Requests / Day",
-  total_requests: "Total Requests",
+  name: "Profile",
   department_ids: "Departments",
   cohort_ids: "Cohorts",
   parameter_item_ids: "Parameter Items",
   scenario_ids: "Scenarios",
   updated_at: "Updated",
+  // Persona card view toggles
+  ai_badge: "AI / MCP Badge",
+  status_badge: "Status Badge",
+  card_description: "Description",
+  num_scenarios: "Scenarios",
+  num_profiles: "Profiles",
+  // Simulation card view toggles
+  practice_badge: "Practice Badge",
+  card_cohorts: "Cohorts",
+  scenario_dots: "Scenario Dots",
+  // Cohort card view toggles
+  card_members: "Members",
+  card_simulations: "Simulations",
+  // Scenario card view toggles
+  problem_statement: "Problem Statement",
+  card_num_simulations: "Simulations",
+  persona_badges: "Persona Badges",
+  field_badges: "Field Badges",
 };
 
 export interface DataTableViewOptionsProps<TData> {
@@ -142,7 +157,7 @@ export function DataTableViewOptions<TData>({
             (column) =>
               typeof column.accessorFn !== "undefined" &&
               column.getCanHide() &&
-              !allHiddenColumns.has(column.id)
+              !allHiddenColumns.has(column.id),
           )
           .map((column) => {
             return (

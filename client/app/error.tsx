@@ -17,11 +17,15 @@ export default function Error({
   const router = useRouter();
   // Use useContext directly instead of useProfile() to avoid throwing and masking real errors
   const profileContext = useContext(ProfileContext);
-  const effectiveProfile = profileContext?.effectiveProfile ?? null;
+  const profile = profileContext?.profile ?? null;
 
   const handleBackToGlow = () => {
     // Navigate based on effective role if available, otherwise default to home
-    if (effectiveProfile?.role && effectiveProfile.role !== "ta" && effectiveProfile.role !== "guest") {
+    if (
+      profile?.role &&
+      profile.role !== "member" &&
+      profile.role !== "guest"
+    ) {
       router.push("/analytics");
     } else {
       router.push("/home");
@@ -40,7 +44,9 @@ export default function Error({
             <h3 className="text-xl font-semibold text-foreground">
               An error occurred
             </h3>
-            <p className="text-muted-foreground text-sm break-words">{error.message}</p>
+            <p className="text-muted-foreground text-sm break-words">
+              {error.message}
+            </p>
             {error.stack && (
               <details className="mt-4 text-left">
                 <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
@@ -61,7 +67,7 @@ export default function Error({
             initialType="bug"
             initialMessage={`Error occurred on page: ${error.message}\n\nError Stack: ${error.stack || "No stack trace available"}\n\nPage URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}`}
           >
-            <Button className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 transition-colors">
+            <Button variant="outline" className="w-full">
               <Bug className="h-4 w-4 mr-2" />
               Report This Error
             </Button>

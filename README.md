@@ -32,9 +32,10 @@ make install-client  # Install client dependencies (yarn)
 
 **Database setup:**
 ```bash
-make start-db    # Start database
-make migrate-db  # Run migrations
-make fresh-db    # Fresh start (with backup)
+make restore-db     # Restore database from latest backup
+make migrate-db     # Run migrations
+make fresh-db       # Interactive setup for fresh database (generates timestamped seed file)
+make export-db      # Export database (schema|base|university|organization)
 ```
 
 ## 🧪 Testing
@@ -95,7 +96,7 @@ make typecheck   # Type check server (MyPy)
 ### Backend
 - **Server:** [FastAPI](https://fastapi.tiangolo.com/)
 - **Database:** [asyncpg](https://github.com/MagicStack/asyncpg) (raw SQL)
-- **Architecture:** DHH-style - 1 SQL file per route, 1 Python file per route
+- **Architecture:** Three-layer BFF — Views, Resources, Artifacts with `make sql-compile` type generation
 - **LLM:** [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
 - **Testing:** [pytest](https://docs.pytest.org/en/stable/) + [Playwright](https://playwright.dev/) for E2E
 - **Linter:** [Ruff](https://docs.astral.sh/ruff/)
@@ -103,11 +104,13 @@ make typecheck   # Type check server (MyPy)
 
 ### Database
 - **SQL:** [PostgreSQL](https://www.postgresql.org/)
-- **Migrations:** [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview) (database folder only)
+- **Migrations:** Manual SQL files in `database/migrate/` folder
+- **Seeding:** Database-first approach - database is source of truth, seed files generated from live database
 
 ### Architecture
 - **Client**: Airgapped UI - server actions dominate, presentation only
-- **Server**: DHH-style architecture - 1 SQL file per route, 1 Python file per route, no abstraction layers
+- **Server**: Three-layer BFF — Views (MV reads) → Resources (cached data-access) → Artifacts (aggregation + permissions)
+- **SQL**: Compiled PostgreSQL functions with auto-generated Pydantic types (`make sql-compile`)
 - **Database**: asyncpg (no ORM), BCNF normalization, no nulls (Chris Date principles)
 - **Testing**: Unit tests (utils), integration tests (endpoints), E2E tests (Playwright)
-- **WebSocket**: Socket.IO with Redis for real-time features
+- **WebSocket**: Socket.IO with Redis for AI generation and real-time features

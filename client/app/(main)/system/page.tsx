@@ -8,11 +8,14 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "System",
-  description: `Manage agents, departments, feedback, logs, and health in GLOW (Graduate Learning Orientation Workshop) at ${process.env["NEXT_PUBLIC_CAMPUS"]}.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "System",
+    description:
+      "System administration hub for teaching assistant training platform. Manage authentication methods, API keys, system health monitoring, feedback collection, and platform configuration for educational institutions and L&D programs.",
+  };
+}
 
 export default function SystemPage() {
-  return redirect("/management/departments");
+  return redirect("/system/auth");
 }

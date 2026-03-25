@@ -7,11 +7,7 @@ import { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
@@ -111,32 +107,32 @@ export function DatePickerWithRange({
   };
 
   const dateButton = (
-          <Button
-            id="date"
-            variant={"secondary"}
-            size="sm"
-            className={cn(
-              "justify-start text-left font-normal h-8",
-              !displayRange && "text-muted-foreground",
-            )}
-          >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {displayRange?.from ? (
-              displayRange.to ? (
-                <>
+    <Button
+      id="date"
+      variant={"secondary"}
+      size="sm"
+      className={cn(
+        "justify-start text-left font-normal h-8",
+        !displayRange && "text-muted-foreground",
+      )}
+    >
+      <CalendarIcon className="mr-2 h-4 w-4" />
+      {displayRange?.from ? (
+        displayRange.to ? (
+          <>
             {isMobile
               ? `${formatMobileDate(displayRange.from)} - ${formatMobileDate(displayRange.to)}`
               : `${formatDesktopDate(displayRange.from)} - ${formatDesktopDate(displayRange.to)}`}
-                </>
-              ) : (
-          isMobile
-            ? formatMobileDate(displayRange.from)
-            : formatDesktopDate(displayRange.from)
-              )
-            ) : (
-              <span>Filter by date</span>
-            )}
-          </Button>
+          </>
+        ) : isMobile ? (
+          formatMobileDate(displayRange.from)
+        ) : (
+          formatDesktopDate(displayRange.from)
+        )
+      ) : (
+        <span>Filter by date</span>
+      )}
+    </Button>
   );
 
   // On mobile, use Dialog; on desktop, use Popover

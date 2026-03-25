@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 FROM python:3.11-slim AS runtime
 WORKDIR /app
 
-# runtime helpers
+# runtime helpers (no curl/wget — hardened against RCE exploitation)
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
     apt-get update && \
@@ -34,8 +34,6 @@ COPY --from=deps /install /usr/local
 
 # Copy everything in the app folder (including all code, configs, etc.)
 COPY app/ ./app/
-# Copy SQL files needed at runtime
-COPY sql/ ./sql/
 
 # non-root for prod
 ARG APP_UID=1001

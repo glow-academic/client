@@ -14,11 +14,14 @@ export default function NotFound() {
   // (not-found.tsx can render outside the layout hierarchy)
   // useContext returns null if context is not provided, which is safe
   const profileContext = useContext(ProfileContext);
-  const effectiveProfile = profileContext?.effectiveProfile ?? null;
+  const profile = profileContext?.profile ?? null;
 
   const handleBackToGlow = () => {
     // Navigate based on effective role, default to /home if context unavailable
-    if (effectiveProfile?.role !== "ta" && effectiveProfile?.role !== "guest") {
+    if (
+      profile?.role !== "member" &&
+      profile?.role !== "guest"
+    ) {
       router.push("/analytics");
     } else {
       router.push("/home");
@@ -48,7 +51,7 @@ export default function NotFound() {
             initialType="bug"
             initialMessage={`404 Error - Page Not Found\n\nRequested URL: ${typeof window !== "undefined" ? window.location.href : "Unknown"}\n\nUser Agent: ${typeof window !== "undefined" ? window.navigator.userAgent : "Unknown"}\n\nTimestamp: ${new Date().toISOString()}`}
           >
-            <Button className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 transition-colors">
+            <Button variant="outline" className="w-full">
               <Bug className="h-4 w-4 mr-2" />
               Report This Issue
             </Button>

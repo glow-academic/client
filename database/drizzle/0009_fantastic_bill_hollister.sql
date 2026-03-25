@@ -1,1 +1,0 @@
-ALTER TABLE "simulation_chat_grades" ADD COLUMN "description" text DEFAULT 'No description provided' NOT NULL;

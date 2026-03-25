@@ -1,12 +1,13 @@
 """Log error with full context and raise HTTPException."""
 
-import logging
 from typing import Any
 
 import asyncpg  # type: ignore
 from fastapi import HTTPException, Request
 
-logger = logging.getLogger(__name__)
+from app.utils.logging.db_logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def log_and_raise_error(
@@ -28,8 +29,8 @@ def log_and_raise_error(
 
     Args:
         error: The exception that occurred
-        route_path: API route path (e.g., "/api/v3/parameters/detail-default")
-        operation: Operation name (e.g., "get_parameter_detail_default")
+        route_path: API route path (e.g., "/api/v3/parameters/new")
+        operation: Operation name (e.g., "get_parameter_new")
         sql_query: SQL query string if this was a SQL error
         sql_params: SQL parameters tuple/list if this was a SQL error
         request: FastAPI Request object for extracting additional context
@@ -103,9 +104,20 @@ def log_and_raise_error(
         status_code = error.status_code
         detail = error.detail
     elif is_sql_error:
-        # SQL errors: 500 with database error message
-        status_code = 500
-        detail = user_friendly_message or f"Database error: {str(error)}"
+        # Check for department permission denied errors
+        error_msg = str(error)
+        if "DEPARTMENT_PERMISSION_DENIED:" in error_msg:
+            # Extract user-friendly message after the prefix
+            detail = (
+                error_msg.split("DEPARTMENT_PERMISSION_DENIED: ", 1)[1]
+                if "DEPARTMENT_PERMISSION_DENIED: " in error_msg
+                else error_msg
+            )
+            status_code = 403
+        else:
+            # Other SQL errors: 500 with database error message
+            status_code = 500
+            detail = user_friendly_message or f"Database error: {str(error)}"
     else:
         # Other errors: 500 with generic message
         status_code = 500

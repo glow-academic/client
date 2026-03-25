@@ -7,13 +7,16 @@
 import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
-  SearchSimulatableProfilesIn,
-  SearchSimulatableProfilesOut,
+  ExitEmulationResult,
+  SearchProfilesIn,
+  SearchProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
+import { getSidebarSections } from "@/lib/sidebar-config";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -44,26 +47,22 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
-import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
+import { useFederatedLogout } from "@/hooks/useFederatedLogout";
+import { getIconComponent } from "@/utils/icons";
+import Link from "next/link";
 import {
   AlertCircle,
-  Brain,
-  ChartBar,
   ChevronRight,
   ChevronsUpDown,
   Home,
   LogOut,
   Search,
-  Settings,
   Sparkles,
-  User,
-  UserCogIcon,
-  Users,
+  UserX,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import * as React from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EmulateProfileModal } from "./EmulateProfileModal";
 import { SidebarSkeleton } from "./SidebarSkeleton";
@@ -75,10 +74,11 @@ export interface UnifiedSidebarProps
   switchEffectiveProfile: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
+  exitEmulation: () => Promise<ExitEmulationResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn
-  ) => Promise<SearchSimulatableProfilesOut>;
+  searchProfiles: (
+    input: SearchProfilesIn
+  ) => Promise<SearchProfilesOut>;
 }
 
 interface ClassData {
@@ -97,9 +97,10 @@ interface MenuItem {
 interface NavSection {
   title: string;
   url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  items?: MenuItem[];
-  section?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: React.ComponentType<any>;
+  items?: MenuItem[] | undefined;
+  section?: string | undefined;
 }
 
 // Helper function to get initials from name
@@ -117,309 +118,132 @@ export function UnifiedSidebar({
   activeSection,
   onSectionChange,
   switchEffectiveProfile,
+  exitEmulation,
   createFeedback,
-  searchSimulatableProfiles,
+  searchProfiles,
   ...props
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isEmulateModalOpen, setIsEmulateModalOpen] = useState(false);
+  const federatedLogout = useFederatedLogout();
+
+  // Preserve scroll position across navigation
+  const savedScrollPositionRef = useRef<number | null>(null);
+  const isRestoringScrollRef = useRef<boolean>(false);
+  const getScrollContainer = () => {
+    // Find the scrollable SidebarContent element by data attribute
+    return document.querySelector(
+      '[data-sidebar="content"]'
+    ) as HTMLDivElement | null;
+  };
 
   // Get sidebar context to close mobile sidebar on navigation
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const {
-    activeProfile,
-    effectiveProfile,
-    isLoading,
-    cohorts,
-    availableSections,
-    isFullEmulation,
-  } = useProfile();
-
-  const getCohortSubItems = React.useMemo(() => {
-    if (!cohorts || !effectiveProfile) return [];
-
-    return cohorts.map((c: { id: string; title: string }) => ({
-      title: c.title,
-      url: `/cohorts/c/${c.id}`,
-      section: `cohort-${c.id}`,
-      isSubItem: true,
-    }));
-  }, [cohorts, effectiveProfile]);
-
-  // Build navigation menu based on role with search filtering
+  const { profile, isAuthenticated, isEmulation, roleArtifacts } =
+    useProfile();
+  const [isExitingEmulation, setIsExitingEmulation] = useState(false);
   const navMain = useMemo(() => {
-    if (!effectiveProfile) return [];
+    if (!profile) return [];
 
-    const menu: NavSection[] = [];
-    // Use server-provided available sections from profile context
+    const sections = getSidebarSections(roleArtifacts);
+    const menu: NavSection[] = sections.map((section) => {
+      const IconComponent = getIconComponent(section.icon) || Home;
+      const items: MenuItem[] | undefined = section.items
+        ? section.items.map((item) => ({
+            title: item.title,
+            url: item.url,
+            section: item.artifact,
+          }))
+        : undefined;
 
-    // Home - Only for non guest users
-    if (availableSections.includes("home")) {
-      menu.push({
-        title: "Home",
-        url: "#",
-        icon: Home,
-        section: "home",
-      });
-    }
-
-    // Practice - all users
-    if (availableSections.includes("practice")) {
-      menu.push({
-        title: "Practice",
-        url: "#",
-        icon: Brain,
-        section: "practice",
-      });
-    }
-
-    // Cohorts sections based on role
-    if (availableSections.includes("cohorts")) {
-      if (["ta"].includes(effectiveProfile.role)) {
-        // TA/Instructor view - collapsible with sub-items
-        menu.push({
-          title: "Cohorts",
-          url: "#",
-          icon: Users,
-          items: [...getCohortSubItems],
-        });
-      } else {
-        // Staff/Admin view - single items, no sub-items, no "new"
-        menu.push({
-          title: "Cohorts",
-          url: "#",
-          icon: Users,
-          section: "cohorts",
-        });
-      }
-    }
-
-    // Analytics - Available from instructor level and up
-    if (
-      availableSections.includes("dashboard") ||
-      availableSections.includes("reports") ||
-      availableSections.includes("leaderboard") ||
-      availableSections.includes("pricing")
-    ) {
-      const analyticsItems: MenuItem[] = [
-        {
-          title: "Dashboard",
-          url: "#",
-          section: "dashboard",
-        },
-        {
-          title: "Reports",
-          url: "#",
-          section: "reports",
-        },
-        {
-          title: "Pricing",
-          url: "#",
-          section: "pricing",
-        },
-        {
-          title: "Leaderboard",
-          url: "#",
-          section: "leaderboard",
-        },
-      ];
-
-      menu.push({
-        title: "Analytics",
-        url: "#",
-        icon: ChartBar,
-        items: analyticsItems,
-      });
-    }
-
-    // Create - Available from instructor level and up
-    if (
-      availableSections.includes("personas") ||
-      availableSections.includes("documents") ||
-      availableSections.includes("scenarios") ||
-      availableSections.includes("simulations")
-    ) {
-      menu.push({
-        title: "Create",
-        url: "#",
-        icon: Sparkles,
-        items: [
-          {
-            title: "Simulations",
-            url: "#",
-            section: "simulations",
-          },
-          {
-            title: "Scenarios",
-            url: "#",
-            section: "scenarios",
-          },
-          {
-            title: "Personas",
-            url: "#",
-            section: "personas",
-          },
-          {
-            title: "Documents",
-            url: "#",
-            section: "documents",
-          },
-        ],
-      });
-    }
-
-    // Management - Available from admin level only
-    if (
-      availableSections.includes("departments") ||
-      availableSections.includes("parameters") ||
-      availableSections.includes("rubrics") ||
-      availableSections.includes("agents")
-    ) {
-      const managementItems: MenuItem[] = [];
-
-      menu.push({
-        title: "Management",
-        url: "#",
-        icon: UserCogIcon,
-        items: managementItems,
-      });
-
-      if (availableSections.includes("departments")) {
-        managementItems.push({
-          title: "Departments",
-          url: "#",
-          section: "departments",
-        });
-      }
-
-      if (availableSections.includes("agents")) {
-        managementItems.push({
-          title: "Agents",
-          url: "#",
-          section: "agents",
-        });
-      }
-
-      if (availableSections.includes("rubrics")) {
-        managementItems.push({
-          title: "Rubrics",
-          url: "#",
-          section: "rubrics",
-        });
-      }
-
-      if (availableSections.includes("parameters")) {
-        managementItems.push({
-          title: "Parameters",
-          url: "#",
-          section: "parameters",
-        });
-      }
-    }
-
-    // System  - Available only for superadmin
-    if (effectiveProfile.role === "superadmin") {
-      const systemItems: MenuItem[] = [];
-
-      menu.push({
-        title: "System",
-        url: "#",
-        icon: Settings,
-        items: systemItems,
-      });
-
-      if (availableSections.includes("staff")) {
-        systemItems.push({
-          title: "Staff",
-          url: "#",
-          section: "staff",
-        });
-      }
-
-      if (availableSections.includes("providers")) {
-        systemItems.push({
-          title: "Providers",
-          url: "#",
-          section: "providers",
-        });
-      }
-
-      // Feedback - moved from management
-      if (availableSections.includes("feedback")) {
-        systemItems.push({
-          title: "Feedback",
-          url: "#",
-          section: "feedback",
-        });
-      }
-
-      // Logs - available for admin
-      if (availableSections.includes("logs")) {
-        systemItems.push({
-          title: "Logs",
-          url: "#",
-          section: "logs",
-        });
-      }
-    }
+      return {
+        title: section.title,
+        url: section.url,
+        icon: IconComponent as NavSection["icon"],
+        section: section.artifact,
+        items,
+      };
+    });
 
     // Apply search filter if search term exists
     if (searchTerm.trim()) {
-      const filteredMenu = menu
-        .map((section) => ({
-          ...section,
-          items:
+      const searchLower = searchTerm.toLowerCase();
+      return menu
+        .map((section) => {
+          if (section.section && !section.items) {
+            const matchesSearch =
+              section.title.toLowerCase().includes(searchLower) ||
+              section.section.toLowerCase().includes(searchLower);
+            return matchesSearch ? section : null;
+          }
+          const filteredItems =
             section.items?.filter(
               (item) =>
-                item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.section?.toLowerCase().includes(searchTerm.toLowerCase())
-            ) || [],
-        }))
-        .filter((section) => section.items.length > 0);
-
-      return filteredMenu;
+                item.title.toLowerCase().includes(searchLower) ||
+                item.section?.toLowerCase().includes(searchLower)
+            ) || [];
+          const sectionMatches = section.title
+            .toLowerCase()
+            .includes(searchLower);
+          if (filteredItems.length > 0 || sectionMatches) {
+            return { ...section, items: filteredItems };
+          }
+          return null;
+        })
+        .filter((section): section is NavSection => section !== null);
     }
 
     return menu;
-  }, [effectiveProfile, searchTerm, getCohortSubItems, availableSections]);
+  }, [profile, searchTerm, roleArtifacts]);
 
-  const handleSectionChange = createFlexibleSectionChangeHandler(
-    router,
-    onSectionChange,
-    pathname
-  );
-
-  // Wrapper function that closes mobile sidebar on section change
-  const handleSectionChangeWithClose = useCallback(
-    (section: string) => {
-      handleSectionChange(section);
-      // Close mobile sidebar after navigation
-      if (isMobile) {
-        setOpenMobile(false);
+  // Resolve the href for any menu item (for use with <Link>)
+  const getItemHref = useCallback(
+    (item: MenuItem): string => {
+      if (item.url && item.url !== "#") {
+        return item.url;
       }
+      return "#";
     },
-    [handleSectionChange, isMobile, setOpenMobile]
+    []
   );
 
   const handleItemClick = useCallback(
-    (item: MenuItem) => {
+    (e: React.MouseEvent, item: MenuItem) => {
+      // Let browser handle Cmd+Click / Ctrl+Click / middle-click natively (opens in new tab)
+      if (e.metaKey || e.ctrlKey || e.button === 1) return;
+
       // Prevent rapid navigation clicks that could cause freezing
-      if (isNavigating) return;
+      if (isNavigating) {
+        e.preventDefault();
+        return;
+      }
+
+      // Store scroll position before navigation to preserve it across re-renders
+      const scrollContainer = getScrollContainer();
+      const scrollBefore = scrollContainer?.scrollTop ?? null;
+      if (scrollBefore !== null && scrollBefore > 0) {
+        savedScrollPositionRef.current = scrollBefore;
+        sessionStorage.setItem("sidebar-scroll-position", String(scrollBefore));
+        sessionStorage.setItem("sidebar-is-restoring", "true");
+        isRestoringScrollRef.current = true;
+      }
 
       setIsNavigating(true);
 
-      if (item.url && item.url !== "#") {
-        // Navigate to the URL (for attempts)
-        router.push(item.url);
-      } else if (item.section) {
-        // Handle section changes
-        handleSectionChange(item.section);
+      if (onSectionChange && item.section) {
+        // If parent provided an onSectionChange callback, prevent Link navigation
+        // and use the callback instead
+        e.preventDefault();
+        onSectionChange(item.section);
+      } else {
+        // Let <Link> handle client-side navigation, but also trigger refresh
+        // for server component re-render
+        router.refresh();
       }
 
       // Close mobile sidebar after navigation
@@ -430,77 +254,59 @@ export function UnifiedSidebar({
       // Reset navigation state after a short delay
       setTimeout(() => setIsNavigating(false), 500);
     },
-    [router, handleSectionChange, isNavigating, isMobile, setOpenMobile]
+    [router, onSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
-  // Handle exit emulation
+  // Check if user can emulate (instructional and higher, and must be authenticated)
+  // Guest/default account users can't emulate even if they have the right role
+  const canEmulate = isAuthenticated && !!profile;
+
   const handleExitEmulation = useCallback(async () => {
-    if (!activeProfile?.id) return;
-
+    setIsExitingEmulation(true);
     try {
-      const result = await switchEffectiveProfile({
-        targetProfileId: activeProfile.id,
-        fullEmulation: false,
-        emulationTTL: null,
-      });
-
+      const result = await exitEmulation();
       if (!result.ok) {
         toast.error(result.reason || "Failed to exit emulation");
         return;
       }
-
-      toast.success("Emulation exited successfully");
-      // Session updated server-side, refresh to pick up changes
-      router.refresh();
+      toast.success("Exiting emulation...");
+      window.location.reload();
     } catch {
       toast.error("Failed to exit emulation");
+    } finally {
+      setIsExitingEmulation(false);
     }
-  }, [activeProfile?.id, switchEffectiveProfile, router]);
+  }, [exitEmulation]);
 
-  // Check if currently emulating
-  const isEmulating =
-    activeProfile &&
-    effectiveProfile &&
-    activeProfile.id !== effectiveProfile.id;
+  // Restore scroll position synchronously before paint to prevent flash
+  useLayoutEffect(() => {
+    const savedScrollFromStorage = sessionStorage.getItem(
+      "sidebar-scroll-position"
+    );
+    const isRestoringFromStorage =
+      sessionStorage.getItem("sidebar-is-restoring") === "true";
 
-  // Check if user can emulate (instructional and higher)
-  const canEmulate =
-    activeProfile &&
-    ["instructional", "admin", "superadmin"].includes(activeProfile.role);
+    if (savedScrollFromStorage && isRestoringFromStorage) {
+      const savedScroll = Number(savedScrollFromStorage);
+      const scrollContainer = getScrollContainer();
 
-  // Watch for profile changes and redirect if current page is not accessible
-  // TEMPORARILY DISABLED: Let users manually navigate from access denied screen for debugging
-  /*
-  React.useEffect(() => {
-    // Don't redirect if still loading or if we don't have a profile yet
-    if (isLoading || !effectiveProfile) {
-      return;
-    }
-
-    // Only redirect if current page is not accessible
-    if (!hasRouteAccess(pathname, effectiveProfile.role)) {
-      // Only redirect if we're not already on a redirect path
-      const redirectPath = getRedirectPathForRole(effectiveProfile.role);
-      if (pathname !== redirectPath) {
-        router.push(redirectPath);
+      if (scrollContainer && savedScroll > 0) {
+        scrollContainer.scrollTop = savedScroll;
+        // Clear saved position after restoration
+        sessionStorage.removeItem("sidebar-scroll-position");
+        sessionStorage.removeItem("sidebar-is-restoring");
+        savedScrollPositionRef.current = null;
+        isRestoringScrollRef.current = false;
       }
     }
-  }, [effectiveProfile, pathname, router, isLoading]);
-  */
+  }, [activeSection]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
   };
 
   const handleLoginOrLogout = async () => {
-    const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-    if (!activeProfile || (activeProfile.defaultProfile && !isFullEmulation)) {
-      // Default guest (unauthenticated) — navigate to login page
-      router.push("/login");
-      return;
-    }
-
-    // Handle logout for logged-in users (including authenticated guests)
+    // Handle logout for all users including guests
     setIsLoggingOut(true);
 
     // Clear guest mode state so post-logout is clean
@@ -510,7 +316,7 @@ export function UnifiedSidebar({
     toast.promise(
       async () => {
         try {
-          await signOut({ redirectTo: `${appPrefix}/login` });
+          await federatedLogout();
           return "Logged out successfully";
         } catch (error) {
           throw new Error(
@@ -528,8 +334,7 @@ export function UnifiedSidebar({
     );
   };
 
-  // Show skeleton while profile is loading or while we don't have a complete profile yet
-  const shouldShowSkeleton = isLoading || !effectiveProfile;
+  const shouldShowSkeleton = !profile;
 
   if (shouldShowSkeleton) {
     return <SidebarSkeleton />;
@@ -553,20 +358,16 @@ export function UnifiedSidebar({
                       style={{ outlineWidth: "1px", outlineStyle: "solid" }}
                     >
                       <AvatarFallback>
-                        {!effectiveProfile
-                          ? "GU"
-                          : getInitials(
-                              effectiveProfile?.firstName +
-                                " " +
-                                effectiveProfile?.lastName
-                            )}
+                        {!profile ? "GU" : getInitials(profile?.name || "")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col gap-0.5 leading-none text-left">
-                      <span className="font-medium truncate">{`${effectiveProfile?.firstName || "Guest"} ${effectiveProfile?.lastName || "User"}`}</span>
+                      <span className="font-medium truncate">
+                        {profile?.name || "Guest User"}
+                      </span>
                       {/* Capitalize the role for display */}
                       <span className="text-xs capitalize">
-                        {effectiveProfile?.role || "guest"}
+                        {profile?.role || "guest"}
                       </span>
                     </div>
                     <ChevronsUpDown className="ml-auto" />
@@ -576,42 +377,32 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {/* Profile - Hidden from guest role users */}
-                  {activeProfile && activeProfile.role !== "guest" && (
+                  {canEmulate ? (
                     <>
                       <DropdownMenuItem
-                        onClick={() => handleSectionChangeWithClose("profile")}
+                        onClick={() => setIsEmulateModalOpen(true)}
                       >
-                        <User className="h-4 w-4 mr-2" />
-                        Profile
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Emulate
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>
-                  )}
-                  {/* Emulate or Exit Emulation - Hidden in full emulation mode */}
-                  {!isFullEmulation && (
+                  ) : null}
+                  {isEmulation ? (
                     <>
-                      {isEmulating ? (
-                        <>
-                          <DropdownMenuItem onClick={handleExitEmulation}>
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Exit Emulation
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                        </>
-                      ) : canEmulate ? (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => setIsEmulateModalOpen(true)}
-                          >
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            Emulate
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                        </>
-                      ) : null}
+                      <DropdownMenuItem
+                        onClick={handleExitEmulation}
+                        disabled={isExitingEmulation}
+                        className={
+                          isExitingEmulation ? "opacity-70 cursor-not-allowed" : ""
+                        }
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        {isExitingEmulation ? "Exiting..." : "Exit Emulation"}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                     </>
-                  )}
+                  ) : null}
                   <DropdownMenuItem
                     onClick={handleLoginOrLogout}
                     disabled={isLoggingOut}
@@ -620,11 +411,7 @@ export function UnifiedSidebar({
                     }
                   >
                     <LogOut className="h-4 w-4 mr-2" />
-                    {isLoggingOut
-                      ? "Logging out..."
-                      : !activeProfile || (activeProfile.defaultProfile && !isFullEmulation)
-                        ? "Log in"
-                        : "Logout"}
+                    {isLoggingOut ? "Logging out..." : "Logout"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -659,9 +446,14 @@ export function UnifiedSidebar({
                     asChild
                     className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm font-medium cursor-pointer"
                   >
-                    <div
-                      onClick={() =>
-                        handleItemClick({
+                    <Link
+                      href={getItemHref({
+                        title: item.title,
+                        url: item.url,
+                        section: item.section!,
+                      })}
+                      onClick={(e) =>
+                        handleItemClick(e, {
                           title: item.title,
                           url: item.url,
                           section: item.section!,
@@ -671,7 +463,7 @@ export function UnifiedSidebar({
                     >
                       <item.icon className="h-4 w-4" />
                       {item.title}
-                    </div>
+                    </Link>
                   </SidebarGroupLabel>
                 </SidebarGroup>
               );
@@ -702,11 +494,16 @@ export function UnifiedSidebar({
                         {item.items?.map((subItem: MenuItem) => (
                           <SidebarMenuItem key={subItem.title}>
                             <SidebarMenuButton
+                              asChild
                               isActive={activeSection === subItem.section}
-                              onClick={() => handleItemClick(subItem)}
                               className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
                             >
-                              {subItem.title}
+                              <Link
+                                href={getItemHref(subItem)}
+                                onClick={(e) => handleItemClick(e, subItem)}
+                              >
+                                {subItem.title}
+                              </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
@@ -725,16 +522,10 @@ export function UnifiedSidebar({
             <SidebarMenuItem>
               <div className="px-2 pb-2">
                 <ReportProblem createFeedback={createFeedback}>
-                  <div className="relative group">
-                    <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5 transition-all duration-200 bg-transparent hover:bg-blue-50 dark:hover:bg-purple-950 text-blue-700 dark:text-purple-200 shadow-none hover:shadow-md">
-                      <div className="flex items-center justify-center gap-2">
-                        <AlertCircle className="h-4 w-4" />
-                        <span className="font-medium text-sm">
-                          Report Problem
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <Button variant="outline" className="w-full">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    Report Problem
+                  </Button>
                 </ReportProblem>
               </div>
             </SidebarMenuItem>
@@ -748,7 +539,7 @@ export function UnifiedSidebar({
       <EmulateProfileModal
         open={isEmulateModalOpen}
         onOpenChange={setIsEmulateModalOpen}
-        searchSimulatableProfiles={searchSimulatableProfiles}
+        searchProfiles={searchProfiles}
         switchEffectiveProfile={switchEffectiveProfile}
       />
     </>
