@@ -43386,6 +43386,26 @@ export interface components {
              */
             standard_ids: string[];
         };
+        /** StandardGroupMappingItem */
+        "StandardGroupMappingItem-Input": {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Passpoints */
+            passPoints: number;
+        };
+        /** StandardMappingItem */
+        "StandardMappingItem-Input": {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+        };
         /**
          * RubricEntry
          * @description Rubric entry with resource metadata.

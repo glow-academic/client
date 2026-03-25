@@ -309,6 +309,10 @@ export function UnifiedSidebar({
     // Handle logout for all users including guests
     setIsLoggingOut(true);
 
+    // Clear guest mode state so post-logout is clean
+    localStorage.removeItem("guestMode");
+    localStorage.removeItem("simulatedProfileId");
+
     toast.promise(
       async () => {
         try {
