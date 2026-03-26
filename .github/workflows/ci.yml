@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main, v1]
+  pull_request:
+    branches: [main, v1]
+
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - name: Build
+        env:
+          AUTH_SECRET: ci-test-secret
+          AUTH_ISSUER: https://example.com/auth/realms/master
+          AUTH_CLIENT_ID: ci-client
+          AUTH_CLIENT_SECRET: ci-secret
+          NEXT_PUBLIC_API_URL: https://example.com
+        run: yarn build
