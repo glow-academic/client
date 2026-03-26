@@ -49,3 +49,6 @@ cypress/screenshots
 .vscode/
 *.swp
 *.swo
+# Claude Code
+.claude/worktrees/
+.claude/plans/
