@@ -67,6 +67,8 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.version.outputs.tag }}
           tags: ${{ env.REGISTRY }}/learnloopllc/glow-client:${{ steps.version.outputs.tag }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/learnloopllc/glow-client
 
       - name: Generate compat.json
         run: |
