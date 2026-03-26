@@ -72,33 +72,29 @@ jobs:
             APP_VERSION=${{ steps.version.outputs.tag }}
           tags: ${{ env.REGISTRY }}/learnloopllc/glow-client:${{ steps.version.outputs.tag }}
 
-      - name: Create GitHub Release
-        if: steps.check.outputs.exists == 'false'
+      - name: Generate compat.json
+        if: steps.check.outputs.should_build == 'true'
+        run: |
+          python3 -c "
+          import yaml, json
+          with open('compat.yml') as f:
+              data = yaml.safe_load(f)
+          data['version'] = '${{ steps.version.outputs.version }}'
+          with open('compat.json', 'w') as f:
+              json.dump(data, f, indent=2)
+          "
+
+      - name: Create or update release
+        if: steps.check.outputs.should_build == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ steps.version.outputs.tag }}" \
-            --title "${{ steps.version.outputs.tag }}" \
-            --generate-notes
+          TAG="${{ steps.version.outputs.tag }}"
+          if gh release view "$TAG" &>/dev/null; then
+            gh release upload "$TAG" compat.json --clobber
+          else
+            gh release create "$TAG" compat.json \
+              --title "$TAG" \
+              --generate-notes
+          fi
 
-      - name: Generate GitHub App token
-        if: steps.check.outputs.exists == 'false'
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.DEPLOY_APP_ID }}
-          private-key: ${{ secrets.DEPLOY_APP_PRIVATE_KEY }}
-          owner: learnloopllc
-
-      - name: Dispatch compat-update
-        if: steps.check.outputs.exists == 'false'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          MIN_API=$(grep 'min_glow_api' compat.yml | cut -d'"' -f2)
-          gh api repos/learnloopllc/api/dispatches \
-            -f event_type=compat-update \
-            -f 'client_payload[component]=glow-client' \
-            -f "client_payload[version]=$VERSION" \
-            -f "client_payload[min_glow_api]=$MIN_API"

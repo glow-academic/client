@@ -1,2 +1,7 @@
+# Compatibility declaration for glow-client releases.
+# Uploaded as compat.json release asset by the tag workflow.
+# The LearnLoop deploy API reads this to filter compatible versions.
+
 component: glow-client
-min_glow_api: "2.0.0"
+min_api: "1.0.0"
+max_api_major: 2
