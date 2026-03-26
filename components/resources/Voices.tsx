@@ -67,7 +67,7 @@ export function Voices({
   required = false,
   group_id,
   create_tool_id,
-  isAutosaveEnabled = true,
+  isAutosaveEnabled: _isAutosaveEnabled = true,
   showAiGenerate = false,
   onGenerate,
 }: VoicesProps) {

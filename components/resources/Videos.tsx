@@ -170,6 +170,9 @@ export function Videos({
     }
   }, [ids, allVideos]);
 
+  // Create internal file input ref (must be before any early returns — rules of hooks)
+  const internalVideoInputRef = useRef<HTMLInputElement>(null);
+
   // Track which video IDs have already had resources created
   const createdVideoIdsRef = useRef<Set<string>>(new Set());
   const flushRef = useRef<(() => Promise<{ video_ids: string[] } | void>) | undefined>(undefined);
@@ -450,8 +453,6 @@ export function Videos({
     return null;
   }
 
-  // Create internal file input ref if not provided
-  const internalVideoInputRef = useRef<HTMLInputElement>(null);
   const effectiveVideoInputRef = videoInputRef || internalVideoInputRef;
 
   return (

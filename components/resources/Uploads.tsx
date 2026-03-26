@@ -94,7 +94,7 @@ export function Uploads({
   createUploadsAction,
   onGenerate,
   showAiGenerate = false,
-  uploadBasePath,
+  uploadBasePath: _uploadBasePath,
   uploadFileAction,
   searchTerm = "",
   isAutosaveEnabled = true,
@@ -287,6 +287,9 @@ export function Uploads({
       group_id,
       ids,
       onChange,
+      create_tool_id,
+      isAutosaveEnabled,
+      onFileUploadComplete,
     ]
   );
 
