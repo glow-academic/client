@@ -142,7 +142,7 @@ export function Simulations({
             : {}),
         };
       });
-  }, [allSimulations]);
+  }, [allSimulations, normalizeDescription]);
 
   // Filter simulations based on search term and show selected filter
   const filteredSimulationItems = useMemo(() => {

@@ -163,12 +163,12 @@ export function Texts({
         setShowCreateForm(false);
         toast.success("Text created");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to create text");
     } finally {
       setIsCreating(false);
     }
-  }, [newTextContent, createTextsAction, create_tool_id, group_id, text_ids, onChange, isAutosaveEnabled, onTextContentCreate]);
+  }, [newTextContent, createTextsAction, create_tool_id, text_ids, onChange, isAutosaveEnabled, onTextContentCreate]);
 
   // Flush function for manual save mode - returns all current text IDs
   flushRef.current = async (): Promise<{ text_ids: string[] } | void> => {
