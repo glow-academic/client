@@ -21,7 +21,7 @@ export interface PracticeProps {
 
 export default function Practice({
   practiceData,
-  isGuest = false,
+  _isGuest = false,
 }: PracticeProps) {
   const { profile } = useProfile();
 

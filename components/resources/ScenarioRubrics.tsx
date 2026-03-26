@@ -137,7 +137,7 @@ export function ScenarioRubrics({
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
 
   // Socket-based AI suggestion handling via shared hook
-  type AiSuggestionItem = Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">;
+  type _AiSuggestionItem = Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">;
   const {
     isGenerating: aiIsGenerating,
     aiSuggestions,

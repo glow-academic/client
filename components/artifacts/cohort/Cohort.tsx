@@ -576,7 +576,8 @@ function CohortComponent({
     } else {
       patchActionRef.current = undefined;
     }
-  }, [patchCohortDraftAction]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchCohortDraftAction, serverSyncPendingRef]);
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateDepartmentIdsStr = React.useMemo(
@@ -702,7 +703,8 @@ function CohortComponent({
 
       return base;
     },
-    [stableCohortDataFields],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   const draftVersion =
@@ -1578,6 +1580,7 @@ function CohortComponent({
           return null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       // Use stableCohortDataFields instead of cohortData to prevent callback recreation
       // when only object reference changes (but content is same)
@@ -1605,8 +1608,10 @@ function CohortComponent({
       formState.department_ids,
       formState.simulation_ids,
       formState.simulation_positions,
+      formState.simulation_availability_ids,
       formState.profile_ids,
       formState.profile_persona_ids,
+      cohortId,
       createNamesAction,
       createDescriptionsAction,
       createSimulationPositionsAction,

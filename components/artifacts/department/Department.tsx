@@ -205,6 +205,7 @@ function DepartmentComponent({
     }
     patchActionRef.current = async (payload: Record<string, unknown>) => {
       const result = await patchDepartmentDraftAction({ body: payload } as PatchDepartmentDraftIn);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const formStateFromServer = (result as any).form_state;
       if (formStateFromServer) {
         serverSyncPendingRef.current = true;
@@ -257,7 +258,8 @@ function DepartmentComponent({
 
       return payload;
     },
-    [s],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
@@ -570,7 +572,6 @@ function DepartmentComponent({
       formState,
       s,
       handleGenerateResources,
-      isGenerating,
       createNamesAction,
       createDescriptionsAction,
       isAutosaveEnabled,

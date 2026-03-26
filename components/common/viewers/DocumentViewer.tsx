@@ -68,6 +68,7 @@ export default function DocumentViewer({
         setContent(null);
 
         // HTML documents (no upload, content stored in texts_entry)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((document as any).template && !document.upload_id) {
           const response = await fetch("/api/resources/documents/html", {
             method: "POST",
@@ -146,10 +147,10 @@ export default function DocumentViewer({
         blobUrlRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    document.document_id,
-    document.name,
-    document.upload_id,
+    document,
+    downloadBaseUrl,
     isFormDocument,
     compact,
   ]);

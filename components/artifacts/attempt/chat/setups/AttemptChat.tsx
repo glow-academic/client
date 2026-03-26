@@ -112,9 +112,9 @@ export function AttemptChat({
     initialAttemptData.current_chat_index ?? 0
   );
   const [showDocuments, setShowDocuments] = useState(true);
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showDocumentModal, _setShowDocumentModal] = useState(false);
   const [showObjectives, setShowObjectives] = useState(false);
-  const [showObjectivesModal, setShowObjectivesModal] = useState(false);
+  const [showObjectivesModal, _setShowObjectivesModal] = useState(false);
   const [showGrades, setShowGrades] = useState(false);
   const [showResponses, setShowResponses] = useState(false);
   const [userHasManuallyToggledGrades, setUserHasManuallyToggledGrades] = useState(false);
@@ -226,6 +226,7 @@ export function AttemptChat({
         return newMap;
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -339,6 +340,7 @@ export function AttemptChat({
         );
         return {
           ...q,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           options: options.length > 0 ? options : (q as any).options,
         };
       });
@@ -473,7 +475,7 @@ export function AttemptChat({
   }, [serverTimer, localElapsedOffset]);
 
   // Check if this is a single chat attempt (no pagination needed)
-  const isSingleChatAttempt = chats.length <= 1;
+  const _isSingleChatAttempt = chats.length <= 1;
 
   // Get grade data for all chats (for pass/fail badges in pagination)
   const allDynamicRubrics = useMemo(() => {
@@ -566,7 +568,8 @@ export function AttemptChat({
     }, 500);
 
     return () => clearTimeout(gracePeriodTimeout);
-  }, [attemptData, currentChatIndex, setStreamingContent, setOptimisticMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attemptData, currentChatIndex, setStreamingContent, setOptimisticMessages, currentChat?.id, messagesByChat]);
 
   // Auto-show grades/rubric or responses when all chats are completed
   useEffect(() => {
@@ -591,6 +594,7 @@ export function AttemptChat({
     attemptData,
     currentChatIndex,
     showResults,
+    resolvedChat?.questions?.length,
   ]);
 
   // Reset question index when chat changes
@@ -846,7 +850,7 @@ export function AttemptChat({
   const chatHeaderProps: ChatHeaderProps = useMemo(() => {
     const chatDocuments = resolvedChat?.documents || [];
     const hasContent = chatDocuments.length > 0;
-    const currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
+    const _currentChatData = attemptData?.entries?.attempt_chat?.[currentChatIndex];
     const hasVideoQuestions = (resolvedChat?.questions?.length ?? 0) > 0;
     return {
       timer: attemptData?.timer ? displayTimer : undefined,
@@ -902,6 +906,7 @@ export function AttemptChat({
     showObjectives,
     showGrades,
     showResponses,
+    handleToggleGrades,
   ]);
 
   const chatAreaProps = useMemo(() => {
@@ -982,13 +987,11 @@ export function AttemptChat({
     currentChatIndex,
     currentChat,
     resolvedChat,
-    scenario,
     chatAreaViewMode,
     streamingContent,
     optimisticMessages,
     messagesByChat,
     handleSendMessage,
-    handleQuizResponse,
     isSendingMessage,
     isActive,
     isAttemptOwner,

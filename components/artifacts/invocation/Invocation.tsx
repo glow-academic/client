@@ -171,6 +171,7 @@ export default function Invocation({
       }
 
       // Sync form state from server response (server is source of truth)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fs = (result as any).form_state as
         | {
             name_ids: string[];
@@ -317,6 +318,7 @@ export default function Invocation({
       {s.flags?.show && (
         <Flags
           flags={
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (s.flags.resources ?? []).map((f: any) => ({
               key: f.id,
               label: f.name ?? f.id,

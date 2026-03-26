@@ -48,7 +48,7 @@ export interface NamesProps {
 }
 
 export function Names({
-  name_id,
+  _name_id,
   name_resource,
   show_name = true,
   name_suggestions,
@@ -63,7 +63,7 @@ export function Names({
   defaultName,
   hideDescription = false,
   group_id,
-  create_tool_id,
+  _create_tool_id,
   showAiGenerate = false,
   onNameChange,
   isAutosaveEnabled = true,

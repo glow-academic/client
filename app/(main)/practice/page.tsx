@@ -58,7 +58,7 @@ export default async function PracticePage({
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
   const historySearch = q.historySearch ?? undefined;
-  const historySimulationIds = q.historySimulationIds ?? undefined;
+  const _historySimulationIds = q.historySimulationIds ?? undefined;
   const historyScenarioIds = q.historyScenarioIds ?? undefined;
   const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
   const historySortBy = q.historySortBy ?? "date";

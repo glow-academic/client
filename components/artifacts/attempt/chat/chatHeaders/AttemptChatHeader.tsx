@@ -123,7 +123,7 @@ export function AttemptChatHeader({
   disabled = false,
 }: ChatHeaderProps) {
   const isInfiniteMode = attempt?.infinite_mode ?? false;
-  const hasTimeLimit = Boolean(simulation?.time_limit);
+  const _hasTimeLimit = Boolean(simulation?.time_limit);
   const timeRemaining = timer?.remaining ?? null;
 
   const shouldShowObjectives =

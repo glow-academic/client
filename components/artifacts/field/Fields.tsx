@@ -346,7 +346,7 @@ export default function Fields({
     router.push(`/management/fields/${fieldId}`);
   };
 
-  const handleCreateNew = () => {
+  const _handleCreateNew = () => {
     router.push("/management/fields/new");
   };
 

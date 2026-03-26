@@ -41,6 +41,7 @@ export interface DocumentAreaProps {
   selected_document_id: string | null;
   on_select_document: (id: string | null) => void;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   document_viewer?: React.ComponentType<any>;
   disabled?: boolean;
 
@@ -57,8 +58,8 @@ export function AttemptDocumentArea({
   selected_document_id,
   on_select_document,
   document_viewer: DocumentViewerComponent = DocumentViewer,
-  disabled = false,
-  is_graded_view = false,
+  disabled: _disabled = false,
+  is_graded_view: _is_graded_view = false,
 }: DocumentAreaProps) {
   if (!visible) return null;
 

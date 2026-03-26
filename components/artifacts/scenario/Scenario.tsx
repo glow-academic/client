@@ -606,6 +606,7 @@ function ScenarioComponent({
     } else {
       patchActionRef.current = undefined;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patchScenarioDraftAction]);
 
   // formStateKey excludes draftId -- the hook prepends it
@@ -1374,6 +1375,7 @@ function ScenarioComponent({
         throw error;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       formState,
       stableScenarioDataFields?.names?.required,
@@ -2054,6 +2056,7 @@ function ScenarioComponent({
           return null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       stableScenarioDataFields,
       disabled,

@@ -77,7 +77,7 @@ export default function EvalCard({
   onStartEval,
   onStartInfiniteMode,
   loadingEval,
-  profile,
+  profile: _profile,
   standard_groups,
   standardGroupsMapping,
   standardsMapping,

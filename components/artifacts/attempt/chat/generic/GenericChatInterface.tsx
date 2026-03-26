@@ -101,11 +101,11 @@ export function GenericChatInterface({
   document_area: DocumentArea,
   input_area: InputArea,
   chat_area_view_mode,
-  on_send_message,
-  on_stop_message,
-  on_voice_start,
-  on_voice_stop,
-  layout = "default",
+  on_send_message: _on_send_message,
+  on_stop_message: _on_stop_message,
+  on_voice_start: _on_voice_start,
+  on_voice_stop: _on_voice_stop,
+  layout: _layout = "default",
   show_documents = false,
   show_document_modal = false,
   show_objectives_modal = false,
@@ -165,10 +165,12 @@ export function GenericChatInterface({
                 )}
                 {chat_area_view_mode === "video" ? (
                   <div className={cn("px-1 relative z-10", hide_input_area && "h-full")}>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <ChatArea {...(chat_area_props as any)} />
                   </div>
                 ) : (
                   <ScrollArea className="flex-1 px-1 min-h-0 relative z-10">
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                     <ChatArea {...(chat_area_props as any)} />
                   </ScrollArea>
                 )}
@@ -196,10 +198,13 @@ export function GenericChatInterface({
                   >
                     {input_area_ref ? (
                       <InputArea
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         ref={input_area_ref as any}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         {...(input_area_props as any)}
                       />
                     ) : (
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       <InputArea {...(input_area_props as any)} />
                     )}
                   </div>

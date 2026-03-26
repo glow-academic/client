@@ -162,7 +162,7 @@ export function ScenarioPositions({
   }, [scenarios, scenario_resources]);
 
   // Socket-based AI suggestion handling via shared hook
-  type AiPositionSuggestion = Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">;
+  type _AiPositionSuggestion = Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">;
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,
@@ -375,6 +375,7 @@ export function ScenarioPositions({
         }
       })();
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       localPositions,
       simulation_id,

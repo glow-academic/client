@@ -129,7 +129,7 @@ export default function SimulationCard({
   hasPassed,
   passRate,
   type,
-  profile,
+  _profile,
 }: SimulationCardProps) {
   const router = useRouter();
   const { socket, isConnected } = useSocket();

@@ -163,7 +163,7 @@ export function Texts({
         setShowCreateForm(false);
         toast.success("Text created");
       }
-    } catch (_error) {
+    } catch {
       toast.error("Failed to create text");
     } finally {
       setIsCreating(false);

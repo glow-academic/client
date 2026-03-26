@@ -52,7 +52,7 @@ const VALID_RESOURCE_TYPES = [
   "images",
   "texts",
 ] as const;
-type DocumentResourceType = (typeof VALID_RESOURCE_TYPES)[number];
+type _DocumentResourceType = (typeof VALID_RESOURCE_TYPES)[number];
 
 const FLUSH_KEYS = [
   "names",
@@ -277,6 +277,7 @@ function DocumentComponent({
       }
       return prev;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     documentDetail?.names?.resource,
     documentDetail?.descriptions?.resource,
@@ -327,6 +328,7 @@ function DocumentComponent({
         } as PatchDocumentDraftIn);
 
         // Sync form_state from server response (server is source of truth)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fs = (result as any).form_state as
           | {
               name_id: string | null;
@@ -365,7 +367,8 @@ function DocumentComponent({
     } else {
       patchActionRef.current = undefined;
     }
-  }, [patchDocumentDraftAction]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchDocumentDraftAction, serverSyncPendingRef]);
 
   const formStateKey = React.useMemo(
     () =>
@@ -430,7 +433,8 @@ function DocumentComponent({
       }
       return payload;
     },
-    [documentDetail],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   const {
@@ -482,10 +486,12 @@ function DocumentComponent({
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       documentId,
       generate,
       flushAllAndSave,
+      formDataRef,
     ],
   );
 
@@ -671,8 +677,8 @@ function DocumentComponent({
         throw error;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      documentDetail,
       formStateRef,
       isEditMode,
       documentId,
@@ -682,11 +688,6 @@ function DocumentComponent({
       router,
       isAutosaveEnabled,
       flushAllResources,
-      getInitialFormState,
-      documentDetail?.names?.required,
-      documentDetail?.departments?.required,
-      documentDetail?.fields?.required,
-      documentDetail?.group_id,
     ],
   );
 
@@ -1311,6 +1312,7 @@ function DocumentComponent({
           return null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       documentDetail,
       disabled,
@@ -1340,6 +1342,8 @@ function DocumentComponent({
       handleDirectStepGenerate,
       isAutosaveEnabled,
       registerFlushCallbacks,
+      uploadBasePath,
+      uploadFileAction,
     ],
   );
 

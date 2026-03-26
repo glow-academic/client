@@ -872,7 +872,7 @@ export default function Profiles({
 
     setIsSubmitting(true);
     try {
-      const profiles = validRows.map((row) => {
+      const _profiles = validRows.map((row) => {
         const rowDeptIds = row.department_ids || [];
         const deptIds = rowDeptIds
           .map((deptIdOrName) => {

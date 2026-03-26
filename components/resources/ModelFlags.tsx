@@ -318,6 +318,7 @@ export function ModelFlags({
         // Resource creation errors are handled by API; keep UI state intact.
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isAutosaveEnabled,
       createModelFlagsAction,

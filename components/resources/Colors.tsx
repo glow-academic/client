@@ -99,7 +99,7 @@ export function Colors({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   group_id,
-  create_tool_id,
+  _create_tool_id,
   showAiGenerate = false,
   isAutosaveEnabled = true,
   // Legacy props for backward compatibility
@@ -110,7 +110,7 @@ export function Colors({
 }: ColorsProps) {
   // Use standardized props with fallback to legacy props
   const resource = color_resource ?? colorResource ?? null;
-  const resourceId = color_id ?? _colorId ?? null;
+  const _resourceId = color_id ?? _colorId ?? null;
   const show = show_color ?? false;
   const suggestionsList = useMemo(
     () => color_suggestions ?? colorSuggestions ?? [],
@@ -327,6 +327,7 @@ export function Colors({
         onChange(selectedIds);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [ids, onChange]
   );
 

@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useChartColors } from "@/lib/utils/chartColors";
 import { BarChart3 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
   Bar,
@@ -178,13 +178,13 @@ export default function SimulationPerformance({
 
   const [selectedSimulationIdInternal, setSelectedSimulationIdInternal] = useState<string>(initialSelectedSimulations?.[0] ?? "");
   const selectedSimulationId = initialSelectedSimulations?.[0] ?? selectedSimulationIdInternal;
-  const setSelectedSimulationId = (id: string) => {
+  const setSelectedSimulationId = useCallback((id: string) => {
     if (onSimulationSelect) {
       onSimulationSelect(id ? [id] : []);
     } else {
       setSelectedSimulationIdInternal(id);
     }
-  };
+  }, [onSimulationSelect]);
   const [isMobile, setIsMobile] = useState(false);
 
   // Get chart colors 1-5 from CSS variables
@@ -208,7 +208,7 @@ export default function SimulationPerformance({
     ) {
       setSelectedSimulationId(validSimulationIds[0] || "");
     }
-  }, [validSimulationIds, selectedSimulationId]);
+  }, [validSimulationIds, selectedSimulationId, setSelectedSimulationId]);
 
   const data = useMemo(
     () =>

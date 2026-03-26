@@ -137,7 +137,7 @@ export function ModelRubrics({
   const allRubrics = useMemo(() => rubrics ?? [], [rubrics]);
 
   // Socket-based AI suggestion handling via shared hook
-  type AiSuggestionItem = Pick<ModelRubricResourceItem, "id" | "model_id" | "rubric_id">;
+  type _AiSuggestionItem = Pick<ModelRubricResourceItem, "id" | "model_id" | "rubric_id">;
   const {
     isGenerating: aiIsGenerating,
     aiSuggestions,

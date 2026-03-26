@@ -146,7 +146,7 @@ export function Questions({
   }, [questionMapping, ids, allQuestions]);
 
   // AI suggestion handling via shared hook
-  type AiQuestionSuggestion = Pick<QuestionsResourceItem, "question_id" | "question_text">[];
+  type _AiQuestionSuggestion = Pick<QuestionsResourceItem, "question_id" | "question_text">[];
   const {
     isGenerating: aiIsGenerating,
     aiSuggestion,

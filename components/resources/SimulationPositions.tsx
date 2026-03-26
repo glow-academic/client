@@ -121,7 +121,7 @@ export function SimulationPositions({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  type AiPositionSuggestion = Pick<
+  type _AiPositionSuggestion = Pick<
     SimulationPositionResourceItem,
     "id" | "simulation_id" | "value"
   >;

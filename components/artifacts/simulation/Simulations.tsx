@@ -156,7 +156,7 @@ export function Simulations({
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
-  const [localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
+  const [_localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
 
   // URL parameter update helper
   const updateSimulationsParams = useCallback(
@@ -537,7 +537,7 @@ export function Simulations({
     [updateSimulationsParams],
   );
 
-  const handleFlagSearchChange = useCallback(
+  const _handleFlagSearchChange = useCallback(
     (term: string) => {
       setLocalFlagSearch(term);
       if (flagSearchTimeoutRef.current) clearTimeout(flagSearchTimeoutRef.current);

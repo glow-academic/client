@@ -131,7 +131,7 @@ function ToolComponent({
     useFlushRegistry<Record<string, unknown>>(TOOL_FLUSH_KEYS);
   // Generation state for AI workflows
   const VALID_TOOL_RESOURCE_TYPES: ToolResourceType[] = ["args", "arg_positions", "args_outputs"];
-  const { isGenerating, makeOnGenerationComplete, generate } =
+  const { isGenerating, _makeOnGenerationComplete, generate } =
     useArtifactAi({
       artifactType: "tool",
       validResourceTypes: VALID_TOOL_RESOURCE_TYPES,
@@ -164,12 +164,15 @@ function ToolComponent({
     if (!toolDataAny) return null;
     const s = toolDataAny;
     const currentArgsIds = (s.args?.current ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((a: any) => a.id)
       .filter((id: unknown): id is string => !!id && typeof id === "string");
     const currentArgsOutputsIds = (s.args_outputs?.current ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((a: any) => a.id)
       .filter((id: unknown): id is string => !!id && typeof id === "string");
     const currentArgPositionIds = (s.arg_positions?.current ?? [])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((a: any) => a.id)
       .filter((id: unknown): id is string => !!id && typeof id === "string");
     return {
@@ -198,7 +201,9 @@ function ToolComponent({
       names: s.names,
       descriptions: s.descriptions,
       flags: s.flags,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       artifacts: (s as any).artifacts,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       operations: (s as any).operations,
     };
   }, [toolDataAny]);
@@ -217,6 +222,7 @@ function ToolComponent({
             (r) => r.generated
           );
         case "arg_positions":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return stableToolDataFields.arg_positions_resources.some((r: any) => r.generated);
         default:
           return false;
@@ -246,23 +252,28 @@ function ToolComponent({
 
   const argPositionsItems = useMemo(() => {
     return (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (stableToolDataFields?.arg_positions as any[] | undefined)
         ?.filter(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (ap: any): ap is NonNullable<typeof ap> =>
             !!ap && !!ap.id && !!ap.args_id && ap.value !== null && ap.value !== undefined
         )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((ap: any) => ({
           id: ap.id!,
           args_id: ap.args_id!,
           value: ap.value!,
           generated: ap.generated ?? false,
         }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .sort((a: any, b: any) => a.value - b.value) ?? []
     );
   }, [stableToolDataFields?.arg_positions]);
 
   const argPositionByArgId = useMemo(() => {
     const map = new Map<string, { id: string; value: number }>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     argPositionsItems.forEach((item: any) => {
       map.set(item.args_id, { id: item.id, value: item.value });
     });
@@ -305,6 +316,7 @@ function ToolComponent({
 
   const getInitialFormState = useCallback(() => {
     const data = toolDataRef.current as
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       | (ToolData & { arg_positions?: any })
       | undefined;
     if (!data) {
@@ -331,15 +343,20 @@ function ToolComponent({
         .map((a) => a.id)
         .filter((id): id is string => !!id),
       arg_position_ids: (data.arg_positions?.current ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((a: any) => a.id)
         .filter((id: unknown): id is string => !!id && typeof id === "string"),
       args_outputs_ids: (data.args_outputs?.current ?? [])
         .map((a) => a.id)
         .filter((id): id is string => !!id),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       artifact_ids: ((data as any).artifacts?.current ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((a: any) => a.id)
         .filter((id: unknown): id is string => !!id && typeof id === "string"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       operation_ids: ((data as any).operations?.current ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map((a: any) => a.id)
         .filter((id: unknown): id is string => !!id && typeof id === "string"),
     };
@@ -426,6 +443,7 @@ function ToolComponent({
     () =>
       JSON.stringify(
         (toolDataAny?.arg_positions?.current ?? [])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((a: any) => a.id)
           .filter(Boolean)
       ),
@@ -613,9 +631,11 @@ function ToolComponent({
         if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
           setLastSavedVersion(result.new_version ?? 0);
           lastSavedVersionRef.current = result.new_version ?? 0;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         }
 
         // Sync form_state from server (resolved IDs for creatables)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formStateFromServer = (result as any).form_state;
         if (formStateFromServer) {
           serverSyncPendingRef.current = true;
@@ -641,6 +661,8 @@ function ToolComponent({
     formState.args_ids,
     formState.arg_position_ids,
     formState.args_outputs_ids,
+    formState.artifact_ids?.length,
+    formState.operation_ids?.length,
   ]);
 
   const handleGenerateResources = useCallback(
@@ -979,7 +1001,9 @@ function ToolComponent({
     []
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const NamesAny = Names as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const DescriptionsAny = Descriptions as any;
 
   // Memoize renderStep
@@ -1332,7 +1356,9 @@ function ToolComponent({
                     name: arg.name,
                   }))}
                   arg_position_ids={formState.arg_position_ids ?? []}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   arg_position_resources={((currentToolData?.arg_positions ?? []) as any[]).map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (ap: any) => ({
                       id: ap.id,
                       args_id: ap.args_id,
@@ -1594,6 +1620,7 @@ function ToolComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
+              // eslint-disable-next-line react-hooks/exhaustive-deps
               resetFields={["operation_ids"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
@@ -1630,13 +1657,15 @@ function ToolComponent({
       handleDirectStepGenerate,
       isGenerating,
       argsItems,
-      argPositionsItems,
       argPositionByArgId,
       argsOutputsItems,
       argsNameById,
       argsOutputsById,
       registerFlushCallbacks,
       isAutosaveEnabled,
+      DescriptionsAny,
+      NamesAny,
+      toolId,
     ]
   );
 

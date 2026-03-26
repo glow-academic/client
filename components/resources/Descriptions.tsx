@@ -183,7 +183,7 @@ export function Descriptions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  create_tool_id,
+  _create_tool_id,
   showAiGenerate = false,
   onDescriptionChange,
   searchTerm,

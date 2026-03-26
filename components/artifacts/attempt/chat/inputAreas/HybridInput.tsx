@@ -154,6 +154,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to start voice mode";
+        // eslint-disable-next-line no-console
         console.error("[Voice] Error starting voice mode:", errorMessage);
         toast.error(errorMessage);
         await cleanup();
@@ -172,6 +173,7 @@ export const HybridInput = forwardRef<HybridInputHandle, HybridInputProps>(
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to stop voice mode";
+        // eslint-disable-next-line no-console
         console.error("[Voice] Error stopping voice mode:", errorMessage);
         toast.error(errorMessage);
       } finally {

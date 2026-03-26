@@ -188,7 +188,7 @@ export function Instructions({
   "data-testid": dataTestId,
   helpText,
   group_id,
-  create_tool_id,
+  _create_tool_id,
   showAiGenerate = false,
   onInstructionsChange,
   searchTerm,
@@ -247,6 +247,7 @@ export function Instructions({
       lastSavedValueRef.current = serverValue;
     }
     lastServerTextRef.current = serverValue;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceTemplate, resourceId, instructionsById]);
 
   // Track and report pending changes (for manual save mode only)

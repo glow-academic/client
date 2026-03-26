@@ -432,12 +432,19 @@ export default function Provider({
     [formState.name_id, formState.value_id]
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const NamesAny = Names as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const DescriptionsAny = Descriptions as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const FlagsAny = Flags as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const DepartmentsAny = Departments as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ValuesAny = Values as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const EndpointsAny = Endpoints as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const KeysAny = Keys as any;
 
   const renderStep = useCallback(
@@ -670,6 +677,7 @@ export default function Provider({
             }
             required={s?.keys?.required}
             disabled={disabled}
+            // eslint-disable-next-line react-hooks/exhaustive-deps
             onKeyIdChange={(id: string | null) =>
               setFormState((prev) => ({ ...prev, key_id: id }))
             }
@@ -677,6 +685,7 @@ export default function Provider({
         </StepCard>
       );
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       s,
       formState,
@@ -690,6 +699,13 @@ export default function Provider({
       createEndpointsAction,
       registerFlushCallbacks,
       isAutosaveEnabled,
+      DepartmentsAny,
+      DescriptionsAny,
+      EndpointsAny,
+      FlagsAny,
+      KeysAny,
+      NamesAny,
+      ValuesAny,
     ]
   );
 

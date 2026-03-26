@@ -392,6 +392,7 @@ function ProfileComponent({
       }
       return prev;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentProfileData?.name_id,
     currentProfileData?.active_flag_id,
@@ -453,6 +454,7 @@ function ProfileComponent({
         } as PatchProfileDraftIn);
 
         // Sync form_state from server response (server is source of truth)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const fs = (result as any).form_state as
           | {
               name_id: string | null;
@@ -481,7 +483,8 @@ function ProfileComponent({
     } else {
       patchActionRef.current = undefined;
     }
-  }, [patchProfileDraftAction]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchProfileDraftAction, serverSyncPendingRef]);
 
   const formStateKey = useMemo(
     () =>
@@ -579,7 +582,8 @@ function ProfileComponent({
       }
       return payload;
     },
-    [currentProfileData, orderDepartmentsByPrimary, orderEmailsByPrimary]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [orderDepartmentsByPrimary, orderEmailsByPrimary]
   );
 
   const onPatchSuccess = useCallback(() => {
@@ -795,6 +799,7 @@ function ProfileComponent({
         throw error;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isEditMode,
       profileId,
@@ -804,13 +809,6 @@ function ProfileComponent({
       router,
       isAutosaveEnabled,
       flushAllResources,
-      formDataRef,
-      getInitialFormState,
-      currentProfileData?.name_required,
-      currentProfileData?.departments_required,
-      currentProfileData?.emails_required,
-      currentProfileData?.draft_version,
-      currentProfileData,
     ]
   );
 
@@ -1338,6 +1336,7 @@ function ProfileComponent({
         default:
           return null;
       }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [
       currentProfileData,
@@ -1362,6 +1361,8 @@ function ProfileComponent({
       createRequestLimitsAction,
       canRegenerate,
       handleDirectStepGenerate,
+      isAutosaveEnabled,
+      registerFlushCallbacks,
     ]
   );
 

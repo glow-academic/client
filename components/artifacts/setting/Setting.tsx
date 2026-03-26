@@ -138,7 +138,7 @@ function SettingComponent({
   const VALID_SETTING_RESOURCE_TYPES: ResourceType[] = [
     "names", "descriptions", "colors", "flags", "departments",
   ];
-  const { isGenerating, makeOnGenerationComplete, generate } =
+  const { isGenerating, _makeOnGenerationComplete, generate } =
     useArtifactAi({
       artifactType: "setting",
       validResourceTypes: VALID_SETTING_RESOURCE_TYPES,

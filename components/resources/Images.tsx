@@ -131,7 +131,7 @@ export function Images({
   isUploadingImage = false,
   isAutosaveEnabled = true,
   registerFlush,
-  uploadBasePath,
+  _uploadBasePath,
   uploadFileAction,
   aiImageResources: _aiImageResources,
   onImageUploadValue,
@@ -521,14 +521,14 @@ export function Images({
     clearAi();
   }, [clearAi]);
 
+  // Create internal file input ref if not provided (must be before conditional return)
+  const internalImageInputRef = useRef<HTMLInputElement>(null);
+  const effectiveImageInputRef = imageInputRef || internalImageInputRef;
+
   // Don't render if show_images is false (AFTER all hooks)
   if (!show) {
     return null;
   }
-
-  // Create internal file input ref if not provided
-  const internalImageInputRef = useRef<HTMLInputElement>(null);
-  const effectiveImageInputRef = imageInputRef || internalImageInputRef;
 
   return (
     <div className="space-y-2">

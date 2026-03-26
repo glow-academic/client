@@ -24,7 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useChartColors } from "@/lib/utils/chartColors";
 import { BarChart3, TrendingDown, TrendingUp } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TruncatedInsight } from "../TruncatedInsight";
 
 type ScenarioSummary = {
@@ -114,13 +114,13 @@ export default function ScenarioComposition({
     useState<string>(initialSelectedScenarios?.[0] ?? "");
   const selectedScenarioId =
     initialSelectedScenarios?.[0] ?? selectedScenarioIdInternal;
-  const setSelectedScenarioId = (id: string) => {
+  const setSelectedScenarioId = useCallback((id: string) => {
     if (onScenarioSelect) {
       onScenarioSelect(id ? [id] : []);
     } else {
       setSelectedScenarioIdInternal(id);
     }
-  };
+  }, [onScenarioSelect]);
 
   const [isMobile, setIsMobile] = useState(false);
   const chartColors = useChartColors();
@@ -143,7 +143,7 @@ export default function ScenarioComposition({
     ) {
       setSelectedScenarioId(validScenarioIds[0] || "");
     }
-  }, [validScenarioIds, selectedScenarioId]);
+  }, [validScenarioIds, selectedScenarioId, setSelectedScenarioId]);
 
   // Get the summary for the selected scenario
   const selectedSummary = useMemo(

@@ -152,6 +152,7 @@ export function ProfilePersonas({
   });
 
   // AI suggestions: hook suggestion takes priority, then prop fallback
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const aiSuggestions = aiSuggestion
     ? [aiSuggestion]
     : aiProfilePersonaResources ?? null;

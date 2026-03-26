@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 type AvailableContinuationOptions =
   components["schemas"]["AvailableContinuationOptions"];
-type ContinuationOption = components["schemas"]["ContinuationOption"];
+type _ContinuationOption = components["schemas"]["ContinuationOption"];
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -43,8 +43,8 @@ export function AttemptLobby({
   chatEntryId,
   simulationName,
   draftId,
-  infiniteMode,
-  userInstructions,
+  infiniteMode: _infiniteMode,
+  userInstructions: _userInstructions,
   continuationOptions,
 }: AttemptLobbyProps) {
   const router = useRouter();
@@ -59,7 +59,7 @@ export function AttemptLobby({
   );
 
   // Listen for attempt lifecycle events
-  const { nextScenario, usePrevious } = useAttemptLifecycle({
+  const { nextScenario, usePrevious: applyPrevious } = useAttemptLifecycle({
     socket,
     attemptId,
     onChatStarted: useCallback((data: AttemptChatStartedEvent) => {
@@ -111,7 +111,6 @@ export function AttemptLobby({
     isConnected,
     attemptId,
     draftId,
-    userInstructions,
     nextScenario,
   ]);
 
@@ -136,8 +135,8 @@ export function AttemptLobby({
     setIsStarting(true);
     isStartingRef.current = true;
 
-    usePrevious(attemptId, previousChatMap);
-  }, [selectedOptionIndex, options, socket, isConnected, attemptId, usePrevious]);
+    applyPrevious(attemptId, previousChatMap);
+  }, [selectedOptionIndex, options, socket, isConnected, attemptId, applyPrevious]);
 
   const handleCustomize = useCallback(() => {
     router.push(`/attempt/${attemptId}/${chatEntryId}`);

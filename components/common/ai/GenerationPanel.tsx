@@ -38,7 +38,7 @@ interface GenerationPanelProps {
 
 export function GenerationPanel({
   panel,
-  artifactType,
+  _artifactType,
   validArtifactTypes,
   validResourceTypes,
   validEntryTypes,

@@ -126,7 +126,7 @@ export function MessagesView({
   send_message,
   retry_message,
   is_sending_message,
-  is_active,
+  is_active: _is_active,
   disabled = false,
   is_attempt_owner = true,
   chat_id,
@@ -144,14 +144,14 @@ export function MessagesView({
   const [branchSelections, setBranchSelections] = useState<Map<string, string>>(new Map());
 
   // ---- Entry-level AI subscriptions ----
-  const { events: contentsEvents } = useEntryAi({ entryType: "contents", groupId: group_id });
+  const { events: _contentsEvents } = useEntryAi({ entryType: "contents", groupId: group_id });
   const { events: hintsEvents } = useEntryAi({ entryType: "hints", groupId: group_id });
-  const { events: feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
-  const { events: strengthsEvents } = useEntryAi({ entryType: "strengths", groupId: group_id });
-  const { events: improvementsEvents } = useEntryAi({ entryType: "improvements", groupId: group_id });
-  const { events: highlightsEvents } = useEntryAi({ entryType: "highlights", groupId: group_id });
-  const { events: replacementsEvents } = useEntryAi({ entryType: "replacements", groupId: group_id });
-  const { events: simulationMessagesEvents } = useEntryAi({ entryType: "simulation_messages", groupId: group_id });
+  const { events: _feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
+  const { events: _strengthsEvents } = useEntryAi({ entryType: "strengths", groupId: group_id });
+  const { events: _improvementsEvents } = useEntryAi({ entryType: "improvements", groupId: group_id });
+  const { events: _highlightsEvents } = useEntryAi({ entryType: "highlights", groupId: group_id });
+  const { events: _replacementsEvents } = useEntryAi({ entryType: "replacements", groupId: group_id });
+  const { events: _simulationMessagesEvents } = useEntryAi({ entryType: "simulation_messages", groupId: group_id });
 
   // Track which messages have new hints from entry events
   const messagesWithNewHints = useMemo(() => {
@@ -425,7 +425,7 @@ export function MessagesView({
   }, []);
 
   const handleStarterPromptClick = (prompt: string) => {
-    const tempId = `optimistic-user-${Date.now()}-${Math.random()}`;
+    const _tempId = `optimistic-user-${Date.now()}-${Math.random()}`;
     // Note: In real implementation, this would update optimistic_messages via callback
     send_message(prompt);
   };

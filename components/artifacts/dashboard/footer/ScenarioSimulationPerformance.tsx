@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useChartColors } from "@/lib/utils/chartColors";
 import { BarChart3 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { TooltipProps } from "recharts";
 import {
   Bar,
@@ -172,13 +172,13 @@ export default function ScenarioSimulationPerformance({
     useState<string>(initialSelectedScenarios?.[0] ?? "");
   const selectedScenarioId =
     initialSelectedScenarios?.[0] ?? selectedScenarioIdInternal;
-  const setSelectedScenarioId = (id: string) => {
+  const setSelectedScenarioId = useCallback((id: string) => {
     if (onScenarioSelect) {
       onScenarioSelect(id ? [id] : []);
     } else {
       setSelectedScenarioIdInternal(id);
     }
-  };
+  }, [onScenarioSelect]);
   const [isMobile, setIsMobile] = useState(false);
 
   const chartColors = useChartColors();
@@ -201,7 +201,7 @@ export default function ScenarioSimulationPerformance({
     ) {
       setSelectedScenarioId(validScenarioIds[0] || "");
     }
-  }, [validScenarioIds, selectedScenarioId]);
+  }, [validScenarioIds, selectedScenarioId, setSelectedScenarioId]);
 
   const data = useMemo(
     () =>

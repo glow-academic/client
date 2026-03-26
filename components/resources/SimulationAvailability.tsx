@@ -122,7 +122,7 @@ export function SimulationAvailability({
   );
 
   // Socket-based AI suggestion handling
-  type AiAvailabilitySuggestion = Pick<
+  type _AiAvailabilitySuggestion = Pick<
     SimulationAvailabilityResourceItem,
     "id" | "simulation_id" | "time" | "type"
   >;

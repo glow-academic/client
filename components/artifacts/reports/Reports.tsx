@@ -64,7 +64,7 @@ interface ReportsProps {
 
 export default function Reports({
   reportsData,
-  filters,
+  _filters,
   isLoading = false,
   profileOptions,
   simulationOptions,

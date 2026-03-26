@@ -252,6 +252,7 @@ function AuthComponent({
     patchActionRef.current = async (payload: Record<string, unknown>) => {
       const result = await patchAuthDraftAction({ body: payload } as PatchAuthDraftIn);
       // Sync form_state from server (resolved IDs for creatables)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const formStateFromServer = (result as any).form_state;
       if (formStateFromServer) {
         serverSyncPendingRef.current = true;
@@ -313,7 +314,8 @@ function AuthComponent({
 
       return payload;
     },
-    [s],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
 
   const { setUrlFormDataRef, onFormDataChange, flushAllAndSave, formDataRef } =
@@ -882,7 +884,6 @@ function AuthComponent({
       formState,
       s,
       handleGenerateResources,
-      isGenerating,
       createNamesAction,
       createDescriptionsAction,
       createProtocolsAction,

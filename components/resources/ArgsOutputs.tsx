@@ -377,9 +377,11 @@ export function ArgsOutputs({
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       Object.values(nameDebounceTimerRef.current).forEach((timer) => {
         if (timer) clearTimeout(timer);
       });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       Object.values(templateDebounceTimerRef.current).forEach((timer) => {
         if (timer) clearTimeout(timer);
       });

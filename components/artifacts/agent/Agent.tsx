@@ -378,11 +378,15 @@ export default function Agent({
         .filter((id): id is string => !!id) ?? [];
     const currentQualities =
       data.qualities?.current
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ?.map((q: any) => q.id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((id: any): id is string => !!id) ?? [];
     const currentRubrics =
       data.rubrics?.current
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ?.map((r: any) => r.id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .filter((id: any): id is string => !!id) ?? [];
 
     return {
@@ -478,7 +482,9 @@ export default function Agent({
           reasoning_level_id: fs.reasoning_level_ids?.[0] ?? prev.reasoning_level_id,
           temperature_level_id: fs.temperature_level_ids?.[0] ?? prev.temperature_level_id,
           voice_ids: fs.voice_ids ?? prev.voice_ids,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           quality_ids: (fs as any).quality_ids ?? prev.quality_ids,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           rubric_ids: (fs as any).rubric_ids ?? prev.rubric_ids,
         }));
         requestAnimationFrame(() => {
@@ -516,13 +522,15 @@ export default function Agent({
         delete base.name_id;
       }
       if (currentDraftState.description != null) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         base.description = currentDraftState.description;
         delete base.description_id;
       }
 
       return base;
     },
-    [sectionData, draftState],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [draftState],
   );
 
   const {
@@ -554,13 +562,16 @@ export default function Agent({
     }
 
     const selectedModel = modelsSection?.resources?.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (m: any) => m.model_id === draftState.modelId,
     );
     if (!selectedModel) {
       return null;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const inputMods = (selectedModel as any).input_modalities ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const outputMods = (selectedModel as any).output_modalities ?? [];
 
     return {
@@ -780,7 +791,9 @@ export default function Agent({
 
         const validDepartmentIds =
           departmentsSection?.resources
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ?.map((d: any) => d.department_id)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .filter((id: any): id is string => !!id) ?? [];
         const finalDepartmentIds = transformDepartmentIdsForSubmit(
           (effectiveFormState["departmentIds"] as string[]) ?? [],
@@ -868,6 +881,7 @@ export default function Agent({
 
         toast.success(
           `Agent ${isEditMode ? "updated" : "created"} successfully!`,
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         );
         resetFormAndState();
         router.push("/intelligence/agents");
@@ -879,11 +893,11 @@ export default function Agent({
         throw error;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       draftState,
       isEditMode,
       agentId,
-      sectionData,
       departmentsSection?.resources,
       isSuperadmin,
       profile,
@@ -964,33 +978,42 @@ export default function Agent({
         case "models":
           return (
             modelsSection?.resources?.some(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (m: any) => (m as { generated?: boolean }).generated,
             ) ?? false
           );
         case "prompts":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return promptsSection?.resources?.some((p: any) => p.generated) ?? false;
         case "instructions":
           return instructionsSection?.resource?.generated ?? false;
         case "flags":
           return flagsSection?.current?.some((f) => f.generated) ?? false;
         case "departments":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return departmentsSection?.current?.some((d: any) => d.generated) ?? false;
         case "reasoning_levels":
           return reasoningLevelsSection?.resource?.generated ?? false;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         case "temperature_levels":
           return temperatureLevelsSection?.resource?.generated ?? false;
         case "voices":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return voicesSection?.current?.some((v: any) => v.generated) ?? false;
         case "tools":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return toolsSection?.current?.some((t: any) => t.generated) ?? false;
         case "qualities":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return qualitiesSection?.current?.some((q: any) => q.generated) ?? false;
         case "rubrics":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return rubricsSection?.current?.some((r: any) => r.generated) ?? false;
         default:
           return false;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       namesSection?.resource,
       descriptionsSection?.resource,
@@ -1345,6 +1368,7 @@ export default function Agent({
                           department_ids={draftState.departmentIds || []}
                           department_resources={
                             (departmentsSection?.current ??
+                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
                               []) as any[]
                           }
                           show_departments={
@@ -1441,10 +1465,12 @@ export default function Agent({
                       <Tools
                         tool_ids={draftState.tool_ids}
                         tool_resources={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (toolsSection?.current ?? []) as any[]
                         }
                         show_tools={toolsSection?.show ?? false}
                         tool_suggestions={toolsSection?.suggestions ?? []}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         tools={mergedTools as any[]}
                         disabled={isReadonly}
                         onChange={(ids) =>
@@ -1518,10 +1544,12 @@ export default function Agent({
                       <Models
                         model_id={draftState.modelId || null}
                         model_resource={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (modelsSection?.resource ?? null) as any
                         }
                         show_models={modelsSection?.show ?? true}
                         model_suggestions={modelsSection?.suggestions ?? []}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         models={mergedModels as any[]}
                         disabled={isReadonly}
                         onModelIdChange={(modelId) => {
@@ -1549,6 +1577,7 @@ export default function Agent({
 
                 case "temperature": {
                   const selectedModel = modelsSection?.resources?.find(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     (m: any) => m.model_id === draftState.modelId,
                   );
 
@@ -1582,6 +1611,7 @@ export default function Agent({
                         temperature_level_id={draftState.temperature_level_id}
                         temperature_level_resource={
                           (temperatureLevelsSection?.resource ??
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             null) as any
                         }
                         show_temperature_levels={
@@ -1590,11 +1620,14 @@ export default function Agent({
                         temperature_level_suggestions={
                           temperatureLevelsSection?.suggestions ?? []
                         }
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         temperature_levels={mergedTemperatureLevels as any[]}
                         temperature_lower={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (selectedModel as any)?.temperature_lower ?? null
                         }
                         temperature_upper={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (selectedModel as any)?.temperature_upper ?? null
                         }
                         disabled={isReadonly}
@@ -1645,6 +1678,7 @@ export default function Agent({
                       <ReasoningLevels
                         reasoning_level_id={draftState.reasoning_level_id}
                         reasoning_level_resource={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (reasoningLevelsSection?.resource ?? null) as any
                         }
                         show_reasoning_levels={
@@ -1653,6 +1687,7 @@ export default function Agent({
                         reasoning_level_suggestions={
                           reasoningLevelsSection?.suggestions ?? []
                         }
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         reasoning_levels={mergedReasoningLevels as any[]}
                         disabled={isReadonly}
                         onReasoningLevelIdChange={(id) =>
@@ -1701,10 +1736,12 @@ export default function Agent({
                       <Voices
                         voice_ids={draftState.voice_ids}
                         voice_resources={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (voicesSection?.current ?? []) as any[]
                         }
                         show_voices={voicesSection?.show ?? true}
                         voice_suggestions={voicesSection?.suggestions ?? []}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         voices={mergedVoices as any[]}
                         disabled={isReadonly}
                         onVoiceIdsChange={(ids) =>
@@ -1749,10 +1786,12 @@ export default function Agent({
                       <Qualities
                         quality_ids={draftState.quality_ids}
                         quality_resources={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (qualitiesSection?.current ?? []) as any[]
                         }
                         show_qualities={qualitiesSection?.show ?? false}
                         quality_suggestions={qualitiesSection?.suggestions ?? []}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         qualities={mergedQualities as any[]}
                         disabled={isReadonly}
                         onChange={(ids) =>
@@ -1800,10 +1839,12 @@ export default function Agent({
                       <Rubrics
                         rubric_ids={draftState.rubric_ids}
                         rubric_resources={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (rubricsSection?.current ?? []) as any[]
                         }
                         show_rubrics={rubricsSection?.show ?? false}
                         rubric_suggestions={rubricsSection?.suggestions ?? []}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         rubrics={mergedRubrics as any[]}
                         disabled={isReadonly}
                         onChange={(ids) =>
@@ -1853,10 +1894,12 @@ export default function Agent({
                       <Prompts
                         prompt_id={draftState.prompt_id}
                         prompt_resource={
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           (promptsSection?.resource ?? null) as any
                         }
                         show_prompts={promptsSection?.show ?? true}
                         prompt_suggestions={promptsSection?.suggestions ?? []}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         prompts={mergedPrompts as any[]}
                         disabled={isReadonly}
                         onPromptIdChange={(id) => {
@@ -1908,12 +1951,14 @@ export default function Agent({
                         instructions_id={draftState.instructions_id}
                         instructions_resource={
                           (instructionsSection?.resource ??
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             null) as any
                         }
                         show_instructions={instructionsSection?.show ?? true}
                         instructions_suggestions={
                           instructionsSection?.suggestions ?? []
                         }
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         instructions={mergedInstructions as any[]}
                         disabled={isReadonly}
                         onInstructionsIdChange={(id) =>

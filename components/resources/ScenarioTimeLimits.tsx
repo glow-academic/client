@@ -122,7 +122,7 @@ export function ScenarioTimeLimits({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  type AiTimeLimitSuggestion = Pick<
+  type _AiTimeLimitSuggestion = Pick<
     ScenarioTimeLimitResourceItem,
     "id" | "scenario_id" | "time_limit_seconds"
   >;

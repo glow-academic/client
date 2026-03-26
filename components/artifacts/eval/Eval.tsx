@@ -256,6 +256,7 @@ function EvalComponent({
           .filter(Boolean)
           .map(String) ?? []
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.departments?.current]
   );
   const modelIdsStr = useMemo(
@@ -266,6 +267,7 @@ function EvalComponent({
           .filter(Boolean)
           .map(String) ?? []
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.models?.current]
   );
   const modelFlagIdsStr = useMemo(
@@ -276,6 +278,7 @@ function EvalComponent({
           .filter(Boolean)
           .map(String) ?? []
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.model_flags?.current]
   );
   const modelPositionIdsStr = useMemo(
@@ -286,6 +289,7 @@ function EvalComponent({
           .filter(Boolean)
           .map(String) ?? []
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.model_positions?.current]
   );
   const modelRubricIdsStr = useMemo(
@@ -296,6 +300,7 @@ function EvalComponent({
           .filter(Boolean)
           .map(String) ?? []
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.model_rubrics?.current]
   );
 
@@ -720,6 +725,7 @@ function EvalComponent({
         throw error;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       formState,
       isEditMode,
@@ -1207,6 +1213,7 @@ function EvalComponent({
           return null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       s,
       formState,

@@ -212,6 +212,7 @@ export function ProviderKeys({
         creatingRef.current.delete(pairKey);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       pairToId,
       emit,

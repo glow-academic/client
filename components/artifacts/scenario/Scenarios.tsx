@@ -170,7 +170,7 @@ export function Scenarios({
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
-  const [localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
+  const [_localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
 
   // URL parameter update helper
   const updateScenariosParams = useCallback(
@@ -786,7 +786,7 @@ export function Scenarios({
     [updateScenariosParams],
   );
 
-  const handleFlagSearchChange = useCallback(
+  const _handleFlagSearchChange = useCallback(
     (term: string) => {
       setLocalFlagSearch(term);
       if (flagSearchDebounceRef.current) clearTimeout(flagSearchDebounceRef.current);

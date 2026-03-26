@@ -30,8 +30,8 @@ export function RubricView({
   group_id,
 }: RubricViewProps) {
   // ---- Entry-level AI subscriptions ----
-  const { events: feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
-  const { events: analysesEvents } = useEntryAi({ entryType: "analyses", groupId: group_id });
+  const { events: _feedbacksEvents } = useEntryAi({ entryType: "feedbacks", groupId: group_id });
+  const { events: _analysesEvents } = useEntryAi({ entryType: "analyses", groupId: group_id });
 
   const standardGroups = rubric_structure?.standard_groups || {};
   const standardGroupsMapping = rubric_structure?.standard_groups_mapping || {};
@@ -39,7 +39,7 @@ export function RubricView({
 
   return (
     <div className="space-y-4 py-2">
-      {/* @ts-ignore - OpenAPI types don't exactly match TableRubric props */}
+      {/* @ts-expect-error - OpenAPI types don't exactly match TableRubric props */}
       <TableRubric
         standardGroups={standardGroups}
         standardGroupsMapping={Object.fromEntries(

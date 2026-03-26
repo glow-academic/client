@@ -40,7 +40,7 @@ export default function Test({
   attemptData,
 }: TestProps) {
   const router = useRouter();
-  const { profile } = useProfile();
+  const { _profile } = useProfile();
   const { socket, isConnected } = useSocket();
   const [runs, setRuns] = useState<RunItem[]>(attemptData.runs || []);
   const [startingRunIds, setStartingRunIds] = useState<Set<string>>(new Set());

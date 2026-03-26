@@ -481,9 +481,9 @@ export default function Personas({
   const [localScenarioSearch, setLocalScenarioSearch] = useState(scenarioSearch);
   const [localFieldSearch, setLocalFieldSearch] = useState(fieldSearch);
   const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
-  const [localColorSearch, setLocalColorSearch] = useState(colorSearch);
-  const [localIconSearch, setLocalIconSearch] = useState(iconSearch);
-  const [localVoiceSearch, setLocalVoiceSearch] = useState(voiceSearch);
+  const [_localColorSearch, setLocalColorSearch] = useState(colorSearch);
+  const [_localIconSearch, setLocalIconSearch] = useState(iconSearch);
+  const [_localVoiceSearch, setLocalVoiceSearch] = useState(voiceSearch);
 
   const handleScenarioSearchChange = useCallback(
     (value: string) => {
@@ -524,7 +524,7 @@ export default function Personas({
     [updatePersonasParams]
   );
 
-  const handleColorSearchChange = useCallback(
+  const _handleColorSearchChange = useCallback(
     (value: string) => {
       setLocalColorSearch(value);
       if (colorSearchTimeoutRef.current) {
@@ -537,7 +537,7 @@ export default function Personas({
     [updatePersonasParams]
   );
 
-  const handleIconSearchChange = useCallback(
+  const _handleIconSearchChange = useCallback(
     (value: string) => {
       setLocalIconSearch(value);
       if (iconSearchTimeoutRef.current) {
@@ -550,7 +550,7 @@ export default function Personas({
     [updatePersonasParams]
   );
 
-  const handleVoiceSearchChange = useCallback(
+  const _handleVoiceSearchChange = useCallback(
     (value: string) => {
       setLocalVoiceSearch(value);
       if (voiceSearchTimeoutRef.current) {

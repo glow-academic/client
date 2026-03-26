@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { useDrafts } from "@/contexts/draft-context";
 import { FileText, Loader2, Plus, RefreshCw, Save } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 
 export function SaveToolbar() {
   const {

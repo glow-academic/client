@@ -59,6 +59,7 @@ export default function Settings({ listData: serverListData }: SettingsProps) {
   const settingsData = serverListData;
 
   // Extract data from response
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const settings = settingsData?.settings || [];
 
   // Derive department options from settings (extract unique department IDs)

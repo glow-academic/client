@@ -153,7 +153,7 @@ export default function Cohorts({
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
-  const [localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
+  const [_localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
 
   // URL parameter update helper
   const updateCohortsParams = useCallback(
@@ -516,7 +516,7 @@ export default function Cohorts({
     [updateCohortsParams],
   );
 
-  const handleFlagSearchChange = useCallback(
+  const _handleFlagSearchChange = useCallback(
     (term: string) => {
       setLocalFlagSearch(term);
       if (flagSearchTimeoutRef.current) clearTimeout(flagSearchTimeoutRef.current);

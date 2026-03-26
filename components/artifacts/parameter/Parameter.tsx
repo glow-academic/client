@@ -413,6 +413,7 @@ function ParameterComponent({
 
       return base;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [deriveFlagIds, s]
   );
 
@@ -499,6 +500,7 @@ function ParameterComponent({
         description: f.description ?? null,
         generated: f.generated ?? null,
       })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.fields?.current]
   );
   const allFieldResources = useMemo(
@@ -601,6 +603,7 @@ function ParameterComponent({
       );
       router.push("/management/parameters");
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isAutosaveEnabled,
       flushAllResources,
@@ -1066,6 +1069,7 @@ function ParameterComponent({
           return null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       disabled,
       isEditMode,

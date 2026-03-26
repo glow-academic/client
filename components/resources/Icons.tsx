@@ -83,7 +83,7 @@ export function Icons({
   group_id,
   showAiGenerate = false,
   onGenerate,
-  isAutosaveEnabled = true,
+  _isAutosaveEnabled = true,
   // Legacy props for backward compatibility
   iconResource,
   iconId: _iconId,

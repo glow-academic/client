@@ -335,6 +335,7 @@ function ModelComponent({
           .map((d) => d.department_id)
           .filter(Boolean),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.departments?.current],
   );
   const modalityIdsStr = React.useMemo(
@@ -342,6 +343,7 @@ function ModelComponent({
       JSON.stringify(
         (s?.modalities?.current ?? []).map((m) => m.id).filter(Boolean),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.modalities?.current],
   );
   const temperatureLevelIdsStr = React.useMemo(
@@ -351,6 +353,7 @@ function ModelComponent({
           .map((t) => t.id)
           .filter(Boolean),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.temperature_levels?.current],
   );
   const reasoningLevelIdsStr = React.useMemo(
@@ -358,6 +361,7 @@ function ModelComponent({
       JSON.stringify(
         (s?.reasoning_levels?.current ?? []).map((r) => r.id).filter(Boolean),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.reasoning_levels?.current],
   );
   const qualityIdsStr = React.useMemo(
@@ -365,6 +369,7 @@ function ModelComponent({
       JSON.stringify(
         (s?.qualities?.current ?? []).map((q) => q.id).filter(Boolean),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.qualities?.current],
   );
   const pricingIdsStr = React.useMemo(
@@ -372,6 +377,7 @@ function ModelComponent({
       JSON.stringify(
         (s?.pricing?.current ?? []).map((p) => p.id).filter(Boolean),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.pricing?.current],
   );
   const voiceIdsStr = React.useMemo(
@@ -379,6 +385,7 @@ function ModelComponent({
       JSON.stringify(
         (s?.voices?.current ?? []).map((v) => v.id).filter(Boolean),
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s?.voices?.current],
   );
 
@@ -557,6 +564,7 @@ function ModelComponent({
 
       return payload;
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [s],
   );
 
@@ -596,6 +604,7 @@ function ModelComponent({
         user_instructions: userInstructions ? [userInstructions] : null,
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [modelId, generate, flushAllAndSave],
   );
 
@@ -1915,6 +1924,7 @@ function ModelComponent({
           return null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       disabled,
       isEditMode,

@@ -444,6 +444,7 @@ export function ProblemStatements({
       lastSavedValueRef.current = serverValue;
     }
     lastServerTextRef.current = serverValue;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceProblemStatement, defaultProblemStatement, resourceId, problemStatementsById]);
 
   // Transform to ensure id and problem_statement are non-null for GenericPicker

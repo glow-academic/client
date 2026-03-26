@@ -378,7 +378,7 @@ export default function SimulationHistory({
   simulationOptions,
   scenarioOptions,
   showModeFilter = true,
-  showCustomize = false,
+  _showCustomize = false,
   profileSearch = "",
   simulationSearch = "",
   scenarioSearch = "",

@@ -502,6 +502,7 @@ function SimulationComponent({
     } else {
       patchActionRef.current = undefined;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patchSimulationDraftAction]);
 
   // formStateKey excludes draftId -- the hook prepends it
@@ -600,6 +601,7 @@ function SimulationComponent({
         expected_version: expectedVersion,
       };
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [stableSimulationDataFields],
   );
 
@@ -897,6 +899,7 @@ function SimulationComponent({
         throw error;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       isAutosaveEnabled,
       flushAllResources,
@@ -1534,6 +1537,7 @@ function SimulationComponent({
           return null;
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       stableSimulationDataFields,
       formState,
