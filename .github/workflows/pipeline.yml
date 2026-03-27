@@ -2,9 +2,9 @@ name: Pipeline
 
 on:
   push:
-    branches: [main, v1]
+    branches: [main, beta, v1]
   pull_request:
-    branches: [main, v1]
+    branches: [main, beta, v1]
   workflow_dispatch:
 
 permissions:
@@ -49,8 +49,13 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           BRANCH="${{ github.ref_name }}"
+          if [ "$BRANCH" = "main" ]; then
+            TAG="v${VERSION}"
+          else
+            TAG="v${VERSION}-${BRANCH}"
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Validate version matches branch
@@ -107,6 +112,7 @@ jobs:
             APP_VERSION=${{ steps.version.outputs.tag }}
           tags: |
             ${{ env.REGISTRY }}/learnloopllc/glow-client:${{ steps.version.outputs.tag }}
+            ${{ env.REGISTRY }}/learnloopllc/glow-client:${{ github.ref_name == 'main' && 'latest' || github.ref_name }}
           labels: |
             org.opencontainers.image.source=https://github.com/learnloopllc/glow-client
 
@@ -128,7 +134,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.version.outputs.tag }}"
+          PRERELEASE=""
+          if [ "${{ github.ref_name }}" != "main" ]; then
+            PRERELEASE="--prerelease"
+          fi
           gh release create "$TAG" compat.json \
             --title "$TAG" \
-            --generate-notes
+            --generate-notes $PRERELEASE
           echo "Created release $TAG"
