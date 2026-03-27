@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  workflows: write
   packages: write
 
 env:
