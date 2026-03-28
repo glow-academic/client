@@ -17,12 +17,10 @@ env:
 jobs:
   # ── Stage 1: Test ───────────────────────────────────────────
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, deploy]
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - uses: actions/checkout@v5
-
-      - uses: oven-sh/setup-bun@v2
 
       - run: bun install
 
@@ -34,7 +32,7 @@ jobs:
   # ── Stage 2: Release ────────────────────────────────────────
   release:
     needs: test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64, deploy]
     if: github.event_name != 'pull_request'
     outputs:
       released: ${{ steps.check.outputs.released }}
