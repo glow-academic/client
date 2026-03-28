@@ -109,6 +109,14 @@ jobs:
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
           echo "Deployment token claimed successfully"
 
+      - name: Update .env with new version
+        run: |
+          cd "$DEPLOY_DIR"
+          if [ -f .env ]; then
+            sed -i '/^CLIENT_VERSION=/d' .env
+          fi
+          echo "CLIENT_VERSION=${{ inputs.version }}" >> .env
+
       - name: Parse subdomain from ORIGIN
         id: parse-origin
         run: |

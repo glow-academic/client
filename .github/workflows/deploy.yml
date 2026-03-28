@@ -9,19 +9,28 @@ on:
       origin:
         description: 'Client origin URL (e.g. https://app-glow-demo.learn-loop.org)'
         required: true
-      api_url:
-        description: 'API URL this client connects to (e.g. https://glow-demo.learn-loop.org)'
-        required: true
       parent_deployment_id:
         description: 'Parent API deployment UUID (for Docker network connectivity)'
         required: true
       version:
-        description: 'Image version (e.g. v0.1.0 or latest)'
+        description: 'Image version (e.g. v1.0.0 or latest)'
         required: true
         default: 'latest'
+      app_prefix:
+        description: 'App prefix for path-based routing (empty for root)'
+        required: false
+        default: ''
+      campus:
+        description: 'Campus display name'
+        required: false
+        default: 'University Name'
       provision_token:
         description: 'One-time token to claim DEPLOYMENT_TOKEN from LearnLoop'
         required: true
+      api_url:
+        description: 'Parent API URL (e.g. https://glow-v1.learn-loop.org)'
+        required: false
+        default: ''
       learnloop_api_url:
         description: 'LearnLoop API URL'
         required: false
@@ -66,26 +75,20 @@ jobs:
             echo "::error::Response: $RESP"
             exit 1
           fi
+          # Extract auth credentials from provision claim
+          AUTH_SECRET=$(echo "$RESP" | jq -r '.auth_secret // empty')
+          AUTH_CONFIG=$(echo "$RESP" | jq -r '.auth_config // empty')
+          ENTRA_ID=$(echo "$AUTH_CONFIG" | jq -r '.client_id // empty' 2>/dev/null)
+          ENTRA_SECRET=$(echo "$AUTH_CONFIG" | jq -r '.client_secret // empty' 2>/dev/null)
+          ENTRA_TENANT=$(echo "$AUTH_CONFIG" | jq -r '.tenant_id // empty' 2>/dev/null)
+
           echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
+          [ -n "$AUTH_SECRET" ] && echo "AUTH_SECRET=${AUTH_SECRET}" >> $GITHUB_ENV
+          [ -n "$ENTRA_ID" ] && echo "AUTH_MICROSOFT_ENTRA_ID_ID=${ENTRA_ID}" >> $GITHUB_ENV
+          [ -n "$ENTRA_SECRET" ] && echo "AUTH_MICROSOFT_ENTRA_ID_SECRET=${ENTRA_SECRET}" >> $GITHUB_ENV
+          [ -n "$ENTRA_TENANT" ] && echo "AUTH_MICROSOFT_ENTRA_ID_TENANT_ID=${ENTRA_TENANT}" >> $GITHUB_ENV
           echo "Deployment token claimed successfully"
-
-      - name: Fetch auth credentials from LearnLoop
-        run: |
-          HOST=$(echo "$LEARNLOOP_API_URL" | sed 's|https\?://||' | sed 's|/.*||')
-          RESP=$(curl -sfk "https://localhost/deploy/${{ inputs.deployment_id }}/credentials" \
-            -H "Host: $HOST" \
-            -H "Authorization: Bearer $DEPLOYMENT_TOKEN")
-          if [ -z "$RESP" ] || echo "$RESP" | jq -e '.detail' >/dev/null 2>&1; then
-            echo "::error::Failed to fetch credentials from LearnLoop"
-            echo "::error::Response: $RESP"
-            exit 1
-          fi
-          echo "AUTH_KEYCLOAK_ID=$(echo "$RESP" | jq -r '.client_id')" >> $GITHUB_ENV
-          echo "AUTH_KEYCLOAK_SECRET=$(echo "$RESP" | jq -r '.client_secret')" >> $GITHUB_ENV
-          echo "AUTH_SECRET=$(echo "$RESP" | jq -r '.auth_secret')" >> $GITHUB_ENV
-          echo "KEYCLOAK_PUBLIC_URL=$(echo "$RESP" | jq -r '.keycloak_url')" >> $GITHUB_ENV
-          echo "Auth credentials fetched from LearnLoop"
 
       - name: Parse subdomain from ORIGIN
         id: parse-origin
@@ -99,78 +102,76 @@ jobs:
 
       - name: Stage release
         run: |
-          mkdir -p "$DEPLOY_DIR/web" "$DEPLOY_DIR/scripts"
+          mkdir -p "$DEPLOY_DIR/web/templates" "$DEPLOY_DIR/web/generated" "$DEPLOY_DIR/scripts"
           cp web/default.conf.template "$DEPLOY_DIR/web/"
+          cp web/templates/*.tmpl "$DEPLOY_DIR/web/templates/"
+          cp web/generated/upstreams.conf "$DEPLOY_DIR/web/generated/"
           cp scripts/*.sh "$DEPLOY_DIR/scripts/"
           chmod +x "$DEPLOY_DIR/scripts/"*.sh
 
       - name: Generate docker-compose.yml
         run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}"
-          API_URL="${{ inputs.api_url }}"
-          API_HOST=$(echo "$API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:\${CLIENT_VERSION}"
           DOMAIN="${{ steps.parse-origin.outputs.domain }}"
+          ORIGIN="${{ inputs.origin }}"
+          APP_PREFIX="${{ inputs.app_prefix }}"
+          CAMPUS="${{ inputs.campus }}"
           PARENT_NETWORK="glow-${{ inputs.parent_deployment_id }}"
+
+          AUTH_SECRET="${AUTH_SECRET:-}"
+          AUTH_MICROSOFT_ENTRA_ID_ID="${AUTH_MICROSOFT_ENTRA_ID_ID:-}"
+          AUTH_MICROSOFT_ENTRA_ID_SECRET="${AUTH_MICROSOFT_ENTRA_ID_SECRET:-}"
+          AUTH_MICROSOFT_ENTRA_ID_TENANT_ID="${AUTH_MICROSOFT_ENTRA_ID_TENANT_ID:-}"
 
           cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
           services:
             app-blue:
               image: "${IMAGE}"
               restart: unless-stopped
-              extra_hosts:
-                - "${API_HOST}:host-gateway"
-                - "${DOMAIN}:host-gateway"
               environment:
                 - HOSTNAME=0.0.0.0
-                - NEXT_PUBLIC_API_URL=${API_URL}
+                - PORT=3000
                 - INTERNAL_API_BASE=http://glow-api:8000
-                - NEXT_PUBLIC_API_BASE=${API_URL}
+                - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
                 - AUTH_SECRET=${AUTH_SECRET}
-                - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
-                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
-                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
-                - AUTH_TRUST_HOST=true
-                - NEXTAUTH_URL=https://${DOMAIN}
-                - DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}
-                - LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}
+                - NEXT_PUBLIC_CAMPUS=${CAMPUS}
+                - APP_PREFIX=${APP_PREFIX}
+                - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
+                - AUTH_MICROSOFT_ENTRA_ID_ID=${AUTH_MICROSOFT_ENTRA_ID_ID}
+                - AUTH_MICROSOFT_ENTRA_ID_SECRET=${AUTH_MICROSOFT_ENTRA_ID_SECRET}
+                - AUTH_MICROSOFT_ENTRA_ID_TENANT_ID=${AUTH_MICROSOFT_ENTRA_ID_TENANT_ID}
               healthcheck:
-                test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
+                test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
                 interval: 10s
                 timeout: 5s
-                retries: 3
-                start_period: 15s
+                retries: 5
+                start_period: 30s
               networks:
                 - internal
-                - server
 
             app-green:
               image: "${IMAGE}"
               restart: unless-stopped
-              extra_hosts:
-                - "${API_HOST}:host-gateway"
-                - "${DOMAIN}:host-gateway"
               environment:
                 - HOSTNAME=0.0.0.0
-                - NEXT_PUBLIC_API_URL=${API_URL}
+                - PORT=3000
                 - INTERNAL_API_BASE=http://glow-api:8000
-                - NEXT_PUBLIC_API_BASE=${API_URL}
+                - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
                 - AUTH_SECRET=${AUTH_SECRET}
-                - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
-                - AUTH_KEYCLOAK_ID=${AUTH_KEYCLOAK_ID}
-                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
-                - AUTH_TRUST_HOST=true
-                - NEXTAUTH_URL=https://${DOMAIN}
-                - DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}
-                - LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}
+                - NEXT_PUBLIC_CAMPUS=${CAMPUS}
+                - APP_PREFIX=${APP_PREFIX}
+                - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
+                - AUTH_MICROSOFT_ENTRA_ID_ID=${AUTH_MICROSOFT_ENTRA_ID_ID}
+                - AUTH_MICROSOFT_ENTRA_ID_SECRET=${AUTH_MICROSOFT_ENTRA_ID_SECRET}
+                - AUTH_MICROSOFT_ENTRA_ID_TENANT_ID=${AUTH_MICROSOFT_ENTRA_ID_TENANT_ID}
               healthcheck:
-                test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
+                test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
                 interval: 10s
                 timeout: 5s
-                retries: 3
-                start_period: 15s
+                retries: 5
+                start_period: 30s
               networks:
                 - internal
-                - server
 
             nginx:
               image: nginx:alpine
@@ -182,24 +183,40 @@ jobs:
                 - ACTIVE_ENV=\${ACTIVE_ENV:-blue}
               volumes:
                 - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+                - ./web/generated:/etc/nginx/conf.d/generated:rw
               networks:
                 - internal
-                - public_net
+
+            docker-gen:
+              image: jwilder/docker-gen:0.7.6
+              restart: unless-stopped
+              environment:
+                - COMPOSE_PROJECT_NAME=\${COMPOSE_PROJECT_NAME}
+              volumes:
+                - /var/run/docker.sock:/tmp/docker.sock:ro
+                - ./web/templates:/etc/docker-gen/templates:ro
+                - ./web/generated:/etc/nginx/conf.d/generated:rw
+              command: >
+                -notify-sighup \${COMPOSE_PROJECT_NAME}-nginx
+                -watch
+                /etc/docker-gen/templates/upstreams.tmpl
+                /etc/nginx/conf.d/generated/upstreams.conf
+              networks:
+                - internal
 
           networks:
             internal:
-            public_net:
-            server:
-              external: true
-              name: ${PARENT_NETWORK}
           COMPOSE
           sed -i 's/^          //' "$DEPLOY_DIR/docker-compose.yml"
 
       - name: Write .env
         run: |
-          if [ ! -f "$DEPLOY_DIR/.env" ]; then
-            echo "ACTIVE_ENV=blue" > "$DEPLOY_DIR/.env"
-          fi
+          cat > "$DEPLOY_DIR/.env" <<EOF
+          COMPOSE_PROJECT_NAME=${{ inputs.deployment_id }}
+          CLIENT_VERSION=${{ inputs.version }}
+          ACTIVE_ENV=blue
+          EOF
+          sed -i 's/^          //' "$DEPLOY_DIR/.env"
 
       - name: Pull images
         run: |
@@ -210,26 +227,35 @@ jobs:
         run: |
           bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
             --name "${{ inputs.deployment_id }}" \
+            --parent-deployment-id "${{ inputs.parent_deployment_id }}" \
             --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
             --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \
             --compose-dir "$DEPLOY_DIR" \
             --entry-service nginx \
             --entry-port 80
 
+      - name: Detect target environment
+        id: env
+        run: |
+          cd "$DEPLOY_DIR"
+          eval $(bash scripts/detect-env.sh)
+          echo "active=$ACTIVE_ENV" >> "$GITHUB_OUTPUT"
+          echo "target=$TARGET_ENV" >> "$GITHUB_OUTPUT"
+
       - name: Deploy target environment
         run: |
           cd "$DEPLOY_DIR"
-          bash scripts/deploy-target.sh blue
+          bash scripts/deploy-target.sh "${{ steps.env.outputs.target }}"
 
       - name: Switch traffic
         run: |
           cd "$DEPLOY_DIR"
-          bash scripts/switch-traffic.sh blue
+          bash scripts/switch-traffic.sh "${{ steps.env.outputs.target }}"
 
       - name: Monitor deployment
         run: |
           cd "$DEPLOY_DIR"
-          bash scripts/monitor.sh blue blue 45
+          bash scripts/monitor.sh "${{ steps.env.outputs.target }}" "${{ steps.env.outputs.active }}" 45
 
       - name: Notify LearnLoop
         if: always()
