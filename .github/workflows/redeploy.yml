@@ -1,0 +1,169 @@
+name: Redeploy (Update)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: 'Deployment UUID'
+        required: true
+      origin:
+        description: 'Client origin URL'
+        required: true
+      parent_deployment_id:
+        description: 'Parent API deployment UUID'
+        required: true
+      version:
+        description: 'Image version (e.g. v1.0.1)'
+        required: true
+      app_prefix:
+        description: 'App prefix for path-based routing'
+        required: false
+        default: ''
+      provision_token:
+        description: 'One-time token to claim DEPLOYMENT_TOKEN from LearnLoop'
+        required: true
+      api_url:
+        description: 'Parent API URL'
+        required: false
+        default: ''
+      learnloop_api_url:
+        description: 'LearnLoop API URL'
+        required: false
+        default: 'https://api.learn-loop.org'
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: learnloopllc/glow-client
+
+jobs:
+  detect-active-environment:
+    runs-on: [self-hosted, linux, x64, deploy]
+    outputs:
+      active-env: ${{ steps.detect.outputs.active-env }}
+      target-env: ${{ steps.detect.outputs.target-env }}
+    env:
+      COMPOSE_PROJECT_NAME: ${{ inputs.deployment_id }}
+    steps:
+      - name: Detect active environment
+        id: detect
+        run: |
+          DEPLOY_DIR="/srv/deploy/live/glow-client/${{ inputs.deployment_id }}"
+          if [ -d "$DEPLOY_DIR" ] && [ -f "$DEPLOY_DIR/scripts/detect-env.sh" ]; then
+            cd "$DEPLOY_DIR"
+            eval $(bash scripts/detect-env.sh)
+          fi
+          ACTIVE_ENV="${ACTIVE_ENV:-blue}"
+          [ -z "$ACTIVE_ENV" ] && ACTIVE_ENV="blue"
+          if [ "$ACTIVE_ENV" = "green" ]; then TARGET_ENV="blue"; else TARGET_ENV="green"; fi
+          echo "active-env=$ACTIVE_ENV" >> $GITHUB_OUTPUT
+          echo "target-env=$TARGET_ENV" >> $GITHUB_OUTPUT
+
+  redeploy:
+    runs-on: [self-hosted, linux, x64, deploy]
+    needs: [detect-active-environment]
+    concurrency:
+      group: deploy-${{ inputs.deployment_id }}
+      cancel-in-progress: true
+    env:
+      DEPLOY_DIR: /srv/deploy/live/glow-client/${{ inputs.deployment_id }}
+      COMPOSE_PROJECT_NAME: ${{ inputs.deployment_id }}
+      ACTIVE_ENV: ${{ needs.detect-active-environment.outputs.active-env }}
+      ORIGIN: ${{ inputs.origin }}
+      APP_PREFIX: ${{ inputs.app_prefix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          clean: true
+
+      - name: Login GHCR
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Stage release
+        run: |
+          mkdir -p "$DEPLOY_DIR/web/templates" "$DEPLOY_DIR/web/generated" "$DEPLOY_DIR/scripts"
+          cp web/default.conf.template "$DEPLOY_DIR/web/"
+          cp web/templates/*.tmpl "$DEPLOY_DIR/web/templates/"
+          cp web/generated/upstreams.conf "$DEPLOY_DIR/web/generated/"
+          cp scripts/*.sh "$DEPLOY_DIR/scripts/"
+          chmod +x "$DEPLOY_DIR/scripts/"*.sh
+
+      - name: Claim DEPLOYMENT_TOKEN from LearnLoop
+        run: |
+          HOST=$(echo "${{ inputs.learnloop_api_url }}" | sed 's|https\?://||' | sed 's|/.*||')
+          RESP=$(curl -sfk -X POST "https://localhost/provision/claim" \
+            -H "Host: $HOST" \
+            -H "Content-Type: application/json" \
+            -d '{"token": "${{ inputs.provision_token }}"}')
+          DEPLOYMENT_TOKEN=$(echo "$RESP" | jq -r '.deployment_token')
+          if [ -z "$DEPLOYMENT_TOKEN" ] || [ "$DEPLOYMENT_TOKEN" = "null" ]; then
+            echo "::error::Failed to claim deployment token"
+            echo "::error::Response: $RESP"
+            exit 1
+          fi
+          echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
+          echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
+          echo "Deployment token claimed successfully"
+
+      - name: Parse subdomain from ORIGIN
+        id: parse-origin
+        run: |
+          DOMAIN=$(echo "${{ inputs.origin }}" | sed 's|https://||' | sed 's|http://||')
+          SUBDOMAIN=$(echo "$DOMAIN" | cut -d. -f1)
+          BASE_DOMAIN=$(echo "$DOMAIN" | cut -d. -f2-)
+          echo "subdomain=$SUBDOMAIN" >> $GITHUB_OUTPUT
+          echo "base-domain=$BASE_DOMAIN" >> $GITHUB_OUTPUT
+
+      - name: Provision Traefik labels
+        run: |
+          bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
+            --name "${{ inputs.deployment_id }}" \
+            --parent-deployment-id "${{ inputs.parent_deployment_id }}" \
+            --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
+            --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \
+            --compose-dir "$DEPLOY_DIR" \
+            --entry-service nginx \
+            --entry-port 80
+
+      - name: Pull images
+        run: |
+          cd "$DEPLOY_DIR"
+          docker compose pull app-blue app-green 2>/dev/null || true
+
+      - name: Deploy target environment
+        run: |
+          cd "$DEPLOY_DIR"
+          bash scripts/deploy-target.sh "${{ needs.detect-active-environment.outputs.target-env }}"
+
+      - name: Switch traffic
+        run: |
+          cd "$DEPLOY_DIR"
+          bash scripts/switch-traffic.sh "${{ needs.detect-active-environment.outputs.target-env }}"
+
+      - name: Monitor deployment
+        run: |
+          cd "$DEPLOY_DIR"
+          bash scripts/monitor.sh "${{ needs.detect-active-environment.outputs.target-env }}" "${{ needs.detect-active-environment.outputs.active-env }}" 45
+
+      - name: Notify LearnLoop
+        if: always()
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then
+            STATUS="running"
+          else
+            STATUS="failed"
+          fi
+          HOST=$(echo "$LEARNLOOP_API_URL" | sed 's|https\?://||' | sed 's|/.*||')
+          curl -sfk -X POST "https://localhost/deploy/${{ inputs.deployment_id }}/callback" \
+            -H "Host: $HOST" \
+            -H "Authorization: Bearer $DEPLOYMENT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"status\": \"$STATUS\"}" || echo "Callback failed (non-fatal)"
+        env:
+          JOB_STATUS: ${{ job.status }}
+          LEARNLOOP_API_URL: ${{ env.LEARNLOOP_API_URL }}
+          DEPLOYMENT_TOKEN: ${{ env.DEPLOYMENT_TOKEN }}
