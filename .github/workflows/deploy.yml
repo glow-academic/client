@@ -102,10 +102,8 @@ jobs:
 
       - name: Stage release
         run: |
-          mkdir -p "$DEPLOY_DIR/web/templates" "$DEPLOY_DIR/web/generated" "$DEPLOY_DIR/scripts"
+          mkdir -p "$DEPLOY_DIR/web" "$DEPLOY_DIR/scripts"
           cp web/default.conf.template "$DEPLOY_DIR/web/"
-          cp web/templates/*.tmpl "$DEPLOY_DIR/web/templates/"
-          cp web/generated/upstreams.conf "$DEPLOY_DIR/web/generated/"
           cp scripts/*.sh "$DEPLOY_DIR/scripts/"
           chmod +x "$DEPLOY_DIR/scripts/"*.sh
 
