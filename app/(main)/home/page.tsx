@@ -18,15 +18,15 @@ import type { Metadata } from "next";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
 /** ---- Strong types from OpenAPI ---- */
-type HomeIn = InputOf<"/api/v5/artifacts/home/get", "post">;
-type HomeOut = OutputOf<"/api/v5/artifacts/home/get", "post">;
+type HomeIn = InputOf<"/home/get", "post">;
+type HomeOut = OutputOf<"/home/get", "post">;
 type HomeHistoryOut = NonNullable<HomeOut["history"]>;
 
 /** ---- Direct fetch for home data (cards + embedded history) ---- */
 const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/home/get", input, {
+  return api.post("/home/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

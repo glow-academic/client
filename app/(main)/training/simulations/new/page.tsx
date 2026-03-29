@@ -17,12 +17,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSimulationIn = InputOf<"/api/v5/artifacts/simulations/get", "post">;
-type GetSimulationOut = OutputOf<"/api/v5/artifacts/simulations/get", "post">;
-type CreateSimulationIn = InputOf<"/api/v5/artifacts/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/create", "post">;
-type PatchSimulationDraftIn = InputOf<"/api/v5/artifacts/simulations/draft", "patch">;
-type PatchSimulationDraftOut = OutputOf<"/api/v5/artifacts/simulations/draft", "patch">;
+type GetSimulationIn = InputOf<"/simulations/get", "post">;
+type GetSimulationOut = OutputOf<"/simulations/get", "post">;
+type CreateSimulationIn = InputOf<"/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/simulations/create", "post">;
+type PatchSimulationDraftIn = InputOf<"/simulations/draft", "patch">;
+type PatchSimulationDraftOut = OutputOf<"/simulations/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -76,7 +76,7 @@ const getSimulationDefault = async (
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
   try {
-    const result = await api.post("/artifacts/simulations/get", input, {
+    const result = await api.post("/simulations/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -99,7 +99,7 @@ async function createSimulation(
   input: CreateSimulationIn
 ): Promise<CreateSimulationOut> {
   "use server";
-  return api.post("/artifacts/simulations/create", input);
+  return api.post("/simulations/create", input);
 }
 
 async function patchSimulationDraft(
@@ -108,7 +108,7 @@ async function patchSimulationDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/artifacts/simulations/draft", input);
+  return api.patch("/simulations/draft", input);
 }
 
 async function createDraftNames(
@@ -160,11 +160,11 @@ async function createDraftScenarioTimeLimits(
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/simulations/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/simulations/docs", "post">;
+type DocsIn = InputOf<"/simulations/docs", "post">;
+type DocsOut = OutputOf<"/simulations/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/simulations/docs", input);
+  return api.post("/simulations/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -213,7 +213,7 @@ export default async function NewSimulationPage({
     } as GetSimulationIn["body"],
   };
 
-  const draftsResult = await api.post("/artifacts/simulations/drafts", {});
+  const draftsResult = await api.post("/simulations/drafts", {});
 
   let simulationDataDefault: GetSimulationOut | null = null;
   try {

@@ -13,11 +13,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParametersListOut = OutputOf<"/api/v5/artifacts/parameters/search", "post">;
-type DuplicateParameterIn = InputOf<"/api/v5/artifacts/parameters/duplicate", "post">;
-type DuplicateParameterOut = OutputOf<"/api/v5/artifacts/parameters/duplicate", "post">;
-type DeleteParameterIn = InputOf<"/api/v5/artifacts/parameters/delete", "post">;
-type DeleteParameterOut = OutputOf<"/api/v5/artifacts/parameters/delete", "post">;
+type ParametersListOut = OutputOf<"/parameters/search", "post">;
+type DuplicateParameterIn = InputOf<"/parameters/duplicate", "post">;
+type DuplicateParameterOut = OutputOf<"/parameters/duplicate", "post">;
+type DeleteParameterIn = InputOf<"/parameters/delete", "post">;
+type DeleteParameterOut = OutputOf<"/parameters/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -26,7 +26,7 @@ type DeleteParameterOut = OutputOf<"/api/v5/artifacts/parameters/delete", "post"
 const getParametersList = async (): Promise<ParametersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/parameters/search",
+    "/parameters/search",
     { body: {} },
     {
       cache: "no-store",
@@ -46,7 +46,7 @@ async function duplicateParameter(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/parameters/duplicate", input);
+  return api.post("/parameters/duplicate", input);
 }
 
 async function deleteParameter(
@@ -55,15 +55,15 @@ async function deleteParameter(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/parameters/delete", input);
+  return api.post("/parameters/delete", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/parameters/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/parameters/docs", "post">;
+type DocsIn = InputOf<"/parameters/docs", "post">;
+type DocsOut = OutputOf<"/parameters/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/parameters/docs", input);
+  return api.post("/parameters/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

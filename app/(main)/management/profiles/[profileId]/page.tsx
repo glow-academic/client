@@ -17,12 +17,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProfileIn = InputOf<"/api/v5/artifacts/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/api/v5/artifacts/profiles/get", "post">;
-type CreateProfileIn = InputOf<"/api/v5/artifacts/profiles/create", "post">;
-type CreateProfileOut = OutputOf<"/api/v5/artifacts/profiles/create", "post">;
-type UpdateProfileIn = InputOf<"/api/v5/artifacts/profiles/update", "post">;
-type UpdateProfileOut = OutputOf<"/api/v5/artifacts/profiles/update", "post">;
+type GetProfileIn = InputOf<"/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/profiles/get", "post">;
+type CreateProfileIn = InputOf<"/profiles/create", "post">;
+type CreateProfileOut = OutputOf<"/profiles/create", "post">;
+type UpdateProfileIn = InputOf<"/profiles/update", "post">;
+type UpdateProfileOut = OutputOf<"/profiles/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
@@ -35,14 +35,14 @@ type CreateDraftRequestLimitsOut = OutputOf<
   "/api/v5/resources/request_limits",
   "post"
 >;
-type PatchProfileDraftIn = InputOf<"/api/v5/artifacts/profiles/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/api/v5/artifacts/profiles/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/profiles/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<"/profiles/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getProfile = async (input: GetProfileIn): Promise<GetProfileOut> => {
-  return api.post("/artifacts/profiles/get", input, {
+  return api.post("/profiles/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -51,11 +51,11 @@ const getProfile = async (input: GetProfileIn): Promise<GetProfileOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/profiles/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/profiles/docs", "post">;
+type DocsIn = InputOf<"/profiles/docs", "post">;
+type DocsOut = OutputOf<"/profiles/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/profiles/docs", input);
+  return api.post("/profiles/docs", input);
 };
 
 export async function generateMetadata({
@@ -71,12 +71,12 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createProfile(input: CreateProfileIn): Promise<CreateProfileOut> {
   "use server";
-  return api.post("/artifacts/profiles/create", input);
+  return api.post("/profiles/create", input);
 }
 
 async function updateProfile(input: UpdateProfileIn): Promise<UpdateProfileOut> {
   "use server";
-  return api.post("/artifacts/profiles/update", input);
+  return api.post("/profiles/update", input);
 }
 
 async function createDraftNames(
@@ -108,7 +108,7 @@ async function patchProfileDraft(
 ): Promise<PatchProfileDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/profiles/draft", input);
+  return api.patch("/profiles/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -153,7 +153,7 @@ export default async function ProfileEditPage({
     const [profileDetail, docs, draftsResult] = await Promise.all([
       getProfile(input),
       getDocs({ body: { entity_id: profileId } }),
-      api.post("/artifacts/profiles/drafts", {})
+      api.post("/profiles/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

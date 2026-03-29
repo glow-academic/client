@@ -17,8 +17,8 @@ import type { Metadata } from "next";
 import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 
 /** ---- Strong types from OpenAPI ---- */
-type BenchmarkOverviewIn = InputOf<"/api/v5/artifacts/benchmark/get", "post">;
-type BenchmarkOverviewOut = OutputOf<"/api/v5/artifacts/benchmark/get", "post">;
+type BenchmarkOverviewIn = InputOf<"/benchmark/get", "post">;
+type BenchmarkOverviewOut = OutputOf<"/benchmark/get", "post">;
 // For backward compatibility, extract evals list structure from overview
 type EvalsListOut = {
   evals: BenchmarkOverviewOut["evals"];
@@ -48,7 +48,7 @@ const getBenchmarkOverview = async (
   "use server";
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/benchmark/get", input, {
+  return api.post("/benchmark/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -59,11 +59,11 @@ const getBenchmarkOverview = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/benchmark/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/benchmark/docs", "post">;
+type DocsIn = InputOf<"/benchmark/docs", "post">;
+type DocsOut = OutputOf<"/benchmark/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/benchmark/docs", input);
+  return api.post("/benchmark/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

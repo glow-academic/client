@@ -15,11 +15,11 @@ import type { Metadata } from "next";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricsListOut = OutputOf<"/api/v5/artifacts/rubrics/search", "post">;
-type DuplicateRubricIn = InputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
-type DuplicateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
-type DeleteRubricIn = InputOf<"/api/v5/artifacts/rubrics/delete", "post">;
-type DeleteRubricOut = OutputOf<"/api/v5/artifacts/rubrics/delete", "post">;
+type RubricsListOut = OutputOf<"/rubrics/search", "post">;
+type DuplicateRubricIn = InputOf<"/rubrics/duplicate", "post">;
+type DuplicateRubricOut = OutputOf<"/rubrics/duplicate", "post">;
+type DeleteRubricIn = InputOf<"/rubrics/delete", "post">;
+type DeleteRubricOut = OutputOf<"/rubrics/delete", "post">;
 /** ---- Body type for rubrics list request ---- */
 type RubricsListBody = {
   search?: string | null;
@@ -38,7 +38,7 @@ type RubricsListBody = {
 const getRubricsList = async (body: RubricsListBody): Promise<RubricsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/rubrics/search",
+    "/rubrics/search",
     { body },
     {
       cache: "no-store",
@@ -58,7 +58,7 @@ export async function duplicateRubric(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/rubrics/duplicate", input);
+  return api.post("/rubrics/duplicate", input);
 }
 
 export async function deleteRubric(
@@ -67,15 +67,15 @@ export async function deleteRubric(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/rubrics/delete", input);
+  return api.post("/rubrics/delete", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/rubrics/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/rubrics/docs", "post">;
+type DocsIn = InputOf<"/rubrics/docs", "post">;
+type DocsOut = OutputOf<"/rubrics/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/rubrics/docs", input);
+  return api.post("/rubrics/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

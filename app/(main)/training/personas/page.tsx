@@ -16,15 +16,15 @@ import type { Metadata } from "next";
 import { loadPersonasSearchParams } from "@/lib/search-params/personas";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonasListOut = OutputOf<"/api/v5/artifacts/personas/search", "post">;
-type DuplicatePersonaIn = InputOf<"/api/v5/artifacts/personas/duplicate", "post">;
-type DuplicatePersonaOut = OutputOf<"/api/v5/artifacts/personas/duplicate", "post">;
-type DeletePersonaIn = InputOf<"/api/v5/artifacts/personas/delete", "post">;
-type DeletePersonaOut = OutputOf<"/api/v5/artifacts/personas/delete", "post">;
-type CreatePersonaIn = InputOf<"/api/v5/artifacts/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/api/v5/artifacts/personas/create", "post">;
-type UpdatePersonaIn = InputOf<"/api/v5/artifacts/personas/update", "post">;
-type UpdatePersonaOut = OutputOf<"/api/v5/artifacts/personas/update", "post">;
+type PersonasListOut = OutputOf<"/personas/search", "post">;
+type DuplicatePersonaIn = InputOf<"/personas/duplicate", "post">;
+type DuplicatePersonaOut = OutputOf<"/personas/duplicate", "post">;
+type DeletePersonaIn = InputOf<"/personas/delete", "post">;
+type DeletePersonaOut = OutputOf<"/personas/delete", "post">;
+type CreatePersonaIn = InputOf<"/personas/create", "post">;
+type CreatePersonaOut = OutputOf<"/personas/create", "post">;
+type UpdatePersonaIn = InputOf<"/personas/update", "post">;
+type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for personas list request ---- */
@@ -50,7 +50,7 @@ type PersonasListBody = {
 const getPersonasList = async (body: PersonasListBody): Promise<PersonasListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/personas/search",
+    "/personas/search",
     { body },
     {
       cache: "no-store",
@@ -68,37 +68,37 @@ async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/duplicate", input);
+  return api.post("/personas/duplicate", input);
 }
 
 async function deletePersona(
   input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/delete", input);
+  return api.post("/personas/delete", input);
 }
 
 async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/create", input);
+  return api.post("/personas/create", input);
 }
 
 async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/update", input);
+  return api.post("/personas/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/artifacts/personas/csv", { formData });
+  return api.post("/personas/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/personas/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/personas/docs", "post">;
+type DocsIn = InputOf<"/personas/docs", "post">;
+type DocsOut = OutputOf<"/personas/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/personas/docs", input);
+  return api.post("/personas/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

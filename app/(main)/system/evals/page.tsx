@@ -15,9 +15,9 @@ import type { Metadata } from "next";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalsListOut = OutputOf<"/api/v5/artifacts/evals/search", "post">;
-type DeleteEvalIn = InputOf<"/api/v5/artifacts/evals/delete", "post">;
-type DeleteEvalOut = OutputOf<"/api/v5/artifacts/evals/delete", "post">;
+type EvalsListOut = OutputOf<"/evals/search", "post">;
+type DeleteEvalIn = InputOf<"/evals/delete", "post">;
+type DeleteEvalOut = OutputOf<"/evals/delete", "post">;
 
 /** ---- Body type for evals list request ---- */
 type EvalsListBody = {
@@ -32,7 +32,7 @@ type EvalsListBody = {
 const getEvalsList = async (body: EvalsListBody): Promise<EvalsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/evals/search",
+    "/evals/search",
     { body },
     {
       cache: "no-store",
@@ -49,15 +49,15 @@ const getEvalsList = async (body: EvalsListBody): Promise<EvalsListOut> => {
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/artifacts/evals/delete", input);
+  return api.post("/evals/delete", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/evals/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/evals/docs", "post">;
+type DocsIn = InputOf<"/evals/docs", "post">;
+type DocsOut = OutputOf<"/evals/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/evals/docs", input);
+  return api.post("/evals/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

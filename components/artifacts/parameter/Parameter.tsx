@@ -34,16 +34,16 @@ import {
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type CreateParameterIn = InputOf<"/api/v5/artifacts/parameters/create", "post">;
-type CreateParameterOut = OutputOf<"/api/v5/artifacts/parameters/create", "post">;
-type UpdateParameterIn = InputOf<"/api/v5/artifacts/parameters/update", "post">;
-type UpdateParameterOut = OutputOf<"/api/v5/artifacts/parameters/update", "post">;
+type CreateParameterIn = InputOf<"/parameters/create", "post">;
+type CreateParameterOut = OutputOf<"/parameters/create", "post">;
+type UpdateParameterIn = InputOf<"/parameters/update", "post">;
+type UpdateParameterOut = OutputOf<"/parameters/update", "post">;
 type PatchParameterDraftIn = InputOf<
-  "/api/v5/artifacts/parameters/draft",
+  "/parameters/draft",
   "patch"
 >;
 type PatchParameterDraftOut = OutputOf<
-  "/api/v5/artifacts/parameters/draft",
+  "/parameters/draft",
   "patch"
 >;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -57,7 +57,7 @@ type CreateDraftDescriptionsOut = OutputOf<
   "post"
 >;
 
-type ParameterData = OutputOf<"/api/v5/artifacts/parameters/get", "post">;
+type ParameterData = OutputOf<"/parameters/get", "post">;
 
 type ParameterFormState = {
   name_id: string | null;

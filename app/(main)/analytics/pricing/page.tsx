@@ -18,15 +18,15 @@ import type { Metadata } from "next";
 import { loadPricingSearchParams } from "@/lib/search-params/pricing";
 
 /** ---- Strong types from OpenAPI ---- */
-type PricingIn = InputOf<"/api/v5/artifacts/pricing/get", "post">;
-type PricingOut = OutputOf<"/api/v5/artifacts/pricing/get", "post">;
+type PricingIn = InputOf<"/pricing/get", "post">;
+type PricingOut = OutputOf<"/pricing/get", "post">;
 type PricingRunsOut = NonNullable<PricingOut["history"]>;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/pricing/get", input, {
+  return api.post("/pricing/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -37,11 +37,11 @@ const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/pricing/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/pricing/docs", "post">;
+type DocsIn = InputOf<"/pricing/docs", "post">;
+type DocsOut = OutputOf<"/pricing/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/pricing/docs", input);
+  return api.post("/pricing/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -17,14 +17,14 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDepartmentIn = InputOf<"/api/v5/artifacts/departments/get", "post">;
-type GetDepartmentOut = OutputOf<"/api/v5/artifacts/departments/get", "post">;
+type GetDepartmentIn = InputOf<"/departments/get", "post">;
+type GetDepartmentOut = OutputOf<"/departments/get", "post">;
 
-type CreateDepartmentIn = InputOf<"/api/v5/artifacts/departments/create", "post">;
-type CreateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/create", "post">;
+type CreateDepartmentIn = InputOf<"/departments/create", "post">;
+type CreateDepartmentOut = OutputOf<"/departments/create", "post">;
 
-type PatchDepartmentDraftIn = InputOf<"/api/v5/artifacts/departments/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<"/api/v5/artifacts/departments/draft", "patch">;
+type PatchDepartmentDraftIn = InputOf<"/departments/draft", "patch">;
+type PatchDepartmentDraftOut = OutputOf<"/departments/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -39,7 +39,7 @@ type CreateDraftDescriptionsOut = OutputOf<
 /** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
 const getDepartmentDefault = cache(
   async (input: GetDepartmentIn): Promise<GetDepartmentOut> => {
-    return api.post("/artifacts/departments/get", input, {
+    return api.post("/departments/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -53,7 +53,7 @@ async function createDepartment(
   input: CreateDepartmentIn
 ): Promise<CreateDepartmentOut> {
   "use server";
-  return api.post("/artifacts/departments/create", input);
+  return api.post("/departments/create", input);
 }
 
 async function createDraftNames(
@@ -76,15 +76,15 @@ async function patchDepartmentDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/artifacts/departments/draft", input);
+  return api.patch("/departments/draft", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/departments/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/departments/docs", "post">;
+type DocsIn = InputOf<"/departments/docs", "post">;
+type DocsOut = OutputOf<"/departments/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/departments/docs", input);
+  return api.post("/departments/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -129,7 +129,7 @@ export default async function NewDepartmentPage({
   };
   const [departmentDetailDefault, draftsResult] = await Promise.all([
     getDepartmentDefault(input),
-    api.post("/artifacts/departments/drafts", {})
+    api.post("/departments/drafts", {})
   ]);
 
   return (

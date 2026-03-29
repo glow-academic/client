@@ -17,8 +17,8 @@ import type { Metadata } from "next";
 import { loadReportsSearchParams } from "@/lib/search-params/reports";
 
 /** ---- Strong types from OpenAPI ---- */
-type ReportsIn = InputOf<"/api/v5/artifacts/reports/get", "post">;
-type ReportsOut = OutputOf<"/api/v5/artifacts/reports/get", "post">;
+type ReportsIn = InputOf<"/reports/get", "post">;
+type ReportsOut = OutputOf<"/reports/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -28,7 +28,7 @@ type ReportsOut = OutputOf<"/api/v5/artifacts/reports/get", "post">;
 const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/reports/get", input, {
+  return api.post("/reports/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -39,11 +39,11 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/reports/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/reports/docs", "post">;
+type DocsIn = InputOf<"/reports/docs", "post">;
+type DocsOut = OutputOf<"/reports/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/reports/docs", input);
+  return api.post("/reports/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

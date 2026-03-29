@@ -17,15 +17,15 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAgentIn = InputOf<"/api/v5/artifacts/agents/get", "post">;
-type GetAgentOut = OutputOf<"/api/v5/artifacts/agents/get", "post">;
-type CreateAgentIn = InputOf<"/api/v5/artifacts/agents/create", "post">;
-type CreateAgentOut = OutputOf<"/api/v5/artifacts/agents/create", "post">;
-type UpdateAgentIn = InputOf<"/api/v5/artifacts/agents/update", "post">;
-type UpdateAgentOut = OutputOf<"/api/v5/artifacts/agents/update", "post">;
+type GetAgentIn = InputOf<"/agents/get", "post">;
+type GetAgentOut = OutputOf<"/agents/get", "post">;
+type CreateAgentIn = InputOf<"/agents/create", "post">;
+type CreateAgentOut = OutputOf<"/agents/create", "post">;
+type UpdateAgentIn = InputOf<"/agents/update", "post">;
+type UpdateAgentOut = OutputOf<"/agents/update", "post">;
 // Prompts delete removed - no prompts delete functionality needed
-type PatchAgentDraftIn = InputOf<"/api/v5/artifacts/agents/draft", "patch">;
-type PatchAgentDraftOut = OutputOf<"/api/v5/artifacts/agents/draft", "patch">;
+type PatchAgentDraftIn = InputOf<"/agents/draft", "patch">;
+type PatchAgentDraftOut = OutputOf<"/agents/draft", "patch">;
 type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 type CreateDraftPromptsIn = InputOf<"/api/v5/resources/prompts", "post">;
@@ -35,7 +35,7 @@ type CreateDraftPromptsOut = OutputOf<"/api/v5/resources/prompts", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
-  return api.post("/artifacts/agents/get", input, {
+  return api.post("/agents/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -44,11 +44,11 @@ const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/agents/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/agents/docs", "post">;
+type DocsIn = InputOf<"/agents/docs", "post">;
+type DocsOut = OutputOf<"/agents/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/agents/docs", input);
+  return api.post("/agents/docs", input);
 };
 
 export async function generateMetadata({
@@ -64,12 +64,12 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
-  return api.post("/artifacts/agents/create", input);
+  return api.post("/agents/create", input);
 }
 
 async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   "use server";
-  return api.post("/artifacts/agents/update", input);
+  return api.post("/agents/update", input);
 }
 
 async function patchAgentDraft(
@@ -77,7 +77,7 @@ async function patchAgentDraft(
 ): Promise<PatchAgentDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/agents/draft", input);
+  return api.patch("/agents/draft", input);
 }
 
 async function createDraftVoices(
@@ -137,7 +137,7 @@ export default async function AgentEditPage({
     const [agentDetail, docs, draftsResult] = await Promise.all([
       agentId ? getAgent(input) : Promise.resolve(null),
       getDocs({ body: { entity_id: agentId } }),
-      api.post("/artifacts/agents/drafts", {})
+      api.post("/agents/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

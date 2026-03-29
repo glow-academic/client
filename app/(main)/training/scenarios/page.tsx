@@ -16,15 +16,15 @@ import type { Metadata } from "next";
 import { loadScenariosListSearchParams } from "@/lib/search-params/scenarios-list";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenariosListOut = OutputOf<"/api/v5/artifacts/scenarios/search", "post">;
-type DuplicateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/duplicate", "post">;
-type DuplicateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/duplicate", "post">;
-type DeleteScenarioIn = InputOf<"/api/v5/artifacts/scenarios/delete", "post">;
-type DeleteScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/delete", "post">;
-type CreateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/create", "post">;
-type UpdateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
+type ScenariosListOut = OutputOf<"/scenarios/search", "post">;
+type DuplicateScenarioIn = InputOf<"/scenarios/duplicate", "post">;
+type DuplicateScenarioOut = OutputOf<"/scenarios/duplicate", "post">;
+type DeleteScenarioIn = InputOf<"/scenarios/delete", "post">;
+type DeleteScenarioOut = OutputOf<"/scenarios/delete", "post">;
+type CreateScenarioIn = InputOf<"/scenarios/create", "post">;
+type CreateScenarioOut = OutputOf<"/scenarios/create", "post">;
+type UpdateScenarioIn = InputOf<"/scenarios/update", "post">;
+type UpdateScenarioOut = OutputOf<"/scenarios/update", "post">;
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for scenarios list request ---- */
@@ -48,7 +48,7 @@ type ScenariosListBody = {
 const getScenariosList = async (body: ScenariosListBody): Promise<ScenariosListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/scenarios/search",
+    "/scenarios/search",
     { body },
     {
       cache: "no-store",
@@ -67,7 +67,7 @@ async function duplicateScenario(
 ): Promise<DuplicateScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/scenarios/duplicate", input);
+  return api.post("/scenarios/duplicate", input);
 }
 
 async function deleteScenario(
@@ -75,30 +75,30 @@ async function deleteScenario(
 ): Promise<DeleteScenarioOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/scenarios/delete", input);
+  return api.post("/scenarios/delete", input);
 }
 
 async function createScenario(input: CreateScenarioIn): Promise<CreateScenarioOut> {
   "use server";
-  return api.post("/artifacts/scenarios/create", input);
+  return api.post("/scenarios/create", input);
 }
 
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
-  return api.post("/artifacts/scenarios/update", input);
+  return api.post("/scenarios/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/artifacts/scenarios/csv", { formData });
+  return api.post("/scenarios/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/scenarios/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/scenarios/docs", "post">;
+type DocsIn = InputOf<"/scenarios/docs", "post">;
+type DocsOut = OutputOf<"/scenarios/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/scenarios/docs", input);
+  return api.post("/scenarios/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

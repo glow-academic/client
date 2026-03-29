@@ -22,12 +22,12 @@ import {
 } from "@/lib/search-params/scenarios";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetScenarioIn = InputOf<"/api/v5/artifacts/scenarios/get", "post">;
-type GetScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/get", "post">;
-type UpdateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
-type PatchScenarioDraftIn = InputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
+type GetScenarioIn = InputOf<"/scenarios/get", "post">;
+type GetScenarioOut = OutputOf<"/scenarios/get", "post">;
+type UpdateScenarioIn = InputOf<"/scenarios/update", "post">;
+type UpdateScenarioOut = OutputOf<"/scenarios/update", "post">;
+type PatchScenarioDraftIn = InputOf<"/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/scenarios/draft", "patch">;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
@@ -123,7 +123,7 @@ const getScenario = async (
   }
 
   return api.post(
-    "/artifacts/scenarios/get",
+    "/scenarios/get",
     {
       body,
     },
@@ -137,11 +137,11 @@ const getScenario = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/scenarios/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/scenarios/docs", "post">;
+type DocsIn = InputOf<"/scenarios/docs", "post">;
+type DocsOut = OutputOf<"/scenarios/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/scenarios/docs", input);
+  return api.post("/scenarios/docs", input);
 };
 
 export async function generateMetadata({
@@ -190,14 +190,14 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
 
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
-  return api.post("/artifacts/scenarios/update", input);
+  return api.post("/scenarios/update", input);
 }
 
 async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  return api.patch("/artifacts/scenarios/draft", input);
+  return api.patch("/scenarios/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -339,7 +339,7 @@ export default async function EditScenarioPage({
           : undefined
       ),
       getDocs({ body: { entity_id: scenarioId } }),
-      api.post("/artifacts/scenarios/drafts", {})
+      api.post("/scenarios/drafts", {})
     ]);
 
     // Entity name from docs (already resolved server-side)
@@ -365,7 +365,7 @@ export default async function EditScenarioPage({
             scenarioDetail={scenarioDetail}
             updateScenarioAction={updateScenario}
             patchScenarioDraftAction={patchScenarioDraft}
-            uploadBasePath="/artifacts/scenarios"
+            uploadBasePath="/scenarios"
             uploadFileAction={uploadFile}
           />
         </div>

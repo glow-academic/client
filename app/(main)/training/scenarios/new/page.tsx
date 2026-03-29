@@ -20,31 +20,31 @@ import {
 } from "@/lib/search-params/scenarios";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetScenarioIn = InputOf<"/api/v5/artifacts/scenarios/get", "post">;
-type GetScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/get", "post">;
-type CreateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/create", "post">;
-type PatchScenarioDraftIn = InputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
+type GetScenarioIn = InputOf<"/scenarios/get", "post">;
+type GetScenarioOut = OutputOf<"/scenarios/get", "post">;
+type CreateScenarioIn = InputOf<"/scenarios/create", "post">;
+type CreateScenarioOut = OutputOf<"/scenarios/create", "post">;
+type PatchScenarioDraftIn = InputOf<"/scenarios/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/scenarios/draft", "patch">;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
 
 async function getScenario(input: GetScenarioIn): Promise<GetScenarioOut> {
   "use server";
-  return api.post("/artifacts/scenarios/get", input);
+  return api.post("/scenarios/get", input);
 }
 
 async function createScenario(input: CreateScenarioIn): Promise<CreateScenarioOut> {
   "use server";
-  return api.post("/artifacts/scenarios/create", input);
+  return api.post("/scenarios/create", input);
 }
 
 async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  return api.patch("/artifacts/scenarios/draft", input);
+  return api.patch("/scenarios/draft", input);
 }
 
 async function uploadFile(formData: FormData): Promise<UploadResult> {
@@ -81,11 +81,11 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/scenarios/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/scenarios/docs", "post">;
+type DocsIn = InputOf<"/scenarios/docs", "post">;
+type DocsOut = OutputOf<"/scenarios/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/scenarios/docs", input);
+  return api.post("/scenarios/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -153,7 +153,7 @@ export default async function NewScenarioPage({
       mcp: false,
     },
   }),
-    api.post("/artifacts/scenarios/drafts", {})
+    api.post("/scenarios/drafts", {})
   ]);
 
   return (
@@ -175,7 +175,7 @@ export default async function NewScenarioPage({
           scenarioDetailDefault={scenarioDetailDefault}
           createScenarioAction={createScenario}
           patchScenarioDraftAction={patchScenarioDraft}
-          uploadBasePath="/artifacts/scenarios"
+          uploadBasePath="/scenarios"
           uploadFileAction={uploadFile}
         />
       </div>

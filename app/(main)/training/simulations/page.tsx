@@ -16,15 +16,15 @@ import type { Metadata } from "next";
 import { loadSimulationsListSearchParams } from "@/lib/search-params/simulations";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationsListOut = OutputOf<"/api/v5/artifacts/simulations/search", "post">;
-type DuplicateSimulationIn = InputOf<"/api/v5/artifacts/simulations/duplicate", "post">;
-type DuplicateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/duplicate", "post">;
-type DeleteSimulationIn = InputOf<"/api/v5/artifacts/simulations/delete", "post">;
-type DeleteSimulationOut = OutputOf<"/api/v5/artifacts/simulations/delete", "post">;
-type CreateSimulationIn = InputOf<"/api/v5/artifacts/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/create", "post">;
-type UpdateSimulationIn = InputOf<"/api/v5/artifacts/simulations/update", "post">;
-type UpdateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/update", "post">;
+type SimulationsListOut = OutputOf<"/simulations/search", "post">;
+type DuplicateSimulationIn = InputOf<"/simulations/duplicate", "post">;
+type DuplicateSimulationOut = OutputOf<"/simulations/duplicate", "post">;
+type DeleteSimulationIn = InputOf<"/simulations/delete", "post">;
+type DeleteSimulationOut = OutputOf<"/simulations/delete", "post">;
+type CreateSimulationIn = InputOf<"/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/simulations/create", "post">;
+type UpdateSimulationIn = InputOf<"/simulations/update", "post">;
+type UpdateSimulationOut = OutputOf<"/simulations/update", "post">;
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for simulations list request ---- */
@@ -48,7 +48,7 @@ type SimulationsListBody = {
 const getSimulationsList = async (body: SimulationsListBody): Promise<SimulationsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/simulations/search",
+    "/simulations/search",
     { body },
     {
       cache: "no-store",
@@ -67,7 +67,7 @@ async function duplicateSimulation(
 ): Promise<DuplicateSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/simulations/duplicate", input);
+  return api.post("/simulations/duplicate", input);
 }
 
 async function deleteSimulation(
@@ -75,30 +75,30 @@ async function deleteSimulation(
 ): Promise<DeleteSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/simulations/delete", input);
+  return api.post("/simulations/delete", input);
 }
 
 async function createSimulation(input: CreateSimulationIn): Promise<CreateSimulationOut> {
   "use server";
-  return api.post("/artifacts/simulations/create", input);
+  return api.post("/simulations/create", input);
 }
 
 async function updateSimulation(input: UpdateSimulationIn): Promise<UpdateSimulationOut> {
   "use server";
-  return api.post("/artifacts/simulations/update", input);
+  return api.post("/simulations/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/artifacts/simulations/csv", { formData });
+  return api.post("/simulations/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/simulations/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/simulations/docs", "post">;
+type DocsIn = InputOf<"/simulations/docs", "post">;
+type DocsOut = OutputOf<"/simulations/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/simulations/docs", input);
+  return api.post("/simulations/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

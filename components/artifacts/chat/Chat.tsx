@@ -29,16 +29,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type GetChatOut = OutputOf<
-  "/api/v5/artifacts/chat/get",
+  "/chat/get",
   "post"
 >;
 export type ChatData = GetChatOut;
 type PatchChatDraftIn = InputOf<
-  "/api/v5/artifacts/chat/draft",
+  "/chat/draft",
   "patch"
 >;
 type PatchChatDraftOut = OutputOf<
-  "/api/v5/artifacts/chat/draft",
+  "/chat/draft",
   "patch"
 >;
 

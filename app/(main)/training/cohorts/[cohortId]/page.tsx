@@ -17,12 +17,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetCohortIn = InputOf<"/api/v5/artifacts/cohorts/get", "post">;
-type GetCohortOut = OutputOf<"/api/v5/artifacts/cohorts/get", "post">;
-type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
-type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
-type PatchCohortDraftIn = InputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
+type GetCohortIn = InputOf<"/cohorts/get", "post">;
+type GetCohortOut = OutputOf<"/cohorts/get", "post">;
+type UpdateCohortIn = InputOf<"/cohorts/update", "post">;
+type UpdateCohortOut = OutputOf<"/cohorts/update", "post">;
+type PatchCohortDraftIn = InputOf<"/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/cohorts/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -54,7 +54,7 @@ type CreateDraftProfilePersonasOut = OutputOf<
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getCohort = async (input: GetCohortIn): Promise<GetCohortOut> => {
-  return api.post("/artifacts/cohorts/get", input, {
+  return api.post("/cohorts/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -63,11 +63,11 @@ const getCohort = async (input: GetCohortIn): Promise<GetCohortOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/cohorts/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/cohorts/docs", "post">;
+type DocsIn = InputOf<"/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/cohorts/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/cohorts/docs", input);
+  return api.post("/cohorts/docs", input);
 };
 
 export async function generateMetadata({
@@ -83,7 +83,7 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   "use server";
-  return api.post("/artifacts/cohorts/update", input);
+  return api.post("/cohorts/update", input);
 }
 
 async function patchCohortDraft(
@@ -92,7 +92,7 @@ async function patchCohortDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/artifacts/cohorts/draft", input);
+  return api.patch("/cohorts/draft", input);
 }
 
 async function createDraftNames(
@@ -178,7 +178,7 @@ export default async function CohortEditPage({
     const [cohortData, docs, draftsResult] = await Promise.all([
       getCohort(input),
       getDocs({ body: { entity_id: cohortId } }),
-      api.post("/artifacts/cohorts/drafts", {})
+      api.post("/cohorts/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

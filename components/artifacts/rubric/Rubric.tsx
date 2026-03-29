@@ -37,12 +37,12 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type CreateRubricIn = InputOf<"/api/v5/artifacts/rubrics/create", "post">;
-type CreateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/create", "post">;
-type UpdateRubricIn = InputOf<"/api/v5/artifacts/rubrics/update", "post">;
-type UpdateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/update", "post">;
-type PatchRubricDraftIn = InputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
+type CreateRubricIn = InputOf<"/rubrics/create", "post">;
+type CreateRubricOut = OutputOf<"/rubrics/create", "post">;
+type UpdateRubricIn = InputOf<"/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/rubrics/update", "post">;
+type PatchRubricDraftIn = InputOf<"/rubrics/draft", "patch">;
+type PatchRubricDraftOut = OutputOf<"/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -63,7 +63,7 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "/api/v5/resources/standard_groups",
   "post"
 >;
-type RubricData = OutputOf<"/api/v5/artifacts/rubrics/get", "post">;
+type RubricData = OutputOf<"/rubrics/get", "post">;
 type RubricResourceType =
   | "names"
   | "descriptions"

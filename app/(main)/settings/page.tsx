@@ -11,7 +11,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SettingsListOut = OutputOf<"/api/v5/artifacts/settings/search", "post">;
+type SettingsListOut = OutputOf<"/settings/search", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -20,7 +20,7 @@ type SettingsListOut = OutputOf<"/api/v5/artifacts/settings/search", "post">;
 const getSettingsList = async (): Promise<SettingsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/settings/search",
+    "/settings/search",
     { body: {} },
     {
       cache: "no-store",
@@ -34,11 +34,11 @@ const getSettingsList = async (): Promise<SettingsListOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/settings/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/settings/docs", "post">;
+type DocsIn = InputOf<"/settings/docs", "post">;
+type DocsOut = OutputOf<"/settings/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/settings/docs", input);
+  return api.post("/settings/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/v5/personas/get": {
+    "/personas/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -24,7 +24,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/search": {
+    "/personas/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -44,7 +44,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/create": {
+    "/personas/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -64,7 +64,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/csv": {
+    "/personas/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -84,7 +84,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/update": {
+    "/personas/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -104,7 +104,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/duplicate": {
+    "/personas/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -124,7 +124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/delete": {
+    "/personas/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -144,7 +144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/draft": {
+    "/personas/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -164,7 +164,7 @@ export interface paths {
         patch: operations["patch_persona_draft_v5_personas_draft_patch"];
         trace?: never;
     };
-    "/v5/personas/drafts": {
+    "/personas/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -184,7 +184,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/docs": {
+    "/personas/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -204,7 +204,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/export": {
+    "/personas/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -224,7 +224,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/personas/refresh": {
+    "/personas/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -244,7 +244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/get": {
+    "/scenarios/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -264,7 +264,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/search": {
+    "/scenarios/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -284,7 +284,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/create": {
+    "/scenarios/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -304,7 +304,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/csv": {
+    "/scenarios/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -324,7 +324,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/update": {
+    "/scenarios/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -344,7 +344,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/duplicate": {
+    "/scenarios/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -364,7 +364,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/delete": {
+    "/scenarios/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -384,7 +384,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/draft": {
+    "/scenarios/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -404,7 +404,7 @@ export interface paths {
         patch: operations["patch_scenario_draft_v5_scenarios_draft_patch"];
         trace?: never;
     };
-    "/v5/scenarios/drafts": {
+    "/scenarios/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -424,7 +424,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/export": {
+    "/scenarios/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -444,7 +444,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/docs": {
+    "/scenarios/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -464,7 +464,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/refresh": {
+    "/scenarios/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -484,7 +484,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/upload": {
+    "/scenarios/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -509,7 +509,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/download/{upload_id}": {
+    "/scenarios/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -529,7 +529,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/scenarios/preview/{upload_id}": {
+    "/scenarios/preview/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -549,7 +549,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/get": {
+    "/simulations/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -569,7 +569,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/search": {
+    "/simulations/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -589,7 +589,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/create": {
+    "/simulations/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -609,7 +609,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/csv": {
+    "/simulations/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -629,7 +629,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/update": {
+    "/simulations/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -649,7 +649,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/duplicate": {
+    "/simulations/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -669,7 +669,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/delete": {
+    "/simulations/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -689,7 +689,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/draft": {
+    "/simulations/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -709,7 +709,7 @@ export interface paths {
         patch: operations["patch_simulation_draft_v5_simulations_draft_patch"];
         trace?: never;
     };
-    "/v5/simulations/drafts": {
+    "/simulations/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -729,7 +729,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/export": {
+    "/simulations/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -749,7 +749,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/docs": {
+    "/simulations/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -769,7 +769,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/simulations/refresh": {
+    "/simulations/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -789,7 +789,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/search": {
+    "/documents/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -809,7 +809,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/get": {
+    "/documents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -829,7 +829,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/create": {
+    "/documents/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -849,7 +849,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/update": {
+    "/documents/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -869,7 +869,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/duplicate": {
+    "/documents/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -889,7 +889,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/delete": {
+    "/documents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -909,7 +909,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/draft": {
+    "/documents/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -929,7 +929,7 @@ export interface paths {
         patch: operations["patch_document_draft_v5_documents_draft_patch"];
         trace?: never;
     };
-    "/v5/documents/drafts": {
+    "/documents/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -949,7 +949,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/docs": {
+    "/documents/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -969,7 +969,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/refresh": {
+    "/documents/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -989,7 +989,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/export": {
+    "/documents/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1009,7 +1009,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/csv": {
+    "/documents/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1029,7 +1029,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/upload": {
+    "/documents/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -1055,7 +1055,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/download/{upload_id}": {
+    "/documents/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1075,7 +1075,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/documents/preview/{upload_id}": {
+    "/documents/preview/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1095,7 +1095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/get": {
+    "/departments/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1115,7 +1115,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/search": {
+    "/departments/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1135,7 +1135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/create": {
+    "/departments/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1155,7 +1155,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/update": {
+    "/departments/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1175,7 +1175,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/duplicate": {
+    "/departments/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1195,7 +1195,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/delete": {
+    "/departments/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1215,7 +1215,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/draft": {
+    "/departments/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1235,7 +1235,7 @@ export interface paths {
         patch: operations["patch_department_draft_v5_departments_draft_patch"];
         trace?: never;
     };
-    "/v5/departments/drafts": {
+    "/departments/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1255,7 +1255,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/docs": {
+    "/departments/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1275,7 +1275,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/export": {
+    "/departments/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1295,7 +1295,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/csv": {
+    "/departments/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1315,7 +1315,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/departments/refresh": {
+    "/departments/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -1335,7 +1335,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/search": {
+    "/cohorts/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1355,7 +1355,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/get": {
+    "/cohorts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1375,7 +1375,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/create": {
+    "/cohorts/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1395,7 +1395,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/update": {
+    "/cohorts/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1415,7 +1415,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/duplicate": {
+    "/cohorts/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1435,7 +1435,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/delete": {
+    "/cohorts/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1455,7 +1455,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/draft": {
+    "/cohorts/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1475,7 +1475,7 @@ export interface paths {
         patch: operations["patch_cohort_draft_v5_cohorts_draft_patch"];
         trace?: never;
     };
-    "/v5/cohorts/drafts": {
+    "/cohorts/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1495,7 +1495,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/export": {
+    "/cohorts/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1515,7 +1515,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/csv": {
+    "/cohorts/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1535,7 +1535,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/docs": {
+    "/cohorts/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1555,7 +1555,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/cohorts/refresh": {
+    "/cohorts/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -1575,7 +1575,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/search": {
+    "/evals/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1595,7 +1595,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/get": {
+    "/evals/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1615,7 +1615,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/create": {
+    "/evals/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1635,7 +1635,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/update": {
+    "/evals/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1655,7 +1655,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/duplicate": {
+    "/evals/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1675,7 +1675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/delete": {
+    "/evals/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1695,7 +1695,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/draft": {
+    "/evals/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1715,7 +1715,7 @@ export interface paths {
         patch: operations["patch_eval_draft_v5_evals_draft_patch"];
         trace?: never;
     };
-    "/v5/evals/drafts": {
+    "/evals/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1735,7 +1735,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/docs": {
+    "/evals/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1755,7 +1755,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/refresh": {
+    "/evals/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -1775,7 +1775,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/export": {
+    "/evals/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1795,7 +1795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/evals/csv": {
+    "/evals/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1815,7 +1815,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/get": {
+    "/rubrics/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1835,7 +1835,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/search": {
+    "/rubrics/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1855,7 +1855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/create": {
+    "/rubrics/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1875,7 +1875,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/update": {
+    "/rubrics/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1895,7 +1895,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/duplicate": {
+    "/rubrics/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1915,7 +1915,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/delete": {
+    "/rubrics/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1935,7 +1935,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/draft": {
+    "/rubrics/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1955,7 +1955,7 @@ export interface paths {
         patch: operations["patch_rubric_draft_v5_rubrics_draft_patch"];
         trace?: never;
     };
-    "/v5/rubrics/drafts": {
+    "/rubrics/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1975,7 +1975,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/docs": {
+    "/rubrics/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1995,7 +1995,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/export": {
+    "/rubrics/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2015,7 +2015,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/csv": {
+    "/rubrics/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2035,7 +2035,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/rubrics/refresh": {
+    "/rubrics/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2055,7 +2055,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/search": {
+    "/settings/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2075,7 +2075,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/get": {
+    "/settings/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2095,7 +2095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/create": {
+    "/settings/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2115,7 +2115,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/update": {
+    "/settings/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2135,7 +2135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/duplicate": {
+    "/settings/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2155,7 +2155,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/delete": {
+    "/settings/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2175,7 +2175,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/draft": {
+    "/settings/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2195,7 +2195,7 @@ export interface paths {
         patch: operations["patch_setting_draft_v5_settings_draft_patch"];
         trace?: never;
     };
-    "/v5/settings/drafts": {
+    "/settings/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2215,7 +2215,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/export": {
+    "/settings/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2235,7 +2235,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/csv": {
+    "/settings/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2255,7 +2255,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/docs": {
+    "/settings/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2275,7 +2275,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/refresh": {
+    "/settings/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2295,7 +2295,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/settings/decrypt": {
+    "/settings/decrypt": {
         parameters: {
             query?: never;
             header?: never;
@@ -2315,7 +2315,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/get": {
+    "/agents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2335,7 +2335,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/search": {
+    "/agents/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2355,7 +2355,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/create": {
+    "/agents/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2375,7 +2375,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/update": {
+    "/agents/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2395,7 +2395,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/duplicate": {
+    "/agents/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2415,7 +2415,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/delete": {
+    "/agents/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2435,7 +2435,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/draft": {
+    "/agents/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2455,7 +2455,7 @@ export interface paths {
         patch: operations["patch_agent_draft_v5_agents_draft_patch"];
         trace?: never;
     };
-    "/v5/agents/drafts": {
+    "/agents/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2475,7 +2475,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/docs": {
+    "/agents/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2495,7 +2495,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/export": {
+    "/agents/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2515,7 +2515,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/csv": {
+    "/agents/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2535,7 +2535,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/agents/refresh": {
+    "/agents/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2555,7 +2555,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/get": {
+    "/models/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2575,7 +2575,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/search": {
+    "/models/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2595,7 +2595,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/create": {
+    "/models/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2615,7 +2615,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/update": {
+    "/models/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2635,7 +2635,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/duplicate": {
+    "/models/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2655,7 +2655,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/delete": {
+    "/models/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2675,7 +2675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/draft": {
+    "/models/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2695,7 +2695,7 @@ export interface paths {
         patch: operations["patch_model_draft_v5_models_draft_patch"];
         trace?: never;
     };
-    "/v5/models/drafts": {
+    "/models/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2715,7 +2715,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/docs": {
+    "/models/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2735,7 +2735,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/export": {
+    "/models/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2755,7 +2755,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/csv": {
+    "/models/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2775,7 +2775,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/models/refresh": {
+    "/models/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2795,7 +2795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/search": {
+    "/providers/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2815,7 +2815,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/get": {
+    "/providers/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2835,7 +2835,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/create": {
+    "/providers/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2855,7 +2855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/update": {
+    "/providers/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2875,7 +2875,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/duplicate": {
+    "/providers/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2895,7 +2895,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/delete": {
+    "/providers/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2915,7 +2915,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/draft": {
+    "/providers/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2935,7 +2935,7 @@ export interface paths {
         patch: operations["patch_provider_draft_v5_providers_draft_patch"];
         trace?: never;
     };
-    "/v5/providers/drafts": {
+    "/providers/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2955,7 +2955,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/docs": {
+    "/providers/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2975,7 +2975,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/export": {
+    "/providers/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2995,7 +2995,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/csv": {
+    "/providers/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -3015,7 +3015,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/refresh": {
+    "/providers/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3035,7 +3035,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/providers/decrypt": {
+    "/providers/decrypt": {
         parameters: {
             query?: never;
             header?: never;
@@ -3055,7 +3055,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/get": {
+    "/parameters/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3075,7 +3075,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/search": {
+    "/parameters/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3095,7 +3095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/create": {
+    "/parameters/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -3115,7 +3115,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/update": {
+    "/parameters/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -3135,7 +3135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/duplicate": {
+    "/parameters/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3155,7 +3155,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/delete": {
+    "/parameters/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3175,7 +3175,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/draft": {
+    "/parameters/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3195,7 +3195,7 @@ export interface paths {
         patch: operations["patch_parameter_draft_v5_parameters_draft_patch"];
         trace?: never;
     };
-    "/v5/parameters/drafts": {
+    "/parameters/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -3215,7 +3215,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/docs": {
+    "/parameters/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3235,7 +3235,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/export": {
+    "/parameters/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3255,7 +3255,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/csv": {
+    "/parameters/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -3275,7 +3275,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/parameters/refresh": {
+    "/parameters/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3295,7 +3295,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/get": {
+    "/fields/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3315,7 +3315,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/search": {
+    "/fields/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3335,7 +3335,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/create": {
+    "/fields/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -3355,7 +3355,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/update": {
+    "/fields/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -3375,7 +3375,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/duplicate": {
+    "/fields/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3395,7 +3395,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/delete": {
+    "/fields/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3415,7 +3415,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/draft": {
+    "/fields/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3435,7 +3435,7 @@ export interface paths {
         patch: operations["patch_field_draft_v5_fields_draft_patch"];
         trace?: never;
     };
-    "/v5/fields/drafts": {
+    "/fields/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -3455,7 +3455,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/docs": {
+    "/fields/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3475,7 +3475,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/export": {
+    "/fields/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3495,7 +3495,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/csv": {
+    "/fields/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -3515,7 +3515,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/fields/refresh": {
+    "/fields/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3535,7 +3535,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/get": {
+    "/profiles/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3555,7 +3555,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/search": {
+    "/profiles/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3575,7 +3575,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/create": {
+    "/profiles/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -3595,7 +3595,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/update": {
+    "/profiles/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -3615,7 +3615,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/duplicate": {
+    "/profiles/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3635,7 +3635,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/draft": {
+    "/profiles/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3655,7 +3655,7 @@ export interface paths {
         patch: operations["patch_profile_draft_v5_profiles_draft_patch"];
         trace?: never;
     };
-    "/v5/profiles/drafts": {
+    "/profiles/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -3675,7 +3675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/delete": {
+    "/profiles/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3695,7 +3695,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/docs": {
+    "/profiles/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3715,7 +3715,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/export": {
+    "/profiles/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3735,7 +3735,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/profiles/refresh": {
+    "/profiles/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3755,7 +3755,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/get": {
+    "/auths/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3775,7 +3775,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/search": {
+    "/auths/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3795,7 +3795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/create": {
+    "/auths/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -3815,7 +3815,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/update": {
+    "/auths/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -3835,7 +3835,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/duplicate": {
+    "/auths/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3855,7 +3855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/delete": {
+    "/auths/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3875,7 +3875,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/draft": {
+    "/auths/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3895,7 +3895,7 @@ export interface paths {
         patch: operations["patch_auth_draft_v5_auths_draft_patch"];
         trace?: never;
     };
-    "/v5/auths/drafts": {
+    "/auths/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -3915,7 +3915,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/docs": {
+    "/auths/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3935,7 +3935,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/export": {
+    "/auths/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3955,7 +3955,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/auths/refresh": {
+    "/auths/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3975,7 +3975,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/search": {
+    "/tools/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3995,7 +3995,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/get": {
+    "/tools/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4015,7 +4015,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/create": {
+    "/tools/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -4035,7 +4035,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/update": {
+    "/tools/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -4055,7 +4055,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/duplicate": {
+    "/tools/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4075,7 +4075,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/delete": {
+    "/tools/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4095,7 +4095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/draft": {
+    "/tools/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -4115,7 +4115,7 @@ export interface paths {
         patch: operations["patch_tool_draft_v5_tools_draft_patch"];
         trace?: never;
     };
-    "/v5/tools/drafts": {
+    "/tools/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -4135,7 +4135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/export": {
+    "/tools/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4155,7 +4155,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/csv": {
+    "/tools/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -4175,7 +4175,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/docs": {
+    "/tools/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4195,7 +4195,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/tools/refresh": {
+    "/tools/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4215,7 +4215,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/group/get": {
+    "/group/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4235,7 +4235,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/group/refresh": {
+    "/group/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4255,7 +4255,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/group/docs": {
+    "/group/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4275,7 +4275,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/group/export": {
+    "/group/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4295,7 +4295,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/group/download/{upload_id}": {
+    "/group/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4315,7 +4315,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/session/get": {
+    "/session/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4335,7 +4335,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/session/refresh": {
+    "/session/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4355,7 +4355,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/session/docs": {
+    "/session/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4375,7 +4375,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/session/export": {
+    "/session/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4395,7 +4395,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/chat/get": {
+    "/chat/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4415,7 +4415,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/chat/draft": {
+    "/chat/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -4435,7 +4435,7 @@ export interface paths {
         patch: operations["patch_chat_draft_v5_chat_draft_patch"];
         trace?: never;
     };
-    "/v5/chat/drafts": {
+    "/chat/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -4455,7 +4455,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/chat/export": {
+    "/chat/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4475,7 +4475,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/chat/refresh": {
+    "/chat/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4495,7 +4495,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/chat/docs": {
+    "/chat/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4515,7 +4515,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/home/get": {
+    "/home/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4535,7 +4535,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/home/search": {
+    "/home/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4555,7 +4555,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/home/refresh": {
+    "/home/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4575,7 +4575,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/home/export": {
+    "/home/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4595,7 +4595,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/home/docs": {
+    "/home/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4615,7 +4615,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/practice/get": {
+    "/practice/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4635,7 +4635,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/practice/search": {
+    "/practice/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4655,7 +4655,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/practice/refresh": {
+    "/practice/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4675,7 +4675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/practice/export": {
+    "/practice/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4695,7 +4695,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/practice/docs": {
+    "/practice/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4715,7 +4715,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/get": {
+    "/attempt/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4735,7 +4735,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/join": {
+    "/attempt/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -4755,7 +4755,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/leave": {
+    "/attempt/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -4775,7 +4775,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/archive": {
+    "/attempt/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -4795,7 +4795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/refresh": {
+    "/attempt/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4815,7 +4815,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/docs": {
+    "/attempt/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4835,7 +4835,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/export": {
+    "/attempt/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4855,7 +4855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/start": {
+    "/attempt/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -4875,7 +4875,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/next": {
+    "/attempt/next": {
         parameters: {
             query?: never;
             header?: never;
@@ -4895,7 +4895,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/end": {
+    "/attempt/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -4918,7 +4918,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/end-all": {
+    "/attempt/end-all": {
         parameters: {
             query?: never;
             header?: never;
@@ -4938,7 +4938,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/message": {
+    "/attempt/message": {
         parameters: {
             query?: never;
             header?: never;
@@ -4961,7 +4961,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/grade": {
+    "/attempt/grade": {
         parameters: {
             query?: never;
             header?: never;
@@ -4984,7 +4984,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/stop": {
+    "/attempt/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -5004,7 +5004,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/response": {
+    "/attempt/response": {
         parameters: {
             query?: never;
             header?: never;
@@ -5024,7 +5024,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/use-previous": {
+    "/attempt/use-previous": {
         parameters: {
             query?: never;
             header?: never;
@@ -5044,7 +5044,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/audio/start": {
+    "/attempt/audio/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -5064,7 +5064,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/audio/frame": {
+    "/attempt/audio/frame": {
         parameters: {
             query?: never;
             header?: never;
@@ -5084,7 +5084,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/audio/stop": {
+    "/attempt/audio/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -5104,7 +5104,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/audio/mute": {
+    "/attempt/audio/mute": {
         parameters: {
             query?: never;
             header?: never;
@@ -5124,7 +5124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/search": {
+    "/attempt/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5144,7 +5144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/attempt/download/{upload_id}": {
+    "/attempt/download/{upload_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5164,7 +5164,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/record/get": {
+    "/record/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5184,7 +5184,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/record/search": {
+    "/record/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5204,7 +5204,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/record/refresh": {
+    "/record/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5224,7 +5224,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/record/export": {
+    "/record/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5244,7 +5244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/record/docs": {
+    "/record/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5264,7 +5264,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/dashboard/get": {
+    "/dashboard/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5281,7 +5281,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/dashboard/search": {
+    "/dashboard/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5301,7 +5301,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/dashboard/refresh": {
+    "/dashboard/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5321,7 +5321,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/dashboard/export": {
+    "/dashboard/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5341,7 +5341,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/dashboard/docs": {
+    "/dashboard/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5361,7 +5361,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/reports/export": {
+    "/reports/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5381,7 +5381,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/reports/search": {
+    "/reports/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5401,7 +5401,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/reports/refresh": {
+    "/reports/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5421,7 +5421,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/reports/docs": {
+    "/reports/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5441,7 +5441,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/leaderboard/get": {
+    "/leaderboard/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5458,7 +5458,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/leaderboard/search": {
+    "/leaderboard/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5478,7 +5478,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/leaderboard/refresh": {
+    "/leaderboard/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5498,7 +5498,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/leaderboard/export": {
+    "/leaderboard/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5518,7 +5518,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/leaderboard/docs": {
+    "/leaderboard/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5538,7 +5538,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/pricing/get": {
+    "/pricing/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5558,7 +5558,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/pricing/search": {
+    "/pricing/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5578,7 +5578,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/pricing/refresh": {
+    "/pricing/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5598,7 +5598,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/pricing/export": {
+    "/pricing/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5618,7 +5618,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/pricing/docs": {
+    "/pricing/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5638,7 +5638,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/activity/get": {
+    "/activity/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5655,7 +5655,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/activity/search": {
+    "/activity/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5675,7 +5675,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/activity/refresh": {
+    "/activity/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5695,7 +5695,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/activity/resolve": {
+    "/activity/resolve": {
         parameters: {
             query?: never;
             header?: never;
@@ -5715,7 +5715,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/activity/export": {
+    "/activity/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5735,7 +5735,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/activity/docs": {
+    "/activity/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5755,7 +5755,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/health/get": {
+    "/health/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5775,7 +5775,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/health/refresh": {
+    "/health/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5795,7 +5795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/health/export": {
+    "/health/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5815,7 +5815,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/health/docs": {
+    "/health/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5835,7 +5835,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/benchmark/get": {
+    "/benchmark/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5855,7 +5855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/benchmark/search": {
+    "/benchmark/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5875,7 +5875,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/benchmark/refresh": {
+    "/benchmark/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5895,7 +5895,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/benchmark/export": {
+    "/benchmark/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5915,7 +5915,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/benchmark/docs": {
+    "/benchmark/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5935,7 +5935,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/get": {
+    "/test/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5955,7 +5955,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/join": {
+    "/test/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -5975,7 +5975,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/leave": {
+    "/test/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -5995,7 +5995,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/archive": {
+    "/test/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -6015,7 +6015,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/refresh": {
+    "/test/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -6035,7 +6035,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/export": {
+    "/test/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -6055,7 +6055,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/docs": {
+    "/test/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -6075,7 +6075,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/start": {
+    "/test/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -6095,7 +6095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/next": {
+    "/test/next": {
         parameters: {
             query?: never;
             header?: never;
@@ -6115,7 +6115,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/run": {
+    "/test/run": {
         parameters: {
             query?: never;
             header?: never;
@@ -6135,7 +6135,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/end": {
+    "/test/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -6158,7 +6158,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/stop": {
+    "/test/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -6178,7 +6178,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/test/search": {
+    "/test/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -6198,7 +6198,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/connect": {
+    "/connect": {
         parameters: {
             query?: never;
             header?: never;
@@ -6218,7 +6218,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/disconnect": {
+    "/disconnect": {
         parameters: {
             query?: never;
             header?: never;
@@ -6238,7 +6238,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/context": {
+    "/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -6258,7 +6258,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/problem": {
+    "/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -6278,7 +6278,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/emulate": {
+    "/emulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -6298,7 +6298,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/unemulate": {
+    "/unemulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -6318,7 +6318,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/generate": {
+    "/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -6338,7 +6338,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/": {
+    "/stream/": {
         parameters: {
             query?: never;
             header?: never;
@@ -6362,7 +6362,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ActivityRequest": {
+    "/stream/ActivityRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -6379,7 +6379,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ActivityResponse": {
+    "/stream/ActivityResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -6396,7 +6396,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAssistantCompleteEvent": {
+    "/stream/AttemptAssistantCompleteEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6413,7 +6413,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAssistantHintsEvent": {
+    "/stream/AttemptAssistantHintsEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6430,7 +6430,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAssistantProgressEvent": {
+    "/stream/AttemptAssistantProgressEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6447,7 +6447,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAssistantStartEvent": {
+    "/stream/AttemptAssistantStartEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6464,7 +6464,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAudioEndedEvent": {
+    "/stream/AttemptAudioEndedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6481,7 +6481,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAudioReadyEvent": {
+    "/stream/AttemptAudioReadyEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6498,7 +6498,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAudioStartPayload": {
+    "/stream/AttemptAudioStartPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6515,7 +6515,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptAudioStopPayload": {
+    "/stream/AttemptAudioStopPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6532,7 +6532,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptChatEndedEvent": {
+    "/stream/AttemptChatEndedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6549,7 +6549,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptChatStartedEvent": {
+    "/stream/AttemptChatStartedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6566,7 +6566,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptEndAllPayload": {
+    "/stream/AttemptEndAllPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6583,7 +6583,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptEndPayload": {
+    "/stream/AttemptEndPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6600,7 +6600,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptEndedEvent": {
+    "/stream/AttemptEndedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6617,7 +6617,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptErrorEvent": {
+    "/stream/AttemptErrorEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6634,7 +6634,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptGradeCompleteEvent": {
+    "/stream/AttemptGradeCompleteEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6651,7 +6651,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptGradePayload": {
+    "/stream/AttemptGradePayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6668,7 +6668,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptGradeProgressEvent": {
+    "/stream/AttemptGradeProgressEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6685,7 +6685,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptGradeStartEvent": {
+    "/stream/AttemptGradeStartEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6702,7 +6702,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptJoinPayload": {
+    "/stream/AttemptJoinPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6719,7 +6719,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptJoinedEvent": {
+    "/stream/AttemptJoinedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6736,7 +6736,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptLeavePayload": {
+    "/stream/AttemptLeavePayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6753,7 +6753,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptMessagePayload": {
+    "/stream/AttemptMessagePayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6770,7 +6770,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptNextPayload": {
+    "/stream/AttemptNextPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6787,7 +6787,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptResponsePayload": {
+    "/stream/AttemptResponsePayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6804,7 +6804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptResponseResultEvent": {
+    "/stream/AttemptResponseResultEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6821,7 +6821,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptStartPayload": {
+    "/stream/AttemptStartPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6838,7 +6838,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptStartedEvent": {
+    "/stream/AttemptStartedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6855,7 +6855,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptStopPayload": {
+    "/stream/AttemptStopPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6872,7 +6872,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptStoppedEvent": {
+    "/stream/AttemptStoppedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6889,7 +6889,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptUsePreviousPayload": {
+    "/stream/AttemptUsePreviousPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -6906,7 +6906,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptUserCompleteEvent": {
+    "/stream/AttemptUserCompleteEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6923,7 +6923,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptUserDeltaEvent": {
+    "/stream/AttemptUserDeltaEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6940,7 +6940,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptUserProgressEvent": {
+    "/stream/AttemptUserProgressEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6957,7 +6957,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/AttemptUserStartEvent": {
+    "/stream/AttemptUserStartEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -6974,7 +6974,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/BenchmarkRequest": {
+    "/stream/BenchmarkRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -6991,7 +6991,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/BenchmarkResponse": {
+    "/stream/BenchmarkResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7008,7 +7008,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ComposedDocsResponse": {
+    "/stream/ComposedDocsResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7025,7 +7025,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ConnectionConfirmedPayload": {
+    "/stream/ConnectionConfirmedPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -7042,7 +7042,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateAgentApiRequest": {
+    "/stream/CreateAgentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7059,7 +7059,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateAgentApiResponse": {
+    "/stream/CreateAgentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7076,7 +7076,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateAuthApiRequest": {
+    "/stream/CreateAuthApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7093,7 +7093,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateAuthApiResponse": {
+    "/stream/CreateAuthApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7110,7 +7110,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateCohortApiRequest": {
+    "/stream/CreateCohortApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7127,7 +7127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateCohortApiResponse": {
+    "/stream/CreateCohortApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7144,7 +7144,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateDepartmentApiRequest": {
+    "/stream/CreateDepartmentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7161,7 +7161,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateDepartmentApiResponse": {
+    "/stream/CreateDepartmentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7178,7 +7178,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateDocumentApiRequest": {
+    "/stream/CreateDocumentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7195,7 +7195,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateDocumentApiResponse": {
+    "/stream/CreateDocumentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7212,7 +7212,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateEvalApiRequest": {
+    "/stream/CreateEvalApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7229,7 +7229,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateEvalApiResponse": {
+    "/stream/CreateEvalApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7246,7 +7246,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateFieldApiRequest": {
+    "/stream/CreateFieldApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7263,7 +7263,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateFieldApiResponse": {
+    "/stream/CreateFieldApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7280,7 +7280,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateModelApiRequest": {
+    "/stream/CreateModelApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7297,7 +7297,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateModelApiResponse": {
+    "/stream/CreateModelApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7314,7 +7314,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateParameterApiRequest": {
+    "/stream/CreateParameterApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7331,7 +7331,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateParameterApiResponse": {
+    "/stream/CreateParameterApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7348,7 +7348,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreatePersonaApiRequest": {
+    "/stream/CreatePersonaApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7365,7 +7365,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreatePersonaApiResponse": {
+    "/stream/CreatePersonaApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7382,7 +7382,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateProfileApiRequest": {
+    "/stream/CreateProfileApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7399,7 +7399,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateProfileApiResponse": {
+    "/stream/CreateProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7416,7 +7416,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateProviderApiRequest": {
+    "/stream/CreateProviderApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7433,7 +7433,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateProviderApiResponse": {
+    "/stream/CreateProviderApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7450,7 +7450,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateRubricApiRequest": {
+    "/stream/CreateRubricApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7467,7 +7467,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateRubricApiResponse": {
+    "/stream/CreateRubricApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7484,7 +7484,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateScenarioApiRequest": {
+    "/stream/CreateScenarioApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7501,7 +7501,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateScenarioApiResponse": {
+    "/stream/CreateScenarioApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7518,7 +7518,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateSettingApiRequest": {
+    "/stream/CreateSettingApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7535,7 +7535,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateSettingApiResponse": {
+    "/stream/CreateSettingApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7552,7 +7552,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateSimulationApiRequest": {
+    "/stream/CreateSimulationApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7569,7 +7569,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateSimulationApiResponse": {
+    "/stream/CreateSimulationApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7586,7 +7586,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateToolApiRequest": {
+    "/stream/CreateToolApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7603,7 +7603,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/CreateToolApiResponse": {
+    "/stream/CreateToolApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7620,7 +7620,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DashboardBundleResponse": {
+    "/stream/DashboardBundleResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7637,7 +7637,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DashboardRequest": {
+    "/stream/DashboardRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7654,7 +7654,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteAgentApiRequest": {
+    "/stream/DeleteAgentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7671,7 +7671,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteAgentApiResponse": {
+    "/stream/DeleteAgentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7688,7 +7688,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteAuthApiRequest": {
+    "/stream/DeleteAuthApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7705,7 +7705,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteAuthApiResponse": {
+    "/stream/DeleteAuthApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7722,7 +7722,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteCohortApiRequest": {
+    "/stream/DeleteCohortApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7739,7 +7739,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteCohortApiResponse": {
+    "/stream/DeleteCohortApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7756,7 +7756,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteDepartmentApiRequest": {
+    "/stream/DeleteDepartmentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7773,7 +7773,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteDepartmentApiResponse": {
+    "/stream/DeleteDepartmentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7790,7 +7790,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteDocumentApiRequest": {
+    "/stream/DeleteDocumentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7807,7 +7807,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteDocumentApiResponse": {
+    "/stream/DeleteDocumentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7824,7 +7824,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteEvalApiRequest": {
+    "/stream/DeleteEvalApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7841,7 +7841,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteEvalApiResponse": {
+    "/stream/DeleteEvalApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7858,7 +7858,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteFieldApiRequest": {
+    "/stream/DeleteFieldApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7875,7 +7875,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteFieldApiResponse": {
+    "/stream/DeleteFieldApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7892,7 +7892,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteModelApiRequest": {
+    "/stream/DeleteModelApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7909,7 +7909,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteModelApiResponse": {
+    "/stream/DeleteModelApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7926,7 +7926,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteParameterApiRequest": {
+    "/stream/DeleteParameterApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7943,7 +7943,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteParameterApiResponse": {
+    "/stream/DeleteParameterApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7960,7 +7960,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeletePersonaApiRequest": {
+    "/stream/DeletePersonaApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -7977,7 +7977,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeletePersonaApiResponse": {
+    "/stream/DeletePersonaApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -7994,7 +7994,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteProfileApiRequest": {
+    "/stream/DeleteProfileApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8011,7 +8011,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteProfileApiResponse": {
+    "/stream/DeleteProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8028,7 +8028,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteProviderApiRequest": {
+    "/stream/DeleteProviderApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8045,7 +8045,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteProviderApiResponse": {
+    "/stream/DeleteProviderApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8062,7 +8062,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteRubricApiRequest": {
+    "/stream/DeleteRubricApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8079,7 +8079,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteRubricApiResponse": {
+    "/stream/DeleteRubricApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8096,7 +8096,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteScenarioApiRequest": {
+    "/stream/DeleteScenarioApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8113,7 +8113,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteScenarioApiResponse": {
+    "/stream/DeleteScenarioApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8130,7 +8130,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteSettingApiRequest": {
+    "/stream/DeleteSettingApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8147,7 +8147,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteSettingApiResponse": {
+    "/stream/DeleteSettingApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8164,7 +8164,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteSimulationApiRequest": {
+    "/stream/DeleteSimulationApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8181,7 +8181,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteSimulationApiResponse": {
+    "/stream/DeleteSimulationApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8198,7 +8198,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteToolApiRequest": {
+    "/stream/DeleteToolApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8215,7 +8215,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DeleteToolApiResponse": {
+    "/stream/DeleteToolApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8232,7 +8232,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateAgentApiRequest": {
+    "/stream/DuplicateAgentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8249,7 +8249,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateAgentApiResponse": {
+    "/stream/DuplicateAgentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8266,7 +8266,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateAuthApiRequest": {
+    "/stream/DuplicateAuthApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8283,7 +8283,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateAuthApiResponse": {
+    "/stream/DuplicateAuthApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8300,7 +8300,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateCohortApiRequest": {
+    "/stream/DuplicateCohortApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8317,7 +8317,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateCohortApiResponse": {
+    "/stream/DuplicateCohortApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8334,7 +8334,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateDepartmentApiRequest": {
+    "/stream/DuplicateDepartmentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8351,7 +8351,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateDepartmentApiResponse": {
+    "/stream/DuplicateDepartmentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8368,7 +8368,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateDocumentApiRequest": {
+    "/stream/DuplicateDocumentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8385,7 +8385,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateDocumentApiResponse": {
+    "/stream/DuplicateDocumentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8402,7 +8402,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateEvalApiRequest": {
+    "/stream/DuplicateEvalApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8419,7 +8419,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateEvalApiResponse": {
+    "/stream/DuplicateEvalApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8436,7 +8436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateFieldApiRequest": {
+    "/stream/DuplicateFieldApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8453,7 +8453,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateFieldApiResponse": {
+    "/stream/DuplicateFieldApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8470,7 +8470,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateModelApiRequest": {
+    "/stream/DuplicateModelApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8487,7 +8487,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateModelApiResponse": {
+    "/stream/DuplicateModelApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8504,7 +8504,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateParameterApiRequest": {
+    "/stream/DuplicateParameterApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8521,7 +8521,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateParameterApiResponse": {
+    "/stream/DuplicateParameterApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8538,7 +8538,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicatePersonaApiRequest": {
+    "/stream/DuplicatePersonaApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8555,7 +8555,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicatePersonaApiResponse": {
+    "/stream/DuplicatePersonaApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8572,7 +8572,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateProfileApiRequest": {
+    "/stream/DuplicateProfileApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8589,7 +8589,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateProfileApiResponse": {
+    "/stream/DuplicateProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8606,7 +8606,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateProviderApiRequest": {
+    "/stream/DuplicateProviderApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8623,7 +8623,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateProviderApiResponse": {
+    "/stream/DuplicateProviderApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8640,7 +8640,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateRubricApiRequest": {
+    "/stream/DuplicateRubricApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8657,7 +8657,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateRubricApiResponse": {
+    "/stream/DuplicateRubricApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8674,7 +8674,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateScenarioApiRequest": {
+    "/stream/DuplicateScenarioApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8691,7 +8691,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateScenarioApiResponse": {
+    "/stream/DuplicateScenarioApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8708,7 +8708,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateSettingApiRequest": {
+    "/stream/DuplicateSettingApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8725,7 +8725,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateSettingApiResponse": {
+    "/stream/DuplicateSettingApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8742,7 +8742,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateSimulationApiRequest": {
+    "/stream/DuplicateSimulationApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8759,7 +8759,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateSimulationApiResponse": {
+    "/stream/DuplicateSimulationApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8776,7 +8776,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateToolApiRequest": {
+    "/stream/DuplicateToolApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8793,7 +8793,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/DuplicateToolApiResponse": {
+    "/stream/DuplicateToolApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8810,7 +8810,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/EmulateProfileApiRequest": {
+    "/stream/EmulateProfileApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8827,7 +8827,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/EmulateProfileApiResponse": {
+    "/stream/EmulateProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8844,7 +8844,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportAgentApiRequest": {
+    "/stream/ExportAgentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8861,7 +8861,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportAgentApiResponse": {
+    "/stream/ExportAgentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8878,7 +8878,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportAuthApiRequest": {
+    "/stream/ExportAuthApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8895,7 +8895,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportAuthApiResponse": {
+    "/stream/ExportAuthApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8912,7 +8912,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportCohortApiRequest": {
+    "/stream/ExportCohortApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8929,7 +8929,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportCohortApiResponse": {
+    "/stream/ExportCohortApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8946,7 +8946,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportDepartmentApiRequest": {
+    "/stream/ExportDepartmentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8963,7 +8963,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportDepartmentApiResponse": {
+    "/stream/ExportDepartmentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -8980,7 +8980,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportDocumentApiRequest": {
+    "/stream/ExportDocumentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -8997,7 +8997,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportDocumentApiResponse": {
+    "/stream/ExportDocumentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9014,7 +9014,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportEvalApiResponse": {
+    "/stream/ExportEvalApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9031,7 +9031,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportFieldApiRequest": {
+    "/stream/ExportFieldApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9048,7 +9048,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportFieldApiResponse": {
+    "/stream/ExportFieldApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9065,7 +9065,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportModelApiRequest": {
+    "/stream/ExportModelApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9082,7 +9082,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportModelApiResponse": {
+    "/stream/ExportModelApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9099,7 +9099,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportParameterApiRequest": {
+    "/stream/ExportParameterApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9116,7 +9116,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportParameterApiResponse": {
+    "/stream/ExportParameterApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9133,7 +9133,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportPersonaApiRequest": {
+    "/stream/ExportPersonaApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9150,7 +9150,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportPersonaApiResponse": {
+    "/stream/ExportPersonaApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9167,7 +9167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportProfileApiRequest": {
+    "/stream/ExportProfileApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9184,7 +9184,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportProfileApiResponse": {
+    "/stream/ExportProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9201,7 +9201,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportProviderApiRequest": {
+    "/stream/ExportProviderApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9218,7 +9218,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportProviderApiResponse": {
+    "/stream/ExportProviderApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9235,7 +9235,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportRubricApiResponse": {
+    "/stream/ExportRubricApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9252,7 +9252,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportScenarioApiRequest": {
+    "/stream/ExportScenarioApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9269,7 +9269,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportScenarioApiResponse": {
+    "/stream/ExportScenarioApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9286,7 +9286,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportSettingApiRequest": {
+    "/stream/ExportSettingApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9303,7 +9303,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportSettingApiResponse": {
+    "/stream/ExportSettingApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9320,7 +9320,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportSimulationApiRequest": {
+    "/stream/ExportSimulationApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9337,7 +9337,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportSimulationApiResponse": {
+    "/stream/ExportSimulationApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9354,7 +9354,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportToolApiRequest": {
+    "/stream/ExportToolApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9371,7 +9371,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ExportToolApiResponse": {
+    "/stream/ExportToolApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9388,7 +9388,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GeneratePayload": {
+    "/stream/GeneratePayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -9405,7 +9405,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GenerationCompleteEvent": {
+    "/stream/GenerationCompleteEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -9422,7 +9422,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GenerationErrorEvent": {
+    "/stream/GenerationErrorEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -9439,7 +9439,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GenerationMediaCompleteEvent": {
+    "/stream/GenerationMediaCompleteEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -9456,7 +9456,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GenerationMediaProgressEvent": {
+    "/stream/GenerationMediaProgressEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -9473,7 +9473,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GenerationProgressEvent": {
+    "/stream/GenerationProgressEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -9490,7 +9490,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GenerationSavedEvent": {
+    "/stream/GenerationSavedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -9507,7 +9507,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAgentApiRequest": {
+    "/stream/GetAgentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9524,7 +9524,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAgentApiResponse": {
+    "/stream/GetAgentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9541,7 +9541,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAgentDraftsApiResponse": {
+    "/stream/GetAgentDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9558,7 +9558,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAttemptDetailRequest": {
+    "/stream/GetAttemptDetailRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9575,7 +9575,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAttemptDetailResponse": {
+    "/stream/GetAttemptDetailResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9592,7 +9592,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAuthApiRequest": {
+    "/stream/GetAuthApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9609,7 +9609,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAuthApiResponse": {
+    "/stream/GetAuthApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9626,7 +9626,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetAuthDraftsApiResponse": {
+    "/stream/GetAuthDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9643,7 +9643,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetChatRequest": {
+    "/stream/GetChatRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9660,7 +9660,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetChatResponse": {
+    "/stream/GetChatResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9677,7 +9677,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetCohortApiRequest": {
+    "/stream/GetCohortApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9694,7 +9694,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetCohortApiResponse": {
+    "/stream/GetCohortApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9711,7 +9711,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetCohortDraftsApiResponse": {
+    "/stream/GetCohortDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9728,7 +9728,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetDepartmentApiRequest": {
+    "/stream/GetDepartmentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9745,7 +9745,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetDepartmentApiResponse": {
+    "/stream/GetDepartmentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9762,7 +9762,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetDepartmentDraftsApiResponse": {
+    "/stream/GetDepartmentDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9779,7 +9779,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetDocumentApiRequest": {
+    "/stream/GetDocumentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9796,7 +9796,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetDocumentApiResponse": {
+    "/stream/GetDocumentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9813,7 +9813,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetDocumentDraftsApiResponse": {
+    "/stream/GetDocumentDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9830,7 +9830,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetEvalApiRequest": {
+    "/stream/GetEvalApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9847,7 +9847,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetEvalApiResponse": {
+    "/stream/GetEvalApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9864,7 +9864,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetEvalDraftsApiResponse": {
+    "/stream/GetEvalDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9881,7 +9881,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetFieldApiRequest": {
+    "/stream/GetFieldApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9898,7 +9898,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetFieldApiResponse": {
+    "/stream/GetFieldApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9915,7 +9915,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetFieldDraftsApiResponse": {
+    "/stream/GetFieldDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9932,7 +9932,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetGroupDetailRequest": {
+    "/stream/GetGroupDetailRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9949,7 +9949,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetGroupDetailResponse": {
+    "/stream/GetGroupDetailResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -9966,7 +9966,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetHomeRequest": {
+    "/stream/GetHomeRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -9983,7 +9983,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetHomeResponse": {
+    "/stream/GetHomeResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10000,7 +10000,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetModelApiRequest": {
+    "/stream/GetModelApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10017,7 +10017,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetModelApiResponse": {
+    "/stream/GetModelApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10034,7 +10034,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetModelDraftsApiResponse": {
+    "/stream/GetModelDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10051,7 +10051,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetParameterApiRequest": {
+    "/stream/GetParameterApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10068,7 +10068,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetParameterApiResponse": {
+    "/stream/GetParameterApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10085,7 +10085,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetParameterDraftsApiResponse": {
+    "/stream/GetParameterDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10102,7 +10102,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetPersonaApiRequest": {
+    "/stream/GetPersonaApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10119,7 +10119,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetPersonaApiResponse": {
+    "/stream/GetPersonaApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10136,7 +10136,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetPersonaDraftsApiResponse": {
+    "/stream/GetPersonaDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10153,7 +10153,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetPracticeRequest": {
+    "/stream/GetPracticeRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10170,7 +10170,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetPracticeResponse": {
+    "/stream/GetPracticeResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10187,7 +10187,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetProfileApiRequest": {
+    "/stream/GetProfileApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10204,7 +10204,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetProfileApiResponse": {
+    "/stream/GetProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10221,7 +10221,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetProfileDraftsApiResponse": {
+    "/stream/GetProfileDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10238,7 +10238,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetProviderApiRequest": {
+    "/stream/GetProviderApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10255,7 +10255,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetProviderApiResponse": {
+    "/stream/GetProviderApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10272,7 +10272,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetProviderDraftsApiResponse": {
+    "/stream/GetProviderDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10289,7 +10289,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetRubricApiRequest": {
+    "/stream/GetRubricApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10306,7 +10306,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetRubricApiResponse": {
+    "/stream/GetRubricApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10323,7 +10323,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetRubricDraftsApiResponse": {
+    "/stream/GetRubricDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10340,7 +10340,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetScenarioApiRequest": {
+    "/stream/GetScenarioApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10357,7 +10357,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetScenarioApiResponse": {
+    "/stream/GetScenarioApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10374,7 +10374,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetScenarioDraftsApiResponse": {
+    "/stream/GetScenarioDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10391,7 +10391,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSessionDetailRequest": {
+    "/stream/GetSessionDetailRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10408,7 +10408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSessionDetailResponse": {
+    "/stream/GetSessionDetailResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10425,7 +10425,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSettingApiRequest": {
+    "/stream/GetSettingApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10442,7 +10442,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSettingApiResponse": {
+    "/stream/GetSettingApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10459,7 +10459,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSettingDraftsApiResponse": {
+    "/stream/GetSettingDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10476,7 +10476,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSimulationApiRequest": {
+    "/stream/GetSimulationApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10493,7 +10493,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSimulationApiResponse": {
+    "/stream/GetSimulationApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10510,7 +10510,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSimulationDraftsApiResponse": {
+    "/stream/GetSimulationDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10527,7 +10527,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSuiteRequest": {
+    "/stream/GetSuiteRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10544,7 +10544,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetSuiteResponse": {
+    "/stream/GetSuiteResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10561,7 +10561,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetTestArtifactRequest": {
+    "/stream/GetTestArtifactRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10578,7 +10578,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetTestArtifactResponse": {
+    "/stream/GetTestArtifactResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10595,7 +10595,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetToolApiRequest": {
+    "/stream/GetToolApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10612,7 +10612,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetToolApiResponse": {
+    "/stream/GetToolApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10629,7 +10629,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/GetToolDraftsApiResponse": {
+    "/stream/GetToolDraftsApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10646,7 +10646,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/HealthRequest": {
+    "/stream/HealthRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10663,7 +10663,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/HealthResponse": {
+    "/stream/HealthResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10680,7 +10680,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/LeaderboardRequest": {
+    "/stream/LeaderboardRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10697,7 +10697,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/LeaderboardResponse": {
+    "/stream/LeaderboardResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10714,7 +10714,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/OperationErrorEvent": {
+    "/stream/OperationErrorEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -10731,7 +10731,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchAgentDraftApiRequest": {
+    "/stream/PatchAgentDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10748,7 +10748,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchAgentDraftApiResponse": {
+    "/stream/PatchAgentDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10765,7 +10765,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchAuthDraftApiRequest": {
+    "/stream/PatchAuthDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10782,7 +10782,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchAuthDraftApiResponse": {
+    "/stream/PatchAuthDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10799,7 +10799,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchCohortDraftApiRequest": {
+    "/stream/PatchCohortDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10816,7 +10816,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchCohortDraftApiResponse": {
+    "/stream/PatchCohortDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10833,7 +10833,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchDepartmentDraftApiRequest": {
+    "/stream/PatchDepartmentDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10850,7 +10850,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchDepartmentDraftApiResponse": {
+    "/stream/PatchDepartmentDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10867,7 +10867,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchDocumentDraftApiRequest": {
+    "/stream/PatchDocumentDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10884,7 +10884,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchDocumentDraftApiResponse": {
+    "/stream/PatchDocumentDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10901,7 +10901,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchEvalDraftApiRequest": {
+    "/stream/PatchEvalDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10918,7 +10918,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchEvalDraftApiResponse": {
+    "/stream/PatchEvalDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10935,7 +10935,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchFieldDraftApiRequest": {
+    "/stream/PatchFieldDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10952,7 +10952,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchFieldDraftApiResponse": {
+    "/stream/PatchFieldDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -10969,7 +10969,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchModelDraftApiRequest": {
+    "/stream/PatchModelDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -10986,7 +10986,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchModelDraftApiResponse": {
+    "/stream/PatchModelDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11003,7 +11003,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchParameterDraftApiRequest": {
+    "/stream/PatchParameterDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11020,7 +11020,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchParameterDraftApiResponse": {
+    "/stream/PatchParameterDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11037,7 +11037,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchPersonaDraftApiRequest": {
+    "/stream/PatchPersonaDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11054,7 +11054,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchPersonaDraftApiResponse": {
+    "/stream/PatchPersonaDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11071,7 +11071,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchProfileDraftApiRequest": {
+    "/stream/PatchProfileDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11088,7 +11088,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchProfileDraftApiResponse": {
+    "/stream/PatchProfileDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11105,7 +11105,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchProviderDraftApiRequest": {
+    "/stream/PatchProviderDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11122,7 +11122,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchProviderDraftApiResponse": {
+    "/stream/PatchProviderDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11139,7 +11139,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchRubricDraftApiRequest": {
+    "/stream/PatchRubricDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11156,7 +11156,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchRubricDraftApiResponse": {
+    "/stream/PatchRubricDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11173,7 +11173,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchScenarioDraftApiRequest": {
+    "/stream/PatchScenarioDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11190,7 +11190,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchScenarioDraftApiResponse": {
+    "/stream/PatchScenarioDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11207,7 +11207,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchSettingDraftApiRequest": {
+    "/stream/PatchSettingDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11224,7 +11224,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchSettingDraftApiResponse": {
+    "/stream/PatchSettingDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11241,7 +11241,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchSimulationDraftApiRequest": {
+    "/stream/PatchSimulationDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11258,7 +11258,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchSimulationDraftApiResponse": {
+    "/stream/PatchSimulationDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11275,7 +11275,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchToolDraftApiRequest": {
+    "/stream/PatchToolDraftApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11292,7 +11292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PatchToolDraftApiResponse": {
+    "/stream/PatchToolDraftApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11309,7 +11309,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PersonaGenerationProgressEvent": {
+    "/stream/PersonaGenerationProgressEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11326,7 +11326,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PricingRequest": {
+    "/stream/PricingRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11343,7 +11343,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/PricingResponse": {
+    "/stream/PricingResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11360,7 +11360,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/ProfileContextApiResponse": {
+    "/stream/ProfileContextApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11377,7 +11377,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/RecordRequest": {
+    "/stream/RecordRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11394,7 +11394,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestAllCompleteEvent": {
+    "/stream/TestAllCompleteEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11411,7 +11411,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestEndAllPayload": {
+    "/stream/TestEndAllPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11428,7 +11428,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestEndPayload": {
+    "/stream/TestEndPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11445,7 +11445,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestGroupPayload": {
+    "/stream/TestGroupPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11462,7 +11462,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestJoinPayload": {
+    "/stream/TestJoinPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11479,7 +11479,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestJoinedEvent": {
+    "/stream/TestJoinedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11496,7 +11496,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestLeavePayload": {
+    "/stream/TestLeavePayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11513,7 +11513,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestNextPayload": {
+    "/stream/TestNextPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11530,7 +11530,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestProgressEvent": {
+    "/stream/TestProgressEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11547,7 +11547,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestRunCompleteEvent": {
+    "/stream/TestRunCompleteEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11564,7 +11564,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestRunDeltaEvent": {
+    "/stream/TestRunDeltaEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11581,7 +11581,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestRunPayload": {
+    "/stream/TestRunPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11598,7 +11598,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestRunStartEvent": {
+    "/stream/TestRunStartEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11615,7 +11615,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestStartPayload": {
+    "/stream/TestStartPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11632,7 +11632,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestStartedEvent": {
+    "/stream/TestStartedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11649,7 +11649,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestStopPayload": {
+    "/stream/TestStopPayload": {
         parameters: {
             query?: never;
             header?: never;
@@ -11666,7 +11666,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/TestStoppedEvent": {
+    "/stream/TestStoppedEvent": {
         parameters: {
             query?: never;
             header?: never;
@@ -11683,7 +11683,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UnemulateProfileApiResponse": {
+    "/stream/UnemulateProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11700,7 +11700,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateAgentApiRequest": {
+    "/stream/UpdateAgentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11717,7 +11717,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateAgentApiResponse": {
+    "/stream/UpdateAgentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11734,7 +11734,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateAuthApiRequest": {
+    "/stream/UpdateAuthApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11751,7 +11751,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateAuthApiResponse": {
+    "/stream/UpdateAuthApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11768,7 +11768,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateCohortApiRequest": {
+    "/stream/UpdateCohortApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11785,7 +11785,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateCohortApiResponse": {
+    "/stream/UpdateCohortApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11802,7 +11802,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateDepartmentApiRequest": {
+    "/stream/UpdateDepartmentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11819,7 +11819,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateDepartmentApiResponse": {
+    "/stream/UpdateDepartmentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11836,7 +11836,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateDocumentApiRequest": {
+    "/stream/UpdateDocumentApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11853,7 +11853,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateDocumentApiResponse": {
+    "/stream/UpdateDocumentApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11870,7 +11870,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateEvalApiRequest": {
+    "/stream/UpdateEvalApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11887,7 +11887,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateEvalApiResponse": {
+    "/stream/UpdateEvalApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11904,7 +11904,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateFieldApiRequest": {
+    "/stream/UpdateFieldApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11921,7 +11921,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateFieldApiResponse": {
+    "/stream/UpdateFieldApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11938,7 +11938,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateModelApiRequest": {
+    "/stream/UpdateModelApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11955,7 +11955,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateModelApiResponse": {
+    "/stream/UpdateModelApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -11972,7 +11972,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateParameterApiRequest": {
+    "/stream/UpdateParameterApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -11989,7 +11989,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateParameterApiResponse": {
+    "/stream/UpdateParameterApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12006,7 +12006,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdatePersonaApiRequest": {
+    "/stream/UpdatePersonaApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12023,7 +12023,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdatePersonaApiResponse": {
+    "/stream/UpdatePersonaApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12040,7 +12040,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateProfileApiRequest": {
+    "/stream/UpdateProfileApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12057,7 +12057,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateProfileApiResponse": {
+    "/stream/UpdateProfileApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12074,7 +12074,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateProviderApiRequest": {
+    "/stream/UpdateProviderApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12091,7 +12091,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateProviderApiResponse": {
+    "/stream/UpdateProviderApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12108,7 +12108,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateRubricApiRequest": {
+    "/stream/UpdateRubricApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12125,7 +12125,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateRubricApiResponse": {
+    "/stream/UpdateRubricApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12142,7 +12142,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateScenarioApiRequest": {
+    "/stream/UpdateScenarioApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12159,7 +12159,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateScenarioApiResponse": {
+    "/stream/UpdateScenarioApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12176,7 +12176,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateSettingApiRequest": {
+    "/stream/UpdateSettingApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12193,7 +12193,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateSettingApiResponse": {
+    "/stream/UpdateSettingApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12210,7 +12210,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateSimulationApiRequest": {
+    "/stream/UpdateSimulationApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12227,7 +12227,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateSimulationApiResponse": {
+    "/stream/UpdateSimulationApiResponse": {
         parameters: {
             query?: never;
             header?: never;
@@ -12244,7 +12244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateToolApiRequest": {
+    "/stream/UpdateToolApiRequest": {
         parameters: {
             query?: never;
             header?: never;
@@ -12261,7 +12261,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v5/stream/UpdateToolApiResponse": {
+    "/stream/UpdateToolApiResponse": {
         parameters: {
             query?: never;
             header?: never;

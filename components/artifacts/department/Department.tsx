@@ -35,10 +35,10 @@ import {
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsString, type Parser } from "nuqs";
 
-type CreateDepartmentIn = InputOf<"/api/v5/artifacts/departments/create", "post">;
-type CreateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/create", "post">;
-type UpdateDepartmentIn = InputOf<"/api/v5/artifacts/departments/update", "post">;
-type UpdateDepartmentOut = OutputOf<"/api/v5/artifacts/departments/update", "post">;
+type CreateDepartmentIn = InputOf<"/departments/create", "post">;
+type CreateDepartmentOut = OutputOf<"/departments/create", "post">;
+type UpdateDepartmentIn = InputOf<"/departments/update", "post">;
+type UpdateDepartmentOut = OutputOf<"/departments/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -50,14 +50,14 @@ type CreateDraftDescriptionsOut = OutputOf<
   "post"
 >;
 type PatchDepartmentDraftIn = InputOf<
-  "/api/v5/artifacts/departments/draft",
+  "/departments/draft",
   "patch"
 >;
 type PatchDepartmentDraftOut = OutputOf<
-  "/api/v5/artifacts/departments/draft",
+  "/departments/draft",
   "patch"
 >;
-type DepartmentData = OutputOf<"/api/v5/artifacts/departments/get", "post">;
+type DepartmentData = OutputOf<"/departments/get", "post">;
 
 type DepartmentFormState = {
   name: string | null;

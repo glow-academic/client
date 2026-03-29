@@ -22,17 +22,17 @@ import {
 } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetPersonaIn = InputOf<"/api/v5/artifacts/personas/get", "post">;
-type GetPersonaOut = OutputOf<"/api/v5/artifacts/personas/get", "post">;
-type UpdatePersonaIn = InputOf<"/api/v5/artifacts/personas/update", "post">;
-type UpdatePersonaOut = OutputOf<"/api/v5/artifacts/personas/update", "post">;
-type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
-type PatchPersonaDraftOut = OutputOf<"/api/v5/artifacts/personas/draft", "patch">;
+type GetPersonaIn = InputOf<"/personas/get", "post">;
+type GetPersonaOut = OutputOf<"/personas/get", "post">;
+type UpdatePersonaIn = InputOf<"/personas/update", "post">;
+type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
+type PatchPersonaDraftIn = InputOf<"/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/personas/draft", "patch">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
-  return api.post("/artifacts/personas/get", input, {
+  return api.post("/personas/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -41,11 +41,11 @@ const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/personas/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/personas/docs", "post">;
+type DocsIn = InputOf<"/personas/docs", "post">;
+type DocsOut = OutputOf<"/personas/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/personas/docs", input);
+  return api.post("/personas/docs", input);
 };
 
 export async function generateMetadata({
@@ -61,7 +61,7 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/update", input);
+  return api.post("/personas/update", input);
 }
 
 async function patchPersonaDraft(
@@ -69,7 +69,7 @@ async function patchPersonaDraft(
 ): Promise<PatchPersonaDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/personas/draft", input);
+  return api.patch("/personas/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -135,7 +135,7 @@ export default async function PersonaEditPage({
     const [personaDetail, docs, draftsResult] = await Promise.all([
       getPersona(input),
       getDocs({ body: { entity_id: personaId } }),
-      api.post("/artifacts/personas/drafts", {})
+      api.post("/personas/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

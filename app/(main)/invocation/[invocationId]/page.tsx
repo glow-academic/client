@@ -15,15 +15,15 @@ import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetBenchmarkBundleOut = OutputOf<
-  "/api/v5/artifacts/invocation/get",
+  "/invocation/get",
   "post"
 >;
 type PatchBenchmarkDraftIn = InputOf<
-  "/api/v5/artifacts/invocation/draft",
+  "/invocation/draft",
   "patch"
 >;
 type PatchBenchmarkDraftOut = OutputOf<
-  "/api/v5/artifacts/invocation/draft",
+  "/invocation/draft",
   "patch"
 >;
 
@@ -32,7 +32,7 @@ const getBenchmarkBundle = async (
   draftId: string | null,
 ): Promise<GetBenchmarkBundleOut> => {
   return api.post(
-    "/artifacts/invocation/get",
+    "/invocation/get",
     {
       body: {
         benchmark_bundle_entry_id: bundleId,
@@ -52,7 +52,7 @@ async function patchBenchmarkDraft(
   input: PatchBenchmarkDraftIn,
 ): Promise<PatchBenchmarkDraftOut> {
   "use server";
-  return api.patch("/artifacts/invocation/draft", input);
+  return api.patch("/invocation/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

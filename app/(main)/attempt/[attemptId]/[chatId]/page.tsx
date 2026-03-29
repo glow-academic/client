@@ -13,15 +13,15 @@ import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetChatBundleOut = OutputOf<
-  "/api/v5/artifacts/chat/get",
+  "/chat/get",
   "post"
 >;
 type PatchChatDraftIn = InputOf<
-  "/api/v5/artifacts/chat/draft",
+  "/chat/draft",
   "patch"
 >;
 type PatchChatDraftOut = OutputOf<
-  "/api/v5/artifacts/chat/draft",
+  "/chat/draft",
   "patch"
 >;
 
@@ -31,7 +31,7 @@ const getChatBundle = async (
   draftId: string | null,
 ): Promise<GetChatBundleOut> => {
   return api.post(
-    "/artifacts/chat/get",
+    "/chat/get",
     {
       body: {
         chat_entry_id: bundleId,
@@ -52,7 +52,7 @@ async function patchChatDraft(
   input: PatchChatDraftIn,
 ): Promise<PatchChatDraftOut> {
   "use server";
-  return api.patch("/artifacts/chat/draft", input);
+  return api.patch("/chat/draft", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {

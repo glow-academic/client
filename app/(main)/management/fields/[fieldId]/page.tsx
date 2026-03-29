@@ -17,12 +17,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetFieldIn = InputOf<"/api/v5/artifacts/fields/get", "post">;
-type GetFieldOut = OutputOf<"/api/v5/artifacts/fields/get", "post">;
-type UpdateFieldIn = InputOf<"/api/v5/artifacts/fields/update", "post">;
-type UpdateFieldOut = OutputOf<"/api/v5/artifacts/fields/update", "post">;
-type PatchFieldDraftIn = InputOf<"/api/v5/artifacts/fields/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/api/v5/artifacts/fields/draft", "patch">;
+type GetFieldIn = InputOf<"/fields/get", "post">;
+type GetFieldOut = OutputOf<"/fields/get", "post">;
+type UpdateFieldIn = InputOf<"/fields/update", "post">;
+type UpdateFieldOut = OutputOf<"/fields/update", "post">;
+type PatchFieldDraftIn = InputOf<"/fields/draft", "patch">;
+type PatchFieldDraftOut = OutputOf<"/fields/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -41,7 +41,7 @@ const getField = async (input: GetFieldIn): Promise<GetFieldOut> => {
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
   try {
-    const result = await api.post("/artifacts/fields/get", input, {
+    const result = await api.post("/fields/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -60,11 +60,11 @@ const getField = async (input: GetFieldIn): Promise<GetFieldOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/fields/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/fields/docs", "post">;
+type DocsIn = InputOf<"/fields/docs", "post">;
+type DocsOut = OutputOf<"/fields/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/fields/docs", input);
+  return api.post("/fields/docs", input);
 };
 
 export async function generateMetadata({
@@ -80,7 +80,7 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
   "use server";
-  return api.post("/artifacts/fields/update", input);
+  return api.post("/fields/update", input);
 }
 
 async function patchFieldDraft(
@@ -89,7 +89,7 @@ async function patchFieldDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/artifacts/fields/draft", input);
+  return api.patch("/fields/draft", input);
 }
 
 async function createNames(
@@ -156,7 +156,7 @@ export default async function FieldEditPage({
     const [fieldData, docs, draftsResult] = await Promise.all([
       getField(input),
       getDocs({ body: { entity_id: fieldId } }),
-      api.post("/artifacts/fields/drafts", {})
+      api.post("/fields/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

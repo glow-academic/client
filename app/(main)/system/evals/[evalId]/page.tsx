@@ -16,19 +16,19 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetEvalIn = InputOf<"/api/v5/artifacts/evals/get", "post">;
-type GetEvalOut = OutputOf<"/api/v5/artifacts/evals/get", "post">;
-type CreateEvalIn = InputOf<"/api/v5/artifacts/evals/create", "post">;
-type CreateEvalOut = OutputOf<"/api/v5/artifacts/evals/create", "post">;
-type UpdateEvalIn = InputOf<"/api/v5/artifacts/evals/update", "post">;
-type UpdateEvalOut = OutputOf<"/api/v5/artifacts/evals/update", "post">;
-type PatchEvalDraftIn = InputOf<"/api/v5/artifacts/evals/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/api/v5/artifacts/evals/draft", "patch">;
+type GetEvalIn = InputOf<"/evals/get", "post">;
+type GetEvalOut = OutputOf<"/evals/get", "post">;
+type CreateEvalIn = InputOf<"/evals/create", "post">;
+type CreateEvalOut = OutputOf<"/evals/create", "post">;
+type UpdateEvalIn = InputOf<"/evals/update", "post">;
+type UpdateEvalOut = OutputOf<"/evals/update", "post">;
+type PatchEvalDraftIn = InputOf<"/evals/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/evals/draft", "patch">;
 // Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
 
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
-  return api.post("/artifacts/evals/get", input, {
+  return api.post("/evals/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -37,11 +37,11 @@ const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/evals/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/evals/docs", "post">;
+type DocsIn = InputOf<"/evals/docs", "post">;
+type DocsOut = OutputOf<"/evals/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/evals/docs", input);
+  return api.post("/evals/docs", input);
 };
 
 export async function generateMetadata({
@@ -57,12 +57,12 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions ---- */
 async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
-  return api.post("/artifacts/evals/create", input);
+  return api.post("/evals/create", input);
 }
 
 async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
   "use server";
-  return api.post("/artifacts/evals/update", input);
+  return api.post("/evals/update", input);
 }
 
 async function patchEvalDraft(
@@ -70,7 +70,7 @@ async function patchEvalDraft(
 ): Promise<PatchEvalDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/evals/draft", input);
+  return api.patch("/evals/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -124,7 +124,7 @@ export default async function EvalDetailPage({
   const [evalDetail, docs, draftsResult] = await Promise.all([
     getEvalDetail(input),
     getDocs({ body: { entity_id: evalId } }),
-    api.post("/artifacts/evals/drafts", {})
+    api.post("/evals/drafts", {})
   ]);
 
   const entityName = docs.detail.title;

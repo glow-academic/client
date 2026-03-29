@@ -16,15 +16,15 @@ import type { Metadata } from "next";
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortsListOut = OutputOf<"/api/v5/artifacts/cohorts/search", "post">;
-type DuplicateCohortIn = InputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
-type DuplicateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
-type DeleteCohortIn = InputOf<"/api/v5/artifacts/cohorts/delete", "post">;
-type DeleteCohortOut = OutputOf<"/api/v5/artifacts/cohorts/delete", "post">;
-type CreateCohortIn = InputOf<"/api/v5/artifacts/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/create", "post">;
-type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
-type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
+type CohortsListOut = OutputOf<"/cohorts/search", "post">;
+type DuplicateCohortIn = InputOf<"/cohorts/duplicate", "post">;
+type DuplicateCohortOut = OutputOf<"/cohorts/duplicate", "post">;
+type DeleteCohortIn = InputOf<"/cohorts/delete", "post">;
+type DeleteCohortOut = OutputOf<"/cohorts/delete", "post">;
+type CreateCohortIn = InputOf<"/cohorts/create", "post">;
+type CreateCohortOut = OutputOf<"/cohorts/create", "post">;
+type UpdateCohortIn = InputOf<"/cohorts/update", "post">;
+type UpdateCohortOut = OutputOf<"/cohorts/update", "post">;
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Body type for cohorts list request ---- */
@@ -48,7 +48,7 @@ type CohortsListBody = {
 const getCohortsList = async (body: CohortsListBody): Promise<CohortsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/cohorts/search",
+    "/cohorts/search",
     { body },
     {
       cache: "no-store",
@@ -67,36 +67,36 @@ async function duplicateCohort(
 ): Promise<DuplicateCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/cohorts/duplicate", input);
+  return api.post("/cohorts/duplicate", input);
 }
 
 async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/cohorts/delete", input);
+  return api.post("/cohorts/delete", input);
 }
 
 async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
   "use server";
-  return api.post("/artifacts/cohorts/create", input);
+  return api.post("/cohorts/create", input);
 }
 
 async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   "use server";
-  return api.post("/artifacts/cohorts/update", input);
+  return api.post("/cohorts/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/artifacts/cohorts/csv", { formData });
+  return api.post("/cohorts/csv", { formData });
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/cohorts/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/cohorts/docs", "post">;
+type DocsIn = InputOf<"/cohorts/docs", "post">;
+type DocsOut = OutputOf<"/cohorts/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/cohorts/docs", input);
+  return api.post("/cohorts/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

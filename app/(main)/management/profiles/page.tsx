@@ -14,19 +14,19 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfilesListIn = InputOf<"/api/v5/artifacts/profiles/search", "post">;
-type ProfilesListOut = OutputOf<"/api/v5/artifacts/profiles/search", "post">;
-type DeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/delete", "post">;
-type DeleteProfileOut = OutputOf<"/api/v5/artifacts/profiles/delete", "post">;
-type BulkDeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/delete", "post">;
-type BulkDeleteProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/delete", "post">;
-type SearchProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/search", "post">;
-type SearchProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/search", "post">;
+type ProfilesListIn = InputOf<"/profiles/search", "post">;
+type ProfilesListOut = OutputOf<"/profiles/search", "post">;
+type DeleteProfileIn = InputOf<"/profiles/delete", "post">;
+type DeleteProfileOut = OutputOf<"/profiles/delete", "post">;
+type BulkDeleteProfileIn = InputOf<"/profiles/bulk/delete", "post">;
+type BulkDeleteProfileOut = OutputOf<"/profiles/bulk/delete", "post">;
+type SearchProfileIn = InputOf<"/profiles/bulk/search", "post">;
+type SearchProfileOut = OutputOf<"/profiles/bulk/search", "post">;
 // Use profiles/get with null target_profile_id to get create profile data
-type GetProfileIn = InputOf<"/api/v5/artifacts/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/api/v5/artifacts/profiles/get", "post">;
-type ProcessCSVIn = InputOf<"/api/v5/artifacts/profiles/bulk/process", "post">;
-type ProcessCSVOut = OutputOf<"/api/v5/artifacts/profiles/bulk/process", "post">;
+type GetProfileIn = InputOf<"/profiles/get", "post">;
+type GetProfileOut = OutputOf<"/profiles/get", "post">;
+type ProcessCSVIn = InputOf<"/profiles/bulk/process", "post">;
+type ProcessCSVOut = OutputOf<"/profiles/bulk/process", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<ProfilesListOut["profiles"]>[number];
 type SearchProfileItem = NonNullable<SearchProfileOut["profiles"]>[number];
@@ -40,7 +40,7 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
  */
 const getProfilesList = async (input: ProfilesListIn): Promise<ProfilesListOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/profiles/search", input, {
+  return api.post("/profiles/search", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -54,7 +54,7 @@ const getProfilesList = async (input: ProfilesListIn): Promise<ProfilesListOut> 
 async function deleteProfile(input: DeleteProfileIn): Promise<DeleteProfileOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/profiles/delete", input);
+  return api.post("/profiles/delete", input);
 }
 
 async function bulkDeleteProfile(
@@ -62,7 +62,7 @@ async function bulkDeleteProfile(
 ): Promise<BulkDeleteProfileOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/profiles/bulk/delete", input);
+  return api.post("/profiles/bulk/delete", input);
 }
 
 // Use profiles/get with null target_profile_id to get create profile data
@@ -70,7 +70,7 @@ async function getCreateProfileData(
   _input: GetProfileIn
 ): Promise<GetProfileOut> {
   "use server";
-  return api.post("/artifacts/profiles/get", {
+  return api.post("/profiles/get", {
     body: {
       target_profile_id: null, // NULL for new mode - returns default data
       draft_id: null,
@@ -80,15 +80,15 @@ async function getCreateProfileData(
 
 async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/artifacts/profiles/bulk/process", input);
+  return api.post("/profiles/bulk/process", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/profiles/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/profiles/docs", "post">;
+type DocsIn = InputOf<"/profiles/docs", "post">;
+type DocsOut = OutputOf<"/profiles/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/profiles/docs", input);
+  return api.post("/profiles/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

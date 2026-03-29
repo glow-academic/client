@@ -17,8 +17,8 @@ import type { Metadata } from "next";
 import { loadLeaderboardSearchParams } from "@/lib/search-params/leaderboard";
 
 /** ---- Strong types from OpenAPI ---- */
-type LeaderboardIn = InputOf<"/api/v5/artifacts/leaderboard/get", "post">;
-type LeaderboardOut = OutputOf<"/api/v5/artifacts/leaderboard/get", "post">;
+type LeaderboardIn = InputOf<"/leaderboard/get", "post">;
+type LeaderboardOut = OutputOf<"/leaderboard/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Leaderboard responses can get large and exceed Next.js 2MB cache limit.
@@ -30,7 +30,7 @@ const getLeaderboard = async (
 ): Promise<LeaderboardOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/leaderboard/get", input, {
+  return api.post("/leaderboard/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -41,11 +41,11 @@ const getLeaderboard = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/leaderboard/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/leaderboard/docs", "post">;
+type DocsIn = InputOf<"/leaderboard/docs", "post">;
+type DocsOut = OutputOf<"/leaderboard/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/leaderboard/docs", input);
+  return api.post("/leaderboard/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

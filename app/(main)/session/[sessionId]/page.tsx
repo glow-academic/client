@@ -13,8 +13,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SessionDetailIn = InputOf<"/api/v5/artifacts/session/get", "post">;
-type SessionDetailOut = OutputOf<"/api/v5/artifacts/session/get", "post">;
+type SessionDetailIn = InputOf<"/session/get", "post">;
+type SessionDetailOut = OutputOf<"/session/get", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -25,7 +25,7 @@ const getSessionDetail = async (
 ): Promise<SessionDetailOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/session/get", input, {
+  return api.post("/session/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -36,11 +36,11 @@ const getSessionDetail = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/activity/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/activity/docs", "post">;
+type DocsIn = InputOf<"/activity/docs", "post">;
+type DocsOut = OutputOf<"/activity/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/activity/docs", input);
+  return api.post("/activity/docs", input);
 };
 
 export async function generateMetadata({

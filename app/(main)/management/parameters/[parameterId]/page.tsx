@@ -17,14 +17,14 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterGetIn = InputOf<"/api/v5/artifacts/parameters/get", "post">;
-type ParameterGetOut = OutputOf<"/api/v5/artifacts/parameters/get", "post">;
+type ParameterGetIn = InputOf<"/parameters/get", "post">;
+type ParameterGetOut = OutputOf<"/parameters/get", "post">;
 
-type UpdateParameterIn = InputOf<"/api/v5/artifacts/parameters/update", "post">;
-type UpdateParameterOut = OutputOf<"/api/v5/artifacts/parameters/update", "post">;
+type UpdateParameterIn = InputOf<"/parameters/update", "post">;
+type UpdateParameterOut = OutputOf<"/parameters/update", "post">;
 
-type PatchParameterDraftIn = InputOf<"/api/v5/artifacts/parameters/draft", "patch">;
-type PatchParameterDraftOut = OutputOf<"/api/v5/artifacts/parameters/draft", "patch">;
+type PatchParameterDraftIn = InputOf<"/parameters/draft", "patch">;
+type PatchParameterDraftOut = OutputOf<"/parameters/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<"/api/v5/resources/descriptions", "post">;
@@ -36,7 +36,7 @@ type CreateDraftDescriptionsOut = OutputOf<"/api/v5/resources/descriptions", "po
 const getParameter = async (
   input: ParameterGetIn
 ): Promise<ParameterGetOut> => {
-  return api.post("/artifacts/parameters/get", input, {
+  return api.post("/parameters/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -45,11 +45,11 @@ const getParameter = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/parameters/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/parameters/docs", "post">;
+type DocsIn = InputOf<"/parameters/docs", "post">;
+type DocsOut = OutputOf<"/parameters/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/parameters/docs", input);
+  return api.post("/parameters/docs", input);
 };
 
 export async function generateMetadata({
@@ -67,13 +67,13 @@ async function updateParameter(
   input: UpdateParameterIn
 ): Promise<UpdateParameterOut> {
   "use server";
-  return api.post("/artifacts/parameters/update", input);
+  return api.post("/parameters/update", input);
 }
 
 async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/parameters/draft", input);
+  return api.patch("/parameters/draft", input);
 }
 
 async function createNames(input: CreateDraftNamesIn): Promise<CreateDraftNamesOut> {
@@ -133,7 +133,7 @@ export default async function ParameterEditPage({
     const [parameterDetail, docs, draftsResult] = await Promise.all([
       getParameter(input),
       getDocs({ body: { entity_id: parameterId } }),
-      api.post("/artifacts/parameters/drafts", {})
+      api.post("/parameters/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

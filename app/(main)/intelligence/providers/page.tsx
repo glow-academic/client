@@ -13,9 +13,9 @@ import type { Metadata } from "next";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProvidersListOut = OutputOf<"/api/v5/artifacts/providers/search", "post">;
-type DeleteProviderIn = InputOf<"/api/v5/artifacts/providers/delete", "post">;
-type DeleteProviderOut = OutputOf<"/api/v5/artifacts/providers/delete", "post">;
+type ProvidersListOut = OutputOf<"/providers/search", "post">;
+type DeleteProviderIn = InputOf<"/providers/delete", "post">;
+type DeleteProviderOut = OutputOf<"/providers/delete", "post">;
 
 /** ---- Body type for providers list request ---- */
 type ProvidersListBody = {
@@ -36,7 +36,7 @@ type ProvidersListBody = {
 const getProvidersList = async (body: ProvidersListBody): Promise<ProvidersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/providers/search",
+    "/providers/search",
     { body },
     {
       cache: "no-store",
@@ -55,18 +55,18 @@ async function deleteProvider(
 ): Promise<DeleteProviderOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/providers/delete", {
+  return api.post("/providers/delete", {
     ...input,
     body: { ...input.body },
   });
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/providers/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/providers/docs", "post">;
+type DocsIn = InputOf<"/providers/docs", "post">;
+type DocsOut = OutputOf<"/providers/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/providers/docs", input);
+  return api.post("/providers/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

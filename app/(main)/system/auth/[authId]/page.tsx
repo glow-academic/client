@@ -15,14 +15,14 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAuthIn = InputOf<"/api/v5/artifacts/auths/get", "post">;
-type GetAuthOut = OutputOf<"/api/v5/artifacts/auths/get", "post">;
-type CreateAuthIn = InputOf<"/api/v5/artifacts/auths/create", "post">;
-type CreateAuthOut = OutputOf<"/api/v5/artifacts/auths/create", "post">;
-type UpdateAuthIn = InputOf<"/api/v5/artifacts/auths/update", "post">;
-type UpdateAuthOut = OutputOf<"/api/v5/artifacts/auths/update", "post">;
-type PatchAuthDraftIn = InputOf<"/api/v5/artifacts/auths/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/api/v5/artifacts/auths/draft", "patch">;
+type GetAuthIn = InputOf<"/auths/get", "post">;
+type GetAuthOut = OutputOf<"/auths/get", "post">;
+type CreateAuthIn = InputOf<"/auths/create", "post">;
+type CreateAuthOut = OutputOf<"/auths/create", "post">;
+type UpdateAuthIn = InputOf<"/auths/update", "post">;
+type UpdateAuthOut = OutputOf<"/auths/update", "post">;
+type PatchAuthDraftIn = InputOf<"/auths/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/auths/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -42,7 +42,7 @@ type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
-  return api.post("/artifacts/auths/get", input, {
+  return api.post("/auths/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -51,11 +51,11 @@ const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/auths/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/auths/docs", "post">;
+type DocsIn = InputOf<"/auths/docs", "post">;
+type DocsOut = OutputOf<"/auths/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/auths/docs", input);
+  return api.post("/auths/docs", input);
 };
 
 export async function generateMetadata({
@@ -71,12 +71,12 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
-  return api.post("/artifacts/auths/create", input);
+  return api.post("/auths/create", input);
 }
 
 async function updateAuth(input: UpdateAuthIn): Promise<UpdateAuthOut> {
   "use server";
-  return api.post("/artifacts/auths/update", input);
+  return api.post("/auths/update", input);
 }
 
 async function patchAuthDraft(
@@ -84,7 +84,7 @@ async function patchAuthDraft(
 ): Promise<PatchAuthDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/auths/draft", input);
+  return api.patch("/auths/draft", input);
 }
 
 async function createDraftNames(
@@ -161,7 +161,7 @@ export default async function AuthEditPage({
     const [authData, docs, draftsResult] = await Promise.all([
       getAuth(input),
       getDocs({ body: { entity_id: authId } }),
-      api.post("/artifacts/auths/drafts", {})
+      api.post("/auths/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

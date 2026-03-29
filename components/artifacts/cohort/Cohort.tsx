@@ -52,10 +52,10 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type CreateCohortIn = InputOf<"/api/v5/artifacts/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/create", "post">;
-type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
-type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
+type CreateCohortIn = InputOf<"/cohorts/create", "post">;
+type CreateCohortOut = OutputOf<"/cohorts/create", "post">;
+type UpdateCohortIn = InputOf<"/cohorts/update", "post">;
+type UpdateCohortOut = OutputOf<"/cohorts/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -90,10 +90,10 @@ type CreateDraftProfilePersonasOut = OutputOf<
   "/api/v5/resources/profile_personas",
   "post"
 >;
-type PatchCohortDraftIn = InputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
+type PatchCohortDraftIn = InputOf<"/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/cohorts/draft", "patch">;
 
-type CohortData = OutputOf<"/api/v5/artifacts/cohorts/get", "post">;
+type CohortData = OutputOf<"/cohorts/get", "post">;
 
 // Type for flush results - each resource returns its created ID(s)
 type FlushResult = {

@@ -16,12 +16,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetModelIn = InputOf<"/api/v5/artifacts/models/get", "post">;
-type GetModelOut = OutputOf<"/api/v5/artifacts/models/get", "post">;
-type CreateModelIn = InputOf<"/api/v5/artifacts/models/create", "post">;
-type CreateModelOut = OutputOf<"/api/v5/artifacts/models/create", "post">;
-type PatchModelDraftIn = InputOf<"/api/v5/artifacts/models/draft", "patch">;
-type PatchModelDraftOut = OutputOf<"/api/v5/artifacts/models/draft", "patch">;
+type GetModelIn = InputOf<"/models/get", "post">;
+type GetModelOut = OutputOf<"/models/get", "post">;
+type CreateModelIn = InputOf<"/models/create", "post">;
+type CreateModelOut = OutputOf<"/models/create", "post">;
+type PatchModelDraftIn = InputOf<"/models/draft", "patch">;
+type PatchModelDraftOut = OutputOf<"/models/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -43,7 +43,7 @@ type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 const getModelDetailDefault = async (
   input: GetModelIn
 ): Promise<GetModelOut> => {
-  return api.post("/artifacts/models/get", input, {
+  return api.post("/models/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -53,11 +53,11 @@ const getModelDetailDefault = async (
 
 /** ---- Metadata ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/models/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/models/docs", "post">;
+type DocsIn = InputOf<"/models/docs", "post">;
+type DocsOut = OutputOf<"/models/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/models/docs", input);
+  return api.post("/models/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -68,7 +68,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
   "use server";
-  return api.post("/artifacts/models/create", input);
+  return api.post("/models/create", input);
 }
 
 async function patchModelDraft(
@@ -77,7 +77,7 @@ async function patchModelDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/artifacts/models/draft", input);
+  return api.patch("/models/draft", input);
 }
 
 async function createDraftNames(
@@ -152,7 +152,7 @@ export default async function NewModelPage({
   };
   const [modelDetailDefault, draftsResult] = await Promise.all([
     getModelDetailDefault(input),
-    api.post("/artifacts/models/drafts", {})
+    api.post("/models/drafts", {})
   ]);
 
   return (

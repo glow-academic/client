@@ -18,25 +18,25 @@ import type { Metadata } from "next";
 import { loadProfileReportSearchParams } from "@/lib/search-params/profile-report";
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/api/v5/artifacts/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
+type DashboardIn = InputOf<"/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/dashboard/get", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
 
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/dashboard/get", input, {
+  return api.post("/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/reports/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/reports/docs", "post">;
+type DocsIn = InputOf<"/reports/docs", "post">;
+type DocsOut = OutputOf<"/reports/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/reports/docs", input);
+  return api.post("/reports/docs", input);
 };
 
 export async function generateMetadata({

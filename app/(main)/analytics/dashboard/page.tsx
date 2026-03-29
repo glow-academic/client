@@ -18,8 +18,8 @@ import type { Metadata } from "next";
 import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
 /** ---- Strong types from OpenAPI ---- */
-type DashboardIn = InputOf<"/api/v5/artifacts/dashboard/get", "post">;
-type DashboardOut = OutputOf<"/api/v5/artifacts/dashboard/get", "post">;
+type DashboardIn = InputOf<"/dashboard/get", "post">;
+type DashboardOut = OutputOf<"/dashboard/get", "post">;
 type DashboardHistoryOut = NonNullable<DashboardOut["history"]>;
 type BulkArchiveAttemptsIn = InputOf<
   "/api/v5/attempts/simulation/archive",
@@ -33,18 +33,18 @@ type BulkArchiveAttemptsOut = OutputOf<
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/dashboard/get", input, {
+  return api.post("/dashboard/get", input, {
     cache: "no-store",
     ...(bypassCache && { headers: { "X-Bypass-Cache": "1" } }),
   });
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/dashboard/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/dashboard/docs", "post">;
+type DocsIn = InputOf<"/dashboard/docs", "post">;
+type DocsOut = OutputOf<"/dashboard/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/dashboard/docs", input);
+  return api.post("/dashboard/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

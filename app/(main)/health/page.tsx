@@ -16,15 +16,15 @@ import { cache } from "react";
 import { loadHealthSearchParams } from "@/lib/search-params/health";
 
 /** ---- Strong types from OpenAPI ---- */
-type HealthBundleIn = InputOf<"/api/v5/artifacts/health/get", "post">;
-type HealthBundleOut = OutputOf<"/api/v5/artifacts/health/get", "post">;
+type HealthBundleIn = InputOf<"/health/get", "post">;
+type HealthBundleOut = OutputOf<"/health/get", "post">;
 
 /** ---- Cached fetch used by page (prevents duplicate requests) ---- */
 const getHealthBundle = cache(
   async (input: HealthBundleIn): Promise<HealthBundleOut> => {
     const bypassCache = await isHardRefresh();
 
-    return api.post("/artifacts/health/get", input, {
+    return api.post("/health/get", input, {
       cache: "no-store",
       ...(bypassCache && {
         headers: {

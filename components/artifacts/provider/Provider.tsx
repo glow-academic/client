@@ -33,13 +33,13 @@ import type { ResourceType } from "@/lib/resources/types";
 import type { Parser } from "nuqs";
 import { parseAsString } from "nuqs";
 
-type CreateProviderIn = InputOf<"/api/v5/artifacts/providers/create", "post">;
-type CreateProviderOut = OutputOf<"/api/v5/artifacts/providers/create", "post">;
-type UpdateProviderIn = InputOf<"/api/v5/artifacts/providers/update", "post">;
-type UpdateProviderOut = OutputOf<"/api/v5/artifacts/providers/update", "post">;
-type PatchProviderDraftIn = InputOf<"/api/v5/artifacts/providers/draft", "patch">;
+type CreateProviderIn = InputOf<"/providers/create", "post">;
+type CreateProviderOut = OutputOf<"/providers/create", "post">;
+type UpdateProviderIn = InputOf<"/providers/update", "post">;
+type UpdateProviderOut = OutputOf<"/providers/update", "post">;
+type PatchProviderDraftIn = InputOf<"/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<
-  "/api/v5/artifacts/providers/draft",
+  "/providers/draft",
   "patch"
 >;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -56,7 +56,7 @@ type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
 type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
 type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
-type ProviderData = OutputOf<"/api/v5/artifacts/providers/get", "post">;
+type ProviderData = OutputOf<"/providers/get", "post">;
 
 type ProviderFormState = {
   name: string | null;

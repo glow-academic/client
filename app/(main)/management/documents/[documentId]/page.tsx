@@ -17,15 +17,15 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDocumentIn = InputOf<"/api/v5/artifacts/documents/get", "post">;
-type GetDocumentOut = OutputOf<"/api/v5/artifacts/documents/get", "post">;
+type GetDocumentIn = InputOf<"/documents/get", "post">;
+type GetDocumentOut = OutputOf<"/documents/get", "post">;
 export type DocumentDetailOut = GetDocumentOut;
-type CreateDocumentIn = InputOf<"/api/v5/artifacts/documents/create", "post">;
-type CreateDocumentOut = OutputOf<"/api/v5/artifacts/documents/create", "post">;
-type UpdateDocumentIn = InputOf<"/api/v5/artifacts/documents/update", "post">;
-type UpdateDocumentOut = OutputOf<"/api/v5/artifacts/documents/update", "post">;
-type PatchDocumentDraftIn = InputOf<"/api/v5/artifacts/documents/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/api/v5/artifacts/documents/draft", "patch">;
+type CreateDocumentIn = InputOf<"/documents/create", "post">;
+type CreateDocumentOut = OutputOf<"/documents/create", "post">;
+type UpdateDocumentIn = InputOf<"/documents/update", "post">;
+type UpdateDocumentOut = OutputOf<"/documents/update", "post">;
+type PatchDocumentDraftIn = InputOf<"/documents/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/documents/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -52,7 +52,7 @@ type UploadResult = { success: boolean; upload_id?: string; message?: string };
 const getDocumentDefault = async (
   input: GetDocumentIn
 ): Promise<GetDocumentOut> => {
-  return api.post("/artifacts/documents/get", input, {
+  return api.post("/documents/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -61,11 +61,11 @@ const getDocumentDefault = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/documents/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/documents/docs", "post">;
+type DocsIn = InputOf<"/documents/docs", "post">;
+type DocsOut = OutputOf<"/documents/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/documents/docs", input);
+  return api.post("/documents/docs", input);
 };
 
 export async function generateMetadata({
@@ -81,12 +81,12 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createDocument(input: CreateDocumentIn): Promise<CreateDocumentOut> {
   "use server";
-  return api.post("/artifacts/documents/create", input);
+  return api.post("/documents/create", input);
 }
 
 async function updateDocument(input: UpdateDocumentIn): Promise<UpdateDocumentOut> {
   "use server";
-  return api.post("/artifacts/documents/update", input);
+  return api.post("/documents/update", input);
 }
 
 async function patchDocumentDraft(
@@ -94,7 +94,7 @@ async function patchDocumentDraft(
 ): Promise<PatchDocumentDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/documents/draft", input);
+  return api.patch("/documents/draft", input);
 }
 
 async function createDraftNames(
@@ -210,7 +210,7 @@ export default async function DocumentEditPage({
     const [documentDetail, docs, draftsResult] = await Promise.all([
       getDocument(documentId, q.draftId ?? null),
       getDocs({ body: { entity_id: documentId } }),
-      api.post("/artifacts/documents/drafts", {})
+      api.post("/documents/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
@@ -243,7 +243,7 @@ export default async function DocumentEditPage({
             createUploadsAction={createDraftUploads}
             createImagesAction={createDraftImages}
             createTextsAction={createDraftTexts}
-            uploadBasePath="/artifacts/documents"
+            uploadBasePath="/documents"
             uploadFileAction={uploadFile}
           />
         </div>

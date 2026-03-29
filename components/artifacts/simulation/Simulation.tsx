@@ -44,10 +44,10 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type CreateSimulationIn = InputOf<"/api/v5/artifacts/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/create", "post">;
-type UpdateSimulationIn = InputOf<"/api/v5/artifacts/simulations/update", "post">;
-type UpdateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/update", "post">;
+type CreateSimulationIn = InputOf<"/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/simulations/create", "post">;
+type UpdateSimulationIn = InputOf<"/simulations/update", "post">;
+type UpdateSimulationOut = OutputOf<"/simulations/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -83,15 +83,15 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
   "post"
 >;
 type PatchSimulationDraftIn = InputOf<
-  "/api/v5/artifacts/simulations/draft",
+  "/simulations/draft",
   "patch"
 >;
 type PatchSimulationDraftOut = OutputOf<
-  "/api/v5/artifacts/simulations/draft",
+  "/simulations/draft",
   "patch"
 >;
 
-type SimulationData = OutputOf<"/api/v5/artifacts/simulations/get", "post">;
+type SimulationData = OutputOf<"/simulations/get", "post">;
 type SimulationResourceType =
   | ResourceType
   | "scenario_time_limits";

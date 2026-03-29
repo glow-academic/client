@@ -14,12 +14,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetToolIn = InputOf<"/api/v5/artifacts/tools/get", "post">;
-type GetToolOut = OutputOf<"/api/v5/artifacts/tools/get", "post">;
-type CreateToolIn = InputOf<"/api/v5/artifacts/tools/create", "post">;
-type CreateToolOut = OutputOf<"/api/v5/artifacts/tools/create", "post">;
-type PatchToolDraftIn = InputOf<"/api/v5/artifacts/tools/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/api/v5/artifacts/tools/draft", "patch">;
+type GetToolIn = InputOf<"/tools/get", "post">;
+type GetToolOut = OutputOf<"/tools/get", "post">;
+type CreateToolIn = InputOf<"/tools/create", "post">;
+type CreateToolOut = OutputOf<"/tools/create", "post">;
+type PatchToolDraftIn = InputOf<"/tools/draft", "patch">;
+type PatchToolDraftOut = OutputOf<"/tools/draft", "patch">;
 type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -43,7 +43,7 @@ type CreateDraftArgPositionsOut = OutputOf<
  * Always bypass cache to ensure fresh data for new pages.
  */
 const getToolDefault = async (input: GetToolIn): Promise<GetToolOut> => {
-  return api.post("/artifacts/tools/get", input, {
+  return api.post("/tools/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -53,11 +53,11 @@ const getToolDefault = async (input: GetToolIn): Promise<GetToolOut> => {
 
 /** ---- Metadata ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/tools/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/tools/docs", "post">;
+type DocsIn = InputOf<"/tools/docs", "post">;
+type DocsOut = OutputOf<"/tools/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/tools/docs", input);
+  return api.post("/tools/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -68,7 +68,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions ---- */
 async function createTool(input: CreateToolIn): Promise<CreateToolOut> {
   "use server";
-  return api.post("/artifacts/tools/create", input);
+  return api.post("/tools/create", input);
 }
 
 async function patchToolDraft(
@@ -76,7 +76,7 @@ async function patchToolDraft(
 ): Promise<PatchToolDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/tools/draft", input);
+  return api.patch("/tools/draft", input);
 }
 
 async function createDraftArgs(
@@ -139,7 +139,7 @@ export default async function NewToolPage({
   };
   const [toolDetailDefault, draftsResult] = await Promise.all([
     getToolDefault(input),
-    api.post("/artifacts/tools/drafts", {})
+    api.post("/tools/drafts", {})
   ]);
 
   return (

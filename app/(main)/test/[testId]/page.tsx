@@ -14,14 +14,14 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-export type TestArtifactOut = OutputOf<"/api/v5/artifacts/test/get", "post">;
+export type TestArtifactOut = OutputOf<"/test/get", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getTestArtifact = async (
   testId: string,
 ): Promise<TestArtifactOut> => {
   return api.post(
-    "/artifacts/test/get",
+    "/test/get",
     { body: { test_id: testId } },
     {
       cache: "no-store",
@@ -33,11 +33,11 @@ const getTestArtifact = async (
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/benchmark/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/benchmark/docs", "post">;
+type DocsIn = InputOf<"/benchmark/docs", "post">;
+type DocsOut = OutputOf<"/benchmark/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/benchmark/docs", input);
+  return api.post("/benchmark/docs", input);
 };
 
 export async function generateMetadata({

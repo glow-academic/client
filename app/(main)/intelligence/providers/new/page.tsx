@@ -14,12 +14,12 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProviderIn = InputOf<"/api/v5/artifacts/providers/get", "post">;
-type GetProviderOut = OutputOf<"/api/v5/artifacts/providers/get", "post">;
-type CreateProviderIn = InputOf<"/api/v5/artifacts/providers/create", "post">;
-type CreateProviderOut = OutputOf<"/api/v5/artifacts/providers/create", "post">;
-type PatchProviderDraftIn = InputOf<"/api/v5/artifacts/providers/draft", "patch">;
-type PatchProviderDraftOut = OutputOf<"/api/v5/artifacts/providers/draft", "patch">;
+type GetProviderIn = InputOf<"/providers/get", "post">;
+type GetProviderOut = OutputOf<"/providers/get", "post">;
+type CreateProviderIn = InputOf<"/providers/create", "post">;
+type CreateProviderOut = OutputOf<"/providers/create", "post">;
+type PatchProviderDraftIn = InputOf<"/providers/draft", "patch">;
+type PatchProviderDraftOut = OutputOf<"/providers/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -41,7 +41,7 @@ type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
 const getProviderDefault = async (
   input: GetProviderIn
 ): Promise<GetProviderOut> => {
-  return api.post("/artifacts/providers/get", input, {
+  return api.post("/providers/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -55,7 +55,7 @@ async function createProvider(
   input: CreateProviderIn
 ): Promise<CreateProviderOut> {
   "use server";
-  return api.post("/artifacts/providers/create", input);
+  return api.post("/providers/create", input);
 }
 
 async function patchProviderDraft(
@@ -63,7 +63,7 @@ async function patchProviderDraft(
 ): Promise<PatchProviderDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/providers/draft", input);
+  return api.patch("/providers/draft", input);
 }
 
 async function createNames(
@@ -95,11 +95,11 @@ async function createEndpoints(
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/providers/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/providers/docs", "post">;
+type DocsIn = InputOf<"/providers/docs", "post">;
+type DocsOut = OutputOf<"/providers/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/providers/docs", input);
+  return api.post("/providers/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -143,7 +143,7 @@ export default async function NewProviderPage({
   };
   const [providerDetailDefault, draftsResult] = await Promise.all([
     getProviderDefault(input),
-    api.post("/artifacts/providers/drafts", {})
+    api.post("/providers/drafts", {})
   ]);
 
   return (

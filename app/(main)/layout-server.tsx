@@ -18,19 +18,19 @@ type CreateFeedbackIn = InputOf<"/api/v5/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v5/problem", "post">;
 /** Page-specific refresh endpoint mapping */
 const REFRESH_ENDPOINT_MAP: Record<string, string> = {
-  chat: "/artifacts/chat/refresh",
-  dashboard: "/artifacts/dashboard/refresh",
-  leaderboard: "/artifacts/leaderboard/refresh",
-  reports: "/artifacts/reports/refresh",
-  pricing: "/artifacts/pricing/refresh",
-  benchmark: "/artifacts/benchmark/refresh",
-  activity: "/artifacts/activity/refresh",
-  health: "/artifacts/health/refresh",
+  chat: "/chat/refresh",
+  dashboard: "/dashboard/refresh",
+  leaderboard: "/leaderboard/refresh",
+  reports: "/reports/refresh",
+  pricing: "/pricing/refresh",
+  benchmark: "/benchmark/refresh",
+  activity: "/activity/refresh",
+  health: "/health/refresh",
 };
-type AttemptFullIn = InputOf<"/api/v5/artifacts/attempt/get", "post">;
-type AttemptFullOut = OutputOf<"/api/v5/artifacts/attempt/get", "post">;
-type SearchProfilesIn = InputOf<"/api/v5/artifacts/profiles/search", "post">;
-type SearchProfilesOut = OutputOf<"/api/v5/artifacts/profiles/search", "post">;
+type AttemptFullIn = InputOf<"/attempt/get", "post">;
+type AttemptFullOut = OutputOf<"/attempt/get", "post">;
+type SearchProfilesIn = InputOf<"/profiles/search", "post">;
+type SearchProfilesOut = OutputOf<"/profiles/search", "post">;
 /** ---- Response type alias ---- */
 export type AuthProfileResponse = ProfileContextOut;
 
@@ -54,13 +54,13 @@ export const getProfileContext = cache(
 
 
 /** ---- Group messages server action (canonical: /artifacts/group/get) ---- */
-type GroupMessagesIn = InputOf<"/api/v5/artifacts/group/get", "post">;
-type GroupMessagesOut = OutputOf<"/api/v5/artifacts/group/get", "post">;
+type GroupMessagesIn = InputOf<"/group/get", "post">;
+type GroupMessagesOut = OutputOf<"/group/get", "post">;
 
 export async function getGroupMessages(
   input: GroupMessagesIn
 ): Promise<GroupMessagesOut> {
-  return api.post("/artifacts/group/get", input);
+  return api.post("/group/get", input);
 }
 
 
@@ -217,16 +217,16 @@ export async function refreshPage(page: string): Promise<void> {
 
 /** Page-specific export endpoint mapping */
 const EXPORT_ENDPOINT_MAP: Record<string, string> = {
-  home: "/artifacts/home/export",
-  dashboard: "/artifacts/dashboard/export",
-  leaderboard: "/artifacts/leaderboard/export",
-  reports: "/artifacts/reports/export",
-  pricing: "/artifacts/pricing/export",
-  practice: "/artifacts/practice/export",
-  personas: "/artifacts/personas/export",
-  scenarios: "/artifacts/scenarios/export",
-  simulations: "/artifacts/simulations/export",
-  cohorts: "/artifacts/cohorts/export",
+  home: "/home/export",
+  dashboard: "/dashboard/export",
+  leaderboard: "/leaderboard/export",
+  reports: "/reports/export",
+  pricing: "/pricing/export",
+  practice: "/practice/export",
+  personas: "/personas/export",
+  scenarios: "/scenarios/export",
+  simulations: "/simulations/export",
+  cohorts: "/cohorts/export",
 };
 
 /** Page-targeted export: calls the correct /export endpoint for the given page. */
@@ -244,7 +244,7 @@ export async function exportPage(
 export async function searchProfiles(
   input: SearchProfilesIn
 ): Promise<SearchProfilesOut> {
-  return api.post("/artifacts/profiles/search", input);
+  return api.post("/profiles/search", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

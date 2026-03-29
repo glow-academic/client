@@ -15,14 +15,14 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSettingIn = InputOf<"/api/v5/artifacts/settings/get", "post">;
-type GetSettingOut = OutputOf<"/api/v5/artifacts/settings/get", "post">;
-type CreateSettingIn = InputOf<"/api/v5/artifacts/settings/create", "post">;
-type CreateSettingOut = OutputOf<"/api/v5/artifacts/settings/create", "post">;
-type UpdateSettingIn = InputOf<"/api/v5/artifacts/settings/update", "post">;
-type UpdateSettingOut = OutputOf<"/api/v5/artifacts/settings/update", "post">;
-type PatchSettingDraftIn = InputOf<"/api/v5/artifacts/settings/draft", "patch">;
-type PatchSettingDraftOut = OutputOf<"/api/v5/artifacts/settings/draft", "patch">;
+type GetSettingIn = InputOf<"/settings/get", "post">;
+type GetSettingOut = OutputOf<"/settings/get", "post">;
+type CreateSettingIn = InputOf<"/settings/create", "post">;
+type CreateSettingOut = OutputOf<"/settings/create", "post">;
+type UpdateSettingIn = InputOf<"/settings/update", "post">;
+type UpdateSettingOut = OutputOf<"/settings/update", "post">;
+type PatchSettingDraftIn = InputOf<"/settings/draft", "patch">;
+type PatchSettingDraftOut = OutputOf<"/settings/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -53,7 +53,7 @@ type CreateAuthItemKeysOut = OutputOf<
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getSetting = async (input: GetSettingIn): Promise<GetSettingOut> => {
-  return api.post("/artifacts/settings/get", input, {
+  return api.post("/settings/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -62,11 +62,11 @@ const getSetting = async (input: GetSettingIn): Promise<GetSettingOut> => {
 };
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/settings/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/settings/docs", "post">;
+type DocsIn = InputOf<"/settings/docs", "post">;
+type DocsOut = OutputOf<"/settings/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/settings/docs", input);
+  return api.post("/settings/docs", input);
 };
 
 export async function generateMetadata({
@@ -82,12 +82,12 @@ export async function generateMetadata({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createSetting(input: CreateSettingIn): Promise<CreateSettingOut> {
   "use server";
-  return api.post("/artifacts/settings/create", input);
+  return api.post("/settings/create", input);
 }
 
 async function updateSetting(input: UpdateSettingIn): Promise<UpdateSettingOut> {
   "use server";
-  return api.post("/artifacts/settings/update", input);
+  return api.post("/settings/update", input);
 }
 
 async function patchSettingDraft(
@@ -95,7 +95,7 @@ async function patchSettingDraft(
 ): Promise<PatchSettingDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/settings/draft", input);
+  return api.patch("/settings/draft", input);
 }
 
 async function createDraftNames(
@@ -181,7 +181,7 @@ export default async function SettingEditPage({
     const [settingDetail, docs, draftsResult] = await Promise.all([
       getSetting(input),
       getDocs({ body: { entity_id: settingId } }),
-      api.post("/artifacts/settings/drafts", {})
+      api.post("/settings/drafts", {})
     ]);
 
     const entityName = docs.detail.title;

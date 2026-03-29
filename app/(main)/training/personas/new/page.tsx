@@ -21,12 +21,12 @@ import {
 } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetPersonaIn = InputOf<"/api/v5/artifacts/personas/get", "post">;
-type GetPersonaOut = OutputOf<"/api/v5/artifacts/personas/get", "post">;
-type CreatePersonaIn = InputOf<"/api/v5/artifacts/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/api/v5/artifacts/personas/create", "post">;
-type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
-type PatchPersonaDraftOut = OutputOf<"/api/v5/artifacts/personas/draft", "patch">;
+type GetPersonaIn = InputOf<"/personas/get", "post">;
+type GetPersonaOut = OutputOf<"/personas/get", "post">;
+type CreatePersonaIn = InputOf<"/personas/create", "post">;
+type CreatePersonaOut = OutputOf<"/personas/create", "post">;
+type PatchPersonaDraftIn = InputOf<"/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/personas/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -34,7 +34,7 @@ type PatchPersonaDraftOut = OutputOf<"/api/v5/artifacts/personas/draft", "patch"
 const getPersonaDefault = async (
   input: GetPersonaIn
 ): Promise<GetPersonaOut> => {
-  return api.post("/artifacts/personas/get", input, {
+  return api.post("/personas/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -45,22 +45,22 @@ const getPersonaDefault = async (
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/create", input);
+  return api.post("/personas/create", input);
 }
 
 async function patchPersonaDraft(
   input: PatchPersonaDraftIn
 ): Promise<PatchPersonaDraftOut> {
   "use server";
-  return api.patch("/artifacts/personas/draft", input);
+  return api.patch("/personas/draft", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/personas/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/personas/docs", "post">;
+type DocsIn = InputOf<"/personas/docs", "post">;
+type DocsOut = OutputOf<"/personas/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/personas/docs", input);
+  return api.post("/personas/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -123,7 +123,7 @@ export default async function NewPersonaPage({
   };
   const [personaDetailDefault, draftsResult] = await Promise.all([
     getPersonaDefault(input),
-    api.post("/artifacts/personas/drafts", {})
+    api.post("/personas/drafts", {})
   ]);
 
   return (

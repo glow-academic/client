@@ -14,10 +14,10 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/api/v5/artifacts/documents/search", "post">;
-type DocumentsListOut = OutputOf<"/api/v5/artifacts/documents/search", "post">;
-type DeleteDocumentIn = InputOf<"/api/v5/artifacts/documents/delete", "post">;
-type DeleteDocumentOut = OutputOf<"/api/v5/artifacts/documents/delete", "post">;
+type DocumentsListIn = InputOf<"/documents/search", "post">;
+type DocumentsListOut = OutputOf<"/documents/search", "post">;
+type DeleteDocumentIn = InputOf<"/documents/delete", "post">;
+type DeleteDocumentOut = OutputOf<"/documents/delete", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
@@ -29,7 +29,7 @@ type GenerateTemplateOut = never;
 const getDocumentsList = async (): Promise<DocumentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/documents/search",
+    "/documents/search",
     { body: {} },
     {
       cache: "no-store",
@@ -48,17 +48,17 @@ async function deleteDocument(
 ): Promise<DeleteDocumentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/documents/delete", input);
+  return api.post("/documents/delete", input);
 }
 
 // generateTemplate removed - component now uses WebSocket directly
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/documents/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/documents/docs", "post">;
+type DocsIn = InputOf<"/documents/docs", "post">;
+type DocsOut = OutputOf<"/documents/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/documents/docs", input);
+  return api.post("/documents/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

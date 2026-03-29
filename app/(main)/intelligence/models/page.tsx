@@ -15,11 +15,11 @@ import type { Metadata } from "next";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelsListOut = OutputOf<"/api/v5/artifacts/models/search", "post">;
-type DuplicateModelIn = InputOf<"/api/v5/artifacts/models/duplicate", "post">;
-type DuplicateModelOut = OutputOf<"/api/v5/artifacts/models/duplicate", "post">;
-type DeleteModelIn = InputOf<"/api/v5/artifacts/models/delete", "post">;
-type DeleteModelOut = OutputOf<"/api/v5/artifacts/models/delete", "post">;
+type ModelsListOut = OutputOf<"/models/search", "post">;
+type DuplicateModelIn = InputOf<"/models/duplicate", "post">;
+type DuplicateModelOut = OutputOf<"/models/duplicate", "post">;
+type DeleteModelIn = InputOf<"/models/delete", "post">;
+type DeleteModelOut = OutputOf<"/models/delete", "post">;
 
 /** ---- Body type for models list request ---- */
 type ModelsListBody = {
@@ -41,7 +41,7 @@ type ModelsListBody = {
 const getModelsList = async (body: ModelsListBody): Promise<ModelsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/models/search",
+    "/models/search",
     { body },
     {
       cache: "no-store",
@@ -60,21 +60,21 @@ async function duplicateModel(
 ): Promise<DuplicateModelOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/models/duplicate", input);
+  return api.post("/models/duplicate", input);
 }
 
 async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/models/delete", input);
+  return api.post("/models/delete", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/models/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/models/docs", "post">;
+type DocsIn = InputOf<"/models/docs", "post">;
+type DocsOut = OutputOf<"/models/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/models/docs", input);
+  return api.post("/models/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

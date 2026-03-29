@@ -18,15 +18,15 @@ import type { Metadata } from "next";
 import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
-type PracticeIn = InputOf<"/api/v5/artifacts/practice/get", "post">;
-type PracticeOut = OutputOf<"/api/v5/artifacts/practice/get", "post">;
+type PracticeIn = InputOf<"/practice/get", "post">;
+type PracticeOut = OutputOf<"/practice/get", "post">;
 type PracticeHistoryOut = NonNullable<PracticeOut["history"]>;
 
 /** ---- Direct fetch for practice data (cards + embedded history) ---- */
 const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
   const bypassCache = await isHardRefresh();
 
-  return api.post("/artifacts/practice/get", input, {
+  return api.post("/practice/get", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

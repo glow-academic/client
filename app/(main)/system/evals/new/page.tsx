@@ -19,16 +19,16 @@ import {
 } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetEvalIn = InputOf<"/api/v5/artifacts/evals/get", "post">;
-type GetEvalOut = OutputOf<"/api/v5/artifacts/evals/get", "post">;
-type CreateEvalIn = InputOf<"/api/v5/artifacts/evals/create", "post">;
-type CreateEvalOut = OutputOf<"/api/v5/artifacts/evals/create", "post">;
-type PatchEvalDraftIn = InputOf<"/api/v5/artifacts/evals/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/api/v5/artifacts/evals/draft", "patch">;
+type GetEvalIn = InputOf<"/evals/get", "post">;
+type GetEvalOut = OutputOf<"/evals/get", "post">;
+type CreateEvalIn = InputOf<"/evals/create", "post">;
+type CreateEvalOut = OutputOf<"/evals/create", "post">;
+type PatchEvalDraftIn = InputOf<"/evals/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/evals/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getEvalDefault = async (input: GetEvalIn): Promise<GetEvalOut> => {
-  return api.post("/artifacts/evals/get", input, {
+  return api.post("/evals/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -38,11 +38,11 @@ const getEvalDefault = async (input: GetEvalIn): Promise<GetEvalOut> => {
 
 /** ---- Metadata ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/evals/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/evals/docs", "post">;
+type DocsIn = InputOf<"/evals/docs", "post">;
+type DocsOut = OutputOf<"/evals/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/evals/docs", input);
+  return api.post("/evals/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -53,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** ---- Strongly-typed server actions ---- */
 async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
-  return api.post("/artifacts/evals/create", input);
+  return api.post("/evals/create", input);
 }
 
 async function patchEvalDraft(
@@ -61,7 +61,7 @@ async function patchEvalDraft(
 ): Promise<PatchEvalDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/artifacts/evals/draft", input);
+  return api.patch("/evals/draft", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -111,7 +111,7 @@ export default async function NewEvalPage({
   };
   const [evalDetailDefault, draftsResult] = await Promise.all([
     getEvalDefault(input),
-    api.post("/artifacts/evals/drafts", {})
+    api.post("/evals/drafts", {})
   ]);
 
   return (

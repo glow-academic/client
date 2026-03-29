@@ -17,14 +17,14 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetRubricIn = InputOf<"/api/v5/artifacts/rubrics/get", "post">;
-type GetRubricOut = OutputOf<"/api/v5/artifacts/rubrics/get", "post">;
-type CreateRubricIn = InputOf<"/api/v5/artifacts/rubrics/create", "post">;
-type CreateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/create", "post">;
-type UpdateRubricIn = InputOf<"/api/v5/artifacts/rubrics/update", "post">;
-type UpdateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/update", "post">;
-type PatchRubricDraftIn = InputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
+type GetRubricIn = InputOf<"/rubrics/get", "post">;
+type GetRubricOut = OutputOf<"/rubrics/get", "post">;
+type CreateRubricIn = InputOf<"/rubrics/create", "post">;
+type CreateRubricOut = OutputOf<"/rubrics/create", "post">;
+type UpdateRubricIn = InputOf<"/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/rubrics/update", "post">;
+type PatchRubricDraftIn = InputOf<"/rubrics/draft", "patch">;
+type PatchRubricDraftOut = OutputOf<"/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -56,7 +56,7 @@ const getRubric = async (
   standardGroupSearch: string | null,
 ): Promise<GetRubricOut> => {
   return api.post(
-    "/artifacts/rubrics/get",
+    "/rubrics/get",
     ({
       body: {
         rubric_id: rubricId,
@@ -76,11 +76,11 @@ const getRubric = async (
 
 /** ---- Metadata uses the same cached fetch ---- */
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/rubrics/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/rubrics/docs", "post">;
+type DocsIn = InputOf<"/rubrics/docs", "post">;
+type DocsOut = OutputOf<"/rubrics/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/rubrics/docs", input);
+  return api.post("/rubrics/docs", input);
 };
 
 export async function generateMetadata({
@@ -135,7 +135,7 @@ export default async function EditRubricPage({
         q.standardGroupSearch ?? null,
       ),
       getDocs({ body: { entity_id: rubricId } }),
-      api.post("/artifacts/rubrics/drafts", {})
+      api.post("/rubrics/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
@@ -193,12 +193,12 @@ export default async function EditRubricPage({
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createRubric(input: CreateRubricIn): Promise<CreateRubricOut> {
   "use server";
-  return api.post("/artifacts/rubrics/create", input);
+  return api.post("/rubrics/create", input);
 }
 
 async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
   "use server";
-  return api.post("/artifacts/rubrics/update", input);
+  return api.post("/rubrics/update", input);
 }
 
 async function patchRubricDraft(
@@ -207,7 +207,7 @@ async function patchRubricDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.patch("/artifacts/rubrics/draft", input);
+  return api.patch("/rubrics/draft", input);
 }
 
 async function createDraftNames(

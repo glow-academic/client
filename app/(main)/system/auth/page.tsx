@@ -11,11 +11,11 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthListOut = OutputOf<"/api/v5/artifacts/auths/search", "post">;
-type DuplicateAuthIn = InputOf<"/api/v5/artifacts/auths/duplicate", "post">;
-type DuplicateAuthOut = OutputOf<"/api/v5/artifacts/auths/duplicate", "post">;
-type DeleteAuthIn = InputOf<"/api/v5/artifacts/auths/delete", "post">;
-type DeleteAuthOut = OutputOf<"/api/v5/artifacts/auths/delete", "post">;
+type AuthListOut = OutputOf<"/auths/search", "post">;
+type DuplicateAuthIn = InputOf<"/auths/duplicate", "post">;
+type DuplicateAuthOut = OutputOf<"/auths/duplicate", "post">;
+type DeleteAuthIn = InputOf<"/auths/delete", "post">;
+type DeleteAuthOut = OutputOf<"/auths/delete", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -24,7 +24,7 @@ type DeleteAuthOut = OutputOf<"/api/v5/artifacts/auths/delete", "post">;
 const getAuthList = async (): Promise<AuthListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/auths/search",
+    "/auths/search",
     { body: {} },
     {
       cache: "no-store",
@@ -44,22 +44,22 @@ async function duplicateAuth(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/auths/duplicate", input);
+  return api.post("/auths/duplicate", input);
 }
 
 async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/auths/delete", input);
+  return api.post("/auths/delete", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/auths/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/auths/docs", "post">;
+type DocsIn = InputOf<"/auths/docs", "post">;
+type DocsOut = OutputOf<"/auths/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/auths/docs", input);
+  return api.post("/auths/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {

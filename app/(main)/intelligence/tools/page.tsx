@@ -13,12 +13,12 @@ import type { Metadata } from "next";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
 
 /** ---- Strong types from OpenAPI ---- */
-type ToolsListIn = InputOf<"/api/v5/artifacts/tools/search", "post">;
-type ToolsListOut = OutputOf<"/api/v5/artifacts/tools/search", "post">;
-type DeleteToolIn = InputOf<"/api/v5/artifacts/tools/delete", "post">;
-type DeleteToolOut = OutputOf<"/api/v5/artifacts/tools/delete", "post">;
-type DuplicateToolIn = InputOf<"/api/v5/artifacts/tools/duplicate", "post">;
-type DuplicateToolOut = OutputOf<"/api/v5/artifacts/tools/duplicate", "post">;
+type ToolsListIn = InputOf<"/tools/search", "post">;
+type ToolsListOut = OutputOf<"/tools/search", "post">;
+type DeleteToolIn = InputOf<"/tools/delete", "post">;
+type DeleteToolOut = OutputOf<"/tools/delete", "post">;
+type DuplicateToolIn = InputOf<"/tools/duplicate", "post">;
+type DuplicateToolOut = OutputOf<"/tools/duplicate", "post">;
 
 /** ---- Body type for tools list request ---- */
 type ToolsListBody = {
@@ -39,7 +39,7 @@ type ToolsListBody = {
 const getToolsList = async (body: ToolsListBody): Promise<ToolsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/tools/search",
+    "/tools/search",
     { body } as ToolsListIn,
     {
       cache: "no-store",
@@ -57,7 +57,7 @@ async function deleteTool(input: DeleteToolIn): Promise<DeleteToolOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/tools/delete", input);
+  return api.post("/tools/delete", input);
 }
 
 async function duplicateTool(
@@ -65,15 +65,15 @@ async function duplicateTool(
 ): Promise<DuplicateToolOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/artifacts/tools/duplicate", input);
+  return api.post("/tools/duplicate", input);
 }
 
 /** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/api/v5/artifacts/tools/docs", "post">;
-type DocsOut = OutputOf<"/api/v5/artifacts/tools/docs", "post">;
+type DocsIn = InputOf<"/tools/docs", "post">;
+type DocsOut = OutputOf<"/tools/docs", "post">;
 
 const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/artifacts/tools/docs", input);
+  return api.post("/tools/docs", input);
 };
 
 export async function generateMetadata(): Promise<Metadata> {
