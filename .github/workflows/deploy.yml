@@ -87,14 +87,14 @@ jobs:
           AUTH_KEYCLOAK_SECRET=""
           if [ -n "$SECRET_KEY" ]; then
             AUTH_KEYCLOAK_SECRET=$(python3 -c "
-import hashlib, base64
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
-salt = hashlib.sha256(b'glow-keycloak-client-v1').digest()
-kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000)
-key = kdf.derive('${SECRET_KEY}'.encode())
-print(base64.urlsafe_b64encode(key).decode().rstrip('='))
-" 2>/dev/null)
+          import hashlib, base64
+          from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+          from cryptography.hazmat.primitives import hashes
+          salt = hashlib.sha256(b'glow-keycloak-client-v1').digest()
+          kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000)
+          key = kdf.derive('${SECRET_KEY}'.encode())
+          print(base64.urlsafe_b64encode(key).decode().rstrip('='))
+          " 2>/dev/null)
           fi
 
           echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
