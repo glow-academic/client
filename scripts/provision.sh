@@ -17,6 +17,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --name) NAME="$2"; shift 2 ;;
     --parent-deployment-id) PARENT_DEPLOYMENT_ID="$2"; shift 2 ;;
+    --api-domain) API_DOMAIN="$2"; shift 2 ;;
     --subdomain) SUBDOMAIN="$2"; shift 2 ;;
     --base-domain) BASE_DOMAIN="$2"; shift 2 ;;
     --compose-dir) COMPOSE_DIR="$2"; shift 2 ;;
@@ -71,21 +72,24 @@ services:
           memory: 512M
           cpus: '1.0'
     extra_hosts:
-    - ${DOMAIN}:host-gateway
+    - ${DOMAIN}:host-gateway${API_DOMAIN:+
+    - ${API_DOMAIN}:host-gateway}
   app-blue:
     networks:
       deployment:
         aliases:
         - client
     extra_hosts:
-    - ${DOMAIN}:host-gateway
+    - ${DOMAIN}:host-gateway${API_DOMAIN:+
+    - ${API_DOMAIN}:host-gateway}
   app-green:
     networks:
       deployment:
         aliases:
         - client
     extra_hosts:
-    - ${DOMAIN}:host-gateway
+    - ${DOMAIN}:host-gateway${API_DOMAIN:+
+    - ${API_DOMAIN}:host-gateway}
   docker-gen:
     container_name: ${NAME}-docker-gen
 networks:

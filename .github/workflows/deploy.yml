@@ -77,14 +77,30 @@ jobs:
           fi
           # Extract auth credentials from provision claim
           AUTH_SECRET=$(echo "$RESP" | jq -r '.auth_secret // empty')
+          SECRET_KEY=$(echo "$RESP" | jq -r '.secret_key // empty')
           AUTH_CONFIG=$(echo "$RESP" | jq -r '.auth_config // empty')
           ENTRA_ID=$(echo "$AUTH_CONFIG" | jq -r '.client_id // empty' 2>/dev/null)
           ENTRA_SECRET=$(echo "$AUTH_CONFIG" | jq -r '.client_secret // empty' 2>/dev/null)
           ENTRA_TENANT=$(echo "$AUTH_CONFIG" | jq -r '.tenant_id // empty' 2>/dev/null)
 
+          # Derive Keycloak client secret from SECRET_KEY (same as API server does)
+          AUTH_KEYCLOAK_SECRET=""
+          if [ -n "$SECRET_KEY" ]; then
+            AUTH_KEYCLOAK_SECRET=$(python3 -c "
+import hashlib, base64
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
+salt = hashlib.sha256(b'glow-keycloak-client-v1').digest()
+kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000)
+key = kdf.derive('${SECRET_KEY}'.encode())
+print(base64.urlsafe_b64encode(key).decode().rstrip('='))
+" 2>/dev/null)
+          fi
+
           echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
           [ -n "$AUTH_SECRET" ] && echo "AUTH_SECRET=${AUTH_SECRET}" >> $GITHUB_ENV
+          [ -n "$AUTH_KEYCLOAK_SECRET" ] && echo "AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}" >> $GITHUB_ENV
           [ -n "$ENTRA_ID" ] && echo "AUTH_MICROSOFT_ENTRA_ID_ID=${ENTRA_ID}" >> $GITHUB_ENV
           [ -n "$ENTRA_SECRET" ] && echo "AUTH_MICROSOFT_ENTRA_ID_SECRET=${ENTRA_SECRET}" >> $GITHUB_ENV
           [ -n "$ENTRA_TENANT" ] && echo "AUTH_MICROSOFT_ENTRA_ID_TENANT_ID=${ENTRA_TENANT}" >> $GITHUB_ENV
@@ -119,9 +135,18 @@ jobs:
           PARENT_NETWORK="glow-${{ inputs.parent_deployment_id }}"
 
           AUTH_SECRET="${AUTH_SECRET:-}"
+          AUTH_KEYCLOAK_SECRET="${AUTH_KEYCLOAK_SECRET:-}"
           AUTH_MICROSOFT_ENTRA_ID_ID="${AUTH_MICROSOFT_ENTRA_ID_ID:-}"
           AUTH_MICROSOFT_ENTRA_ID_SECRET="${AUTH_MICROSOFT_ENTRA_ID_SECRET:-}"
           AUTH_MICROSOFT_ENTRA_ID_TENANT_ID="${AUTH_MICROSOFT_ENTRA_ID_TENANT_ID:-}"
+
+          # Resolve parent API URL for Keycloak
+          API_URL="${{ inputs.api_url }}"
+          if [ -z "$API_URL" ]; then
+            # Derive from parent deployment's subdomain convention
+            API_URL="https://${{ inputs.parent_deployment_id }}.learn-loop.org"
+          fi
+          KEYCLOAK_PUBLIC_URL="${API_URL}${APP_PREFIX}/auth"
 
           cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
           services:
@@ -134,6 +159,8 @@ jobs:
                 - INTERNAL_API_BASE=http://glow-api:8000
                 - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
                 - AUTH_SECRET=${AUTH_SECRET}
+                - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
+                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
                 - NEXT_PUBLIC_CAMPUS=${CAMPUS}
                 - APP_PREFIX=${APP_PREFIX}
                 - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
@@ -158,6 +185,8 @@ jobs:
                 - INTERNAL_API_BASE=http://glow-api:8000
                 - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
                 - AUTH_SECRET=${AUTH_SECRET}
+                - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL}
+                - AUTH_KEYCLOAK_SECRET=${AUTH_KEYCLOAK_SECRET}
                 - NEXT_PUBLIC_CAMPUS=${CAMPUS}
                 - APP_PREFIX=${APP_PREFIX}
                 - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
@@ -225,9 +254,16 @@ jobs:
 
       - name: Provision Traefik labels
         run: |
+          # Resolve parent API domain for extra_hosts
+          API_DOMAIN=""
+          if [ -n "${{ inputs.api_url }}" ]; then
+            API_DOMAIN=$(echo "${{ inputs.api_url }}" | sed 's|https\?://||' | sed 's|/.*||')
+          fi
+
           bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
             --name "${{ inputs.deployment_id }}" \
             --parent-deployment-id "${{ inputs.parent_deployment_id }}" \
+            ${API_DOMAIN:+--api-domain "$API_DOMAIN"} \
             --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
             --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \
             --compose-dir "$DEPLOY_DIR" \
