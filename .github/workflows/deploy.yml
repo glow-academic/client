@@ -227,6 +227,7 @@ jobs:
         run: |
           bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
             --name "${{ inputs.deployment_id }}" \
+            --parent-deployment-id "${{ inputs.parent_deployment_id }}" \
             --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
             --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \
             --compose-dir "$DEPLOY_DIR" \
