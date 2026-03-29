@@ -75,13 +75,30 @@ jobs:
             echo "::error::Response: $RESP"
             exit 1
           fi
-          # Extract auth credentials from provision claim
-          AUTH_SECRET=$(echo "$RESP" | jq -r '.auth_secret // empty')
+          # Extract credentials from provision claim
+          SECRET_KEY=$(echo "$RESP" | jq -r '.secret_key // empty')
 
           echo "DEPLOYMENT_TOKEN=${DEPLOYMENT_TOKEN}" >> $GITHUB_ENV
           echo "LEARNLOOP_API_URL=${{ inputs.learnloop_api_url }}" >> $GITHUB_ENV
-          [ -n "$AUTH_SECRET" ] && echo "AUTH_SECRET=${AUTH_SECRET}" >> $GITHUB_ENV
+          [ -n "$SECRET_KEY" ] && echo "SECRET_KEY=${SECRET_KEY}" >> $GITHUB_ENV
           echo "Deployment token claimed successfully"
+
+      - name: Derive auth secret
+        if: env.SECRET_KEY != ''
+        run: |
+          AUTH_CLIENT_SECRET=$(python3 /dev/stdin "$SECRET_KEY" <<'PYEOF'
+          import sys, hashlib, base64
+          from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+          from cryptography.hazmat.primitives import hashes
+          sk = sys.argv[1]
+          salt = hashlib.sha256(b"glow-auth-secret-v1").digest()
+          kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=100000)
+          key = kdf.derive(sk.encode())
+          print(base64.urlsafe_b64encode(key).decode().rstrip("="))
+          PYEOF
+          )
+          echo "AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}" >> $GITHUB_ENV
+          echo "Auth client secret derived from SECRET_KEY"
 
       - name: Parse subdomain from ORIGIN
         id: parse-origin
@@ -111,7 +128,7 @@ jobs:
           CAMPUS="${{ inputs.campus }}"
           PARENT_NETWORK="glow-${{ inputs.parent_deployment_id }}"
 
-          AUTH_SECRET="${AUTH_SECRET:-}"
+          AUTH_CLIENT_SECRET="${AUTH_CLIENT_SECRET:-}"
 
           # Resolve parent API URL (OIDC issuer for the client)
           API_URL="${{ inputs.api_url }}"
@@ -130,9 +147,9 @@ jobs:
                 - INTERNAL_API_BASE=http://glow-api:8000
                 - AUTH_ISSUER=${API_URL}
                 - AUTH_CLIENT_ID=glow-client
-                - AUTH_CLIENT_SECRET=${AUTH_SECRET}
+                - AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}
                 - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
-                - AUTH_SECRET=${AUTH_SECRET}
+                - AUTH_SECRET=${AUTH_CLIENT_SECRET}
                 - NEXT_PUBLIC_CAMPUS=${CAMPUS}
                 - APP_PREFIX=${APP_PREFIX}
                 - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
@@ -154,9 +171,9 @@ jobs:
                 - INTERNAL_API_BASE=http://glow-api:8000
                 - AUTH_ISSUER=${API_URL}
                 - AUTH_CLIENT_ID=glow-client
-                - AUTH_CLIENT_SECRET=${AUTH_SECRET}
+                - AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}
                 - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
-                - AUTH_SECRET=${AUTH_SECRET}
+                - AUTH_SECRET=${AUTH_CLIENT_SECRET}
                 - NEXT_PUBLIC_CAMPUS=${CAMPUS}
                 - APP_PREFIX=${APP_PREFIX}
                 - NEXT_PUBLIC_APP_PREFIX=${APP_PREFIX}
