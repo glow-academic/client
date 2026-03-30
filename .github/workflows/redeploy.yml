@@ -128,9 +128,16 @@ jobs:
 
       - name: Provision Traefik labels
         run: |
+          # Resolve parent API domain for extra_hosts
+          API_DOMAIN=""
+          if [ -n "${{ inputs.api_url }}" ]; then
+            API_DOMAIN=$(echo "${{ inputs.api_url }}" | sed 's|https\?://||' | sed 's|/.*||')
+          fi
+
           bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
             --name "${{ inputs.deployment_id }}" \
             --parent-deployment-id "${{ inputs.parent_deployment_id }}" \
+            ${API_DOMAIN:+--api-domain "$API_DOMAIN"} \
             --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
             --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \
             --compose-dir "$DEPLOY_DIR" \
