@@ -47,7 +47,7 @@ export const {
       return token;
     },
 
-    // Expose id_token to client session (needed for API auth + federated logout)
+    // Expose id_token + issuer to client session (needed for API auth + OIDC logout)
     async session({ session, token }) {
       if (session.user) {
         session.user.id = session.user.id ?? (token.sub as string);
@@ -56,6 +56,9 @@ export const {
       if (token["id_token"]) {
         session.id_token = token["id_token"] as string;
       }
+
+      // Expose issuer so client-side can construct standard OIDC logout URL
+      session.issuer = issuer;
 
       return session;
     },

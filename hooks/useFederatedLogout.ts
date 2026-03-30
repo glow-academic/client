@@ -1,11 +1,13 @@
 import { signOut, useSession } from "next-auth/react";
 
 /**
- * Hook for federated logout.
+ * Hook for standard OIDC federated logout.
  *
- * Clears the local NextAuth session, then redirects to the Glow API's
- * OIDC logout endpoint via a server-side route that knows the API URL.
- * The client never needs to know the API URL directly.
+ * 1. Clears the local NextAuth session
+ * 2. Redirects to the OIDC provider's end_session_endpoint
+ *
+ * Works with any OIDC provider — the issuer URL comes from the session,
+ * which is populated server-side from AUTH_ISSUER.
  */
 export function useFederatedLogout() {
   const { data: session } = useSession();
@@ -17,7 +19,7 @@ export function useFederatedLogout() {
         sessionStorage.setItem("logout-start-time", Date.now().toString());
       }
 
-      // 1. Clear local NextAuth session
+      // 1. Clear local session
       await signOut({ redirect: false });
 
       // 2. Clear session cookies
@@ -30,14 +32,18 @@ export function useFederatedLogout() {
         // Ignore errors - cookies might not exist
       }
 
-      // 3. Redirect to server-side logout route (it knows the OIDC issuer)
+      // 3. Standard OIDC logout redirect
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-      const params = new URLSearchParams();
+      const returnTo = encodeURIComponent(
+        `${window.location.origin}${appPrefix}/`
+      );
+
+      let logoutUrl = `${session?.issuer}/logout?post_logout_redirect_uri=${returnTo}&client_id=glow-client`;
       if (session?.id_token) {
-        params.set("id_token_hint", session.id_token);
+        logoutUrl += `&id_token_hint=${session.id_token}`;
       }
 
-      window.location.href = `${appPrefix}/api/auth/federated-logout?${params}`;
+      window.location.href = logoutUrl;
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Logout failed:", error);
