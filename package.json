@@ -16,9 +16,7 @@
     "lint": "next lint --dir app --dir components --dir utils --dir hooks --dir lib --dir contexts",
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
-    "gen:types": "openapi-typescript ../server/openapi.json -o lib/api/schema.ts",
-    "watch:openapi": "chokidar ../server/openapi.json -c \"bun run gen:types\"",
-    "watch:sql-types": "chokidar '../server/app/sql/**/*.sql' '../server/tests/sql/**/*.sql' -c 'node scripts/watch-sql-types.js {path}'"
+    "sync:types": "curl -sf ${API_URL:-http://localhost:8000}/openapi.json -o /tmp/glow-openapi.json && openapi-typescript /tmp/glow-openapi.json -o lib/api/schema.ts && rm -f /tmp/glow-openapi.json"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
@@ -94,7 +92,6 @@
     "@types/pg": "^8.15.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "chokidar-cli": "^3.0.0",
     "eslint": "^9",
     "eslint-config-next": "15.3.8",
     "openapi-typescript": "^7.10.1",

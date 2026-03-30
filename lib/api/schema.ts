@@ -17,7 +17,7 @@ export interface paths {
          * Get Persona
          * @description Get persona information using the canonical shared persona operation.
          */
-        post: operations["get_persona_v5_personas_get_post"];
+        post: operations["get_persona_personas_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -37,7 +37,7 @@ export interface paths {
          * Search Persona
          * @description Search personas — composable infra architecture.
          */
-        post: operations["search_persona_v5_personas_search_post"];
+        post: operations["search_persona_personas_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -57,7 +57,7 @@ export interface paths {
          * Create Persona
          * @description Create personas using composable infra architecture.
          */
-        post: operations["create_persona_v5_personas_create_post"];
+        post: operations["create_persona_personas_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -77,7 +77,7 @@ export interface paths {
          * Parse Persona Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_persona_csv_v5_personas_csv_post"];
+        post: operations["parse_persona_csv_personas_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -97,7 +97,7 @@ export interface paths {
          * Update Persona
          * @description Update personas using composable infra architecture.
          */
-        post: operations["update_persona_v5_personas_update_post"];
+        post: operations["update_persona_personas_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -117,7 +117,7 @@ export interface paths {
          * Duplicate Persona
          * @description Duplicate a persona — composable infra architecture.
          */
-        post: operations["duplicate_persona_v5_personas_duplicate_post"];
+        post: operations["duplicate_persona_personas_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -137,7 +137,7 @@ export interface paths {
          * Delete Persona
          * @description Bulk delete personas — composable infra architecture.
          */
-        post: operations["delete_persona_v5_personas_delete_post"];
+        post: operations["delete_persona_personas_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -161,7 +161,7 @@ export interface paths {
          * Patch Persona Draft
          * @description Patch persona draft — composable infra architecture.
          */
-        patch: operations["patch_persona_draft_v5_personas_draft_patch"];
+        patch: operations["patch_persona_draft_personas_draft_patch"];
         trace?: never;
     };
     "/personas/drafts": {
@@ -177,7 +177,7 @@ export interface paths {
          * Get Persona Drafts
          * @description List persona drafts owned by the current profile.
          */
-        post: operations["get_persona_drafts_v5_personas_drafts_post"];
+        post: operations["get_persona_drafts_personas_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -197,7 +197,7 @@ export interface paths {
          * Get Persona Docs Endpoint
          * @description Get composed documentation for the persona artifact.
          */
-        post: operations["get_persona_docs_endpoint_v5_personas_docs_post"];
+        post: operations["get_persona_docs_endpoint_personas_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -217,7 +217,7 @@ export interface paths {
          * Export Personas
          * @description Export all personas as a clean, denormalized CSV.
          */
-        post: operations["export_personas_v5_personas_export_post"];
+        post: operations["export_personas_personas_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -237,7 +237,7 @@ export interface paths {
          * Persona Refresh
          * @description Refresh persona materialized views and invalidate caches.
          */
-        post: operations["persona_refresh_v5_personas_refresh_post"];
+        post: operations["persona_refresh_personas_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -257,7 +257,7 @@ export interface paths {
          * Get Scenario
          * @description Get scenario information using the canonical shared scenario operation.
          */
-        post: operations["get_scenario_v5_scenarios_get_post"];
+        post: operations["get_scenario_scenarios_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -277,7 +277,7 @@ export interface paths {
          * Search Scenario
          * @description Search scenarios — composable infra architecture.
          */
-        post: operations["search_scenario_v5_scenarios_search_post"];
+        post: operations["search_scenario_scenarios_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -297,7 +297,7 @@ export interface paths {
          * Create Scenario
          * @description Create scenarios using composable infra architecture.
          */
-        post: operations["create_scenario_v5_scenarios_create_post"];
+        post: operations["create_scenario_scenarios_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -317,7 +317,7 @@ export interface paths {
          * Parse Scenario Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_scenario_csv_v5_scenarios_csv_post"];
+        post: operations["parse_scenario_csv_scenarios_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -337,7 +337,7 @@ export interface paths {
          * Update Scenario
          * @description Update scenarios using composable infra architecture.
          */
-        post: operations["update_scenario_v5_scenarios_update_post"];
+        post: operations["update_scenario_scenarios_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -357,7 +357,7 @@ export interface paths {
          * Duplicate Scenario
          * @description Duplicate a scenario — composable infra architecture.
          */
-        post: operations["duplicate_scenario_v5_scenarios_duplicate_post"];
+        post: operations["duplicate_scenario_scenarios_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -377,7 +377,7 @@ export interface paths {
          * Delete Scenario
          * @description Bulk delete scenarios — composable infra architecture.
          */
-        post: operations["delete_scenario_v5_scenarios_delete_post"];
+        post: operations["delete_scenario_scenarios_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -401,7 +401,7 @@ export interface paths {
          * Patch Scenario Draft
          * @description Patch scenario draft — composable infra architecture.
          */
-        patch: operations["patch_scenario_draft_v5_scenarios_draft_patch"];
+        patch: operations["patch_scenario_draft_scenarios_draft_patch"];
         trace?: never;
     };
     "/scenarios/drafts": {
@@ -417,7 +417,7 @@ export interface paths {
          * Get Scenario Drafts
          * @description List scenario drafts owned by the current profile.
          */
-        post: operations["get_scenario_drafts_v5_scenarios_drafts_post"];
+        post: operations["get_scenario_drafts_scenarios_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -437,7 +437,7 @@ export interface paths {
          * Export Scenarios
          * @description Export all scenarios as a clean, denormalized CSV.
          */
-        post: operations["export_scenarios_v5_scenarios_export_post"];
+        post: operations["export_scenarios_scenarios_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -457,7 +457,7 @@ export interface paths {
          * Get Scenario Docs Endpoint
          * @description Get composed documentation for the scenario artifact.
          */
-        post: operations["get_scenario_docs_endpoint_v5_scenarios_docs_post"];
+        post: operations["get_scenario_docs_endpoint_scenarios_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -477,7 +477,7 @@ export interface paths {
          * Scenario Refresh
          * @description Refresh scenario materialized views and invalidate caches.
          */
-        post: operations["scenario_refresh_v5_scenarios_refresh_post"];
+        post: operations["scenario_refresh_scenarios_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -502,7 +502,7 @@ export interface paths {
          *       X-Filename: original filename (for extension + display)
          *     Body: raw file bytes (streamed).
          */
-        post: operations["upload_v5_scenarios_upload_post"];
+        post: operations["upload_scenarios_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -520,7 +520,7 @@ export interface paths {
          * Download
          * @description Download any file by upload ID with range support.
          */
-        get: operations["download_v5_scenarios_download__upload_id__get"];
+        get: operations["download_scenarios_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -540,7 +540,7 @@ export interface paths {
          * Preview
          * @description Return a PNG preview of the first page of a PDF upload.
          */
-        get: operations["preview_v5_scenarios_preview__upload_id__get"];
+        get: operations["preview_scenarios_preview__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -562,7 +562,7 @@ export interface paths {
          * Get Simulation
          * @description Get simulation information using the canonical shared simulation operation.
          */
-        post: operations["get_simulation_v5_simulations_get_post"];
+        post: operations["get_simulation_simulations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -582,7 +582,7 @@ export interface paths {
          * Search Simulation
          * @description Search simulations — composable infra architecture.
          */
-        post: operations["search_simulation_v5_simulations_search_post"];
+        post: operations["search_simulation_simulations_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -602,7 +602,7 @@ export interface paths {
          * Create Simulation
          * @description Create simulations using composable infra architecture.
          */
-        post: operations["create_simulation_v5_simulations_create_post"];
+        post: operations["create_simulation_simulations_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -622,7 +622,7 @@ export interface paths {
          * Parse Simulation Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_simulation_csv_v5_simulations_csv_post"];
+        post: operations["parse_simulation_csv_simulations_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -642,7 +642,7 @@ export interface paths {
          * Update Simulation
          * @description Update simulations using composable infra architecture.
          */
-        post: operations["update_simulation_v5_simulations_update_post"];
+        post: operations["update_simulation_simulations_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -662,7 +662,7 @@ export interface paths {
          * Duplicate Simulation
          * @description Duplicate a simulation — composable infra architecture.
          */
-        post: operations["duplicate_simulation_v5_simulations_duplicate_post"];
+        post: operations["duplicate_simulation_simulations_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -682,7 +682,7 @@ export interface paths {
          * Delete Simulation
          * @description Bulk delete simulations — composable infra architecture.
          */
-        post: operations["delete_simulation_v5_simulations_delete_post"];
+        post: operations["delete_simulation_simulations_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -706,7 +706,7 @@ export interface paths {
          * Patch Simulation Draft
          * @description Patch simulation draft — composable infra architecture.
          */
-        patch: operations["patch_simulation_draft_v5_simulations_draft_patch"];
+        patch: operations["patch_simulation_draft_simulations_draft_patch"];
         trace?: never;
     };
     "/simulations/drafts": {
@@ -722,7 +722,7 @@ export interface paths {
          * Get Simulation Drafts
          * @description List simulation drafts owned by the current profile.
          */
-        post: operations["get_simulation_drafts_v5_simulations_drafts_post"];
+        post: operations["get_simulation_drafts_simulations_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -742,7 +742,7 @@ export interface paths {
          * Export Simulations
          * @description Export all simulations as a clean, denormalized CSV.
          */
-        post: operations["export_simulations_v5_simulations_export_post"];
+        post: operations["export_simulations_simulations_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -762,7 +762,7 @@ export interface paths {
          * Get Simulation Docs Endpoint
          * @description Get composed documentation for the simulation artifact.
          */
-        post: operations["get_simulation_docs_endpoint_v5_simulations_docs_post"];
+        post: operations["get_simulation_docs_endpoint_simulations_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -782,7 +782,7 @@ export interface paths {
          * Simulation Refresh
          * @description Refresh simulation materialized views and invalidate caches.
          */
-        post: operations["simulation_refresh_v5_simulations_refresh_post"];
+        post: operations["simulation_refresh_simulations_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -802,7 +802,7 @@ export interface paths {
          * Search Document
          * @description Search documents — composable infra architecture.
          */
-        post: operations["search_document_v5_documents_search_post"];
+        post: operations["search_document_documents_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -822,7 +822,7 @@ export interface paths {
          * Get Document
          * @description Get document information using the canonical shared document operation.
          */
-        post: operations["get_document_v5_documents_get_post"];
+        post: operations["get_document_documents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -842,7 +842,7 @@ export interface paths {
          * Create Document
          * @description Create documents using composable infra architecture.
          */
-        post: operations["create_document_v5_documents_create_post"];
+        post: operations["create_document_documents_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -862,7 +862,7 @@ export interface paths {
          * Update Document
          * @description Update documents using composable infra architecture.
          */
-        post: operations["update_document_v5_documents_update_post"];
+        post: operations["update_document_documents_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -882,7 +882,7 @@ export interface paths {
          * Duplicate Document
          * @description Duplicate a document — composable infra architecture.
          */
-        post: operations["duplicate_document_v5_documents_duplicate_post"];
+        post: operations["duplicate_document_documents_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -902,7 +902,7 @@ export interface paths {
          * Delete Document
          * @description Bulk delete documents — composable infra architecture.
          */
-        post: operations["delete_document_v5_documents_delete_post"];
+        post: operations["delete_document_documents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -926,7 +926,7 @@ export interface paths {
          * Patch Document Draft
          * @description Patch document draft — composable infra architecture.
          */
-        patch: operations["patch_document_draft_v5_documents_draft_patch"];
+        patch: operations["patch_document_draft_documents_draft_patch"];
         trace?: never;
     };
     "/documents/drafts": {
@@ -942,7 +942,7 @@ export interface paths {
          * Get Document Drafts
          * @description List document drafts owned by the current profile.
          */
-        post: operations["get_document_drafts_v5_documents_drafts_post"];
+        post: operations["get_document_drafts_documents_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -962,7 +962,7 @@ export interface paths {
          * Get Document Docs Endpoint
          * @description Get composed documentation for the document artifact.
          */
-        post: operations["get_document_docs_endpoint_v5_documents_docs_post"];
+        post: operations["get_document_docs_endpoint_documents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -982,7 +982,7 @@ export interface paths {
          * Document Refresh
          * @description Refresh document materialized views and invalidate caches.
          */
-        post: operations["document_refresh_v5_documents_refresh_post"];
+        post: operations["document_refresh_documents_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1002,7 +1002,7 @@ export interface paths {
          * Export Documents
          * @description Export all documents as a clean, denormalized CSV.
          */
-        post: operations["export_documents_v5_documents_export_post"];
+        post: operations["export_documents_documents_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1022,7 +1022,7 @@ export interface paths {
          * Parse Document Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_document_csv_v5_documents_csv_post"];
+        post: operations["parse_document_csv_documents_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1048,7 +1048,7 @@ export interface paths {
          *       Content-Length: file size in bytes (optional but recommended)
          *     Body: raw file bytes (streamed, not multipart).
          */
-        post: operations["upload_v5_documents_upload_post"];
+        post: operations["upload_documents_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1066,7 +1066,7 @@ export interface paths {
          * Download
          * @description Download any file by upload ID with range support.
          */
-        get: operations["download_v5_documents_download__upload_id__get"];
+        get: operations["download_documents_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1086,7 +1086,7 @@ export interface paths {
          * Preview
          * @description Return a PNG preview of the first page of a PDF upload.
          */
-        get: operations["preview_v5_documents_preview__upload_id__get"];
+        get: operations["preview_documents_preview__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1108,7 +1108,7 @@ export interface paths {
          * Get Department
          * @description Get department information using the canonical shared department operation.
          */
-        post: operations["get_department_v5_departments_get_post"];
+        post: operations["get_department_departments_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1128,7 +1128,7 @@ export interface paths {
          * Search Department
          * @description Search departments — composable infra architecture.
          */
-        post: operations["search_department_v5_departments_search_post"];
+        post: operations["search_department_departments_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1148,7 +1148,7 @@ export interface paths {
          * Create Department
          * @description Create departments using composable infra architecture.
          */
-        post: operations["create_department_v5_departments_create_post"];
+        post: operations["create_department_departments_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1168,7 +1168,7 @@ export interface paths {
          * Update Department
          * @description Update departments using composable infra architecture.
          */
-        post: operations["update_department_v5_departments_update_post"];
+        post: operations["update_department_departments_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1188,7 +1188,7 @@ export interface paths {
          * Duplicate Department
          * @description Duplicate a department — composable infra architecture.
          */
-        post: operations["duplicate_department_v5_departments_duplicate_post"];
+        post: operations["duplicate_department_departments_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1208,7 +1208,7 @@ export interface paths {
          * Delete Department
          * @description Bulk delete departments — composable infra architecture.
          */
-        post: operations["delete_department_v5_departments_delete_post"];
+        post: operations["delete_department_departments_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1232,7 +1232,7 @@ export interface paths {
          * Patch Department Draft
          * @description Patch department draft — composable infra architecture.
          */
-        patch: operations["patch_department_draft_v5_departments_draft_patch"];
+        patch: operations["patch_department_draft_departments_draft_patch"];
         trace?: never;
     };
     "/departments/drafts": {
@@ -1248,7 +1248,7 @@ export interface paths {
          * Get Department Drafts
          * @description List department drafts owned by the current profile.
          */
-        post: operations["get_department_drafts_v5_departments_drafts_post"];
+        post: operations["get_department_drafts_departments_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1268,7 +1268,7 @@ export interface paths {
          * Get Department Docs Endpoint
          * @description Get composed documentation for the department artifact.
          */
-        post: operations["get_department_docs_endpoint_v5_departments_docs_post"];
+        post: operations["get_department_docs_endpoint_departments_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1288,7 +1288,7 @@ export interface paths {
          * Export Departments
          * @description Export all departments as a clean, denormalized CSV.
          */
-        post: operations["export_departments_v5_departments_export_post"];
+        post: operations["export_departments_departments_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1308,7 +1308,7 @@ export interface paths {
          * Parse Department Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_department_csv_v5_departments_csv_post"];
+        post: operations["parse_department_csv_departments_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1328,7 +1328,7 @@ export interface paths {
          * Department Refresh
          * @description Refresh department materialized views and invalidate caches.
          */
-        post: operations["department_refresh_v5_departments_refresh_post"];
+        post: operations["department_refresh_departments_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1348,7 +1348,7 @@ export interface paths {
          * Search Cohort
          * @description Search cohorts — composable infra architecture.
          */
-        post: operations["search_cohort_v5_cohorts_search_post"];
+        post: operations["search_cohort_cohorts_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1368,7 +1368,7 @@ export interface paths {
          * Get Cohort
          * @description Get cohort information using the canonical shared cohort operation.
          */
-        post: operations["get_cohort_v5_cohorts_get_post"];
+        post: operations["get_cohort_cohorts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1388,7 +1388,7 @@ export interface paths {
          * Create Cohort
          * @description Create cohorts using composable infra architecture.
          */
-        post: operations["create_cohort_v5_cohorts_create_post"];
+        post: operations["create_cohort_cohorts_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1408,7 +1408,7 @@ export interface paths {
          * Update Cohort
          * @description Update cohorts using composable infra architecture.
          */
-        post: operations["update_cohort_v5_cohorts_update_post"];
+        post: operations["update_cohort_cohorts_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1428,7 +1428,7 @@ export interface paths {
          * Duplicate Cohort
          * @description Duplicate a cohort — composable infra architecture.
          */
-        post: operations["duplicate_cohort_v5_cohorts_duplicate_post"];
+        post: operations["duplicate_cohort_cohorts_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1448,7 +1448,7 @@ export interface paths {
          * Delete Cohort
          * @description Bulk delete cohorts — composable infra architecture.
          */
-        post: operations["delete_cohort_v5_cohorts_delete_post"];
+        post: operations["delete_cohort_cohorts_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1472,7 +1472,7 @@ export interface paths {
          * Patch Cohort Draft
          * @description Patch cohort draft — composable infra architecture.
          */
-        patch: operations["patch_cohort_draft_v5_cohorts_draft_patch"];
+        patch: operations["patch_cohort_draft_cohorts_draft_patch"];
         trace?: never;
     };
     "/cohorts/drafts": {
@@ -1488,7 +1488,7 @@ export interface paths {
          * Get Cohort Drafts
          * @description List cohort drafts owned by the current profile.
          */
-        post: operations["get_cohort_drafts_v5_cohorts_drafts_post"];
+        post: operations["get_cohort_drafts_cohorts_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1508,7 +1508,7 @@ export interface paths {
          * Export Cohorts
          * @description Export all cohorts as a clean, denormalized CSV.
          */
-        post: operations["export_cohorts_v5_cohorts_export_post"];
+        post: operations["export_cohorts_cohorts_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1528,7 +1528,7 @@ export interface paths {
          * Parse Cohort Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_cohort_csv_v5_cohorts_csv_post"];
+        post: operations["parse_cohort_csv_cohorts_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1548,7 +1548,7 @@ export interface paths {
          * Get Cohort Docs Endpoint
          * @description Get composed documentation for the cohort artifact.
          */
-        post: operations["get_cohort_docs_endpoint_v5_cohorts_docs_post"];
+        post: operations["get_cohort_docs_endpoint_cohorts_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1568,7 +1568,7 @@ export interface paths {
          * Cohort Refresh
          * @description Refresh cohort materialized views and invalidate caches.
          */
-        post: operations["cohort_refresh_v5_cohorts_refresh_post"];
+        post: operations["cohort_refresh_cohorts_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1588,7 +1588,7 @@ export interface paths {
          * Search Eval
          * @description Search evals — composable infra architecture.
          */
-        post: operations["search_eval_v5_evals_search_post"];
+        post: operations["search_eval_evals_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1608,7 +1608,7 @@ export interface paths {
          * Get Eval
          * @description Get eval information using the canonical shared eval operation.
          */
-        post: operations["get_eval_v5_evals_get_post"];
+        post: operations["get_eval_evals_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1628,7 +1628,7 @@ export interface paths {
          * Create Eval
          * @description Create evals using composable infra architecture.
          */
-        post: operations["create_eval_v5_evals_create_post"];
+        post: operations["create_eval_evals_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1648,7 +1648,7 @@ export interface paths {
          * Update Eval
          * @description Update evals using composable infra architecture.
          */
-        post: operations["update_eval_v5_evals_update_post"];
+        post: operations["update_eval_evals_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1668,7 +1668,7 @@ export interface paths {
          * Duplicate Eval
          * @description Duplicate an eval — composable infra architecture.
          */
-        post: operations["duplicate_eval_v5_evals_duplicate_post"];
+        post: operations["duplicate_eval_evals_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1688,7 +1688,7 @@ export interface paths {
          * Delete Eval
          * @description Bulk delete evals — composable infra architecture.
          */
-        post: operations["delete_eval_v5_evals_delete_post"];
+        post: operations["delete_eval_evals_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1712,7 +1712,7 @@ export interface paths {
          * Patch Eval Draft
          * @description Patch eval draft — composable infra architecture.
          */
-        patch: operations["patch_eval_draft_v5_evals_draft_patch"];
+        patch: operations["patch_eval_draft_evals_draft_patch"];
         trace?: never;
     };
     "/evals/drafts": {
@@ -1728,7 +1728,7 @@ export interface paths {
          * Get Eval Drafts
          * @description List eval drafts owned by the current profile.
          */
-        post: operations["get_eval_drafts_v5_evals_drafts_post"];
+        post: operations["get_eval_drafts_evals_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1748,7 +1748,7 @@ export interface paths {
          * Get Eval Docs Endpoint
          * @description Get composed documentation for the eval artifact.
          */
-        post: operations["get_eval_docs_endpoint_v5_evals_docs_post"];
+        post: operations["get_eval_docs_endpoint_evals_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1768,7 +1768,7 @@ export interface paths {
          * Eval Refresh
          * @description Refresh eval materialized views and invalidate caches.
          */
-        post: operations["eval_refresh_v5_evals_refresh_post"];
+        post: operations["eval_refresh_evals_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1788,7 +1788,7 @@ export interface paths {
          * Export Evals
          * @description Export all evals as a clean, denormalized CSV.
          */
-        post: operations["export_evals_v5_evals_export_post"];
+        post: operations["export_evals_evals_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1808,7 +1808,7 @@ export interface paths {
          * Parse Eval Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_eval_csv_v5_evals_csv_post"];
+        post: operations["parse_eval_csv_evals_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1828,7 +1828,7 @@ export interface paths {
          * Get Rubric
          * @description Get rubric information using the canonical shared rubric operation.
          */
-        post: operations["get_rubric_v5_rubrics_get_post"];
+        post: operations["get_rubric_rubrics_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1848,7 +1848,7 @@ export interface paths {
          * Search Rubric
          * @description Search rubrics — composable infra architecture.
          */
-        post: operations["search_rubric_v5_rubrics_search_post"];
+        post: operations["search_rubric_rubrics_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1868,7 +1868,7 @@ export interface paths {
          * Create Rubric
          * @description Create rubrics using composable infra architecture.
          */
-        post: operations["create_rubric_v5_rubrics_create_post"];
+        post: operations["create_rubric_rubrics_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1888,7 +1888,7 @@ export interface paths {
          * Update Rubric
          * @description Update rubrics using composable infra architecture.
          */
-        post: operations["update_rubric_v5_rubrics_update_post"];
+        post: operations["update_rubric_rubrics_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1908,7 +1908,7 @@ export interface paths {
          * Duplicate Rubric
          * @description Duplicate a rubric — composable infra architecture.
          */
-        post: operations["duplicate_rubric_v5_rubrics_duplicate_post"];
+        post: operations["duplicate_rubric_rubrics_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1928,7 +1928,7 @@ export interface paths {
          * Delete Rubric
          * @description Bulk delete rubrics — composable infra architecture.
          */
-        post: operations["delete_rubric_v5_rubrics_delete_post"];
+        post: operations["delete_rubric_rubrics_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1952,7 +1952,7 @@ export interface paths {
          * Patch Rubric Draft
          * @description Patch rubric draft — composable infra architecture.
          */
-        patch: operations["patch_rubric_draft_v5_rubrics_draft_patch"];
+        patch: operations["patch_rubric_draft_rubrics_draft_patch"];
         trace?: never;
     };
     "/rubrics/drafts": {
@@ -1968,7 +1968,7 @@ export interface paths {
          * Get Rubric Drafts
          * @description List rubric drafts owned by the current profile.
          */
-        post: operations["get_rubric_drafts_v5_rubrics_drafts_post"];
+        post: operations["get_rubric_drafts_rubrics_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1988,7 +1988,7 @@ export interface paths {
          * Get Rubric Docs Endpoint
          * @description Get composed documentation for the rubric artifact.
          */
-        post: operations["get_rubric_docs_endpoint_v5_rubrics_docs_post"];
+        post: operations["get_rubric_docs_endpoint_rubrics_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2008,7 +2008,7 @@ export interface paths {
          * Export Rubrics
          * @description Export all rubrics as a clean, denormalized CSV.
          */
-        post: operations["export_rubrics_v5_rubrics_export_post"];
+        post: operations["export_rubrics_rubrics_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2028,7 +2028,7 @@ export interface paths {
          * Parse Rubric Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_rubric_csv_v5_rubrics_csv_post"];
+        post: operations["parse_rubric_csv_rubrics_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2048,7 +2048,7 @@ export interface paths {
          * Rubric Refresh
          * @description Refresh rubric materialized views and invalidate caches.
          */
-        post: operations["rubric_refresh_v5_rubrics_refresh_post"];
+        post: operations["rubric_refresh_rubrics_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2068,7 +2068,7 @@ export interface paths {
          * Search Setting
          * @description Search settings — composable infra architecture.
          */
-        post: operations["search_setting_v5_settings_search_post"];
+        post: operations["search_setting_settings_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2088,7 +2088,7 @@ export interface paths {
          * Get Setting
          * @description Get setting information using the canonical shared setting operation.
          */
-        post: operations["get_setting_v5_settings_get_post"];
+        post: operations["get_setting_settings_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2108,7 +2108,7 @@ export interface paths {
          * Create Setting
          * @description Create settings using composable infra architecture.
          */
-        post: operations["create_setting_v5_settings_create_post"];
+        post: operations["create_setting_settings_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2128,7 +2128,7 @@ export interface paths {
          * Update Setting
          * @description Update settings using composable infra architecture.
          */
-        post: operations["update_setting_v5_settings_update_post"];
+        post: operations["update_setting_settings_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2148,7 +2148,7 @@ export interface paths {
          * Duplicate Setting
          * @description Duplicate a setting — composable infra architecture.
          */
-        post: operations["duplicate_setting_v5_settings_duplicate_post"];
+        post: operations["duplicate_setting_settings_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2168,7 +2168,7 @@ export interface paths {
          * Delete Setting
          * @description Bulk delete settings — composable infra architecture.
          */
-        post: operations["delete_setting_v5_settings_delete_post"];
+        post: operations["delete_setting_settings_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2192,7 +2192,7 @@ export interface paths {
          * Patch Setting Draft
          * @description Patch setting draft — composable infra architecture.
          */
-        patch: operations["patch_setting_draft_v5_settings_draft_patch"];
+        patch: operations["patch_setting_draft_settings_draft_patch"];
         trace?: never;
     };
     "/settings/drafts": {
@@ -2208,7 +2208,7 @@ export interface paths {
          * Get Setting Drafts
          * @description List setting drafts owned by the current profile.
          */
-        post: operations["get_setting_drafts_v5_settings_drafts_post"];
+        post: operations["get_setting_drafts_settings_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2228,7 +2228,7 @@ export interface paths {
          * Export Settings
          * @description Export all settings as a clean, denormalized CSV.
          */
-        post: operations["export_settings_v5_settings_export_post"];
+        post: operations["export_settings_settings_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2248,7 +2248,7 @@ export interface paths {
          * Parse Setting Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_setting_csv_v5_settings_csv_post"];
+        post: operations["parse_setting_csv_settings_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2268,7 +2268,7 @@ export interface paths {
          * Get Setting Docs Endpoint
          * @description Get composed documentation for the setting artifact.
          */
-        post: operations["get_setting_docs_endpoint_v5_settings_docs_post"];
+        post: operations["get_setting_docs_endpoint_settings_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2288,7 +2288,7 @@ export interface paths {
          * Setting Refresh
          * @description Refresh setting materialized views and invalidate caches.
          */
-        post: operations["setting_refresh_v5_settings_refresh_post"];
+        post: operations["setting_refresh_settings_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2308,7 +2308,7 @@ export interface paths {
          * Decrypt Setting Key
          * @description Decrypt a key scoped to a setting artifact.
          */
-        post: operations["decrypt_setting_key_v5_settings_decrypt_post"];
+        post: operations["decrypt_setting_key_settings_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2328,7 +2328,7 @@ export interface paths {
          * Get Agent
          * @description Get agent information using the canonical shared agent operation.
          */
-        post: operations["get_agent_v5_agents_get_post"];
+        post: operations["get_agent_agents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2348,7 +2348,7 @@ export interface paths {
          * Search Agent
          * @description Search agents — composable infra architecture.
          */
-        post: operations["search_agent_v5_agents_search_post"];
+        post: operations["search_agent_agents_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2368,7 +2368,7 @@ export interface paths {
          * Create Agent
          * @description Create agents using composable infra architecture.
          */
-        post: operations["create_agent_v5_agents_create_post"];
+        post: operations["create_agent_agents_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2388,7 +2388,7 @@ export interface paths {
          * Update Agent
          * @description Update agents using composable infra architecture.
          */
-        post: operations["update_agent_v5_agents_update_post"];
+        post: operations["update_agent_agents_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2408,7 +2408,7 @@ export interface paths {
          * Duplicate Agent
          * @description Duplicate an agent — composable infra architecture.
          */
-        post: operations["duplicate_agent_v5_agents_duplicate_post"];
+        post: operations["duplicate_agent_agents_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2428,7 +2428,7 @@ export interface paths {
          * Delete Agent
          * @description Bulk delete agents — composable infra architecture.
          */
-        post: operations["delete_agent_v5_agents_delete_post"];
+        post: operations["delete_agent_agents_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2452,7 +2452,7 @@ export interface paths {
          * Patch Agent Draft
          * @description Patch agent draft — composable infra architecture.
          */
-        patch: operations["patch_agent_draft_v5_agents_draft_patch"];
+        patch: operations["patch_agent_draft_agents_draft_patch"];
         trace?: never;
     };
     "/agents/drafts": {
@@ -2468,7 +2468,7 @@ export interface paths {
          * Get Agent Drafts
          * @description List agent drafts owned by the current profile.
          */
-        post: operations["get_agent_drafts_v5_agents_drafts_post"];
+        post: operations["get_agent_drafts_agents_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2488,7 +2488,7 @@ export interface paths {
          * Get Agent Docs Endpoint
          * @description Get composed documentation for the agent artifact.
          */
-        post: operations["get_agent_docs_endpoint_v5_agents_docs_post"];
+        post: operations["get_agent_docs_endpoint_agents_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2508,7 +2508,7 @@ export interface paths {
          * Export Agents
          * @description Export all agents as a clean, denormalized CSV.
          */
-        post: operations["export_agents_v5_agents_export_post"];
+        post: operations["export_agents_agents_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2528,7 +2528,7 @@ export interface paths {
          * Parse Agent Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_agent_csv_v5_agents_csv_post"];
+        post: operations["parse_agent_csv_agents_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2548,7 +2548,7 @@ export interface paths {
          * Agent Refresh
          * @description Refresh agent materialized views and invalidate caches.
          */
-        post: operations["agent_refresh_v5_agents_refresh_post"];
+        post: operations["agent_refresh_agents_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2568,7 +2568,7 @@ export interface paths {
          * Get Model
          * @description Get model information using the canonical shared model operation.
          */
-        post: operations["get_model_v5_models_get_post"];
+        post: operations["get_model_models_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2588,7 +2588,7 @@ export interface paths {
          * Search Model
          * @description Search models — composable infra architecture.
          */
-        post: operations["search_model_v5_models_search_post"];
+        post: operations["search_model_models_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2608,7 +2608,7 @@ export interface paths {
          * Create Model
          * @description Create models using composable infra architecture.
          */
-        post: operations["create_model_v5_models_create_post"];
+        post: operations["create_model_models_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2628,7 +2628,7 @@ export interface paths {
          * Update Model
          * @description Update models using composable infra architecture.
          */
-        post: operations["update_model_v5_models_update_post"];
+        post: operations["update_model_models_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2648,7 +2648,7 @@ export interface paths {
          * Duplicate Model
          * @description Duplicate a model — composable infra architecture.
          */
-        post: operations["duplicate_model_v5_models_duplicate_post"];
+        post: operations["duplicate_model_models_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2668,7 +2668,7 @@ export interface paths {
          * Delete Model
          * @description Bulk delete models — composable infra architecture.
          */
-        post: operations["delete_model_v5_models_delete_post"];
+        post: operations["delete_model_models_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2692,7 +2692,7 @@ export interface paths {
          * Patch Model Draft
          * @description Patch model draft — composable infra architecture.
          */
-        patch: operations["patch_model_draft_v5_models_draft_patch"];
+        patch: operations["patch_model_draft_models_draft_patch"];
         trace?: never;
     };
     "/models/drafts": {
@@ -2708,7 +2708,7 @@ export interface paths {
          * Get Model Drafts
          * @description List model drafts owned by the current profile.
          */
-        post: operations["get_model_drafts_v5_models_drafts_post"];
+        post: operations["get_model_drafts_models_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2728,7 +2728,7 @@ export interface paths {
          * Get Model Docs Endpoint
          * @description Get composed documentation for the model artifact.
          */
-        post: operations["get_model_docs_endpoint_v5_models_docs_post"];
+        post: operations["get_model_docs_endpoint_models_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2748,7 +2748,7 @@ export interface paths {
          * Export Models
          * @description Export all models as a clean, denormalized CSV.
          */
-        post: operations["export_models_v5_models_export_post"];
+        post: operations["export_models_models_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2768,7 +2768,7 @@ export interface paths {
          * Parse Model Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_model_csv_v5_models_csv_post"];
+        post: operations["parse_model_csv_models_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2788,7 +2788,7 @@ export interface paths {
          * Model Refresh
          * @description Refresh model materialized views and invalidate caches.
          */
-        post: operations["model_refresh_v5_models_refresh_post"];
+        post: operations["model_refresh_models_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2808,7 +2808,7 @@ export interface paths {
          * Search Provider
          * @description Search providers — composable infra architecture.
          */
-        post: operations["search_provider_v5_providers_search_post"];
+        post: operations["search_provider_providers_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2828,7 +2828,7 @@ export interface paths {
          * Get Provider
          * @description Get provider information using the canonical shared provider operation.
          */
-        post: operations["get_provider_v5_providers_get_post"];
+        post: operations["get_provider_providers_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2848,7 +2848,7 @@ export interface paths {
          * Create Provider
          * @description Create providers using composable infra architecture.
          */
-        post: operations["create_provider_v5_providers_create_post"];
+        post: operations["create_provider_providers_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2868,7 +2868,7 @@ export interface paths {
          * Update Provider
          * @description Update providers using composable infra architecture.
          */
-        post: operations["update_provider_v5_providers_update_post"];
+        post: operations["update_provider_providers_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2888,7 +2888,7 @@ export interface paths {
          * Duplicate Provider
          * @description Duplicate a provider — composable infra architecture.
          */
-        post: operations["duplicate_provider_v5_providers_duplicate_post"];
+        post: operations["duplicate_provider_providers_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2908,7 +2908,7 @@ export interface paths {
          * Delete Provider
          * @description Bulk delete providers — composable infra architecture.
          */
-        post: operations["delete_provider_v5_providers_delete_post"];
+        post: operations["delete_provider_providers_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2932,7 +2932,7 @@ export interface paths {
          * Patch Provider Draft
          * @description Patch provider draft — composable infra architecture.
          */
-        patch: operations["patch_provider_draft_v5_providers_draft_patch"];
+        patch: operations["patch_provider_draft_providers_draft_patch"];
         trace?: never;
     };
     "/providers/drafts": {
@@ -2948,7 +2948,7 @@ export interface paths {
          * Get Provider Drafts
          * @description List provider drafts owned by the current profile.
          */
-        post: operations["get_provider_drafts_v5_providers_drafts_post"];
+        post: operations["get_provider_drafts_providers_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2968,7 +2968,7 @@ export interface paths {
          * Get Provider Docs Endpoint
          * @description Get composed documentation for the provider artifact.
          */
-        post: operations["get_provider_docs_endpoint_v5_providers_docs_post"];
+        post: operations["get_provider_docs_endpoint_providers_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2988,7 +2988,7 @@ export interface paths {
          * Export Providers
          * @description Export all providers as a clean, denormalized CSV.
          */
-        post: operations["export_providers_v5_providers_export_post"];
+        post: operations["export_providers_providers_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3008,7 +3008,7 @@ export interface paths {
          * Parse Provider Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_provider_csv_v5_providers_csv_post"];
+        post: operations["parse_provider_csv_providers_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3028,7 +3028,7 @@ export interface paths {
          * Provider Refresh
          * @description Refresh provider materialized views and invalidate caches.
          */
-        post: operations["provider_refresh_v5_providers_refresh_post"];
+        post: operations["provider_refresh_providers_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3048,7 +3048,7 @@ export interface paths {
          * Decrypt Provider Key
          * @description Decrypt a key scoped to a provider artifact.
          */
-        post: operations["decrypt_provider_key_v5_providers_decrypt_post"];
+        post: operations["decrypt_provider_key_providers_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3068,7 +3068,7 @@ export interface paths {
          * Get Parameter
          * @description Get parameter information using the canonical shared parameter operation.
          */
-        post: operations["get_parameter_v5_parameters_get_post"];
+        post: operations["get_parameter_parameters_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3088,7 +3088,7 @@ export interface paths {
          * Search Parameter
          * @description Search parameters — composable infra architecture.
          */
-        post: operations["search_parameter_v5_parameters_search_post"];
+        post: operations["search_parameter_parameters_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3108,7 +3108,7 @@ export interface paths {
          * Create Parameter
          * @description Create parameters using composable infra architecture.
          */
-        post: operations["create_parameter_v5_parameters_create_post"];
+        post: operations["create_parameter_parameters_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3128,7 +3128,7 @@ export interface paths {
          * Update Parameter
          * @description Update parameters using composable infra architecture.
          */
-        post: operations["update_parameter_v5_parameters_update_post"];
+        post: operations["update_parameter_parameters_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3148,7 +3148,7 @@ export interface paths {
          * Duplicate Parameter
          * @description Duplicate a parameter — composable infra architecture.
          */
-        post: operations["duplicate_parameter_v5_parameters_duplicate_post"];
+        post: operations["duplicate_parameter_parameters_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3168,7 +3168,7 @@ export interface paths {
          * Delete Parameter
          * @description Bulk delete parameters — composable infra architecture.
          */
-        post: operations["delete_parameter_v5_parameters_delete_post"];
+        post: operations["delete_parameter_parameters_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3192,7 +3192,7 @@ export interface paths {
          * Patch Parameter Draft
          * @description Patch parameter draft — composable infra architecture.
          */
-        patch: operations["patch_parameter_draft_v5_parameters_draft_patch"];
+        patch: operations["patch_parameter_draft_parameters_draft_patch"];
         trace?: never;
     };
     "/parameters/drafts": {
@@ -3208,7 +3208,7 @@ export interface paths {
          * Get Parameter Drafts
          * @description List parameter drafts owned by the current profile.
          */
-        post: operations["get_parameter_drafts_v5_parameters_drafts_post"];
+        post: operations["get_parameter_drafts_parameters_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3228,7 +3228,7 @@ export interface paths {
          * Get Parameter Docs Endpoint
          * @description Get composed documentation for the parameter artifact.
          */
-        post: operations["get_parameter_docs_endpoint_v5_parameters_docs_post"];
+        post: operations["get_parameter_docs_endpoint_parameters_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3248,7 +3248,7 @@ export interface paths {
          * Export Parameters
          * @description Export all parameters as a clean, denormalized CSV.
          */
-        post: operations["export_parameters_v5_parameters_export_post"];
+        post: operations["export_parameters_parameters_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3268,7 +3268,7 @@ export interface paths {
          * Parse Parameter Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_parameter_csv_v5_parameters_csv_post"];
+        post: operations["parse_parameter_csv_parameters_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3288,7 +3288,7 @@ export interface paths {
          * Parameter Refresh
          * @description Refresh parameter materialized views and invalidate caches.
          */
-        post: operations["parameter_refresh_v5_parameters_refresh_post"];
+        post: operations["parameter_refresh_parameters_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3308,7 +3308,7 @@ export interface paths {
          * Get Field
          * @description Get field information using the canonical shared field operation.
          */
-        post: operations["get_field_v5_fields_get_post"];
+        post: operations["get_field_fields_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3328,7 +3328,7 @@ export interface paths {
          * Search Field
          * @description Search fields — composable infra architecture.
          */
-        post: operations["search_field_v5_fields_search_post"];
+        post: operations["search_field_fields_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3348,7 +3348,7 @@ export interface paths {
          * Create Field
          * @description Create fields using composable infra architecture.
          */
-        post: operations["create_field_v5_fields_create_post"];
+        post: operations["create_field_fields_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3368,7 +3368,7 @@ export interface paths {
          * Update Field
          * @description Update fields using composable infra architecture.
          */
-        post: operations["update_field_v5_fields_update_post"];
+        post: operations["update_field_fields_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3388,7 +3388,7 @@ export interface paths {
          * Duplicate Field
          * @description Duplicate a field — composable infra architecture.
          */
-        post: operations["duplicate_field_v5_fields_duplicate_post"];
+        post: operations["duplicate_field_fields_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3408,7 +3408,7 @@ export interface paths {
          * Delete Field
          * @description Bulk delete fields — composable infra architecture.
          */
-        post: operations["delete_field_v5_fields_delete_post"];
+        post: operations["delete_field_fields_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3432,7 +3432,7 @@ export interface paths {
          * Patch Field Draft
          * @description Patch field draft — composable infra architecture.
          */
-        patch: operations["patch_field_draft_v5_fields_draft_patch"];
+        patch: operations["patch_field_draft_fields_draft_patch"];
         trace?: never;
     };
     "/fields/drafts": {
@@ -3448,7 +3448,7 @@ export interface paths {
          * Get Field Drafts
          * @description List field drafts owned by the current profile.
          */
-        post: operations["get_field_drafts_v5_fields_drafts_post"];
+        post: operations["get_field_drafts_fields_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3468,7 +3468,7 @@ export interface paths {
          * Get Field Docs Endpoint
          * @description Get composed documentation for the field artifact.
          */
-        post: operations["get_field_docs_endpoint_v5_fields_docs_post"];
+        post: operations["get_field_docs_endpoint_fields_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3488,7 +3488,7 @@ export interface paths {
          * Export Fields
          * @description Export all fields as a clean, denormalized CSV.
          */
-        post: operations["export_fields_v5_fields_export_post"];
+        post: operations["export_fields_fields_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3508,7 +3508,7 @@ export interface paths {
          * Parse Field Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_field_csv_v5_fields_csv_post"];
+        post: operations["parse_field_csv_fields_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3528,7 +3528,7 @@ export interface paths {
          * Field Refresh
          * @description Refresh field materialized views and invalidate caches.
          */
-        post: operations["field_refresh_v5_fields_refresh_post"];
+        post: operations["field_refresh_fields_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3548,7 +3548,7 @@ export interface paths {
          * Get Profile
          * @description Get profile information using the canonical shared profile operation.
          */
-        post: operations["get_profile_v5_profiles_get_post"];
+        post: operations["get_profile_profiles_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3568,7 +3568,7 @@ export interface paths {
          * Search Profile
          * @description Search profiles — composable infra architecture.
          */
-        post: operations["search_profile_v5_profiles_search_post"];
+        post: operations["search_profile_profiles_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3588,7 +3588,7 @@ export interface paths {
          * Create Profile
          * @description Create profiles using composable infra architecture.
          */
-        post: operations["create_profile_v5_profiles_create_post"];
+        post: operations["create_profile_profiles_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3608,7 +3608,7 @@ export interface paths {
          * Update Profile
          * @description Update profiles using composable infra architecture.
          */
-        post: operations["update_profile_v5_profiles_update_post"];
+        post: operations["update_profile_profiles_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3628,7 +3628,7 @@ export interface paths {
          * Duplicate Profile
          * @description Duplicate a profile — composable infra architecture.
          */
-        post: operations["duplicate_profile_v5_profiles_duplicate_post"];
+        post: operations["duplicate_profile_profiles_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3652,7 +3652,7 @@ export interface paths {
          * Patch Profile Draft
          * @description Patch profile draft — composable infra architecture.
          */
-        patch: operations["patch_profile_draft_v5_profiles_draft_patch"];
+        patch: operations["patch_profile_draft_profiles_draft_patch"];
         trace?: never;
     };
     "/profiles/drafts": {
@@ -3668,7 +3668,7 @@ export interface paths {
          * Get Profile Drafts
          * @description List profile drafts owned by the current profile.
          */
-        post: operations["get_profile_drafts_v5_profiles_drafts_post"];
+        post: operations["get_profile_drafts_profiles_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3688,7 +3688,7 @@ export interface paths {
          * Delete Profile
          * @description Bulk delete profiles — composable infra architecture.
          */
-        post: operations["delete_profile_v5_profiles_delete_post"];
+        post: operations["delete_profile_profiles_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3708,7 +3708,7 @@ export interface paths {
          * Get Profile Docs Endpoint
          * @description Get composed documentation for the profile artifact.
          */
-        post: operations["get_profile_docs_endpoint_v5_profiles_docs_post"];
+        post: operations["get_profile_docs_endpoint_profiles_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3728,7 +3728,7 @@ export interface paths {
          * Export Profiles
          * @description Export all profiles as a clean, denormalized CSV.
          */
-        post: operations["export_profiles_v5_profiles_export_post"];
+        post: operations["export_profiles_profiles_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3748,7 +3748,7 @@ export interface paths {
          * Profile Refresh
          * @description Refresh profile materialized views and invalidate caches.
          */
-        post: operations["profile_refresh_v5_profiles_refresh_post"];
+        post: operations["profile_refresh_profiles_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3768,7 +3768,7 @@ export interface paths {
          * Get Auth
          * @description Get auth information using the canonical shared auth operation.
          */
-        post: operations["get_auth_v5_auths_get_post"];
+        post: operations["get_auth_auths_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3788,7 +3788,7 @@ export interface paths {
          * Search Auth
          * @description Search auths — composable infra architecture.
          */
-        post: operations["search_auth_v5_auths_search_post"];
+        post: operations["search_auth_auths_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3808,7 +3808,7 @@ export interface paths {
          * Create Auth
          * @description Create auths using composable infra architecture.
          */
-        post: operations["create_auth_v5_auths_create_post"];
+        post: operations["create_auth_auths_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3828,7 +3828,7 @@ export interface paths {
          * Update Auth
          * @description Update auths using composable infra architecture.
          */
-        post: operations["update_auth_v5_auths_update_post"];
+        post: operations["update_auth_auths_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3848,7 +3848,7 @@ export interface paths {
          * Duplicate Auth
          * @description Duplicate an auth — composable infra architecture.
          */
-        post: operations["duplicate_auth_v5_auths_duplicate_post"];
+        post: operations["duplicate_auth_auths_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3868,7 +3868,7 @@ export interface paths {
          * Delete Auth
          * @description Bulk delete auths — composable infra architecture.
          */
-        post: operations["delete_auth_v5_auths_delete_post"];
+        post: operations["delete_auth_auths_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3892,7 +3892,7 @@ export interface paths {
          * Patch Auth Draft
          * @description Patch auth draft — composable infra architecture.
          */
-        patch: operations["patch_auth_draft_v5_auths_draft_patch"];
+        patch: operations["patch_auth_draft_auths_draft_patch"];
         trace?: never;
     };
     "/auths/drafts": {
@@ -3908,7 +3908,7 @@ export interface paths {
          * Get Auth Drafts
          * @description List auth drafts owned by the current profile.
          */
-        post: operations["get_auth_drafts_v5_auths_drafts_post"];
+        post: operations["get_auth_drafts_auths_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3928,7 +3928,7 @@ export interface paths {
          * Get Auth Docs Endpoint
          * @description Get composed documentation for the auth artifact.
          */
-        post: operations["get_auth_docs_endpoint_v5_auths_docs_post"];
+        post: operations["get_auth_docs_endpoint_auths_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3948,7 +3948,7 @@ export interface paths {
          * Export Auths
          * @description Export all auths as a clean, denormalized CSV.
          */
-        post: operations["export_auths_v5_auths_export_post"];
+        post: operations["export_auths_auths_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3968,7 +3968,7 @@ export interface paths {
          * Auth Refresh
          * @description Refresh auth materialized views and invalidate caches.
          */
-        post: operations["auth_refresh_v5_auths_refresh_post"];
+        post: operations["auth_refresh_auths_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3988,7 +3988,7 @@ export interface paths {
          * Search Tool
          * @description Search tools — composable infra architecture.
          */
-        post: operations["search_tool_v5_tools_search_post"];
+        post: operations["search_tool_tools_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4008,7 +4008,7 @@ export interface paths {
          * Get Tool
          * @description Get tool information using the canonical shared tool operation.
          */
-        post: operations["get_tool_v5_tools_get_post"];
+        post: operations["get_tool_tools_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4028,7 +4028,7 @@ export interface paths {
          * Create Tool
          * @description Create tools using composable infra architecture.
          */
-        post: operations["create_tool_v5_tools_create_post"];
+        post: operations["create_tool_tools_create_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4048,7 +4048,7 @@ export interface paths {
          * Update Tool
          * @description Update tools using composable infra architecture.
          */
-        post: operations["update_tool_v5_tools_update_post"];
+        post: operations["update_tool_tools_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4068,7 +4068,7 @@ export interface paths {
          * Duplicate Tool
          * @description Duplicate a tool — composable infra architecture.
          */
-        post: operations["duplicate_tool_v5_tools_duplicate_post"];
+        post: operations["duplicate_tool_tools_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4088,7 +4088,7 @@ export interface paths {
          * Delete Tool
          * @description Bulk delete tools — composable infra architecture.
          */
-        post: operations["delete_tool_v5_tools_delete_post"];
+        post: operations["delete_tool_tools_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4112,7 +4112,7 @@ export interface paths {
          * Patch Tool Draft
          * @description Patch tool draft — composable infra architecture.
          */
-        patch: operations["patch_tool_draft_v5_tools_draft_patch"];
+        patch: operations["patch_tool_draft_tools_draft_patch"];
         trace?: never;
     };
     "/tools/drafts": {
@@ -4128,7 +4128,7 @@ export interface paths {
          * Get Tool Drafts
          * @description List tool drafts owned by the current profile.
          */
-        post: operations["get_tool_drafts_v5_tools_drafts_post"];
+        post: operations["get_tool_drafts_tools_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4148,7 +4148,7 @@ export interface paths {
          * Export Tools
          * @description Export all tools as a clean, denormalized CSV.
          */
-        post: operations["export_tools_v5_tools_export_post"];
+        post: operations["export_tools_tools_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4168,7 +4168,7 @@ export interface paths {
          * Parse Tool Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_tool_csv_v5_tools_csv_post"];
+        post: operations["parse_tool_csv_tools_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4188,7 +4188,7 @@ export interface paths {
          * Get Tool Docs Endpoint
          * @description Get composed documentation for the tool artifact.
          */
-        post: operations["get_tool_docs_endpoint_v5_tools_docs_post"];
+        post: operations["get_tool_docs_endpoint_tools_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4208,7 +4208,7 @@ export interface paths {
          * Tool Refresh
          * @description Refresh tool materialized views and invalidate caches.
          */
-        post: operations["tool_refresh_v5_tools_refresh_post"];
+        post: operations["tool_refresh_tools_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4228,7 +4228,7 @@ export interface paths {
          * Get Group
          * @description Get detailed group information with all runs and messages.
          */
-        post: operations["get_group_v5_group_get_post"];
+        post: operations["get_group_group_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4248,7 +4248,7 @@ export interface paths {
          * Group Refresh
          * @description Refresh group materialized views and invalidate caches.
          */
-        post: operations["group_refresh_v5_group_refresh_post"];
+        post: operations["group_refresh_group_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4268,7 +4268,7 @@ export interface paths {
          * Get Group Docs Endpoint
          * @description Get composed documentation for the group analytics.
          */
-        post: operations["get_group_docs_endpoint_v5_group_docs_post"];
+        post: operations["get_group_docs_endpoint_group_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4288,7 +4288,7 @@ export interface paths {
          * Export Group
          * @description Export group data as a clean, denormalized ZIP.
          */
-        post: operations["export_group_v5_group_export_post"];
+        post: operations["export_group_group_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4306,7 +4306,7 @@ export interface paths {
          * Download
          * @description Download any file by upload ID with range support.
          */
-        get: operations["download_v5_group_download__upload_id__get"];
+        get: operations["download_group_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4328,7 +4328,7 @@ export interface paths {
          * Get Session
          * @description Get session detail with groups and timeline.
          */
-        post: operations["get_session_v5_session_get_post"];
+        post: operations["get_session_session_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4348,7 +4348,7 @@ export interface paths {
          * Session Refresh
          * @description Refresh session materialized views and invalidate caches.
          */
-        post: operations["session_refresh_v5_session_refresh_post"];
+        post: operations["session_refresh_session_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4368,7 +4368,7 @@ export interface paths {
          * Get Session Docs Endpoint
          * @description Get composed documentation for the session analytics.
          */
-        post: operations["get_session_docs_endpoint_v5_session_docs_post"];
+        post: operations["get_session_docs_endpoint_session_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4388,7 +4388,7 @@ export interface paths {
          * Export Session
          * @description Export session data as a clean, denormalized ZIP.
          */
-        post: operations["export_session_v5_session_export_post"];
+        post: operations["export_session_session_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4408,7 +4408,7 @@ export interface paths {
          * Chat Get
          * @description Get hydrated resources for chat bundle customization.
          */
-        post: operations["chat_get_v5_chat_get_post"];
+        post: operations["chat_get_chat_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4432,7 +4432,7 @@ export interface paths {
          * Patch Chat Draft
          * @description Patch chat draft — composable infra architecture.
          */
-        patch: operations["patch_chat_draft_v5_chat_draft_patch"];
+        patch: operations["patch_chat_draft_chat_draft_patch"];
         trace?: never;
     };
     "/chat/drafts": {
@@ -4448,7 +4448,7 @@ export interface paths {
          * Get Chat Drafts
          * @description List chat drafts owned by the current profile.
          */
-        post: operations["get_chat_drafts_v5_chat_drafts_post"];
+        post: operations["get_chat_drafts_chat_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4468,7 +4468,7 @@ export interface paths {
          * Export Chat
          * @description Export a single chat as a clean, denormalized CSV.
          */
-        post: operations["export_chat_v5_chat_export_post"];
+        post: operations["export_chat_chat_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4488,7 +4488,7 @@ export interface paths {
          * Chat Refresh
          * @description Refresh chat materialized views and invalidate caches.
          */
-        post: operations["chat_refresh_v5_chat_refresh_post"];
+        post: operations["chat_refresh_chat_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4508,7 +4508,7 @@ export interface paths {
          * Get Chat Docs Endpoint
          * @description Get composed documentation for the chat analytics.
          */
-        post: operations["get_chat_docs_endpoint_v5_chat_docs_post"];
+        post: operations["get_chat_docs_endpoint_chat_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4528,7 +4528,7 @@ export interface paths {
          * Home Get
          * @description Get simulations available for home (operational).
          */
-        post: operations["home_get_v5_home_get_post"];
+        post: operations["home_get_home_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4548,7 +4548,7 @@ export interface paths {
          * Search Home
          * @description Get paginated attempt history for home.
          */
-        post: operations["search_home_v5_home_search_post"];
+        post: operations["search_home_home_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4568,7 +4568,7 @@ export interface paths {
          * Home Refresh
          * @description Refresh home materialized views and invalidate caches.
          */
-        post: operations["home_refresh_v5_home_refresh_post"];
+        post: operations["home_refresh_home_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4588,7 +4588,7 @@ export interface paths {
          * Export Home
          * @description Export all home data as a clean, denormalized ZIP with certificate.
          */
-        post: operations["export_home_v5_home_export_post"];
+        post: operations["export_home_home_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4608,7 +4608,7 @@ export interface paths {
          * Get Home Docs Endpoint
          * @description Get composed documentation for the home analytics.
          */
-        post: operations["get_home_docs_endpoint_v5_home_docs_post"];
+        post: operations["get_home_docs_endpoint_home_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4628,7 +4628,7 @@ export interface paths {
          * Practice Get
          * @description Get simulations available for practice (operational).
          */
-        post: operations["practice_get_v5_practice_get_post"];
+        post: operations["practice_get_practice_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4648,7 +4648,7 @@ export interface paths {
          * Search Practice
          * @description Get paginated attempt history for practice.
          */
-        post: operations["search_practice_v5_practice_search_post"];
+        post: operations["search_practice_practice_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4668,7 +4668,7 @@ export interface paths {
          * Practice Refresh
          * @description Refresh practice materialized views and invalidate caches.
          */
-        post: operations["practice_refresh_v5_practice_refresh_post"];
+        post: operations["practice_refresh_practice_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4688,7 +4688,7 @@ export interface paths {
          * Export Practice
          * @description Export all practice data as a clean, denormalized ZIP.
          */
-        post: operations["export_practice_v5_practice_export_post"];
+        post: operations["export_practice_practice_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4708,7 +4708,7 @@ export interface paths {
          * Get Practice Docs Endpoint
          * @description Get composed documentation for the practice analytics.
          */
-        post: operations["get_practice_docs_endpoint_v5_practice_docs_post"];
+        post: operations["get_practice_docs_endpoint_practice_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4728,7 +4728,7 @@ export interface paths {
          * Attempt Get
          * @description Get attempt detail with the canonical shared attempt bundle.
          */
-        post: operations["attempt_get_v5_attempt_get_post"];
+        post: operations["attempt_get_attempt_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4748,7 +4748,7 @@ export interface paths {
          * Attempt Join
          * @description Join a chat room for real-time attempt updates.
          */
-        post: operations["attempt_join_v5_attempt_join_post"];
+        post: operations["attempt_join_attempt_join_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4768,7 +4768,7 @@ export interface paths {
          * Attempt Leave
          * @description Leave a chat room, stopping real-time attempt updates.
          */
-        post: operations["attempt_leave_v5_attempt_leave_post"];
+        post: operations["attempt_leave_attempt_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4788,7 +4788,7 @@ export interface paths {
          * Archive Attempts
          * @description Bulk archive or unarchive attempts (simulation or benchmark).
          */
-        post: operations["archive_attempts_v5_attempt_archive_post"];
+        post: operations["archive_attempts_attempt_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4808,7 +4808,7 @@ export interface paths {
          * Attempt Refresh
          * @description Refresh attempt materialized views and invalidate caches.
          */
-        post: operations["attempt_refresh_v5_attempt_refresh_post"];
+        post: operations["attempt_refresh_attempt_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4828,7 +4828,7 @@ export interface paths {
          * Get Attempt Docs Endpoint
          * @description Get composed documentation for the attempt analytics.
          */
-        post: operations["get_attempt_docs_endpoint_v5_attempt_docs_post"];
+        post: operations["get_attempt_docs_endpoint_attempt_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4848,7 +4848,7 @@ export interface paths {
          * Export Attempt
          * @description Export attempt data as a clean, denormalized ZIP.
          */
-        post: operations["export_attempt_v5_attempt_export_post"];
+        post: operations["export_attempt_attempt_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4868,7 +4868,7 @@ export interface paths {
          * Start Attempt
          * @description Create a new attempt using the canonical internal attempt orchestration.
          */
-        post: operations["start_attempt_v5_attempt_start_post"];
+        post: operations["start_attempt_attempt_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4888,7 +4888,7 @@ export interface paths {
          * Next Attempt
          * @description Proceed to the next scenario in an existing attempt.
          */
-        post: operations["next_attempt_v5_attempt_next_post"];
+        post: operations["next_attempt_attempt_next_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4911,7 +4911,7 @@ export interface paths {
          *     Browser client: sends grade=True, internal AI generates full grade.
          *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
          */
-        post: operations["end_attempt_v5_attempt_end_post"];
+        post: operations["end_attempt_attempt_end_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4931,7 +4931,7 @@ export interface paths {
          * End All Attempt
          * @description End all remaining chats in an attempt.
          */
-        post: operations["end_all_attempt_v5_attempt_end_all_post"];
+        post: operations["end_all_attempt_attempt_end_all_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4954,7 +4954,7 @@ export interface paths {
          *     Browser client: sends message only, internal AI generates response + hints.
          *     Agent: can optionally provide assistant_content, hints, contents to skip AI.
          */
-        post: operations["attempt_message_v5_attempt_message_post"];
+        post: operations["attempt_message_attempt_message_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4977,7 +4977,7 @@ export interface paths {
          *     Browser client: sends chat_id only, internal AI generates full grade.
          *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
          */
-        post: operations["attempt_grade_v5_attempt_grade_post"];
+        post: operations["attempt_grade_attempt_grade_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4997,7 +4997,7 @@ export interface paths {
          * Attempt Stop
          * @description Stop message generation for an attempt chat.
          */
-        post: operations["attempt_stop_v5_attempt_stop_post"];
+        post: operations["attempt_stop_attempt_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5017,7 +5017,7 @@ export interface paths {
          * Attempt Response
          * @description Submit a video question response.
          */
-        post: operations["attempt_response_v5_attempt_response_post"];
+        post: operations["attempt_response_attempt_response_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5037,7 +5037,7 @@ export interface paths {
          * Attempt Use Previous
          * @description Copy grades from a previous attempt's chats.
          */
-        post: operations["attempt_use_previous_v5_attempt_use_previous_post"];
+        post: operations["attempt_use_previous_attempt_use_previous_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5057,7 +5057,7 @@ export interface paths {
          * Audio Start
          * @description Start an audio session for an attempt chat.
          */
-        post: operations["audio_start_v5_attempt_audio_start_post"];
+        post: operations["audio_start_attempt_audio_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5077,7 +5077,7 @@ export interface paths {
          * Audio Frame
          * @description Push audio bytes into the session inbound queue.
          */
-        post: operations["audio_frame_v5_attempt_audio_frame_post"];
+        post: operations["audio_frame_attempt_audio_frame_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5097,7 +5097,7 @@ export interface paths {
          * Audio Stop
          * @description Stop an audio session for an attempt chat.
          */
-        post: operations["audio_stop_v5_attempt_audio_stop_post"];
+        post: operations["audio_stop_attempt_audio_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5117,7 +5117,7 @@ export interface paths {
          * Audio Mute
          * @description Toggle microphone mute for an audio session.
          */
-        post: operations["audio_mute_v5_attempt_audio_mute_post"];
+        post: operations["audio_mute_attempt_audio_mute_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5137,7 +5137,7 @@ export interface paths {
          * Search Attempt
          * @description Search attempts — composable infra architecture.
          */
-        post: operations["search_attempt_v5_attempt_search_post"];
+        post: operations["search_attempt_attempt_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5155,7 +5155,7 @@ export interface paths {
          * Download
          * @description Download any file by upload ID with range support.
          */
-        get: operations["download_v5_attempt_download__upload_id__get"];
+        get: operations["download_attempt_download__upload_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5177,7 +5177,7 @@ export interface paths {
          * Get Record
          * @description Get record profile report — dashboard metrics for a single profile.
          */
-        post: operations["get_record_v5_record_get_post"];
+        post: operations["get_record_record_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5197,7 +5197,7 @@ export interface paths {
          * Search Record
          * @description Get record attempt history for a single profile (paginated).
          */
-        post: operations["search_record_v5_record_search_post"];
+        post: operations["search_record_record_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5217,7 +5217,7 @@ export interface paths {
          * Record Refresh
          * @description Refresh record caches.
          */
-        post: operations["record_refresh_v5_record_refresh_post"];
+        post: operations["record_refresh_record_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5237,7 +5237,7 @@ export interface paths {
          * Export Record
          * @description Export record data (dashboard for one profile) as a clean, denormalized ZIP.
          */
-        post: operations["export_record_v5_record_export_post"];
+        post: operations["export_record_record_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5257,7 +5257,7 @@ export interface paths {
          * Get Record Docs Endpoint
          * @description Get composed documentation for the record analytics.
          */
-        post: operations["get_record_docs_endpoint_v5_record_docs_post"];
+        post: operations["get_record_docs_endpoint_record_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5274,7 +5274,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Dashboard */
-        post: operations["get_dashboard_v5_dashboard_get_post"];
+        post: operations["get_dashboard_dashboard_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5294,7 +5294,7 @@ export interface paths {
          * Search Dashboard
          * @description Get dashboard attempt history (paginated).
          */
-        post: operations["search_dashboard_v5_dashboard_search_post"];
+        post: operations["search_dashboard_dashboard_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5314,7 +5314,7 @@ export interface paths {
          * Dashboard Refresh
          * @description Refresh dashboard caches (no materialized views).
          */
-        post: operations["dashboard_refresh_v5_dashboard_refresh_post"];
+        post: operations["dashboard_refresh_dashboard_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5334,7 +5334,7 @@ export interface paths {
          * Export Dashboard
          * @description Export all dashboard data as a clean, denormalized ZIP.
          */
-        post: operations["export_dashboard_v5_dashboard_export_post"];
+        post: operations["export_dashboard_dashboard_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5354,7 +5354,7 @@ export interface paths {
          * Get Dashboard Docs Endpoint
          * @description Get composed documentation for the dashboard analytics.
          */
-        post: operations["get_dashboard_docs_endpoint_v5_dashboard_docs_post"];
+        post: operations["get_dashboard_docs_endpoint_dashboard_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5374,7 +5374,7 @@ export interface paths {
          * Export Reports
          * @description Export all reports data as a clean, denormalized ZIP.
          */
-        post: operations["export_reports_v5_reports_export_post"];
+        post: operations["export_reports_reports_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5394,7 +5394,7 @@ export interface paths {
          * Get Reports
          * @description Get reports artifact data via composable context resolver.
          */
-        post: operations["get_reports_v5_reports_search_post"];
+        post: operations["get_reports_reports_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5414,7 +5414,7 @@ export interface paths {
          * Reports Refresh
          * @description Refresh reports caches.
          */
-        post: operations["reports_refresh_v5_reports_refresh_post"];
+        post: operations["reports_refresh_reports_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5434,7 +5434,7 @@ export interface paths {
          * Get Reports Docs Endpoint
          * @description Get composed documentation for the reports analytics.
          */
-        post: operations["get_reports_docs_endpoint_v5_reports_docs_post"];
+        post: operations["get_reports_docs_endpoint_reports_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5451,7 +5451,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Leaderboard */
-        post: operations["get_leaderboard_v5_leaderboard_get_post"];
+        post: operations["get_leaderboard_leaderboard_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5471,7 +5471,7 @@ export interface paths {
          * Search Leaderboard
          * @description Get leaderboard profile rows (bottom table, paginated).
          */
-        post: operations["search_leaderboard_v5_leaderboard_search_post"];
+        post: operations["search_leaderboard_leaderboard_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5491,7 +5491,7 @@ export interface paths {
          * Leaderboard Refresh
          * @description Refresh leaderboard caches.
          */
-        post: operations["leaderboard_refresh_v5_leaderboard_refresh_post"];
+        post: operations["leaderboard_refresh_leaderboard_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5511,7 +5511,7 @@ export interface paths {
          * Export Leaderboard
          * @description Export all leaderboard data as a clean, denormalized ZIP.
          */
-        post: operations["export_leaderboard_v5_leaderboard_export_post"];
+        post: operations["export_leaderboard_leaderboard_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5531,7 +5531,7 @@ export interface paths {
          * Get Leaderboard Docs Endpoint
          * @description Get composed documentation for the leaderboard analytics.
          */
-        post: operations["get_leaderboard_docs_endpoint_v5_leaderboard_docs_post"];
+        post: operations["get_leaderboard_docs_endpoint_leaderboard_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5551,7 +5551,7 @@ export interface paths {
          * Get Pricing
          * @description Get pricing top chart — daily cost aggregation + filter options.
          */
-        post: operations["get_pricing_v5_pricing_get_post"];
+        post: operations["get_pricing_pricing_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5571,7 +5571,7 @@ export interface paths {
          * Search Pricing
          * @description Get pricing group history (bottom table, paginated).
          */
-        post: operations["search_pricing_v5_pricing_search_post"];
+        post: operations["search_pricing_pricing_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5591,7 +5591,7 @@ export interface paths {
          * Pricing Refresh
          * @description Refresh pricing materialized views and invalidate caches.
          */
-        post: operations["pricing_refresh_v5_pricing_refresh_post"];
+        post: operations["pricing_refresh_pricing_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5611,7 +5611,7 @@ export interface paths {
          * Export Pricing
          * @description Export all pricing data as a clean, denormalized ZIP.
          */
-        post: operations["export_pricing_v5_pricing_export_post"];
+        post: operations["export_pricing_pricing_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5631,7 +5631,7 @@ export interface paths {
          * Get Pricing Docs Endpoint
          * @description Get composed documentation for the pricing analytics.
          */
-        post: operations["get_pricing_docs_endpoint_v5_pricing_docs_post"];
+        post: operations["get_pricing_docs_endpoint_pricing_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5648,7 +5648,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Get Activity */
-        post: operations["get_activity_v5_activity_get_post"];
+        post: operations["get_activity_activity_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5668,7 +5668,7 @@ export interface paths {
          * Search Activity
          * @description Get activity session history (bottom table, paginated).
          */
-        post: operations["search_activity_v5_activity_search_post"];
+        post: operations["search_activity_activity_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5688,7 +5688,7 @@ export interface paths {
          * Activity Refresh
          * @description Refresh activity materialized views and invalidate caches.
          */
-        post: operations["activity_refresh_v5_activity_refresh_post"];
+        post: operations["activity_refresh_activity_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5708,7 +5708,7 @@ export interface paths {
          * Resolve Problem
          * @description Resolve or unresolve a problem entry.
          */
-        post: operations["resolve_problem_v5_activity_resolve_post"];
+        post: operations["resolve_problem_activity_resolve_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5728,7 +5728,7 @@ export interface paths {
          * Export Activity
          * @description Export all activity data as a clean, denormalized ZIP.
          */
-        post: operations["export_activity_v5_activity_export_post"];
+        post: operations["export_activity_activity_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5748,7 +5748,7 @@ export interface paths {
          * Get Activity Docs Endpoint
          * @description Get composed documentation for the activity analytics.
          */
-        post: operations["get_activity_docs_endpoint_v5_activity_docs_post"];
+        post: operations["get_activity_docs_endpoint_activity_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5768,7 +5768,7 @@ export interface paths {
          * Get Health
          * @description Get health artifact data.
          */
-        post: operations["get_health_v5_health_get_post"];
+        post: operations["get_health_health_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5788,7 +5788,7 @@ export interface paths {
          * Health Refresh
          * @description Refresh health materialized views and invalidate caches.
          */
-        post: operations["health_refresh_v5_health_refresh_post"];
+        post: operations["health_refresh_health_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5808,7 +5808,7 @@ export interface paths {
          * Export Health
          * @description Export all health data as a clean, denormalized ZIP.
          */
-        post: operations["export_health_v5_health_export_post"];
+        post: operations["export_health_health_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5828,7 +5828,7 @@ export interface paths {
          * Get Health Docs Endpoint
          * @description Get composed documentation for the health analytics.
          */
-        post: operations["get_health_docs_endpoint_v5_health_docs_post"];
+        post: operations["get_health_docs_endpoint_health_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5848,7 +5848,7 @@ export interface paths {
          * Get Benchmark
          * @description Get benchmark artifact data with the canonical shared benchmark operation.
          */
-        post: operations["get_benchmark_v5_benchmark_get_post"];
+        post: operations["get_benchmark_benchmark_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5868,7 +5868,7 @@ export interface paths {
          * Search Benchmark History
          * @description Search benchmark test history with pagination and filters.
          */
-        post: operations["search_benchmark_history_v5_benchmark_search_post"];
+        post: operations["search_benchmark_history_benchmark_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5888,7 +5888,7 @@ export interface paths {
          * Benchmark Refresh
          * @description Refresh benchmark materialized views and invalidate caches.
          */
-        post: operations["benchmark_refresh_v5_benchmark_refresh_post"];
+        post: operations["benchmark_refresh_benchmark_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5908,7 +5908,7 @@ export interface paths {
          * Export Benchmark
          * @description Export all benchmark data as a clean, denormalized ZIP.
          */
-        post: operations["export_benchmark_v5_benchmark_export_post"];
+        post: operations["export_benchmark_benchmark_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5928,7 +5928,7 @@ export interface paths {
          * Get Benchmark Docs Endpoint
          * @description Get composed documentation for the benchmark analytics.
          */
-        post: operations["get_benchmark_docs_endpoint_v5_benchmark_docs_post"];
+        post: operations["get_benchmark_docs_endpoint_benchmark_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5948,7 +5948,7 @@ export interface paths {
          * Get Test Artifact
          * @description Get benchmark test artifact details with tests/invocations in parallel.
          */
-        post: operations["get_test_artifact_v5_test_get_post"];
+        post: operations["get_test_artifact_test_get_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5968,7 +5968,7 @@ export interface paths {
          * Test Join
          * @description Join a test invocation room for real-time updates.
          */
-        post: operations["test_join_v5_test_join_post"];
+        post: operations["test_join_test_join_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5988,7 +5988,7 @@ export interface paths {
          * Test Leave
          * @description Leave a test invocation room, stopping real-time updates.
          */
-        post: operations["test_leave_v5_test_leave_post"];
+        post: operations["test_leave_test_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6008,7 +6008,7 @@ export interface paths {
          * Archive Test Artifacts
          * @description Archive or unarchive benchmark tests by IDs.
          */
-        post: operations["archive_test_artifacts_v5_test_archive_post"];
+        post: operations["archive_test_artifacts_test_archive_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6028,7 +6028,7 @@ export interface paths {
          * Test Refresh
          * @description Refresh test materialized views and invalidate caches.
          */
-        post: operations["test_refresh_v5_test_refresh_post"];
+        post: operations["test_refresh_test_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6048,7 +6048,7 @@ export interface paths {
          * Export Test
          * @description Export test data as a clean, denormalized ZIP.
          */
-        post: operations["export_test_v5_test_export_post"];
+        post: operations["export_test_test_export_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6068,7 +6068,7 @@ export interface paths {
          * Get Test Docs Endpoint
          * @description Get composed documentation for the test analytics.
          */
-        post: operations["get_test_docs_endpoint_v5_test_docs_post"];
+        post: operations["get_test_docs_endpoint_test_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6088,7 +6088,7 @@ export interface paths {
          * Start Test
          * @description Create a new test.
          */
-        post: operations["start_test_v5_test_start_post"];
+        post: operations["start_test_test_start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6108,7 +6108,7 @@ export interface paths {
          * Next Test
          * @description Find next pending run in an existing test.
          */
-        post: operations["next_test_v5_test_next_post"];
+        post: operations["next_test_test_next_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6128,7 +6128,7 @@ export interface paths {
          * Run Test
          * @description Run one auto-regressive replay. Returns immediately; progress via socket.
          */
-        post: operations["run_test_v5_test_run_post"];
+        post: operations["run_test_test_run_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6151,7 +6151,7 @@ export interface paths {
          *     Browser client: sends grade=True, internal AI generates grade + feedback.
          *     Agent: can optionally provide score, passed, feedback to skip AI.
          */
-        post: operations["end_test_v5_test_end_post"];
+        post: operations["end_test_test_end_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6171,7 +6171,7 @@ export interface paths {
          * Stop Test
          * @description Stop current test execution.
          */
-        post: operations["stop_test_v5_test_stop_post"];
+        post: operations["stop_test_test_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6191,7 +6191,7 @@ export interface paths {
          * Search Test
          * @description Search tests — composable infra architecture.
          */
-        post: operations["search_test_v5_test_search_post"];
+        post: operations["search_test_test_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6211,7 +6211,7 @@ export interface paths {
          * Connect
          * @description Create a stream session for the authenticated profile.
          */
-        post: operations["connect_v5_connect_post"];
+        post: operations["connect_connect_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6231,7 +6231,7 @@ export interface paths {
          * Disconnect
          * @description Destroy a stream session.
          */
-        post: operations["disconnect_v5_disconnect_post"];
+        post: operations["disconnect_disconnect_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6251,7 +6251,7 @@ export interface paths {
          * Get Profile Context
          * @description Identity + permissions + theme context endpoint.
          */
-        post: operations["get_profile_context_v5_context_post"];
+        post: operations["get_profile_context_context_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6271,7 +6271,7 @@ export interface paths {
          * Create Problem
          * @description Create new problem entry.
          */
-        post: operations["create_problem_v5_problem_post"];
+        post: operations["create_problem_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6291,7 +6291,7 @@ export interface paths {
          * Emulate Profile
          * @description Create emulation grant. Next request will resolve to target profile.
          */
-        post: operations["emulate_profile_v5_emulate_post"];
+        post: operations["emulate_profile_emulate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6311,7 +6311,7 @@ export interface paths {
          * Unemulate Profile
          * @description Exit innermost emulation layer. Next request resolves one layer less.
          */
-        post: operations["unemulate_profile_v5_unemulate_post"];
+        post: operations["unemulate_profile_unemulate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6331,7 +6331,7 @@ export interface paths {
          * Generate
          * @description Trigger artifact generation. Returns immediately; progress via events.
          */
-        post: operations["generate_v5_generate_post"];
+        post: operations["generate_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6349,11 +6349,11 @@ export interface paths {
          * Stream Events
          * @description Stream artifact events via SSE, scoped to the session's joined entities.
          *
-         *     Callers must first obtain an ``sid`` via POST /v5/connect, then join
-         *     entities via POST /v5/attempt/join or POST /v5/test/join.  Only events
+         *     Callers must first obtain an ``sid`` via POST /connect, then join
+         *     entities via POST /attempt/join or POST /test/join.  Only events
          *     matching joined entities are delivered.
          */
-        get: operations["stream_events_v5_stream__get"];
+        get: operations["stream_events_stream__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6372,7 +6372,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ActivityRequest */
-        post: operations["ActivityRequest_schema_v5_stream_ActivityRequest_post"];
+        post: operations["ActivityRequest_schema_stream_ActivityRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6389,7 +6389,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ActivityResponse */
-        post: operations["ActivityResponse_schema_v5_stream_ActivityResponse_post"];
+        post: operations["ActivityResponse_schema_stream_ActivityResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6406,7 +6406,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAssistantCompleteEvent */
-        post: operations["AttemptAssistantCompleteEvent_schema_v5_stream_AttemptAssistantCompleteEvent_post"];
+        post: operations["AttemptAssistantCompleteEvent_schema_stream_AttemptAssistantCompleteEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6423,7 +6423,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAssistantHintsEvent */
-        post: operations["AttemptAssistantHintsEvent_schema_v5_stream_AttemptAssistantHintsEvent_post"];
+        post: operations["AttemptAssistantHintsEvent_schema_stream_AttemptAssistantHintsEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6440,7 +6440,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAssistantProgressEvent */
-        post: operations["AttemptAssistantProgressEvent_schema_v5_stream_AttemptAssistantProgressEvent_post"];
+        post: operations["AttemptAssistantProgressEvent_schema_stream_AttemptAssistantProgressEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6457,7 +6457,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAssistantStartEvent */
-        post: operations["AttemptAssistantStartEvent_schema_v5_stream_AttemptAssistantStartEvent_post"];
+        post: operations["AttemptAssistantStartEvent_schema_stream_AttemptAssistantStartEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6474,7 +6474,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAudioEndedEvent */
-        post: operations["AttemptAudioEndedEvent_schema_v5_stream_AttemptAudioEndedEvent_post"];
+        post: operations["AttemptAudioEndedEvent_schema_stream_AttemptAudioEndedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6491,7 +6491,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAudioReadyEvent */
-        post: operations["AttemptAudioReadyEvent_schema_v5_stream_AttemptAudioReadyEvent_post"];
+        post: operations["AttemptAudioReadyEvent_schema_stream_AttemptAudioReadyEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6508,7 +6508,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAudioStartPayload */
-        post: operations["AttemptAudioStartPayload_schema_v5_stream_AttemptAudioStartPayload_post"];
+        post: operations["AttemptAudioStartPayload_schema_stream_AttemptAudioStartPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6525,7 +6525,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptAudioStopPayload */
-        post: operations["AttemptAudioStopPayload_schema_v5_stream_AttemptAudioStopPayload_post"];
+        post: operations["AttemptAudioStopPayload_schema_stream_AttemptAudioStopPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6542,7 +6542,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptChatEndedEvent */
-        post: operations["AttemptChatEndedEvent_schema_v5_stream_AttemptChatEndedEvent_post"];
+        post: operations["AttemptChatEndedEvent_schema_stream_AttemptChatEndedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6559,7 +6559,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptChatStartedEvent */
-        post: operations["AttemptChatStartedEvent_schema_v5_stream_AttemptChatStartedEvent_post"];
+        post: operations["AttemptChatStartedEvent_schema_stream_AttemptChatStartedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6576,7 +6576,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptEndAllPayload */
-        post: operations["AttemptEndAllPayload_schema_v5_stream_AttemptEndAllPayload_post"];
+        post: operations["AttemptEndAllPayload_schema_stream_AttemptEndAllPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6593,7 +6593,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptEndPayload */
-        post: operations["AttemptEndPayload_schema_v5_stream_AttemptEndPayload_post"];
+        post: operations["AttemptEndPayload_schema_stream_AttemptEndPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6610,7 +6610,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptEndedEvent */
-        post: operations["AttemptEndedEvent_schema_v5_stream_AttemptEndedEvent_post"];
+        post: operations["AttemptEndedEvent_schema_stream_AttemptEndedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6627,7 +6627,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptErrorEvent */
-        post: operations["AttemptErrorEvent_schema_v5_stream_AttemptErrorEvent_post"];
+        post: operations["AttemptErrorEvent_schema_stream_AttemptErrorEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6644,7 +6644,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptGradeCompleteEvent */
-        post: operations["AttemptGradeCompleteEvent_schema_v5_stream_AttemptGradeCompleteEvent_post"];
+        post: operations["AttemptGradeCompleteEvent_schema_stream_AttemptGradeCompleteEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6661,7 +6661,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptGradePayload */
-        post: operations["AttemptGradePayload_schema_v5_stream_AttemptGradePayload_post"];
+        post: operations["AttemptGradePayload_schema_stream_AttemptGradePayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6678,7 +6678,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptGradeProgressEvent */
-        post: operations["AttemptGradeProgressEvent_schema_v5_stream_AttemptGradeProgressEvent_post"];
+        post: operations["AttemptGradeProgressEvent_schema_stream_AttemptGradeProgressEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6695,7 +6695,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptGradeStartEvent */
-        post: operations["AttemptGradeStartEvent_schema_v5_stream_AttemptGradeStartEvent_post"];
+        post: operations["AttemptGradeStartEvent_schema_stream_AttemptGradeStartEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6712,7 +6712,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptJoinPayload */
-        post: operations["AttemptJoinPayload_schema_v5_stream_AttemptJoinPayload_post"];
+        post: operations["AttemptJoinPayload_schema_stream_AttemptJoinPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6729,7 +6729,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptJoinedEvent */
-        post: operations["AttemptJoinedEvent_schema_v5_stream_AttemptJoinedEvent_post"];
+        post: operations["AttemptJoinedEvent_schema_stream_AttemptJoinedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6746,7 +6746,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptLeavePayload */
-        post: operations["AttemptLeavePayload_schema_v5_stream_AttemptLeavePayload_post"];
+        post: operations["AttemptLeavePayload_schema_stream_AttemptLeavePayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6763,7 +6763,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptMessagePayload */
-        post: operations["AttemptMessagePayload_schema_v5_stream_AttemptMessagePayload_post"];
+        post: operations["AttemptMessagePayload_schema_stream_AttemptMessagePayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6780,7 +6780,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptNextPayload */
-        post: operations["AttemptNextPayload_schema_v5_stream_AttemptNextPayload_post"];
+        post: operations["AttemptNextPayload_schema_stream_AttemptNextPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6797,7 +6797,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptResponsePayload */
-        post: operations["AttemptResponsePayload_schema_v5_stream_AttemptResponsePayload_post"];
+        post: operations["AttemptResponsePayload_schema_stream_AttemptResponsePayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6814,7 +6814,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptResponseResultEvent */
-        post: operations["AttemptResponseResultEvent_schema_v5_stream_AttemptResponseResultEvent_post"];
+        post: operations["AttemptResponseResultEvent_schema_stream_AttemptResponseResultEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6831,7 +6831,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptStartPayload */
-        post: operations["AttemptStartPayload_schema_v5_stream_AttemptStartPayload_post"];
+        post: operations["AttemptStartPayload_schema_stream_AttemptStartPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6848,7 +6848,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptStartedEvent */
-        post: operations["AttemptStartedEvent_schema_v5_stream_AttemptStartedEvent_post"];
+        post: operations["AttemptStartedEvent_schema_stream_AttemptStartedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6865,7 +6865,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptStopPayload */
-        post: operations["AttemptStopPayload_schema_v5_stream_AttemptStopPayload_post"];
+        post: operations["AttemptStopPayload_schema_stream_AttemptStopPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6882,7 +6882,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptStoppedEvent */
-        post: operations["AttemptStoppedEvent_schema_v5_stream_AttemptStoppedEvent_post"];
+        post: operations["AttemptStoppedEvent_schema_stream_AttemptStoppedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6899,7 +6899,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptUsePreviousPayload */
-        post: operations["AttemptUsePreviousPayload_schema_v5_stream_AttemptUsePreviousPayload_post"];
+        post: operations["AttemptUsePreviousPayload_schema_stream_AttemptUsePreviousPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6916,7 +6916,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptUserCompleteEvent */
-        post: operations["AttemptUserCompleteEvent_schema_v5_stream_AttemptUserCompleteEvent_post"];
+        post: operations["AttemptUserCompleteEvent_schema_stream_AttemptUserCompleteEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6933,7 +6933,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptUserDeltaEvent */
-        post: operations["AttemptUserDeltaEvent_schema_v5_stream_AttemptUserDeltaEvent_post"];
+        post: operations["AttemptUserDeltaEvent_schema_stream_AttemptUserDeltaEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6950,7 +6950,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptUserProgressEvent */
-        post: operations["AttemptUserProgressEvent_schema_v5_stream_AttemptUserProgressEvent_post"];
+        post: operations["AttemptUserProgressEvent_schema_stream_AttemptUserProgressEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6967,7 +6967,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: AttemptUserStartEvent */
-        post: operations["AttemptUserStartEvent_schema_v5_stream_AttemptUserStartEvent_post"];
+        post: operations["AttemptUserStartEvent_schema_stream_AttemptUserStartEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6984,7 +6984,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: BenchmarkRequest */
-        post: operations["BenchmarkRequest_schema_v5_stream_BenchmarkRequest_post"];
+        post: operations["BenchmarkRequest_schema_stream_BenchmarkRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7001,7 +7001,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: BenchmarkResponse */
-        post: operations["BenchmarkResponse_schema_v5_stream_BenchmarkResponse_post"];
+        post: operations["BenchmarkResponse_schema_stream_BenchmarkResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7018,7 +7018,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ComposedDocsResponse */
-        post: operations["ComposedDocsResponse_schema_v5_stream_ComposedDocsResponse_post"];
+        post: operations["ComposedDocsResponse_schema_stream_ComposedDocsResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7035,7 +7035,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ConnectionConfirmedPayload */
-        post: operations["ConnectionConfirmedPayload_schema_v5_stream_ConnectionConfirmedPayload_post"];
+        post: operations["ConnectionConfirmedPayload_schema_stream_ConnectionConfirmedPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7052,7 +7052,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateAgentApiRequest */
-        post: operations["CreateAgentApiRequest_schema_v5_stream_CreateAgentApiRequest_post"];
+        post: operations["CreateAgentApiRequest_schema_stream_CreateAgentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7069,7 +7069,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateAgentApiResponse */
-        post: operations["CreateAgentApiResponse_schema_v5_stream_CreateAgentApiResponse_post"];
+        post: operations["CreateAgentApiResponse_schema_stream_CreateAgentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7086,7 +7086,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateAuthApiRequest */
-        post: operations["CreateAuthApiRequest_schema_v5_stream_CreateAuthApiRequest_post"];
+        post: operations["CreateAuthApiRequest_schema_stream_CreateAuthApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7103,7 +7103,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateAuthApiResponse */
-        post: operations["CreateAuthApiResponse_schema_v5_stream_CreateAuthApiResponse_post"];
+        post: operations["CreateAuthApiResponse_schema_stream_CreateAuthApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7120,7 +7120,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateCohortApiRequest */
-        post: operations["CreateCohortApiRequest_schema_v5_stream_CreateCohortApiRequest_post"];
+        post: operations["CreateCohortApiRequest_schema_stream_CreateCohortApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7137,7 +7137,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateCohortApiResponse */
-        post: operations["CreateCohortApiResponse_schema_v5_stream_CreateCohortApiResponse_post"];
+        post: operations["CreateCohortApiResponse_schema_stream_CreateCohortApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7154,7 +7154,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateDepartmentApiRequest */
-        post: operations["CreateDepartmentApiRequest_schema_v5_stream_CreateDepartmentApiRequest_post"];
+        post: operations["CreateDepartmentApiRequest_schema_stream_CreateDepartmentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7171,7 +7171,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateDepartmentApiResponse */
-        post: operations["CreateDepartmentApiResponse_schema_v5_stream_CreateDepartmentApiResponse_post"];
+        post: operations["CreateDepartmentApiResponse_schema_stream_CreateDepartmentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7188,7 +7188,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateDocumentApiRequest */
-        post: operations["CreateDocumentApiRequest_schema_v5_stream_CreateDocumentApiRequest_post"];
+        post: operations["CreateDocumentApiRequest_schema_stream_CreateDocumentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7205,7 +7205,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateDocumentApiResponse */
-        post: operations["CreateDocumentApiResponse_schema_v5_stream_CreateDocumentApiResponse_post"];
+        post: operations["CreateDocumentApiResponse_schema_stream_CreateDocumentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7222,7 +7222,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateEvalApiRequest */
-        post: operations["CreateEvalApiRequest_schema_v5_stream_CreateEvalApiRequest_post"];
+        post: operations["CreateEvalApiRequest_schema_stream_CreateEvalApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7239,7 +7239,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateEvalApiResponse */
-        post: operations["CreateEvalApiResponse_schema_v5_stream_CreateEvalApiResponse_post"];
+        post: operations["CreateEvalApiResponse_schema_stream_CreateEvalApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7256,7 +7256,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateFieldApiRequest */
-        post: operations["CreateFieldApiRequest_schema_v5_stream_CreateFieldApiRequest_post"];
+        post: operations["CreateFieldApiRequest_schema_stream_CreateFieldApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7273,7 +7273,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateFieldApiResponse */
-        post: operations["CreateFieldApiResponse_schema_v5_stream_CreateFieldApiResponse_post"];
+        post: operations["CreateFieldApiResponse_schema_stream_CreateFieldApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7290,7 +7290,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateModelApiRequest */
-        post: operations["CreateModelApiRequest_schema_v5_stream_CreateModelApiRequest_post"];
+        post: operations["CreateModelApiRequest_schema_stream_CreateModelApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7307,7 +7307,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateModelApiResponse */
-        post: operations["CreateModelApiResponse_schema_v5_stream_CreateModelApiResponse_post"];
+        post: operations["CreateModelApiResponse_schema_stream_CreateModelApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7324,7 +7324,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateParameterApiRequest */
-        post: operations["CreateParameterApiRequest_schema_v5_stream_CreateParameterApiRequest_post"];
+        post: operations["CreateParameterApiRequest_schema_stream_CreateParameterApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7341,7 +7341,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateParameterApiResponse */
-        post: operations["CreateParameterApiResponse_schema_v5_stream_CreateParameterApiResponse_post"];
+        post: operations["CreateParameterApiResponse_schema_stream_CreateParameterApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7358,7 +7358,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreatePersonaApiRequest */
-        post: operations["CreatePersonaApiRequest_schema_v5_stream_CreatePersonaApiRequest_post"];
+        post: operations["CreatePersonaApiRequest_schema_stream_CreatePersonaApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7375,7 +7375,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreatePersonaApiResponse */
-        post: operations["CreatePersonaApiResponse_schema_v5_stream_CreatePersonaApiResponse_post"];
+        post: operations["CreatePersonaApiResponse_schema_stream_CreatePersonaApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7392,7 +7392,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateProfileApiRequest */
-        post: operations["CreateProfileApiRequest_schema_v5_stream_CreateProfileApiRequest_post"];
+        post: operations["CreateProfileApiRequest_schema_stream_CreateProfileApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7409,7 +7409,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateProfileApiResponse */
-        post: operations["CreateProfileApiResponse_schema_v5_stream_CreateProfileApiResponse_post"];
+        post: operations["CreateProfileApiResponse_schema_stream_CreateProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7426,7 +7426,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateProviderApiRequest */
-        post: operations["CreateProviderApiRequest_schema_v5_stream_CreateProviderApiRequest_post"];
+        post: operations["CreateProviderApiRequest_schema_stream_CreateProviderApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7443,7 +7443,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateProviderApiResponse */
-        post: operations["CreateProviderApiResponse_schema_v5_stream_CreateProviderApiResponse_post"];
+        post: operations["CreateProviderApiResponse_schema_stream_CreateProviderApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7460,7 +7460,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateRubricApiRequest */
-        post: operations["CreateRubricApiRequest_schema_v5_stream_CreateRubricApiRequest_post"];
+        post: operations["CreateRubricApiRequest_schema_stream_CreateRubricApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7477,7 +7477,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateRubricApiResponse */
-        post: operations["CreateRubricApiResponse_schema_v5_stream_CreateRubricApiResponse_post"];
+        post: operations["CreateRubricApiResponse_schema_stream_CreateRubricApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7494,7 +7494,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateScenarioApiRequest */
-        post: operations["CreateScenarioApiRequest_schema_v5_stream_CreateScenarioApiRequest_post"];
+        post: operations["CreateScenarioApiRequest_schema_stream_CreateScenarioApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7511,7 +7511,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateScenarioApiResponse */
-        post: operations["CreateScenarioApiResponse_schema_v5_stream_CreateScenarioApiResponse_post"];
+        post: operations["CreateScenarioApiResponse_schema_stream_CreateScenarioApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7528,7 +7528,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateSettingApiRequest */
-        post: operations["CreateSettingApiRequest_schema_v5_stream_CreateSettingApiRequest_post"];
+        post: operations["CreateSettingApiRequest_schema_stream_CreateSettingApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7545,7 +7545,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateSettingApiResponse */
-        post: operations["CreateSettingApiResponse_schema_v5_stream_CreateSettingApiResponse_post"];
+        post: operations["CreateSettingApiResponse_schema_stream_CreateSettingApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7562,7 +7562,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateSimulationApiRequest */
-        post: operations["CreateSimulationApiRequest_schema_v5_stream_CreateSimulationApiRequest_post"];
+        post: operations["CreateSimulationApiRequest_schema_stream_CreateSimulationApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7579,7 +7579,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateSimulationApiResponse */
-        post: operations["CreateSimulationApiResponse_schema_v5_stream_CreateSimulationApiResponse_post"];
+        post: operations["CreateSimulationApiResponse_schema_stream_CreateSimulationApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7596,7 +7596,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateToolApiRequest */
-        post: operations["CreateToolApiRequest_schema_v5_stream_CreateToolApiRequest_post"];
+        post: operations["CreateToolApiRequest_schema_stream_CreateToolApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7613,7 +7613,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: CreateToolApiResponse */
-        post: operations["CreateToolApiResponse_schema_v5_stream_CreateToolApiResponse_post"];
+        post: operations["CreateToolApiResponse_schema_stream_CreateToolApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7630,7 +7630,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DashboardBundleResponse */
-        post: operations["DashboardBundleResponse_schema_v5_stream_DashboardBundleResponse_post"];
+        post: operations["DashboardBundleResponse_schema_stream_DashboardBundleResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7647,7 +7647,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DashboardRequest */
-        post: operations["DashboardRequest_schema_v5_stream_DashboardRequest_post"];
+        post: operations["DashboardRequest_schema_stream_DashboardRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7664,7 +7664,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteAgentApiRequest */
-        post: operations["DeleteAgentApiRequest_schema_v5_stream_DeleteAgentApiRequest_post"];
+        post: operations["DeleteAgentApiRequest_schema_stream_DeleteAgentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7681,7 +7681,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteAgentApiResponse */
-        post: operations["DeleteAgentApiResponse_schema_v5_stream_DeleteAgentApiResponse_post"];
+        post: operations["DeleteAgentApiResponse_schema_stream_DeleteAgentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7698,7 +7698,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteAuthApiRequest */
-        post: operations["DeleteAuthApiRequest_schema_v5_stream_DeleteAuthApiRequest_post"];
+        post: operations["DeleteAuthApiRequest_schema_stream_DeleteAuthApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7715,7 +7715,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteAuthApiResponse */
-        post: operations["DeleteAuthApiResponse_schema_v5_stream_DeleteAuthApiResponse_post"];
+        post: operations["DeleteAuthApiResponse_schema_stream_DeleteAuthApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7732,7 +7732,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteCohortApiRequest */
-        post: operations["DeleteCohortApiRequest_schema_v5_stream_DeleteCohortApiRequest_post"];
+        post: operations["DeleteCohortApiRequest_schema_stream_DeleteCohortApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7749,7 +7749,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteCohortApiResponse */
-        post: operations["DeleteCohortApiResponse_schema_v5_stream_DeleteCohortApiResponse_post"];
+        post: operations["DeleteCohortApiResponse_schema_stream_DeleteCohortApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7766,7 +7766,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteDepartmentApiRequest */
-        post: operations["DeleteDepartmentApiRequest_schema_v5_stream_DeleteDepartmentApiRequest_post"];
+        post: operations["DeleteDepartmentApiRequest_schema_stream_DeleteDepartmentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7783,7 +7783,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteDepartmentApiResponse */
-        post: operations["DeleteDepartmentApiResponse_schema_v5_stream_DeleteDepartmentApiResponse_post"];
+        post: operations["DeleteDepartmentApiResponse_schema_stream_DeleteDepartmentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7800,7 +7800,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteDocumentApiRequest */
-        post: operations["DeleteDocumentApiRequest_schema_v5_stream_DeleteDocumentApiRequest_post"];
+        post: operations["DeleteDocumentApiRequest_schema_stream_DeleteDocumentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7817,7 +7817,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteDocumentApiResponse */
-        post: operations["DeleteDocumentApiResponse_schema_v5_stream_DeleteDocumentApiResponse_post"];
+        post: operations["DeleteDocumentApiResponse_schema_stream_DeleteDocumentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7834,7 +7834,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteEvalApiRequest */
-        post: operations["DeleteEvalApiRequest_schema_v5_stream_DeleteEvalApiRequest_post"];
+        post: operations["DeleteEvalApiRequest_schema_stream_DeleteEvalApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7851,7 +7851,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteEvalApiResponse */
-        post: operations["DeleteEvalApiResponse_schema_v5_stream_DeleteEvalApiResponse_post"];
+        post: operations["DeleteEvalApiResponse_schema_stream_DeleteEvalApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7868,7 +7868,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteFieldApiRequest */
-        post: operations["DeleteFieldApiRequest_schema_v5_stream_DeleteFieldApiRequest_post"];
+        post: operations["DeleteFieldApiRequest_schema_stream_DeleteFieldApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7885,7 +7885,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteFieldApiResponse */
-        post: operations["DeleteFieldApiResponse_schema_v5_stream_DeleteFieldApiResponse_post"];
+        post: operations["DeleteFieldApiResponse_schema_stream_DeleteFieldApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7902,7 +7902,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteModelApiRequest */
-        post: operations["DeleteModelApiRequest_schema_v5_stream_DeleteModelApiRequest_post"];
+        post: operations["DeleteModelApiRequest_schema_stream_DeleteModelApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7919,7 +7919,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteModelApiResponse */
-        post: operations["DeleteModelApiResponse_schema_v5_stream_DeleteModelApiResponse_post"];
+        post: operations["DeleteModelApiResponse_schema_stream_DeleteModelApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7936,7 +7936,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteParameterApiRequest */
-        post: operations["DeleteParameterApiRequest_schema_v5_stream_DeleteParameterApiRequest_post"];
+        post: operations["DeleteParameterApiRequest_schema_stream_DeleteParameterApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7953,7 +7953,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteParameterApiResponse */
-        post: operations["DeleteParameterApiResponse_schema_v5_stream_DeleteParameterApiResponse_post"];
+        post: operations["DeleteParameterApiResponse_schema_stream_DeleteParameterApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7970,7 +7970,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeletePersonaApiRequest */
-        post: operations["DeletePersonaApiRequest_schema_v5_stream_DeletePersonaApiRequest_post"];
+        post: operations["DeletePersonaApiRequest_schema_stream_DeletePersonaApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7987,7 +7987,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeletePersonaApiResponse */
-        post: operations["DeletePersonaApiResponse_schema_v5_stream_DeletePersonaApiResponse_post"];
+        post: operations["DeletePersonaApiResponse_schema_stream_DeletePersonaApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8004,7 +8004,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteProfileApiRequest */
-        post: operations["DeleteProfileApiRequest_schema_v5_stream_DeleteProfileApiRequest_post"];
+        post: operations["DeleteProfileApiRequest_schema_stream_DeleteProfileApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8021,7 +8021,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteProfileApiResponse */
-        post: operations["DeleteProfileApiResponse_schema_v5_stream_DeleteProfileApiResponse_post"];
+        post: operations["DeleteProfileApiResponse_schema_stream_DeleteProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8038,7 +8038,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteProviderApiRequest */
-        post: operations["DeleteProviderApiRequest_schema_v5_stream_DeleteProviderApiRequest_post"];
+        post: operations["DeleteProviderApiRequest_schema_stream_DeleteProviderApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8055,7 +8055,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteProviderApiResponse */
-        post: operations["DeleteProviderApiResponse_schema_v5_stream_DeleteProviderApiResponse_post"];
+        post: operations["DeleteProviderApiResponse_schema_stream_DeleteProviderApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8072,7 +8072,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteRubricApiRequest */
-        post: operations["DeleteRubricApiRequest_schema_v5_stream_DeleteRubricApiRequest_post"];
+        post: operations["DeleteRubricApiRequest_schema_stream_DeleteRubricApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8089,7 +8089,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteRubricApiResponse */
-        post: operations["DeleteRubricApiResponse_schema_v5_stream_DeleteRubricApiResponse_post"];
+        post: operations["DeleteRubricApiResponse_schema_stream_DeleteRubricApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8106,7 +8106,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteScenarioApiRequest */
-        post: operations["DeleteScenarioApiRequest_schema_v5_stream_DeleteScenarioApiRequest_post"];
+        post: operations["DeleteScenarioApiRequest_schema_stream_DeleteScenarioApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8123,7 +8123,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteScenarioApiResponse */
-        post: operations["DeleteScenarioApiResponse_schema_v5_stream_DeleteScenarioApiResponse_post"];
+        post: operations["DeleteScenarioApiResponse_schema_stream_DeleteScenarioApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8140,7 +8140,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteSettingApiRequest */
-        post: operations["DeleteSettingApiRequest_schema_v5_stream_DeleteSettingApiRequest_post"];
+        post: operations["DeleteSettingApiRequest_schema_stream_DeleteSettingApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8157,7 +8157,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteSettingApiResponse */
-        post: operations["DeleteSettingApiResponse_schema_v5_stream_DeleteSettingApiResponse_post"];
+        post: operations["DeleteSettingApiResponse_schema_stream_DeleteSettingApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8174,7 +8174,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteSimulationApiRequest */
-        post: operations["DeleteSimulationApiRequest_schema_v5_stream_DeleteSimulationApiRequest_post"];
+        post: operations["DeleteSimulationApiRequest_schema_stream_DeleteSimulationApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8191,7 +8191,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteSimulationApiResponse */
-        post: operations["DeleteSimulationApiResponse_schema_v5_stream_DeleteSimulationApiResponse_post"];
+        post: operations["DeleteSimulationApiResponse_schema_stream_DeleteSimulationApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8208,7 +8208,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteToolApiRequest */
-        post: operations["DeleteToolApiRequest_schema_v5_stream_DeleteToolApiRequest_post"];
+        post: operations["DeleteToolApiRequest_schema_stream_DeleteToolApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8225,7 +8225,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DeleteToolApiResponse */
-        post: operations["DeleteToolApiResponse_schema_v5_stream_DeleteToolApiResponse_post"];
+        post: operations["DeleteToolApiResponse_schema_stream_DeleteToolApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8242,7 +8242,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateAgentApiRequest */
-        post: operations["DuplicateAgentApiRequest_schema_v5_stream_DuplicateAgentApiRequest_post"];
+        post: operations["DuplicateAgentApiRequest_schema_stream_DuplicateAgentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8259,7 +8259,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateAgentApiResponse */
-        post: operations["DuplicateAgentApiResponse_schema_v5_stream_DuplicateAgentApiResponse_post"];
+        post: operations["DuplicateAgentApiResponse_schema_stream_DuplicateAgentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8276,7 +8276,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateAuthApiRequest */
-        post: operations["DuplicateAuthApiRequest_schema_v5_stream_DuplicateAuthApiRequest_post"];
+        post: operations["DuplicateAuthApiRequest_schema_stream_DuplicateAuthApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8293,7 +8293,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateAuthApiResponse */
-        post: operations["DuplicateAuthApiResponse_schema_v5_stream_DuplicateAuthApiResponse_post"];
+        post: operations["DuplicateAuthApiResponse_schema_stream_DuplicateAuthApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8310,7 +8310,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateCohortApiRequest */
-        post: operations["DuplicateCohortApiRequest_schema_v5_stream_DuplicateCohortApiRequest_post"];
+        post: operations["DuplicateCohortApiRequest_schema_stream_DuplicateCohortApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8327,7 +8327,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateCohortApiResponse */
-        post: operations["DuplicateCohortApiResponse_schema_v5_stream_DuplicateCohortApiResponse_post"];
+        post: operations["DuplicateCohortApiResponse_schema_stream_DuplicateCohortApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8344,7 +8344,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateDepartmentApiRequest */
-        post: operations["DuplicateDepartmentApiRequest_schema_v5_stream_DuplicateDepartmentApiRequest_post"];
+        post: operations["DuplicateDepartmentApiRequest_schema_stream_DuplicateDepartmentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8361,7 +8361,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateDepartmentApiResponse */
-        post: operations["DuplicateDepartmentApiResponse_schema_v5_stream_DuplicateDepartmentApiResponse_post"];
+        post: operations["DuplicateDepartmentApiResponse_schema_stream_DuplicateDepartmentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8378,7 +8378,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateDocumentApiRequest */
-        post: operations["DuplicateDocumentApiRequest_schema_v5_stream_DuplicateDocumentApiRequest_post"];
+        post: operations["DuplicateDocumentApiRequest_schema_stream_DuplicateDocumentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8395,7 +8395,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateDocumentApiResponse */
-        post: operations["DuplicateDocumentApiResponse_schema_v5_stream_DuplicateDocumentApiResponse_post"];
+        post: operations["DuplicateDocumentApiResponse_schema_stream_DuplicateDocumentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8412,7 +8412,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateEvalApiRequest */
-        post: operations["DuplicateEvalApiRequest_schema_v5_stream_DuplicateEvalApiRequest_post"];
+        post: operations["DuplicateEvalApiRequest_schema_stream_DuplicateEvalApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8429,7 +8429,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateEvalApiResponse */
-        post: operations["DuplicateEvalApiResponse_schema_v5_stream_DuplicateEvalApiResponse_post"];
+        post: operations["DuplicateEvalApiResponse_schema_stream_DuplicateEvalApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8446,7 +8446,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateFieldApiRequest */
-        post: operations["DuplicateFieldApiRequest_schema_v5_stream_DuplicateFieldApiRequest_post"];
+        post: operations["DuplicateFieldApiRequest_schema_stream_DuplicateFieldApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8463,7 +8463,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateFieldApiResponse */
-        post: operations["DuplicateFieldApiResponse_schema_v5_stream_DuplicateFieldApiResponse_post"];
+        post: operations["DuplicateFieldApiResponse_schema_stream_DuplicateFieldApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8480,7 +8480,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateModelApiRequest */
-        post: operations["DuplicateModelApiRequest_schema_v5_stream_DuplicateModelApiRequest_post"];
+        post: operations["DuplicateModelApiRequest_schema_stream_DuplicateModelApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8497,7 +8497,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateModelApiResponse */
-        post: operations["DuplicateModelApiResponse_schema_v5_stream_DuplicateModelApiResponse_post"];
+        post: operations["DuplicateModelApiResponse_schema_stream_DuplicateModelApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8514,7 +8514,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateParameterApiRequest */
-        post: operations["DuplicateParameterApiRequest_schema_v5_stream_DuplicateParameterApiRequest_post"];
+        post: operations["DuplicateParameterApiRequest_schema_stream_DuplicateParameterApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8531,7 +8531,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateParameterApiResponse */
-        post: operations["DuplicateParameterApiResponse_schema_v5_stream_DuplicateParameterApiResponse_post"];
+        post: operations["DuplicateParameterApiResponse_schema_stream_DuplicateParameterApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8548,7 +8548,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicatePersonaApiRequest */
-        post: operations["DuplicatePersonaApiRequest_schema_v5_stream_DuplicatePersonaApiRequest_post"];
+        post: operations["DuplicatePersonaApiRequest_schema_stream_DuplicatePersonaApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8565,7 +8565,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicatePersonaApiResponse */
-        post: operations["DuplicatePersonaApiResponse_schema_v5_stream_DuplicatePersonaApiResponse_post"];
+        post: operations["DuplicatePersonaApiResponse_schema_stream_DuplicatePersonaApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8582,7 +8582,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateProfileApiRequest */
-        post: operations["DuplicateProfileApiRequest_schema_v5_stream_DuplicateProfileApiRequest_post"];
+        post: operations["DuplicateProfileApiRequest_schema_stream_DuplicateProfileApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8599,7 +8599,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateProfileApiResponse */
-        post: operations["DuplicateProfileApiResponse_schema_v5_stream_DuplicateProfileApiResponse_post"];
+        post: operations["DuplicateProfileApiResponse_schema_stream_DuplicateProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8616,7 +8616,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateProviderApiRequest */
-        post: operations["DuplicateProviderApiRequest_schema_v5_stream_DuplicateProviderApiRequest_post"];
+        post: operations["DuplicateProviderApiRequest_schema_stream_DuplicateProviderApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8633,7 +8633,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateProviderApiResponse */
-        post: operations["DuplicateProviderApiResponse_schema_v5_stream_DuplicateProviderApiResponse_post"];
+        post: operations["DuplicateProviderApiResponse_schema_stream_DuplicateProviderApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8650,7 +8650,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateRubricApiRequest */
-        post: operations["DuplicateRubricApiRequest_schema_v5_stream_DuplicateRubricApiRequest_post"];
+        post: operations["DuplicateRubricApiRequest_schema_stream_DuplicateRubricApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8667,7 +8667,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateRubricApiResponse */
-        post: operations["DuplicateRubricApiResponse_schema_v5_stream_DuplicateRubricApiResponse_post"];
+        post: operations["DuplicateRubricApiResponse_schema_stream_DuplicateRubricApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8684,7 +8684,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateScenarioApiRequest */
-        post: operations["DuplicateScenarioApiRequest_schema_v5_stream_DuplicateScenarioApiRequest_post"];
+        post: operations["DuplicateScenarioApiRequest_schema_stream_DuplicateScenarioApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8701,7 +8701,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateScenarioApiResponse */
-        post: operations["DuplicateScenarioApiResponse_schema_v5_stream_DuplicateScenarioApiResponse_post"];
+        post: operations["DuplicateScenarioApiResponse_schema_stream_DuplicateScenarioApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8718,7 +8718,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateSettingApiRequest */
-        post: operations["DuplicateSettingApiRequest_schema_v5_stream_DuplicateSettingApiRequest_post"];
+        post: operations["DuplicateSettingApiRequest_schema_stream_DuplicateSettingApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8735,7 +8735,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateSettingApiResponse */
-        post: operations["DuplicateSettingApiResponse_schema_v5_stream_DuplicateSettingApiResponse_post"];
+        post: operations["DuplicateSettingApiResponse_schema_stream_DuplicateSettingApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8752,7 +8752,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateSimulationApiRequest */
-        post: operations["DuplicateSimulationApiRequest_schema_v5_stream_DuplicateSimulationApiRequest_post"];
+        post: operations["DuplicateSimulationApiRequest_schema_stream_DuplicateSimulationApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8769,7 +8769,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateSimulationApiResponse */
-        post: operations["DuplicateSimulationApiResponse_schema_v5_stream_DuplicateSimulationApiResponse_post"];
+        post: operations["DuplicateSimulationApiResponse_schema_stream_DuplicateSimulationApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8786,7 +8786,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateToolApiRequest */
-        post: operations["DuplicateToolApiRequest_schema_v5_stream_DuplicateToolApiRequest_post"];
+        post: operations["DuplicateToolApiRequest_schema_stream_DuplicateToolApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8803,7 +8803,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: DuplicateToolApiResponse */
-        post: operations["DuplicateToolApiResponse_schema_v5_stream_DuplicateToolApiResponse_post"];
+        post: operations["DuplicateToolApiResponse_schema_stream_DuplicateToolApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8820,7 +8820,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: EmulateProfileApiRequest */
-        post: operations["EmulateProfileApiRequest_schema_v5_stream_EmulateProfileApiRequest_post"];
+        post: operations["EmulateProfileApiRequest_schema_stream_EmulateProfileApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8837,7 +8837,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: EmulateProfileApiResponse */
-        post: operations["EmulateProfileApiResponse_schema_v5_stream_EmulateProfileApiResponse_post"];
+        post: operations["EmulateProfileApiResponse_schema_stream_EmulateProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8854,7 +8854,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportAgentApiRequest */
-        post: operations["ExportAgentApiRequest_schema_v5_stream_ExportAgentApiRequest_post"];
+        post: operations["ExportAgentApiRequest_schema_stream_ExportAgentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8871,7 +8871,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportAgentApiResponse */
-        post: operations["ExportAgentApiResponse_schema_v5_stream_ExportAgentApiResponse_post"];
+        post: operations["ExportAgentApiResponse_schema_stream_ExportAgentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8888,7 +8888,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportAuthApiRequest */
-        post: operations["ExportAuthApiRequest_schema_v5_stream_ExportAuthApiRequest_post"];
+        post: operations["ExportAuthApiRequest_schema_stream_ExportAuthApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8905,7 +8905,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportAuthApiResponse */
-        post: operations["ExportAuthApiResponse_schema_v5_stream_ExportAuthApiResponse_post"];
+        post: operations["ExportAuthApiResponse_schema_stream_ExportAuthApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8922,7 +8922,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportCohortApiRequest */
-        post: operations["ExportCohortApiRequest_schema_v5_stream_ExportCohortApiRequest_post"];
+        post: operations["ExportCohortApiRequest_schema_stream_ExportCohortApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8939,7 +8939,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportCohortApiResponse */
-        post: operations["ExportCohortApiResponse_schema_v5_stream_ExportCohortApiResponse_post"];
+        post: operations["ExportCohortApiResponse_schema_stream_ExportCohortApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8956,7 +8956,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportDepartmentApiRequest */
-        post: operations["ExportDepartmentApiRequest_schema_v5_stream_ExportDepartmentApiRequest_post"];
+        post: operations["ExportDepartmentApiRequest_schema_stream_ExportDepartmentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8973,7 +8973,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportDepartmentApiResponse */
-        post: operations["ExportDepartmentApiResponse_schema_v5_stream_ExportDepartmentApiResponse_post"];
+        post: operations["ExportDepartmentApiResponse_schema_stream_ExportDepartmentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8990,7 +8990,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportDocumentApiRequest */
-        post: operations["ExportDocumentApiRequest_schema_v5_stream_ExportDocumentApiRequest_post"];
+        post: operations["ExportDocumentApiRequest_schema_stream_ExportDocumentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9007,7 +9007,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportDocumentApiResponse */
-        post: operations["ExportDocumentApiResponse_schema_v5_stream_ExportDocumentApiResponse_post"];
+        post: operations["ExportDocumentApiResponse_schema_stream_ExportDocumentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9024,7 +9024,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportEvalApiResponse */
-        post: operations["ExportEvalApiResponse_schema_v5_stream_ExportEvalApiResponse_post"];
+        post: operations["ExportEvalApiResponse_schema_stream_ExportEvalApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9041,7 +9041,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportFieldApiRequest */
-        post: operations["ExportFieldApiRequest_schema_v5_stream_ExportFieldApiRequest_post"];
+        post: operations["ExportFieldApiRequest_schema_stream_ExportFieldApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9058,7 +9058,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportFieldApiResponse */
-        post: operations["ExportFieldApiResponse_schema_v5_stream_ExportFieldApiResponse_post"];
+        post: operations["ExportFieldApiResponse_schema_stream_ExportFieldApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9075,7 +9075,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportModelApiRequest */
-        post: operations["ExportModelApiRequest_schema_v5_stream_ExportModelApiRequest_post"];
+        post: operations["ExportModelApiRequest_schema_stream_ExportModelApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9092,7 +9092,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportModelApiResponse */
-        post: operations["ExportModelApiResponse_schema_v5_stream_ExportModelApiResponse_post"];
+        post: operations["ExportModelApiResponse_schema_stream_ExportModelApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9109,7 +9109,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportParameterApiRequest */
-        post: operations["ExportParameterApiRequest_schema_v5_stream_ExportParameterApiRequest_post"];
+        post: operations["ExportParameterApiRequest_schema_stream_ExportParameterApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9126,7 +9126,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportParameterApiResponse */
-        post: operations["ExportParameterApiResponse_schema_v5_stream_ExportParameterApiResponse_post"];
+        post: operations["ExportParameterApiResponse_schema_stream_ExportParameterApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9143,7 +9143,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportPersonaApiRequest */
-        post: operations["ExportPersonaApiRequest_schema_v5_stream_ExportPersonaApiRequest_post"];
+        post: operations["ExportPersonaApiRequest_schema_stream_ExportPersonaApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9160,7 +9160,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportPersonaApiResponse */
-        post: operations["ExportPersonaApiResponse_schema_v5_stream_ExportPersonaApiResponse_post"];
+        post: operations["ExportPersonaApiResponse_schema_stream_ExportPersonaApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9177,7 +9177,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportProfileApiRequest */
-        post: operations["ExportProfileApiRequest_schema_v5_stream_ExportProfileApiRequest_post"];
+        post: operations["ExportProfileApiRequest_schema_stream_ExportProfileApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9194,7 +9194,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportProfileApiResponse */
-        post: operations["ExportProfileApiResponse_schema_v5_stream_ExportProfileApiResponse_post"];
+        post: operations["ExportProfileApiResponse_schema_stream_ExportProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9211,7 +9211,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportProviderApiRequest */
-        post: operations["ExportProviderApiRequest_schema_v5_stream_ExportProviderApiRequest_post"];
+        post: operations["ExportProviderApiRequest_schema_stream_ExportProviderApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9228,7 +9228,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportProviderApiResponse */
-        post: operations["ExportProviderApiResponse_schema_v5_stream_ExportProviderApiResponse_post"];
+        post: operations["ExportProviderApiResponse_schema_stream_ExportProviderApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9245,7 +9245,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportRubricApiResponse */
-        post: operations["ExportRubricApiResponse_schema_v5_stream_ExportRubricApiResponse_post"];
+        post: operations["ExportRubricApiResponse_schema_stream_ExportRubricApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9262,7 +9262,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportScenarioApiRequest */
-        post: operations["ExportScenarioApiRequest_schema_v5_stream_ExportScenarioApiRequest_post"];
+        post: operations["ExportScenarioApiRequest_schema_stream_ExportScenarioApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9279,7 +9279,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportScenarioApiResponse */
-        post: operations["ExportScenarioApiResponse_schema_v5_stream_ExportScenarioApiResponse_post"];
+        post: operations["ExportScenarioApiResponse_schema_stream_ExportScenarioApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9296,7 +9296,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportSettingApiRequest */
-        post: operations["ExportSettingApiRequest_schema_v5_stream_ExportSettingApiRequest_post"];
+        post: operations["ExportSettingApiRequest_schema_stream_ExportSettingApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9313,7 +9313,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportSettingApiResponse */
-        post: operations["ExportSettingApiResponse_schema_v5_stream_ExportSettingApiResponse_post"];
+        post: operations["ExportSettingApiResponse_schema_stream_ExportSettingApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9330,7 +9330,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportSimulationApiRequest */
-        post: operations["ExportSimulationApiRequest_schema_v5_stream_ExportSimulationApiRequest_post"];
+        post: operations["ExportSimulationApiRequest_schema_stream_ExportSimulationApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9347,7 +9347,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportSimulationApiResponse */
-        post: operations["ExportSimulationApiResponse_schema_v5_stream_ExportSimulationApiResponse_post"];
+        post: operations["ExportSimulationApiResponse_schema_stream_ExportSimulationApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9364,7 +9364,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportToolApiRequest */
-        post: operations["ExportToolApiRequest_schema_v5_stream_ExportToolApiRequest_post"];
+        post: operations["ExportToolApiRequest_schema_stream_ExportToolApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9381,7 +9381,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ExportToolApiResponse */
-        post: operations["ExportToolApiResponse_schema_v5_stream_ExportToolApiResponse_post"];
+        post: operations["ExportToolApiResponse_schema_stream_ExportToolApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9398,7 +9398,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GeneratePayload */
-        post: operations["GeneratePayload_schema_v5_stream_GeneratePayload_post"];
+        post: operations["GeneratePayload_schema_stream_GeneratePayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9415,7 +9415,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GenerationCompleteEvent */
-        post: operations["GenerationCompleteEvent_schema_v5_stream_GenerationCompleteEvent_post"];
+        post: operations["GenerationCompleteEvent_schema_stream_GenerationCompleteEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9432,7 +9432,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GenerationErrorEvent */
-        post: operations["GenerationErrorEvent_schema_v5_stream_GenerationErrorEvent_post"];
+        post: operations["GenerationErrorEvent_schema_stream_GenerationErrorEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9449,7 +9449,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GenerationMediaCompleteEvent */
-        post: operations["GenerationMediaCompleteEvent_schema_v5_stream_GenerationMediaCompleteEvent_post"];
+        post: operations["GenerationMediaCompleteEvent_schema_stream_GenerationMediaCompleteEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9466,7 +9466,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GenerationMediaProgressEvent */
-        post: operations["GenerationMediaProgressEvent_schema_v5_stream_GenerationMediaProgressEvent_post"];
+        post: operations["GenerationMediaProgressEvent_schema_stream_GenerationMediaProgressEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9483,7 +9483,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GenerationProgressEvent */
-        post: operations["GenerationProgressEvent_schema_v5_stream_GenerationProgressEvent_post"];
+        post: operations["GenerationProgressEvent_schema_stream_GenerationProgressEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9500,7 +9500,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GenerationSavedEvent */
-        post: operations["GenerationSavedEvent_schema_v5_stream_GenerationSavedEvent_post"];
+        post: operations["GenerationSavedEvent_schema_stream_GenerationSavedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9517,7 +9517,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAgentApiRequest */
-        post: operations["GetAgentApiRequest_schema_v5_stream_GetAgentApiRequest_post"];
+        post: operations["GetAgentApiRequest_schema_stream_GetAgentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9534,7 +9534,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAgentApiResponse */
-        post: operations["GetAgentApiResponse_schema_v5_stream_GetAgentApiResponse_post"];
+        post: operations["GetAgentApiResponse_schema_stream_GetAgentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9551,7 +9551,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAgentDraftsApiResponse */
-        post: operations["GetAgentDraftsApiResponse_schema_v5_stream_GetAgentDraftsApiResponse_post"];
+        post: operations["GetAgentDraftsApiResponse_schema_stream_GetAgentDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9568,7 +9568,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAttemptDetailRequest */
-        post: operations["GetAttemptDetailRequest_schema_v5_stream_GetAttemptDetailRequest_post"];
+        post: operations["GetAttemptDetailRequest_schema_stream_GetAttemptDetailRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9585,7 +9585,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAttemptDetailResponse */
-        post: operations["GetAttemptDetailResponse_schema_v5_stream_GetAttemptDetailResponse_post"];
+        post: operations["GetAttemptDetailResponse_schema_stream_GetAttemptDetailResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9602,7 +9602,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAuthApiRequest */
-        post: operations["GetAuthApiRequest_schema_v5_stream_GetAuthApiRequest_post"];
+        post: operations["GetAuthApiRequest_schema_stream_GetAuthApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9619,7 +9619,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAuthApiResponse */
-        post: operations["GetAuthApiResponse_schema_v5_stream_GetAuthApiResponse_post"];
+        post: operations["GetAuthApiResponse_schema_stream_GetAuthApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9636,7 +9636,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetAuthDraftsApiResponse */
-        post: operations["GetAuthDraftsApiResponse_schema_v5_stream_GetAuthDraftsApiResponse_post"];
+        post: operations["GetAuthDraftsApiResponse_schema_stream_GetAuthDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9653,7 +9653,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetChatRequest */
-        post: operations["GetChatRequest_schema_v5_stream_GetChatRequest_post"];
+        post: operations["GetChatRequest_schema_stream_GetChatRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9670,7 +9670,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetChatResponse */
-        post: operations["GetChatResponse_schema_v5_stream_GetChatResponse_post"];
+        post: operations["GetChatResponse_schema_stream_GetChatResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9687,7 +9687,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetCohortApiRequest */
-        post: operations["GetCohortApiRequest_schema_v5_stream_GetCohortApiRequest_post"];
+        post: operations["GetCohortApiRequest_schema_stream_GetCohortApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9704,7 +9704,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetCohortApiResponse */
-        post: operations["GetCohortApiResponse_schema_v5_stream_GetCohortApiResponse_post"];
+        post: operations["GetCohortApiResponse_schema_stream_GetCohortApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9721,7 +9721,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetCohortDraftsApiResponse */
-        post: operations["GetCohortDraftsApiResponse_schema_v5_stream_GetCohortDraftsApiResponse_post"];
+        post: operations["GetCohortDraftsApiResponse_schema_stream_GetCohortDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9738,7 +9738,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetDepartmentApiRequest */
-        post: operations["GetDepartmentApiRequest_schema_v5_stream_GetDepartmentApiRequest_post"];
+        post: operations["GetDepartmentApiRequest_schema_stream_GetDepartmentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9755,7 +9755,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetDepartmentApiResponse */
-        post: operations["GetDepartmentApiResponse_schema_v5_stream_GetDepartmentApiResponse_post"];
+        post: operations["GetDepartmentApiResponse_schema_stream_GetDepartmentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9772,7 +9772,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetDepartmentDraftsApiResponse */
-        post: operations["GetDepartmentDraftsApiResponse_schema_v5_stream_GetDepartmentDraftsApiResponse_post"];
+        post: operations["GetDepartmentDraftsApiResponse_schema_stream_GetDepartmentDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9789,7 +9789,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetDocumentApiRequest */
-        post: operations["GetDocumentApiRequest_schema_v5_stream_GetDocumentApiRequest_post"];
+        post: operations["GetDocumentApiRequest_schema_stream_GetDocumentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9806,7 +9806,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetDocumentApiResponse */
-        post: operations["GetDocumentApiResponse_schema_v5_stream_GetDocumentApiResponse_post"];
+        post: operations["GetDocumentApiResponse_schema_stream_GetDocumentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9823,7 +9823,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetDocumentDraftsApiResponse */
-        post: operations["GetDocumentDraftsApiResponse_schema_v5_stream_GetDocumentDraftsApiResponse_post"];
+        post: operations["GetDocumentDraftsApiResponse_schema_stream_GetDocumentDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9840,7 +9840,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetEvalApiRequest */
-        post: operations["GetEvalApiRequest_schema_v5_stream_GetEvalApiRequest_post"];
+        post: operations["GetEvalApiRequest_schema_stream_GetEvalApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9857,7 +9857,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetEvalApiResponse */
-        post: operations["GetEvalApiResponse_schema_v5_stream_GetEvalApiResponse_post"];
+        post: operations["GetEvalApiResponse_schema_stream_GetEvalApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9874,7 +9874,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetEvalDraftsApiResponse */
-        post: operations["GetEvalDraftsApiResponse_schema_v5_stream_GetEvalDraftsApiResponse_post"];
+        post: operations["GetEvalDraftsApiResponse_schema_stream_GetEvalDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9891,7 +9891,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetFieldApiRequest */
-        post: operations["GetFieldApiRequest_schema_v5_stream_GetFieldApiRequest_post"];
+        post: operations["GetFieldApiRequest_schema_stream_GetFieldApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9908,7 +9908,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetFieldApiResponse */
-        post: operations["GetFieldApiResponse_schema_v5_stream_GetFieldApiResponse_post"];
+        post: operations["GetFieldApiResponse_schema_stream_GetFieldApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9925,7 +9925,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetFieldDraftsApiResponse */
-        post: operations["GetFieldDraftsApiResponse_schema_v5_stream_GetFieldDraftsApiResponse_post"];
+        post: operations["GetFieldDraftsApiResponse_schema_stream_GetFieldDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9942,7 +9942,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetGroupDetailRequest */
-        post: operations["GetGroupDetailRequest_schema_v5_stream_GetGroupDetailRequest_post"];
+        post: operations["GetGroupDetailRequest_schema_stream_GetGroupDetailRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9959,7 +9959,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetGroupDetailResponse */
-        post: operations["GetGroupDetailResponse_schema_v5_stream_GetGroupDetailResponse_post"];
+        post: operations["GetGroupDetailResponse_schema_stream_GetGroupDetailResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9976,7 +9976,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetHomeRequest */
-        post: operations["GetHomeRequest_schema_v5_stream_GetHomeRequest_post"];
+        post: operations["GetHomeRequest_schema_stream_GetHomeRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9993,7 +9993,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetHomeResponse */
-        post: operations["GetHomeResponse_schema_v5_stream_GetHomeResponse_post"];
+        post: operations["GetHomeResponse_schema_stream_GetHomeResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10010,7 +10010,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetModelApiRequest */
-        post: operations["GetModelApiRequest_schema_v5_stream_GetModelApiRequest_post"];
+        post: operations["GetModelApiRequest_schema_stream_GetModelApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10027,7 +10027,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetModelApiResponse */
-        post: operations["GetModelApiResponse_schema_v5_stream_GetModelApiResponse_post"];
+        post: operations["GetModelApiResponse_schema_stream_GetModelApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10044,7 +10044,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetModelDraftsApiResponse */
-        post: operations["GetModelDraftsApiResponse_schema_v5_stream_GetModelDraftsApiResponse_post"];
+        post: operations["GetModelDraftsApiResponse_schema_stream_GetModelDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10061,7 +10061,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetParameterApiRequest */
-        post: operations["GetParameterApiRequest_schema_v5_stream_GetParameterApiRequest_post"];
+        post: operations["GetParameterApiRequest_schema_stream_GetParameterApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10078,7 +10078,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetParameterApiResponse */
-        post: operations["GetParameterApiResponse_schema_v5_stream_GetParameterApiResponse_post"];
+        post: operations["GetParameterApiResponse_schema_stream_GetParameterApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10095,7 +10095,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetParameterDraftsApiResponse */
-        post: operations["GetParameterDraftsApiResponse_schema_v5_stream_GetParameterDraftsApiResponse_post"];
+        post: operations["GetParameterDraftsApiResponse_schema_stream_GetParameterDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10112,7 +10112,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetPersonaApiRequest */
-        post: operations["GetPersonaApiRequest_schema_v5_stream_GetPersonaApiRequest_post"];
+        post: operations["GetPersonaApiRequest_schema_stream_GetPersonaApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10129,7 +10129,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetPersonaApiResponse */
-        post: operations["GetPersonaApiResponse_schema_v5_stream_GetPersonaApiResponse_post"];
+        post: operations["GetPersonaApiResponse_schema_stream_GetPersonaApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10146,7 +10146,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetPersonaDraftsApiResponse */
-        post: operations["GetPersonaDraftsApiResponse_schema_v5_stream_GetPersonaDraftsApiResponse_post"];
+        post: operations["GetPersonaDraftsApiResponse_schema_stream_GetPersonaDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10163,7 +10163,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetPracticeRequest */
-        post: operations["GetPracticeRequest_schema_v5_stream_GetPracticeRequest_post"];
+        post: operations["GetPracticeRequest_schema_stream_GetPracticeRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10180,7 +10180,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetPracticeResponse */
-        post: operations["GetPracticeResponse_schema_v5_stream_GetPracticeResponse_post"];
+        post: operations["GetPracticeResponse_schema_stream_GetPracticeResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10197,7 +10197,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetProfileApiRequest */
-        post: operations["GetProfileApiRequest_schema_v5_stream_GetProfileApiRequest_post"];
+        post: operations["GetProfileApiRequest_schema_stream_GetProfileApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10214,7 +10214,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetProfileApiResponse */
-        post: operations["GetProfileApiResponse_schema_v5_stream_GetProfileApiResponse_post"];
+        post: operations["GetProfileApiResponse_schema_stream_GetProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10231,7 +10231,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetProfileDraftsApiResponse */
-        post: operations["GetProfileDraftsApiResponse_schema_v5_stream_GetProfileDraftsApiResponse_post"];
+        post: operations["GetProfileDraftsApiResponse_schema_stream_GetProfileDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10248,7 +10248,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetProviderApiRequest */
-        post: operations["GetProviderApiRequest_schema_v5_stream_GetProviderApiRequest_post"];
+        post: operations["GetProviderApiRequest_schema_stream_GetProviderApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10265,7 +10265,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetProviderApiResponse */
-        post: operations["GetProviderApiResponse_schema_v5_stream_GetProviderApiResponse_post"];
+        post: operations["GetProviderApiResponse_schema_stream_GetProviderApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10282,7 +10282,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetProviderDraftsApiResponse */
-        post: operations["GetProviderDraftsApiResponse_schema_v5_stream_GetProviderDraftsApiResponse_post"];
+        post: operations["GetProviderDraftsApiResponse_schema_stream_GetProviderDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10299,7 +10299,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetRubricApiRequest */
-        post: operations["GetRubricApiRequest_schema_v5_stream_GetRubricApiRequest_post"];
+        post: operations["GetRubricApiRequest_schema_stream_GetRubricApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10316,7 +10316,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetRubricApiResponse */
-        post: operations["GetRubricApiResponse_schema_v5_stream_GetRubricApiResponse_post"];
+        post: operations["GetRubricApiResponse_schema_stream_GetRubricApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10333,7 +10333,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetRubricDraftsApiResponse */
-        post: operations["GetRubricDraftsApiResponse_schema_v5_stream_GetRubricDraftsApiResponse_post"];
+        post: operations["GetRubricDraftsApiResponse_schema_stream_GetRubricDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10350,7 +10350,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetScenarioApiRequest */
-        post: operations["GetScenarioApiRequest_schema_v5_stream_GetScenarioApiRequest_post"];
+        post: operations["GetScenarioApiRequest_schema_stream_GetScenarioApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10367,7 +10367,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetScenarioApiResponse */
-        post: operations["GetScenarioApiResponse_schema_v5_stream_GetScenarioApiResponse_post"];
+        post: operations["GetScenarioApiResponse_schema_stream_GetScenarioApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10384,7 +10384,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetScenarioDraftsApiResponse */
-        post: operations["GetScenarioDraftsApiResponse_schema_v5_stream_GetScenarioDraftsApiResponse_post"];
+        post: operations["GetScenarioDraftsApiResponse_schema_stream_GetScenarioDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10401,7 +10401,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSessionDetailRequest */
-        post: operations["GetSessionDetailRequest_schema_v5_stream_GetSessionDetailRequest_post"];
+        post: operations["GetSessionDetailRequest_schema_stream_GetSessionDetailRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10418,7 +10418,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSessionDetailResponse */
-        post: operations["GetSessionDetailResponse_schema_v5_stream_GetSessionDetailResponse_post"];
+        post: operations["GetSessionDetailResponse_schema_stream_GetSessionDetailResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10435,7 +10435,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSettingApiRequest */
-        post: operations["GetSettingApiRequest_schema_v5_stream_GetSettingApiRequest_post"];
+        post: operations["GetSettingApiRequest_schema_stream_GetSettingApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10452,7 +10452,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSettingApiResponse */
-        post: operations["GetSettingApiResponse_schema_v5_stream_GetSettingApiResponse_post"];
+        post: operations["GetSettingApiResponse_schema_stream_GetSettingApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10469,7 +10469,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSettingDraftsApiResponse */
-        post: operations["GetSettingDraftsApiResponse_schema_v5_stream_GetSettingDraftsApiResponse_post"];
+        post: operations["GetSettingDraftsApiResponse_schema_stream_GetSettingDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10486,7 +10486,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSimulationApiRequest */
-        post: operations["GetSimulationApiRequest_schema_v5_stream_GetSimulationApiRequest_post"];
+        post: operations["GetSimulationApiRequest_schema_stream_GetSimulationApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10503,7 +10503,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSimulationApiResponse */
-        post: operations["GetSimulationApiResponse_schema_v5_stream_GetSimulationApiResponse_post"];
+        post: operations["GetSimulationApiResponse_schema_stream_GetSimulationApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10520,7 +10520,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSimulationDraftsApiResponse */
-        post: operations["GetSimulationDraftsApiResponse_schema_v5_stream_GetSimulationDraftsApiResponse_post"];
+        post: operations["GetSimulationDraftsApiResponse_schema_stream_GetSimulationDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10537,7 +10537,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSuiteRequest */
-        post: operations["GetSuiteRequest_schema_v5_stream_GetSuiteRequest_post"];
+        post: operations["GetSuiteRequest_schema_stream_GetSuiteRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10554,7 +10554,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetSuiteResponse */
-        post: operations["GetSuiteResponse_schema_v5_stream_GetSuiteResponse_post"];
+        post: operations["GetSuiteResponse_schema_stream_GetSuiteResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10571,7 +10571,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetTestArtifactRequest */
-        post: operations["GetTestArtifactRequest_schema_v5_stream_GetTestArtifactRequest_post"];
+        post: operations["GetTestArtifactRequest_schema_stream_GetTestArtifactRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10588,7 +10588,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetTestArtifactResponse */
-        post: operations["GetTestArtifactResponse_schema_v5_stream_GetTestArtifactResponse_post"];
+        post: operations["GetTestArtifactResponse_schema_stream_GetTestArtifactResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10605,7 +10605,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetToolApiRequest */
-        post: operations["GetToolApiRequest_schema_v5_stream_GetToolApiRequest_post"];
+        post: operations["GetToolApiRequest_schema_stream_GetToolApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10622,7 +10622,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetToolApiResponse */
-        post: operations["GetToolApiResponse_schema_v5_stream_GetToolApiResponse_post"];
+        post: operations["GetToolApiResponse_schema_stream_GetToolApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10639,7 +10639,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: GetToolDraftsApiResponse */
-        post: operations["GetToolDraftsApiResponse_schema_v5_stream_GetToolDraftsApiResponse_post"];
+        post: operations["GetToolDraftsApiResponse_schema_stream_GetToolDraftsApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10656,7 +10656,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: HealthRequest */
-        post: operations["HealthRequest_schema_v5_stream_HealthRequest_post"];
+        post: operations["HealthRequest_schema_stream_HealthRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10673,7 +10673,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: HealthResponse */
-        post: operations["HealthResponse_schema_v5_stream_HealthResponse_post"];
+        post: operations["HealthResponse_schema_stream_HealthResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10690,7 +10690,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: LeaderboardRequest */
-        post: operations["LeaderboardRequest_schema_v5_stream_LeaderboardRequest_post"];
+        post: operations["LeaderboardRequest_schema_stream_LeaderboardRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10707,7 +10707,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: LeaderboardResponse */
-        post: operations["LeaderboardResponse_schema_v5_stream_LeaderboardResponse_post"];
+        post: operations["LeaderboardResponse_schema_stream_LeaderboardResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10724,7 +10724,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: OperationErrorEvent */
-        post: operations["OperationErrorEvent_schema_v5_stream_OperationErrorEvent_post"];
+        post: operations["OperationErrorEvent_schema_stream_OperationErrorEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10741,7 +10741,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchAgentDraftApiRequest */
-        post: operations["PatchAgentDraftApiRequest_schema_v5_stream_PatchAgentDraftApiRequest_post"];
+        post: operations["PatchAgentDraftApiRequest_schema_stream_PatchAgentDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10758,7 +10758,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchAgentDraftApiResponse */
-        post: operations["PatchAgentDraftApiResponse_schema_v5_stream_PatchAgentDraftApiResponse_post"];
+        post: operations["PatchAgentDraftApiResponse_schema_stream_PatchAgentDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10775,7 +10775,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchAuthDraftApiRequest */
-        post: operations["PatchAuthDraftApiRequest_schema_v5_stream_PatchAuthDraftApiRequest_post"];
+        post: operations["PatchAuthDraftApiRequest_schema_stream_PatchAuthDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10792,7 +10792,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchAuthDraftApiResponse */
-        post: operations["PatchAuthDraftApiResponse_schema_v5_stream_PatchAuthDraftApiResponse_post"];
+        post: operations["PatchAuthDraftApiResponse_schema_stream_PatchAuthDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10809,7 +10809,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchCohortDraftApiRequest */
-        post: operations["PatchCohortDraftApiRequest_schema_v5_stream_PatchCohortDraftApiRequest_post"];
+        post: operations["PatchCohortDraftApiRequest_schema_stream_PatchCohortDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10826,7 +10826,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchCohortDraftApiResponse */
-        post: operations["PatchCohortDraftApiResponse_schema_v5_stream_PatchCohortDraftApiResponse_post"];
+        post: operations["PatchCohortDraftApiResponse_schema_stream_PatchCohortDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10843,7 +10843,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchDepartmentDraftApiRequest */
-        post: operations["PatchDepartmentDraftApiRequest_schema_v5_stream_PatchDepartmentDraftApiRequest_post"];
+        post: operations["PatchDepartmentDraftApiRequest_schema_stream_PatchDepartmentDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10860,7 +10860,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchDepartmentDraftApiResponse */
-        post: operations["PatchDepartmentDraftApiResponse_schema_v5_stream_PatchDepartmentDraftApiResponse_post"];
+        post: operations["PatchDepartmentDraftApiResponse_schema_stream_PatchDepartmentDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10877,7 +10877,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchDocumentDraftApiRequest */
-        post: operations["PatchDocumentDraftApiRequest_schema_v5_stream_PatchDocumentDraftApiRequest_post"];
+        post: operations["PatchDocumentDraftApiRequest_schema_stream_PatchDocumentDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10894,7 +10894,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchDocumentDraftApiResponse */
-        post: operations["PatchDocumentDraftApiResponse_schema_v5_stream_PatchDocumentDraftApiResponse_post"];
+        post: operations["PatchDocumentDraftApiResponse_schema_stream_PatchDocumentDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10911,7 +10911,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchEvalDraftApiRequest */
-        post: operations["PatchEvalDraftApiRequest_schema_v5_stream_PatchEvalDraftApiRequest_post"];
+        post: operations["PatchEvalDraftApiRequest_schema_stream_PatchEvalDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10928,7 +10928,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchEvalDraftApiResponse */
-        post: operations["PatchEvalDraftApiResponse_schema_v5_stream_PatchEvalDraftApiResponse_post"];
+        post: operations["PatchEvalDraftApiResponse_schema_stream_PatchEvalDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10945,7 +10945,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchFieldDraftApiRequest */
-        post: operations["PatchFieldDraftApiRequest_schema_v5_stream_PatchFieldDraftApiRequest_post"];
+        post: operations["PatchFieldDraftApiRequest_schema_stream_PatchFieldDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10962,7 +10962,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchFieldDraftApiResponse */
-        post: operations["PatchFieldDraftApiResponse_schema_v5_stream_PatchFieldDraftApiResponse_post"];
+        post: operations["PatchFieldDraftApiResponse_schema_stream_PatchFieldDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10979,7 +10979,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchModelDraftApiRequest */
-        post: operations["PatchModelDraftApiRequest_schema_v5_stream_PatchModelDraftApiRequest_post"];
+        post: operations["PatchModelDraftApiRequest_schema_stream_PatchModelDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10996,7 +10996,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchModelDraftApiResponse */
-        post: operations["PatchModelDraftApiResponse_schema_v5_stream_PatchModelDraftApiResponse_post"];
+        post: operations["PatchModelDraftApiResponse_schema_stream_PatchModelDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11013,7 +11013,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchParameterDraftApiRequest */
-        post: operations["PatchParameterDraftApiRequest_schema_v5_stream_PatchParameterDraftApiRequest_post"];
+        post: operations["PatchParameterDraftApiRequest_schema_stream_PatchParameterDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11030,7 +11030,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchParameterDraftApiResponse */
-        post: operations["PatchParameterDraftApiResponse_schema_v5_stream_PatchParameterDraftApiResponse_post"];
+        post: operations["PatchParameterDraftApiResponse_schema_stream_PatchParameterDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11047,7 +11047,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchPersonaDraftApiRequest */
-        post: operations["PatchPersonaDraftApiRequest_schema_v5_stream_PatchPersonaDraftApiRequest_post"];
+        post: operations["PatchPersonaDraftApiRequest_schema_stream_PatchPersonaDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11064,7 +11064,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchPersonaDraftApiResponse */
-        post: operations["PatchPersonaDraftApiResponse_schema_v5_stream_PatchPersonaDraftApiResponse_post"];
+        post: operations["PatchPersonaDraftApiResponse_schema_stream_PatchPersonaDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11081,7 +11081,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchProfileDraftApiRequest */
-        post: operations["PatchProfileDraftApiRequest_schema_v5_stream_PatchProfileDraftApiRequest_post"];
+        post: operations["PatchProfileDraftApiRequest_schema_stream_PatchProfileDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11098,7 +11098,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchProfileDraftApiResponse */
-        post: operations["PatchProfileDraftApiResponse_schema_v5_stream_PatchProfileDraftApiResponse_post"];
+        post: operations["PatchProfileDraftApiResponse_schema_stream_PatchProfileDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11115,7 +11115,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchProviderDraftApiRequest */
-        post: operations["PatchProviderDraftApiRequest_schema_v5_stream_PatchProviderDraftApiRequest_post"];
+        post: operations["PatchProviderDraftApiRequest_schema_stream_PatchProviderDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11132,7 +11132,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchProviderDraftApiResponse */
-        post: operations["PatchProviderDraftApiResponse_schema_v5_stream_PatchProviderDraftApiResponse_post"];
+        post: operations["PatchProviderDraftApiResponse_schema_stream_PatchProviderDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11149,7 +11149,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchRubricDraftApiRequest */
-        post: operations["PatchRubricDraftApiRequest_schema_v5_stream_PatchRubricDraftApiRequest_post"];
+        post: operations["PatchRubricDraftApiRequest_schema_stream_PatchRubricDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11166,7 +11166,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchRubricDraftApiResponse */
-        post: operations["PatchRubricDraftApiResponse_schema_v5_stream_PatchRubricDraftApiResponse_post"];
+        post: operations["PatchRubricDraftApiResponse_schema_stream_PatchRubricDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11183,7 +11183,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchScenarioDraftApiRequest */
-        post: operations["PatchScenarioDraftApiRequest_schema_v5_stream_PatchScenarioDraftApiRequest_post"];
+        post: operations["PatchScenarioDraftApiRequest_schema_stream_PatchScenarioDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11200,7 +11200,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchScenarioDraftApiResponse */
-        post: operations["PatchScenarioDraftApiResponse_schema_v5_stream_PatchScenarioDraftApiResponse_post"];
+        post: operations["PatchScenarioDraftApiResponse_schema_stream_PatchScenarioDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11217,7 +11217,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchSettingDraftApiRequest */
-        post: operations["PatchSettingDraftApiRequest_schema_v5_stream_PatchSettingDraftApiRequest_post"];
+        post: operations["PatchSettingDraftApiRequest_schema_stream_PatchSettingDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11234,7 +11234,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchSettingDraftApiResponse */
-        post: operations["PatchSettingDraftApiResponse_schema_v5_stream_PatchSettingDraftApiResponse_post"];
+        post: operations["PatchSettingDraftApiResponse_schema_stream_PatchSettingDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11251,7 +11251,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchSimulationDraftApiRequest */
-        post: operations["PatchSimulationDraftApiRequest_schema_v5_stream_PatchSimulationDraftApiRequest_post"];
+        post: operations["PatchSimulationDraftApiRequest_schema_stream_PatchSimulationDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11268,7 +11268,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchSimulationDraftApiResponse */
-        post: operations["PatchSimulationDraftApiResponse_schema_v5_stream_PatchSimulationDraftApiResponse_post"];
+        post: operations["PatchSimulationDraftApiResponse_schema_stream_PatchSimulationDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11285,7 +11285,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchToolDraftApiRequest */
-        post: operations["PatchToolDraftApiRequest_schema_v5_stream_PatchToolDraftApiRequest_post"];
+        post: operations["PatchToolDraftApiRequest_schema_stream_PatchToolDraftApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11302,7 +11302,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PatchToolDraftApiResponse */
-        post: operations["PatchToolDraftApiResponse_schema_v5_stream_PatchToolDraftApiResponse_post"];
+        post: operations["PatchToolDraftApiResponse_schema_stream_PatchToolDraftApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11319,7 +11319,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PersonaGenerationProgressEvent */
-        post: operations["PersonaGenerationProgressEvent_schema_v5_stream_PersonaGenerationProgressEvent_post"];
+        post: operations["PersonaGenerationProgressEvent_schema_stream_PersonaGenerationProgressEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11336,7 +11336,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PricingRequest */
-        post: operations["PricingRequest_schema_v5_stream_PricingRequest_post"];
+        post: operations["PricingRequest_schema_stream_PricingRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11353,7 +11353,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: PricingResponse */
-        post: operations["PricingResponse_schema_v5_stream_PricingResponse_post"];
+        post: operations["PricingResponse_schema_stream_PricingResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11370,7 +11370,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: ProfileContextApiResponse */
-        post: operations["ProfileContextApiResponse_schema_v5_stream_ProfileContextApiResponse_post"];
+        post: operations["ProfileContextApiResponse_schema_stream_ProfileContextApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11387,7 +11387,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: RecordRequest */
-        post: operations["RecordRequest_schema_v5_stream_RecordRequest_post"];
+        post: operations["RecordRequest_schema_stream_RecordRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11404,7 +11404,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestAllCompleteEvent */
-        post: operations["TestAllCompleteEvent_schema_v5_stream_TestAllCompleteEvent_post"];
+        post: operations["TestAllCompleteEvent_schema_stream_TestAllCompleteEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11421,7 +11421,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestEndAllPayload */
-        post: operations["TestEndAllPayload_schema_v5_stream_TestEndAllPayload_post"];
+        post: operations["TestEndAllPayload_schema_stream_TestEndAllPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11438,7 +11438,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestEndPayload */
-        post: operations["TestEndPayload_schema_v5_stream_TestEndPayload_post"];
+        post: operations["TestEndPayload_schema_stream_TestEndPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11455,7 +11455,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestGroupPayload */
-        post: operations["TestGroupPayload_schema_v5_stream_TestGroupPayload_post"];
+        post: operations["TestGroupPayload_schema_stream_TestGroupPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11472,7 +11472,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestJoinPayload */
-        post: operations["TestJoinPayload_schema_v5_stream_TestJoinPayload_post"];
+        post: operations["TestJoinPayload_schema_stream_TestJoinPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11489,7 +11489,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestJoinedEvent */
-        post: operations["TestJoinedEvent_schema_v5_stream_TestJoinedEvent_post"];
+        post: operations["TestJoinedEvent_schema_stream_TestJoinedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11506,7 +11506,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestLeavePayload */
-        post: operations["TestLeavePayload_schema_v5_stream_TestLeavePayload_post"];
+        post: operations["TestLeavePayload_schema_stream_TestLeavePayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11523,7 +11523,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestNextPayload */
-        post: operations["TestNextPayload_schema_v5_stream_TestNextPayload_post"];
+        post: operations["TestNextPayload_schema_stream_TestNextPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11540,7 +11540,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestProgressEvent */
-        post: operations["TestProgressEvent_schema_v5_stream_TestProgressEvent_post"];
+        post: operations["TestProgressEvent_schema_stream_TestProgressEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11557,7 +11557,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestRunCompleteEvent */
-        post: operations["TestRunCompleteEvent_schema_v5_stream_TestRunCompleteEvent_post"];
+        post: operations["TestRunCompleteEvent_schema_stream_TestRunCompleteEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11574,7 +11574,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestRunDeltaEvent */
-        post: operations["TestRunDeltaEvent_schema_v5_stream_TestRunDeltaEvent_post"];
+        post: operations["TestRunDeltaEvent_schema_stream_TestRunDeltaEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11591,7 +11591,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestRunPayload */
-        post: operations["TestRunPayload_schema_v5_stream_TestRunPayload_post"];
+        post: operations["TestRunPayload_schema_stream_TestRunPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11608,7 +11608,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestRunStartEvent */
-        post: operations["TestRunStartEvent_schema_v5_stream_TestRunStartEvent_post"];
+        post: operations["TestRunStartEvent_schema_stream_TestRunStartEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11625,7 +11625,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestStartPayload */
-        post: operations["TestStartPayload_schema_v5_stream_TestStartPayload_post"];
+        post: operations["TestStartPayload_schema_stream_TestStartPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11642,7 +11642,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestStartedEvent */
-        post: operations["TestStartedEvent_schema_v5_stream_TestStartedEvent_post"];
+        post: operations["TestStartedEvent_schema_stream_TestStartedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11659,7 +11659,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestStopPayload */
-        post: operations["TestStopPayload_schema_v5_stream_TestStopPayload_post"];
+        post: operations["TestStopPayload_schema_stream_TestStopPayload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11676,7 +11676,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: TestStoppedEvent */
-        post: operations["TestStoppedEvent_schema_v5_stream_TestStoppedEvent_post"];
+        post: operations["TestStoppedEvent_schema_stream_TestStoppedEvent_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11693,7 +11693,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UnemulateProfileApiResponse */
-        post: operations["UnemulateProfileApiResponse_schema_v5_stream_UnemulateProfileApiResponse_post"];
+        post: operations["UnemulateProfileApiResponse_schema_stream_UnemulateProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11710,7 +11710,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateAgentApiRequest */
-        post: operations["UpdateAgentApiRequest_schema_v5_stream_UpdateAgentApiRequest_post"];
+        post: operations["UpdateAgentApiRequest_schema_stream_UpdateAgentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11727,7 +11727,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateAgentApiResponse */
-        post: operations["UpdateAgentApiResponse_schema_v5_stream_UpdateAgentApiResponse_post"];
+        post: operations["UpdateAgentApiResponse_schema_stream_UpdateAgentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11744,7 +11744,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateAuthApiRequest */
-        post: operations["UpdateAuthApiRequest_schema_v5_stream_UpdateAuthApiRequest_post"];
+        post: operations["UpdateAuthApiRequest_schema_stream_UpdateAuthApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11761,7 +11761,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateAuthApiResponse */
-        post: operations["UpdateAuthApiResponse_schema_v5_stream_UpdateAuthApiResponse_post"];
+        post: operations["UpdateAuthApiResponse_schema_stream_UpdateAuthApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11778,7 +11778,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateCohortApiRequest */
-        post: operations["UpdateCohortApiRequest_schema_v5_stream_UpdateCohortApiRequest_post"];
+        post: operations["UpdateCohortApiRequest_schema_stream_UpdateCohortApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11795,7 +11795,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateCohortApiResponse */
-        post: operations["UpdateCohortApiResponse_schema_v5_stream_UpdateCohortApiResponse_post"];
+        post: operations["UpdateCohortApiResponse_schema_stream_UpdateCohortApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11812,7 +11812,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateDepartmentApiRequest */
-        post: operations["UpdateDepartmentApiRequest_schema_v5_stream_UpdateDepartmentApiRequest_post"];
+        post: operations["UpdateDepartmentApiRequest_schema_stream_UpdateDepartmentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11829,7 +11829,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateDepartmentApiResponse */
-        post: operations["UpdateDepartmentApiResponse_schema_v5_stream_UpdateDepartmentApiResponse_post"];
+        post: operations["UpdateDepartmentApiResponse_schema_stream_UpdateDepartmentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11846,7 +11846,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateDocumentApiRequest */
-        post: operations["UpdateDocumentApiRequest_schema_v5_stream_UpdateDocumentApiRequest_post"];
+        post: operations["UpdateDocumentApiRequest_schema_stream_UpdateDocumentApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11863,7 +11863,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateDocumentApiResponse */
-        post: operations["UpdateDocumentApiResponse_schema_v5_stream_UpdateDocumentApiResponse_post"];
+        post: operations["UpdateDocumentApiResponse_schema_stream_UpdateDocumentApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11880,7 +11880,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateEvalApiRequest */
-        post: operations["UpdateEvalApiRequest_schema_v5_stream_UpdateEvalApiRequest_post"];
+        post: operations["UpdateEvalApiRequest_schema_stream_UpdateEvalApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11897,7 +11897,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateEvalApiResponse */
-        post: operations["UpdateEvalApiResponse_schema_v5_stream_UpdateEvalApiResponse_post"];
+        post: operations["UpdateEvalApiResponse_schema_stream_UpdateEvalApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11914,7 +11914,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateFieldApiRequest */
-        post: operations["UpdateFieldApiRequest_schema_v5_stream_UpdateFieldApiRequest_post"];
+        post: operations["UpdateFieldApiRequest_schema_stream_UpdateFieldApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11931,7 +11931,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateFieldApiResponse */
-        post: operations["UpdateFieldApiResponse_schema_v5_stream_UpdateFieldApiResponse_post"];
+        post: operations["UpdateFieldApiResponse_schema_stream_UpdateFieldApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11948,7 +11948,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateModelApiRequest */
-        post: operations["UpdateModelApiRequest_schema_v5_stream_UpdateModelApiRequest_post"];
+        post: operations["UpdateModelApiRequest_schema_stream_UpdateModelApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11965,7 +11965,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateModelApiResponse */
-        post: operations["UpdateModelApiResponse_schema_v5_stream_UpdateModelApiResponse_post"];
+        post: operations["UpdateModelApiResponse_schema_stream_UpdateModelApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11982,7 +11982,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateParameterApiRequest */
-        post: operations["UpdateParameterApiRequest_schema_v5_stream_UpdateParameterApiRequest_post"];
+        post: operations["UpdateParameterApiRequest_schema_stream_UpdateParameterApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -11999,7 +11999,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateParameterApiResponse */
-        post: operations["UpdateParameterApiResponse_schema_v5_stream_UpdateParameterApiResponse_post"];
+        post: operations["UpdateParameterApiResponse_schema_stream_UpdateParameterApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12016,7 +12016,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdatePersonaApiRequest */
-        post: operations["UpdatePersonaApiRequest_schema_v5_stream_UpdatePersonaApiRequest_post"];
+        post: operations["UpdatePersonaApiRequest_schema_stream_UpdatePersonaApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12033,7 +12033,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdatePersonaApiResponse */
-        post: operations["UpdatePersonaApiResponse_schema_v5_stream_UpdatePersonaApiResponse_post"];
+        post: operations["UpdatePersonaApiResponse_schema_stream_UpdatePersonaApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12050,7 +12050,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateProfileApiRequest */
-        post: operations["UpdateProfileApiRequest_schema_v5_stream_UpdateProfileApiRequest_post"];
+        post: operations["UpdateProfileApiRequest_schema_stream_UpdateProfileApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12067,7 +12067,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateProfileApiResponse */
-        post: operations["UpdateProfileApiResponse_schema_v5_stream_UpdateProfileApiResponse_post"];
+        post: operations["UpdateProfileApiResponse_schema_stream_UpdateProfileApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12084,7 +12084,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateProviderApiRequest */
-        post: operations["UpdateProviderApiRequest_schema_v5_stream_UpdateProviderApiRequest_post"];
+        post: operations["UpdateProviderApiRequest_schema_stream_UpdateProviderApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12101,7 +12101,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateProviderApiResponse */
-        post: operations["UpdateProviderApiResponse_schema_v5_stream_UpdateProviderApiResponse_post"];
+        post: operations["UpdateProviderApiResponse_schema_stream_UpdateProviderApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12118,7 +12118,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateRubricApiRequest */
-        post: operations["UpdateRubricApiRequest_schema_v5_stream_UpdateRubricApiRequest_post"];
+        post: operations["UpdateRubricApiRequest_schema_stream_UpdateRubricApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12135,7 +12135,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateRubricApiResponse */
-        post: operations["UpdateRubricApiResponse_schema_v5_stream_UpdateRubricApiResponse_post"];
+        post: operations["UpdateRubricApiResponse_schema_stream_UpdateRubricApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12152,7 +12152,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateScenarioApiRequest */
-        post: operations["UpdateScenarioApiRequest_schema_v5_stream_UpdateScenarioApiRequest_post"];
+        post: operations["UpdateScenarioApiRequest_schema_stream_UpdateScenarioApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12169,7 +12169,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateScenarioApiResponse */
-        post: operations["UpdateScenarioApiResponse_schema_v5_stream_UpdateScenarioApiResponse_post"];
+        post: operations["UpdateScenarioApiResponse_schema_stream_UpdateScenarioApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12186,7 +12186,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateSettingApiRequest */
-        post: operations["UpdateSettingApiRequest_schema_v5_stream_UpdateSettingApiRequest_post"];
+        post: operations["UpdateSettingApiRequest_schema_stream_UpdateSettingApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12203,7 +12203,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateSettingApiResponse */
-        post: operations["UpdateSettingApiResponse_schema_v5_stream_UpdateSettingApiResponse_post"];
+        post: operations["UpdateSettingApiResponse_schema_stream_UpdateSettingApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12220,7 +12220,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateSimulationApiRequest */
-        post: operations["UpdateSimulationApiRequest_schema_v5_stream_UpdateSimulationApiRequest_post"];
+        post: operations["UpdateSimulationApiRequest_schema_stream_UpdateSimulationApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12237,7 +12237,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateSimulationApiResponse */
-        post: operations["UpdateSimulationApiResponse_schema_v5_stream_UpdateSimulationApiResponse_post"];
+        post: operations["UpdateSimulationApiResponse_schema_stream_UpdateSimulationApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12254,7 +12254,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateToolApiRequest */
-        post: operations["UpdateToolApiRequest_schema_v5_stream_UpdateToolApiRequest_post"];
+        post: operations["UpdateToolApiRequest_schema_stream_UpdateToolApiRequest_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12271,27 +12271,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Schema: UpdateToolApiResponse */
-        post: operations["UpdateToolApiResponse_schema_v5_stream_UpdateToolApiResponse_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Health Services
-         * @description Lightweight health check — no DB/Redis/Keycloak connections.
-         */
-        get: operations["health_services_health_get"];
-        put?: never;
-        post?: never;
+        post: operations["UpdateToolApiResponse_schema_stream_UpdateToolApiResponse_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12307,7 +12287,7 @@ export interface paths {
         };
         /**
          * Oauth Authorization Server Metadata
-         * @description RFC 8414 OAuth Authorization Server Metadata endpoint.
+         * @description RFC 8414 OAuth Authorization Server Metadata — same as OIDC discovery.
          */
         get: operations["oauth_authorization_server_metadata__well_known_oauth_authorization_server_get"];
         put?: never;
@@ -12367,9 +12347,32 @@ export interface paths {
         };
         /**
          * Authorize
-         * @description Authorization endpoint — handles Keycloak broker redirects.
+         * @description OIDC authorization endpoint.
+         *
+         *     Without profile_id: standard OIDC flow — redirect to Keycloak for login.
+         *     With profile_id: Keycloak broker callback — issue auth code directly.
          */
         get: operations["authorize_authorize_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oidc-callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oidc Callback
+         * @description Handle Keycloak's redirect back after user authentication.
+         */
+        get: operations["oidc_callback_oidc_callback_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -12390,6 +12393,8 @@ export interface paths {
         /**
          * Token
          * @description Token endpoint — exchanges authorization codes for tokens.
+         *
+         *     Supports client_secret_post (form body) and client_secret_basic (Authorization header).
          */
         post: operations["token_token_post"];
         delete?: never;
@@ -12410,6 +12415,113 @@ export interface paths {
          * @description UserInfo endpoint — returns user claims from access token.
          */
         get: operations["userinfo_userinfo_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Login
+         * @description Redirect to Keycloak login page.
+         */
+        get: operations["login_login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Callback
+         * @description Handle Keycloak callback — exchange code for tokens.
+         */
+        get: operations["callback_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Logout
+         * @description Redirect to Keycloak logout, then back to login page.
+         */
+        get: operations["logout_logout_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Me
+         * @description Return current authenticated user info.
+         */
+        get: operations["me_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/client-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Client Config
+         * @description Return OAuth client credentials for frontend integration.
+         *
+         *     Authenticated by deployment token (managed or self-hosted).
+         *     Any frontend (Next.js, React, mobile) can call this to get
+         *     the credentials needed to connect to this server's auth.
+         *
+         *     Like Google/Microsoft OAuth: you get a client_id + secret,
+         *     plug them into your app, done.
+         */
+        get: operations["client_config_auth_client_config_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -15675,138 +15787,125 @@ export interface components {
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets-Output"] | null;
         };
-        /** Body_parse_agent_csv_v5_agents_csv_post */
-        Body_parse_agent_csv_v5_agents_csv_post: {
+        /** Body_parse_agent_csv_agents_csv_post */
+        Body_parse_agent_csv_agents_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_cohort_csv_v5_cohorts_csv_post */
-        Body_parse_cohort_csv_v5_cohorts_csv_post: {
+        /** Body_parse_cohort_csv_cohorts_csv_post */
+        Body_parse_cohort_csv_cohorts_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_department_csv_v5_departments_csv_post */
-        Body_parse_department_csv_v5_departments_csv_post: {
+        /** Body_parse_department_csv_departments_csv_post */
+        Body_parse_department_csv_departments_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_document_csv_v5_documents_csv_post */
-        Body_parse_document_csv_v5_documents_csv_post: {
+        /** Body_parse_document_csv_documents_csv_post */
+        Body_parse_document_csv_documents_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_eval_csv_v5_evals_csv_post */
-        Body_parse_eval_csv_v5_evals_csv_post: {
+        /** Body_parse_eval_csv_evals_csv_post */
+        Body_parse_eval_csv_evals_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_field_csv_v5_fields_csv_post */
-        Body_parse_field_csv_v5_fields_csv_post: {
+        /** Body_parse_field_csv_fields_csv_post */
+        Body_parse_field_csv_fields_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_model_csv_v5_models_csv_post */
-        Body_parse_model_csv_v5_models_csv_post: {
+        /** Body_parse_model_csv_models_csv_post */
+        Body_parse_model_csv_models_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_parameter_csv_v5_parameters_csv_post */
-        Body_parse_parameter_csv_v5_parameters_csv_post: {
+        /** Body_parse_parameter_csv_parameters_csv_post */
+        Body_parse_parameter_csv_parameters_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_persona_csv_v5_personas_csv_post */
-        Body_parse_persona_csv_v5_personas_csv_post: {
+        /** Body_parse_persona_csv_personas_csv_post */
+        Body_parse_persona_csv_personas_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_provider_csv_v5_providers_csv_post */
-        Body_parse_provider_csv_v5_providers_csv_post: {
+        /** Body_parse_provider_csv_providers_csv_post */
+        Body_parse_provider_csv_providers_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_rubric_csv_v5_rubrics_csv_post */
-        Body_parse_rubric_csv_v5_rubrics_csv_post: {
+        /** Body_parse_rubric_csv_rubrics_csv_post */
+        Body_parse_rubric_csv_rubrics_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_scenario_csv_v5_scenarios_csv_post */
-        Body_parse_scenario_csv_v5_scenarios_csv_post: {
+        /** Body_parse_scenario_csv_scenarios_csv_post */
+        Body_parse_scenario_csv_scenarios_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_setting_csv_v5_settings_csv_post */
-        Body_parse_setting_csv_v5_settings_csv_post: {
+        /** Body_parse_setting_csv_settings_csv_post */
+        Body_parse_setting_csv_settings_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_simulation_csv_v5_simulations_csv_post */
-        Body_parse_simulation_csv_v5_simulations_csv_post: {
+        /** Body_parse_simulation_csv_simulations_csv_post */
+        Body_parse_simulation_csv_simulations_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_tool_csv_v5_tools_csv_post */
-        Body_parse_tool_csv_v5_tools_csv_post: {
+        /** Body_parse_tool_csv_tools_csv_post */
+        Body_parse_tool_csv_tools_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
-        };
-        /** Body_token_token_post */
-        Body_token_token_post: {
-            /** Grant Type */
-            grant_type: string;
-            /** Code */
-            code: string;
-            /** Redirect Uri */
-            redirect_uri: string;
-            /** Client Id */
-            client_id: string;
-            /** Client Secret */
-            client_secret?: string;
         };
         /**
          * ChatData
@@ -35935,9 +36034,9 @@ export interface components {
             /** Assistant Content */
             assistant_content?: string | null;
             /** Hints */
-            hints?: components["schemas"]["app__routes__v5__attempt__message__HintEntry"][] | null;
+            hints?: components["schemas"]["app__routes__attempt__message__HintEntry"][] | null;
             /** Contents */
-            contents?: components["schemas"]["app__routes__v5__attempt__message__ContentEntry"][] | null;
+            contents?: components["schemas"]["app__routes__attempt__message__ContentEntry"][] | null;
         };
         /** MessageAttemptApiResponse */
         MessageAttemptApiResponse: {
@@ -40977,7 +41076,7 @@ export interface components {
          * ProfileContextApiResponse
          * @description Response for POST /context — identity + permissions + theme.
          *
-         *     Root-level layout route (mounted at /v5/context).
+         *     Root-level layout route (mounted at /context).
          */
         ProfileContextApiResponse: {
             /**
@@ -52264,7 +52363,7 @@ export interface components {
          * ContentEntry
          * @description Agent-provided content entry for a message.
          */
-        app__routes__v5__attempt__message__ContentEntry: {
+        app__routes__attempt__message__ContentEntry: {
             /** Content */
             content: string;
             /** Persona Id */
@@ -52274,7 +52373,7 @@ export interface components {
          * HintEntry
          * @description Agent-provided hint for a message.
          */
-        app__routes__v5__attempt__message__HintEntry: {
+        app__routes__attempt__message__HintEntry: {
             /** Hint */
             hint: string;
             /** Message Id */
@@ -52284,7 +52383,7 @@ export interface components {
          * ExportCohortApiRequest
          * @description Request model for cohort export.
          */
-        app__routes__v5__cohort__export__ExportCohortApiRequest: {
+        app__routes__cohort__export__ExportCohortApiRequest: {
             /** Cohort Id */
             cohort_id?: string | null;
         };
@@ -52297,7 +52396,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_persona_v5_personas_get_post: {
+    get_persona_personas_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52330,7 +52429,7 @@ export interface operations {
             };
         };
     };
-    search_persona_v5_personas_search_post: {
+    search_persona_personas_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52363,7 +52462,7 @@ export interface operations {
             };
         };
     };
-    create_persona_v5_personas_create_post: {
+    create_persona_personas_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52396,7 +52495,7 @@ export interface operations {
             };
         };
     };
-    parse_persona_csv_v5_personas_csv_post: {
+    parse_persona_csv_personas_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52405,7 +52504,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_persona_csv_v5_personas_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_persona_csv_personas_csv_post"];
             };
         };
         responses: {
@@ -52429,7 +52528,7 @@ export interface operations {
             };
         };
     };
-    update_persona_v5_personas_update_post: {
+    update_persona_personas_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52462,7 +52561,7 @@ export interface operations {
             };
         };
     };
-    duplicate_persona_v5_personas_duplicate_post: {
+    duplicate_persona_personas_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52495,7 +52594,7 @@ export interface operations {
             };
         };
     };
-    delete_persona_v5_personas_delete_post: {
+    delete_persona_personas_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52528,7 +52627,7 @@ export interface operations {
             };
         };
     };
-    patch_persona_draft_v5_personas_draft_patch: {
+    patch_persona_draft_personas_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -52561,7 +52660,7 @@ export interface operations {
             };
         };
     };
-    get_persona_drafts_v5_personas_drafts_post: {
+    get_persona_drafts_personas_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52581,7 +52680,7 @@ export interface operations {
             };
         };
     };
-    get_persona_docs_endpoint_v5_personas_docs_post: {
+    get_persona_docs_endpoint_personas_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52614,7 +52713,7 @@ export interface operations {
             };
         };
     };
-    export_personas_v5_personas_export_post: {
+    export_personas_personas_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52647,7 +52746,7 @@ export interface operations {
             };
         };
     };
-    persona_refresh_v5_personas_refresh_post: {
+    persona_refresh_personas_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52667,7 +52766,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_v5_scenarios_get_post: {
+    get_scenario_scenarios_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52700,7 +52799,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_v5_scenarios_search_post: {
+    search_scenario_scenarios_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52733,7 +52832,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_v5_scenarios_create_post: {
+    create_scenario_scenarios_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52766,7 +52865,7 @@ export interface operations {
             };
         };
     };
-    parse_scenario_csv_v5_scenarios_csv_post: {
+    parse_scenario_csv_scenarios_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52775,7 +52874,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_scenario_csv_v5_scenarios_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_scenario_csv_scenarios_csv_post"];
             };
         };
         responses: {
@@ -52799,7 +52898,7 @@ export interface operations {
             };
         };
     };
-    update_scenario_v5_scenarios_update_post: {
+    update_scenario_scenarios_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52832,7 +52931,7 @@ export interface operations {
             };
         };
     };
-    duplicate_scenario_v5_scenarios_duplicate_post: {
+    duplicate_scenario_scenarios_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52865,7 +52964,7 @@ export interface operations {
             };
         };
     };
-    delete_scenario_v5_scenarios_delete_post: {
+    delete_scenario_scenarios_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52898,7 +52997,7 @@ export interface operations {
             };
         };
     };
-    patch_scenario_draft_v5_scenarios_draft_patch: {
+    patch_scenario_draft_scenarios_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -52931,7 +53030,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_drafts_v5_scenarios_drafts_post: {
+    get_scenario_drafts_scenarios_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52951,7 +53050,7 @@ export interface operations {
             };
         };
     };
-    export_scenarios_v5_scenarios_export_post: {
+    export_scenarios_scenarios_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52984,7 +53083,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_docs_endpoint_v5_scenarios_docs_post: {
+    get_scenario_docs_endpoint_scenarios_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53017,7 +53116,7 @@ export interface operations {
             };
         };
     };
-    scenario_refresh_v5_scenarios_refresh_post: {
+    scenario_refresh_scenarios_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53037,7 +53136,7 @@ export interface operations {
             };
         };
     };
-    upload_v5_scenarios_upload_post: {
+    upload_scenarios_upload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53057,7 +53156,7 @@ export interface operations {
             };
         };
     };
-    download_v5_scenarios_download__upload_id__get: {
+    download_scenarios_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -53088,7 +53187,7 @@ export interface operations {
             };
         };
     };
-    preview_v5_scenarios_preview__upload_id__get: {
+    preview_scenarios_preview__upload_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -53119,7 +53218,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_v5_simulations_get_post: {
+    get_simulation_simulations_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53152,7 +53251,7 @@ export interface operations {
             };
         };
     };
-    search_simulation_v5_simulations_search_post: {
+    search_simulation_simulations_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53185,7 +53284,7 @@ export interface operations {
             };
         };
     };
-    create_simulation_v5_simulations_create_post: {
+    create_simulation_simulations_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53218,7 +53317,7 @@ export interface operations {
             };
         };
     };
-    parse_simulation_csv_v5_simulations_csv_post: {
+    parse_simulation_csv_simulations_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53227,7 +53326,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_simulation_csv_v5_simulations_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_simulation_csv_simulations_csv_post"];
             };
         };
         responses: {
@@ -53251,7 +53350,7 @@ export interface operations {
             };
         };
     };
-    update_simulation_v5_simulations_update_post: {
+    update_simulation_simulations_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53284,7 +53383,7 @@ export interface operations {
             };
         };
     };
-    duplicate_simulation_v5_simulations_duplicate_post: {
+    duplicate_simulation_simulations_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53317,7 +53416,7 @@ export interface operations {
             };
         };
     };
-    delete_simulation_v5_simulations_delete_post: {
+    delete_simulation_simulations_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53350,7 +53449,7 @@ export interface operations {
             };
         };
     };
-    patch_simulation_draft_v5_simulations_draft_patch: {
+    patch_simulation_draft_simulations_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -53383,7 +53482,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_drafts_v5_simulations_drafts_post: {
+    get_simulation_drafts_simulations_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53403,7 +53502,7 @@ export interface operations {
             };
         };
     };
-    export_simulations_v5_simulations_export_post: {
+    export_simulations_simulations_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53436,7 +53535,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_docs_endpoint_v5_simulations_docs_post: {
+    get_simulation_docs_endpoint_simulations_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53469,7 +53568,7 @@ export interface operations {
             };
         };
     };
-    simulation_refresh_v5_simulations_refresh_post: {
+    simulation_refresh_simulations_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53489,7 +53588,7 @@ export interface operations {
             };
         };
     };
-    search_document_v5_documents_search_post: {
+    search_document_documents_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53522,7 +53621,7 @@ export interface operations {
             };
         };
     };
-    get_document_v5_documents_get_post: {
+    get_document_documents_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53555,7 +53654,7 @@ export interface operations {
             };
         };
     };
-    create_document_v5_documents_create_post: {
+    create_document_documents_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53588,7 +53687,7 @@ export interface operations {
             };
         };
     };
-    update_document_v5_documents_update_post: {
+    update_document_documents_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53621,7 +53720,7 @@ export interface operations {
             };
         };
     };
-    duplicate_document_v5_documents_duplicate_post: {
+    duplicate_document_documents_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53654,7 +53753,7 @@ export interface operations {
             };
         };
     };
-    delete_document_v5_documents_delete_post: {
+    delete_document_documents_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53687,7 +53786,7 @@ export interface operations {
             };
         };
     };
-    patch_document_draft_v5_documents_draft_patch: {
+    patch_document_draft_documents_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -53720,7 +53819,7 @@ export interface operations {
             };
         };
     };
-    get_document_drafts_v5_documents_drafts_post: {
+    get_document_drafts_documents_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53740,7 +53839,7 @@ export interface operations {
             };
         };
     };
-    get_document_docs_endpoint_v5_documents_docs_post: {
+    get_document_docs_endpoint_documents_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53773,7 +53872,7 @@ export interface operations {
             };
         };
     };
-    document_refresh_v5_documents_refresh_post: {
+    document_refresh_documents_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53793,7 +53892,7 @@ export interface operations {
             };
         };
     };
-    export_documents_v5_documents_export_post: {
+    export_documents_documents_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53826,7 +53925,7 @@ export interface operations {
             };
         };
     };
-    parse_document_csv_v5_documents_csv_post: {
+    parse_document_csv_documents_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53835,7 +53934,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_document_csv_v5_documents_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_document_csv_documents_csv_post"];
             };
         };
         responses: {
@@ -53859,7 +53958,7 @@ export interface operations {
             };
         };
     };
-    upload_v5_documents_upload_post: {
+    upload_documents_upload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53879,7 +53978,7 @@ export interface operations {
             };
         };
     };
-    download_v5_documents_download__upload_id__get: {
+    download_documents_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -53910,7 +54009,7 @@ export interface operations {
             };
         };
     };
-    preview_v5_documents_preview__upload_id__get: {
+    preview_documents_preview__upload_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -53941,7 +54040,7 @@ export interface operations {
             };
         };
     };
-    get_department_v5_departments_get_post: {
+    get_department_departments_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -53974,7 +54073,7 @@ export interface operations {
             };
         };
     };
-    search_department_v5_departments_search_post: {
+    search_department_departments_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54007,7 +54106,7 @@ export interface operations {
             };
         };
     };
-    create_department_v5_departments_create_post: {
+    create_department_departments_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54040,7 +54139,7 @@ export interface operations {
             };
         };
     };
-    update_department_v5_departments_update_post: {
+    update_department_departments_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54073,7 +54172,7 @@ export interface operations {
             };
         };
     };
-    duplicate_department_v5_departments_duplicate_post: {
+    duplicate_department_departments_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54106,7 +54205,7 @@ export interface operations {
             };
         };
     };
-    delete_department_v5_departments_delete_post: {
+    delete_department_departments_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54139,7 +54238,7 @@ export interface operations {
             };
         };
     };
-    patch_department_draft_v5_departments_draft_patch: {
+    patch_department_draft_departments_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -54172,7 +54271,7 @@ export interface operations {
             };
         };
     };
-    get_department_drafts_v5_departments_drafts_post: {
+    get_department_drafts_departments_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54192,7 +54291,7 @@ export interface operations {
             };
         };
     };
-    get_department_docs_endpoint_v5_departments_docs_post: {
+    get_department_docs_endpoint_departments_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54225,7 +54324,7 @@ export interface operations {
             };
         };
     };
-    export_departments_v5_departments_export_post: {
+    export_departments_departments_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54258,7 +54357,7 @@ export interface operations {
             };
         };
     };
-    parse_department_csv_v5_departments_csv_post: {
+    parse_department_csv_departments_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54267,7 +54366,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_department_csv_v5_departments_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_department_csv_departments_csv_post"];
             };
         };
         responses: {
@@ -54291,7 +54390,7 @@ export interface operations {
             };
         };
     };
-    department_refresh_v5_departments_refresh_post: {
+    department_refresh_departments_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54311,7 +54410,7 @@ export interface operations {
             };
         };
     };
-    search_cohort_v5_cohorts_search_post: {
+    search_cohort_cohorts_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54344,7 +54443,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_v5_cohorts_get_post: {
+    get_cohort_cohorts_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54377,7 +54476,7 @@ export interface operations {
             };
         };
     };
-    create_cohort_v5_cohorts_create_post: {
+    create_cohort_cohorts_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54410,7 +54509,7 @@ export interface operations {
             };
         };
     };
-    update_cohort_v5_cohorts_update_post: {
+    update_cohort_cohorts_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54443,7 +54542,7 @@ export interface operations {
             };
         };
     };
-    duplicate_cohort_v5_cohorts_duplicate_post: {
+    duplicate_cohort_cohorts_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54476,7 +54575,7 @@ export interface operations {
             };
         };
     };
-    delete_cohort_v5_cohorts_delete_post: {
+    delete_cohort_cohorts_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54509,7 +54608,7 @@ export interface operations {
             };
         };
     };
-    patch_cohort_draft_v5_cohorts_draft_patch: {
+    patch_cohort_draft_cohorts_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -54542,7 +54641,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_drafts_v5_cohorts_drafts_post: {
+    get_cohort_drafts_cohorts_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54562,7 +54661,7 @@ export interface operations {
             };
         };
     };
-    export_cohorts_v5_cohorts_export_post: {
+    export_cohorts_cohorts_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54571,7 +54670,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__v5__cohort__export__ExportCohortApiRequest"];
+                "application/json": components["schemas"]["app__routes__cohort__export__ExportCohortApiRequest"];
             };
         };
         responses: {
@@ -54595,7 +54694,7 @@ export interface operations {
             };
         };
     };
-    parse_cohort_csv_v5_cohorts_csv_post: {
+    parse_cohort_csv_cohorts_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54604,7 +54703,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_cohort_csv_v5_cohorts_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_cohort_csv_cohorts_csv_post"];
             };
         };
         responses: {
@@ -54628,7 +54727,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_docs_endpoint_v5_cohorts_docs_post: {
+    get_cohort_docs_endpoint_cohorts_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54661,7 +54760,7 @@ export interface operations {
             };
         };
     };
-    cohort_refresh_v5_cohorts_refresh_post: {
+    cohort_refresh_cohorts_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54681,7 +54780,7 @@ export interface operations {
             };
         };
     };
-    search_eval_v5_evals_search_post: {
+    search_eval_evals_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54714,7 +54813,7 @@ export interface operations {
             };
         };
     };
-    get_eval_v5_evals_get_post: {
+    get_eval_evals_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54747,7 +54846,7 @@ export interface operations {
             };
         };
     };
-    create_eval_v5_evals_create_post: {
+    create_eval_evals_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54780,7 +54879,7 @@ export interface operations {
             };
         };
     };
-    update_eval_v5_evals_update_post: {
+    update_eval_evals_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54813,7 +54912,7 @@ export interface operations {
             };
         };
     };
-    duplicate_eval_v5_evals_duplicate_post: {
+    duplicate_eval_evals_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54846,7 +54945,7 @@ export interface operations {
             };
         };
     };
-    delete_eval_v5_evals_delete_post: {
+    delete_eval_evals_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54879,7 +54978,7 @@ export interface operations {
             };
         };
     };
-    patch_eval_draft_v5_evals_draft_patch: {
+    patch_eval_draft_evals_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -54912,7 +55011,7 @@ export interface operations {
             };
         };
     };
-    get_eval_drafts_v5_evals_drafts_post: {
+    get_eval_drafts_evals_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54932,7 +55031,7 @@ export interface operations {
             };
         };
     };
-    get_eval_docs_endpoint_v5_evals_docs_post: {
+    get_eval_docs_endpoint_evals_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54965,7 +55064,7 @@ export interface operations {
             };
         };
     };
-    eval_refresh_v5_evals_refresh_post: {
+    eval_refresh_evals_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -54985,7 +55084,7 @@ export interface operations {
             };
         };
     };
-    export_evals_v5_evals_export_post: {
+    export_evals_evals_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55018,7 +55117,7 @@ export interface operations {
             };
         };
     };
-    parse_eval_csv_v5_evals_csv_post: {
+    parse_eval_csv_evals_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55027,7 +55126,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_eval_csv_v5_evals_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_eval_csv_evals_csv_post"];
             };
         };
         responses: {
@@ -55051,7 +55150,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_v5_rubrics_get_post: {
+    get_rubric_rubrics_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55084,7 +55183,7 @@ export interface operations {
             };
         };
     };
-    search_rubric_v5_rubrics_search_post: {
+    search_rubric_rubrics_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55117,7 +55216,7 @@ export interface operations {
             };
         };
     };
-    create_rubric_v5_rubrics_create_post: {
+    create_rubric_rubrics_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55150,7 +55249,7 @@ export interface operations {
             };
         };
     };
-    update_rubric_v5_rubrics_update_post: {
+    update_rubric_rubrics_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55183,7 +55282,7 @@ export interface operations {
             };
         };
     };
-    duplicate_rubric_v5_rubrics_duplicate_post: {
+    duplicate_rubric_rubrics_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55216,7 +55315,7 @@ export interface operations {
             };
         };
     };
-    delete_rubric_v5_rubrics_delete_post: {
+    delete_rubric_rubrics_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55249,7 +55348,7 @@ export interface operations {
             };
         };
     };
-    patch_rubric_draft_v5_rubrics_draft_patch: {
+    patch_rubric_draft_rubrics_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -55282,7 +55381,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_drafts_v5_rubrics_drafts_post: {
+    get_rubric_drafts_rubrics_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55302,7 +55401,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_docs_endpoint_v5_rubrics_docs_post: {
+    get_rubric_docs_endpoint_rubrics_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55335,7 +55434,7 @@ export interface operations {
             };
         };
     };
-    export_rubrics_v5_rubrics_export_post: {
+    export_rubrics_rubrics_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55368,7 +55467,7 @@ export interface operations {
             };
         };
     };
-    parse_rubric_csv_v5_rubrics_csv_post: {
+    parse_rubric_csv_rubrics_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55377,7 +55476,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_rubric_csv_v5_rubrics_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_rubric_csv_rubrics_csv_post"];
             };
         };
         responses: {
@@ -55401,7 +55500,7 @@ export interface operations {
             };
         };
     };
-    rubric_refresh_v5_rubrics_refresh_post: {
+    rubric_refresh_rubrics_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55421,7 +55520,7 @@ export interface operations {
             };
         };
     };
-    search_setting_v5_settings_search_post: {
+    search_setting_settings_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55454,7 +55553,7 @@ export interface operations {
             };
         };
     };
-    get_setting_v5_settings_get_post: {
+    get_setting_settings_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55487,7 +55586,7 @@ export interface operations {
             };
         };
     };
-    create_setting_v5_settings_create_post: {
+    create_setting_settings_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55520,7 +55619,7 @@ export interface operations {
             };
         };
     };
-    update_setting_v5_settings_update_post: {
+    update_setting_settings_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55553,7 +55652,7 @@ export interface operations {
             };
         };
     };
-    duplicate_setting_v5_settings_duplicate_post: {
+    duplicate_setting_settings_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55586,7 +55685,7 @@ export interface operations {
             };
         };
     };
-    delete_setting_v5_settings_delete_post: {
+    delete_setting_settings_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55619,7 +55718,7 @@ export interface operations {
             };
         };
     };
-    patch_setting_draft_v5_settings_draft_patch: {
+    patch_setting_draft_settings_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -55652,7 +55751,7 @@ export interface operations {
             };
         };
     };
-    get_setting_drafts_v5_settings_drafts_post: {
+    get_setting_drafts_settings_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55672,7 +55771,7 @@ export interface operations {
             };
         };
     };
-    export_settings_v5_settings_export_post: {
+    export_settings_settings_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55705,7 +55804,7 @@ export interface operations {
             };
         };
     };
-    parse_setting_csv_v5_settings_csv_post: {
+    parse_setting_csv_settings_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55714,7 +55813,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_setting_csv_v5_settings_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_setting_csv_settings_csv_post"];
             };
         };
         responses: {
@@ -55738,7 +55837,7 @@ export interface operations {
             };
         };
     };
-    get_setting_docs_endpoint_v5_settings_docs_post: {
+    get_setting_docs_endpoint_settings_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55771,7 +55870,7 @@ export interface operations {
             };
         };
     };
-    setting_refresh_v5_settings_refresh_post: {
+    setting_refresh_settings_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55791,7 +55890,7 @@ export interface operations {
             };
         };
     };
-    decrypt_setting_key_v5_settings_decrypt_post: {
+    decrypt_setting_key_settings_decrypt_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55824,7 +55923,7 @@ export interface operations {
             };
         };
     };
-    get_agent_v5_agents_get_post: {
+    get_agent_agents_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55857,7 +55956,7 @@ export interface operations {
             };
         };
     };
-    search_agent_v5_agents_search_post: {
+    search_agent_agents_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55890,7 +55989,7 @@ export interface operations {
             };
         };
     };
-    create_agent_v5_agents_create_post: {
+    create_agent_agents_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55923,7 +56022,7 @@ export interface operations {
             };
         };
     };
-    update_agent_v5_agents_update_post: {
+    update_agent_agents_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55956,7 +56055,7 @@ export interface operations {
             };
         };
     };
-    duplicate_agent_v5_agents_duplicate_post: {
+    duplicate_agent_agents_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -55989,7 +56088,7 @@ export interface operations {
             };
         };
     };
-    delete_agent_v5_agents_delete_post: {
+    delete_agent_agents_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56022,7 +56121,7 @@ export interface operations {
             };
         };
     };
-    patch_agent_draft_v5_agents_draft_patch: {
+    patch_agent_draft_agents_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -56055,7 +56154,7 @@ export interface operations {
             };
         };
     };
-    get_agent_drafts_v5_agents_drafts_post: {
+    get_agent_drafts_agents_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56075,7 +56174,7 @@ export interface operations {
             };
         };
     };
-    get_agent_docs_endpoint_v5_agents_docs_post: {
+    get_agent_docs_endpoint_agents_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56108,7 +56207,7 @@ export interface operations {
             };
         };
     };
-    export_agents_v5_agents_export_post: {
+    export_agents_agents_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56141,7 +56240,7 @@ export interface operations {
             };
         };
     };
-    parse_agent_csv_v5_agents_csv_post: {
+    parse_agent_csv_agents_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56150,7 +56249,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_agent_csv_v5_agents_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_agent_csv_agents_csv_post"];
             };
         };
         responses: {
@@ -56174,7 +56273,7 @@ export interface operations {
             };
         };
     };
-    agent_refresh_v5_agents_refresh_post: {
+    agent_refresh_agents_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56194,7 +56293,7 @@ export interface operations {
             };
         };
     };
-    get_model_v5_models_get_post: {
+    get_model_models_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56227,7 +56326,7 @@ export interface operations {
             };
         };
     };
-    search_model_v5_models_search_post: {
+    search_model_models_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56260,7 +56359,7 @@ export interface operations {
             };
         };
     };
-    create_model_v5_models_create_post: {
+    create_model_models_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56293,7 +56392,7 @@ export interface operations {
             };
         };
     };
-    update_model_v5_models_update_post: {
+    update_model_models_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56326,7 +56425,7 @@ export interface operations {
             };
         };
     };
-    duplicate_model_v5_models_duplicate_post: {
+    duplicate_model_models_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56359,7 +56458,7 @@ export interface operations {
             };
         };
     };
-    delete_model_v5_models_delete_post: {
+    delete_model_models_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56392,7 +56491,7 @@ export interface operations {
             };
         };
     };
-    patch_model_draft_v5_models_draft_patch: {
+    patch_model_draft_models_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -56425,7 +56524,7 @@ export interface operations {
             };
         };
     };
-    get_model_drafts_v5_models_drafts_post: {
+    get_model_drafts_models_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56445,7 +56544,7 @@ export interface operations {
             };
         };
     };
-    get_model_docs_endpoint_v5_models_docs_post: {
+    get_model_docs_endpoint_models_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56478,7 +56577,7 @@ export interface operations {
             };
         };
     };
-    export_models_v5_models_export_post: {
+    export_models_models_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56511,7 +56610,7 @@ export interface operations {
             };
         };
     };
-    parse_model_csv_v5_models_csv_post: {
+    parse_model_csv_models_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56520,7 +56619,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_model_csv_v5_models_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_model_csv_models_csv_post"];
             };
         };
         responses: {
@@ -56544,7 +56643,7 @@ export interface operations {
             };
         };
     };
-    model_refresh_v5_models_refresh_post: {
+    model_refresh_models_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56564,7 +56663,7 @@ export interface operations {
             };
         };
     };
-    search_provider_v5_providers_search_post: {
+    search_provider_providers_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56597,7 +56696,7 @@ export interface operations {
             };
         };
     };
-    get_provider_v5_providers_get_post: {
+    get_provider_providers_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56630,7 +56729,7 @@ export interface operations {
             };
         };
     };
-    create_provider_v5_providers_create_post: {
+    create_provider_providers_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56663,7 +56762,7 @@ export interface operations {
             };
         };
     };
-    update_provider_v5_providers_update_post: {
+    update_provider_providers_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56696,7 +56795,7 @@ export interface operations {
             };
         };
     };
-    duplicate_provider_v5_providers_duplicate_post: {
+    duplicate_provider_providers_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56729,7 +56828,7 @@ export interface operations {
             };
         };
     };
-    delete_provider_v5_providers_delete_post: {
+    delete_provider_providers_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56762,7 +56861,7 @@ export interface operations {
             };
         };
     };
-    patch_provider_draft_v5_providers_draft_patch: {
+    patch_provider_draft_providers_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -56795,7 +56894,7 @@ export interface operations {
             };
         };
     };
-    get_provider_drafts_v5_providers_drafts_post: {
+    get_provider_drafts_providers_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56815,7 +56914,7 @@ export interface operations {
             };
         };
     };
-    get_provider_docs_endpoint_v5_providers_docs_post: {
+    get_provider_docs_endpoint_providers_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56848,7 +56947,7 @@ export interface operations {
             };
         };
     };
-    export_providers_v5_providers_export_post: {
+    export_providers_providers_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56881,7 +56980,7 @@ export interface operations {
             };
         };
     };
-    parse_provider_csv_v5_providers_csv_post: {
+    parse_provider_csv_providers_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56890,7 +56989,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_provider_csv_v5_providers_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_provider_csv_providers_csv_post"];
             };
         };
         responses: {
@@ -56914,7 +57013,7 @@ export interface operations {
             };
         };
     };
-    provider_refresh_v5_providers_refresh_post: {
+    provider_refresh_providers_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56934,7 +57033,7 @@ export interface operations {
             };
         };
     };
-    decrypt_provider_key_v5_providers_decrypt_post: {
+    decrypt_provider_key_providers_decrypt_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -56967,7 +57066,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_v5_parameters_get_post: {
+    get_parameter_parameters_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57000,7 +57099,7 @@ export interface operations {
             };
         };
     };
-    search_parameter_v5_parameters_search_post: {
+    search_parameter_parameters_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57033,7 +57132,7 @@ export interface operations {
             };
         };
     };
-    create_parameter_v5_parameters_create_post: {
+    create_parameter_parameters_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57066,7 +57165,7 @@ export interface operations {
             };
         };
     };
-    update_parameter_v5_parameters_update_post: {
+    update_parameter_parameters_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57099,7 +57198,7 @@ export interface operations {
             };
         };
     };
-    duplicate_parameter_v5_parameters_duplicate_post: {
+    duplicate_parameter_parameters_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57132,7 +57231,7 @@ export interface operations {
             };
         };
     };
-    delete_parameter_v5_parameters_delete_post: {
+    delete_parameter_parameters_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57165,7 +57264,7 @@ export interface operations {
             };
         };
     };
-    patch_parameter_draft_v5_parameters_draft_patch: {
+    patch_parameter_draft_parameters_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -57198,7 +57297,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_drafts_v5_parameters_drafts_post: {
+    get_parameter_drafts_parameters_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57218,7 +57317,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_docs_endpoint_v5_parameters_docs_post: {
+    get_parameter_docs_endpoint_parameters_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57251,7 +57350,7 @@ export interface operations {
             };
         };
     };
-    export_parameters_v5_parameters_export_post: {
+    export_parameters_parameters_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57284,7 +57383,7 @@ export interface operations {
             };
         };
     };
-    parse_parameter_csv_v5_parameters_csv_post: {
+    parse_parameter_csv_parameters_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57293,7 +57392,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_parameter_csv_v5_parameters_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_parameter_csv_parameters_csv_post"];
             };
         };
         responses: {
@@ -57317,7 +57416,7 @@ export interface operations {
             };
         };
     };
-    parameter_refresh_v5_parameters_refresh_post: {
+    parameter_refresh_parameters_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57337,7 +57436,7 @@ export interface operations {
             };
         };
     };
-    get_field_v5_fields_get_post: {
+    get_field_fields_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57370,7 +57469,7 @@ export interface operations {
             };
         };
     };
-    search_field_v5_fields_search_post: {
+    search_field_fields_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57403,7 +57502,7 @@ export interface operations {
             };
         };
     };
-    create_field_v5_fields_create_post: {
+    create_field_fields_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57436,7 +57535,7 @@ export interface operations {
             };
         };
     };
-    update_field_v5_fields_update_post: {
+    update_field_fields_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57469,7 +57568,7 @@ export interface operations {
             };
         };
     };
-    duplicate_field_v5_fields_duplicate_post: {
+    duplicate_field_fields_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57502,7 +57601,7 @@ export interface operations {
             };
         };
     };
-    delete_field_v5_fields_delete_post: {
+    delete_field_fields_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57535,7 +57634,7 @@ export interface operations {
             };
         };
     };
-    patch_field_draft_v5_fields_draft_patch: {
+    patch_field_draft_fields_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -57568,7 +57667,7 @@ export interface operations {
             };
         };
     };
-    get_field_drafts_v5_fields_drafts_post: {
+    get_field_drafts_fields_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57588,7 +57687,7 @@ export interface operations {
             };
         };
     };
-    get_field_docs_endpoint_v5_fields_docs_post: {
+    get_field_docs_endpoint_fields_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57621,7 +57720,7 @@ export interface operations {
             };
         };
     };
-    export_fields_v5_fields_export_post: {
+    export_fields_fields_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57654,7 +57753,7 @@ export interface operations {
             };
         };
     };
-    parse_field_csv_v5_fields_csv_post: {
+    parse_field_csv_fields_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57663,7 +57762,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_field_csv_v5_fields_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_field_csv_fields_csv_post"];
             };
         };
         responses: {
@@ -57687,7 +57786,7 @@ export interface operations {
             };
         };
     };
-    field_refresh_v5_fields_refresh_post: {
+    field_refresh_fields_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57707,7 +57806,7 @@ export interface operations {
             };
         };
     };
-    get_profile_v5_profiles_get_post: {
+    get_profile_profiles_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57740,7 +57839,7 @@ export interface operations {
             };
         };
     };
-    search_profile_v5_profiles_search_post: {
+    search_profile_profiles_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57773,7 +57872,7 @@ export interface operations {
             };
         };
     };
-    create_profile_v5_profiles_create_post: {
+    create_profile_profiles_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57806,7 +57905,7 @@ export interface operations {
             };
         };
     };
-    update_profile_v5_profiles_update_post: {
+    update_profile_profiles_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57839,7 +57938,7 @@ export interface operations {
             };
         };
     };
-    duplicate_profile_v5_profiles_duplicate_post: {
+    duplicate_profile_profiles_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57872,7 +57971,7 @@ export interface operations {
             };
         };
     };
-    patch_profile_draft_v5_profiles_draft_patch: {
+    patch_profile_draft_profiles_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -57905,7 +58004,7 @@ export interface operations {
             };
         };
     };
-    get_profile_drafts_v5_profiles_drafts_post: {
+    get_profile_drafts_profiles_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57925,7 +58024,7 @@ export interface operations {
             };
         };
     };
-    delete_profile_v5_profiles_delete_post: {
+    delete_profile_profiles_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57958,7 +58057,7 @@ export interface operations {
             };
         };
     };
-    get_profile_docs_endpoint_v5_profiles_docs_post: {
+    get_profile_docs_endpoint_profiles_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57991,7 +58090,7 @@ export interface operations {
             };
         };
     };
-    export_profiles_v5_profiles_export_post: {
+    export_profiles_profiles_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58024,7 +58123,7 @@ export interface operations {
             };
         };
     };
-    profile_refresh_v5_profiles_refresh_post: {
+    profile_refresh_profiles_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58044,7 +58143,7 @@ export interface operations {
             };
         };
     };
-    get_auth_v5_auths_get_post: {
+    get_auth_auths_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58077,7 +58176,7 @@ export interface operations {
             };
         };
     };
-    search_auth_v5_auths_search_post: {
+    search_auth_auths_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58110,7 +58209,7 @@ export interface operations {
             };
         };
     };
-    create_auth_v5_auths_create_post: {
+    create_auth_auths_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58143,7 +58242,7 @@ export interface operations {
             };
         };
     };
-    update_auth_v5_auths_update_post: {
+    update_auth_auths_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58176,7 +58275,7 @@ export interface operations {
             };
         };
     };
-    duplicate_auth_v5_auths_duplicate_post: {
+    duplicate_auth_auths_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58209,7 +58308,7 @@ export interface operations {
             };
         };
     };
-    delete_auth_v5_auths_delete_post: {
+    delete_auth_auths_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58242,7 +58341,7 @@ export interface operations {
             };
         };
     };
-    patch_auth_draft_v5_auths_draft_patch: {
+    patch_auth_draft_auths_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -58275,7 +58374,7 @@ export interface operations {
             };
         };
     };
-    get_auth_drafts_v5_auths_drafts_post: {
+    get_auth_drafts_auths_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58295,7 +58394,7 @@ export interface operations {
             };
         };
     };
-    get_auth_docs_endpoint_v5_auths_docs_post: {
+    get_auth_docs_endpoint_auths_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58328,7 +58427,7 @@ export interface operations {
             };
         };
     };
-    export_auths_v5_auths_export_post: {
+    export_auths_auths_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58361,7 +58460,7 @@ export interface operations {
             };
         };
     };
-    auth_refresh_v5_auths_refresh_post: {
+    auth_refresh_auths_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58381,7 +58480,7 @@ export interface operations {
             };
         };
     };
-    search_tool_v5_tools_search_post: {
+    search_tool_tools_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58414,7 +58513,7 @@ export interface operations {
             };
         };
     };
-    get_tool_v5_tools_get_post: {
+    get_tool_tools_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58447,7 +58546,7 @@ export interface operations {
             };
         };
     };
-    create_tool_v5_tools_create_post: {
+    create_tool_tools_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58480,7 +58579,7 @@ export interface operations {
             };
         };
     };
-    update_tool_v5_tools_update_post: {
+    update_tool_tools_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58513,7 +58612,7 @@ export interface operations {
             };
         };
     };
-    duplicate_tool_v5_tools_duplicate_post: {
+    duplicate_tool_tools_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58546,7 +58645,7 @@ export interface operations {
             };
         };
     };
-    delete_tool_v5_tools_delete_post: {
+    delete_tool_tools_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58579,7 +58678,7 @@ export interface operations {
             };
         };
     };
-    patch_tool_draft_v5_tools_draft_patch: {
+    patch_tool_draft_tools_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -58612,7 +58711,7 @@ export interface operations {
             };
         };
     };
-    get_tool_drafts_v5_tools_drafts_post: {
+    get_tool_drafts_tools_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58632,7 +58731,7 @@ export interface operations {
             };
         };
     };
-    export_tools_v5_tools_export_post: {
+    export_tools_tools_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58665,7 +58764,7 @@ export interface operations {
             };
         };
     };
-    parse_tool_csv_v5_tools_csv_post: {
+    parse_tool_csv_tools_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58674,7 +58773,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_tool_csv_v5_tools_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_tool_csv_tools_csv_post"];
             };
         };
         responses: {
@@ -58698,7 +58797,7 @@ export interface operations {
             };
         };
     };
-    get_tool_docs_endpoint_v5_tools_docs_post: {
+    get_tool_docs_endpoint_tools_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58731,7 +58830,7 @@ export interface operations {
             };
         };
     };
-    tool_refresh_v5_tools_refresh_post: {
+    tool_refresh_tools_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58751,7 +58850,7 @@ export interface operations {
             };
         };
     };
-    get_group_v5_group_get_post: {
+    get_group_group_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58784,7 +58883,7 @@ export interface operations {
             };
         };
     };
-    group_refresh_v5_group_refresh_post: {
+    group_refresh_group_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58804,7 +58903,7 @@ export interface operations {
             };
         };
     };
-    get_group_docs_endpoint_v5_group_docs_post: {
+    get_group_docs_endpoint_group_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58837,7 +58936,7 @@ export interface operations {
             };
         };
     };
-    export_group_v5_group_export_post: {
+    export_group_group_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58870,7 +58969,7 @@ export interface operations {
             };
         };
     };
-    download_v5_group_download__upload_id__get: {
+    download_group_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -58901,7 +59000,7 @@ export interface operations {
             };
         };
     };
-    get_session_v5_session_get_post: {
+    get_session_session_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58934,7 +59033,7 @@ export interface operations {
             };
         };
     };
-    session_refresh_v5_session_refresh_post: {
+    session_refresh_session_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58954,7 +59053,7 @@ export interface operations {
             };
         };
     };
-    get_session_docs_endpoint_v5_session_docs_post: {
+    get_session_docs_endpoint_session_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58987,7 +59086,7 @@ export interface operations {
             };
         };
     };
-    export_session_v5_session_export_post: {
+    export_session_session_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59020,7 +59119,7 @@ export interface operations {
             };
         };
     };
-    chat_get_v5_chat_get_post: {
+    chat_get_chat_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59053,7 +59152,7 @@ export interface operations {
             };
         };
     };
-    patch_chat_draft_v5_chat_draft_patch: {
+    patch_chat_draft_chat_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -59086,7 +59185,7 @@ export interface operations {
             };
         };
     };
-    get_chat_drafts_v5_chat_drafts_post: {
+    get_chat_drafts_chat_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59106,7 +59205,7 @@ export interface operations {
             };
         };
     };
-    export_chat_v5_chat_export_post: {
+    export_chat_chat_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59139,7 +59238,7 @@ export interface operations {
             };
         };
     };
-    chat_refresh_v5_chat_refresh_post: {
+    chat_refresh_chat_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59159,7 +59258,7 @@ export interface operations {
             };
         };
     };
-    get_chat_docs_endpoint_v5_chat_docs_post: {
+    get_chat_docs_endpoint_chat_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59192,7 +59291,7 @@ export interface operations {
             };
         };
     };
-    home_get_v5_home_get_post: {
+    home_get_home_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59225,7 +59324,7 @@ export interface operations {
             };
         };
     };
-    search_home_v5_home_search_post: {
+    search_home_home_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59258,7 +59357,7 @@ export interface operations {
             };
         };
     };
-    home_refresh_v5_home_refresh_post: {
+    home_refresh_home_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59278,7 +59377,7 @@ export interface operations {
             };
         };
     };
-    export_home_v5_home_export_post: {
+    export_home_home_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59298,7 +59397,7 @@ export interface operations {
             };
         };
     };
-    get_home_docs_endpoint_v5_home_docs_post: {
+    get_home_docs_endpoint_home_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59331,7 +59430,7 @@ export interface operations {
             };
         };
     };
-    practice_get_v5_practice_get_post: {
+    practice_get_practice_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59364,7 +59463,7 @@ export interface operations {
             };
         };
     };
-    search_practice_v5_practice_search_post: {
+    search_practice_practice_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59397,7 +59496,7 @@ export interface operations {
             };
         };
     };
-    practice_refresh_v5_practice_refresh_post: {
+    practice_refresh_practice_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59417,7 +59516,7 @@ export interface operations {
             };
         };
     };
-    export_practice_v5_practice_export_post: {
+    export_practice_practice_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59437,7 +59536,7 @@ export interface operations {
             };
         };
     };
-    get_practice_docs_endpoint_v5_practice_docs_post: {
+    get_practice_docs_endpoint_practice_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59470,7 +59569,7 @@ export interface operations {
             };
         };
     };
-    attempt_get_v5_attempt_get_post: {
+    attempt_get_attempt_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59503,7 +59602,7 @@ export interface operations {
             };
         };
     };
-    attempt_join_v5_attempt_join_post: {
+    attempt_join_attempt_join_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59536,7 +59635,7 @@ export interface operations {
             };
         };
     };
-    attempt_leave_v5_attempt_leave_post: {
+    attempt_leave_attempt_leave_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59569,7 +59668,7 @@ export interface operations {
             };
         };
     };
-    archive_attempts_v5_attempt_archive_post: {
+    archive_attempts_attempt_archive_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59602,7 +59701,7 @@ export interface operations {
             };
         };
     };
-    attempt_refresh_v5_attempt_refresh_post: {
+    attempt_refresh_attempt_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59622,7 +59721,7 @@ export interface operations {
             };
         };
     };
-    get_attempt_docs_endpoint_v5_attempt_docs_post: {
+    get_attempt_docs_endpoint_attempt_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59655,7 +59754,7 @@ export interface operations {
             };
         };
     };
-    export_attempt_v5_attempt_export_post: {
+    export_attempt_attempt_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59688,7 +59787,7 @@ export interface operations {
             };
         };
     };
-    start_attempt_v5_attempt_start_post: {
+    start_attempt_attempt_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59721,7 +59820,7 @@ export interface operations {
             };
         };
     };
-    next_attempt_v5_attempt_next_post: {
+    next_attempt_attempt_next_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59754,7 +59853,7 @@ export interface operations {
             };
         };
     };
-    end_attempt_v5_attempt_end_post: {
+    end_attempt_attempt_end_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59787,7 +59886,7 @@ export interface operations {
             };
         };
     };
-    end_all_attempt_v5_attempt_end_all_post: {
+    end_all_attempt_attempt_end_all_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59820,7 +59919,7 @@ export interface operations {
             };
         };
     };
-    attempt_message_v5_attempt_message_post: {
+    attempt_message_attempt_message_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59853,7 +59952,7 @@ export interface operations {
             };
         };
     };
-    attempt_grade_v5_attempt_grade_post: {
+    attempt_grade_attempt_grade_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59886,7 +59985,7 @@ export interface operations {
             };
         };
     };
-    attempt_stop_v5_attempt_stop_post: {
+    attempt_stop_attempt_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59919,7 +60018,7 @@ export interface operations {
             };
         };
     };
-    attempt_response_v5_attempt_response_post: {
+    attempt_response_attempt_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59952,7 +60051,7 @@ export interface operations {
             };
         };
     };
-    attempt_use_previous_v5_attempt_use_previous_post: {
+    attempt_use_previous_attempt_use_previous_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59985,7 +60084,7 @@ export interface operations {
             };
         };
     };
-    audio_start_v5_attempt_audio_start_post: {
+    audio_start_attempt_audio_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60018,7 +60117,7 @@ export interface operations {
             };
         };
     };
-    audio_frame_v5_attempt_audio_frame_post: {
+    audio_frame_attempt_audio_frame_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60051,7 +60150,7 @@ export interface operations {
             };
         };
     };
-    audio_stop_v5_attempt_audio_stop_post: {
+    audio_stop_attempt_audio_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60084,7 +60183,7 @@ export interface operations {
             };
         };
     };
-    audio_mute_v5_attempt_audio_mute_post: {
+    audio_mute_attempt_audio_mute_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60117,7 +60216,7 @@ export interface operations {
             };
         };
     };
-    search_attempt_v5_attempt_search_post: {
+    search_attempt_attempt_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60150,7 +60249,7 @@ export interface operations {
             };
         };
     };
-    download_v5_attempt_download__upload_id__get: {
+    download_attempt_download__upload_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -60181,7 +60280,7 @@ export interface operations {
             };
         };
     };
-    get_record_v5_record_get_post: {
+    get_record_record_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60214,7 +60313,7 @@ export interface operations {
             };
         };
     };
-    search_record_v5_record_search_post: {
+    search_record_record_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60247,7 +60346,7 @@ export interface operations {
             };
         };
     };
-    record_refresh_v5_record_refresh_post: {
+    record_refresh_record_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60267,7 +60366,7 @@ export interface operations {
             };
         };
     };
-    export_record_v5_record_export_post: {
+    export_record_record_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60300,7 +60399,7 @@ export interface operations {
             };
         };
     };
-    get_record_docs_endpoint_v5_record_docs_post: {
+    get_record_docs_endpoint_record_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60333,7 +60432,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_v5_dashboard_get_post: {
+    get_dashboard_dashboard_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60366,7 +60465,7 @@ export interface operations {
             };
         };
     };
-    search_dashboard_v5_dashboard_search_post: {
+    search_dashboard_dashboard_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60399,7 +60498,7 @@ export interface operations {
             };
         };
     };
-    dashboard_refresh_v5_dashboard_refresh_post: {
+    dashboard_refresh_dashboard_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60419,7 +60518,7 @@ export interface operations {
             };
         };
     };
-    export_dashboard_v5_dashboard_export_post: {
+    export_dashboard_dashboard_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60439,7 +60538,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_docs_endpoint_v5_dashboard_docs_post: {
+    get_dashboard_docs_endpoint_dashboard_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60472,7 +60571,7 @@ export interface operations {
             };
         };
     };
-    export_reports_v5_reports_export_post: {
+    export_reports_reports_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60492,7 +60591,7 @@ export interface operations {
             };
         };
     };
-    get_reports_v5_reports_search_post: {
+    get_reports_reports_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60525,7 +60624,7 @@ export interface operations {
             };
         };
     };
-    reports_refresh_v5_reports_refresh_post: {
+    reports_refresh_reports_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60545,7 +60644,7 @@ export interface operations {
             };
         };
     };
-    get_reports_docs_endpoint_v5_reports_docs_post: {
+    get_reports_docs_endpoint_reports_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60578,7 +60677,7 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_v5_leaderboard_get_post: {
+    get_leaderboard_leaderboard_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60611,7 +60710,7 @@ export interface operations {
             };
         };
     };
-    search_leaderboard_v5_leaderboard_search_post: {
+    search_leaderboard_leaderboard_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60644,7 +60743,7 @@ export interface operations {
             };
         };
     };
-    leaderboard_refresh_v5_leaderboard_refresh_post: {
+    leaderboard_refresh_leaderboard_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60664,7 +60763,7 @@ export interface operations {
             };
         };
     };
-    export_leaderboard_v5_leaderboard_export_post: {
+    export_leaderboard_leaderboard_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60684,7 +60783,7 @@ export interface operations {
             };
         };
     };
-    get_leaderboard_docs_endpoint_v5_leaderboard_docs_post: {
+    get_leaderboard_docs_endpoint_leaderboard_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60717,7 +60816,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_v5_pricing_get_post: {
+    get_pricing_pricing_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60750,7 +60849,7 @@ export interface operations {
             };
         };
     };
-    search_pricing_v5_pricing_search_post: {
+    search_pricing_pricing_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60783,7 +60882,7 @@ export interface operations {
             };
         };
     };
-    pricing_refresh_v5_pricing_refresh_post: {
+    pricing_refresh_pricing_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60803,7 +60902,7 @@ export interface operations {
             };
         };
     };
-    export_pricing_v5_pricing_export_post: {
+    export_pricing_pricing_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60823,7 +60922,7 @@ export interface operations {
             };
         };
     };
-    get_pricing_docs_endpoint_v5_pricing_docs_post: {
+    get_pricing_docs_endpoint_pricing_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60856,7 +60955,7 @@ export interface operations {
             };
         };
     };
-    get_activity_v5_activity_get_post: {
+    get_activity_activity_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60889,7 +60988,7 @@ export interface operations {
             };
         };
     };
-    search_activity_v5_activity_search_post: {
+    search_activity_activity_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60922,7 +61021,7 @@ export interface operations {
             };
         };
     };
-    activity_refresh_v5_activity_refresh_post: {
+    activity_refresh_activity_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60942,7 +61041,7 @@ export interface operations {
             };
         };
     };
-    resolve_problem_v5_activity_resolve_post: {
+    resolve_problem_activity_resolve_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60975,7 +61074,7 @@ export interface operations {
             };
         };
     };
-    export_activity_v5_activity_export_post: {
+    export_activity_activity_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60995,7 +61094,7 @@ export interface operations {
             };
         };
     };
-    get_activity_docs_endpoint_v5_activity_docs_post: {
+    get_activity_docs_endpoint_activity_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61028,7 +61127,7 @@ export interface operations {
             };
         };
     };
-    get_health_v5_health_get_post: {
+    get_health_health_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61061,7 +61160,7 @@ export interface operations {
             };
         };
     };
-    health_refresh_v5_health_refresh_post: {
+    health_refresh_health_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61081,7 +61180,7 @@ export interface operations {
             };
         };
     };
-    export_health_v5_health_export_post: {
+    export_health_health_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61101,7 +61200,7 @@ export interface operations {
             };
         };
     };
-    get_health_docs_endpoint_v5_health_docs_post: {
+    get_health_docs_endpoint_health_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61134,7 +61233,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_v5_benchmark_get_post: {
+    get_benchmark_benchmark_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61167,7 +61266,7 @@ export interface operations {
             };
         };
     };
-    search_benchmark_history_v5_benchmark_search_post: {
+    search_benchmark_history_benchmark_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61200,7 +61299,7 @@ export interface operations {
             };
         };
     };
-    benchmark_refresh_v5_benchmark_refresh_post: {
+    benchmark_refresh_benchmark_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61220,7 +61319,7 @@ export interface operations {
             };
         };
     };
-    export_benchmark_v5_benchmark_export_post: {
+    export_benchmark_benchmark_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61240,7 +61339,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_docs_endpoint_v5_benchmark_docs_post: {
+    get_benchmark_docs_endpoint_benchmark_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61273,7 +61372,7 @@ export interface operations {
             };
         };
     };
-    get_test_artifact_v5_test_get_post: {
+    get_test_artifact_test_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61306,7 +61405,7 @@ export interface operations {
             };
         };
     };
-    test_join_v5_test_join_post: {
+    test_join_test_join_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61339,7 +61438,7 @@ export interface operations {
             };
         };
     };
-    test_leave_v5_test_leave_post: {
+    test_leave_test_leave_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61372,7 +61471,7 @@ export interface operations {
             };
         };
     };
-    archive_test_artifacts_v5_test_archive_post: {
+    archive_test_artifacts_test_archive_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61405,7 +61504,7 @@ export interface operations {
             };
         };
     };
-    test_refresh_v5_test_refresh_post: {
+    test_refresh_test_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61425,7 +61524,7 @@ export interface operations {
             };
         };
     };
-    export_test_v5_test_export_post: {
+    export_test_test_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61458,7 +61557,7 @@ export interface operations {
             };
         };
     };
-    get_test_docs_endpoint_v5_test_docs_post: {
+    get_test_docs_endpoint_test_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61491,7 +61590,7 @@ export interface operations {
             };
         };
     };
-    start_test_v5_test_start_post: {
+    start_test_test_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61524,7 +61623,7 @@ export interface operations {
             };
         };
     };
-    next_test_v5_test_next_post: {
+    next_test_test_next_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61557,7 +61656,7 @@ export interface operations {
             };
         };
     };
-    run_test_v5_test_run_post: {
+    run_test_test_run_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61590,7 +61689,7 @@ export interface operations {
             };
         };
     };
-    end_test_v5_test_end_post: {
+    end_test_test_end_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61623,7 +61722,7 @@ export interface operations {
             };
         };
     };
-    stop_test_v5_test_stop_post: {
+    stop_test_test_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61656,7 +61755,7 @@ export interface operations {
             };
         };
     };
-    search_test_v5_test_search_post: {
+    search_test_test_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61689,7 +61788,7 @@ export interface operations {
             };
         };
     };
-    connect_v5_connect_post: {
+    connect_connect_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61709,7 +61808,7 @@ export interface operations {
             };
         };
     };
-    disconnect_v5_disconnect_post: {
+    disconnect_disconnect_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61742,7 +61841,7 @@ export interface operations {
             };
         };
     };
-    get_profile_context_v5_context_post: {
+    get_profile_context_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61775,7 +61874,7 @@ export interface operations {
             };
         };
     };
-    create_problem_v5_problem_post: {
+    create_problem_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61808,7 +61907,7 @@ export interface operations {
             };
         };
     };
-    emulate_profile_v5_emulate_post: {
+    emulate_profile_emulate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61841,7 +61940,7 @@ export interface operations {
             };
         };
     };
-    unemulate_profile_v5_unemulate_post: {
+    unemulate_profile_unemulate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61861,7 +61960,7 @@ export interface operations {
             };
         };
     };
-    generate_v5_generate_post: {
+    generate_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61894,10 +61993,13 @@ export interface operations {
             };
         };
     };
-    stream_events_v5_stream__get: {
+    stream_events_stream__get: {
         parameters: {
-            query: {
-                sid: string;
+            query?: {
+                sid?: string | null;
+                artifact?: string | null;
+                operation?: string | null;
+                entity_id?: string | null;
                 cursor?: string | null;
                 types?: string[] | null;
                 limit?: number;
@@ -61928,7 +62030,7 @@ export interface operations {
             };
         };
     };
-    ActivityRequest_schema_v5_stream_ActivityRequest_post: {
+    ActivityRequest_schema_stream_ActivityRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61963,7 +62065,7 @@ export interface operations {
             };
         };
     };
-    ActivityResponse_schema_v5_stream_ActivityResponse_post: {
+    ActivityResponse_schema_stream_ActivityResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61998,7 +62100,7 @@ export interface operations {
             };
         };
     };
-    AttemptAssistantCompleteEvent_schema_v5_stream_AttemptAssistantCompleteEvent_post: {
+    AttemptAssistantCompleteEvent_schema_stream_AttemptAssistantCompleteEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62033,7 +62135,7 @@ export interface operations {
             };
         };
     };
-    AttemptAssistantHintsEvent_schema_v5_stream_AttemptAssistantHintsEvent_post: {
+    AttemptAssistantHintsEvent_schema_stream_AttemptAssistantHintsEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62068,7 +62170,7 @@ export interface operations {
             };
         };
     };
-    AttemptAssistantProgressEvent_schema_v5_stream_AttemptAssistantProgressEvent_post: {
+    AttemptAssistantProgressEvent_schema_stream_AttemptAssistantProgressEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62103,7 +62205,7 @@ export interface operations {
             };
         };
     };
-    AttemptAssistantStartEvent_schema_v5_stream_AttemptAssistantStartEvent_post: {
+    AttemptAssistantStartEvent_schema_stream_AttemptAssistantStartEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62138,7 +62240,7 @@ export interface operations {
             };
         };
     };
-    AttemptAudioEndedEvent_schema_v5_stream_AttemptAudioEndedEvent_post: {
+    AttemptAudioEndedEvent_schema_stream_AttemptAudioEndedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62173,7 +62275,7 @@ export interface operations {
             };
         };
     };
-    AttemptAudioReadyEvent_schema_v5_stream_AttemptAudioReadyEvent_post: {
+    AttemptAudioReadyEvent_schema_stream_AttemptAudioReadyEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62208,7 +62310,7 @@ export interface operations {
             };
         };
     };
-    AttemptAudioStartPayload_schema_v5_stream_AttemptAudioStartPayload_post: {
+    AttemptAudioStartPayload_schema_stream_AttemptAudioStartPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62243,7 +62345,7 @@ export interface operations {
             };
         };
     };
-    AttemptAudioStopPayload_schema_v5_stream_AttemptAudioStopPayload_post: {
+    AttemptAudioStopPayload_schema_stream_AttemptAudioStopPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62278,7 +62380,7 @@ export interface operations {
             };
         };
     };
-    AttemptChatEndedEvent_schema_v5_stream_AttemptChatEndedEvent_post: {
+    AttemptChatEndedEvent_schema_stream_AttemptChatEndedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62313,7 +62415,7 @@ export interface operations {
             };
         };
     };
-    AttemptChatStartedEvent_schema_v5_stream_AttemptChatStartedEvent_post: {
+    AttemptChatStartedEvent_schema_stream_AttemptChatStartedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62348,7 +62450,7 @@ export interface operations {
             };
         };
     };
-    AttemptEndAllPayload_schema_v5_stream_AttemptEndAllPayload_post: {
+    AttemptEndAllPayload_schema_stream_AttemptEndAllPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62383,7 +62485,7 @@ export interface operations {
             };
         };
     };
-    AttemptEndPayload_schema_v5_stream_AttemptEndPayload_post: {
+    AttemptEndPayload_schema_stream_AttemptEndPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62418,7 +62520,7 @@ export interface operations {
             };
         };
     };
-    AttemptEndedEvent_schema_v5_stream_AttemptEndedEvent_post: {
+    AttemptEndedEvent_schema_stream_AttemptEndedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62453,7 +62555,7 @@ export interface operations {
             };
         };
     };
-    AttemptErrorEvent_schema_v5_stream_AttemptErrorEvent_post: {
+    AttemptErrorEvent_schema_stream_AttemptErrorEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62488,7 +62590,7 @@ export interface operations {
             };
         };
     };
-    AttemptGradeCompleteEvent_schema_v5_stream_AttemptGradeCompleteEvent_post: {
+    AttemptGradeCompleteEvent_schema_stream_AttemptGradeCompleteEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62523,7 +62625,7 @@ export interface operations {
             };
         };
     };
-    AttemptGradePayload_schema_v5_stream_AttemptGradePayload_post: {
+    AttemptGradePayload_schema_stream_AttemptGradePayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62558,7 +62660,7 @@ export interface operations {
             };
         };
     };
-    AttemptGradeProgressEvent_schema_v5_stream_AttemptGradeProgressEvent_post: {
+    AttemptGradeProgressEvent_schema_stream_AttemptGradeProgressEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62593,7 +62695,7 @@ export interface operations {
             };
         };
     };
-    AttemptGradeStartEvent_schema_v5_stream_AttemptGradeStartEvent_post: {
+    AttemptGradeStartEvent_schema_stream_AttemptGradeStartEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62628,7 +62730,7 @@ export interface operations {
             };
         };
     };
-    AttemptJoinPayload_schema_v5_stream_AttemptJoinPayload_post: {
+    AttemptJoinPayload_schema_stream_AttemptJoinPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62663,7 +62765,7 @@ export interface operations {
             };
         };
     };
-    AttemptJoinedEvent_schema_v5_stream_AttemptJoinedEvent_post: {
+    AttemptJoinedEvent_schema_stream_AttemptJoinedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62698,7 +62800,7 @@ export interface operations {
             };
         };
     };
-    AttemptLeavePayload_schema_v5_stream_AttemptLeavePayload_post: {
+    AttemptLeavePayload_schema_stream_AttemptLeavePayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62733,7 +62835,7 @@ export interface operations {
             };
         };
     };
-    AttemptMessagePayload_schema_v5_stream_AttemptMessagePayload_post: {
+    AttemptMessagePayload_schema_stream_AttemptMessagePayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62768,7 +62870,7 @@ export interface operations {
             };
         };
     };
-    AttemptNextPayload_schema_v5_stream_AttemptNextPayload_post: {
+    AttemptNextPayload_schema_stream_AttemptNextPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62803,7 +62905,7 @@ export interface operations {
             };
         };
     };
-    AttemptResponsePayload_schema_v5_stream_AttemptResponsePayload_post: {
+    AttemptResponsePayload_schema_stream_AttemptResponsePayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62838,7 +62940,7 @@ export interface operations {
             };
         };
     };
-    AttemptResponseResultEvent_schema_v5_stream_AttemptResponseResultEvent_post: {
+    AttemptResponseResultEvent_schema_stream_AttemptResponseResultEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62873,7 +62975,7 @@ export interface operations {
             };
         };
     };
-    AttemptStartPayload_schema_v5_stream_AttemptStartPayload_post: {
+    AttemptStartPayload_schema_stream_AttemptStartPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62908,7 +63010,7 @@ export interface operations {
             };
         };
     };
-    AttemptStartedEvent_schema_v5_stream_AttemptStartedEvent_post: {
+    AttemptStartedEvent_schema_stream_AttemptStartedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62943,7 +63045,7 @@ export interface operations {
             };
         };
     };
-    AttemptStopPayload_schema_v5_stream_AttemptStopPayload_post: {
+    AttemptStopPayload_schema_stream_AttemptStopPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62978,7 +63080,7 @@ export interface operations {
             };
         };
     };
-    AttemptStoppedEvent_schema_v5_stream_AttemptStoppedEvent_post: {
+    AttemptStoppedEvent_schema_stream_AttemptStoppedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63013,7 +63115,7 @@ export interface operations {
             };
         };
     };
-    AttemptUsePreviousPayload_schema_v5_stream_AttemptUsePreviousPayload_post: {
+    AttemptUsePreviousPayload_schema_stream_AttemptUsePreviousPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63048,7 +63150,7 @@ export interface operations {
             };
         };
     };
-    AttemptUserCompleteEvent_schema_v5_stream_AttemptUserCompleteEvent_post: {
+    AttemptUserCompleteEvent_schema_stream_AttemptUserCompleteEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63083,7 +63185,7 @@ export interface operations {
             };
         };
     };
-    AttemptUserDeltaEvent_schema_v5_stream_AttemptUserDeltaEvent_post: {
+    AttemptUserDeltaEvent_schema_stream_AttemptUserDeltaEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63118,7 +63220,7 @@ export interface operations {
             };
         };
     };
-    AttemptUserProgressEvent_schema_v5_stream_AttemptUserProgressEvent_post: {
+    AttemptUserProgressEvent_schema_stream_AttemptUserProgressEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63153,7 +63255,7 @@ export interface operations {
             };
         };
     };
-    AttemptUserStartEvent_schema_v5_stream_AttemptUserStartEvent_post: {
+    AttemptUserStartEvent_schema_stream_AttemptUserStartEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63188,7 +63290,7 @@ export interface operations {
             };
         };
     };
-    BenchmarkRequest_schema_v5_stream_BenchmarkRequest_post: {
+    BenchmarkRequest_schema_stream_BenchmarkRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63223,7 +63325,7 @@ export interface operations {
             };
         };
     };
-    BenchmarkResponse_schema_v5_stream_BenchmarkResponse_post: {
+    BenchmarkResponse_schema_stream_BenchmarkResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63258,7 +63360,7 @@ export interface operations {
             };
         };
     };
-    ComposedDocsResponse_schema_v5_stream_ComposedDocsResponse_post: {
+    ComposedDocsResponse_schema_stream_ComposedDocsResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63293,7 +63395,7 @@ export interface operations {
             };
         };
     };
-    ConnectionConfirmedPayload_schema_v5_stream_ConnectionConfirmedPayload_post: {
+    ConnectionConfirmedPayload_schema_stream_ConnectionConfirmedPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63328,7 +63430,7 @@ export interface operations {
             };
         };
     };
-    CreateAgentApiRequest_schema_v5_stream_CreateAgentApiRequest_post: {
+    CreateAgentApiRequest_schema_stream_CreateAgentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63363,7 +63465,7 @@ export interface operations {
             };
         };
     };
-    CreateAgentApiResponse_schema_v5_stream_CreateAgentApiResponse_post: {
+    CreateAgentApiResponse_schema_stream_CreateAgentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63398,7 +63500,7 @@ export interface operations {
             };
         };
     };
-    CreateAuthApiRequest_schema_v5_stream_CreateAuthApiRequest_post: {
+    CreateAuthApiRequest_schema_stream_CreateAuthApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63433,7 +63535,7 @@ export interface operations {
             };
         };
     };
-    CreateAuthApiResponse_schema_v5_stream_CreateAuthApiResponse_post: {
+    CreateAuthApiResponse_schema_stream_CreateAuthApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63468,7 +63570,7 @@ export interface operations {
             };
         };
     };
-    CreateCohortApiRequest_schema_v5_stream_CreateCohortApiRequest_post: {
+    CreateCohortApiRequest_schema_stream_CreateCohortApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63503,7 +63605,7 @@ export interface operations {
             };
         };
     };
-    CreateCohortApiResponse_schema_v5_stream_CreateCohortApiResponse_post: {
+    CreateCohortApiResponse_schema_stream_CreateCohortApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63538,7 +63640,7 @@ export interface operations {
             };
         };
     };
-    CreateDepartmentApiRequest_schema_v5_stream_CreateDepartmentApiRequest_post: {
+    CreateDepartmentApiRequest_schema_stream_CreateDepartmentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63573,7 +63675,7 @@ export interface operations {
             };
         };
     };
-    CreateDepartmentApiResponse_schema_v5_stream_CreateDepartmentApiResponse_post: {
+    CreateDepartmentApiResponse_schema_stream_CreateDepartmentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63608,7 +63710,7 @@ export interface operations {
             };
         };
     };
-    CreateDocumentApiRequest_schema_v5_stream_CreateDocumentApiRequest_post: {
+    CreateDocumentApiRequest_schema_stream_CreateDocumentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63643,7 +63745,7 @@ export interface operations {
             };
         };
     };
-    CreateDocumentApiResponse_schema_v5_stream_CreateDocumentApiResponse_post: {
+    CreateDocumentApiResponse_schema_stream_CreateDocumentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63678,7 +63780,7 @@ export interface operations {
             };
         };
     };
-    CreateEvalApiRequest_schema_v5_stream_CreateEvalApiRequest_post: {
+    CreateEvalApiRequest_schema_stream_CreateEvalApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63713,7 +63815,7 @@ export interface operations {
             };
         };
     };
-    CreateEvalApiResponse_schema_v5_stream_CreateEvalApiResponse_post: {
+    CreateEvalApiResponse_schema_stream_CreateEvalApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63748,7 +63850,7 @@ export interface operations {
             };
         };
     };
-    CreateFieldApiRequest_schema_v5_stream_CreateFieldApiRequest_post: {
+    CreateFieldApiRequest_schema_stream_CreateFieldApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63783,7 +63885,7 @@ export interface operations {
             };
         };
     };
-    CreateFieldApiResponse_schema_v5_stream_CreateFieldApiResponse_post: {
+    CreateFieldApiResponse_schema_stream_CreateFieldApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63818,7 +63920,7 @@ export interface operations {
             };
         };
     };
-    CreateModelApiRequest_schema_v5_stream_CreateModelApiRequest_post: {
+    CreateModelApiRequest_schema_stream_CreateModelApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63853,7 +63955,7 @@ export interface operations {
             };
         };
     };
-    CreateModelApiResponse_schema_v5_stream_CreateModelApiResponse_post: {
+    CreateModelApiResponse_schema_stream_CreateModelApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63888,7 +63990,7 @@ export interface operations {
             };
         };
     };
-    CreateParameterApiRequest_schema_v5_stream_CreateParameterApiRequest_post: {
+    CreateParameterApiRequest_schema_stream_CreateParameterApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63923,7 +64025,7 @@ export interface operations {
             };
         };
     };
-    CreateParameterApiResponse_schema_v5_stream_CreateParameterApiResponse_post: {
+    CreateParameterApiResponse_schema_stream_CreateParameterApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63958,7 +64060,7 @@ export interface operations {
             };
         };
     };
-    CreatePersonaApiRequest_schema_v5_stream_CreatePersonaApiRequest_post: {
+    CreatePersonaApiRequest_schema_stream_CreatePersonaApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63993,7 +64095,7 @@ export interface operations {
             };
         };
     };
-    CreatePersonaApiResponse_schema_v5_stream_CreatePersonaApiResponse_post: {
+    CreatePersonaApiResponse_schema_stream_CreatePersonaApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64028,7 +64130,7 @@ export interface operations {
             };
         };
     };
-    CreateProfileApiRequest_schema_v5_stream_CreateProfileApiRequest_post: {
+    CreateProfileApiRequest_schema_stream_CreateProfileApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64063,7 +64165,7 @@ export interface operations {
             };
         };
     };
-    CreateProfileApiResponse_schema_v5_stream_CreateProfileApiResponse_post: {
+    CreateProfileApiResponse_schema_stream_CreateProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64098,7 +64200,7 @@ export interface operations {
             };
         };
     };
-    CreateProviderApiRequest_schema_v5_stream_CreateProviderApiRequest_post: {
+    CreateProviderApiRequest_schema_stream_CreateProviderApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64133,7 +64235,7 @@ export interface operations {
             };
         };
     };
-    CreateProviderApiResponse_schema_v5_stream_CreateProviderApiResponse_post: {
+    CreateProviderApiResponse_schema_stream_CreateProviderApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64168,7 +64270,7 @@ export interface operations {
             };
         };
     };
-    CreateRubricApiRequest_schema_v5_stream_CreateRubricApiRequest_post: {
+    CreateRubricApiRequest_schema_stream_CreateRubricApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64203,7 +64305,7 @@ export interface operations {
             };
         };
     };
-    CreateRubricApiResponse_schema_v5_stream_CreateRubricApiResponse_post: {
+    CreateRubricApiResponse_schema_stream_CreateRubricApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64238,7 +64340,7 @@ export interface operations {
             };
         };
     };
-    CreateScenarioApiRequest_schema_v5_stream_CreateScenarioApiRequest_post: {
+    CreateScenarioApiRequest_schema_stream_CreateScenarioApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64273,7 +64375,7 @@ export interface operations {
             };
         };
     };
-    CreateScenarioApiResponse_schema_v5_stream_CreateScenarioApiResponse_post: {
+    CreateScenarioApiResponse_schema_stream_CreateScenarioApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64308,7 +64410,7 @@ export interface operations {
             };
         };
     };
-    CreateSettingApiRequest_schema_v5_stream_CreateSettingApiRequest_post: {
+    CreateSettingApiRequest_schema_stream_CreateSettingApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64343,7 +64445,7 @@ export interface operations {
             };
         };
     };
-    CreateSettingApiResponse_schema_v5_stream_CreateSettingApiResponse_post: {
+    CreateSettingApiResponse_schema_stream_CreateSettingApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64378,7 +64480,7 @@ export interface operations {
             };
         };
     };
-    CreateSimulationApiRequest_schema_v5_stream_CreateSimulationApiRequest_post: {
+    CreateSimulationApiRequest_schema_stream_CreateSimulationApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64413,7 +64515,7 @@ export interface operations {
             };
         };
     };
-    CreateSimulationApiResponse_schema_v5_stream_CreateSimulationApiResponse_post: {
+    CreateSimulationApiResponse_schema_stream_CreateSimulationApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64448,7 +64550,7 @@ export interface operations {
             };
         };
     };
-    CreateToolApiRequest_schema_v5_stream_CreateToolApiRequest_post: {
+    CreateToolApiRequest_schema_stream_CreateToolApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64483,7 +64585,7 @@ export interface operations {
             };
         };
     };
-    CreateToolApiResponse_schema_v5_stream_CreateToolApiResponse_post: {
+    CreateToolApiResponse_schema_stream_CreateToolApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64518,7 +64620,7 @@ export interface operations {
             };
         };
     };
-    DashboardBundleResponse_schema_v5_stream_DashboardBundleResponse_post: {
+    DashboardBundleResponse_schema_stream_DashboardBundleResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64553,7 +64655,7 @@ export interface operations {
             };
         };
     };
-    DashboardRequest_schema_v5_stream_DashboardRequest_post: {
+    DashboardRequest_schema_stream_DashboardRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64588,7 +64690,7 @@ export interface operations {
             };
         };
     };
-    DeleteAgentApiRequest_schema_v5_stream_DeleteAgentApiRequest_post: {
+    DeleteAgentApiRequest_schema_stream_DeleteAgentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64623,7 +64725,7 @@ export interface operations {
             };
         };
     };
-    DeleteAgentApiResponse_schema_v5_stream_DeleteAgentApiResponse_post: {
+    DeleteAgentApiResponse_schema_stream_DeleteAgentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64658,7 +64760,7 @@ export interface operations {
             };
         };
     };
-    DeleteAuthApiRequest_schema_v5_stream_DeleteAuthApiRequest_post: {
+    DeleteAuthApiRequest_schema_stream_DeleteAuthApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64693,7 +64795,7 @@ export interface operations {
             };
         };
     };
-    DeleteAuthApiResponse_schema_v5_stream_DeleteAuthApiResponse_post: {
+    DeleteAuthApiResponse_schema_stream_DeleteAuthApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64728,7 +64830,7 @@ export interface operations {
             };
         };
     };
-    DeleteCohortApiRequest_schema_v5_stream_DeleteCohortApiRequest_post: {
+    DeleteCohortApiRequest_schema_stream_DeleteCohortApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64763,7 +64865,7 @@ export interface operations {
             };
         };
     };
-    DeleteCohortApiResponse_schema_v5_stream_DeleteCohortApiResponse_post: {
+    DeleteCohortApiResponse_schema_stream_DeleteCohortApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64798,7 +64900,7 @@ export interface operations {
             };
         };
     };
-    DeleteDepartmentApiRequest_schema_v5_stream_DeleteDepartmentApiRequest_post: {
+    DeleteDepartmentApiRequest_schema_stream_DeleteDepartmentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64833,7 +64935,7 @@ export interface operations {
             };
         };
     };
-    DeleteDepartmentApiResponse_schema_v5_stream_DeleteDepartmentApiResponse_post: {
+    DeleteDepartmentApiResponse_schema_stream_DeleteDepartmentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64868,7 +64970,7 @@ export interface operations {
             };
         };
     };
-    DeleteDocumentApiRequest_schema_v5_stream_DeleteDocumentApiRequest_post: {
+    DeleteDocumentApiRequest_schema_stream_DeleteDocumentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64903,7 +65005,7 @@ export interface operations {
             };
         };
     };
-    DeleteDocumentApiResponse_schema_v5_stream_DeleteDocumentApiResponse_post: {
+    DeleteDocumentApiResponse_schema_stream_DeleteDocumentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64938,7 +65040,7 @@ export interface operations {
             };
         };
     };
-    DeleteEvalApiRequest_schema_v5_stream_DeleteEvalApiRequest_post: {
+    DeleteEvalApiRequest_schema_stream_DeleteEvalApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64973,7 +65075,7 @@ export interface operations {
             };
         };
     };
-    DeleteEvalApiResponse_schema_v5_stream_DeleteEvalApiResponse_post: {
+    DeleteEvalApiResponse_schema_stream_DeleteEvalApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65008,7 +65110,7 @@ export interface operations {
             };
         };
     };
-    DeleteFieldApiRequest_schema_v5_stream_DeleteFieldApiRequest_post: {
+    DeleteFieldApiRequest_schema_stream_DeleteFieldApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65043,7 +65145,7 @@ export interface operations {
             };
         };
     };
-    DeleteFieldApiResponse_schema_v5_stream_DeleteFieldApiResponse_post: {
+    DeleteFieldApiResponse_schema_stream_DeleteFieldApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65078,7 +65180,7 @@ export interface operations {
             };
         };
     };
-    DeleteModelApiRequest_schema_v5_stream_DeleteModelApiRequest_post: {
+    DeleteModelApiRequest_schema_stream_DeleteModelApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65113,7 +65215,7 @@ export interface operations {
             };
         };
     };
-    DeleteModelApiResponse_schema_v5_stream_DeleteModelApiResponse_post: {
+    DeleteModelApiResponse_schema_stream_DeleteModelApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65148,7 +65250,7 @@ export interface operations {
             };
         };
     };
-    DeleteParameterApiRequest_schema_v5_stream_DeleteParameterApiRequest_post: {
+    DeleteParameterApiRequest_schema_stream_DeleteParameterApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65183,7 +65285,7 @@ export interface operations {
             };
         };
     };
-    DeleteParameterApiResponse_schema_v5_stream_DeleteParameterApiResponse_post: {
+    DeleteParameterApiResponse_schema_stream_DeleteParameterApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65218,7 +65320,7 @@ export interface operations {
             };
         };
     };
-    DeletePersonaApiRequest_schema_v5_stream_DeletePersonaApiRequest_post: {
+    DeletePersonaApiRequest_schema_stream_DeletePersonaApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65253,7 +65355,7 @@ export interface operations {
             };
         };
     };
-    DeletePersonaApiResponse_schema_v5_stream_DeletePersonaApiResponse_post: {
+    DeletePersonaApiResponse_schema_stream_DeletePersonaApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65288,7 +65390,7 @@ export interface operations {
             };
         };
     };
-    DeleteProfileApiRequest_schema_v5_stream_DeleteProfileApiRequest_post: {
+    DeleteProfileApiRequest_schema_stream_DeleteProfileApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65323,7 +65425,7 @@ export interface operations {
             };
         };
     };
-    DeleteProfileApiResponse_schema_v5_stream_DeleteProfileApiResponse_post: {
+    DeleteProfileApiResponse_schema_stream_DeleteProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65358,7 +65460,7 @@ export interface operations {
             };
         };
     };
-    DeleteProviderApiRequest_schema_v5_stream_DeleteProviderApiRequest_post: {
+    DeleteProviderApiRequest_schema_stream_DeleteProviderApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65393,7 +65495,7 @@ export interface operations {
             };
         };
     };
-    DeleteProviderApiResponse_schema_v5_stream_DeleteProviderApiResponse_post: {
+    DeleteProviderApiResponse_schema_stream_DeleteProviderApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65428,7 +65530,7 @@ export interface operations {
             };
         };
     };
-    DeleteRubricApiRequest_schema_v5_stream_DeleteRubricApiRequest_post: {
+    DeleteRubricApiRequest_schema_stream_DeleteRubricApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65463,7 +65565,7 @@ export interface operations {
             };
         };
     };
-    DeleteRubricApiResponse_schema_v5_stream_DeleteRubricApiResponse_post: {
+    DeleteRubricApiResponse_schema_stream_DeleteRubricApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65498,7 +65600,7 @@ export interface operations {
             };
         };
     };
-    DeleteScenarioApiRequest_schema_v5_stream_DeleteScenarioApiRequest_post: {
+    DeleteScenarioApiRequest_schema_stream_DeleteScenarioApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65533,7 +65635,7 @@ export interface operations {
             };
         };
     };
-    DeleteScenarioApiResponse_schema_v5_stream_DeleteScenarioApiResponse_post: {
+    DeleteScenarioApiResponse_schema_stream_DeleteScenarioApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65568,7 +65670,7 @@ export interface operations {
             };
         };
     };
-    DeleteSettingApiRequest_schema_v5_stream_DeleteSettingApiRequest_post: {
+    DeleteSettingApiRequest_schema_stream_DeleteSettingApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65603,7 +65705,7 @@ export interface operations {
             };
         };
     };
-    DeleteSettingApiResponse_schema_v5_stream_DeleteSettingApiResponse_post: {
+    DeleteSettingApiResponse_schema_stream_DeleteSettingApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65638,7 +65740,7 @@ export interface operations {
             };
         };
     };
-    DeleteSimulationApiRequest_schema_v5_stream_DeleteSimulationApiRequest_post: {
+    DeleteSimulationApiRequest_schema_stream_DeleteSimulationApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65673,7 +65775,7 @@ export interface operations {
             };
         };
     };
-    DeleteSimulationApiResponse_schema_v5_stream_DeleteSimulationApiResponse_post: {
+    DeleteSimulationApiResponse_schema_stream_DeleteSimulationApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65708,7 +65810,7 @@ export interface operations {
             };
         };
     };
-    DeleteToolApiRequest_schema_v5_stream_DeleteToolApiRequest_post: {
+    DeleteToolApiRequest_schema_stream_DeleteToolApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65743,7 +65845,7 @@ export interface operations {
             };
         };
     };
-    DeleteToolApiResponse_schema_v5_stream_DeleteToolApiResponse_post: {
+    DeleteToolApiResponse_schema_stream_DeleteToolApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65778,7 +65880,7 @@ export interface operations {
             };
         };
     };
-    DuplicateAgentApiRequest_schema_v5_stream_DuplicateAgentApiRequest_post: {
+    DuplicateAgentApiRequest_schema_stream_DuplicateAgentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65813,7 +65915,7 @@ export interface operations {
             };
         };
     };
-    DuplicateAgentApiResponse_schema_v5_stream_DuplicateAgentApiResponse_post: {
+    DuplicateAgentApiResponse_schema_stream_DuplicateAgentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65848,7 +65950,7 @@ export interface operations {
             };
         };
     };
-    DuplicateAuthApiRequest_schema_v5_stream_DuplicateAuthApiRequest_post: {
+    DuplicateAuthApiRequest_schema_stream_DuplicateAuthApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65883,7 +65985,7 @@ export interface operations {
             };
         };
     };
-    DuplicateAuthApiResponse_schema_v5_stream_DuplicateAuthApiResponse_post: {
+    DuplicateAuthApiResponse_schema_stream_DuplicateAuthApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65918,7 +66020,7 @@ export interface operations {
             };
         };
     };
-    DuplicateCohortApiRequest_schema_v5_stream_DuplicateCohortApiRequest_post: {
+    DuplicateCohortApiRequest_schema_stream_DuplicateCohortApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65953,7 +66055,7 @@ export interface operations {
             };
         };
     };
-    DuplicateCohortApiResponse_schema_v5_stream_DuplicateCohortApiResponse_post: {
+    DuplicateCohortApiResponse_schema_stream_DuplicateCohortApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65988,7 +66090,7 @@ export interface operations {
             };
         };
     };
-    DuplicateDepartmentApiRequest_schema_v5_stream_DuplicateDepartmentApiRequest_post: {
+    DuplicateDepartmentApiRequest_schema_stream_DuplicateDepartmentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66023,7 +66125,7 @@ export interface operations {
             };
         };
     };
-    DuplicateDepartmentApiResponse_schema_v5_stream_DuplicateDepartmentApiResponse_post: {
+    DuplicateDepartmentApiResponse_schema_stream_DuplicateDepartmentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66058,7 +66160,7 @@ export interface operations {
             };
         };
     };
-    DuplicateDocumentApiRequest_schema_v5_stream_DuplicateDocumentApiRequest_post: {
+    DuplicateDocumentApiRequest_schema_stream_DuplicateDocumentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66093,7 +66195,7 @@ export interface operations {
             };
         };
     };
-    DuplicateDocumentApiResponse_schema_v5_stream_DuplicateDocumentApiResponse_post: {
+    DuplicateDocumentApiResponse_schema_stream_DuplicateDocumentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66128,7 +66230,7 @@ export interface operations {
             };
         };
     };
-    DuplicateEvalApiRequest_schema_v5_stream_DuplicateEvalApiRequest_post: {
+    DuplicateEvalApiRequest_schema_stream_DuplicateEvalApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66163,7 +66265,7 @@ export interface operations {
             };
         };
     };
-    DuplicateEvalApiResponse_schema_v5_stream_DuplicateEvalApiResponse_post: {
+    DuplicateEvalApiResponse_schema_stream_DuplicateEvalApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66198,7 +66300,7 @@ export interface operations {
             };
         };
     };
-    DuplicateFieldApiRequest_schema_v5_stream_DuplicateFieldApiRequest_post: {
+    DuplicateFieldApiRequest_schema_stream_DuplicateFieldApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66233,7 +66335,7 @@ export interface operations {
             };
         };
     };
-    DuplicateFieldApiResponse_schema_v5_stream_DuplicateFieldApiResponse_post: {
+    DuplicateFieldApiResponse_schema_stream_DuplicateFieldApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66268,7 +66370,7 @@ export interface operations {
             };
         };
     };
-    DuplicateModelApiRequest_schema_v5_stream_DuplicateModelApiRequest_post: {
+    DuplicateModelApiRequest_schema_stream_DuplicateModelApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66303,7 +66405,7 @@ export interface operations {
             };
         };
     };
-    DuplicateModelApiResponse_schema_v5_stream_DuplicateModelApiResponse_post: {
+    DuplicateModelApiResponse_schema_stream_DuplicateModelApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66338,7 +66440,7 @@ export interface operations {
             };
         };
     };
-    DuplicateParameterApiRequest_schema_v5_stream_DuplicateParameterApiRequest_post: {
+    DuplicateParameterApiRequest_schema_stream_DuplicateParameterApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66373,7 +66475,7 @@ export interface operations {
             };
         };
     };
-    DuplicateParameterApiResponse_schema_v5_stream_DuplicateParameterApiResponse_post: {
+    DuplicateParameterApiResponse_schema_stream_DuplicateParameterApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66408,7 +66510,7 @@ export interface operations {
             };
         };
     };
-    DuplicatePersonaApiRequest_schema_v5_stream_DuplicatePersonaApiRequest_post: {
+    DuplicatePersonaApiRequest_schema_stream_DuplicatePersonaApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66443,7 +66545,7 @@ export interface operations {
             };
         };
     };
-    DuplicatePersonaApiResponse_schema_v5_stream_DuplicatePersonaApiResponse_post: {
+    DuplicatePersonaApiResponse_schema_stream_DuplicatePersonaApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66478,7 +66580,7 @@ export interface operations {
             };
         };
     };
-    DuplicateProfileApiRequest_schema_v5_stream_DuplicateProfileApiRequest_post: {
+    DuplicateProfileApiRequest_schema_stream_DuplicateProfileApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66513,7 +66615,7 @@ export interface operations {
             };
         };
     };
-    DuplicateProfileApiResponse_schema_v5_stream_DuplicateProfileApiResponse_post: {
+    DuplicateProfileApiResponse_schema_stream_DuplicateProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66548,7 +66650,7 @@ export interface operations {
             };
         };
     };
-    DuplicateProviderApiRequest_schema_v5_stream_DuplicateProviderApiRequest_post: {
+    DuplicateProviderApiRequest_schema_stream_DuplicateProviderApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66583,7 +66685,7 @@ export interface operations {
             };
         };
     };
-    DuplicateProviderApiResponse_schema_v5_stream_DuplicateProviderApiResponse_post: {
+    DuplicateProviderApiResponse_schema_stream_DuplicateProviderApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66618,7 +66720,7 @@ export interface operations {
             };
         };
     };
-    DuplicateRubricApiRequest_schema_v5_stream_DuplicateRubricApiRequest_post: {
+    DuplicateRubricApiRequest_schema_stream_DuplicateRubricApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66653,7 +66755,7 @@ export interface operations {
             };
         };
     };
-    DuplicateRubricApiResponse_schema_v5_stream_DuplicateRubricApiResponse_post: {
+    DuplicateRubricApiResponse_schema_stream_DuplicateRubricApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66688,7 +66790,7 @@ export interface operations {
             };
         };
     };
-    DuplicateScenarioApiRequest_schema_v5_stream_DuplicateScenarioApiRequest_post: {
+    DuplicateScenarioApiRequest_schema_stream_DuplicateScenarioApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66723,7 +66825,7 @@ export interface operations {
             };
         };
     };
-    DuplicateScenarioApiResponse_schema_v5_stream_DuplicateScenarioApiResponse_post: {
+    DuplicateScenarioApiResponse_schema_stream_DuplicateScenarioApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66758,7 +66860,7 @@ export interface operations {
             };
         };
     };
-    DuplicateSettingApiRequest_schema_v5_stream_DuplicateSettingApiRequest_post: {
+    DuplicateSettingApiRequest_schema_stream_DuplicateSettingApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66793,7 +66895,7 @@ export interface operations {
             };
         };
     };
-    DuplicateSettingApiResponse_schema_v5_stream_DuplicateSettingApiResponse_post: {
+    DuplicateSettingApiResponse_schema_stream_DuplicateSettingApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66828,7 +66930,7 @@ export interface operations {
             };
         };
     };
-    DuplicateSimulationApiRequest_schema_v5_stream_DuplicateSimulationApiRequest_post: {
+    DuplicateSimulationApiRequest_schema_stream_DuplicateSimulationApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66863,7 +66965,7 @@ export interface operations {
             };
         };
     };
-    DuplicateSimulationApiResponse_schema_v5_stream_DuplicateSimulationApiResponse_post: {
+    DuplicateSimulationApiResponse_schema_stream_DuplicateSimulationApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66898,7 +67000,7 @@ export interface operations {
             };
         };
     };
-    DuplicateToolApiRequest_schema_v5_stream_DuplicateToolApiRequest_post: {
+    DuplicateToolApiRequest_schema_stream_DuplicateToolApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66933,7 +67035,7 @@ export interface operations {
             };
         };
     };
-    DuplicateToolApiResponse_schema_v5_stream_DuplicateToolApiResponse_post: {
+    DuplicateToolApiResponse_schema_stream_DuplicateToolApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66968,7 +67070,7 @@ export interface operations {
             };
         };
     };
-    EmulateProfileApiRequest_schema_v5_stream_EmulateProfileApiRequest_post: {
+    EmulateProfileApiRequest_schema_stream_EmulateProfileApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67003,7 +67105,7 @@ export interface operations {
             };
         };
     };
-    EmulateProfileApiResponse_schema_v5_stream_EmulateProfileApiResponse_post: {
+    EmulateProfileApiResponse_schema_stream_EmulateProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67038,7 +67140,7 @@ export interface operations {
             };
         };
     };
-    ExportAgentApiRequest_schema_v5_stream_ExportAgentApiRequest_post: {
+    ExportAgentApiRequest_schema_stream_ExportAgentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67073,7 +67175,7 @@ export interface operations {
             };
         };
     };
-    ExportAgentApiResponse_schema_v5_stream_ExportAgentApiResponse_post: {
+    ExportAgentApiResponse_schema_stream_ExportAgentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67108,7 +67210,7 @@ export interface operations {
             };
         };
     };
-    ExportAuthApiRequest_schema_v5_stream_ExportAuthApiRequest_post: {
+    ExportAuthApiRequest_schema_stream_ExportAuthApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67143,7 +67245,7 @@ export interface operations {
             };
         };
     };
-    ExportAuthApiResponse_schema_v5_stream_ExportAuthApiResponse_post: {
+    ExportAuthApiResponse_schema_stream_ExportAuthApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67178,7 +67280,7 @@ export interface operations {
             };
         };
     };
-    ExportCohortApiRequest_schema_v5_stream_ExportCohortApiRequest_post: {
+    ExportCohortApiRequest_schema_stream_ExportCohortApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67213,7 +67315,7 @@ export interface operations {
             };
         };
     };
-    ExportCohortApiResponse_schema_v5_stream_ExportCohortApiResponse_post: {
+    ExportCohortApiResponse_schema_stream_ExportCohortApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67248,7 +67350,7 @@ export interface operations {
             };
         };
     };
-    ExportDepartmentApiRequest_schema_v5_stream_ExportDepartmentApiRequest_post: {
+    ExportDepartmentApiRequest_schema_stream_ExportDepartmentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67283,7 +67385,7 @@ export interface operations {
             };
         };
     };
-    ExportDepartmentApiResponse_schema_v5_stream_ExportDepartmentApiResponse_post: {
+    ExportDepartmentApiResponse_schema_stream_ExportDepartmentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67318,7 +67420,7 @@ export interface operations {
             };
         };
     };
-    ExportDocumentApiRequest_schema_v5_stream_ExportDocumentApiRequest_post: {
+    ExportDocumentApiRequest_schema_stream_ExportDocumentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67353,7 +67455,7 @@ export interface operations {
             };
         };
     };
-    ExportDocumentApiResponse_schema_v5_stream_ExportDocumentApiResponse_post: {
+    ExportDocumentApiResponse_schema_stream_ExportDocumentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67388,7 +67490,7 @@ export interface operations {
             };
         };
     };
-    ExportEvalApiResponse_schema_v5_stream_ExportEvalApiResponse_post: {
+    ExportEvalApiResponse_schema_stream_ExportEvalApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67423,7 +67525,7 @@ export interface operations {
             };
         };
     };
-    ExportFieldApiRequest_schema_v5_stream_ExportFieldApiRequest_post: {
+    ExportFieldApiRequest_schema_stream_ExportFieldApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67458,7 +67560,7 @@ export interface operations {
             };
         };
     };
-    ExportFieldApiResponse_schema_v5_stream_ExportFieldApiResponse_post: {
+    ExportFieldApiResponse_schema_stream_ExportFieldApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67493,7 +67595,7 @@ export interface operations {
             };
         };
     };
-    ExportModelApiRequest_schema_v5_stream_ExportModelApiRequest_post: {
+    ExportModelApiRequest_schema_stream_ExportModelApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67528,7 +67630,7 @@ export interface operations {
             };
         };
     };
-    ExportModelApiResponse_schema_v5_stream_ExportModelApiResponse_post: {
+    ExportModelApiResponse_schema_stream_ExportModelApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67563,7 +67665,7 @@ export interface operations {
             };
         };
     };
-    ExportParameterApiRequest_schema_v5_stream_ExportParameterApiRequest_post: {
+    ExportParameterApiRequest_schema_stream_ExportParameterApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67598,7 +67700,7 @@ export interface operations {
             };
         };
     };
-    ExportParameterApiResponse_schema_v5_stream_ExportParameterApiResponse_post: {
+    ExportParameterApiResponse_schema_stream_ExportParameterApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67633,7 +67735,7 @@ export interface operations {
             };
         };
     };
-    ExportPersonaApiRequest_schema_v5_stream_ExportPersonaApiRequest_post: {
+    ExportPersonaApiRequest_schema_stream_ExportPersonaApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67668,7 +67770,7 @@ export interface operations {
             };
         };
     };
-    ExportPersonaApiResponse_schema_v5_stream_ExportPersonaApiResponse_post: {
+    ExportPersonaApiResponse_schema_stream_ExportPersonaApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67703,7 +67805,7 @@ export interface operations {
             };
         };
     };
-    ExportProfileApiRequest_schema_v5_stream_ExportProfileApiRequest_post: {
+    ExportProfileApiRequest_schema_stream_ExportProfileApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67738,7 +67840,7 @@ export interface operations {
             };
         };
     };
-    ExportProfileApiResponse_schema_v5_stream_ExportProfileApiResponse_post: {
+    ExportProfileApiResponse_schema_stream_ExportProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67773,7 +67875,7 @@ export interface operations {
             };
         };
     };
-    ExportProviderApiRequest_schema_v5_stream_ExportProviderApiRequest_post: {
+    ExportProviderApiRequest_schema_stream_ExportProviderApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67808,7 +67910,7 @@ export interface operations {
             };
         };
     };
-    ExportProviderApiResponse_schema_v5_stream_ExportProviderApiResponse_post: {
+    ExportProviderApiResponse_schema_stream_ExportProviderApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67843,7 +67945,7 @@ export interface operations {
             };
         };
     };
-    ExportRubricApiResponse_schema_v5_stream_ExportRubricApiResponse_post: {
+    ExportRubricApiResponse_schema_stream_ExportRubricApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67878,7 +67980,7 @@ export interface operations {
             };
         };
     };
-    ExportScenarioApiRequest_schema_v5_stream_ExportScenarioApiRequest_post: {
+    ExportScenarioApiRequest_schema_stream_ExportScenarioApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67913,7 +68015,7 @@ export interface operations {
             };
         };
     };
-    ExportScenarioApiResponse_schema_v5_stream_ExportScenarioApiResponse_post: {
+    ExportScenarioApiResponse_schema_stream_ExportScenarioApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67948,7 +68050,7 @@ export interface operations {
             };
         };
     };
-    ExportSettingApiRequest_schema_v5_stream_ExportSettingApiRequest_post: {
+    ExportSettingApiRequest_schema_stream_ExportSettingApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67983,7 +68085,7 @@ export interface operations {
             };
         };
     };
-    ExportSettingApiResponse_schema_v5_stream_ExportSettingApiResponse_post: {
+    ExportSettingApiResponse_schema_stream_ExportSettingApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68018,7 +68120,7 @@ export interface operations {
             };
         };
     };
-    ExportSimulationApiRequest_schema_v5_stream_ExportSimulationApiRequest_post: {
+    ExportSimulationApiRequest_schema_stream_ExportSimulationApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68053,7 +68155,7 @@ export interface operations {
             };
         };
     };
-    ExportSimulationApiResponse_schema_v5_stream_ExportSimulationApiResponse_post: {
+    ExportSimulationApiResponse_schema_stream_ExportSimulationApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68088,7 +68190,7 @@ export interface operations {
             };
         };
     };
-    ExportToolApiRequest_schema_v5_stream_ExportToolApiRequest_post: {
+    ExportToolApiRequest_schema_stream_ExportToolApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68123,7 +68225,7 @@ export interface operations {
             };
         };
     };
-    ExportToolApiResponse_schema_v5_stream_ExportToolApiResponse_post: {
+    ExportToolApiResponse_schema_stream_ExportToolApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68158,7 +68260,7 @@ export interface operations {
             };
         };
     };
-    GeneratePayload_schema_v5_stream_GeneratePayload_post: {
+    GeneratePayload_schema_stream_GeneratePayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68193,7 +68295,7 @@ export interface operations {
             };
         };
     };
-    GenerationCompleteEvent_schema_v5_stream_GenerationCompleteEvent_post: {
+    GenerationCompleteEvent_schema_stream_GenerationCompleteEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68228,7 +68330,7 @@ export interface operations {
             };
         };
     };
-    GenerationErrorEvent_schema_v5_stream_GenerationErrorEvent_post: {
+    GenerationErrorEvent_schema_stream_GenerationErrorEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68263,7 +68365,7 @@ export interface operations {
             };
         };
     };
-    GenerationMediaCompleteEvent_schema_v5_stream_GenerationMediaCompleteEvent_post: {
+    GenerationMediaCompleteEvent_schema_stream_GenerationMediaCompleteEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68298,7 +68400,7 @@ export interface operations {
             };
         };
     };
-    GenerationMediaProgressEvent_schema_v5_stream_GenerationMediaProgressEvent_post: {
+    GenerationMediaProgressEvent_schema_stream_GenerationMediaProgressEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68333,7 +68435,7 @@ export interface operations {
             };
         };
     };
-    GenerationProgressEvent_schema_v5_stream_GenerationProgressEvent_post: {
+    GenerationProgressEvent_schema_stream_GenerationProgressEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68368,7 +68470,7 @@ export interface operations {
             };
         };
     };
-    GenerationSavedEvent_schema_v5_stream_GenerationSavedEvent_post: {
+    GenerationSavedEvent_schema_stream_GenerationSavedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68403,7 +68505,7 @@ export interface operations {
             };
         };
     };
-    GetAgentApiRequest_schema_v5_stream_GetAgentApiRequest_post: {
+    GetAgentApiRequest_schema_stream_GetAgentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68438,7 +68540,7 @@ export interface operations {
             };
         };
     };
-    GetAgentApiResponse_schema_v5_stream_GetAgentApiResponse_post: {
+    GetAgentApiResponse_schema_stream_GetAgentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68473,7 +68575,7 @@ export interface operations {
             };
         };
     };
-    GetAgentDraftsApiResponse_schema_v5_stream_GetAgentDraftsApiResponse_post: {
+    GetAgentDraftsApiResponse_schema_stream_GetAgentDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68508,7 +68610,7 @@ export interface operations {
             };
         };
     };
-    GetAttemptDetailRequest_schema_v5_stream_GetAttemptDetailRequest_post: {
+    GetAttemptDetailRequest_schema_stream_GetAttemptDetailRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68543,7 +68645,7 @@ export interface operations {
             };
         };
     };
-    GetAttemptDetailResponse_schema_v5_stream_GetAttemptDetailResponse_post: {
+    GetAttemptDetailResponse_schema_stream_GetAttemptDetailResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68578,7 +68680,7 @@ export interface operations {
             };
         };
     };
-    GetAuthApiRequest_schema_v5_stream_GetAuthApiRequest_post: {
+    GetAuthApiRequest_schema_stream_GetAuthApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68613,7 +68715,7 @@ export interface operations {
             };
         };
     };
-    GetAuthApiResponse_schema_v5_stream_GetAuthApiResponse_post: {
+    GetAuthApiResponse_schema_stream_GetAuthApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68648,7 +68750,7 @@ export interface operations {
             };
         };
     };
-    GetAuthDraftsApiResponse_schema_v5_stream_GetAuthDraftsApiResponse_post: {
+    GetAuthDraftsApiResponse_schema_stream_GetAuthDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68683,7 +68785,7 @@ export interface operations {
             };
         };
     };
-    GetChatRequest_schema_v5_stream_GetChatRequest_post: {
+    GetChatRequest_schema_stream_GetChatRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68718,7 +68820,7 @@ export interface operations {
             };
         };
     };
-    GetChatResponse_schema_v5_stream_GetChatResponse_post: {
+    GetChatResponse_schema_stream_GetChatResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68753,7 +68855,7 @@ export interface operations {
             };
         };
     };
-    GetCohortApiRequest_schema_v5_stream_GetCohortApiRequest_post: {
+    GetCohortApiRequest_schema_stream_GetCohortApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68788,7 +68890,7 @@ export interface operations {
             };
         };
     };
-    GetCohortApiResponse_schema_v5_stream_GetCohortApiResponse_post: {
+    GetCohortApiResponse_schema_stream_GetCohortApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68823,7 +68925,7 @@ export interface operations {
             };
         };
     };
-    GetCohortDraftsApiResponse_schema_v5_stream_GetCohortDraftsApiResponse_post: {
+    GetCohortDraftsApiResponse_schema_stream_GetCohortDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68858,7 +68960,7 @@ export interface operations {
             };
         };
     };
-    GetDepartmentApiRequest_schema_v5_stream_GetDepartmentApiRequest_post: {
+    GetDepartmentApiRequest_schema_stream_GetDepartmentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68893,7 +68995,7 @@ export interface operations {
             };
         };
     };
-    GetDepartmentApiResponse_schema_v5_stream_GetDepartmentApiResponse_post: {
+    GetDepartmentApiResponse_schema_stream_GetDepartmentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68928,7 +69030,7 @@ export interface operations {
             };
         };
     };
-    GetDepartmentDraftsApiResponse_schema_v5_stream_GetDepartmentDraftsApiResponse_post: {
+    GetDepartmentDraftsApiResponse_schema_stream_GetDepartmentDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68963,7 +69065,7 @@ export interface operations {
             };
         };
     };
-    GetDocumentApiRequest_schema_v5_stream_GetDocumentApiRequest_post: {
+    GetDocumentApiRequest_schema_stream_GetDocumentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -68998,7 +69100,7 @@ export interface operations {
             };
         };
     };
-    GetDocumentApiResponse_schema_v5_stream_GetDocumentApiResponse_post: {
+    GetDocumentApiResponse_schema_stream_GetDocumentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69033,7 +69135,7 @@ export interface operations {
             };
         };
     };
-    GetDocumentDraftsApiResponse_schema_v5_stream_GetDocumentDraftsApiResponse_post: {
+    GetDocumentDraftsApiResponse_schema_stream_GetDocumentDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69068,7 +69170,7 @@ export interface operations {
             };
         };
     };
-    GetEvalApiRequest_schema_v5_stream_GetEvalApiRequest_post: {
+    GetEvalApiRequest_schema_stream_GetEvalApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69103,7 +69205,7 @@ export interface operations {
             };
         };
     };
-    GetEvalApiResponse_schema_v5_stream_GetEvalApiResponse_post: {
+    GetEvalApiResponse_schema_stream_GetEvalApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69138,7 +69240,7 @@ export interface operations {
             };
         };
     };
-    GetEvalDraftsApiResponse_schema_v5_stream_GetEvalDraftsApiResponse_post: {
+    GetEvalDraftsApiResponse_schema_stream_GetEvalDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69173,7 +69275,7 @@ export interface operations {
             };
         };
     };
-    GetFieldApiRequest_schema_v5_stream_GetFieldApiRequest_post: {
+    GetFieldApiRequest_schema_stream_GetFieldApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69208,7 +69310,7 @@ export interface operations {
             };
         };
     };
-    GetFieldApiResponse_schema_v5_stream_GetFieldApiResponse_post: {
+    GetFieldApiResponse_schema_stream_GetFieldApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69243,7 +69345,7 @@ export interface operations {
             };
         };
     };
-    GetFieldDraftsApiResponse_schema_v5_stream_GetFieldDraftsApiResponse_post: {
+    GetFieldDraftsApiResponse_schema_stream_GetFieldDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69278,7 +69380,7 @@ export interface operations {
             };
         };
     };
-    GetGroupDetailRequest_schema_v5_stream_GetGroupDetailRequest_post: {
+    GetGroupDetailRequest_schema_stream_GetGroupDetailRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69313,7 +69415,7 @@ export interface operations {
             };
         };
     };
-    GetGroupDetailResponse_schema_v5_stream_GetGroupDetailResponse_post: {
+    GetGroupDetailResponse_schema_stream_GetGroupDetailResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69348,7 +69450,7 @@ export interface operations {
             };
         };
     };
-    GetHomeRequest_schema_v5_stream_GetHomeRequest_post: {
+    GetHomeRequest_schema_stream_GetHomeRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69383,7 +69485,7 @@ export interface operations {
             };
         };
     };
-    GetHomeResponse_schema_v5_stream_GetHomeResponse_post: {
+    GetHomeResponse_schema_stream_GetHomeResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69418,7 +69520,7 @@ export interface operations {
             };
         };
     };
-    GetModelApiRequest_schema_v5_stream_GetModelApiRequest_post: {
+    GetModelApiRequest_schema_stream_GetModelApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69453,7 +69555,7 @@ export interface operations {
             };
         };
     };
-    GetModelApiResponse_schema_v5_stream_GetModelApiResponse_post: {
+    GetModelApiResponse_schema_stream_GetModelApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69488,7 +69590,7 @@ export interface operations {
             };
         };
     };
-    GetModelDraftsApiResponse_schema_v5_stream_GetModelDraftsApiResponse_post: {
+    GetModelDraftsApiResponse_schema_stream_GetModelDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69523,7 +69625,7 @@ export interface operations {
             };
         };
     };
-    GetParameterApiRequest_schema_v5_stream_GetParameterApiRequest_post: {
+    GetParameterApiRequest_schema_stream_GetParameterApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69558,7 +69660,7 @@ export interface operations {
             };
         };
     };
-    GetParameterApiResponse_schema_v5_stream_GetParameterApiResponse_post: {
+    GetParameterApiResponse_schema_stream_GetParameterApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69593,7 +69695,7 @@ export interface operations {
             };
         };
     };
-    GetParameterDraftsApiResponse_schema_v5_stream_GetParameterDraftsApiResponse_post: {
+    GetParameterDraftsApiResponse_schema_stream_GetParameterDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69628,7 +69730,7 @@ export interface operations {
             };
         };
     };
-    GetPersonaApiRequest_schema_v5_stream_GetPersonaApiRequest_post: {
+    GetPersonaApiRequest_schema_stream_GetPersonaApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69663,7 +69765,7 @@ export interface operations {
             };
         };
     };
-    GetPersonaApiResponse_schema_v5_stream_GetPersonaApiResponse_post: {
+    GetPersonaApiResponse_schema_stream_GetPersonaApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69698,7 +69800,7 @@ export interface operations {
             };
         };
     };
-    GetPersonaDraftsApiResponse_schema_v5_stream_GetPersonaDraftsApiResponse_post: {
+    GetPersonaDraftsApiResponse_schema_stream_GetPersonaDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69733,7 +69835,7 @@ export interface operations {
             };
         };
     };
-    GetPracticeRequest_schema_v5_stream_GetPracticeRequest_post: {
+    GetPracticeRequest_schema_stream_GetPracticeRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69768,7 +69870,7 @@ export interface operations {
             };
         };
     };
-    GetPracticeResponse_schema_v5_stream_GetPracticeResponse_post: {
+    GetPracticeResponse_schema_stream_GetPracticeResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69803,7 +69905,7 @@ export interface operations {
             };
         };
     };
-    GetProfileApiRequest_schema_v5_stream_GetProfileApiRequest_post: {
+    GetProfileApiRequest_schema_stream_GetProfileApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69838,7 +69940,7 @@ export interface operations {
             };
         };
     };
-    GetProfileApiResponse_schema_v5_stream_GetProfileApiResponse_post: {
+    GetProfileApiResponse_schema_stream_GetProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69873,7 +69975,7 @@ export interface operations {
             };
         };
     };
-    GetProfileDraftsApiResponse_schema_v5_stream_GetProfileDraftsApiResponse_post: {
+    GetProfileDraftsApiResponse_schema_stream_GetProfileDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69908,7 +70010,7 @@ export interface operations {
             };
         };
     };
-    GetProviderApiRequest_schema_v5_stream_GetProviderApiRequest_post: {
+    GetProviderApiRequest_schema_stream_GetProviderApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69943,7 +70045,7 @@ export interface operations {
             };
         };
     };
-    GetProviderApiResponse_schema_v5_stream_GetProviderApiResponse_post: {
+    GetProviderApiResponse_schema_stream_GetProviderApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -69978,7 +70080,7 @@ export interface operations {
             };
         };
     };
-    GetProviderDraftsApiResponse_schema_v5_stream_GetProviderDraftsApiResponse_post: {
+    GetProviderDraftsApiResponse_schema_stream_GetProviderDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70013,7 +70115,7 @@ export interface operations {
             };
         };
     };
-    GetRubricApiRequest_schema_v5_stream_GetRubricApiRequest_post: {
+    GetRubricApiRequest_schema_stream_GetRubricApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70048,7 +70150,7 @@ export interface operations {
             };
         };
     };
-    GetRubricApiResponse_schema_v5_stream_GetRubricApiResponse_post: {
+    GetRubricApiResponse_schema_stream_GetRubricApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70083,7 +70185,7 @@ export interface operations {
             };
         };
     };
-    GetRubricDraftsApiResponse_schema_v5_stream_GetRubricDraftsApiResponse_post: {
+    GetRubricDraftsApiResponse_schema_stream_GetRubricDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70118,7 +70220,7 @@ export interface operations {
             };
         };
     };
-    GetScenarioApiRequest_schema_v5_stream_GetScenarioApiRequest_post: {
+    GetScenarioApiRequest_schema_stream_GetScenarioApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70153,7 +70255,7 @@ export interface operations {
             };
         };
     };
-    GetScenarioApiResponse_schema_v5_stream_GetScenarioApiResponse_post: {
+    GetScenarioApiResponse_schema_stream_GetScenarioApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70188,7 +70290,7 @@ export interface operations {
             };
         };
     };
-    GetScenarioDraftsApiResponse_schema_v5_stream_GetScenarioDraftsApiResponse_post: {
+    GetScenarioDraftsApiResponse_schema_stream_GetScenarioDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70223,7 +70325,7 @@ export interface operations {
             };
         };
     };
-    GetSessionDetailRequest_schema_v5_stream_GetSessionDetailRequest_post: {
+    GetSessionDetailRequest_schema_stream_GetSessionDetailRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70258,7 +70360,7 @@ export interface operations {
             };
         };
     };
-    GetSessionDetailResponse_schema_v5_stream_GetSessionDetailResponse_post: {
+    GetSessionDetailResponse_schema_stream_GetSessionDetailResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70293,7 +70395,7 @@ export interface operations {
             };
         };
     };
-    GetSettingApiRequest_schema_v5_stream_GetSettingApiRequest_post: {
+    GetSettingApiRequest_schema_stream_GetSettingApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70328,7 +70430,7 @@ export interface operations {
             };
         };
     };
-    GetSettingApiResponse_schema_v5_stream_GetSettingApiResponse_post: {
+    GetSettingApiResponse_schema_stream_GetSettingApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70363,7 +70465,7 @@ export interface operations {
             };
         };
     };
-    GetSettingDraftsApiResponse_schema_v5_stream_GetSettingDraftsApiResponse_post: {
+    GetSettingDraftsApiResponse_schema_stream_GetSettingDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70398,7 +70500,7 @@ export interface operations {
             };
         };
     };
-    GetSimulationApiRequest_schema_v5_stream_GetSimulationApiRequest_post: {
+    GetSimulationApiRequest_schema_stream_GetSimulationApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70433,7 +70535,7 @@ export interface operations {
             };
         };
     };
-    GetSimulationApiResponse_schema_v5_stream_GetSimulationApiResponse_post: {
+    GetSimulationApiResponse_schema_stream_GetSimulationApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70468,7 +70570,7 @@ export interface operations {
             };
         };
     };
-    GetSimulationDraftsApiResponse_schema_v5_stream_GetSimulationDraftsApiResponse_post: {
+    GetSimulationDraftsApiResponse_schema_stream_GetSimulationDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70503,7 +70605,7 @@ export interface operations {
             };
         };
     };
-    GetSuiteRequest_schema_v5_stream_GetSuiteRequest_post: {
+    GetSuiteRequest_schema_stream_GetSuiteRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70538,7 +70640,7 @@ export interface operations {
             };
         };
     };
-    GetSuiteResponse_schema_v5_stream_GetSuiteResponse_post: {
+    GetSuiteResponse_schema_stream_GetSuiteResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70573,7 +70675,7 @@ export interface operations {
             };
         };
     };
-    GetTestArtifactRequest_schema_v5_stream_GetTestArtifactRequest_post: {
+    GetTestArtifactRequest_schema_stream_GetTestArtifactRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70608,7 +70710,7 @@ export interface operations {
             };
         };
     };
-    GetTestArtifactResponse_schema_v5_stream_GetTestArtifactResponse_post: {
+    GetTestArtifactResponse_schema_stream_GetTestArtifactResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70643,7 +70745,7 @@ export interface operations {
             };
         };
     };
-    GetToolApiRequest_schema_v5_stream_GetToolApiRequest_post: {
+    GetToolApiRequest_schema_stream_GetToolApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70678,7 +70780,7 @@ export interface operations {
             };
         };
     };
-    GetToolApiResponse_schema_v5_stream_GetToolApiResponse_post: {
+    GetToolApiResponse_schema_stream_GetToolApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70713,7 +70815,7 @@ export interface operations {
             };
         };
     };
-    GetToolDraftsApiResponse_schema_v5_stream_GetToolDraftsApiResponse_post: {
+    GetToolDraftsApiResponse_schema_stream_GetToolDraftsApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70748,7 +70850,7 @@ export interface operations {
             };
         };
     };
-    HealthRequest_schema_v5_stream_HealthRequest_post: {
+    HealthRequest_schema_stream_HealthRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70783,7 +70885,7 @@ export interface operations {
             };
         };
     };
-    HealthResponse_schema_v5_stream_HealthResponse_post: {
+    HealthResponse_schema_stream_HealthResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70818,7 +70920,7 @@ export interface operations {
             };
         };
     };
-    LeaderboardRequest_schema_v5_stream_LeaderboardRequest_post: {
+    LeaderboardRequest_schema_stream_LeaderboardRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70853,7 +70955,7 @@ export interface operations {
             };
         };
     };
-    LeaderboardResponse_schema_v5_stream_LeaderboardResponse_post: {
+    LeaderboardResponse_schema_stream_LeaderboardResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70888,7 +70990,7 @@ export interface operations {
             };
         };
     };
-    OperationErrorEvent_schema_v5_stream_OperationErrorEvent_post: {
+    OperationErrorEvent_schema_stream_OperationErrorEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70923,7 +71025,7 @@ export interface operations {
             };
         };
     };
-    PatchAgentDraftApiRequest_schema_v5_stream_PatchAgentDraftApiRequest_post: {
+    PatchAgentDraftApiRequest_schema_stream_PatchAgentDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70958,7 +71060,7 @@ export interface operations {
             };
         };
     };
-    PatchAgentDraftApiResponse_schema_v5_stream_PatchAgentDraftApiResponse_post: {
+    PatchAgentDraftApiResponse_schema_stream_PatchAgentDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70993,7 +71095,7 @@ export interface operations {
             };
         };
     };
-    PatchAuthDraftApiRequest_schema_v5_stream_PatchAuthDraftApiRequest_post: {
+    PatchAuthDraftApiRequest_schema_stream_PatchAuthDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71028,7 +71130,7 @@ export interface operations {
             };
         };
     };
-    PatchAuthDraftApiResponse_schema_v5_stream_PatchAuthDraftApiResponse_post: {
+    PatchAuthDraftApiResponse_schema_stream_PatchAuthDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71063,7 +71165,7 @@ export interface operations {
             };
         };
     };
-    PatchCohortDraftApiRequest_schema_v5_stream_PatchCohortDraftApiRequest_post: {
+    PatchCohortDraftApiRequest_schema_stream_PatchCohortDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71098,7 +71200,7 @@ export interface operations {
             };
         };
     };
-    PatchCohortDraftApiResponse_schema_v5_stream_PatchCohortDraftApiResponse_post: {
+    PatchCohortDraftApiResponse_schema_stream_PatchCohortDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71133,7 +71235,7 @@ export interface operations {
             };
         };
     };
-    PatchDepartmentDraftApiRequest_schema_v5_stream_PatchDepartmentDraftApiRequest_post: {
+    PatchDepartmentDraftApiRequest_schema_stream_PatchDepartmentDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71168,7 +71270,7 @@ export interface operations {
             };
         };
     };
-    PatchDepartmentDraftApiResponse_schema_v5_stream_PatchDepartmentDraftApiResponse_post: {
+    PatchDepartmentDraftApiResponse_schema_stream_PatchDepartmentDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71203,7 +71305,7 @@ export interface operations {
             };
         };
     };
-    PatchDocumentDraftApiRequest_schema_v5_stream_PatchDocumentDraftApiRequest_post: {
+    PatchDocumentDraftApiRequest_schema_stream_PatchDocumentDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71238,7 +71340,7 @@ export interface operations {
             };
         };
     };
-    PatchDocumentDraftApiResponse_schema_v5_stream_PatchDocumentDraftApiResponse_post: {
+    PatchDocumentDraftApiResponse_schema_stream_PatchDocumentDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71273,7 +71375,7 @@ export interface operations {
             };
         };
     };
-    PatchEvalDraftApiRequest_schema_v5_stream_PatchEvalDraftApiRequest_post: {
+    PatchEvalDraftApiRequest_schema_stream_PatchEvalDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71308,7 +71410,7 @@ export interface operations {
             };
         };
     };
-    PatchEvalDraftApiResponse_schema_v5_stream_PatchEvalDraftApiResponse_post: {
+    PatchEvalDraftApiResponse_schema_stream_PatchEvalDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71343,7 +71445,7 @@ export interface operations {
             };
         };
     };
-    PatchFieldDraftApiRequest_schema_v5_stream_PatchFieldDraftApiRequest_post: {
+    PatchFieldDraftApiRequest_schema_stream_PatchFieldDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71378,7 +71480,7 @@ export interface operations {
             };
         };
     };
-    PatchFieldDraftApiResponse_schema_v5_stream_PatchFieldDraftApiResponse_post: {
+    PatchFieldDraftApiResponse_schema_stream_PatchFieldDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71413,7 +71515,7 @@ export interface operations {
             };
         };
     };
-    PatchModelDraftApiRequest_schema_v5_stream_PatchModelDraftApiRequest_post: {
+    PatchModelDraftApiRequest_schema_stream_PatchModelDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71448,7 +71550,7 @@ export interface operations {
             };
         };
     };
-    PatchModelDraftApiResponse_schema_v5_stream_PatchModelDraftApiResponse_post: {
+    PatchModelDraftApiResponse_schema_stream_PatchModelDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71483,7 +71585,7 @@ export interface operations {
             };
         };
     };
-    PatchParameterDraftApiRequest_schema_v5_stream_PatchParameterDraftApiRequest_post: {
+    PatchParameterDraftApiRequest_schema_stream_PatchParameterDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71518,7 +71620,7 @@ export interface operations {
             };
         };
     };
-    PatchParameterDraftApiResponse_schema_v5_stream_PatchParameterDraftApiResponse_post: {
+    PatchParameterDraftApiResponse_schema_stream_PatchParameterDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71553,7 +71655,7 @@ export interface operations {
             };
         };
     };
-    PatchPersonaDraftApiRequest_schema_v5_stream_PatchPersonaDraftApiRequest_post: {
+    PatchPersonaDraftApiRequest_schema_stream_PatchPersonaDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71588,7 +71690,7 @@ export interface operations {
             };
         };
     };
-    PatchPersonaDraftApiResponse_schema_v5_stream_PatchPersonaDraftApiResponse_post: {
+    PatchPersonaDraftApiResponse_schema_stream_PatchPersonaDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71623,7 +71725,7 @@ export interface operations {
             };
         };
     };
-    PatchProfileDraftApiRequest_schema_v5_stream_PatchProfileDraftApiRequest_post: {
+    PatchProfileDraftApiRequest_schema_stream_PatchProfileDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71658,7 +71760,7 @@ export interface operations {
             };
         };
     };
-    PatchProfileDraftApiResponse_schema_v5_stream_PatchProfileDraftApiResponse_post: {
+    PatchProfileDraftApiResponse_schema_stream_PatchProfileDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71693,7 +71795,7 @@ export interface operations {
             };
         };
     };
-    PatchProviderDraftApiRequest_schema_v5_stream_PatchProviderDraftApiRequest_post: {
+    PatchProviderDraftApiRequest_schema_stream_PatchProviderDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71728,7 +71830,7 @@ export interface operations {
             };
         };
     };
-    PatchProviderDraftApiResponse_schema_v5_stream_PatchProviderDraftApiResponse_post: {
+    PatchProviderDraftApiResponse_schema_stream_PatchProviderDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71763,7 +71865,7 @@ export interface operations {
             };
         };
     };
-    PatchRubricDraftApiRequest_schema_v5_stream_PatchRubricDraftApiRequest_post: {
+    PatchRubricDraftApiRequest_schema_stream_PatchRubricDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71798,7 +71900,7 @@ export interface operations {
             };
         };
     };
-    PatchRubricDraftApiResponse_schema_v5_stream_PatchRubricDraftApiResponse_post: {
+    PatchRubricDraftApiResponse_schema_stream_PatchRubricDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71833,7 +71935,7 @@ export interface operations {
             };
         };
     };
-    PatchScenarioDraftApiRequest_schema_v5_stream_PatchScenarioDraftApiRequest_post: {
+    PatchScenarioDraftApiRequest_schema_stream_PatchScenarioDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71868,7 +71970,7 @@ export interface operations {
             };
         };
     };
-    PatchScenarioDraftApiResponse_schema_v5_stream_PatchScenarioDraftApiResponse_post: {
+    PatchScenarioDraftApiResponse_schema_stream_PatchScenarioDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71903,7 +72005,7 @@ export interface operations {
             };
         };
     };
-    PatchSettingDraftApiRequest_schema_v5_stream_PatchSettingDraftApiRequest_post: {
+    PatchSettingDraftApiRequest_schema_stream_PatchSettingDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71938,7 +72040,7 @@ export interface operations {
             };
         };
     };
-    PatchSettingDraftApiResponse_schema_v5_stream_PatchSettingDraftApiResponse_post: {
+    PatchSettingDraftApiResponse_schema_stream_PatchSettingDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71973,7 +72075,7 @@ export interface operations {
             };
         };
     };
-    PatchSimulationDraftApiRequest_schema_v5_stream_PatchSimulationDraftApiRequest_post: {
+    PatchSimulationDraftApiRequest_schema_stream_PatchSimulationDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72008,7 +72110,7 @@ export interface operations {
             };
         };
     };
-    PatchSimulationDraftApiResponse_schema_v5_stream_PatchSimulationDraftApiResponse_post: {
+    PatchSimulationDraftApiResponse_schema_stream_PatchSimulationDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72043,7 +72145,7 @@ export interface operations {
             };
         };
     };
-    PatchToolDraftApiRequest_schema_v5_stream_PatchToolDraftApiRequest_post: {
+    PatchToolDraftApiRequest_schema_stream_PatchToolDraftApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72078,7 +72180,7 @@ export interface operations {
             };
         };
     };
-    PatchToolDraftApiResponse_schema_v5_stream_PatchToolDraftApiResponse_post: {
+    PatchToolDraftApiResponse_schema_stream_PatchToolDraftApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72113,7 +72215,7 @@ export interface operations {
             };
         };
     };
-    PersonaGenerationProgressEvent_schema_v5_stream_PersonaGenerationProgressEvent_post: {
+    PersonaGenerationProgressEvent_schema_stream_PersonaGenerationProgressEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72148,7 +72250,7 @@ export interface operations {
             };
         };
     };
-    PricingRequest_schema_v5_stream_PricingRequest_post: {
+    PricingRequest_schema_stream_PricingRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72183,7 +72285,7 @@ export interface operations {
             };
         };
     };
-    PricingResponse_schema_v5_stream_PricingResponse_post: {
+    PricingResponse_schema_stream_PricingResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72218,7 +72320,7 @@ export interface operations {
             };
         };
     };
-    ProfileContextApiResponse_schema_v5_stream_ProfileContextApiResponse_post: {
+    ProfileContextApiResponse_schema_stream_ProfileContextApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72253,7 +72355,7 @@ export interface operations {
             };
         };
     };
-    RecordRequest_schema_v5_stream_RecordRequest_post: {
+    RecordRequest_schema_stream_RecordRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72288,7 +72390,7 @@ export interface operations {
             };
         };
     };
-    TestAllCompleteEvent_schema_v5_stream_TestAllCompleteEvent_post: {
+    TestAllCompleteEvent_schema_stream_TestAllCompleteEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72323,7 +72425,7 @@ export interface operations {
             };
         };
     };
-    TestEndAllPayload_schema_v5_stream_TestEndAllPayload_post: {
+    TestEndAllPayload_schema_stream_TestEndAllPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72358,7 +72460,7 @@ export interface operations {
             };
         };
     };
-    TestEndPayload_schema_v5_stream_TestEndPayload_post: {
+    TestEndPayload_schema_stream_TestEndPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72393,7 +72495,7 @@ export interface operations {
             };
         };
     };
-    TestGroupPayload_schema_v5_stream_TestGroupPayload_post: {
+    TestGroupPayload_schema_stream_TestGroupPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72428,7 +72530,7 @@ export interface operations {
             };
         };
     };
-    TestJoinPayload_schema_v5_stream_TestJoinPayload_post: {
+    TestJoinPayload_schema_stream_TestJoinPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72463,7 +72565,7 @@ export interface operations {
             };
         };
     };
-    TestJoinedEvent_schema_v5_stream_TestJoinedEvent_post: {
+    TestJoinedEvent_schema_stream_TestJoinedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72498,7 +72600,7 @@ export interface operations {
             };
         };
     };
-    TestLeavePayload_schema_v5_stream_TestLeavePayload_post: {
+    TestLeavePayload_schema_stream_TestLeavePayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72533,7 +72635,7 @@ export interface operations {
             };
         };
     };
-    TestNextPayload_schema_v5_stream_TestNextPayload_post: {
+    TestNextPayload_schema_stream_TestNextPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72568,7 +72670,7 @@ export interface operations {
             };
         };
     };
-    TestProgressEvent_schema_v5_stream_TestProgressEvent_post: {
+    TestProgressEvent_schema_stream_TestProgressEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72603,7 +72705,7 @@ export interface operations {
             };
         };
     };
-    TestRunCompleteEvent_schema_v5_stream_TestRunCompleteEvent_post: {
+    TestRunCompleteEvent_schema_stream_TestRunCompleteEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72638,7 +72740,7 @@ export interface operations {
             };
         };
     };
-    TestRunDeltaEvent_schema_v5_stream_TestRunDeltaEvent_post: {
+    TestRunDeltaEvent_schema_stream_TestRunDeltaEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72673,7 +72775,7 @@ export interface operations {
             };
         };
     };
-    TestRunPayload_schema_v5_stream_TestRunPayload_post: {
+    TestRunPayload_schema_stream_TestRunPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72708,7 +72810,7 @@ export interface operations {
             };
         };
     };
-    TestRunStartEvent_schema_v5_stream_TestRunStartEvent_post: {
+    TestRunStartEvent_schema_stream_TestRunStartEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72743,7 +72845,7 @@ export interface operations {
             };
         };
     };
-    TestStartPayload_schema_v5_stream_TestStartPayload_post: {
+    TestStartPayload_schema_stream_TestStartPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72778,7 +72880,7 @@ export interface operations {
             };
         };
     };
-    TestStartedEvent_schema_v5_stream_TestStartedEvent_post: {
+    TestStartedEvent_schema_stream_TestStartedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72813,7 +72915,7 @@ export interface operations {
             };
         };
     };
-    TestStopPayload_schema_v5_stream_TestStopPayload_post: {
+    TestStopPayload_schema_stream_TestStopPayload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72848,7 +72950,7 @@ export interface operations {
             };
         };
     };
-    TestStoppedEvent_schema_v5_stream_TestStoppedEvent_post: {
+    TestStoppedEvent_schema_stream_TestStoppedEvent_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72883,7 +72985,7 @@ export interface operations {
             };
         };
     };
-    UnemulateProfileApiResponse_schema_v5_stream_UnemulateProfileApiResponse_post: {
+    UnemulateProfileApiResponse_schema_stream_UnemulateProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72918,7 +73020,7 @@ export interface operations {
             };
         };
     };
-    UpdateAgentApiRequest_schema_v5_stream_UpdateAgentApiRequest_post: {
+    UpdateAgentApiRequest_schema_stream_UpdateAgentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72953,7 +73055,7 @@ export interface operations {
             };
         };
     };
-    UpdateAgentApiResponse_schema_v5_stream_UpdateAgentApiResponse_post: {
+    UpdateAgentApiResponse_schema_stream_UpdateAgentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -72988,7 +73090,7 @@ export interface operations {
             };
         };
     };
-    UpdateAuthApiRequest_schema_v5_stream_UpdateAuthApiRequest_post: {
+    UpdateAuthApiRequest_schema_stream_UpdateAuthApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73023,7 +73125,7 @@ export interface operations {
             };
         };
     };
-    UpdateAuthApiResponse_schema_v5_stream_UpdateAuthApiResponse_post: {
+    UpdateAuthApiResponse_schema_stream_UpdateAuthApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73058,7 +73160,7 @@ export interface operations {
             };
         };
     };
-    UpdateCohortApiRequest_schema_v5_stream_UpdateCohortApiRequest_post: {
+    UpdateCohortApiRequest_schema_stream_UpdateCohortApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73093,7 +73195,7 @@ export interface operations {
             };
         };
     };
-    UpdateCohortApiResponse_schema_v5_stream_UpdateCohortApiResponse_post: {
+    UpdateCohortApiResponse_schema_stream_UpdateCohortApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73128,7 +73230,7 @@ export interface operations {
             };
         };
     };
-    UpdateDepartmentApiRequest_schema_v5_stream_UpdateDepartmentApiRequest_post: {
+    UpdateDepartmentApiRequest_schema_stream_UpdateDepartmentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73163,7 +73265,7 @@ export interface operations {
             };
         };
     };
-    UpdateDepartmentApiResponse_schema_v5_stream_UpdateDepartmentApiResponse_post: {
+    UpdateDepartmentApiResponse_schema_stream_UpdateDepartmentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73198,7 +73300,7 @@ export interface operations {
             };
         };
     };
-    UpdateDocumentApiRequest_schema_v5_stream_UpdateDocumentApiRequest_post: {
+    UpdateDocumentApiRequest_schema_stream_UpdateDocumentApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73233,7 +73335,7 @@ export interface operations {
             };
         };
     };
-    UpdateDocumentApiResponse_schema_v5_stream_UpdateDocumentApiResponse_post: {
+    UpdateDocumentApiResponse_schema_stream_UpdateDocumentApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73268,7 +73370,7 @@ export interface operations {
             };
         };
     };
-    UpdateEvalApiRequest_schema_v5_stream_UpdateEvalApiRequest_post: {
+    UpdateEvalApiRequest_schema_stream_UpdateEvalApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73303,7 +73405,7 @@ export interface operations {
             };
         };
     };
-    UpdateEvalApiResponse_schema_v5_stream_UpdateEvalApiResponse_post: {
+    UpdateEvalApiResponse_schema_stream_UpdateEvalApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73338,7 +73440,7 @@ export interface operations {
             };
         };
     };
-    UpdateFieldApiRequest_schema_v5_stream_UpdateFieldApiRequest_post: {
+    UpdateFieldApiRequest_schema_stream_UpdateFieldApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73373,7 +73475,7 @@ export interface operations {
             };
         };
     };
-    UpdateFieldApiResponse_schema_v5_stream_UpdateFieldApiResponse_post: {
+    UpdateFieldApiResponse_schema_stream_UpdateFieldApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73408,7 +73510,7 @@ export interface operations {
             };
         };
     };
-    UpdateModelApiRequest_schema_v5_stream_UpdateModelApiRequest_post: {
+    UpdateModelApiRequest_schema_stream_UpdateModelApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73443,7 +73545,7 @@ export interface operations {
             };
         };
     };
-    UpdateModelApiResponse_schema_v5_stream_UpdateModelApiResponse_post: {
+    UpdateModelApiResponse_schema_stream_UpdateModelApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73478,7 +73580,7 @@ export interface operations {
             };
         };
     };
-    UpdateParameterApiRequest_schema_v5_stream_UpdateParameterApiRequest_post: {
+    UpdateParameterApiRequest_schema_stream_UpdateParameterApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73513,7 +73615,7 @@ export interface operations {
             };
         };
     };
-    UpdateParameterApiResponse_schema_v5_stream_UpdateParameterApiResponse_post: {
+    UpdateParameterApiResponse_schema_stream_UpdateParameterApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73548,7 +73650,7 @@ export interface operations {
             };
         };
     };
-    UpdatePersonaApiRequest_schema_v5_stream_UpdatePersonaApiRequest_post: {
+    UpdatePersonaApiRequest_schema_stream_UpdatePersonaApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73583,7 +73685,7 @@ export interface operations {
             };
         };
     };
-    UpdatePersonaApiResponse_schema_v5_stream_UpdatePersonaApiResponse_post: {
+    UpdatePersonaApiResponse_schema_stream_UpdatePersonaApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73618,7 +73720,7 @@ export interface operations {
             };
         };
     };
-    UpdateProfileApiRequest_schema_v5_stream_UpdateProfileApiRequest_post: {
+    UpdateProfileApiRequest_schema_stream_UpdateProfileApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73653,7 +73755,7 @@ export interface operations {
             };
         };
     };
-    UpdateProfileApiResponse_schema_v5_stream_UpdateProfileApiResponse_post: {
+    UpdateProfileApiResponse_schema_stream_UpdateProfileApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73688,7 +73790,7 @@ export interface operations {
             };
         };
     };
-    UpdateProviderApiRequest_schema_v5_stream_UpdateProviderApiRequest_post: {
+    UpdateProviderApiRequest_schema_stream_UpdateProviderApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73723,7 +73825,7 @@ export interface operations {
             };
         };
     };
-    UpdateProviderApiResponse_schema_v5_stream_UpdateProviderApiResponse_post: {
+    UpdateProviderApiResponse_schema_stream_UpdateProviderApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73758,7 +73860,7 @@ export interface operations {
             };
         };
     };
-    UpdateRubricApiRequest_schema_v5_stream_UpdateRubricApiRequest_post: {
+    UpdateRubricApiRequest_schema_stream_UpdateRubricApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73793,7 +73895,7 @@ export interface operations {
             };
         };
     };
-    UpdateRubricApiResponse_schema_v5_stream_UpdateRubricApiResponse_post: {
+    UpdateRubricApiResponse_schema_stream_UpdateRubricApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73828,7 +73930,7 @@ export interface operations {
             };
         };
     };
-    UpdateScenarioApiRequest_schema_v5_stream_UpdateScenarioApiRequest_post: {
+    UpdateScenarioApiRequest_schema_stream_UpdateScenarioApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73863,7 +73965,7 @@ export interface operations {
             };
         };
     };
-    UpdateScenarioApiResponse_schema_v5_stream_UpdateScenarioApiResponse_post: {
+    UpdateScenarioApiResponse_schema_stream_UpdateScenarioApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73898,7 +74000,7 @@ export interface operations {
             };
         };
     };
-    UpdateSettingApiRequest_schema_v5_stream_UpdateSettingApiRequest_post: {
+    UpdateSettingApiRequest_schema_stream_UpdateSettingApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73933,7 +74035,7 @@ export interface operations {
             };
         };
     };
-    UpdateSettingApiResponse_schema_v5_stream_UpdateSettingApiResponse_post: {
+    UpdateSettingApiResponse_schema_stream_UpdateSettingApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73968,7 +74070,7 @@ export interface operations {
             };
         };
     };
-    UpdateSimulationApiRequest_schema_v5_stream_UpdateSimulationApiRequest_post: {
+    UpdateSimulationApiRequest_schema_stream_UpdateSimulationApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74003,7 +74105,7 @@ export interface operations {
             };
         };
     };
-    UpdateSimulationApiResponse_schema_v5_stream_UpdateSimulationApiResponse_post: {
+    UpdateSimulationApiResponse_schema_stream_UpdateSimulationApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74038,7 +74140,7 @@ export interface operations {
             };
         };
     };
-    UpdateToolApiRequest_schema_v5_stream_UpdateToolApiRequest_post: {
+    UpdateToolApiRequest_schema_stream_UpdateToolApiRequest_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74073,7 +74175,7 @@ export interface operations {
             };
         };
     };
-    UpdateToolApiResponse_schema_v5_stream_UpdateToolApiResponse_post: {
+    UpdateToolApiResponse_schema_stream_UpdateToolApiResponse_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -74104,26 +74206,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    health_services_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
                 };
             };
         };
@@ -74196,12 +74278,46 @@ export interface operations {
                 client_id: string;
                 redirect_uri: string;
                 response_type: string;
-                state: string;
+                state?: string;
                 scope?: string;
                 nonce?: string | null;
                 profile_id?: string | null;
                 emulation_grant?: string | null;
                 login_hint?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oidc_callback_oidc_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                state?: string | null;
+                error?: string | null;
+                error_description?: string | null;
             };
             header?: never;
             path?: never;
@@ -74236,11 +74352,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/x-www-form-urlencoded": components["schemas"]["Body_token_token_post"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -74251,15 +74363,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -74293,6 +74396,118 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    callback_callback_get: {
+        parameters: {
+            query?: {
+                code?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_logout_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    me_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    client_config_auth_client_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

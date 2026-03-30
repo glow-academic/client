@@ -1,0 +1,6 @@
+{
+  "glow-api": {
+    "version": "2.6.0",
+    "note": "Pinned API version this client was built for"
+  }
+}

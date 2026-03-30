@@ -2,8 +2,22 @@
 import type { NextConfig } from "next";
 import type { WebpackConfigContext } from "next/dist/server/config-shared";
 import type { Configuration as WebpackConfig } from "webpack";
+import { readFileSync } from "fs";
+import { join } from "path";
+
+// Read pinned API version from api-versions.json at build time
+const apiVersions = (() => {
+  try {
+    return JSON.parse(readFileSync(join(__dirname, "api-versions.json"), "utf8"));
+  } catch {
+    return {};
+  }
+})();
 
 module.exports = {
+  env: {
+    NEXT_PUBLIC_API_VERSION: apiVersions?.["glow-api"]?.version || "unknown",
+  },
   basePath: process.env["APP_PREFIX"] || "",
   output: "standalone",
   devIndicators: false,
