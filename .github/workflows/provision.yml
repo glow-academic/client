@@ -122,7 +122,7 @@ jobs:
                 - app-green
               environment:
                 - ACTIVE_ENV=\${ACTIVE_ENV:-blue}
-                - MCP_BACKEND=\${MCP_BACKEND:-server:8000}
+                - MCP_BACKEND=\${MCP_BACKEND:-glow-api:8000}
               volumes:
                 - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
           COMPEOF
