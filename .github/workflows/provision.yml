@@ -123,6 +123,7 @@ jobs:
               environment:
                 - ACTIVE_ENV=\${ACTIVE_ENV:-blue}
                 - MCP_BACKEND=\${MCP_BACKEND:-glow-api:8000}
+                - LEARNLOOP_API=\${LEARNLOOP_API:-api-beta-nginx:80}
               volumes:
                 - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
           COMPEOF
