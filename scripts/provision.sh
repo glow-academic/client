@@ -23,6 +23,7 @@ while [[ $# -gt 0 ]]; do
     --compose-dir) COMPOSE_DIR="$2"; shift 2 ;;
     --entry-service) ENTRY_SERVICE="$2"; shift 2 ;;
     --entry-port) ENTRY_PORT="$2"; shift 2 ;;
+    --custom-domain) CUSTOM_DOMAIN="$2"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -38,6 +39,11 @@ case "$COMMAND" in
     : "${ENTRY_PORT:?--entry-port required}"
 
     DOMAIN="${SUBDOMAIN}.${BASE_DOMAIN}"
+    if [ -n "${CUSTOM_DOMAIN:-}" ]; then
+      HOST_RULE="Host(\`${DOMAIN}\`) || Host(\`${CUSTOM_DOMAIN}\`)"
+    else
+      HOST_RULE="Host(\`${DOMAIN}\`)"
+    fi
     DEPLOY_NETWORK="glow-${PARENT_DEPLOYMENT_ID}"
 
     # Ensure external networks exist (API creates the deployment network;
@@ -58,7 +64,7 @@ services:
     - deployment
     labels:
     - traefik.enable=true
-    - traefik.http.routers.client-${NAME}.rule=Host(\`${DOMAIN}\`)
+    - traefik.http.routers.client-${NAME}.rule=${HOST_RULE}
     - traefik.http.routers.client-${NAME}.entrypoints=websecure
     - traefik.http.routers.client-${NAME}.tls.certresolver=letsencrypt
     - traefik.http.routers.client-${NAME}.middlewares=secure-public@file
