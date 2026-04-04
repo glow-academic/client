@@ -149,7 +149,7 @@ jobs:
                 - HOSTNAME=0.0.0.0
                 - PORT=3000
                 - INTERNAL_API_BASE=http://glow-api:8000
-                - AUTH_ISSUER=${API_URL}/auth/realms/master
+                - AUTH_ISSUER=${API_URL}
                 - AUTH_CLIENT_ID=glow-client
                 - AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}
                 - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
@@ -173,7 +173,7 @@ jobs:
                 - HOSTNAME=0.0.0.0
                 - PORT=3000
                 - INTERNAL_API_BASE=http://glow-api:8000
-                - AUTH_ISSUER=${API_URL}/auth/realms/master
+                - AUTH_ISSUER=${API_URL}
                 - AUTH_CLIENT_ID=glow-client
                 - AUTH_CLIENT_SECRET=${AUTH_CLIENT_SECRET}
                 - AUTH_URL=${ORIGIN}${APP_PREFIX}/api/auth
