@@ -9,8 +9,8 @@ on:
       origin:
         description: 'Client origin URL'
         required: true
-      parent_deployment_id:
-        description: 'Parent API deployment UUID'
+      instance_id:
+        description: 'Instance UUID'
         required: true
       version:
         description: 'Image version (e.g. v1.0.1)'
@@ -141,7 +141,7 @@ jobs:
           CUSTOM_DOMAIN="${{ inputs.custom_domain }}"
           bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
             --name "${{ inputs.deployment_id }}" \
-            --parent-deployment-id "${{ inputs.parent_deployment_id }}" \
+            --instance-id "${{ inputs.instance_id }}" \
             ${API_DOMAIN:+--api-domain "$API_DOMAIN"} \
             --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
             --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \

@@ -5,7 +5,7 @@
 # Traefik labels for HTTPS routing + deployment network for app services.
 #
 # Usage:
-#   ./scripts/provision.sh deploy --name <id> --parent-deployment-id <id> --subdomain <sub> --base-domain <domain> --compose-dir <dir> --entry-service <svc> --entry-port <port>
+#   ./scripts/provision.sh deploy --name <id> --instance-id <id> --subdomain <sub> --base-domain <domain> --compose-dir <dir> --entry-service <svc> --entry-port <port>
 #   ./scripts/provision.sh teardown --name <name> --compose-dir <dir>
 
 set -e
@@ -16,7 +16,7 @@ shift
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --name) NAME="$2"; shift 2 ;;
-    --parent-deployment-id) PARENT_DEPLOYMENT_ID="$2"; shift 2 ;;
+    --instance-id) INSTANCE_ID="$2"; shift 2 ;;
     --api-domain) API_DOMAIN="$2"; shift 2 ;;
     --subdomain) SUBDOMAIN="$2"; shift 2 ;;
     --base-domain) BASE_DOMAIN="$2"; shift 2 ;;
@@ -31,7 +31,7 @@ done
 case "$COMMAND" in
   deploy)
     : "${NAME:?--name required}"
-    : "${PARENT_DEPLOYMENT_ID:?--parent-deployment-id required}"
+    : "${INSTANCE_ID:?--instance-id required}"
     : "${COMPOSE_DIR:?--compose-dir required}"
     : "${SUBDOMAIN:?--subdomain required}"
     : "${BASE_DOMAIN:?--base-domain required}"
@@ -44,7 +44,7 @@ case "$COMMAND" in
     else
       HOST_RULE="Host(\`${DOMAIN}\`)"
     fi
-    DEPLOY_NETWORK="glow-${PARENT_DEPLOYMENT_ID}"
+    DEPLOY_NETWORK="glow-${INSTANCE_ID}"
 
     # Ensure external networks exist (API creates the deployment network;
     # this is a no-op if it already exists)

@@ -9,8 +9,8 @@ on:
       origin:
         description: 'Client origin URL (e.g. https://app-glow-demo.learn-loop.org)'
         required: true
-      parent_deployment_id:
-        description: 'Parent API deployment UUID (for Docker network connectivity)'
+      instance_id:
+        description: 'Instance UUID (for Docker network connectivity)'
         required: true
       version:
         description: 'Image version (e.g. v1.0.0 or latest)'
@@ -130,14 +130,14 @@ jobs:
           ORIGIN="${{ inputs.origin }}"
           APP_PREFIX="${{ inputs.app_prefix }}"
           CAMPUS="${{ inputs.campus }}"
-          PARENT_NETWORK="glow-${{ inputs.parent_deployment_id }}"
+          PARENT_NETWORK="glow-${{ inputs.instance_id }}"
 
           AUTH_CLIENT_SECRET="${AUTH_CLIENT_SECRET:-}"
 
           # Resolve parent API URL (OIDC issuer for the client)
           API_URL="${{ inputs.api_url }}"
           if [ -z "$API_URL" ]; then
-            API_URL="https://${{ inputs.parent_deployment_id }}.learn-loop.org"
+            API_URL="https://${{ inputs.instance_id }}.learn-loop.org"
           fi
 
           cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
@@ -252,7 +252,7 @@ jobs:
           CUSTOM_DOMAIN="${{ inputs.custom_domain }}"
           bash "$DEPLOY_DIR/scripts/provision.sh" deploy \
             --name "${{ inputs.deployment_id }}" \
-            --parent-deployment-id "${{ inputs.parent_deployment_id }}" \
+            --instance-id "${{ inputs.instance_id }}" \
             ${API_DOMAIN:+--api-domain "$API_DOMAIN"} \
             --subdomain "${{ steps.parse-origin.outputs.subdomain }}" \
             --base-domain "${{ steps.parse-origin.outputs.base-domain }}" \
