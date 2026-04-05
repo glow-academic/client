@@ -118,12 +118,16 @@ jobs:
         if: steps.check.outputs.released == 'true'
         run: |
           python3 -c "
-          import yaml, json
-          with open('compat.yml') as f:
-              data = yaml.safe_load(f)
-          data['version'] = '${{ steps.version.outputs.version }}'
+          import json
+          with open('api-versions.json') as f:
+              api_ver = json.load(f)['glow-api']['version']
+          compat = {
+              'component': 'glow-client',
+              'min_glow_api': api_ver,
+              'version': '${{ steps.version.outputs.version }}',
+          }
           with open('compat.json', 'w') as f:
-              json.dump(data, f, indent=2)
+              json.dump(compat, f, indent=2)
           "
 
       - name: Create release

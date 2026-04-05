@@ -1,8 +1,0 @@
-# Compatibility: minimum glow-api version this client works with.
-# Uploaded as compat.json release asset by the tag workflow.
-# The LearnLoop deploy API uses this to filter compatible client versions
-# when a parent API deployment is selected.
-
-component: glow-client
-min_glow_api: "1.0.0"
-max_glow_api_major: 2
