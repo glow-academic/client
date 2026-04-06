@@ -38,7 +38,12 @@ export const {
   secret,
   trustHost: true,
   session: { strategy: "jwt" },
+  pages: { signIn: "/auth/signin" },
   callbacks: {
+    // Auto-redirect to OIDC provider when not authenticated (skip sign-in page)
+    authorized({ auth: session }) {
+      return !!session?.user;
+    },
     // Store id_token in JWT — server resolves identity from it on every request
     async jwt({ token, account }) {
       if (account?.id_token) {
