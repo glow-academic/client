@@ -67,7 +67,7 @@ monitor: ## Monitor deployment (ENV=blue|green ROLLBACK=blue|green)
 sync-types: ## Fetch OpenAPI schema from server and regenerate TypeScript types
 	@echo "Fetching OpenAPI schema from $(API_URL)..."
 	@curl -sf $(API_URL)/openapi.json -o /tmp/glow-openapi.json
-	@echo "{\"glow-api\":{\"version\":\"$$(jq -r '.info.version' /tmp/glow-openapi.json)\",\"synced_at\":\"$$(date -u +%%Y-%%m-%%dT%%H:%%M:%%SZ)\"}}" | jq . > api-versions.json
+	@echo "{\"glow-api\":{\"version\":\"$$(jq -r '.info.version' /tmp/glow-openapi.json)\",\"synced_at\":\"$$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}}" | jq . > api-versions.json
 	@bun x openapi-typescript /tmp/glow-openapi.json -o lib/api/schema.ts
 	@rm -f /tmp/glow-openapi.json
 	@echo "✅ Types updated: lib/api/schema.ts"

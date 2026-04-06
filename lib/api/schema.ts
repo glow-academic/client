@@ -4938,6 +4938,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/attempt/expire": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Expire
+         * @description Find and end all expired attempt chats.
+         */
+        post: operations["expire_attempt_expire_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/attempt/message": {
         parameters: {
             query?: never;
@@ -12472,7 +12492,11 @@ export interface paths {
         };
         /**
          * Logout
-         * @description Redirect to Keycloak logout, then back to login page.
+         * @description OIDC end_session_endpoint — proxy logout to Keycloak.
+         *
+         *     The client sends a Glow-signed id_token_hint. We look up the
+         *     corresponding KC-signed id_token (stored during login) and pass
+         *     that to Keycloak so it can do a silent logout without confirmation.
          */
         get: operations["logout_logout_get"];
         put?: never;
@@ -12541,6 +12565,30 @@ export interface paths {
         get: operations["root_info__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/docs-mcp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Docs Mcp Proxy
+         * @description Forward an MCP request to the Glow docs sibling.
+         *
+         *     This route is behind McpOAuthMiddleware, so the user is already
+         *     authenticated. We re-sign with the Glow API's key so the docs
+         *     can verify against our /jwks.
+         */
+        post: operations["docs_mcp_proxy_docs_mcp_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -59919,6 +59967,26 @@ export interface operations {
             };
         };
     };
+    expire_attempt_expire_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     attempt_message_attempt_message_post: {
         parameters: {
             query?: never;
@@ -74454,7 +74522,11 @@ export interface operations {
     };
     logout_logout_get: {
         parameters: {
-            query?: never;
+            query?: {
+                post_logout_redirect_uri?: string | null;
+                client_id?: string | null;
+                id_token_hint?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -74468,6 +74540,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -74513,6 +74594,26 @@ export interface operations {
         };
     };
     root_info__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    docs_mcp_proxy_docs_mcp_post: {
         parameters: {
             query?: never;
             header?: never;
