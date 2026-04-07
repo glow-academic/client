@@ -35,6 +35,10 @@ on:
         description: 'LearnLoop API URL'
         required: false
         default: 'https://api.learn-loop.org'
+      airgapped_api:
+        description: 'If true, API has no public URL — auth proxied through client nginx'
+        required: false
+        default: 'false'
       custom_domain:
         description: 'Custom domain (e.g. app.example.com) — added to Traefik Host rule'
         required: false
@@ -134,10 +138,16 @@ jobs:
 
           AUTH_CLIENT_SECRET="${AUTH_CLIENT_SECRET:-}"
 
-          # Resolve parent API URL (OIDC issuer for the client)
-          API_URL="${{ inputs.api_url }}"
-          if [ -z "$API_URL" ]; then
-            API_URL="https://${{ inputs.instance_id }}.learn-loop.org"
+          # Resolve OIDC issuer for the client
+          # Airgapped API: auth endpoints proxied through client nginx, so issuer = client origin
+          # Exposed API: auth endpoints on API's public domain
+          if [ "${{ inputs.airgapped_api }}" = "true" ]; then
+            API_URL="${ORIGIN}"
+          else
+            API_URL="${{ inputs.api_url }}"
+            if [ -z "$API_URL" ]; then
+              API_URL="https://${{ inputs.instance_id }}.learn-loop.org"
+            fi
           fi
 
           cat > "$DEPLOY_DIR/docker-compose.yml" <<COMPOSE
@@ -199,6 +209,7 @@ jobs:
               environment:
                 - ACTIVE_ENV=\${ACTIVE_ENV:-blue}
                 - MCP_BACKEND=\${MCP_BACKEND:-glow-api:8000}
+                - GLOW_NGINX=\${GLOW_NGINX:-glow-nginx:80}
               volumes:
                 - ./web/default.conf.template:/etc/nginx/templates/default.conf.template:ro
                 - ./web/generated:/etc/nginx/conf.d/generated:rw

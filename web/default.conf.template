@@ -5,6 +5,13 @@ map "${ACTIVE_ENV}" $app_backend {
     default   app-blue:3000;
 }
 
+# Preserve upstream proto (Traefik sets X-Forwarded-Proto: https).
+# If no upstream header, fall back to this hop's $scheme.
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
 server {
     listen 80;
     server_name _;
@@ -19,7 +26,7 @@ server {
         proxy_set_header   Host              $host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
 
         # SSE support for MCP streaming
         proxy_buffering    off;
@@ -36,7 +43,7 @@ server {
         proxy_set_header   Host              $host;
         proxy_set_header   X-Real-IP         $remote_addr;
         proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
 
         proxy_buffering    off;
         proxy_cache        off;
@@ -63,14 +70,14 @@ server {
         set $api_backend "${MCP_BACKEND}";
         proxy_pass http://$api_backend;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
     }
 
     location = /authorize {
         set $api_backend "${MCP_BACKEND}";
         proxy_pass http://$api_backend;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
     }
 
     location = /token {
@@ -78,28 +85,70 @@ server {
         proxy_pass http://$api_backend;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
     }
 
     location = /userinfo {
         set $api_backend "${MCP_BACKEND}";
         proxy_pass http://$api_backend;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
     }
 
     location = /jwks {
         set $api_backend "${MCP_BACKEND}";
         proxy_pass http://$api_backend;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
     }
 
     location = /logout {
         set $api_backend "${MCP_BACKEND}";
         proxy_pass http://$api_backend;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    # OIDC callback — Keycloak redirects here after authentication
+    location = /oidc-callback {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+    }
+
+    # Keycloak auth proxy — needed for Login with LearnLoop (airgapped API).
+    # Routes through API's nginx which handles blue/green Keycloak routing.
+    # GLOW_NGINX is the API's nginx alias on the shared deployment network.
+    location ^~ /auth/ {
+        set $kc_backend "${GLOW_NGINX}";
+        proxy_pass         http://$kc_backend;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto https;
+        proxy_set_header   X-Forwarded-Host  $host;
+        proxy_redirect     off;
+        # Keycloak responses can have large headers (cookies, tokens)
+        proxy_buffer_size        128k;
+        proxy_buffers            4 256k;
+        proxy_busy_buffers_size  256k;
+    }
+
+    # WebSocket proxy — Socket.IO for real-time features (airgapped API)
+    location ^~ /socket.io/ {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass         http://$api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade           $http_upgrade;
+        proxy_set_header   Connection        "upgrade";
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $forwarded_proto;
+        proxy_buffering    off;
     }
 
     # Client app — everything else
@@ -109,7 +158,7 @@ server {
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
         proxy_http_version 1.1;
         proxy_set_header Upgrade    $http_upgrade;
         proxy_set_header Connection "upgrade";
