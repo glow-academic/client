@@ -141,21 +141,17 @@ export function UnifiedAccessDenied({
         case "simulation":
           return "/training/simulations";
         case "cohort":
-          return "/cohorts";
+          return "/training/cohorts";
         case "persona":
           return "/training/personas";
         case "department":
-          return "/departments";
+          return "/system/departments";
         case "agent":
           return "/intelligence/agents";
         case "rubric":
           return "/system/rubrics";
         case "parameter":
           return "/management/parameters";
-        case "key":
-          return "/system/keys";
-        case "prompt":
-          return "/intelligence/prompts";
         case "video":
           return "/training/videos";
         case "setting":

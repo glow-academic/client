@@ -62,22 +62,29 @@ function MainLayoutContent({
     }
   }, [pathname, router]);
 
-  // Derive active section from pathname
+  // Derive active section (artifact name) from pathname by matching against sidebar URLs
   const activeSection = useMemo(() => {
-    const segments = pathname.split("/").filter(Boolean);
-    return segments[0] || "home";
+    for (const route of SIDEBAR_SECTIONS) {
+      if (route.items) {
+        const child = route.items.find((item) => pathname.startsWith(item.url));
+        if (child) return child.artifact;
+      } else if (route.artifact && pathname.startsWith(route.url)) {
+        return route.artifact;
+      }
+    }
+    return "";
   }, [pathname]);
 
   const handleSectionChange = (section: string) => {
     // Look up the correct URL from client-side sidebar config
     let targetUrl = `/${section}`;
     for (const route of SIDEBAR_SECTIONS) {
-      if (route.section === section) {
+      if (route.artifact === section) {
         targetUrl = route.url;
         break;
       }
       if (route.items) {
-        const child = route.items.find((item) => item.section === section);
+        const child = route.items.find((item) => item.artifact === section);
         if (child) {
           targetUrl = child.url;
           break;

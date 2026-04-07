@@ -309,7 +309,7 @@ export default function TableRubric({
 
                             return (
                               <TableCell
-                                key={standardId}
+                                key={standardIndex}
                                 className={`whitespace-normal text-xs relative align-top p-2 ${
                                   !isLast ? "border-r border-border" : ""
                                 } ${
