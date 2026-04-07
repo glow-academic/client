@@ -12,7 +12,10 @@ const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
 // OIDC configuration — Glow API is the identity provider
-const issuer = process.env["AUTH_ISSUER"] || process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
+// publicBase = browser-accessible URL (AUTH_ISSUER or INTERNAL_API_BASE for local dev)
+// internalBase = server-side URL (Docker network when deployed, same as publicBase locally)
+const publicBase = process.env["AUTH_ISSUER"] || process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
+const internalBase = process.env["INTERNAL_API_BASE"] || publicBase;
 const clientId = process.env["AUTH_CLIENT_ID"] || "glow-client";
 const clientSecret = process.env["AUTH_CLIENT_SECRET"] || secret;
 
@@ -28,11 +31,23 @@ export const {
     {
       id: "glow",
       name: "Glow",
-      type: "oidc",
-      issuer,
+      // Use "oauth" with explicit endpoints to support airgapped API:
+      // - authorization: public URL (browser redirect)
+      // - token/userinfo/jwks: internal URL (server-side, Docker network)
+      type: "oauth",
+      issuer: publicBase,
+      authorization: { url: `${publicBase}/authorize`, params: { scope: "openid profile email" } },
+      token: `${internalBase}/token`,
+      userinfo: `${internalBase}/userinfo`,
+      jwks_endpoint: `${internalBase}/jwks`,
       clientId,
       clientSecret,
       allowDangerousEmailAccountLinking: true,
+      checks: ["state"],
+      idToken: true,
+      profile(profile) {
+        return { id: profile.sub, name: profile.name, email: profile.email };
+      },
     },
   ],
   secret,
@@ -58,7 +73,7 @@ export const {
       }
 
       // Expose issuer so client-side can construct standard OIDC logout URL
-      session.issuer = issuer;
+      session.issuer = publicBase;
 
       return session;
     },
