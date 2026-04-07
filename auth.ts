@@ -12,7 +12,9 @@ const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
 // OIDC configuration — Glow API is the identity provider
-const issuer = process.env["AUTH_ISSUER"] || process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
+// INTERNAL_API_BASE is used for server-side discovery (Docker network: glow-api:8000)
+// AUTH_ISSUER is the public URL (used for browser redirects)
+const issuer = process.env["INTERNAL_API_BASE"] || process.env["AUTH_ISSUER"] || "http://localhost:8000";
 const clientId = process.env["AUTH_CLIENT_ID"] || "glow-client";
 const clientSecret = process.env["AUTH_CLIENT_SECRET"] || secret;
 
