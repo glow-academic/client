@@ -118,6 +118,15 @@ server {
         proxy_set_header X-Forwarded-Proto $forwarded_proto;
     }
 
+    # Auto-signin route — must be BEFORE /auth/ to avoid Keycloak proxy match
+    location = /auth/signin {
+        set $backend $app_backend;
+        proxy_pass http://$backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_http_version 1.1;
+    }
+
     # Keycloak auth proxy — needed for Login with LearnLoop (airgapped API).
     # Routes through API's nginx which handles blue/green Keycloak routing.
     # GLOW_NGINX is the API's nginx alias on the shared deployment network.
