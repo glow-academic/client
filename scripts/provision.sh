@@ -78,24 +78,24 @@ services:
           memory: 512M
           cpus: '1.0'
     extra_hosts:
-    - ${DOMAIN}:host-gateway${API_DOMAIN:+
-    - ${API_DOMAIN}:host-gateway}
+      ${DOMAIN}: host-gateway${API_DOMAIN:+
+      ${API_DOMAIN}: host-gateway}
   app-blue:
     networks:
       deployment:
         aliases:
         - client
     extra_hosts:
-    - ${DOMAIN}:host-gateway${API_DOMAIN:+
-    - ${API_DOMAIN}:host-gateway}
+      ${DOMAIN}: host-gateway${API_DOMAIN:+
+      ${API_DOMAIN}: host-gateway}
   app-green:
     networks:
       deployment:
         aliases:
         - client
     extra_hosts:
-    - ${DOMAIN}:host-gateway${API_DOMAIN:+
-    - ${API_DOMAIN}:host-gateway}
+      ${DOMAIN}: host-gateway${API_DOMAIN:+
+      ${API_DOMAIN}: host-gateway}
   docker-gen:
     container_name: ${NAME}-docker-gen
 networks:
