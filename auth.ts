@@ -12,9 +12,7 @@ const appPrefix = process.env["APP_PREFIX"] || "";
 const secret = process.env["AUTH_SECRET"] || "";
 
 // OIDC configuration — Glow API is the identity provider
-// Server-side discovery uses INTERNAL_API_BASE (Docker network: glow-api:8000)
-// The discovery endpoint returns issuer matching the request Host header
-const issuer = process.env["INTERNAL_API_BASE"] || process.env["AUTH_ISSUER"] || "http://localhost:8000";
+const issuer = process.env["AUTH_ISSUER"] || process.env["INTERNAL_API_BASE"] || "http://localhost:8000";
 const clientId = process.env["AUTH_CLIENT_ID"] || "glow-client";
 const clientSecret = process.env["AUTH_CLIENT_SECRET"] || secret;
 
@@ -40,12 +38,7 @@ export const {
   secret,
   trustHost: true,
   session: { strategy: "jwt" },
-  pages: { signIn: "/auth/signin" },
   callbacks: {
-    // Auto-redirect to OIDC provider when not authenticated (skip sign-in page)
-    authorized({ auth: session }) {
-      return !!session?.user;
-    },
     // Store id_token in JWT — server resolves identity from it on every request
     async jwt({ token, account }) {
       if (account?.id_token) {
