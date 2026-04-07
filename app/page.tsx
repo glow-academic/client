@@ -1,6 +1,6 @@
 /**
  * app/page.tsx
- * Root page - redirects to Keycloak login
+ * Root page - redirects to Glow OIDC login
  */
 
 "use client";
@@ -16,7 +16,7 @@ export default function RootPage() {
     hasRedirected.current = true;
 
     // Redirect to Keycloak login
-    signIn("keycloak", {
+    signIn("glow", {
       callbackUrl: "/callback",
     });
   }, []);

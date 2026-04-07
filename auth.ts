@@ -33,7 +33,6 @@ export const {
       allowDangerousEmailAccountLinking: true,
     },
   ],
-  pages: { signIn: `${appPrefix}/auth/signin` },
   secret,
   trustHost: true,
   session: { strategy: "jwt" },
