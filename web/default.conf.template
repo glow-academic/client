@@ -57,6 +57,51 @@ server {
         proxy_set_header Host $host;
     }
 
+    # OIDC proxy — forward auth endpoints to Glow API (airgapped).
+    # The API is the OIDC provider; the client needs these for login.
+    location = /.well-known/openid-configuration {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /authorize {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /token {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /userinfo {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /jwks {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /logout {
+        set $api_backend "${MCP_BACKEND}";
+        proxy_pass http://$api_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # Client app — everything else
     location / {
         set $backend $app_backend;
