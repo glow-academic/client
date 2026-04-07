@@ -31,15 +31,25 @@ export const {
     {
       id: "glow",
       name: "Glow",
-      type: "oidc",
-      // Use public issuer for OIDC validation, internal URL for server-side calls
+      type: "oauth",
+      // Manual endpoints — avoids OIDC auto-discovery fetch to unreachable public URL
       issuer,
-      wellKnown: `${internalBase}/.well-known/openid-configuration`,
+      authorization: { url: `${issuer}/authorize`, params: { scope: "openid profile email" } },
       token: `${internalBase}/token`,
       userinfo: `${internalBase}/userinfo`,
+      jwks_endpoint: `${internalBase}/jwks`,
       clientId,
       clientSecret,
       allowDangerousEmailAccountLinking: true,
+      checks: ["state"],
+      idToken: true,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+        };
+      },
     },
   ],
   secret,
