@@ -168,7 +168,8 @@ const getRoleIcon = (role: string) => {
   }
 };
 
-const getRoleDisplayName = (role: string): string => {
+const getRoleDisplayName = (role: string, roleName?: string | null): string => {
+  if (roleName) return roleName;
   switch (role) {
     case "superadmin":
       return "Super Administrator";
@@ -1007,7 +1008,7 @@ export default function Profiles({
             <div className="flex items-center gap-2">
               <RoleIcon className="h-4 w-4" />
               <span className="text-sm font-medium">
-                {getRoleDisplayName(role)}
+                {getRoleDisplayName(role, profile.role_name)}
               </span>
             </div>
           );
