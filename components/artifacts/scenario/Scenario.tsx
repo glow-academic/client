@@ -492,63 +492,6 @@ function ScenarioComponent({
     [scenarioData?.options],
   );
 
-  // Update form state when server data changes
-  useEffect(() => {
-    const newState = getInitialFormState();
-    setFormState((prev) => {
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.problem_statement_id !== newState.problem_statement_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        prev.objectives_enabled_flag_id !==
-          newState.objectives_enabled_flag_id ||
-        prev.images_enabled_flag_id !== newState.images_enabled_flag_id ||
-        prev.video_enabled_flag_id !== newState.video_enabled_flag_id ||
-        prev.questions_enabled_flag_id !== newState.questions_enabled_flag_id ||
-        prev.problem_statement_enabled_flag_id !==
-          newState.problem_statement_enabled_flag_id ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.persona_ids) !==
-          JSON.stringify(newState.persona_ids) ||
-        JSON.stringify(prev.document_ids) !==
-          JSON.stringify(newState.document_ids) ||
-        JSON.stringify(prev.parameter_field_ids) !==
-          JSON.stringify(newState.parameter_field_ids) ||
-        JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
-        JSON.stringify(prev.objective_ids) !==
-          JSON.stringify(newState.objective_ids) ||
-        JSON.stringify(prev.video_ids) !== JSON.stringify(newState.video_ids) ||
-        JSON.stringify(prev.question_ids) !==
-          JSON.stringify(newState.question_ids) ||
-        JSON.stringify(prev.option_ids) !==
-          JSON.stringify(newState.option_ids)
-      ) {
-        serverSyncPendingRef.current = true;
-        return newState;
-      }
-      return prev;
-    });
-    // Use individual scenarioData fields in dependencies to prevent effect from running when unrelated fields change
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    scenarioData?.names,
-    scenarioData?.descriptions,
-    scenarioData?.problem_statements,
-    scenarioData?.flags,
-    scenarioDepartmentIdsStr,
-    scenarioPersonaIdsStr,
-    scenarioDocumentIdsStr,
-    scenarioParameterFieldIdsStr,
-    scenarioImageIdsStr,
-    scenarioObjectiveIdsStr,
-    scenarioVideoIdsStr,
-    scenarioQuestionIdsStr,
-    scenarioOptionIdsStr,
-  ]);
-
   // --- Draft Lifecycle ---
   const patchScenarioDraftActionRef = useRef(patchScenarioDraftAction);
   useEffect(() => {
@@ -562,52 +505,6 @@ function ScenarioComponent({
       ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
     | undefined
   >(undefined);
-  useEffect(() => {
-    if (patchScenarioDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const result = await patchScenarioDraftAction({
-          body: payload,
-        } as PatchScenarioDraftIn);
-
-        // Sync form_state from server response (server is source of truth)
-        const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
-        if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs["name_id"] as string) ?? prev.name_id,
-            description_id: (fs["description_id"] as string) ?? prev.description_id,
-            problem_statement_id: (fs["problem_statement_id"] as string) ?? prev.problem_statement_id,
-            flag_ids: (fs["flag_ids"] as string[]) ?? prev.active_flag_id,
-            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
-            persona_ids: (fs["persona_ids"] as string[]) ?? prev.persona_ids,
-            document_ids: (fs["document_ids"] as string[]) ?? prev.document_ids,
-            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
-            objective_ids: (fs["objective_ids"] as string[]) ?? prev.objective_ids,
-            image_ids: (fs["image_ids"] as string[]) ?? prev.image_ids,
-            video_ids: (fs["video_ids"] as string[]) ?? prev.video_ids,
-            question_ids: (fs["question_ids"] as string[]) ?? prev.question_ids,
-            option_ids: (fs["option_ids"] as string[]) ?? prev.option_ids,
-            // Clear value fields after server resolves them to IDs
-            name: fs["name_id"] ? null : prev.name,
-            description: fs["description_id"] ? null : prev.description,
-            problem_statement: fs["problem_statement_id"] ? null : prev.problem_statement,
-            // Clear multi-select values — server merged them into IDs
-            objectives: null,
-            images: null,
-            videos: null,
-            questions: null,
-            options: null,
-          }));
-        }
-
-        return result;
-      };
-    } else {
-      patchActionRef.current = undefined;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patchScenarioDraftAction]);
 
   // formStateKey excludes draftId -- the hook prepends it
   const formStateKey = useMemo(
@@ -795,6 +692,110 @@ function ScenarioComponent({
     formStateRef,
     onPatchSuccess,
   });
+
+  // Update form state when server data changes
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.problem_statement_id !== newState.problem_statement_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        prev.objectives_enabled_flag_id !==
+          newState.objectives_enabled_flag_id ||
+        prev.images_enabled_flag_id !== newState.images_enabled_flag_id ||
+        prev.video_enabled_flag_id !== newState.video_enabled_flag_id ||
+        prev.questions_enabled_flag_id !== newState.questions_enabled_flag_id ||
+        prev.problem_statement_enabled_flag_id !==
+          newState.problem_statement_enabled_flag_id ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.persona_ids) !==
+          JSON.stringify(newState.persona_ids) ||
+        JSON.stringify(prev.document_ids) !==
+          JSON.stringify(newState.document_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !==
+          JSON.stringify(newState.parameter_field_ids) ||
+        JSON.stringify(prev.image_ids) !== JSON.stringify(newState.image_ids) ||
+        JSON.stringify(prev.objective_ids) !==
+          JSON.stringify(newState.objective_ids) ||
+        JSON.stringify(prev.video_ids) !== JSON.stringify(newState.video_ids) ||
+        JSON.stringify(prev.question_ids) !==
+          JSON.stringify(newState.question_ids) ||
+        JSON.stringify(prev.option_ids) !==
+          JSON.stringify(newState.option_ids)
+      ) {
+        serverSyncPendingRef.current = true;
+        return newState;
+      }
+      return prev;
+    });
+    // Use individual scenarioData fields in dependencies to prevent effect from running when unrelated fields change
+    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    scenarioData?.names,
+    scenarioData?.descriptions,
+    scenarioData?.problem_statements,
+    scenarioData?.flags,
+    scenarioDepartmentIdsStr,
+    scenarioPersonaIdsStr,
+    scenarioDocumentIdsStr,
+    scenarioParameterFieldIdsStr,
+    scenarioImageIdsStr,
+    scenarioObjectiveIdsStr,
+    scenarioVideoIdsStr,
+    scenarioQuestionIdsStr,
+    scenarioOptionIdsStr,
+  ]);
+
+  useEffect(() => {
+    if (patchScenarioDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchScenarioDraftAction({
+          body: payload,
+        } as PatchScenarioDraftIn);
+
+        // Sync form_state from server response (server is source of truth)
+        const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs["name_id"] as string) ?? prev.name_id,
+            description_id: (fs["description_id"] as string) ?? prev.description_id,
+            problem_statement_id: (fs["problem_statement_id"] as string) ?? prev.problem_statement_id,
+            flag_ids: (fs["flag_ids"] as string[]) ?? prev.active_flag_id,
+            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+            persona_ids: (fs["persona_ids"] as string[]) ?? prev.persona_ids,
+            document_ids: (fs["document_ids"] as string[]) ?? prev.document_ids,
+            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
+            objective_ids: (fs["objective_ids"] as string[]) ?? prev.objective_ids,
+            image_ids: (fs["image_ids"] as string[]) ?? prev.image_ids,
+            video_ids: (fs["video_ids"] as string[]) ?? prev.video_ids,
+            question_ids: (fs["question_ids"] as string[]) ?? prev.question_ids,
+            option_ids: (fs["option_ids"] as string[]) ?? prev.option_ids,
+            // Clear value fields after server resolves them to IDs
+            name: fs["name_id"] ? null : prev.name,
+            description: fs["description_id"] ? null : prev.description,
+            problem_statement: fs["problem_statement_id"] ? null : prev.problem_statement,
+            // Clear multi-select values — server merged them into IDs
+            objectives: null,
+            images: null,
+            videos: null,
+            questions: null,
+            options: null,
+          }));
+        }
+
+        return result;
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchScenarioDraftAction]);
 
   // --- Initialize URL parameterIds from server resolved_parameter_ids ---
   const hasInitializedParameterIds = useRef(false);

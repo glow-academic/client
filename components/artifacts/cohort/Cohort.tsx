@@ -485,50 +485,6 @@ function CohortComponent({
     [cohortData?.profile_personas],
   );
 
-  // Update form state when server data changes
-  // Use cohortData directly in dependency array, not getInitialFormState
-  useEffect(() => {
-    const newState = getInitialFormState();
-    setFormState((prev) => {
-      // Only update if resource IDs actually changed
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.simulation_ids) !==
-          JSON.stringify(newState.simulation_ids) ||
-        JSON.stringify(prev.simulation_positions) !==
-          JSON.stringify(newState.simulation_positions) ||
-        JSON.stringify(prev.simulation_availability_ids) !==
-          JSON.stringify(newState.simulation_availability_ids) ||
-        JSON.stringify(prev.profile_ids) !==
-          JSON.stringify(newState.profile_ids) ||
-        JSON.stringify(prev.profile_persona_ids) !==
-          JSON.stringify(newState.profile_persona_ids)
-      ) {
-        serverSyncPendingRef.current = true;
-        return newState;
-      }
-      return prev;
-    });
-    lastPatchedFormStateRef.current = newState;
-    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
-    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    cohortData?.names,
-    cohortData?.descriptions,
-    cohortData?.flags,
-    departmentIdsStr,
-    simulationIdsStr,
-    simulationPositionsStr,
-    simulationAvailabilityIdsStr,
-    profileIdsStr,
-    profilePersonaIdsStr,
-  ]);
-
   // --- Draft Lifecycle ---
   const patchCohortDraftActionRef = React.useRef(patchCohortDraftAction);
   React.useEffect(() => {
@@ -542,42 +498,6 @@ function CohortComponent({
       ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
     | undefined
   >(undefined);
-  React.useEffect(() => {
-    if (patchCohortDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const result = await patchCohortDraftAction({
-          body: payload,
-        } as PatchCohortDraftIn);
-        // Sync form_state from server response (server is source of truth)
-        if (result && typeof result === "object" && "form_state" in result && result.form_state) {
-          const fs = result.form_state as Record<string, unknown>;
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs.name_id as string) ?? prev.name_id,
-            description_id: (fs.description_id as string) ?? prev.description_id,
-            active_flag_id: (fs.flag_id as string) ?? prev.active_flag_id,
-            department_ids: (fs.department_ids as string[]) ?? prev.department_ids,
-            simulation_ids: (fs.simulation_ids as string[]) ?? prev.simulation_ids,
-            simulation_position_ids: (fs.simulation_position_ids as string[]) ?? prev.simulation_position_ids,
-            simulation_availability_ids: (fs.simulation_availability_ids as string[]) ?? prev.simulation_availability_ids,
-            profile_ids: (fs.profile_ids as string[]) ?? prev.profile_ids,
-            profile_persona_ids: (fs.profile_persona_ids as string[]) ?? prev.profile_persona_ids,
-            // Clear value fields after server has resolved them to IDs
-            name: null,
-            description: null,
-            simulation_position_values: null,
-            simulation_availability_values: null,
-            profile_persona_values: null,
-          }));
-        }
-        return result;
-      };
-    } else {
-      patchActionRef.current = undefined;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patchCohortDraftAction, serverSyncPendingRef]);
 
   // Memoize stringified formState arrays for draft listener effect dependencies
   const formStateDepartmentIdsStr = React.useMemo(
@@ -736,6 +656,87 @@ function CohortComponent({
     formStateRef,
     onPatchSuccess,
   });
+
+  // Update form state when server data changes
+  // Use cohortData directly in dependency array, not getInitialFormState
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      // Only update if resource IDs actually changed
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.simulation_ids) !==
+          JSON.stringify(newState.simulation_ids) ||
+        JSON.stringify(prev.simulation_positions) !==
+          JSON.stringify(newState.simulation_positions) ||
+        JSON.stringify(prev.simulation_availability_ids) !==
+          JSON.stringify(newState.simulation_availability_ids) ||
+        JSON.stringify(prev.profile_ids) !==
+          JSON.stringify(newState.profile_ids) ||
+        JSON.stringify(prev.profile_persona_ids) !==
+          JSON.stringify(newState.profile_persona_ids)
+      ) {
+        serverSyncPendingRef.current = true;
+        return newState;
+      }
+      return prev;
+    });
+    lastPatchedFormStateRef.current = newState;
+    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
+    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    cohortData?.names,
+    cohortData?.descriptions,
+    cohortData?.flags,
+    departmentIdsStr,
+    simulationIdsStr,
+    simulationPositionsStr,
+    simulationAvailabilityIdsStr,
+    profileIdsStr,
+    profilePersonaIdsStr,
+  ]);
+
+  React.useEffect(() => {
+    if (patchCohortDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchCohortDraftAction({
+          body: payload,
+        } as PatchCohortDraftIn);
+        // Sync form_state from server response (server is source of truth)
+        if (result && typeof result === "object" && "form_state" in result && result.form_state) {
+          const fs = result.form_state as Record<string, unknown>;
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs.name_id as string) ?? prev.name_id,
+            description_id: (fs.description_id as string) ?? prev.description_id,
+            active_flag_id: (fs.flag_id as string) ?? prev.active_flag_id,
+            department_ids: (fs.department_ids as string[]) ?? prev.department_ids,
+            simulation_ids: (fs.simulation_ids as string[]) ?? prev.simulation_ids,
+            simulation_position_ids: (fs.simulation_position_ids as string[]) ?? prev.simulation_position_ids,
+            simulation_availability_ids: (fs.simulation_availability_ids as string[]) ?? prev.simulation_availability_ids,
+            profile_ids: (fs.profile_ids as string[]) ?? prev.profile_ids,
+            profile_persona_ids: (fs.profile_persona_ids as string[]) ?? prev.profile_persona_ids,
+            // Clear value fields after server has resolved them to IDs
+            name: null,
+            description: null,
+            simulation_position_values: null,
+            simulation_availability_values: null,
+            profile_persona_values: null,
+          }));
+        }
+        return result;
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchCohortDraftAction, serverSyncPendingRef]);
 
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {

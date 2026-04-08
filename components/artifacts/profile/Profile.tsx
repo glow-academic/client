@@ -446,45 +446,6 @@ function ProfileComponent({
       ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
     | undefined
   >(undefined);
-  React.useEffect(() => {
-    if (patchProfileDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const result = await patchProfileDraftAction({
-          body: payload,
-        } as PatchProfileDraftIn);
-
-        // Sync form_state from server response (server is source of truth)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fs = (result as any).form_state as
-          | {
-              name_id: string | null;
-              flag_id: string | null;
-              department_ids: string[];
-              email_ids: string[];
-              role_ids: string[];
-              request_limit_ids: string[];
-            }
-          | undefined;
-        if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name: null,
-            name_id: fs.name_id ?? prev.name_id,
-            active_flag_id: fs.flag_id ?? prev.active_flag_id,
-            department_ids: fs.department_ids ?? prev.department_ids,
-            email_ids: fs.email_ids ?? prev.email_ids,
-            request_limit_id: fs.request_limit_ids?.[0] ?? prev.request_limit_id,
-          }));
-        }
-
-        return result;
-      };
-    } else {
-      patchActionRef.current = undefined;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patchProfileDraftAction, serverSyncPendingRef]);
 
   const formStateKey = useMemo(
     () =>
@@ -610,6 +571,46 @@ function ProfileComponent({
     formStateRef,
     onPatchSuccess,
   });
+
+  React.useEffect(() => {
+    if (patchProfileDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchProfileDraftAction({
+          body: payload,
+        } as PatchProfileDraftIn);
+
+        // Sync form_state from server response (server is source of truth)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fs = (result as any).form_state as
+          | {
+              name_id: string | null;
+              flag_id: string | null;
+              department_ids: string[];
+              email_ids: string[];
+              role_ids: string[];
+              request_limit_ids: string[];
+            }
+          | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name: null,
+            name_id: fs.name_id ?? prev.name_id,
+            active_flag_id: fs.flag_id ?? prev.active_flag_id,
+            department_ids: fs.department_ids ?? prev.department_ids,
+            email_ids: fs.email_ids ?? prev.email_ids,
+            request_limit_id: fs.request_limit_ids?.[0] ?? prev.request_limit_id,
+          }));
+        }
+
+        return result;
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchProfileDraftAction, serverSyncPendingRef]);
 
   const { isGenerating, generate } = useArtifactAi({
     artifactType: "profile",

@@ -320,55 +320,6 @@ function DocumentComponent({
   const patchActionRef = React.useRef<
     ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
   >(undefined);
-  React.useEffect(() => {
-    if (patchDocumentDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const result = await patchDocumentDraftAction({
-          body: payload,
-        } as PatchDocumentDraftIn);
-
-        // Sync form_state from server response (server is source of truth)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fs = (result as any).form_state as
-          | {
-              name_id: string | null;
-              description_id: string | null;
-              flag_ids: string[];
-              department_ids: string[];
-              file_ids: string[];
-              image_ids: string[];
-              text_ids: string[];
-              parameter_field_ids: string[];
-              parameter_ids: string[];
-            }
-          | undefined;
-        if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name: null,
-            description: null,
-            name_id: fs.name_id ?? prev.name_id,
-            description_id: fs.description_id ?? prev.description_id,
-            active_flag_id: fs.flag_ids?.[0] ?? prev.active_flag_id,
-            department_ids: fs.department_ids ?? prev.department_ids,
-            upload_ids: fs.file_ids ?? prev.upload_ids,
-            image_ids: fs.image_ids ?? prev.image_ids,
-            text_ids: fs.text_ids ?? prev.text_ids,
-            field_ids: fs.parameter_field_ids ?? prev.field_ids,
-            // Clear pending values — server has resolved them into IDs
-            pending_upload_ids: [],
-            pending_text_contents: [],
-          }));
-        }
-
-        return result;
-      };
-    } else {
-      patchActionRef.current = undefined;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patchDocumentDraftAction, serverSyncPendingRef]);
 
   const formStateKey = React.useMemo(
     () =>
@@ -457,6 +408,56 @@ function DocumentComponent({
       lastPatchedFormStateRef.current = { ...formStateRef.current };
     },
   });
+
+  React.useEffect(() => {
+    if (patchDocumentDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchDocumentDraftAction({
+          body: payload,
+        } as PatchDocumentDraftIn);
+
+        // Sync form_state from server response (server is source of truth)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fs = (result as any).form_state as
+          | {
+              name_id: string | null;
+              description_id: string | null;
+              flag_ids: string[];
+              department_ids: string[];
+              file_ids: string[];
+              image_ids: string[];
+              text_ids: string[];
+              parameter_field_ids: string[];
+              parameter_ids: string[];
+            }
+          | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name: null,
+            description: null,
+            name_id: fs.name_id ?? prev.name_id,
+            description_id: fs.description_id ?? prev.description_id,
+            active_flag_id: fs.flag_ids?.[0] ?? prev.active_flag_id,
+            department_ids: fs.department_ids ?? prev.department_ids,
+            upload_ids: fs.file_ids ?? prev.upload_ids,
+            image_ids: fs.image_ids ?? prev.image_ids,
+            text_ids: fs.text_ids ?? prev.text_ids,
+            field_ids: fs.parameter_field_ids ?? prev.field_ids,
+            // Clear pending values — server has resolved them into IDs
+            pending_upload_ids: [],
+            pending_text_contents: [],
+          }));
+        }
+
+        return result;
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchDocumentDraftAction, serverSyncPendingRef]);
 
   // AI generation via shared hook
   const { isGenerating, generate } = useArtifactAi({

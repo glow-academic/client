@@ -325,7 +325,7 @@ export default function Documents({
           return value.some((v) => rowIds.includes(v));
         },
         cell: ({ row }) => {
-          const itemIds = row.getValue("field_ids") as string[];
+          const itemIds = (row.getValue("field_ids") as string[]) ?? [];
           if (!itemIds.length) {
             return <span className="text-xs text-muted-foreground">None</span>;
           }
@@ -355,7 +355,7 @@ export default function Documents({
           <DataTableColumnHeader column={column} title="Scenarios" />
         ),
         cell: ({ row }) => {
-          const scenarioIds = row.getValue("scenario_ids") as string[];
+          const scenarioIds = (row.getValue("scenario_ids") as string[]) ?? [];
           if (scenarioIds.length === 0) {
             return (
               <div className="max-w-[200px]">
@@ -382,7 +382,7 @@ export default function Documents({
           );
         },
         filterFn: (row, _id, value) => {
-          const scenarioIds = row.getValue("scenario_ids") as string[];
+          const scenarioIds = (row.getValue("scenario_ids") as string[]) ?? [];
           return (
             value.length === 0 ||
             scenarioIds.some((id: string) => value.includes(id))

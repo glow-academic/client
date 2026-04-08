@@ -464,46 +464,6 @@ function SimulationComponent({
       ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
     | undefined
   >(undefined);
-  React.useEffect(() => {
-    if (patchSimulationDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const result = await patchSimulationDraftAction({
-          body: payload,
-        } as PatchSimulationDraftIn);
-
-        // Sync form_state from server response (server is source of truth)
-        const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
-        if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs["name_id"] as string) ?? prev.name_id,
-            description_id: (fs["description_id"] as string) ?? prev.description_id,
-            flag_ids: (fs["flag_ids"] as string[]) ?? prev.flag_ids,
-            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
-            scenario_ids: (fs["scenario_ids"] as string[]) ?? prev.scenario_ids,
-            scenario_flag_ids: (fs["scenario_flag_ids"] as string[]) ?? prev.scenario_flag_ids,
-            scenario_position_ids: (fs["scenario_position_ids"] as string[]) ?? prev.scenario_position_ids,
-            scenario_rubric_ids: (fs["scenario_rubric_ids"] as string[]) ?? prev.scenario_rubric_ids,
-            scenario_time_limit_ids: (fs["scenario_time_limit_ids"] as string[]) ?? prev.scenario_time_limit_ids,
-            // Clear value fields after server resolves them to IDs
-            name: fs["name_id"] ? null : prev.name,
-            description: fs["description_id"] ? null : prev.description,
-            // Clear multi-select values — server merged them into IDs
-            scenario_flags: null,
-            scenario_positions: null,
-            scenario_rubrics: null,
-            scenario_time_limits: null,
-          }));
-        }
-
-        return result;
-      };
-    } else {
-      patchActionRef.current = undefined;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patchSimulationDraftAction]);
 
   // formStateKey excludes draftId -- the hook prepends it
   const formStateKey = React.useMemo(
@@ -627,6 +587,47 @@ function SimulationComponent({
     flushRegistryRef,
     formStateRef,
   });
+
+  React.useEffect(() => {
+    if (patchSimulationDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchSimulationDraftAction({
+          body: payload,
+        } as PatchSimulationDraftIn);
+
+        // Sync form_state from server response (server is source of truth)
+        const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs["name_id"] as string) ?? prev.name_id,
+            description_id: (fs["description_id"] as string) ?? prev.description_id,
+            flag_ids: (fs["flag_ids"] as string[]) ?? prev.flag_ids,
+            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+            scenario_ids: (fs["scenario_ids"] as string[]) ?? prev.scenario_ids,
+            scenario_flag_ids: (fs["scenario_flag_ids"] as string[]) ?? prev.scenario_flag_ids,
+            scenario_position_ids: (fs["scenario_position_ids"] as string[]) ?? prev.scenario_position_ids,
+            scenario_rubric_ids: (fs["scenario_rubric_ids"] as string[]) ?? prev.scenario_rubric_ids,
+            scenario_time_limit_ids: (fs["scenario_time_limit_ids"] as string[]) ?? prev.scenario_time_limit_ids,
+            // Clear value fields after server resolves them to IDs
+            name: fs["name_id"] ? null : prev.name,
+            description: fs["description_id"] ? null : prev.description,
+            // Clear multi-select values — server merged them into IDs
+            scenario_flags: null,
+            scenario_positions: null,
+            scenario_rubrics: null,
+            scenario_time_limits: null,
+          }));
+        }
+
+        return result;
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchSimulationDraftAction]);
 
   // Update form state when server data changes.
   useEffect(() => {

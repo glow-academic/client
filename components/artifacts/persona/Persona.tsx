@@ -375,50 +375,6 @@ function PersonaComponent({
     );
   }, [personaData?.voices]);
 
-  // Update form state when server data changes
-  useEffect(() => {
-    const newState = getInitialFormState();
-    setFormState((prev) => {
-      if (
-        prev.name_id !== newState.name_id ||
-        prev.description_id !== newState.description_id ||
-        prev.color_id !== newState.color_id ||
-        prev.icon_id !== newState.icon_id ||
-        prev.instructions_id !== newState.instructions_id ||
-        prev.active_flag_id !== newState.active_flag_id ||
-        JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids) ||
-        JSON.stringify(prev.parameter_field_ids) !==
-          JSON.stringify(newState.parameter_field_ids) ||
-        JSON.stringify(prev.example_ids) !==
-          JSON.stringify(newState.example_ids) ||
-        JSON.stringify(prev.voice_ids) !==
-          JSON.stringify(newState.voice_ids)
-      ) {
-        serverSyncPendingRef.current = true;
-        lastPatchedFormStateRef.current = newState;
-        return newState;
-      }
-      return prev;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    personaData?.names,
-    personaData?.descriptions,
-    personaData?.colors,
-    personaData?.icons,
-    personaData?.instructions,
-    personaData?.flags,
-    personaData?.departments,
-    personaData?.parameter_fields,
-    personaData?.examples,
-    personaData?.voices,
-    departmentIdsStr,
-    parameterFieldIdsStr,
-    exampleIdsStr,
-    voiceIdsStr,
-  ]);
-
   // --- Draft Lifecycle ---
   const patchPersonaDraftActionRef = React.useRef(patchPersonaDraftAction);
   React.useEffect(() => {
@@ -432,40 +388,6 @@ function PersonaComponent({
       ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
     | undefined
   >(undefined);
-  React.useEffect(() => {
-    if (patchPersonaDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) => {
-        const result = await patchPersonaDraftAction({
-          body: payload,
-        } as PatchPersonaDraftIn);
-
-        // Sync resolved IDs from server form_state (server is source of truth)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const fs = (result as any)?.form_state as Record<string, unknown> | undefined;
-        if (fs) {
-          serverSyncPendingRef.current = true;
-          setFormState((prev) => ({
-            ...prev,
-            name_id: (fs["name_id"] as string) ?? prev.name_id,
-            description_id: (fs["description_id"] as string) ?? prev.description_id,
-            instructions_id: (fs["instructions_id"] as string) ?? prev.instructions_id,
-            color_id: (fs["color_id"] as string) ?? prev.color_id,
-            icon_id: (fs["icon_id"] as string) ?? prev.icon_id,
-            active_flag_id: (fs["active_flag_id"] as string) ?? prev.active_flag_id,
-            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
-            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
-            example_ids: (fs["example_ids"] as string[]) ?? prev.example_ids,
-            voice_ids: (fs["voice_ids"] as string[]) ?? prev.voice_ids,
-          }));
-        }
-
-        return result;
-      };
-    } else {
-      patchActionRef.current = undefined;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patchPersonaDraftAction]);
 
   const formStateDepartmentIdsStr = React.useMemo(
     () => JSON.stringify(formState.department_ids),
@@ -654,6 +576,85 @@ function PersonaComponent({
     formStateRef,
     onPatchSuccess,
   });
+
+  // Update form state when server data changes
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.color_id !== newState.color_id ||
+        prev.icon_id !== newState.icon_id ||
+        prev.instructions_id !== newState.instructions_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.parameter_field_ids) !==
+          JSON.stringify(newState.parameter_field_ids) ||
+        JSON.stringify(prev.example_ids) !==
+          JSON.stringify(newState.example_ids) ||
+        JSON.stringify(prev.voice_ids) !==
+          JSON.stringify(newState.voice_ids)
+      ) {
+        serverSyncPendingRef.current = true;
+        lastPatchedFormStateRef.current = newState;
+        return newState;
+      }
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    personaData?.names,
+    personaData?.descriptions,
+    personaData?.colors,
+    personaData?.icons,
+    personaData?.instructions,
+    personaData?.flags,
+    personaData?.departments,
+    personaData?.parameter_fields,
+    personaData?.examples,
+    personaData?.voices,
+    departmentIdsStr,
+    parameterFieldIdsStr,
+    exampleIdsStr,
+    voiceIdsStr,
+  ]);
+
+  React.useEffect(() => {
+    if (patchPersonaDraftAction) {
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchPersonaDraftAction({
+          body: payload,
+        } as PatchPersonaDraftIn);
+
+        // Sync resolved IDs from server form_state (server is source of truth)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fs = (result as any)?.form_state as Record<string, unknown> | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs["name_id"] as string) ?? prev.name_id,
+            description_id: (fs["description_id"] as string) ?? prev.description_id,
+            instructions_id: (fs["instructions_id"] as string) ?? prev.instructions_id,
+            color_id: (fs["color_id"] as string) ?? prev.color_id,
+            icon_id: (fs["icon_id"] as string) ?? prev.icon_id,
+            active_flag_id: (fs["active_flag_id"] as string) ?? prev.active_flag_id,
+            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
+            example_ids: (fs["example_ids"] as string[]) ?? prev.example_ids,
+            voice_ids: (fs["voice_ids"] as string[]) ?? prev.voice_ids,
+          }));
+        }
+
+        return result;
+      };
+    } else {
+      patchActionRef.current = undefined;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patchPersonaDraftAction]);
 
   // --- Initialize URL parameterIds from server resolved_parameter_ids ---
   const hasInitializedParameterIds = useRef(false);

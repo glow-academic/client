@@ -316,7 +316,7 @@ export default function Settings({ listData: serverListData }: SettingsProps) {
               {/* Department Filter */}
               {departmentsColumn &&
                 departmentOptions.length > 0 &&
-                departmentIds.length > 1 && (
+                (departmentIds?.length ?? 0) > 1 && (
                   <DataTableFacetedFilter
                     column={departmentsColumn}
                     title="Department"
