@@ -75,7 +75,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { documentId } = await params;
   const docs = await getDocs({ body: { entity_id: documentId } });
-  return { title: docs.detail.title, description: docs.detail.description };
+  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
@@ -213,7 +213,7 @@ export default async function DocumentEditPage({
       api.post("/documents/drafts", {})
     ]);
 
-    const entityName = docs.detail.title;
+    const entityName = docs.page_metadata?.detail.title;
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>

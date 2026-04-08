@@ -47,7 +47,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { testId } = await params;
   const docs = await getDocs({ body: { entity_id: testId } });
-  return { title: docs.detail.title, description: docs.detail.description };
+  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
 }
 
 /** ---- Page component ---- */

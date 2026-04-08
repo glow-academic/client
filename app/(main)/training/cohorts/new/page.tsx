@@ -119,7 +119,7 @@ const getDocs = async (input: DocsIn): Promise<DocsOut> => {
 
 export async function generateMetadata(): Promise<Metadata> {
   const docs = await getDocs({ body: {} });
-  return { title: docs.new.title, description: docs.new.description };
+  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
 }
 
 export default async function NewCohortPage({
