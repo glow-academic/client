@@ -11,10 +11,12 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
+import { GenerationPanelProvider } from "@/contexts/generation-panel-context";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
 import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
@@ -95,22 +97,29 @@ function MainLayoutContent({
     router.refresh();
   };
 
+  // AI panel — simple local state, no server action needed
+  const [panelOpen, setPanelOpen] = useState(false);
+  const togglePanel = useCallback(() => setPanelOpen(prev => !prev), []);
+
   return (
-    <div className="flex min-h-svh w-full">
-      <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
-        <UnifiedSidebar
-          activeSection={activeSection}
-          onSectionChange={handleSectionChange}
-          switchEffectiveProfile={switchEffectiveProfileAction}
-          exitEmulation={exitEmulationAction}
-          createFeedback={createFeedbackAction}
-          searchProfiles={searchProfilesAction}
-        />
-        <SidebarInset>
-          <div className="flex flex-1 flex-col gap-4">{children}</div>
-        </SidebarInset>
-      </SidebarProvider>
-    </div>
+    <GenerationPanelProvider togglePanel={togglePanel} panelOpen={panelOpen}>
+      <div className="flex min-h-svh w-full">
+        <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
+          <UnifiedSidebar
+            activeSection={activeSection}
+            onSectionChange={handleSectionChange}
+            switchEffectiveProfile={switchEffectiveProfileAction}
+            exitEmulation={exitEmulationAction}
+            createFeedback={createFeedbackAction}
+            searchProfiles={searchProfilesAction}
+          />
+          <SidebarInset>
+            <div className="flex flex-1 flex-col gap-4">{children}</div>
+          </SidebarInset>
+        </SidebarProvider>
+        <GenerationPanel panelOpen={panelOpen} onToggle={togglePanel} />
+      </div>
+    </GenerationPanelProvider>
   );
 }
 

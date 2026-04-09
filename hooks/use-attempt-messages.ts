@@ -204,22 +204,22 @@ export function useAttemptMessages({
       toast.error(data.message);
     };
 
-    socket.on("attempt_assistant_start", handleAssistantStart);
-    socket.on("attempt_assistant_delta", handleAssistantDelta);
-    socket.on("attempt_assistant_complete", handleAssistantComplete);
-    socket.on("attempt_user_complete", handleUserComplete);
-    socket.on("attempt_complete", handleAttemptComplete);
-    socket.on("attempt_stopped", handleStopped);
-    socket.on("attempt_error", handleError);
+    socket.on("attempt.assistant_start", handleAssistantStart);
+    socket.on("attempt.assistant_progress", handleAssistantDelta);
+    socket.on("attempt.assistant_complete", handleAssistantComplete);
+    socket.on("attempt.user_complete", handleUserComplete);
+    socket.on("attempt.complete", handleAttemptComplete);
+    socket.on("attempt.stopped", handleStopped);
+    socket.on("attempt.error", handleError);
 
     return () => {
-      socket.off("attempt_assistant_start", handleAssistantStart);
-      socket.off("attempt_assistant_delta", handleAssistantDelta);
-      socket.off("attempt_assistant_complete", handleAssistantComplete);
-      socket.off("attempt_user_complete", handleUserComplete);
-      socket.off("attempt_complete", handleAttemptComplete);
-      socket.off("attempt_stopped", handleStopped);
-      socket.off("attempt_error", handleError);
+      socket.off("attempt.assistant_start", handleAssistantStart);
+      socket.off("attempt.assistant_progress", handleAssistantDelta);
+      socket.off("attempt.assistant_complete", handleAssistantComplete);
+      socket.off("attempt.user_complete", handleUserComplete);
+      socket.off("attempt.complete", handleAttemptComplete);
+      socket.off("attempt.stopped", handleStopped);
+      socket.off("attempt.error", handleError);
 
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
@@ -233,7 +233,7 @@ export function useAttemptMessages({
     (chatId: string, attemptId: string, message: string, parentMessageId?: string) => {
       if (!socket) return;
       setIsSending(true);
-      socket.emit("attempt_message", {
+      socket.emit("attempt.message", {
         attempt_id: attemptId,
         chat_id: chatId,
         message,
@@ -247,7 +247,7 @@ export function useAttemptMessages({
     (chatId: string) => {
       if (!socket) return;
       setIsStopping(true);
-      socket.emit("attempt_stop", { chat_id: chatId });
+      socket.emit("attempt.stop", { chat_id: chatId });
     },
     [socket],
   );
@@ -255,7 +255,7 @@ export function useAttemptMessages({
   const submitResponse = useCallback(
     (chatId: string, questionId: string, optionIds: string[]) => {
       if (!socket) return;
-      socket.emit("attempt_response_submit", {
+      socket.emit("attempt.response", {
         chat_id: chatId,
         question_id: questionId,
         option_ids: optionIds,

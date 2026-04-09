@@ -118,7 +118,7 @@ function SidebarSkeleton() {
           <SidebarMenuItem>
             <div className="px-2 pb-2">
               <div className="relative group">
-                <div className="relative border border-blue-500 dark:border-purple-600 rounded-lg px-4 py-2.5">
+                <div className="relative border rounded-lg px-4 py-2.5">
                   <div className="flex items-center justify-center gap-2">
                     <Skeleton className="h-4 w-4" />
                     <Skeleton className="h-4 w-16" />

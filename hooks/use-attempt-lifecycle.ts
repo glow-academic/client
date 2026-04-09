@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { AppSocket } from "@/contexts/socket-context";
-import { useGroupId } from "@/contexts/group-context";
+import { useGroupIdOptional } from "@/contexts/group-context";
 import type { ServerToClientEvents } from "@/lib/ws/types";
 
 // Re-export event types for consumer convenience
@@ -65,7 +65,8 @@ export function useAttemptLifecycle({
   onError,
   onResponseResult,
 }: UseAttemptLifecycleConfig): UseAttemptLifecycleReturn {
-  const { groupId } = useGroupId();
+  const groupCtx = useGroupIdOptional();
+  const groupId = groupCtx?.groupId ?? null;
 
   // Store callbacks in refs to avoid re-registering socket listeners on every render
   const callbacksRef = useRef({
@@ -124,22 +125,22 @@ export function useAttemptLifecycle({
       callbacksRef.current.onResponseResult?.(data);
     };
 
-    socket.on("attempt_started", handleStarted);
-    socket.on("attempt_chat_started", handleChatStarted);
-    socket.on("attempt_chat_ended", handleChatEnded);
-    socket.on("attempt_ended", handleEnded);
-    socket.on("attempt_graded", handleGradeComplete);
-    socket.on("attempt_error", handleError);
-    socket.on("attempt_response_result", handleResponseResult);
+    socket.on("attempt.started", handleStarted);
+    socket.on("attempt.chat_started", handleChatStarted);
+    socket.on("attempt.chat_ended", handleChatEnded);
+    socket.on("attempt.ended", handleEnded);
+    socket.on("attempt.grade_complete", handleGradeComplete);
+    socket.on("attempt.error", handleError);
+    socket.on("attempt.response_result", handleResponseResult);
 
     return () => {
-      socket.off("attempt_started", handleStarted);
-      socket.off("attempt_chat_started", handleChatStarted);
-      socket.off("attempt_chat_ended", handleChatEnded);
-      socket.off("attempt_ended", handleEnded);
-      socket.off("attempt_graded", handleGradeComplete);
-      socket.off("attempt_error", handleError);
-      socket.off("attempt_response_result", handleResponseResult);
+      socket.off("attempt.started", handleStarted);
+      socket.off("attempt.chat_started", handleChatStarted);
+      socket.off("attempt.chat_ended", handleChatEnded);
+      socket.off("attempt.ended", handleEnded);
+      socket.off("attempt.grade_complete", handleGradeComplete);
+      socket.off("attempt.error", handleError);
+      socket.off("attempt.response_result", handleResponseResult);
     };
   }, [socket, attemptId, chatId, chatIdRef]);
 
@@ -151,20 +152,20 @@ export function useAttemptLifecycle({
       practiceId?: string;
       infiniteMode?: boolean;
     }) => {
-      if (!socket || !groupId) return;
-      socket.emit("attempt_start", {
+      if (!socket) return;
+      socket.emit("attempt.start", {
         ...(opts.homeId && { home_id: opts.homeId }),
         ...(opts.practiceId && { practice_id: opts.practiceId }),
         infinite_mode: opts.infiniteMode ?? false,
       });
     },
-    [socket, groupId],
+    [socket],
   );
 
   const nextScenario = useCallback(
     (attemptIdArg: string, opts?: { draftId?: string }) => {
       if (!socket) return;
-      socket.emit("attempt_next", {
+      socket.emit("attempt.next", {
         attempt_id: attemptIdArg,
         ...(opts?.draftId && { draft_id: opts.draftId }),
       });
@@ -179,7 +180,7 @@ export function useAttemptLifecycle({
       opts?: { grade?: boolean },
     ) => {
       if (!socket) return;
-      socket.emit("attempt_end", {
+      socket.emit("attempt.end", {
         attempt_id: attemptIdArg,
         chat_id: chatIdArg,
         grade: opts?.grade ?? true,
@@ -191,7 +192,7 @@ export function useAttemptLifecycle({
   const endAll = useCallback(
     (attemptIdArg: string) => {
       if (!socket) return;
-      socket.emit("attempt_end_all", {
+      socket.emit("attempt.end_all", {
         attempt_id: attemptIdArg,
       });
     },
@@ -201,7 +202,7 @@ export function useAttemptLifecycle({
   const usePrevious = useCallback(
     (attemptIdArg: string, previousChatMap: Record<string, string>) => {
       if (!socket) return;
-      socket.emit("attempt_use_previous", {
+      socket.emit("attempt.use_previous", {
         attempt_id: attemptIdArg,
         previous_chat_map: previousChatMap,
       });

@@ -506,16 +506,16 @@ export function AttemptChat({
     if (currentRoomRef.current === currentChat.id) return;
 
     if (currentRoomRef.current) {
-      socket.emit("attempt_leave", { chat_id: currentRoomRef.current });
+      socket.emit("attempt.leave", { chat_id: currentRoomRef.current });
     }
 
-    socket.emit("attempt_join", { chat_id: currentChat.id });
+    socket.emit("attempt.join", { chat_id: currentChat.id });
     currentRoomRef.current = currentChat.id;
     currentChatIdRef.current = currentChat.id;
 
     return () => {
       if (currentRoomRef.current && socket) {
-        socket.emit("attempt_leave", { chat_id: currentRoomRef.current });
+        socket.emit("attempt.leave", { chat_id: currentRoomRef.current });
         currentRoomRef.current = null;
         currentChatIdRef.current = null;
       }

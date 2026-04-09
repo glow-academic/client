@@ -112,6 +112,11 @@ export function useGenerationPanel({
 }: UseGenerationPanelConfig): UseGenerationPanelReturn {
   const groupContext = useGroupIdOptional();
   const groupId = groupIdProp ?? groupContext?.groupId ?? null;
+
+  // Stable ref for server action to avoid re-triggering effects on new references
+  const getGroupMessagesRef = useRef(getGroupMessagesAction);
+  getGroupMessagesRef.current = getGroupMessagesAction;
+
   // Panel visibility — initialised from SSR cookie
   const [panelOpen, setPanelOpenRaw] = useState(initialPanelOpen ?? false);
 
@@ -122,8 +127,12 @@ export function useGenerationPanel({
   }, []);
 
   const togglePanel = useCallback(
-    () => setPanelOpen(!panelOpen),
-    [panelOpen, setPanelOpen],
+    () => setPanelOpenRaw((prev) => {
+      const next = !prev;
+      document.cookie = `${PANEL_COOKIE}=${next}; path=/; max-age=31536000; SameSite=Lax`;
+      return next;
+    }),
+    [],
   );
 
   // Messages state
@@ -147,7 +156,7 @@ export function useGenerationPanel({
     setIsLoadingMessages(true);
     offsetRef.current = 0;
 
-    getGroupMessagesAction({
+    getGroupMessagesRef.current({
       body: {
         group_id: groupId,
         message_limit: PAGE_SIZE,
@@ -175,7 +184,7 @@ export function useGenerationPanel({
     return () => {
       cancelled = true;
     };
-  }, [groupId, getGroupMessagesAction]);
+  }, [groupId]);
 
   // Load more (pagination)
   const loadMoreMessages = useCallback(() => {
@@ -183,7 +192,7 @@ export function useGenerationPanel({
     if (messages.length >= totalMessageCount) return;
 
     setIsLoadingMessages(true);
-    getGroupMessagesAction({
+    getGroupMessagesRef.current({
       body: {
         group_id: groupId,
         message_limit: PAGE_SIZE,
@@ -202,7 +211,6 @@ export function useGenerationPanel({
     isLoadingMessages,
     messages.length,
     totalMessageCount,
-    getGroupMessagesAction,
   ]);
 
   // Type selection — default to all types selected

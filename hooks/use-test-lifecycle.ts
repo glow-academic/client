@@ -133,7 +133,7 @@ export function useTestLifecycle({
   const startTest = useCallback(
     (evalId: string, opts?: { infiniteMode?: boolean }) => {
       if (!socket) return;
-      socket.emit("test_start", {
+      socket.emit("test.start", {
         eval_id: evalId,
         infinite_mode: opts?.infiniteMode ?? false,
       });
@@ -144,7 +144,7 @@ export function useTestLifecycle({
   const nextTest = useCallback(
     (testId: string) => {
       if (!socket) return;
-      socket.emit("test_next", {
+      socket.emit("test.next", {
         test_id: testId,
       });
     },
@@ -154,7 +154,7 @@ export function useTestLifecycle({
   const runTest = useCallback(
     (invocationIdArg: string, testId: string) => {
       if (!socket) return;
-      socket.emit("test_run", {
+      socket.emit("test.run", {
         invocation_id: invocationIdArg,
         test_id: testId,
       });
@@ -165,7 +165,7 @@ export function useTestLifecycle({
   const endTest = useCallback(
     (invocationIdArg: string, testId: string, runId: string) => {
       if (!socket) return;
-      socket.emit("test_end", {
+      socket.emit("test.end", {
         invocation_id: invocationIdArg,
         test_id: testId,
         run_id: runId,
@@ -177,7 +177,7 @@ export function useTestLifecycle({
   const stopTest = useCallback(
     (invocationIdArg: string) => {
       if (!socket) return;
-      socket.emit("test_stop", {
+      socket.emit("test.stop", {
         invocation_id: invocationIdArg,
       });
     },
@@ -187,7 +187,7 @@ export function useTestLifecycle({
   const joinRoom = useCallback(
     (invocationIdArg: string) => {
       if (!socket) return;
-      socket.emit("test_join", {
+      socket.emit("test.join", {
         invocation_id: invocationIdArg,
       });
     },
@@ -197,7 +197,7 @@ export function useTestLifecycle({
   const leaveRoom = useCallback(
     (invocationIdArg: string) => {
       if (!socket) return;
-      socket.emit("test_leave", {
+      socket.emit("test.leave", {
         invocation_id: invocationIdArg,
       });
     },
