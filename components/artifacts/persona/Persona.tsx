@@ -396,7 +396,7 @@ function PersonaComponent({
   const patchActionRef = React.useRef<
     | ((
         payload: Record<string, unknown>,
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
@@ -475,7 +475,6 @@ function PersonaComponent({
   const buildPatchPayload = useCallback(
     (
       draftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const current = formStateRef.current as unknown as PersonaFormState;
@@ -523,16 +522,10 @@ function PersonaComponent({
       return {
         input_draft_id: draftId || null,
         ...idPayload,
-        expected_version: expectedVersion,
       };
     },
     [],
   );
-
-  const draftVersion =
-    personaData && "draft_version" in personaData
-      ? (personaData as { draft_version?: number | null }).draft_version
-      : null;
 
   const onPatchSuccess = useCallback(() => {
     lastPatchedFormStateRef.current = {
@@ -581,7 +574,6 @@ function PersonaComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: draftVersion ?? null,
     hasResourceIds,
     flushRegistryRef: emptyFlushRegistryRef,
     formStateRef,
@@ -696,8 +688,8 @@ function PersonaComponent({
         userInstructions || `Generate ${resourceTypes.join(", ")}`,
         {
           resources: resourceTypes,
-          draftId: draftIdToUse,
           artifactId: personaId ?? undefined,
+          params: { draft_id: draftIdToUse },
         },
       );
     },
