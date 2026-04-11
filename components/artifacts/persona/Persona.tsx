@@ -38,7 +38,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
-import { useArtifactAi } from "@/hooks/use-artifact-ai";
+import { useGenerate } from "@/hooks/use-generate";
 
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 
@@ -170,11 +170,22 @@ function PersonaComponent({
   >(new Map());
 
   // --- AI Generation State ---
-  const { isGenerating, makeOnGenerationComplete, generate } =
-    useArtifactAi({
-      artifactType: "persona",
-      validResourceTypes: VALID_RESOURCE_TYPES as string[],
+  const { isGenerating: isGeneratingBool, generate } =
+    useGenerate({
+      permissions: [
+        { artifact: "persona", operation: "create" },
+        { artifact: "persona", operation: "draft" },
+        { artifact: "persona", operation: "get" },
+      ],
+      resources: [],
+      groupId: personaData?.group_id ?? null,
     });
+
+  // Wrap boolean into function for StepCardAiButton compatibility
+  const isGenerating = useCallback(
+    (_resourceType?: string) => isGeneratingBool,
+    [isGeneratingBool],
+  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const personaSearchParamsClient = useMemo(
@@ -681,15 +692,20 @@ function PersonaComponent({
         return;
       }
 
-      generate(resourceTypes, {
-        user_instructions: userInstructions ? [userInstructions] : null,
-        draft_id: draftIdToUse,
-      });
+      generate(
+        userInstructions || `Generate ${resourceTypes.join(", ")}`,
+        {
+          resources: resourceTypes,
+          draftId: draftIdToUse,
+          artifactId: personaId ?? undefined,
+        },
+      );
     },
     [
       flushAllAndSave,
       formDataRef,
       generate,
+      personaId,
     ],
   );
 
@@ -1511,7 +1527,6 @@ function PersonaComponent({
       canRegenerate,
       handleDirectStepGenerate,
       isAutosaveEnabled,
-      makeOnGenerationComplete,
       handleNameChange,
       handleDescriptionChange,
       handleInstructionsChange,
