@@ -88,11 +88,7 @@ export function useGenerate({
     }) => {
       if (!socket || !isConnected || !groupIdRef.current) return;
 
-      // Add user message immediately
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", text: instructions },
-      ]);
+      // User message will arrive via generate_text_complete event from server
       setIsGenerating(true);
 
       const resolvedResources = options?.resources ?? resourcesRef.current ?? [];
@@ -126,9 +122,11 @@ export function useGenerate({
       return data.group_id === groupIdRef.current;
     };
 
+    // --- Tool call events ---
+
     const handleCallStart = (data: Record<string, unknown>) => {
       if (!matchesGroup(data)) return;
-      const toolName = (data.tool_name as string) || (data.resource_type as string) || "unknown";
+      const toolName = (data.tool_name as string) || (data.resource_type as string) || "tool";
       setMessages((prev) => [
         ...prev,
         {
@@ -141,27 +139,26 @@ export function useGenerate({
       ]);
     };
 
+    const handleCallProgress = (data: Record<string, unknown>) => {
+      if (!matchesGroup(data)) return;
+      // Tool call arg streaming — not rendered
+    };
+
     const handleCallComplete = (data: Record<string, unknown>) => {
       if (!matchesGroup(data)) return;
-      const toolName = (data.tool_name as string) || "";
       const success = data.success !== false;
 
-      // Update the last tool message with status
+      // Match by tool name on the last pending tool pill
       setMessages((prev) => {
         const updated = [...prev];
         for (let i = updated.length - 1; i >= 0; i--) {
-          if (updated[i].type === "tool" && updated[i].toolName === toolName && !updated[i].toolStatus) {
+          if (updated[i].type === "tool" && !updated[i].toolStatus) {
             updated[i] = { ...updated[i], toolStatus: success ? "success" : "error" };
             break;
           }
         }
         return updated;
       });
-    };
-
-    const handleCallProgress = (data: Record<string, unknown>) => {
-      if (!matchesGroup(data)) return;
-      // Progress updates — could add streaming text here later
     };
 
     const handleCallError = (data: Record<string, unknown>) => {
@@ -174,17 +171,63 @@ export function useGenerate({
       setIsGenerating(false);
     };
 
-    // Listen for generation lifecycle events (per-artifact-type)
-    const handleGenerationComplete = (data: Record<string, unknown>) => {
+    // --- Text streaming events ---
+
+    const handleTextStart = (data: Record<string, unknown>) => {
       if (!matchesGroup(data)) return;
-      const message = (data.message as string) || "Generation complete";
-      const success = data.success !== false;
-      if (success) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", text: message },
-        ]);
+      // Add a streaming placeholder that will accumulate deltas
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: "", type: "text" },
+      ]);
+    };
+
+    const handleTextProgress = (data: Record<string, unknown>) => {
+      if (!matchesGroup(data)) return;
+      const delta = (data.delta as string) || "";
+      if (!delta) return;
+
+      // Append delta to the last streaming text message
+      setMessages((prev) => {
+        const updated = [...prev];
+        for (let i = updated.length - 1; i >= 0; i--) {
+          if (updated[i].role === "assistant" && updated[i].type === "text") {
+            updated[i] = { ...updated[i], text: updated[i].text + delta };
+            break;
+          }
+        }
+        return updated;
+      });
+    };
+
+    const handleTextComplete = (data: Record<string, unknown>) => {
+      if (!matchesGroup(data)) return;
+      const text = (data.text as string) || "";
+      const role = (data.role as "user" | "assistant") || "assistant";
+
+      if (role === "user") {
+        // User message event from server — add as user bubble
+        setMessages((prev) => [...prev, { role: "user", text }]);
+        return;
       }
+
+      // Finalize the streaming assistant message with the complete text
+      setMessages((prev) => {
+        const updated = [...prev];
+        for (let i = updated.length - 1; i >= 0; i--) {
+          if (updated[i].role === "assistant" && updated[i].type === "text") {
+            updated[i] = { ...updated[i], text, type: undefined };
+            break;
+          }
+        }
+        return updated;
+      });
+    };
+
+    // --- Run complete ---
+
+    const handleRunComplete = (data: Record<string, unknown>) => {
+      if (!matchesGroup(data)) return;
       setIsGenerating(false);
     };
 
@@ -192,28 +235,20 @@ export function useGenerate({
     s.on("generate_call_complete", handleCallComplete);
     s.on("generate_call_progress", handleCallProgress);
     s.on("generate_call_error", handleCallError);
-
-    // Also listen for the per-artifact completion events
-    // These use the pattern: {artifact_type}_generation_complete
-    // We listen broadly and filter by group_id
-    const artifactTypes = permissionsRef.current.map((p) => p.artifact);
-    const uniqueArtifacts = [...new Set(artifactTypes)];
-    const completeHandlers: [string, (data: Record<string, unknown>) => void][] = [];
-
-    for (const artifact of uniqueArtifacts) {
-      const event = `${artifact}_generation_complete`;
-      s.on(event, handleGenerationComplete);
-      completeHandlers.push([event, handleGenerationComplete]);
-    }
+    s.on("generate_text_start", handleTextStart);
+    s.on("generate_text_progress", handleTextProgress);
+    s.on("generate_text_complete", handleTextComplete);
+    s.on("generate_run_complete", handleRunComplete);
 
     return () => {
       s.off("generate_call_start", handleCallStart);
       s.off("generate_call_complete", handleCallComplete);
       s.off("generate_call_progress", handleCallProgress);
       s.off("generate_call_error", handleCallError);
-      for (const [event, handler] of completeHandlers) {
-        s.off(event, handler);
-      }
+      s.off("generate_text_start", handleTextStart);
+      s.off("generate_text_progress", handleTextProgress);
+      s.off("generate_text_complete", handleTextComplete);
+      s.off("generate_run_complete", handleRunComplete);
     };
   }, [socket, isConnected]);
 

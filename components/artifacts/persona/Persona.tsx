@@ -35,10 +35,13 @@ import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Voices } from "@/components/resources/Voices";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useGroupId } from "@/contexts/group-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { useGenerate } from "@/hooks/use-generate";
+import { useGenerationDraft } from "@/hooks/use-generation-draft";
+import { usePersonaGeneration } from "@/hooks/use-persona-generation";
 
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 
@@ -163,6 +166,7 @@ function PersonaComponent({
   const isEditMode = !!personaId;
   const { profile } = useProfile();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
+  const { groupId } = useGroupId();
 
   // Empty flush registry — resource creation is handled by the unified draft endpoint
   const emptyFlushRegistryRef = useRef<
@@ -178,7 +182,7 @@ function PersonaComponent({
         { artifact: "persona", operation: "get" },
       ],
       resources: [],
-      groupId: personaData?.group_id ?? null,
+      groupId: groupId,
     });
 
   // Wrap boolean into function for StepCardAiButton compatibility
@@ -580,6 +584,38 @@ function PersonaComponent({
     onPatchSuccess,
   });
 
+  // --- AI Draft Sync (generic: update draftId when AI saves) ---
+  useGenerationDraft({
+    artifactType: "persona",
+    groupId: groupId,
+    onDraftCompleted: (draftId) => {
+      setUrlFormDataRef.current?.({ draftId });
+      router.refresh();
+    },
+    onDraftFailed: (message) => {
+      toast.error("AI draft failed", { description: message });
+    },
+  });
+
+  // --- AI Persona Streaming (persona-specific: live field updates) ---
+  usePersonaGeneration({
+    groupId: groupId,
+    onFieldsStreaming: (fields) => {
+      setFormState((prev) => {
+        const next = { ...prev };
+        if (fields.color_id) next.color_id = fields.color_id as string;
+        if (fields.name) next.name = fields.name as string;
+        if (fields.name_id) next.name_id = fields.name_id as string;
+        if (fields.description) next.description = fields.description as string;
+        if (fields.description_id) next.description_id = fields.description_id as string;
+        if (fields.icon_id) next.icon_id = fields.icon_id as string;
+        if (fields.instructions) next.instructions = fields.instructions as string;
+        if (fields.instructions_id) next.instructions_id = fields.instructions_id as string;
+        return next;
+      });
+    },
+  });
+
   // Update form state when server data changes
   useEffect(() => {
     const newState = getInitialFormState();
@@ -873,7 +909,6 @@ function PersonaComponent({
       personaData?.departments,
       personaData?.parameter_fields,
       personaData?.examples,
-      personaData?.group_id,
       router,
     ],
   );
