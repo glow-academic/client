@@ -25,6 +25,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useGroupId } from "@/contexts/group-context";
+import { useSocket } from "@/contexts/socket-context";
 import { useGenerate } from "@/hooks/use-generate";
 import type { GenerateMessage } from "@/hooks/use-generate";
 import { deriveGenerationConfig } from "@/lib/generation/derive-config";
@@ -117,11 +118,32 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
 
   // Group context — fresh group per page load, or scoped to draft
   const { groupId: contextGroupId } = useGroupId();
+  const { socket, isConnected } = useSocket();
 
   // Selected group — defaults to context, can be changed via picker
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
   const activeGroupId = selectedGroupId ?? contextGroupId;
+
+  // Listen for group.name.completed to update the displayed name in real-time
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const s = socket as unknown as {
+      on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
+      off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
+    };
+
+    const handleNameCompleted = (data: Record<string, unknown>) => {
+      const name = data.name as string;
+      if (name) {
+        setSelectedGroupName(name);
+      }
+    };
+
+    s.on("group.name.completed", handleNameCompleted);
+    return () => { s.off("group.name.completed", handleNameCompleted); };
+  }, [socket, isConnected]);
 
   // Historical messages from /group/get
   const [historicalMessages, setHistoricalMessages] = useState<HistoricalMessage[]>([]);

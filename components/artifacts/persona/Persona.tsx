@@ -177,9 +177,10 @@ function PersonaComponent({
   const { isGenerating: isGeneratingBool, generate } =
     useGenerate({
       permissions: [
-        { artifact: "persona", operation: "create" },
         { artifact: "persona", operation: "draft" },
         { artifact: "persona", operation: "get" },
+        { artifact: "persona", operation: "docs" },
+        { artifact: "group", operation: "name" },
       ],
       resources: [],
       groupId: groupId,
@@ -699,10 +700,13 @@ function PersonaComponent({
   const hasInitializedParameterIds = useRef(false);
   useEffect(() => {
     const resolvedIds = (personaData as PersonaData & { resolved_parameter_ids?: string[] | null })?.resolved_parameter_ids;
-    if (resolvedIds && resolvedIds.length > 0 && !hasInitializedParameterIds.current) {
+    if (!hasInitializedParameterIds.current) {
       hasInitializedParameterIds.current = true;
       if (setUrlFormDataRef.current) {
-        setUrlFormDataRef.current({ parameterIds: resolvedIds });
+        // Set resolved IDs, or null to remove empty ?parameterIds= from URL
+        setUrlFormDataRef.current({
+          parameterIds: resolvedIds && resolvedIds.length > 0 ? resolvedIds : null,
+        });
       }
     }
   }, [personaData, setUrlFormDataRef]);
