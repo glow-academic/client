@@ -803,6 +803,85 @@ function PersonaComponent({
   );
 
 
+  // --- Pending state helpers per step ---
+  const stepHasPending = useCallback(
+    (stepId: string): boolean => {
+      const pendingSet = new Set(formState.pending_ids);
+      if (pendingSet.size === 0) return false;
+      const data = personaDataRef.current;
+      if (!data) return false;
+      const resources = stepResources[stepId] ?? [];
+      for (const rt of resources) {
+        const items = (data as any)[rt] ?? [];
+        for (const item of items) {
+          const itemId = item.id ?? item.department_id ?? item.flag_option_id;
+          if (itemId && pendingSet.has(itemId)) return true;
+        }
+      }
+      return false;
+    },
+    [formState.pending_ids, stepResources],
+  );
+
+  const handleAcceptAllForStep = useCallback(
+    (stepId: string) => {
+      const data = personaDataRef.current;
+      if (!data) return;
+      const resources = stepResources[stepId] ?? [];
+      const idsToAccept: string[] = [];
+      for (const rt of resources) {
+        const items = (data as any)[rt] ?? [];
+        for (const item of items) {
+          if (item.pending) {
+            const itemId = item.id ?? item.department_id ?? item.flag_option_id;
+            if (itemId) idsToAccept.push(itemId);
+          }
+        }
+      }
+      // Remove accepted IDs from pending_ids (keep in form state = confirmed)
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !idsToAccept.includes(id)),
+      }));
+    },
+    [stepResources],
+  );
+
+  const handleRejectAllForStep = useCallback(
+    (stepId: string) => {
+      const data = personaDataRef.current;
+      if (!data) return;
+      const resources = stepResources[stepId] ?? [];
+      const idsToReject: string[] = [];
+      for (const rt of resources) {
+        const items = (data as any)[rt] ?? [];
+        for (const item of items) {
+          if (item.pending) {
+            const itemId = item.id ?? item.department_id ?? item.flag_option_id;
+            if (itemId) idsToReject.push(itemId);
+          }
+        }
+      }
+      const rejectSet = new Set(idsToReject);
+      // Remove from both form state and pending_ids
+      setFormState((prev) => ({
+        ...prev,
+        name_id: rejectSet.has(prev.name_id ?? "") ? null : prev.name_id,
+        description_id: rejectSet.has(prev.description_id ?? "") ? null : prev.description_id,
+        color_id: rejectSet.has(prev.color_id ?? "") ? null : prev.color_id,
+        icon_id: rejectSet.has(prev.icon_id ?? "") ? null : prev.icon_id,
+        instructions_id: rejectSet.has(prev.instructions_id ?? "") ? null : prev.instructions_id,
+        active_flag_id: rejectSet.has(prev.active_flag_id ?? "") ? null : prev.active_flag_id,
+        department_ids: prev.department_ids.filter((id) => !rejectSet.has(id)),
+        parameter_field_ids: prev.parameter_field_ids.filter((id) => !rejectSet.has(id)),
+        example_ids: prev.example_ids.filter((id) => !rejectSet.has(id)),
+        voice_ids: prev.voice_ids.filter((id) => !rejectSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !rejectSet.has(id)),
+      }));
+    },
+    [stepResources],
+  );
+
   // --- Disabled / Breadcrumb ---
   const disabled = useMemo(() => {
     if (!personaData) return false;
@@ -1092,6 +1171,9 @@ function PersonaComponent({
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("basic")}
+                    onAcceptAll={() => handleAcceptAllForStep("basic")}
+                    onRejectAll={() => handleRejectAllForStep("basic")}
                   />
                 ) : undefined
               }
@@ -1208,6 +1290,9 @@ function PersonaComponent({
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("parameters")}
+                    onAcceptAll={() => handleAcceptAllForStep("parameters")}
+                    onRejectAll={() => handleRejectAllForStep("parameters")}
                   />
                 ) : undefined
               }
@@ -1294,6 +1379,9 @@ function PersonaComponent({
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("color")}
+                    onAcceptAll={() => handleAcceptAllForStep("color")}
+                    onRejectAll={() => handleRejectAllForStep("color")}
                   />
                 ) : undefined
               }
@@ -1373,6 +1461,9 @@ function PersonaComponent({
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("icon")}
+                    onAcceptAll={() => handleAcceptAllForStep("icon")}
+                    onRejectAll={() => handleRejectAllForStep("icon")}
                   />
                 ) : undefined
               }
@@ -1433,6 +1524,9 @@ function PersonaComponent({
                     isGenerating={isGenerating}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("content")}
+                    onAcceptAll={() => handleAcceptAllForStep("content")}
+                    onRejectAll={() => handleRejectAllForStep("content")}
                   />
                 ) : undefined
               }
