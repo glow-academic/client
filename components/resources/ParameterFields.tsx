@@ -30,6 +30,8 @@ export interface ParameterFieldResourceItem {
   value?: string | null;
   conditional_parameter_id?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ParameterFieldsProps {
@@ -353,13 +355,12 @@ export function ParameterFields({
           ).length;
 
           return (
-            <div key={param.parameter_id} className="border rounded-lg overflow-hidden">
+            <div key={param.parameter_id}>
               <button
                 type="button"
                 className={cn(
-                  "w-full flex items-center gap-2 px-4 py-3 text-left transition-colors",
-                  "hover:bg-accent/50",
-                  isExpanded && "bg-accent/30"
+                  "w-full flex items-center gap-2 py-2 text-left transition-colors rounded-md",
+                  "hover:bg-accent/50"
                 )}
                 onClick={() => onToggleParameter(param.parameter_id, !isExpanded)}
                 disabled={disabled}
@@ -375,13 +376,10 @@ export function ParameterFields({
                     {selectedCount} selected
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground">
-                  {isExpanded ? "Close" : "Explore"}
-                </span>
               </button>
 
               {isExpanded && parameterOptions.length > 0 && (
-                <div className="px-4 pb-4 pt-2">
+                <div className="pb-2 pt-1">
                   <SelectableGrid<AvailableFieldOption>
                     items={parameterOptions}
                     selectedId={null}
@@ -421,34 +419,40 @@ export function ParameterFields({
                             </div>
                           )}
                           <div className="flex-1 min-w-0 overflow-hidden">
-                            <h3 className="font-medium text-sm leading-tight truncate pr-8">{item.name}</h3>
+                            <div className="flex items-center gap-1 pr-8">
+                              {hasExplore && (
+                                <button
+                                  type="button"
+                                  className={cn(
+                                    "p-0.5 -ml-1 rounded transition-colors shrink-0",
+                                    isExploreExpanded
+                                      ? "text-muted-foreground hover:bg-accent/50"
+                                      : "text-primary hover:text-primary/80 hover:bg-primary/10"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleParameter(
+                                      item.conditional_parameter_id!,
+                                      !isExploreExpanded
+                                    );
+                                  }}
+                                  disabled={disabled}
+                                >
+                                  {isExploreExpanded ? (
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                  )}
+                                </button>
+                              )}
+                              <h3 className="font-medium text-sm leading-tight truncate">{item.name}</h3>
+                            </div>
                             {item.description && (
                               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                 {item.description}
                               </p>
                             )}
                           </div>
-                          {hasExplore && (
-                            <button
-                              type="button"
-                              className={cn(
-                                "mt-1 text-xs font-medium flex items-center gap-0.5 self-start",
-                                isExploreExpanded
-                                  ? "text-muted-foreground"
-                                  : "text-primary hover:text-primary/80"
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onToggleParameter(
-                                  item.conditional_parameter_id!,
-                                  !isExploreExpanded
-                                );
-                              }}
-                              disabled={disabled}
-                            >
-                              {isExploreExpanded ? "Exploring" : "Explore →"}
-                            </button>
-                          )}
                         </div>
                       );
                     }}
@@ -460,7 +464,7 @@ export function ParameterFields({
               )}
 
               {isExpanded && parameterOptions.length === 0 && (
-                <div className="px-4 pb-4 pt-2 text-sm text-muted-foreground">
+                <div className="pb-2 pt-1 text-sm text-muted-foreground">
                   No fields available for this parameter.
                 </div>
               )}

@@ -30,6 +30,7 @@ export interface ColorResourceItem {
   hex_code?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ColorItem {

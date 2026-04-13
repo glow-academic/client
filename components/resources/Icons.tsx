@@ -29,6 +29,7 @@ export interface IconResourceItem {
   description?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface IconItem {
@@ -136,6 +137,20 @@ export function Icons({
     }
     return [];
   }, [allIconsArray, allIcons]);
+
+  // Detect pending items
+  const hasPending = useMemo(() => {
+    return allIconsArray?.some((item) => item.pending) ?? false;
+  }, [allIconsArray]);
+
+  // Check if an icon is pending
+  const isPendingIcon = useCallback(
+    (iconId: string) => {
+      const icon = allIconsArray.find((i) => i.id === iconId);
+      return icon?.pending === true;
+    },
+    [allIconsArray]
+  );
 
   // Check if an icon is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
@@ -271,6 +286,7 @@ export function Icons({
           if (!IconComponent) return null;
 
           const isAiSuggested = showDiff && item.id === aiSuggestedId;
+          const isPending = isPendingIcon(item.id);
 
           return (
             <div
@@ -279,7 +295,8 @@ export function Icons({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10",
+                isPending && !isSelected && "ring-2 ring-amber-500 bg-amber-50"
               )}
             >
               {/* Check icon - top right */}
@@ -289,15 +306,22 @@ export function Icons({
                 </div>
               )}
 
+              {/* Pending badge - top right */}
+              {isPending && !isSelected && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+
               {/* AI suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+              {isAiSuggested && !isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
                   AI Suggested
                 </div>
               )}
 
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
+              {isSuggested(item.id) && !isSelected && !isAiSuggested && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

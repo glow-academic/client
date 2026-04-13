@@ -28,6 +28,7 @@ export interface InstructionResourceItem {
   template?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 // Word-based diff types and utilities
@@ -209,6 +210,14 @@ export function Instructions({
   const saveSeqRef = useRef(0);
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(resourceTemplate);
+
+  // Detect pending items
+  const hasPending = useMemo(() => {
+    return instructions?.some((item) => item.pending) ?? false;
+  }, [instructions]);
+
+  // Check if current instructions resource is pending
+  const isPending = resource?.pending === true;
 
   const instructionsById = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -447,6 +456,7 @@ export function Instructions({
           required={required}
           disabled={disabled}
           rows={rows}
+          className={cn(isPending && "ring-2 ring-amber-500 bg-amber-50")}
         />
       )}
       {helpText && (

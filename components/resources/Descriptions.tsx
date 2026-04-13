@@ -27,6 +27,7 @@ export interface DescriptionResourceItem {
   description?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 // Word-based diff types and utilities
@@ -205,6 +206,14 @@ export function Descriptions({
 
   // Keep a stable "server identity" for when we should accept server as source of truth
   const lastServerTextRef = useRef<string>(resourceDescription);
+
+  // Detect pending items
+  const hasPending = useMemo(() => {
+    return descriptions?.some((item) => item.pending) ?? false;
+  }, [descriptions]);
+
+  // Check if current description resource is pending
+  const isPending = resource?.pending === true;
 
   const descriptionsById = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -486,6 +495,7 @@ export function Descriptions({
           required={required}
           disabled={disabled}
           rows={rows}
+          className={cn(isPending && "ring-2 ring-amber-500 bg-amber-50")}
         />
       )}
       {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}

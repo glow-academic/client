@@ -25,6 +25,7 @@ export interface ExampleResourceItem {
   example?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ExamplesProps {

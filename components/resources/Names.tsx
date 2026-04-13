@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
+import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -23,6 +24,7 @@ export interface NameResourceItem {
   name?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface NamesProps {
@@ -89,6 +91,14 @@ export function Names({
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Detect pending items
+  const hasPending = useMemo(() => {
+    return namesArray?.some((item) => item.pending) ?? false;
+  }, [namesArray]);
+
+  // Check if current name resource is pending
+  const isPending = resource?.pending === true;
 
   // Convert suggested names to name strings for autocomplete
   const suggestionNames = useMemo(() => {
@@ -269,7 +279,10 @@ export function Names({
               required={required}
               disabled={disabled}
               size={1}
-              className="col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+              className={cn(
+                "col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
+                isPending && "ring-2 ring-amber-500 bg-amber-50"
+              )}
             />
             {ghostSuffix && !disabled && (
               <span

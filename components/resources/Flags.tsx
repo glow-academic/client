@@ -28,6 +28,7 @@ export interface FlagResourceItem {
   id?: string | null;
   name?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface FlagConfig {
@@ -39,6 +40,7 @@ export interface FlagConfig {
   show?: boolean; // Whether to display this flag (defaults to true)
   required?: boolean; // Required indicator
   generated?: boolean | null; // Whether AI generated
+  pending?: boolean | null; // Whether this flag is pending acceptance
 }
 
 // Common props for both modes
@@ -93,6 +95,12 @@ export function Flags(props: FlagsProps) {
   const visibleFlags = useMemo(
     () => flags.filter((flag) => flag.show !== false),
     [flags]
+  );
+
+  // Detect pending items
+  const hasPending = useMemo(
+    () => visibleFlags.some((flag) => flag.pending),
+    [visibleFlags]
   );
 
   // Check if any flag has been generated
@@ -274,6 +282,7 @@ export function Flags(props: FlagsProps) {
           );
 
           const checked = isChecked(flag);
+          const isPending = flag.pending === true;
           const isAiSuggested =
             showDiff &&
             !!flag.flag_option_id &&
@@ -285,7 +294,8 @@ export function Flags(props: FlagsProps) {
               key={flag.key}
               className={cn(
                 "space-y-1 p-2 rounded-lg transition-all",
-                isAiSuggested && "ring-2 ring-success bg-success/10"
+                isAiSuggested && "ring-2 ring-success bg-success/10",
+                isPending && !checked && "ring-2 ring-amber-500 bg-amber-50"
               )}
             >
               <div className="flex items-center gap-2">
@@ -298,7 +308,12 @@ export function Flags(props: FlagsProps) {
                   {flag.required && (
                     <span className="text-destructive">*</span>
                   )}
-                  {isAiSuggested && (
+                  {isPending && !checked && (
+                    <span className="ml-2 text-xs text-amber-600 font-medium">
+                      Pending
+                    </span>
+                  )}
+                  {isAiSuggested && !isPending && (
                     <span className="ml-2 text-xs text-success font-medium">
                       → {wouldChange ? "ON" : "OFF"} (AI)
                     </span>
