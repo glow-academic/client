@@ -121,37 +121,52 @@ export default async function NewScenarioPage({
     extractFieldShowSelectedByParam(searchParamsObj);
 
   // Fetch default scenario detail server-side with filter params
+  const parameterIds = csvToArray(q.parameterIds);
+
   const [scenarioDetailDefault, draftsResult] = await Promise.all([
     getScenario({
     body: {
+      id: null,
       draft_id: q.draftId ?? null,
-      filter_department_ids: csvToArray(q.departmentIds) ?? null,
-      filter_persona_ids: csvToArray(q.personaIds) ?? null,
-      filter_document_ids: csvToArray(q.documentIds) ?? null,
-      filter_parameter_ids: csvToArray(q.parameterIds) ?? null,
-      filter_field_ids: csvToArray(q.fieldIds) ?? null,
-      persona_search: q.personaSearch ?? null,
-      document_search: q.documentSearch ?? null,
-      parameter_search: q.parameterSearch ?? null,
-      description_search: q.descriptionSearch ?? null,
-      problem_statement_search: q.problemStatementSearch ?? null,
-      image_search: q.imageSearch ?? null,
-      video_search: q.videoSearch ?? null,
-      document_show_selected: q.documentShowSelected ?? null,
-      persona_show_selected: q.personaShowSelected ?? null,
-      parameter_show_selected: q.parameterShowSelected ?? null,
-      field_show_selected_by_param: fieldShowSelectedByParam
-        ? Object.entries(fieldShowSelectedByParam).map(
-            ([parameter_id, show_selected]) => ({
-              parameter_id,
-              show_selected,
-            })
-          )
-        : null,
-      problem_statement_ids: csvToArray(q.problemStatementIds) ?? null,
-      parameter_ids: csvToArray(q.parameterIds) ?? null,
       mcp: false,
-    },
+      descriptions: q.descriptionSearch ? {
+        search: q.descriptionSearch,
+      } : undefined,
+      personas: q.personaSearch || q.personaShowSelected ? {
+        search: q.personaSearch ?? undefined,
+        selected: q.personaShowSelected ?? undefined,
+      } : undefined,
+      documents: q.documentSearch || q.documentShowSelected ? {
+        search: q.documentSearch ?? undefined,
+        selected: q.documentShowSelected ?? undefined,
+      } : undefined,
+      parameters: q.parameterSearch || q.parameterShowSelected ? {
+        search: q.parameterSearch ?? undefined,
+        selected: q.parameterShowSelected ?? undefined,
+      } : undefined,
+      problem_statements: q.problemStatementSearch ? {
+        search: q.problemStatementSearch,
+      } : undefined,
+      images: q.imageSearch ? {
+        search: q.imageSearch,
+      } : undefined,
+      videos: q.videoSearch || q.videoEnabled === false ? {
+        search: q.videoSearch ?? undefined,
+        include: q.videoEnabled ?? undefined,
+      } : undefined,
+      objectives: q.objectivesEnabled === false ? {
+        include: false,
+      } : undefined,
+      questions: q.questionsEnabled === false ? {
+        include: false,
+      } : undefined,
+      parameter_fields: fieldShowSelectedByParam || parameterIds ? {
+        selected: fieldShowSelectedByParam ? Object.entries(fieldShowSelectedByParam).map(
+          ([parameter_id, show_selected]) => ({ parameter_id, show_selected })
+        ) : undefined,
+        parameter_ids: parameterIds ?? undefined,
+      } : undefined,
+    } as GetScenarioIn["body"],
   }),
     api.post("/scenarios/drafts", {})
   ]);

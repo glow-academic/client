@@ -17,7 +17,6 @@ import type { Metadata } from "next";
 import {
   csvToArray,
   extractFieldShowSelectedByParam,
-  extractParameterItemRanges,
   loadScenarioSearchParams,
 } from "@/lib/search-params/scenarios";
 
@@ -36,104 +35,13 @@ type UploadResult = { success: boolean; upload_id?: string; message?: string };
  * Always bypass cache to ensure fresh data for detail/edit pages.
  * Uses unified get endpoint.
  */
-const getScenario = async (
-  scenarioId: string,
-  filterParams?: {
-    draftId?: string | null;
-    departmentIds?: string[];
-    personaIds?: string[];
-    documentIds?: string[];
-    parameterIds?: string[];
-    parameterItemIds?: string[];
-    personaSearch?: string;
-    documentSearch?: string;
-    parameterSearch?: string;
-    descriptionSearch?: string;
-    problemStatementSearch?: string;
-    imageSearch?: string;
-    videoSearch?: string;
-    documentShowSelected?: boolean;
-    personaShowSelected?: boolean;
-    parameterShowSelected?: boolean;
-    fieldShowSelectedByParam?: Record<string, boolean>;
-    urlParameterIds?: string[];
-    personaMin?: number;
-    personaMax?: number;
-    documentMin?: number;
-    documentMax?: number;
-    parameterSelectionMin?: number;
-    parameterSelectionMax?: number;
-    parameterItemRanges?: Record<string, { min: number; max: number }>;
-    imageIds?: string[];
-    objectiveIds?: string[];
-    problemStatementIds?: string[];
-  }
-): Promise<GetScenarioOut> => {
-  const body: GetScenarioIn["body"] = {
-    scenario_id: scenarioId,
-    mcp: null,
-    parameter_ids: null,
-  };
-
-  if (filterParams) {
-    if (filterParams.draftId) body.draft_id = filterParams.draftId;
-    if (filterParams.departmentIds)
-      body.filter_department_ids = filterParams.departmentIds;
-    if (filterParams.personaIds)
-      body.filter_persona_ids = filterParams.personaIds;
-    if (filterParams.documentIds)
-      body.filter_document_ids = filterParams.documentIds;
-    if (filterParams.parameterIds)
-      body.filter_parameter_ids = filterParams.parameterIds;
-    if (filterParams.parameterItemIds)
-      body.filter_field_ids = filterParams.parameterItemIds;
-    if (filterParams.personaSearch)
-      body.persona_search = filterParams.personaSearch;
-    if (filterParams.documentSearch)
-      body.document_search = filterParams.documentSearch;
-    if (filterParams.parameterSearch)
-      body.parameter_search = filterParams.parameterSearch;
-    if (filterParams.descriptionSearch)
-      body.description_search = filterParams.descriptionSearch;
-    if (filterParams.problemStatementSearch)
-      body.problem_statement_search = filterParams.problemStatementSearch;
-    if (filterParams.imageSearch) body.image_search = filterParams.imageSearch;
-    if (filterParams.videoSearch) body.video_search = filterParams.videoSearch;
-    if (filterParams.documentShowSelected !== undefined)
-      body.document_show_selected = filterParams.documentShowSelected;
-    if (filterParams.personaShowSelected !== undefined)
-      body.persona_show_selected = filterParams.personaShowSelected;
-    if (filterParams.parameterShowSelected !== undefined)
-      body.parameter_show_selected = filterParams.parameterShowSelected;
-    if (filterParams.fieldShowSelectedByParam) {
-      body.field_show_selected_by_param = Object.entries(
-        filterParams.fieldShowSelectedByParam
-      ).map(([parameter_id, show_selected]) => ({
-        parameter_id,
-        show_selected,
-      }));
-    }
-    if (filterParams.imageIds) body.image_ids = filterParams.imageIds;
-    if (filterParams.objectiveIds)
-      body.objective_ids = filterParams.objectiveIds;
-    if (filterParams.problemStatementIds)
-      body.problem_statement_ids = filterParams.problemStatementIds;
-    if (filterParams.urlParameterIds)
-      body.parameter_ids = filterParams.urlParameterIds;
-  }
-
-  return api.post(
-    "/scenarios/get",
-    {
-      body,
+const getScenario = async (input: GetScenarioIn): Promise<GetScenarioOut> => {
+  return api.post("/scenarios/get", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
     },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+  });
 };
 
 /** ---- Docs types for page metadata ---- */
@@ -230,114 +138,58 @@ export default async function EditScenarioPage({
   // Extract dynamic params (not handled by nuqs parsers)
   const fieldShowSelectedByParam =
     extractFieldShowSelectedByParam(searchParamsObj);
-  const parameterItemRanges = extractParameterItemRanges(searchParamsObj);
 
   // Fetch scenario detail (always fresh - source of truth) with filter params
   try {
-    type FilterParams = {
-      draftId?: string | null;
-      departmentIds?: string[];
-      personaIds?: string[];
-      documentIds?: string[];
-      parameterIds?: string[];
-      parameterItemIds?: string[];
-      personaSearch?: string;
-      documentSearch?: string;
-      parameterSearch?: string;
-      descriptionSearch?: string;
-      problemStatementSearch?: string;
-      imageSearch?: string;
-      videoSearch?: string;
-      documentShowSelected?: boolean;
-      personaShowSelected?: boolean;
-      parameterShowSelected?: boolean;
-      fieldShowSelectedByParam?: Record<string, boolean>;
-      personaMin?: number;
-      personaMax?: number;
-      documentMin?: number;
-      documentMax?: number;
-      parameterSelectionMin?: number;
-      parameterSelectionMax?: number;
-      parameterItemRanges?: Record<string, { min: number; max: number }>;
-      imageIds?: string[];
-      objectiveIds?: string[];
-      problemStatementIds?: string[];
-      urlParameterIds?: string[];
-    };
-    const filterParams: FilterParams = {};
-    if (q.draftId) filterParams.draftId = q.draftId;
-    const departmentIds = csvToArray(q.departmentIds);
-    const personaIds = csvToArray(q.personaIds);
-    const documentIds = csvToArray(q.documentIds);
     const parameterIds = csvToArray(q.parameterIds);
-    const fieldIds = csvToArray(q.fieldIds);
 
-    if (departmentIds) filterParams.departmentIds = departmentIds;
-    if (personaIds) filterParams.personaIds = personaIds;
-    if (documentIds) filterParams.documentIds = documentIds;
-    if (parameterIds) filterParams.parameterIds = parameterIds;
-    if (fieldIds) filterParams.parameterItemIds = fieldIds;
-    if (q.personaSearch) filterParams.personaSearch = q.personaSearch;
-    if (q.documentSearch) filterParams.documentSearch = q.documentSearch;
-    if (q.parameterSearch) filterParams.parameterSearch = q.parameterSearch;
-    if (q.descriptionSearch) filterParams.descriptionSearch = q.descriptionSearch;
-    if (q.problemStatementSearch)
-      filterParams.problemStatementSearch = q.problemStatementSearch;
-    if (q.imageSearch) filterParams.imageSearch = q.imageSearch;
-    if (q.videoSearch) filterParams.videoSearch = q.videoSearch;
-    if (q.documentShowSelected !== undefined && q.documentShowSelected !== null)
-      filterParams.documentShowSelected = q.documentShowSelected;
-    if (q.personaShowSelected !== undefined && q.personaShowSelected !== null)
-      filterParams.personaShowSelected = q.personaShowSelected;
-    if (
-      q.parameterShowSelected !== undefined &&
-      q.parameterShowSelected !== null
-    )
-      filterParams.parameterShowSelected = q.parameterShowSelected;
-    if (
-      fieldShowSelectedByParam !== undefined &&
-      fieldShowSelectedByParam !== null
-    )
-      filterParams.fieldShowSelectedByParam = fieldShowSelectedByParam;
-    if (q.personaMin !== undefined && q.personaMin !== null)
-      filterParams.personaMin = q.personaMin;
-    if (q.personaMax !== undefined && q.personaMax !== null)
-      filterParams.personaMax = q.personaMax;
-    if (q.documentMin !== undefined && q.documentMin !== null)
-      filterParams.documentMin = q.documentMin;
-    if (q.documentMax !== undefined && q.documentMax !== null)
-      filterParams.documentMax = q.documentMax;
-    if (
-      q.parameterSelectionMin !== undefined &&
-      q.parameterSelectionMin !== null
-    )
-      filterParams.parameterSelectionMin = q.parameterSelectionMin;
-    if (
-      q.parameterSelectionMax !== undefined &&
-      q.parameterSelectionMax !== null
-    )
-      filterParams.parameterSelectionMax = q.parameterSelectionMax;
-    if (parameterItemRanges)
-      filterParams.parameterItemRanges = parameterItemRanges;
-    const imageIds = csvToArray(q.imageIds);
-    const objectiveIds = csvToArray(q.objectiveIds);
-    const problemStatementIds = csvToArray(q.problemStatementIds);
-    if (imageIds) filterParams.imageIds = imageIds;
-    if (objectiveIds) filterParams.objectiveIds = objectiveIds;
-    if (problemStatementIds)
-      filterParams.problemStatementIds = problemStatementIds;
-
-    // URL render filter: which parameters are expanded
-    const urlParameterIds = csvToArray(q.parameterIds);
-    if (urlParameterIds) filterParams.urlParameterIds = urlParameterIds;
+    const input: GetScenarioIn = {
+      body: {
+        id: scenarioId,
+        draft_id: q.draftId ?? null,
+        mcp: null,
+        descriptions: q.descriptionSearch ? {
+          search: q.descriptionSearch,
+        } : undefined,
+        personas: q.personaSearch || q.personaShowSelected ? {
+          search: q.personaSearch ?? undefined,
+          selected: q.personaShowSelected ?? undefined,
+        } : undefined,
+        documents: q.documentSearch || q.documentShowSelected ? {
+          search: q.documentSearch ?? undefined,
+          selected: q.documentShowSelected ?? undefined,
+        } : undefined,
+        parameters: q.parameterSearch || q.parameterShowSelected ? {
+          search: q.parameterSearch ?? undefined,
+          selected: q.parameterShowSelected ?? undefined,
+        } : undefined,
+        problem_statements: q.problemStatementSearch ? {
+          search: q.problemStatementSearch,
+        } : undefined,
+        images: q.imageSearch ? {
+          search: q.imageSearch,
+        } : undefined,
+        videos: q.videoSearch || q.videoEnabled === false ? {
+          search: q.videoSearch ?? undefined,
+          include: q.videoEnabled ?? undefined,
+        } : undefined,
+        objectives: q.objectivesEnabled === false ? {
+          include: false,
+        } : undefined,
+        questions: q.questionsEnabled === false ? {
+          include: false,
+        } : undefined,
+        parameter_fields: fieldShowSelectedByParam || parameterIds ? {
+          selected: fieldShowSelectedByParam ? Object.entries(fieldShowSelectedByParam).map(
+            ([parameter_id, show_selected]) => ({ parameter_id, show_selected })
+          ) : undefined,
+          parameter_ids: parameterIds ?? undefined,
+        } : undefined,
+      } as GetScenarioIn["body"],
+    };
 
     const [scenarioDetail, docs, draftsResult] = await Promise.all([
-      getScenario(
-        scenarioId,
-        Object.keys(filterParams).length > 0
-          ? (filterParams as Parameters<typeof getScenario>[1])
-          : undefined
-      ),
+      getScenario(input),
       getDocs({ body: { entity_id: scenarioId } }),
       api.post("/scenarios/drafts", {})
     ]);
