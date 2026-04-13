@@ -1233,10 +1233,14 @@ function PersonaComponent({
                   }
                 }}
                 onChange={(ids) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    parameter_field_ids: ids,
-                  }))
+                  setFormState((prev) => {
+                    const removedIds = prev.parameter_field_ids.filter((id) => !ids.includes(id));
+                    return {
+                      ...prev,
+                      parameter_field_ids: ids,
+                      pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                    };
+                  })
                 }
                 disabled={disabled}
 
@@ -1301,7 +1305,11 @@ function PersonaComponent({
                 colors={s?.colors ?? []}
                 disabled={disabled}
                 onColorIdChange={(colorId) =>
-                  setFormState((prev) => ({ ...prev, color_id: colorId }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    color_id: colorId,
+                    pending_ids: prev.pending_ids.filter((id) => id !== prev.color_id),
+                  }))
                 }
                 onGenerate={generateHandlers["colors"]}
                 searchTerm={
@@ -1376,7 +1384,11 @@ function PersonaComponent({
                 icons={s?.icons ?? []}
                 disabled={disabled}
                 onIconIdChange={(iconId) =>
-                  setFormState((prev) => ({ ...prev, icon_id: iconId }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    icon_id: iconId,
+                    pending_ids: prev.pending_ids.filter((id) => id !== prev.icon_id),
+                  }))
                 }
                 onGenerate={generateHandlers["icons"]}
                 searchTerm={
@@ -1440,6 +1452,7 @@ function PersonaComponent({
                     ...prev,
                     instructions_id: instructionsId,
                     instructions: null,
+                    pending_ids: prev.pending_ids.filter((id) => id !== prev.instructions_id),
                   }))
                 }
                 onInstructionsChange={handleInstructionsChange}
@@ -1469,11 +1482,15 @@ function PersonaComponent({
                 examples={s?.examples ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    example_ids: ids,
-                    examples: [],
-                  }))
+                  setFormState((prev) => {
+                    const removedIds = prev.example_ids.filter((id) => !ids.includes(id));
+                    return {
+                      ...prev,
+                      example_ids: ids,
+                      examples: [],
+                      pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                    };
+                  })
                 }
                 onExamplesChange={handleExamplesChange}
                 onGenerate={generateHandlers["examples"]}
@@ -1503,7 +1520,14 @@ function PersonaComponent({
                 voices={s?.voices ?? []}
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, voice_ids: ids }))
+                  setFormState((prev) => {
+                    const removedIds = prev.voice_ids.filter((id) => !ids.includes(id));
+                    return {
+                      ...prev,
+                      voice_ids: ids,
+                      pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                    };
+                  })
                 }
 
                 showAiGenerate={false}
