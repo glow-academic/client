@@ -14,9 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface NameResourceItem {
@@ -73,19 +71,9 @@ export function Names({
   const show = show_name ?? true;
   const namesArray = useMemo(() => names ?? [], [names]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "names",
-    groupId: group_id,
-  });
-
-  // Find pending item from API (soft draft connection)
-  const pendingItem = useMemo(() => {
-    return namesArray.find((n) => n.pending && n.id && n.name) ?? null;
-  }, [namesArray]);
-
-  // AI suggestion state — show diff for socket AI suggestion OR API pending item
-  const showDiff = !!aiSuggestion?.name || !!pendingItem;
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
+  const isPending = resource?.pending === true;
+  const showDiff = isPending;
 
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
@@ -213,28 +201,20 @@ export function Names({
     [ghostSuffix, ghostMatch, namesArray, onNameIdChange]
   );
 
-  // Accept suggestion — works for both socket AI suggestion and API pending item
+  // Accept pending — confirm the pending resource as the active selection
   const handleAccept = useCallback(() => {
-    const item = aiSuggestion?.id ? aiSuggestion : pendingItem;
-    if (!item?.id) return;
+    if (!resource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    const text = item.name || "";
+    const text = resource.name || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
-    onNameIdChange(item.id);
-    clearAi();
-  }, [aiSuggestion, pendingItem, onNameIdChange, clearAi]);
+    onNameIdChange(resource.id);
+  }, [resource, onNameIdChange]);
 
-  // Reject suggestion — clear socket AI or remove pending item from form state
+  // Reject pending — remove the pending resource from form state
   const handleReject = useCallback(() => {
-    if (aiSuggestion?.id) {
-      clearAi();
-    } else if (pendingItem?.id) {
-      // Remove pending item — set name back to previous or empty
-      onNameIdChange(null);
-      clearAi();
-    }
-  }, [aiSuggestion, pendingItem, onNameIdChange, clearAi]);
+    onNameIdChange(null);
+  }, [onNameIdChange]);
 
   // Don't render if show_name is false (AFTER all hooks)
   if (!show) {
@@ -245,8 +225,8 @@ export function Names({
   // When input has value, measure that; otherwise measure placeholder
   const displayValue = internalValue || defaultName || "";
 
-  // Suggestion text — from socket AI or API pending item
-  const aiName = aiSuggestion?.name || pendingItem?.name || "";
+  // Pending name for diff display
+  const pendingName = resource?.name || "";
 
   return (
     <div className="flex-1 items-end">
@@ -258,7 +238,7 @@ export function Names({
               {internalValue || defaultName || "Untitled"}
             </span>
             <span className="text-2xl font-semibold text-success">
-              {aiName}
+              {pendingName}
             </span>
           </div>
         ) : (
@@ -306,13 +286,9 @@ export function Names({
                   size="icon"
                   className="h-8 w-8"
                   onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating || showDiff}
+                  disabled={disabled || showDiff}
                 >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
+                  <Sparkles className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
