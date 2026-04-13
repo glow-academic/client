@@ -229,10 +229,7 @@ function PersonaComponent({
       examples: personaData.examples,
       parameters: personaData.parameters,
       voices: personaData.voices,
-      basic_show_ai_generate: personaData.basic_show_ai_generate,
-      content_show_ai_generate: personaData.content_show_ai_generate,
-      parameters_step_show_ai_generate:
-        personaData.parameters_step_show_ai_generate,
+      show_ai_generate: personaData.show_ai_generate,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -247,9 +244,7 @@ function PersonaComponent({
     personaData?.examples,
     personaData?.parameters,
     personaData?.voices,
-    personaData?.basic_show_ai_generate,
-    personaData?.content_show_ai_generate,
-    personaData?.parameters_step_show_ai_generate,
+    personaData?.show_ai_generate,
   ]);
 
   const canRegenerate = useCallback(
@@ -1096,14 +1091,14 @@ function PersonaComponent({
                   required={s?.names?.required ?? false}
                   hideDescription={true}
 
-                  showAiGenerate={s?.names?.show_ai_generate ?? false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
               actions={
                 stepResources["basic"]?.length &&
-                (s?.basic_show_ai_generate ?? false) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="basic"
                     resourceTypes={stepResources["basic"]!}
@@ -1149,7 +1144,7 @@ function PersonaComponent({
                   rows={4}
                   data-testid="input-persona-description"
 
-                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Departments
@@ -1165,7 +1160,7 @@ function PersonaComponent({
                   onGenerate={generateHandlers["departments"]}
                   required={s?.departments?.required ?? false}
 
-                  showAiGenerate={s?.departments?.show_ai_generate ?? false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Flags
@@ -1176,7 +1171,7 @@ function PersonaComponent({
                   label="Flags"
                   disabled={disabled}
 
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
@@ -1212,7 +1207,7 @@ function PersonaComponent({
               resetLabel="Reset"
               actions={
                 stepResources["parameters"]?.length &&
-                (s?.parameters_step_show_ai_generate ?? false) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="parameters"
                     resourceTypes={stepResources["parameters"]!}
@@ -1253,7 +1248,7 @@ function PersonaComponent({
                 disabled={disabled}
 
                 showAiGenerate={
-                  s?.parameter_fields?.show_ai_generate ?? false
+                  s?.show_ai_generate ?? false
                 }
                 required={s?.parameter_fields?.required ?? false}
                 onGenerate={generateHandlers["parameter_fields"]}
@@ -1331,7 +1326,7 @@ function PersonaComponent({
                   setStepFormData({ colorShowSelected: value || null })
                 }
 
-                showAiGenerate={s?.colors?.show_ai_generate ?? false}
+                showAiGenerate={s?.show_ai_generate ?? false}
                 required={s?.colors?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -1407,7 +1402,7 @@ function PersonaComponent({
                   setStepFormData({ iconShowSelected: value || null })
                 }
 
-                showAiGenerate={s?.icons?.show_ai_generate ?? false}
+                showAiGenerate={s?.show_ai_generate ?? false}
                 required={s?.icons?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -1429,7 +1424,7 @@ function PersonaComponent({
               resetLabel="Reset"
               actions={
                 stepResources["content"]?.length &&
-                (s?.content_show_ai_generate ?? false) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="content"
                     resourceTypes={stepResources["content"]!}
@@ -1477,7 +1472,7 @@ function PersonaComponent({
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
 
-                showAiGenerate={s?.instructions?.show_ai_generate ?? false}
+                showAiGenerate={s?.show_ai_generate ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
               <Examples
@@ -1500,7 +1495,7 @@ function PersonaComponent({
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
 
-                showAiGenerate={s?.examples?.show_ai_generate ?? false}
+                showAiGenerate={s?.show_ai_generate ?? false}
                 required={s?.examples?.required ?? false}
                 exampleMapping={
                   s?.examples?.resources && formState.example_ids
@@ -1526,7 +1521,7 @@ function PersonaComponent({
                   setFormState((prev) => ({ ...prev, voice_ids: ids }))
                 }
 
-                showAiGenerate={s?.voices?.show_ai_generate ?? false}
+                showAiGenerate={s?.show_ai_generate ?? false}
                 onGenerate={generateHandlers["voices"]}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
