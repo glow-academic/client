@@ -1074,7 +1074,6 @@ function PersonaComponent({
                   name_id={formState.name_id ?? null}
                   name_resource={s?.names?.resource ?? null}
                   show_name={s?.names?.show ?? true}
-                  name_suggestions={s?.names?.suggestions ?? []}
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
@@ -1117,7 +1116,6 @@ function PersonaComponent({
                   description_id={formState.description_id ?? null}
                   description_resource={s?.descriptions?.resource ?? null}
                   show_description={s?.descriptions?.show ?? true}
-                  description_suggestions={s?.descriptions?.suggestions ?? []}
                   descriptions={s?.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
@@ -1151,7 +1149,6 @@ function PersonaComponent({
                   department_ids={formState.department_ids ?? []}
                   department_resources={s?.departments?.current ?? []}
                   show_departments={s?.departments?.show ?? false}
-                  department_suggestions={s?.departments?.suggestions ?? []}
                   departments={s?.departments?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
@@ -1307,7 +1304,6 @@ function PersonaComponent({
                 color_id={formState.color_id ?? null}
                 color_resource={s?.colors?.resource ?? null}
                 show_color={s?.colors?.show ?? false}
-                color_suggestions={s?.colors?.suggestions ?? []}
                 colors={s?.colors?.resources ?? []}
                 disabled={disabled}
                 onColorIdChange={(colorId) =>
@@ -1383,7 +1379,6 @@ function PersonaComponent({
                 icon_id={formState.icon_id ?? null}
                 icon_resource={s?.icons?.resource ?? null}
                 show_icon={s?.icons?.show ?? false}
-                icon_suggestions={s?.icons?.suggestions ?? []}
                 icons={s?.icons?.resources ?? []}
                 disabled={disabled}
                 onIconIdChange={(iconId) =>
@@ -1444,7 +1439,6 @@ function PersonaComponent({
                     : null
                 }
                 show_instructions={s?.instructions?.show ?? true}
-                instructions_suggestions={s?.instructions?.suggestions ?? []}
                 instructions={s?.instructions?.resources ?? []}
                 disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
@@ -1479,7 +1473,6 @@ function PersonaComponent({
                 example_ids={formState.example_ids ?? []}
                 example_resources={s?.examples?.current ?? []}
                 show_examples={s?.examples?.show ?? false}
-                example_suggestions={s?.examples?.suggestions ?? []}
                 examples={s?.examples?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -1514,7 +1507,6 @@ function PersonaComponent({
                 voice_ids={formState.voice_ids ?? []}
                 voice_resources={s?.voices?.current ?? []}
                 show_voices={s?.voices?.show ?? false}
-                voice_suggestions={s?.voices?.suggestions ?? []}
                 voices={s?.voices?.resources ?? []}
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>

@@ -24,6 +24,7 @@ export interface VoiceResourceItem {
   id?: string | null;
   voice?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 export interface VoiceItem {
@@ -38,8 +39,7 @@ export interface VoicesProps {
   voice_ids?: string[]; // Current voice resource IDs (standardized prop name)
   voice_resources?: VoiceResourceItem[]; // Selected voice resources (each includes generated field)
   show_voices?: boolean; // Whether to show this resource picker
-  voice_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  voices?: VoiceResourceItem[]; // All available voices from API (each includes generated field)
+  voices?: VoiceResourceItem[]; // All available voices from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onVoiceIdsChange: (ids: string[]) => void; // Update voice_ids in parent form state
   label?: string;
@@ -58,7 +58,6 @@ export function Voices({
   voice_ids,
   voice_resources,
   show_voices = false,
-  voice_suggestions,
   voices,
   disabled = false,
   onVoiceIdsChange,
@@ -74,10 +73,6 @@ export function Voices({
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);
   const show = show_voices ?? false;
   const allVoices = useMemo(() => voices ?? [], [voices]);
-  const suggestionsList = useMemo(
-    () => voice_suggestions ?? [],
-    [voice_suggestions]
-  );
 
   // Socket-based AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
@@ -94,10 +89,13 @@ export function Voices({
     return items;
   }, [allVoices]);
 
-  // Check if a voice is suggested
+  // Check if a voice is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (voiceId: string) => suggestionsList.includes(voiceId),
-    [suggestionsList]
+    (voiceId: string) => {
+      const voice = allVoices.find((v) => v.id === voiceId);
+      return voice?.suggested === true;
+    },
+    [allVoices]
   );
 
   // Check if a voice is AI-suggested
