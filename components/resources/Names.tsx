@@ -79,8 +79,13 @@ export function Names({
     groupId: group_id,
   });
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.name;
+  // Find pending item from API (soft draft connection)
+  const pendingItem = useMemo(() => {
+    return namesArray.find((n) => n.pending && n.id && n.name) ?? null;
+  }, [namesArray]);
+
+  // AI suggestion state — show diff for socket AI suggestion OR API pending item
+  const showDiff = !!aiSuggestion?.name || !!pendingItem;
 
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
@@ -91,14 +96,6 @@ export function Names({
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Detect pending items
-  const hasPending = useMemo(() => {
-    return namesArray?.some((item) => item.pending) ?? false;
-  }, [namesArray]);
-
-  // Check if current name resource is pending
-  const isPending = resource?.pending === true;
 
   // Convert suggested names to name strings for autocomplete
   const suggestionNames = useMemo(() => {
@@ -216,21 +213,28 @@ export function Names({
     [ghostSuffix, ghostMatch, namesArray, onNameIdChange]
   );
 
-  // Accept AI suggestion - update internal value and notify parent
+  // Accept suggestion — works for both socket AI suggestion and API pending item
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.id) return;
+    const item = aiSuggestion?.id ? aiSuggestion : pendingItem;
+    if (!item?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-    const text = aiSuggestion.name || "";
+    const text = item.name || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
-    onNameIdChange(aiSuggestion.id);
+    onNameIdChange(item.id);
     clearAi();
-  }, [aiSuggestion, onNameIdChange, clearAi]);
+  }, [aiSuggestion, pendingItem, onNameIdChange, clearAi]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject suggestion — clear socket AI or remove pending item from form state
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    if (aiSuggestion?.id) {
+      clearAi();
+    } else if (pendingItem?.id) {
+      // Remove pending item — set name back to previous or empty
+      onNameIdChange(null);
+      clearAi();
+    }
+  }, [aiSuggestion, pendingItem, onNameIdChange, clearAi]);
 
   // Don't render if show_name is false (AFTER all hooks)
   if (!show) {
@@ -241,8 +245,8 @@ export function Names({
   // When input has value, measure that; otherwise measure placeholder
   const displayValue = internalValue || defaultName || "";
 
-  // AI suggestion text
-  const aiName = aiSuggestion?.name || "";
+  // Suggestion text — from socket AI or API pending item
+  const aiName = aiSuggestion?.name || pendingItem?.name || "";
 
   return (
     <div className="flex-1 items-end">
@@ -279,10 +283,7 @@ export function Names({
               required={required}
               disabled={disabled}
               size={1}
-              className={cn(
-                "col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20",
-                isPending && "ring-2 ring-amber-500 bg-amber-50"
-              )}
+              className="col-start-1 row-start-1 w-full min-w-0 text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
             />
             {ghostSuffix && !disabled && (
               <span
