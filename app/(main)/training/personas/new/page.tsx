@@ -27,6 +27,10 @@ type CreatePersonaIn = InputOf<"/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/personas/create", "post">;
 type PatchPersonaDraftIn = InputOf<"/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/personas/draft", "patch">;
+type GroupPersonaIn = InputOf<"/personas/group", "post">;
+type GroupPersonaOut = OutputOf<"/personas/group", "post">;
+type GeneratePersonaIn = InputOf<"/personas/generate", "post">;
+type GeneratePersonaOut = OutputOf<"/personas/generate", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -53,6 +57,13 @@ async function patchPersonaDraft(
 ): Promise<PatchPersonaDraftOut> {
   "use server";
   return api.post("/personas/draft", input);
+}
+
+async function generatePersona(
+  input: GeneratePersonaIn
+): Promise<GeneratePersonaOut> {
+  "use server";
+  return api.post("/personas/generate", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -131,9 +142,10 @@ export default async function NewPersonaPage({
       } : undefined,
     } as GetPersonaIn["body"],
   };
-  const [personaDetailDefault, draftsResult] = await Promise.all([
+  const [personaDetailDefault, draftsResult, groupResult] = await Promise.all([
     getPersonaDefault(input),
-    api.post("/personas/drafts", {})
+    api.post("/personas/drafts", {}),
+    api.post("/personas/group", { body: {} } as GroupPersonaIn),
   ]);
 
   return (
@@ -153,9 +165,11 @@ export default async function NewPersonaPage({
       >
         <Persona
           key={q.draftId || "no-draft"}
+          groupId={(groupResult as any)?.group_id ?? null}
           personaData={personaDetailDefault}
           createPersonaAction={createPersona}
           patchPersonaDraftAction={patchPersonaDraft}
+          generateAction={generatePersona}
         />
       </div>
     </DraftProviderClient>

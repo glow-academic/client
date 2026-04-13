@@ -28,6 +28,10 @@ type UpdatePersonaIn = InputOf<"/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
 type PatchPersonaDraftIn = InputOf<"/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/personas/draft", "patch">;
+type GroupPersonaIn = InputOf<"/personas/group", "post">;
+type GroupPersonaOut = OutputOf<"/personas/group", "post">;
+type GeneratePersonaIn = InputOf<"/personas/generate", "post">;
+type GeneratePersonaOut = OutputOf<"/personas/generate", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
@@ -70,6 +74,13 @@ async function patchPersonaDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/personas/draft", input);
+}
+
+async function generatePersona(
+  input: GeneratePersonaIn
+): Promise<GeneratePersonaOut> {
+  "use server";
+  return api.post("/personas/generate", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -142,10 +153,11 @@ export default async function PersonaEditPage({
         } : undefined,
       } as GetPersonaIn["body"],
     };
-    const [personaDetail, docs, draftsResult] = await Promise.all([
+    const [personaDetail, docs, draftsResult, groupResult] = await Promise.all([
       getPersona(input),
       getDocs({ body: { entity_id: personaId } }),
-      api.post("/personas/drafts", {})
+      api.post("/personas/drafts", {}),
+      api.post("/personas/group", { body: {} } as GroupPersonaIn),
     ]);
 
     const entityName = docs.page_metadata?.detail.title;
@@ -167,9 +179,11 @@ export default async function PersonaEditPage({
         >
           <Persona
             personaId={personaId}
+            groupId={(groupResult as any)?.group_id ?? null}
             personaData={personaDetail}
             updatePersonaAction={updatePersona}
             patchPersonaDraftAction={patchPersonaDraft}
+            generateAction={generatePersona}
           />
         </div>
       </DraftProviderClient>
