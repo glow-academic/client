@@ -1,7 +1,7 @@
 /**
  * ProblemStatements.tsx
  * Resource component for problem statement input fields
- * Header-style input with optional AI generate button
+ * Header-style input with accept/reject for pending changes
  * Creates resources independently and reports resource IDs to parent
  */
 
@@ -17,9 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftProblemStatementsIn = {
@@ -39,6 +38,7 @@ export interface ProblemStatementResourceItem {
   problem_statement_id?: string | null;
   problem_statement?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 // Word-based diff types and utilities
@@ -161,8 +161,6 @@ export interface ProblemStatementsProps {
   problem_statements?: ProblemStatementResourceItem[]; // Array of problem statement suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
   onProblemStatementIdChange: (problemStatementId: string | null) => void; // Update problem_statement_id in parent form state
-  onGenerate?: () => Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -171,7 +169,6 @@ export interface ProblemStatementsProps {
   "data-testid"?: string;
   defaultProblemStatement?: string; // Default problem statement value (for header style - reverts to this on blur if empty)
   hideDescription?: boolean; // Legacy prop (no-op)
-  group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   createProblemStatementsAction?:
     | ((
@@ -196,8 +193,6 @@ export function ProblemStatements({
   problem_statements,
   disabled = false,
   onProblemStatementIdChange,
-  onGenerate,
-  showAiGenerate = false,
   label = "Problem Statement",
   placeholder = "Enter problem statement",
   required = false,
@@ -205,7 +200,6 @@ export function ProblemStatements({
   id = "problem_statement",
   "data-testid": dataTestId,
   defaultProblemStatement,
-  group_id,
   create_tool_id,
   createProblemStatementsAction,
   searchTerm,
@@ -226,16 +220,6 @@ export function ProblemStatements({
     [problem_statements]
   );
 
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "problem_statements",
-    groupId: group_id,
-  });
-
   // Handle nullable resource properties
   const resourceProblemStatement = resource?.problem_statement ?? "";
   const initialValue =
@@ -254,7 +238,7 @@ export function ProblemStatements({
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ problem_statement_id: string | null } | void> => {
     // Skip if no action available
-    if (!createProblemStatementsAction || !create_tool_id || !group_id) {
+    if (!createProblemStatementsAction || !create_tool_id) {
       return { problem_statement_id: resourceId };
     }
 
@@ -332,7 +316,7 @@ export function ProblemStatements({
     debounceTimerRef.current = setTimeout(async () => {
       const seq = ++saveSeqRef.current;
       try {
-        if (internalValue.trim() && create_tool_id && group_id) {
+        if (internalValue.trim() && create_tool_id) {
           const result = await createProblemStatementsAction({
             body: {
               name: "",
@@ -368,7 +352,6 @@ export function ProblemStatements({
     createProblemStatementsAction,
     onProblemStatementIdChange,
     create_tool_id,
-    group_id,
     isAutosaveEnabled,
   ]);
 
@@ -462,29 +445,29 @@ export function ProblemStatements({
     return Object.values(suggestionsMapping);
   }, [problemStatementsArray, suggestionsMapping]);
 
-  // AI diff view state
-  const showDiff = !!aiSuggestion?.problem_statement;
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
+  const isPending = resource?.pending === true;
+  const showDiff = isPending;
   const currentText = internalValue || "";
-  const aiText = aiSuggestion?.problem_statement || "";
+  const pendingText = resource?.problem_statement || "";
 
-  // Accept AI suggestion - update internal value and notify parent
+  // Accept pending — confirm the pending resource as the active selection
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.problem_statement_id) return;
+    if (!resource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = aiSuggestion.problem_statement || "";
+    const text = resource.problem_statement || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onProblemStatementIdChange(aiSuggestion.problem_statement_id);
-    clearAi();
-  }, [aiSuggestion, onProblemStatementIdChange, clearAi]);
+    onProblemStatementIdChange(resource.id);
+  }, [resource, onProblemStatementIdChange]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove the pending resource from form state
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onProblemStatementIdChange(null);
+  }, [onProblemStatementIdChange]);
 
   // Don't render if show_problem_statement is false (AFTER all hooks)
   if (!show) {
@@ -499,31 +482,6 @@ export function ProblemStatements({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {resource?.generated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -626,7 +584,7 @@ export function ProblemStatements({
       </div>
       {/* Conditional: DiffView when AI suggestion pending, otherwise Textarea */}
       {showDiff ? (
-        <DiffView current={currentText} proposed={aiText} rows={rows} />
+        <DiffView current={currentText} proposed={pendingText} rows={rows} />
       ) : (
         <Textarea
           id={id}

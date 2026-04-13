@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Brain, Check, Loader2, Sparkles, X } from "lucide-react";
+import { Brain, Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 // Utility function to generate gradient from hex color
@@ -49,6 +48,7 @@ export interface PersonaResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
   video_persona?: boolean | null;
   non_video_persona?: boolean | null;
   icon?: string | null;
@@ -76,13 +76,7 @@ export interface PersonasProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
-  aiPersonaResources?:
-    | Pick<PersonaResourceItem, "persona_id" | "name">[]
-    | null;
 }
 
 export function Personas({
@@ -98,11 +92,7 @@ export function Personas({
   required = false,
   placeholder: _placeholder = "Select personas...",
   description,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
   videoEnabled = false,
-  aiPersonaResources,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
   const show = show_personas ?? false;
@@ -131,20 +121,6 @@ export function Personas({
     () => persona_suggestions ?? [],
     [persona_suggestions]
   );
-
-  // AI suggestion via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "personas",
-    groupId: group_id,
-  });
-
-  // Effective AI resources: hook (socket) takes priority, then prop fallback
-  const effectiveAiPersonaResources =
-    aiSuggestion ?? aiPersonaResources ?? null;
 
   // Convert personas array to PersonaItem format for GenericPicker
   const personaItems = useMemo(() => {
@@ -178,39 +154,26 @@ export function Personas({
     [ids, onChange]
   );
 
-  // Check if any persona resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return persona_resources?.some((p) => p.generated) ?? false;
-  }, [persona_resources]);
-
-  // AI suggestion state
-  const showDiff = !!effectiveAiPersonaResources?.length;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        effectiveAiPersonaResources
-          ?.map((p) => p.id)
-          .filter(Boolean) as string[]
-      ),
-    [effectiveAiPersonaResources]
+  // Pending state: items with pending=true from the API
+  const pendingItems = useMemo(
+    () => personaItems.filter((i) => {
+      const full = filteredPersonas.find((p) => p.persona_id === i.id);
+      return full?.pending === true;
+    }),
+    [personaItems, filteredPersonas]
   );
+  const pendingIds = useMemo(() => new Set(pendingItems.map((i) => i.id)), [pendingItems]);
+  const showDiff = pendingItems.length > 0;
 
-  // Accept AI suggestion - add AI-suggested personas and clear internal state
+  // Accept pending — pending items are already in the list, no-op for selection
   const handleAccept = useCallback(() => {
-    if (!effectiveAiPersonaResources?.length) return;
-    const newIds = effectiveAiPersonaResources
-      .map((p) => p.id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [effectiveAiPersonaResources, ids, onChange, clearAi]);
+    // no-op: pending items already in selection
+  }, []);
 
-  // Reject AI suggestion - clear internal state
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
   // Don't render if show_personas is false (AFTER all hooks)
   if (!show) {
@@ -230,31 +193,6 @@ export function Personas({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -303,7 +241,7 @@ export function Personas({
         horizontal={true}
         renderItem={(item, isSelected) => {
           const suggested = isSuggested(item.id);
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = showDiff && pendingIds.has(item.id);
           const IconComponent = getIconComponent(item.icon || "") || Brain;
           const hexColor = item.color || "#64748b";
 
@@ -314,7 +252,7 @@ export function Personas({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested &&
+                isPending &&
                   !isSelected &&
                   "ring-2 ring-success bg-success/10"
               )}
@@ -326,15 +264,15 @@ export function Personas({
                 </div>
               )}
 
-              {/* AI suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+              {/* Pending badge - top right */}
+              {isPending && !isSelected && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Suggested
                 </div>
               )}
 
               {/* Suggested dot indicator - top right */}
-              {suggested && !isSelected && !isAiSuggested && (
+              {suggested && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

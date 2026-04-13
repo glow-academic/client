@@ -19,13 +19,11 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import {
   Check,
   Eye,
   Image,
   Loader2,
-  Sparkles,
   Upload,
   X,
 } from "lucide-react";
@@ -42,6 +40,7 @@ export interface ImageResourceItem {
   name?: string | null;
   upload_id?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface ImageItem {
@@ -67,12 +66,9 @@ export interface ImagesProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
   createImagesAction?:
     | ((input: CreateDraftImagesIn) => Promise<CreateDraftImagesOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   multiSelect?: boolean; // Whether to allow multiple image selection
   maxImages?: number; // Maximum number of images allowed
   onImageUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
@@ -92,9 +88,6 @@ export interface ImagesProps {
     upload_id?: string;
     message?: string;
   }>;
-  aiImageResources?:
-    | Pick<ImageResourceItem, "image_id" | "name">[]
-    | null;
   /** Report uploaded image values upward (unified draft pattern -- parent owns creation)
    *  Called after TUS upload + finalize with the creation parameters.
    *  TODO: Server-side DraftImageValue needs upload_id field for file-backed images. */
@@ -120,10 +113,7 @@ export function Images({
   required = false,
   placeholder = "Select images...",
   description: _description,
-  group_id,
   createImagesAction,
-  onGenerate,
-  showAiGenerate = false,
   multiSelect = false,
   maxImages = 1,
   onImageUpload,
@@ -131,23 +121,13 @@ export function Images({
   isUploadingImage = false,
   isAutosaveEnabled = true,
   registerFlush,
-  _uploadBasePath,
+  uploadBasePath: _uploadBasePath,
   uploadFileAction,
-  aiImageResources: _aiImageResources,
   onImageUploadValue,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "images",
-    groupId: group_id,
-  });
 
   // Internal state for selected images (for display)
   const [selectedImages, setSelectedImages] = useState<
@@ -267,8 +247,7 @@ export function Images({
         isAutosaveEnabled &&
         newlySelected.length > 0 &&
         createImagesAction &&
-        create_tool_id &&
-        group_id
+        create_tool_id
       ) {
         for (const imageId of newlySelected) {
           try {
@@ -301,7 +280,6 @@ export function Images({
       onChange,
       createImagesAction,
       create_tool_id,
-      group_id,
       imageMapping,
       isAutosaveEnabled,
     ]
@@ -309,7 +287,7 @@ export function Images({
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
   flushRef.current = async (): Promise<{ image_ids: string[] } | void> => {
-    if (!createImagesAction || !create_tool_id || !group_id) {
+    if (!createImagesAction || !create_tool_id) {
       return { image_ids: ids };
     }
 
@@ -355,7 +333,6 @@ export function Images({
       if (
         !uploadFileAction ||
         !createImagesAction ||
-        !group_id ||
         !create_tool_id
       ) {
         toast.error("Upload functionality not available");
@@ -465,7 +442,6 @@ export function Images({
     [
       uploadFileAction,
       createImagesAction,
-      group_id,
       create_tool_id,
       ids,
       onChange,
@@ -496,30 +472,26 @@ export function Images({
     [ids, onChange]
   );
 
-  // Check if any image resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return image_resources?.some((i) => i.generated) ?? false;
-  }, [image_resources]);
+  // Pending state: items with pending=true from the API
+  const pendingItems = useMemo(
+    () => allImages.filter((i) => i.pending === true),
+    [allImages]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((i) => i.image_id ?? i.id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+  const showDiff = pendingItems.length > 0;
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.length;
-
-  // Accept AI suggestion - add AI-suggested images to selection
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.length) return;
-    const newIds = aiSuggestion
-      .map((i) => i.image_id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestion, ids, onChange, clearAi]);
+    // no-op: pending items already in selection
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
   // Create internal file input ref if not provided (must be before conditional return)
   const internalImageInputRef = useRef<HTMLInputElement>(null);
@@ -543,31 +515,6 @@ export function Images({
                 <span className="text-destructive">*</span>
               )}
             </Label>
-            {onGenerate && showAiGenerate && create_tool_id && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={onGenerate}
-                      disabled={disabled || aiIsGenerating || showDiff}
-                    >
-                      {aiIsGenerating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {hasGenerated ? "Regenerate" : "Generate"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
             {showDiff && (
               <>
                 <TooltipProvider>
@@ -681,55 +628,6 @@ export function Images({
         {/* Image Grid - Horizontal Scrollable Row (matching ContentSection pattern) */}
         <div className="overflow-x-auto">
           <div className="flex gap-2 pb-2">
-            {/* Display AI suggested images (not yet selected) */}
-            {showDiff &&
-              aiSuggestion
-                ?.filter(
-                  (ai) => ai.image_id && !ids.includes(ai.image_id)
-                )
-                .map((ai) => {
-                  const imgData = allImages.find(
-                    (i) => (i.image_id ?? i.id) === ai.image_id
-                  );
-                  if (!imgData || !ai.image_id) return null;
-                  return (
-                    <div
-                      key={ai.image_id}
-                      className="relative aspect-square w-32 min-w-[8rem] border-2 border-success rounded-lg overflow-hidden bg-success/10 shrink-0"
-                    >
-                      {/* AI suggested badge - top right */}
-                      <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                        AI Suggested
-                      </div>
-                      {/* Preview button - top left */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewImageId(
-                            imgData.upload_id || ai.image_id!
-                          );
-                        }}
-                        className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
-                        disabled={disabled}
-                      >
-                        <Eye className="h-3.5 w-3.5 text-primary-foreground" />
-                      </button>
-                      <ImageViewer
-                        imageId={imgData.upload_id || ai.image_id!}
-                        name={ai.name || "Image"}
-                        bare={true}
-                      />
-                      {/* Image name at bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
-                        <span className="truncate block">
-                          {ai.name || "Image"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-
             {/* Display selected images */}
             {selectedImages.map((img) => (
               <div

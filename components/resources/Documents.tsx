@@ -26,9 +26,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Eye, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Eye, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 export interface DocumentResourceItem {
@@ -36,6 +35,7 @@ export interface DocumentResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
   video_document?: boolean | null;
   non_video_document?: boolean | null;
   file_path?: string | null;
@@ -63,13 +63,7 @@ export interface DocumentsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
-  aiDocumentResources?:
-    | Pick<DocumentResourceItem, "document_id" | "name">[]
-    | null;
 }
 
 export function Documents({
@@ -85,11 +79,7 @@ export function Documents({
   required = false,
   placeholder: _placeholder = "Select documents...",
   description,
-  group_id,
-  onGenerate,
-  showAiGenerate = false,
   videoEnabled = false,
-  aiDocumentResources: _aiDocumentResources,
 }: DocumentsProps) {
   const ids = useMemo(() => document_ids ?? [], [document_ids]);
   const show = show_documents ?? false;
@@ -118,16 +108,6 @@ export function Documents({
     () => document_suggestions ?? [],
     [document_suggestions]
   );
-
-  // AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "documents",
-    groupId: group_id,
-  });
 
   // Convert documents array to DocumentItem format for GenericPicker
   const documentItems = useMemo(() => {
@@ -164,39 +144,26 @@ export function Documents({
     [ids, onChange]
   );
 
-  // Check if any document resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return document_resources?.some((d) => d.generated) ?? false;
-  }, [document_resources]);
-
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.length;
-  const aiSuggestedIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestion
-          ?.map((d) => d.document_id)
-          .filter(Boolean) as string[]
-      ),
-    [aiSuggestion]
+  // Pending state: items with pending=true from the API
+  const pendingItems = useMemo(
+    () => documentItems.filter((i) => {
+      const full = filteredDocuments.find((d) => d.document_id === i.id);
+      return full?.pending === true;
+    }),
+    [documentItems, filteredDocuments]
   );
+  const pendingIds = useMemo(() => new Set(pendingItems.map((i) => i.id)), [pendingItems]);
+  const showDiff = pendingItems.length > 0;
 
-  // Accept AI suggestion - add AI-suggested documents to selection
+  // Accept pending — pending items are already in the list, no-op for selection
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.length) return;
-    const newIds = aiSuggestion
-      .map((d) => d.document_id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestion, ids, onChange, clearAi]);
+    // no-op: pending items already in selection
+  }, []);
 
-  // Reject AI suggestion - clear internal state
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
   // Don't render if show_documents is false (AFTER all hooks)
   if (!show) {
@@ -216,31 +183,6 @@ export function Documents({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -289,7 +231,7 @@ export function Documents({
         horizontal={true}
         renderItem={(item, isSelected) => {
           const suggested = isSuggested(item.id);
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPending = showDiff && pendingIds.has(item.id);
 
           // Find the full document data for DocumentViewer
           const fullDoc = filteredDocuments.find(
@@ -321,7 +263,7 @@ export function Documents({
                 "hover:shadow-md",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary",
-                isAiSuggested && !isSelected && "ring-2 ring-success"
+                isPending && !isSelected && "ring-2 ring-success"
               )}
             >
               {/* Preview button - top left */}
@@ -352,14 +294,14 @@ export function Documents({
               )}
 
               {/* AI suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
+              {isPending && !isSelected && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
+                  Suggested
                 </div>
               )}
 
               {/* Suggested dot indicator - top right */}
-              {suggested && !isSelected && !isAiSuggested && (
+              {suggested && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

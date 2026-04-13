@@ -16,15 +16,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   Check,
   GripVertical,
-  Loader2,
   PlusCircle,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -40,6 +37,7 @@ export interface OptionResourceItem {
   option_text?: string | null;
   is_correct?: boolean | null;
   generated?: boolean | null;
+  pending?: boolean | null;
   question_id?: string | null;
 }
 
@@ -65,7 +63,6 @@ export interface OptionsProps {
   internalQuestions?: { id: string; question_text: string }[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
-  group_id?: string | null;
   create_tool_id?: string | null;
   createOptionsAction?:
     | ((input: CreateDraftOptionsIn) => Promise<CreateDraftOptionsOut>)
@@ -80,8 +77,6 @@ export interface OptionsProps {
   ) => void;
   isAutosaveEnabled?: boolean;
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
 }
 
 export function Options({
@@ -94,14 +89,11 @@ export function Options({
   internalQuestions: internalQuestionsProp,
   disabled = false,
   onChange,
-  group_id,
   create_tool_id,
   createOptionsAction,
   onOptionsChange,
   isAutosaveEnabled = true,
   registerFlush,
-  showAiGenerate = false,
-  onGenerate,
 }: OptionsProps) {
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;
@@ -292,7 +284,7 @@ export function Options({
 
   // Flush function
   flushRef.current = async (): Promise<FlushResult> => {
-    if (!createOptionsAction || !create_tool_id || !group_id) return;
+    if (!createOptionsAction || !create_tool_id) return;
 
     // Only flush options whose parent question has a real server ID (not pending-*)
     const toCreate = internalOptions.filter(
@@ -489,37 +481,27 @@ export function Options({
     [draggedIndex]
   );
 
-  // AI suggestion handling
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestions,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "options",
-    groupId: group_id,
-    accumulate: true,
-  });
+  // Pending state: items with pending=true from the API
+  const allOptions = useMemo(() => [...(option_resources ?? []), ...(options ?? [])], [option_resources, options]);
+  const pendingItems = useMemo(
+    () => allOptions.filter((o) => o.pending === true),
+    [allOptions]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((o) => o.option_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+  const showDiff = pendingItems.length > 0;
 
-  const showDiff = aiSuggestions.length > 0;
-
-  const hasGenerated = useMemo(() => {
-    return option_resources?.some((o) => o.generated) ?? false;
-  }, [option_resources]);
-
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((o) => o.option_id)
-      .filter((id): id is string => !!id && !ids.includes(id));
-    if (newIds.length > 0) {
-      onChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onChange, clearAi]);
+    // no-op: pending items already in selection
+  }, []);
 
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
   // Don't render if no questions or not shown
   if (!show || displayQuestions.length === 0) {
@@ -531,31 +513,6 @@ export function Options({
       {/* Label and AI generate */}
       <div className="flex items-center gap-2">
         <Label className="flex items-center gap-1">Options</Label>
-        {onGenerate && showAiGenerate && create_tool_id && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating || showDiff}
-                >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasGenerated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
         {showDiff && (
           <>
             <TooltipProvider>

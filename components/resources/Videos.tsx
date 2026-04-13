@@ -16,10 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, Upload, Video, X } from "lucide-react";
+import { Check, Loader2, Upload, Video, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
@@ -33,6 +32,7 @@ export interface VideoResourceItem {
   length_seconds?: number | null;
   upload_id?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface VideoItem {
@@ -58,12 +58,9 @@ export interface VideosProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
   createVideosAction?:
     | ((input: CreateDraftVideosIn) => Promise<CreateDraftVideosOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onVideoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; // Upload handler
   videoInputRef?: React.RefObject<HTMLInputElement>; // Ref for file input
   isUploadingVideo?: boolean; // Whether video is currently uploading
@@ -79,7 +76,6 @@ export interface VideosProps {
     upload_id?: string;
     message?: string;
   }>;
-  aiVideoResources?: Pick<VideoResourceItem, "video_id" | "name">[] | null;
   /** Report uploaded video values upward (unified draft pattern — parent owns creation)
    *  Called after TUS upload + finalize with the creation parameters.
    *  TODO: Server-side DraftVideoValue needs upload_id field for file-backed videos. */
@@ -101,10 +97,7 @@ export function Videos({
   required = false,
   placeholder = "Select video...",
   description: _description,
-  group_id,
   createVideosAction,
-  onGenerate,
-  showAiGenerate = false,
   onVideoUpload,
   videoInputRef,
   isUploadingVideo = false,
@@ -112,21 +105,11 @@ export function Videos({
   registerFlush,
   uploadBasePath,
   uploadFileAction,
-  aiVideoResources: _aiVideoResources,
   onVideoUploadValue,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;
   const allVideos = useMemo(() => videos ?? [], [videos]);
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "videos",
-    groupId: group_id,
-  });
 
   // Internal state for selected video (single select for videos)
   // API returns video_id, not id
@@ -225,7 +208,7 @@ export function Videos({
 
         // Create resource for newly selected video (only if autosave is enabled)
         if (isAutosaveEnabled && isNewlySelected) {
-          if (createVideosAction && create_tool_id && group_id) {
+          if (createVideosAction && create_tool_id) {
             try {
               await createVideosAction({
                 body: {
@@ -255,12 +238,12 @@ export function Videos({
         onChange([]);
       }
     },
-    [ids, onChange, createVideosAction, create_tool_id, group_id, videoMapping, isAutosaveEnabled]
+    [ids, onChange, createVideosAction, create_tool_id, videoMapping, isAutosaveEnabled]
   );
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
   flushRef.current = async (): Promise<{ video_ids: string[] } | void> => {
-    if (!createVideosAction || !create_tool_id || !group_id) {
+    if (!createVideosAction || !create_tool_id) {
       return { video_ids: ids };
     }
 
@@ -301,7 +284,7 @@ export function Videos({
   // Upload function via server action
   const uploadFile = useCallback(
     async (file: File) => {
-      if (!uploadFileAction || !createVideosAction || !group_id || !create_tool_id) {
+      if (!uploadFileAction || !createVideosAction || !create_tool_id) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -404,7 +387,6 @@ export function Videos({
     [
       uploadFileAction,
       createVideosAction,
-      group_id,
       create_tool_id,
       onChange,
       onVideoUploadValue,
@@ -425,28 +407,26 @@ export function Videos({
     [uploadFile]
   );
 
-  // Check if any video resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return video_resources?.some((v) => v.generated) ?? false;
-  }, [video_resources]);
+  // Pending state: items with pending=true from the API
+  const pendingItems = useMemo(
+    () => allVideos.filter((v) => v.pending === true),
+    [allVideos]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((v) => v.video_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+  const showDiff = pendingItems.length > 0;
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.length;
-
-  // Accept AI suggestion - select the first AI-suggested video
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.length) return;
-    const firstSuggested = aiSuggestion[0];
-    if (firstSuggested?.video_id) {
-      onChange([firstSuggested.video_id]);
-    }
-    clearAi();
-  }, [aiSuggestion, onChange, clearAi]);
+    // no-op: pending items already in selection
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
   // Don't render if show_videos is false (AFTER all hooks)
   if (!show) {
@@ -468,31 +448,6 @@ export function Videos({
                 <span className="text-destructive">*</span>
               )}
             </Label>
-            {onGenerate && showAiGenerate && create_tool_id && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={onGenerate}
-                      disabled={disabled || aiIsGenerating || showDiff}
-                    >
-                      {aiIsGenerating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {hasGenerated ? "Regenerate" : "Generate"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
             {showDiff && (
               <>
                 <TooltipProvider>
@@ -594,17 +549,6 @@ export function Videos({
           clearActionLabel="No Video"
         />
       </div>
-
-      {/* AI Suggested Video Preview */}
-      {showDiff && aiSuggestion && aiSuggestion.length > 0 && (
-        <div className="mb-2 p-3 rounded-lg border-2 border-success bg-success/10">
-          <p className="text-sm font-medium text-success mb-2">AI Suggested Video</p>
-          <div className="flex items-center gap-2">
-            <Video className="h-4 w-4 text-success" />
-            <span className="text-sm">{aiSuggestion[0]?.name || "Video"}</span>
-          </div>
-        </div>
-      )}
 
       {/* Video Preview Container (matching ContentSection pattern) */}
       <div className="relative border rounded-lg overflow-hidden min-h-[400px] flex-1 bg-black flex items-center justify-center">

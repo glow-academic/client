@@ -17,15 +17,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import {
   Check,
   GripVertical,
-  Loader2,
   MessageSquare,
   PlusCircle,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -49,6 +46,7 @@ export interface QuestionsResourceItem {
   question_id?: string | null;
   question_text?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface QuestionsProps {
@@ -67,12 +65,9 @@ export interface QuestionsProps {
   maxItems?: number;
   addButtonLabel?: string;
   itemPlaceholder?: string;
-  group_id?: string | null; // Group ID for linking resources
   createQuestionsAction?:
     | ((input: CreateDraftQuestionsIn) => Promise<CreateDraftQuestionsOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // Optional: mapping of question_id -> question text (for initial display)
   questionMapping?: Record<string, string>;
   // Optional: video length for time slider (when questions are associated with videos)
@@ -83,7 +78,6 @@ export interface QuestionsProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ question_ids: string[] } | void>) => void;
-  aiQuestionResources?: Pick<QuestionsResourceItem, "question_id" | "question_text">[] | null;
   /** Called whenever internal questions change (including unflushed) — allows parent to show dependent UI immediately */
   onInternalQuestionsChange?: (questions: { id: string; question_text: string }[]) => void;
 }
@@ -112,16 +106,12 @@ export function Questions({
   maxItems = 4, // Default to 4 like ContentSection
   addButtonLabel = "Add question",
   itemPlaceholder = "Question",
-  group_id,
   createQuestionsAction,
-  onGenerate,
-  showAiGenerate = false,
   questionMapping = {},
   videoLength = null,
   onQuestionsChange,
   isAutosaveEnabled = true,
   registerFlush,
-  aiQuestionResources: _aiQuestionResources,
   onInternalQuestionsChange,
 }: QuestionsProps) {
   // Use standardized props
@@ -144,17 +134,6 @@ export function Questions({
     });
     return mapping;
   }, [questionMapping, ids, allQuestions]);
-
-  // AI suggestion handling via shared hook
-  type _AiQuestionSuggestion = Pick<QuestionsResourceItem, "question_id" | "question_text">[];
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "questions",
-    groupId: group_id,
-  });
 
   // Internal state for questions (matching ContentSection pattern)
   const [internalQuestions, setInternalQuestions] = useState<QuestionType[]>(
@@ -308,7 +287,7 @@ export function Questions({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ question_ids: string[] } | void> => {
-    if (!createQuestionsAction || !create_tool_id || !group_id) return;
+    if (!createQuestionsAction || !create_tool_id) return;
 
     // Find questions that need creation (have text but no ID)
     const questionsToCreate = internalQuestions.filter(
@@ -445,45 +424,26 @@ export function Questions({
     setInternalQuestions((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  // Check if any question resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return _question_resources?.some((q) => q.generated) ?? false;
-  }, [_question_resources]);
+  // Pending state: items with pending=true from the API
+  const pendingItems = useMemo(
+    () => allQuestions.filter((q) => q.pending === true),
+    [allQuestions]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((q) => q.question_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+  const showDiff = pendingItems.length > 0;
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.length;
-
-  // Accept AI suggestion - add AI-suggested questions to internal questions
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.length) return;
-    // Add AI questions to internal questions
-    const newQuestions = aiSuggestion
-      .filter((q) => q.question_text)
-      .map((q, idx) => ({
-        id: q.question_id || `ai-${idx}`,
-        question_text: q.question_text || "",
-        allow_multiple: false,
-        times: [],
-      }));
-    if (newQuestions.length > 0) {
-      setInternalQuestions((prev) => [
-        ...prev.filter((q) => q.question_text.trim()),
-        ...newQuestions,
-      ]);
-      // Map the new question IDs
-      aiSuggestion.forEach((q) => {
-        if (q.question_id && q.question_text) {
-          questionIdMapRef.current.set(q.question_text, q.question_id);
-        }
-      });
-    }
-    clearAi();
-  }, [aiSuggestion, clearAi]);
+    // no-op: pending items already in selection
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
   // Don't render if show_questions is false (AFTER all hooks)
   if (!show) {
@@ -502,31 +462,6 @@ export function Questions({
               <span className="text-destructive">*</span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -563,26 +498,6 @@ export function Questions({
               </TooltipProvider>
             </>
           )}
-        </div>
-      )}
-
-      {/* AI-suggested questions preview */}
-      {showDiff && aiSuggestion && aiSuggestion.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Questions</p>
-          <div className="space-y-2">
-            {aiSuggestion.map((item, idx) => (
-              <div
-                key={item.question_id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.question_text || ""}
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

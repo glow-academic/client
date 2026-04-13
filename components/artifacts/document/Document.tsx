@@ -1217,10 +1217,6 @@ function DocumentComponent({
                 }
                 label="Images"
                 required={documentDetail?.images?.required ?? false}
-    
-                showAiGenerate={
-                  documentDetail?.images?.show_ai_generate ?? false
-                }
                 createImagesAction={createImagesAction}
                 uploadBasePath={uploadBasePath}
                 uploadFileAction={uploadFileAction}

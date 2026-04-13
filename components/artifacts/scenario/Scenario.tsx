@@ -1843,8 +1843,6 @@ function ScenarioComponent({
                         images: [...(prev.images ?? []), img],
                       }))
                     }
-                    onGenerate={generateHandlers["images"]}
-                    showAiGenerate={s?.show_ai_generate ?? false}
                     multiSelect={true}
                     maxImages={3}
                     isAutosaveEnabled={isAutosaveEnabled}
@@ -1879,7 +1877,6 @@ function ScenarioComponent({
                         problem_statement_id: null,
                       }))
                     }
-                    onGenerate={generateHandlers["problem_statements"]}
                     label="Problem Statement"
                     placeholder="Define the core problem"
                     required={false}
@@ -1887,7 +1884,6 @@ function ScenarioComponent({
                     onSearchChange={(term: string) =>
                       setFormData({ problemStatementSearch: term || null })
                     }
-                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
@@ -1916,8 +1912,6 @@ function ScenarioComponent({
                         objectives: objectives.length > 0 ? objectives : null,
                       }))
                     }
-                    showAiGenerate={s?.show_ai_generate ?? false}
-                    onGenerate={generateHandlers["objectives"]}
                     isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
@@ -1986,10 +1980,7 @@ function ScenarioComponent({
                     })
                   }
                   required={false}
-                  onGenerate={generateHandlers["personas"]}
-                  showAiGenerate={s?.show_ai_generate ?? false}
                   videoEnabled={urlVideoEnabled}
-
                 />
               </div>
             </StepCard>
@@ -2056,10 +2047,7 @@ function ScenarioComponent({
                     })
                   }
                   required={false}
-                  onGenerate={generateHandlers["documents"]}
-                  showAiGenerate={s?.show_ai_generate ?? false}
                   videoEnabled={urlVideoEnabled}
-
                 />
               </div>
             </StepCard>
@@ -2197,8 +2185,6 @@ function ScenarioComponent({
                         videos: [...(prev.videos ?? []), vid],
                       }))
                     }
-                    onGenerate={generateHandlers["videos"]}
-                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                     uploadBasePath={uploadBasePath}
                     uploadFileAction={uploadFileAction}
@@ -2229,8 +2215,6 @@ function ScenarioComponent({
                         questions: qs.length > 0 ? qs : null,
                       }))
                     }
-                    onGenerate={generateHandlers["questions"]}
-                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                     onInternalQuestionsChange={setInternalQuestions}
                   />
@@ -2261,7 +2245,6 @@ function ScenarioComponent({
                         options: opts.length > 0 ? opts : null,
                       }))
                     }
-                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}

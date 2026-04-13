@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, GripVertical, Loader2, PlusCircle, Sparkles, Target, Trash2, X } from "lucide-react";
+import { Check, GripVertical, PlusCircle, Target, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -37,6 +36,7 @@ export interface ObjectiveResourceItem {
   objective_id?: string | null;
   objective?: string | null;
   generated?: boolean | null;
+  pending?: boolean | null;
 }
 
 // ObjectiveInputWithAutocomplete component (ghost tab autocomplete)
@@ -161,13 +161,10 @@ export interface ObjectivesProps {
   maxItems?: number;
   addButtonLabel?: string;
   itemPlaceholder?: string;
-  group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   createObjectivesAction?:
     | ((input: CreateDraftObjectivesIn) => Promise<CreateDraftObjectivesOut>)
     | undefined;
-  onGenerate?: () => void | Promise<void>;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // Optional: mapping of objective_id -> objective text (for initial display)
   objectiveMapping?: Record<string, string>;
   /** Report value changes upward (unified draft pattern — parent owns creation) */
@@ -176,7 +173,6 @@ export interface ObjectivesProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ objective_ids: string[] } | void>) => void;
-  aiObjectiveResources?: Pick<ObjectiveResourceItem, "objective_id" | "objective">[] | null;
 }
 
 export function Objectives({
@@ -194,16 +190,12 @@ export function Objectives({
   maxItems = 3, // Default to 3 like ContentSection
   addButtonLabel = "Add objective",
   itemPlaceholder = "Learning objective",
-  group_id,
   create_tool_id,
   createObjectivesAction,
-  onGenerate,
-  showAiGenerate = false,
   objectiveMapping = {},
   onObjectivesChange,
   isAutosaveEnabled = true,
   registerFlush,
-  aiObjectiveResources: _aiObjectiveResources,
 }: ObjectivesProps) {
   // Use standardized props
   const ids = useMemo(() => objective_ids ?? [], [objective_ids]);
@@ -243,16 +235,6 @@ export function Objectives({
       .map((obj) => obj.objective)
       .filter((text): text is string => text !== null && text !== undefined && text.trim() !== "");
   }, [objective_suggestions, effectiveObjectiveMapping, allObjectives]);
-
-  // Socket-based AI suggestion handling via shared hook
-  const {
-    isGenerating: aiIsGenerating,
-    aiSuggestion,
-    clear: clearAi,
-  } = useResourceAi({
-    resourceType: "objectives",
-    groupId: group_id,
-  });
 
   // Internal state for display texts (synced with objective_ids via objectiveMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -366,7 +348,7 @@ export function Objectives({
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{ objective_ids: string[] } | void> => {
-    if (!createObjectivesAction || !create_tool_id || !group_id) return;
+    if (!createObjectivesAction || !create_tool_id) return;
 
     // Find texts that need creation (have text but no ID)
     const textsToCreate = internalTexts.filter(
@@ -466,37 +448,26 @@ export function Objectives({
     setDraggedObjectiveIndex(null);
   }, [draggedObjectiveIndex]);
 
-  // Check if any objective resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return _objective_resources?.some((o) => o.generated) ?? false;
-  }, [_objective_resources]);
+  // Pending state: items with pending=true from the API
+  const pendingItems = useMemo(
+    () => allObjectives.filter((o) => o.pending === true),
+    [allObjectives]
+  );
+  const pendingIds = useMemo(
+    () => new Set(pendingItems.map((o) => o.objective_id).filter(Boolean) as string[]),
+    [pendingItems]
+  );
+  const showDiff = pendingItems.length > 0;
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.length;
-
-  // Accept AI suggestion - add AI-suggested objectives to internal texts
+  // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.length) return;
-    // Add AI objectives to internal texts
-    const newTexts = aiSuggestion
-      .map((o) => o.objective)
-      .filter((text): text is string => !!text);
-    if (newTexts.length > 0) {
-      setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
-      // Map the new objective IDs
-      aiSuggestion.forEach((o) => {
-        if (o.objective_id && o.objective) {
-          objectiveIdMapRef.current.set(o.objective, o.objective_id);
-        }
-      });
-    }
-    clearAi();
-  }, [aiSuggestion, clearAi]);
+    // no-op: pending items already in selection
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onChange(ids.filter((id) => !pendingIds.has(id)));
+  }, [ids, onChange, pendingIds]);
 
   // Don't render if show_objectives is false (AFTER all hooks)
   if (!show) {
@@ -514,31 +485,6 @@ export function Objectives({
               <span className="text-destructive">*</span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && create_tool_id && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -578,26 +524,6 @@ export function Objectives({
         </div>
       )}
       
-      {/* AI-suggested objectives preview */}
-      {showDiff && aiSuggestion && aiSuggestion.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Objectives</p>
-          <div className="space-y-2">
-            {aiSuggestion.map((item, idx) => (
-              <div
-                key={item.objective_id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.objective || ""}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Objectives List (matching ContentSection pattern) */}
       {internalTexts.length === 0 && (
         <div>
