@@ -26,6 +26,7 @@ export interface DescriptionResourceItem {
   id?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 // Word-based diff types and utilities
@@ -144,8 +145,7 @@ export interface DescriptionsProps {
   description_id?: string | null; // Current description_id (standardized prop name)
   description_resource?: DescriptionResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_description?: boolean; // Whether to show this resource picker
-  description_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  descriptions?: DescriptionResourceItem[]; // Array of suggested description resources (only suggested options, not all)
+  descriptions?: DescriptionResourceItem[]; // Array of description resources (each item has suggested field)
   disabled?: boolean; // Based on can_edit flag
   onDescriptionIdChange: (descriptionId: string | null) => void; // Update description_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -170,7 +170,6 @@ export function Descriptions({
   description_id,
   description_resource,
   show_description = true,
-  description_suggestions,
   descriptions,
   disabled = false,
   onDescriptionIdChange,
@@ -193,11 +192,6 @@ export function Descriptions({
   const resource = description_resource ?? null;
   const resourceId = description_id ?? null;
   const show = show_description ?? true;
-  const suggestionsList = useMemo(
-    () => description_suggestions ?? [],
-    [description_suggestions]
-  );
-
   // Handle nullable resource properties - normalize to string
   const resourceDescription = resource?.description ?? "";
   const [internalValue, setInternalValue] = useState(resourceDescription);
@@ -303,10 +297,10 @@ export function Descriptions({
     clearAi();
   }, [clearAi]);
 
-  // Use descriptions array if available, otherwise create placeholder mapping
+  // Use descriptions array if available
   const suggestionsMapping = useMemo(() => {
+    const mapping: Record<string, { id: string; description: string }> = {};
     if (descriptions && descriptions.length > 0) {
-      const mapping: Record<string, { id: string; description: string }> = {};
       descriptions.forEach((desc) => {
         if (desc.id) {
           mapping[desc.id] = {
@@ -316,18 +310,9 @@ export function Descriptions({
           };
         }
       });
-      return mapping;
     }
-    // Fallback: create placeholder mapping from suggestion IDs
-    const mapping: Record<string, { id: string; description: string }> = {};
-    suggestionsList.forEach((suggestionId) => {
-      mapping[suggestionId] = {
-        id: suggestionId,
-        description: `Description ${suggestionId.slice(0, 8)}...`,
-      };
-    });
     return mapping;
-  }, [descriptions, suggestionsList]);
+  }, [descriptions]);
 
   // Use descriptions array for GenericPicker items if available
   // Transform to ensure id and description are non-null for GenericPicker

@@ -343,27 +343,6 @@ function EvalComponent({
     getInitialFormState,
   ]);
 
-  // Draft version tracking
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = useRef(0);
-  useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    s && "draft_version" in s
-      ? (s as { draft_version?: number | null }).draft_version
-      : null;
-  useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-  }, [draftVersion]);
-
   // URL-backed form data bridge
   const [draftId, setDraftId] = useState<string | null>(null);
   const setUrlFormDataRef = useRef<
@@ -448,7 +427,6 @@ function EvalComponent({
           flag_ids: flagIds.length > 0 ? flagIds : null,
           department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
           model_ids: formState.model_ids.length > 0 ? formState.model_ids : null,
-          expected_version: lastSavedVersionRef.current,
         };
         if (formState.name) {
           payload["name"] = formState.name;
@@ -486,10 +464,6 @@ function EvalComponent({
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
       } catch {
         // Draft patch failed - leave lastPatchedKeyRef unchanged
       }

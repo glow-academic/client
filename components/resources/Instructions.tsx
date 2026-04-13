@@ -27,6 +27,7 @@ export interface InstructionResourceItem {
   instruction?: string | null;
   template?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 // Word-based diff types and utilities
@@ -145,8 +146,7 @@ export interface InstructionsProps {
   instructions_id?: string | null; // Current instructions_id (standardized prop name)
   instructions_resource?: InstructionResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_instructions?: boolean; // Whether to show this resource picker
-  instructions_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  instructions?: InstructionResourceItem[]; // Array of suggested instruction resources (only suggested options, not all)
+  instructions?: InstructionResourceItem[]; // Array of instruction resources (each item has suggested field)
   disabled?: boolean; // Based on can_edit flag
   onInstructionsIdChange: (instructionsId: string | null) => void; // Update instructions_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -168,14 +168,12 @@ export interface InstructionsProps {
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
-  suggestions?: string[];
 }
 
 export function Instructions({
   instructions_id,
   instructions_resource,
   show_instructions = true,
-  instructions_suggestions,
   instructions,
   disabled = false,
   onInstructionsIdChange,
@@ -197,17 +195,11 @@ export function Instructions({
   // Legacy props for backward compatibility
   instructionsResource,
   instructionsId,
-  suggestions,
 }: InstructionsProps) {
   // Use standardized props with fallback to legacy props
   const resource = instructions_resource ?? instructionsResource ?? null;
   const resourceId = instructions_id ?? instructionsId ?? null;
   const show = show_instructions ?? true;
-  const suggestionsList = useMemo(
-    () => instructions_suggestions ?? suggestions ?? [],
-    [instructions_suggestions, suggestions]
-  );
-
   // Handle nullable resource properties
   const resourceTemplate = resource?.template ?? "";
   const [internalValue, setInternalValue] = useState(resourceTemplate);
@@ -308,10 +300,10 @@ export function Instructions({
     clearAi();
   }, [clearAi]);
 
-  // Use instructions array if available, otherwise create placeholder mapping
+  // Use instructions array if available
   const suggestionsMapping = useMemo(() => {
+    const mapping: Record<string, { id: string; template: string; generated: boolean | null }> = {};
     if (instructions && instructions.length > 0) {
-      const mapping: Record<string, { id: string; template: string; generated: boolean | null }> = {};
       instructions.forEach((inst) => {
         if (inst.id) {
           mapping[inst.id] = {
@@ -321,19 +313,9 @@ export function Instructions({
           };
         }
       });
-      return mapping;
     }
-    // Fallback: create placeholder mapping from suggestion IDs
-    const mapping: Record<string, { id: string; template: string; generated: boolean | null }> = {};
-    suggestionsList.forEach((suggestionId) => {
-      mapping[suggestionId] = {
-        id: suggestionId,
-        template: `Instructions ${suggestionId.slice(0, 8)}...`,
-        generated: null,
-      };
-    });
     return mapping;
-  }, [instructions, suggestionsList]);
+  }, [instructions]);
   
   // Use instructions array for GenericPicker items if available
   const pickerItems = instructions && instructions.length > 0

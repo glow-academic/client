@@ -22,13 +22,13 @@ export interface NameResourceItem {
   id?: string | null;
   name?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 export interface NamesProps {
   name_id?: string | null; // Current name_id (standardized prop name)
   name_resource?: NameResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_name?: boolean; // Whether to show this resource picker
-  name_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   names?: NameResourceItem[]; // Array of name suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
   onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
@@ -51,7 +51,6 @@ export function Names({
   _name_id,
   name_resource,
   show_name = true,
-  name_suggestions,
   names,
   disabled = false,
   onNameIdChange,
@@ -70,10 +69,6 @@ export function Names({
 }: NamesProps) {
   const resource = name_resource ?? null;
   const show = show_name ?? true;
-  const suggestionsList = useMemo(
-    () => name_suggestions ?? [],
-    [name_suggestions]
-  );
   const namesArray = useMemo(() => names ?? [], [names]);
 
   // Socket-based AI suggestion handling via shared hook
@@ -95,23 +90,15 @@ export function Names({
   const isInitialMountRef = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Convert name_suggestions UUIDs to name strings for autocomplete
+  // Convert suggested names to name strings for autocomplete
   const suggestionNames = useMemo(() => {
     if (namesArray.length > 0) {
-      // Use names array to map UUIDs to name strings
-      return suggestionsList
-        .map((id) => {
-          const nameObj = namesArray.find((n) => n.id === id);
-          return nameObj?.name ?? null;
-        })
-        .filter((name): name is string => name !== null && name.trim() !== "");
-    }
-    // Fallback: if we have name_resource and it matches a suggestion, use it
-    if (resource?.name && suggestionsList.includes(resource.id ?? "")) {
-      return [resource.name];
+      return namesArray
+        .filter((n) => n.suggested && n.name && n.name.trim() !== "")
+        .map((n) => n.name!);
     }
     return [];
-  }, [suggestionsList, namesArray, resource]);
+  }, [namesArray]);
 
   // Ghost autocomplete: find first prefix match and compute the untyped suffix
   const ghostMatch = useMemo(() => {

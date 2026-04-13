@@ -114,9 +114,6 @@ export default function Invocation({
   const [draftId, setDraftId] = useState<string | null>(
     urlParams.draftId || null,
   );
-  const [draftVersion, setDraftVersion] = useState<number>(
-    s.draft_version ?? 0,
-  );
   const [isSaving, setIsSaving] = useState(false);
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -137,7 +134,6 @@ export default function Invocation({
       // Build payload with ID fields
       const payload: Record<string, unknown> = {
         input_draft_id: draftId,
-        expected_version: draftVersion,
         name_ids: formState.name_ids,
         description_ids: formState.description_ids,
         value_ids: formState.value_ids,
@@ -165,9 +161,6 @@ export default function Invocation({
 
       if (result.draft_id) {
         setDraftId(result.draft_id);
-      }
-      if (typeof result.new_version === "number") {
-        setDraftVersion(result.new_version);
       }
 
       // Sync form state from server response (server is source of truth)
@@ -211,7 +204,7 @@ export default function Invocation({
     } finally {
       savingRef.current = false;
     }
-  }, [draftId, draftVersion, formState, patchBenchmarkDraftAction]);
+  }, [draftId, formState, patchBenchmarkDraftAction]);
 
   // Debounced autosave on form state change
   useEffect(() => {

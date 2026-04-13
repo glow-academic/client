@@ -494,28 +494,6 @@ function SettingComponent({
     roleIdsStr,
   ]);
 
-  // Draft version tracking for optimistic concurrency control
-  // Keep version in a ref so updating it doesn't retrigger the effect
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    settingData && "draft_version" in settingData
-      ? (settingData as { draft_version?: number | null }).draft_version
-      : null;
-  React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-  }, [draftVersion]);
-
   // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
   const [draftId, setDraftId] = useState<string | null>(null);
   const setUrlFormDataRef = React.useRef<
@@ -625,7 +603,6 @@ function SettingComponent({
           provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
           auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
           role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
-          expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
         };
 
         // Value field overlay: send value instead of ID for creatable resources
@@ -667,12 +644,6 @@ function SettingComponent({
           });
         }
 
-        // This can stay as state (for UI), but it won't re-trigger patching
-        // because the effect is gated by payload changes.
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        }
       } catch {
         // Failed to save draft - error already logged by API
         // Don't update lastPatchedKeyRef on failure so we retry on next change

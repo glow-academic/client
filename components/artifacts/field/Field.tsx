@@ -252,7 +252,7 @@ function FieldComponent({
   const patchActionRef = useRef<
     | ((
         payload: Record<string, unknown>,
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
@@ -299,7 +299,6 @@ function FieldComponent({
   const buildPatchPayload = useCallback(
     (
       draftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ) => {
       const currentFormState = formStateRef.current as unknown as FieldFormState;
@@ -313,7 +312,6 @@ function FieldComponent({
           > | null,
           flushResults: (flushResults ?? {}) as Record<string, unknown>,
         }),
-        expected_version: expectedVersion,
       };
 
       // Overlay value fields (single-select values clear the corresponding ID)
@@ -349,7 +347,6 @@ function FieldComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: fieldData?.draft_version ?? null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,

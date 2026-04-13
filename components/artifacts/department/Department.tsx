@@ -193,10 +193,8 @@ function DepartmentComponent({
     if (serverSyncPendingRef.current) return undefined;
     return JSON.stringify(formState);
   }, [formState]);
-  const draftVersion = s?.draft_version ?? null;
-
   const patchActionRef = React.useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
   useEffect(() => {
     if (!patchDepartmentDraftAction) {
@@ -233,7 +231,6 @@ function DepartmentComponent({
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const payload: Record<string, unknown> = {
@@ -243,7 +240,6 @@ function DepartmentComponent({
           referenceState: lastPatchedFormStateRef.current,
           flushResults: flushResults ?? {},
         }),
-        expected_version: expectedVersion,
       };
 
       const fs = formStateRef.current as unknown as DepartmentFormState;
@@ -269,7 +265,6 @@ function DepartmentComponent({
       isAutosaveEnabled,
       buildPatchPayload,
       setSelectedDraftId,
-      serverDraftVersion: draftVersion,
       hasResourceIds,
       flushRegistryRef,
       formStateRef,

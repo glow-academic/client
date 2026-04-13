@@ -101,10 +101,10 @@ async function fetchGroupTextContent(uploadId: string): Promise<string> {
 
 type GroupMessageItem = {
   id: string | null;
-  text_upload_ids?: string[];
+  text_ids?: string[];
 };
 
-/** Hook: resolve text_upload_ids to displayable strings for each message. */
+/** Hook: resolve text_ids to displayable strings for each message. */
 function useGroupTextContents(messages: GroupMessageItem[]) {
   const [contentMap, setContentMap] = useState<Record<string, string[]>>({});
   const fetchedRef = useRef<Set<string>>(new Set());
@@ -115,7 +115,7 @@ function useGroupTextContents(messages: GroupMessageItem[]) {
     for (const msg of messages) {
       const mid = msg.id;
       if (!mid || fetchedRef.current.has(mid)) continue;
-      const ids = msg.text_upload_ids;
+      const ids = msg.text_ids;
       if (!ids || ids.length === 0) continue;
       toFetch.push({ messageId: mid, uploadIds: ids });
       fetchedRef.current.add(mid);
@@ -142,12 +142,12 @@ function MessageContent({
 }: {
   msg: {
     id: string | null;
-    text_upload_ids?: string[];
-    image_upload_ids?: string[];
-    audio_upload_ids?: string[];
-    video_upload_ids?: string[];
-    file_upload_ids?: string[];
-    call_upload_ids?: string[];
+    text_ids?: string[];
+    image_ids?: string[];
+    audio_ids?: string[];
+    video_ids?: string[];
+    file_ids?: string[];
+    call_ids?: string[];
   };
   textContents: Record<string, string[]>;
 }) {
@@ -155,12 +155,12 @@ function MessageContent({
   const textContent = texts?.join("\n") ?? "";
   const isLoadingText =
     !texts &&
-    ((msg.text_upload_ids?.length ?? 0) > 0);
-  const hasImages = (msg.image_upload_ids?.length ?? 0) > 0;
-  const hasAudio = (msg.audio_upload_ids?.length ?? 0) > 0;
-  const hasVideo = (msg.video_upload_ids?.length ?? 0) > 0;
-  const hasFiles = (msg.file_upload_ids?.length ?? 0) > 0;
-  const hasCalls = (msg.call_upload_ids?.length ?? 0) > 0;
+    ((msg.text_ids?.length ?? 0) > 0);
+  const hasImages = (msg.image_ids?.length ?? 0) > 0;
+  const hasAudio = (msg.audio_ids?.length ?? 0) > 0;
+  const hasVideo = (msg.video_ids?.length ?? 0) > 0;
+  const hasFiles = (msg.file_ids?.length ?? 0) > 0;
+  const hasCalls = (msg.call_ids?.length ?? 0) > 0;
   const hasAnyContent =
     isLoadingText || textContent || hasImages || hasAudio || hasVideo || hasFiles || hasCalls;
 
@@ -179,7 +179,7 @@ function MessageContent({
 
       {/* Images */}
       {hasImages &&
-        msg.image_upload_ids!.map((uploadId) => (
+        msg.image_ids!.map((uploadId) => (
           <img
             key={uploadId}
             src={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
@@ -191,7 +191,7 @@ function MessageContent({
 
       {/* Audio */}
       {hasAudio &&
-        msg.audio_upload_ids!.map((uploadId) => (
+        msg.audio_ids!.map((uploadId) => (
           <audio
             key={uploadId}
             controls
@@ -206,7 +206,7 @@ function MessageContent({
 
       {/* Video */}
       {hasVideo &&
-        msg.video_upload_ids!.map((uploadId) => (
+        msg.video_ids!.map((uploadId) => (
           <video
             key={uploadId}
             controls
@@ -221,7 +221,7 @@ function MessageContent({
 
       {/* Files */}
       {hasFiles &&
-        msg.file_upload_ids!.map((uploadId) => (
+        msg.file_ids!.map((uploadId) => (
           <a
             key={uploadId}
             href={`${GROUP_DOWNLOAD_BASE}/${uploadId}`}
@@ -236,7 +236,7 @@ function MessageContent({
 
       {/* Call recordings */}
       {hasCalls &&
-        msg.call_upload_ids!.map((uploadId) => (
+        msg.call_ids!.map((uploadId) => (
           <audio
             key={uploadId}
             controls
@@ -279,12 +279,12 @@ export default function Group({ groupDetail }: GroupProps) {
   type MessageItem = {
     id: string | null;
     role: string | null;
-    text_upload_ids?: string[];
-    audio_upload_ids?: string[];
-    image_upload_ids?: string[];
-    video_upload_ids?: string[];
-    file_upload_ids?: string[];
-    call_upload_ids?: string[];
+    text_ids?: string[];
+    audio_ids?: string[];
+    image_ids?: string[];
+    video_ids?: string[];
+    file_ids?: string[];
+    call_ids?: string[];
     calls?: CallItem[];
   };
 
@@ -357,7 +357,7 @@ export default function Group({ groupDetail }: GroupProps) {
     });
   }, [currentRun, showSystemPrompt, showDeveloperPrompt, showPreviousContext]);
 
-  // Fetch text content for all messages with text_upload_ids
+  // Fetch text content for all messages with text_ids
   const allMessages = useMemo(() => {
     return sortedRuns.flatMap((r) => r.messages);
   }, [sortedRuns]);

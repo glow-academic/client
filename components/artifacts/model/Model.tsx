@@ -442,8 +442,6 @@ function ModelComponent({
     voiceIdsStr,
   ]);
 
-  const draftVersion = s?.draft_version;
-
   const formStateKey = React.useMemo(
     () => {
       if (serverSyncPendingRef.current) return undefined;
@@ -455,7 +453,7 @@ function ModelComponent({
   const serverSyncPendingRef = React.useRef(false);
 
   const patchActionRef = React.useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
   React.useEffect(() => {
     if (patchModelDraftAction) {
@@ -506,7 +504,6 @@ function ModelComponent({
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const effectiveFormState = computeEffectiveFormState(
@@ -548,7 +545,6 @@ function ModelComponent({
           effectiveFormState.reasoning_levels_enabled_flag_id,
           effectiveFormState.qualities_enabled_flag_id,
         ].filter((id): id is string => id != null),
-        expected_version: expectedVersion,
       };
 
       // Value field overlay: send raw value instead of ID when set
@@ -575,7 +571,6 @@ function ModelComponent({
       isAutosaveEnabled,
       buildPatchPayload,
       setSelectedDraftId,
-      serverDraftVersion: draftVersion ?? null,
       hasResourceIds,
       flushRegistryRef,
       formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,

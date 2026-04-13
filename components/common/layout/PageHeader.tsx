@@ -35,7 +35,7 @@ export function PageHeader({ breadcrumbs, toolbar }: PageHeaderProps) {
         <Separator orientation="vertical" className="mr-2 h-4" />
         <NavigationBreadcrumbs breadcrumbs={breadcrumbs} />
       </div>
-      {toolbar && <div className="flex items-center gap-2 pr-4">{toolbar}</div>}
+      {toolbar && <div className="flex items-center gap-2 pr-2">{toolbar}</div>}
       {panelCtx && (
         <div className="pr-4">
           <Button

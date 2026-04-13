@@ -239,10 +239,8 @@ function AuthComponent({
     if (serverSyncPendingRef.current) return undefined;
     return JSON.stringify(formState);
   }, [formState]);
-  const draftVersion = s?.draft_version ?? null;
-
   const patchActionRef = React.useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
   useEffect(() => {
     if (!patchAuthDraftAction) {
@@ -280,7 +278,6 @@ function AuthComponent({
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const payload: Record<string, unknown> = {
@@ -298,7 +295,6 @@ function AuthComponent({
           ((formStateRef.current["item_ids"] as AuthFormState["item_ids"]) ?? []).length > 0
             ? ((formStateRef.current["item_ids"] as AuthFormState["item_ids"]) ?? [])
             : null,
-        expected_version: expectedVersion,
       };
 
       // Value field overlay — send raw value instead of ID for creatables
@@ -325,7 +321,6 @@ function AuthComponent({
       isAutosaveEnabled,
       buildPatchPayload,
       setSelectedDraftId,
-      serverDraftVersion: draftVersion,
       hasResourceIds,
       flushRegistryRef,
       formStateRef,

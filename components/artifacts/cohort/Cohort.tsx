@@ -495,7 +495,7 @@ function CohortComponent({
   const patchActionRef = React.useRef<
     | ((
         payload: Record<string, unknown>,
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
@@ -583,7 +583,6 @@ function CohortComponent({
   const buildPatchPayload = useCallback(
     (
       draftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const currentFormState =
@@ -598,7 +597,6 @@ function CohortComponent({
           >,
           flushResults: (flushResults ?? {}) as Record<string, unknown>,
         }),
-        expected_version: expectedVersion,
       };
 
       // Overlay value fields (single-select values clear the corresponding ID)
@@ -627,11 +625,6 @@ function CohortComponent({
     [],
   );
 
-  const draftVersion =
-    cohortData && "draft_version" in cohortData
-      ? (cohortData as { draft_version?: number | null }).draft_version
-      : null;
-
   const onPatchSuccess = useCallback(() => {
     lastPatchedFormStateRef.current = {
       ...(formStateRef.current as unknown as CohortFormState),
@@ -650,7 +643,6 @@ function CohortComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: draftVersion ?? null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,

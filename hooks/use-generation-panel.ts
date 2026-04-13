@@ -24,12 +24,12 @@ export interface GroupMessage {
   run_id: string | null;
   role: string | null;
   message_created_at: string | null;
-  text_upload_ids: string[] | null;
-  audio_upload_ids: string[] | null;
-  image_upload_ids: string[] | null;
-  video_upload_ids: string[] | null;
-  file_upload_ids: string[] | null;
-  call_upload_ids: string[] | null;
+  text_ids: string[] | null;
+  audio_ids: string[] | null;
+  image_ids: string[] | null;
+  video_ids: string[] | null;
+  file_ids: string[] | null;
+  call_ids: string[] | null;
 }
 
 const PANEL_COOKIE = "glow_ai_panel";
@@ -90,12 +90,12 @@ function flattenRunMessages(res: GroupMessagesOut): GroupMessage[] {
         run_id: runWithMessages.run?.id ? String(runWithMessages.run.id) : null,
         role: msg.role ?? null,
         message_created_at: null,
-        text_upload_ids: msg.text_upload_ids?.map(String) ?? null,
-        audio_upload_ids: msg.audio_upload_ids?.map(String) ?? null,
-        image_upload_ids: msg.image_upload_ids?.map(String) ?? null,
-        video_upload_ids: msg.video_upload_ids?.map(String) ?? null,
-        file_upload_ids: msg.file_upload_ids?.map(String) ?? null,
-        call_upload_ids: msg.call_upload_ids?.map(String) ?? null,
+        text_ids: msg.text_ids?.map(String) ?? null,
+        audio_ids: msg.audio_ids?.map(String) ?? null,
+        image_ids: msg.image_ids?.map(String) ?? null,
+        video_ids: msg.video_ids?.map(String) ?? null,
+        file_ids: msg.file_ids?.map(String) ?? null,
+        call_ids: msg.call_ids?.map(String) ?? null,
       });
     }
   }

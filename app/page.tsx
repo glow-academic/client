@@ -7,19 +7,26 @@
 
 import { signIn } from "next-auth/react";
 import { useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function RootPage() {
   const hasRedirected = useRef(false);
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (hasRedirected.current) return;
     hasRedirected.current = true;
 
-    // Redirect to Keycloak login
+    const returnTo = searchParams.get("return_to");
+
+    // If return_to is a valid internal path, go there directly after login.
+    // Otherwise, go through /callback for role-based routing.
     signIn("glow", {
-      callbackUrl: "/callback",
+      callbackUrl: returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+        ? returnTo
+        : "/callback",
     });
-  }, []);
+  }, [searchParams]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

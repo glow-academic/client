@@ -63,7 +63,7 @@ export const SIDEBAR_SECTIONS: SidebarSectionConfig[] = [
     ],
   },
   {
-    title: "Chat",
+    title: "Training",
     icon: "GraduationCap",
     url: "/training/cohorts",
     order: 4,

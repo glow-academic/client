@@ -20,7 +20,7 @@ export default async function CallbackPage() {
   let redirectPath = "/home";
 
   try {
-    const profile = await api.post("/context", { body: {} });
+    const profile = await api.post("/profiles/context", { body: {} });
     const role = profile?.role ?? "guest";
     redirectPath = ROLE_REDIRECT[role] ?? "/home";
   } catch {

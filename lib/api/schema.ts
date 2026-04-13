@@ -153,15 +153,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
         /**
          * Patch Persona Draft
          * @description Patch persona draft — composable infra architecture.
          */
-        patch: operations["patch_persona_draft_personas_draft_patch"];
+        post: operations["patch_persona_draft_personas_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/personas/drafts": {
@@ -484,7 +484,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/scenarios/upload": {
+    "/scenarios/image/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -494,55 +494,130 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload
-         * @description Stream-upload any file.
-         *
-         *     Headers:
-         *       Content-Type: the file's actual MIME type
-         *       X-Filename: original filename (for extension + display)
-         *     Body: raw file bytes (streamed).
+         * Upload Image
+         * @description Upload an image for later use in scenarios.
          */
-        post: operations["upload_scenarios_upload_post"];
+        post: operations["upload_image_scenarios_image_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/download/{upload_id}": {
+    "/scenarios/image/download": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Download
-         * @description Download any file by upload ID with range support.
-         */
-        get: operations["download_scenarios_download__upload_id__get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Download Image
+         * @description Download an image file by image resource ID.
+         */
+        post: operations["download_image_scenarios_image_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/preview/{upload_id}": {
+    "/scenarios/video/upload": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Preview
-         * @description Return a PNG preview of the first page of a PDF upload.
-         */
-        get: operations["preview_scenarios_preview__upload_id__get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Upload Video
+         * @description Upload a video for later use in scenarios.
+         */
+        post: operations["upload_video_scenarios_video_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/video/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Video
+         * @description Download a video file by video resource ID with range support.
+         */
+        post: operations["download_video_scenarios_video_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_scenarios_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID with range support.
+         */
+        post: operations["download_file_scenarios_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/file/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview File
+         * @description Return a PNG preview of the first page of a PDF file resource.
+         */
+        post: operations["preview_file_scenarios_file_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1029,7 +1104,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/documents/upload": {
+    "/documents/text/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -1039,56 +1114,90 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Upload
-         * @description Stream-upload any file.
-         *
-         *     Headers:
-         *       Content-Type: the file's actual MIME type
-         *       X-Filename: original filename (for extension + display)
-         *       Content-Length: file size in bytes (optional but recommended)
-         *     Body: raw file bytes (streamed, not multipart).
+         * Upload Text
+         * @description Upload a text file for later use in documents.
          */
-        post: operations["upload_documents_upload_post"];
+        post: operations["upload_text_documents_text_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/download/{upload_id}": {
+    "/documents/text/download": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Download
-         * @description Download any file by upload ID with range support.
-         */
-        get: operations["download_documents_download__upload_id__get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_documents_text_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/preview/{upload_id}": {
+    "/documents/file/upload": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
-         * Preview
+         * Upload File
+         * @description Upload a file for later use in documents.
+         */
+        post: operations["upload_file_documents_file_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_documents_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/documents/file/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview File
          * @description Return a PNG preview of the first page of a PDF upload.
          */
-        get: operations["preview_documents_preview__upload_id__get"];
-        put?: never;
-        post?: never;
+        post: operations["preview_file_documents_file_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3755,6 +3864,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/profiles/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile Context
+         * @description Identity + permissions + theme context endpoint.
+         */
+        post: operations["get_profile_context_profiles_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profiles/emulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Emulate Profile
+         * @description Create emulation grant. Next request will resolve to target profile.
+         */
+        post: operations["emulate_profile_profiles_emulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profiles/unemulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unemulate Profile
+         * @description Exit innermost emulation layer. Next request resolves one layer less.
+         */
+        post: operations["unemulate_profile_profiles_unemulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auths/get": {
         parameters: {
             query?: never;
@@ -4235,6 +4404,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/group/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Groups
+         * @description Search groups — composable infra architecture.
+         */
+        post: operations["search_groups_group_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/group/refresh": {
         parameters: {
             query?: never;
@@ -4295,20 +4484,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/group/download/{upload_id}": {
+    "/group/generate": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Download
-         * @description Download any file by upload ID with range support.
-         */
-        get: operations["download_group_download__upload_id__get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Generate
+         * @description Trigger artifact generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_group_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Name Group
+         * @description Set or update a group's name.
+         */
+        post: operations["name_group_group_name_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/image/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Image
+         * @description Download an image file by image resource ID.
+         */
+        post: operations["download_image_group_image_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/video/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Video
+         * @description Download a video file by video resource ID with range support for seeking.
+         */
+        post: operations["download_video_group_video_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text resource ID.
+         */
+        post: operations["download_text_group_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file resource ID.
+         */
+        post: operations["download_file_group_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/file/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview File
+         * @description Return a PNG preview of the first page of a PDF upload.
+         */
+        post: operations["preview_file_group_file_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/audio/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Audio
+         * @description Download an audio file by audio resource ID with range support for seeking.
+         */
+        post: operations["download_audio_group_audio_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Call
+         * @description Download a call file by call resource ID with range support.
+         */
+        post: operations["download_call_group_call_download_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4735,7 +5084,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/join": {
+    "/attempt/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4745,30 +5094,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Join
-         * @description Join a chat room for real-time attempt updates.
+         * Search Attempt
+         * @description Search attempts — composable infra architecture.
          */
-        post: operations["attempt_join_attempt_join_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/leave": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Leave
-         * @description Leave a chat room, stopping real-time attempt updates.
-         */
-        post: operations["attempt_leave_attempt_leave_post"];
+        post: operations["search_attempt_attempt_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4918,7 +5247,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/end-all": {
+    "/attempt/end/all": {
         parameters: {
             query?: never;
             header?: never;
@@ -5044,7 +5373,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/use-previous": {
+    "/attempt/previous": {
         parameters: {
             query?: never;
             header?: never;
@@ -5054,10 +5383,50 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Use Previous
+         * Attempt Previous
          * @description Copy grades from a previous attempt's chats.
          */
-        post: operations["attempt_use_previous_attempt_use_previous_post"];
+        post: operations["attempt_previous_attempt_previous_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Join
+         * @description Join a chat room for real-time attempt updates.
+         */
+        post: operations["attempt_join_attempt_join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attempt Leave
+         * @description Leave a chat room, stopping real-time attempt updates.
+         */
+        post: operations["attempt_leave_attempt_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5144,7 +5513,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/search": {
+    "/attempt/audio/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -5154,30 +5523,130 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Search Attempt
-         * @description Search attempts — composable infra architecture.
+         * Upload Audio
+         * @description Upload an audio file for an attempt.
          */
-        post: operations["search_attempt_attempt_search_post"];
+        post: operations["upload_audio_attempt_audio_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/download/{upload_id}": {
+    "/attempt/audio/download": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Download
-         * @description Download any file by upload ID with range support.
-         */
-        get: operations["download_attempt_download__upload_id__get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Download Audio
+         * @description Download an audio file by audio entry ID.
+         */
+        post: operations["download_audio_attempt_audio_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/image/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Image
+         * @description Download an image file by image entry ID.
+         */
+        post: operations["download_image_attempt_image_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/video/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Video
+         * @description Download a video file by video entry ID with range support for seeking.
+         */
+        post: operations["download_video_attempt_video_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Text
+         * @description Download a text file by text entry ID.
+         */
+        post: operations["download_text_attempt_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/file/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download File
+         * @description Download a file by file entry ID.
+         */
+        post: operations["download_file_attempt_file_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/file/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview File
+         * @description Return a PNG preview of the first page of a PDF upload.
+         */
+        post: operations["preview_file_attempt_file_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5775,6 +6244,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/activity/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Problem
+         * @description Create new problem entry.
+         */
+        post: operations["create_problem_activity_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health/get": {
         parameters: {
             query?: never;
@@ -6218,6 +6707,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/test/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Grade
+         * @description Create a test grade.
+         */
+        post: operations["create_grade_test_grade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Feedback
+         * @description Create test feedback for a specific tool call.
+         */
+        post: operations["create_feedback_test_feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/text/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Text Download
+         * @description Download text content for a test.
+         */
+        post: operations["test_text_download_test_text_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/test/call/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Call Download
+         * @description Download call JSON for a test.
+         */
+        post: operations["test_call_download_test_call_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/connect": {
         parameters: {
             query?: never;
@@ -6252,106 +6821,6 @@ export interface paths {
          * @description Destroy a stream session.
          */
         post: operations["disconnect_disconnect_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/context": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Profile Context
-         * @description Identity + permissions + theme context endpoint.
-         */
-        post: operations["get_profile_context_context_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/problem": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Problem
-         * @description Create new problem entry.
-         */
-        post: operations["create_problem_problem_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/emulate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Emulate Profile
-         * @description Create emulation grant. Next request will resolve to target profile.
-         */
-        post: operations["emulate_profile_emulate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/unemulate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Unemulate Profile
-         * @description Exit innermost emulation layer. Next request resolves one layer less.
-         */
-        post: operations["unemulate_profile_unemulate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Generate
-         * @description Trigger artifact generation. Returns immediately; progress via events.
-         */
-        post: operations["generate_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12721,39 +13190,6 @@ export interface components {
         /** AgentDepartmentSection */
         AgentDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected departments
              */
@@ -12766,39 +13202,6 @@ export interface components {
         };
         /** AgentDescriptionSection */
         AgentDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -12836,10 +13239,10 @@ export interface components {
              */
             department_ids: string[];
             /**
-             * Model Ids
-             * @description Selected model UUIDs
+             * Model Id
+             * @description Selected model UUID
              */
-            model_ids: string[];
+            model_id?: string | null;
             /**
              * Tool Ids
              * @description Selected tool UUIDs
@@ -12933,39 +13336,6 @@ export interface components {
         /** AgentFlagSection */
         AgentFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected flags
              */
@@ -12978,39 +13348,6 @@ export interface components {
         };
         /** AgentInstructionSection */
         AgentInstructionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected instruction resource
@@ -13025,39 +13362,6 @@ export interface components {
         /** AgentModelSection */
         AgentModelSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected model resource
              */
@@ -13070,39 +13374,6 @@ export interface components {
         };
         /** AgentNameSection */
         AgentNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected name resource
@@ -13117,39 +13388,6 @@ export interface components {
         /** AgentPromptSection */
         AgentPromptSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected prompt resource
              */
@@ -13163,39 +13401,6 @@ export interface components {
         /** AgentQualitySection */
         AgentQualitySection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected qualities
              */
@@ -13208,39 +13413,6 @@ export interface components {
         };
         /** AgentReasoningLevelSection */
         AgentReasoningLevelSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected reasoning level
@@ -13281,39 +13453,6 @@ export interface components {
         /** AgentRubricSection */
         AgentRubricSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected rubrics
              */
@@ -13326,39 +13465,6 @@ export interface components {
         };
         /** AgentTemperatureLevelSection */
         AgentTemperatureLevelSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected temperature level
@@ -13373,39 +13479,6 @@ export interface components {
         /** AgentToolSection */
         AgentToolSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected tools
              */
@@ -13418,39 +13491,6 @@ export interface components {
         };
         /** AgentVoiceSection */
         AgentVoiceSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected voices
@@ -14931,6 +14971,30 @@ export interface components {
              */
             item_id?: string | null;
         };
+        /**
+         * AudioDownloadAttemptApiRequest
+         * @description Request model for attempt audio download endpoint.
+         */
+        AudioDownloadAttemptApiRequest: {
+            /**
+             * Audio Id
+             * Format: uuid
+             * @description UUID of the audios_entry to download
+             */
+            audio_id: string;
+        };
+        /**
+         * AudioDownloadGroupApiRequest
+         * @description Request model for group audio download endpoint.
+         */
+        AudioDownloadGroupApiRequest: {
+            /**
+             * Audio Id
+             * Format: uuid
+             * @description UUID of the audios_resource to download
+             */
+            audio_id: string;
+        };
         /** AudioFramePayload */
         AudioFramePayload: {
             /**
@@ -15009,41 +15073,26 @@ export interface components {
              */
             chat_id: string;
         };
+        /**
+         * AudioUploadAttemptApiResponse
+         * @description Response model for attempt audio upload endpoint.
+         */
+        AudioUploadAttemptApiResponse: {
+            /**
+             * Audio Id
+             * Format: uuid
+             * @description UUID of the created audios_entry
+             */
+            audio_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             * @description UUID of the uploads_entry (file on disk)
+             */
+            upload_id: string;
+        };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -15163,39 +15212,6 @@ export interface components {
         /** AuthFlagSection */
         AuthFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned flag configs
              */
@@ -15260,39 +15276,6 @@ export interface components {
         /** AuthItemSection */
         AuthItemSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned auth items
              */
@@ -15306,39 +15289,6 @@ export interface components {
         /** AuthNameSection */
         AuthNameSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected name resource
              */
@@ -15351,39 +15301,6 @@ export interface components {
         };
         /** AuthProtocolSection */
         AuthProtocolSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned protocols
@@ -15423,39 +15340,6 @@ export interface components {
         };
         /** AuthSlugSection */
         AuthSlugSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned slugs
@@ -15954,6 +15838,67 @@ export interface components {
              * Format: binary
              */
             file: string;
+        };
+        /** Body_upload_audio_attempt_audio_upload_post */
+        Body_upload_audio_attempt_audio_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_file_documents_file_upload_post */
+        Body_upload_file_documents_file_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_image_scenarios_image_upload_post */
+        Body_upload_image_scenarios_image_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_text_documents_text_upload_post */
+        Body_upload_text_documents_text_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_video_scenarios_video_upload_post */
+        Body_upload_video_scenarios_video_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /**
+         * CallDownloadGroupApiRequest
+         * @description Request model for group call download endpoint.
+         */
+        CallDownloadGroupApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the calls_resource to download
+             */
+            call_id: string;
+        };
+        /** CallDownloadTestApiRequest */
+        CallDownloadTestApiRequest: {
+            /**
+             * Call Id
+             * Format: uuid
+             * @description UUID of the call resource to download
+             */
+            call_id: string;
         };
         /**
          * ChatData
@@ -17026,39 +16971,6 @@ export interface components {
         /** CohortDepartmentSection */
         CohortDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected departments
              */
@@ -17092,39 +17004,6 @@ export interface components {
         };
         /** CohortDescriptionSection */
         CohortDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected description resource */
             resource?: components["schemas"]["CohortDescriptionResource"] | null;
             /**
@@ -17250,39 +17129,6 @@ export interface components {
         };
         /** CohortFlagSection */
         CohortFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected flag config */
             resource?: components["schemas"]["CohortFlagConfig"] | null;
             /**
@@ -17314,39 +17160,6 @@ export interface components {
         };
         /** CohortNameSection */
         CohortNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected name resource */
             resource?: components["schemas"]["CohortNameResource"] | null;
             /**
@@ -17420,39 +17233,6 @@ export interface components {
         /** CohortProfilePersonaSection */
         CohortProfilePersonaSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected profile personas
              */
@@ -17465,39 +17245,6 @@ export interface components {
         };
         /** CohortProfileSection */
         CohortProfileSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected profiles
@@ -17600,39 +17347,6 @@ export interface components {
         /** CohortSimulationAvailabilitySection */
         CohortSimulationAvailabilitySection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected availability slots
              */
@@ -17672,39 +17386,6 @@ export interface components {
         /** CohortSimulationPositionSection */
         CohortSimulationPositionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected simulation positions
              */
@@ -17717,39 +17398,6 @@ export interface components {
         };
         /** CohortSimulationSection */
         CohortSimulationSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected simulations
@@ -18013,6 +17661,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description UUID of the name resource
              */
@@ -18043,15 +17696,25 @@ export interface components {
              */
             departments?: string[] | null;
             /**
+             * Active Flag
+             * @description Whether this agent is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Ids
              * @description Associated flag UUIDs
              */
             flag_ids?: string[] | null;
             /**
-             * Model Ids
-             * @description Associated model UUIDs
+             * Model Id
+             * @description Associated model UUID
              */
-            model_ids?: string[] | null;
+            model_id?: string | null;
             /**
              * Reasoning Level Ids
              * @description Associated reasoning level UUIDs
@@ -18077,6 +17740,21 @@ export interface components {
              * @description Associated agent resource UUIDs
              */
             agent_ids?: string[] | null;
+            /**
+             * Rubric Ids
+             * @description Associated rubric UUIDs
+             */
+            rubric_ids?: string[] | null;
+            /**
+             * Prompt Id
+             * @description System prompt resource UUID
+             */
+            prompt_id?: string | null;
+            /**
+             * Instruction Ids
+             * @description Instruction template resource UUIDs
+             */
+            instruction_ids?: string[] | null;
         };
         /**
          * CreateAuthApiRequest
@@ -18123,6 +17801,11 @@ export interface components {
              * @description Optional preset UUID for the new auth provider
              */
             id?: string | null;
+            /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -18240,6 +17923,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description Name resource UUID
              */
@@ -18295,10 +17983,15 @@ export interface components {
              */
             profile_persona_ids?: string[] | null;
             /**
-             * Is Inactive
-             * @description Whether the cohort is inactive
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
              */
-            is_inactive?: boolean | null;
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the cohort is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
             /**
              * Departments
              * @description Department names for resolution
@@ -18357,9 +18050,14 @@ export interface components {
         CreateDepartmentItem: {
             /**
              * Id
-             * @description Optional preset UUID for the new department
+             * @description Optional preset UUID for the new department artifact
              */
             id?: string | null;
+            /**
+             * Resource Id
+             * @description Optional preset UUID for the departments_resource snapshot
+             */
+            resource_id?: string | null;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -18400,6 +18098,12 @@ export interface components {
              * @description Sub-department UUIDs to assign
              */
             department_ids?: string[] | null;
+            /**
+             * Is Primary
+             * @description Whether this is the primary department
+             * @default false
+             */
+            is_primary: boolean;
         };
         /**
          * CreateDocumentApiRequest
@@ -18447,6 +18151,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description Name resource UUID
              */
@@ -18472,10 +18181,25 @@ export interface components {
              */
             flag_id?: string | null;
             /**
-             * Is Inactive
-             * @description Whether the document is inactive
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
              */
-            is_inactive?: boolean | null;
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the document is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
+            /**
+             * Template Flag
+             * @description Whether this is a template document
+             */
+            template_flag?: boolean | null;
+            /**
+             * Template Flag Id
+             * @description Template flag resource UUID
+             */
+            template_flag_id?: string | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -18487,10 +18211,10 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Field Ids
+             * Parameter Field Ids
              * @description Parameter field UUIDs
              */
-            field_ids?: string[] | null;
+            parameter_field_ids?: string[] | null;
             /**
              * Upload Ids
              * @description File upload UUIDs
@@ -18553,6 +18277,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description Name resource UUID
              */
@@ -18607,6 +18336,54 @@ export interface components {
              * @description Model position UUIDs
              */
             model_position_ids?: string[] | null;
+            /**
+             * Active Flag
+             * @description Whether this eval is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
+        };
+        /** CreateFeedbackApiRequest */
+        CreateFeedbackApiRequest: {
+            /**
+             * Grade Id
+             * Format: uuid
+             * @description Grade entry to attach feedback to
+             */
+            grade_id: string;
+            /**
+             * Tool Call Id
+             * Format: uuid
+             * @description Tool call being graded
+             */
+            tool_call_id: string;
+            /**
+             * Standard Group Id
+             * Format: uuid
+             * @description Rubric standard group being scored
+             */
+            standard_group_id: string;
+            /**
+             * Score
+             * @description Score for this criterion (1-5)
+             * @default 0
+             */
+            score: number;
+            /**
+             * Feedback
+             * @description Feedback text
+             * @default
+             */
+            feedback: string;
+            /**
+             * Run Id
+             * @description Run ID for audit linkage
+             */
+            run_id?: string | null;
         };
         /**
          * CreateFieldApiRequest
@@ -18654,6 +18431,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description UUID of the name resource
              */
@@ -18673,6 +18455,16 @@ export interface components {
              * @description Description value to resolve or create
              */
             description?: string | null;
+            /**
+             * Active Flag
+             * @description Whether this field is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
             /**
              * Flag Id
              * @description UUID of the flag option
@@ -18698,6 +18490,26 @@ export interface components {
              * @description Related field UUIDs
              */
             field_ids?: string[] | null;
+        };
+        /** CreateGradeApiRequest */
+        CreateGradeApiRequest: {
+            /**
+             * Invocation Id
+             * Format: uuid
+             * @description Test invocation to grade
+             */
+            invocation_id: string;
+            /**
+             * Run Id
+             * @description Run ID for audit linkage
+             */
+            run_id?: string | null;
+            /**
+             * Score
+             * @description Overall score
+             * @default 0
+             */
+            score: number;
         };
         /**
          * CreateModelApiRequest
@@ -18745,6 +18557,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description Name resource identifier
              */
@@ -18775,6 +18592,16 @@ export interface components {
              */
             departments?: string[] | null;
             /**
+             * Active Flag
+             * @description Whether this model is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Ids
              * @description Flag option identifiers
              */
@@ -18790,10 +18617,10 @@ export interface components {
              */
             pricing_ids?: string[] | null;
             /**
-             * Provider Ids
-             * @description Provider identifiers
+             * Provider Id
+             * @description Provider identifier
              */
-            provider_ids?: string[] | null;
+            provider_id?: string | null;
             /**
              * Quality Ids
              * @description Quality level identifiers
@@ -18810,10 +18637,15 @@ export interface components {
              */
             temperature_level_ids?: string[] | null;
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids?: string[] | null;
+            value_id?: string | null;
+            /**
+             * Value
+             * @description Direct model value/identifier (e.g. the actual API model name)
+             */
+            value?: string | null;
             /**
              * Voice Ids
              * @description Voice identifiers
@@ -18869,6 +18701,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description Name resource identifier
              */
@@ -18908,6 +18745,26 @@ export interface components {
              * @description Field identifiers
              */
             field_ids?: string[] | null;
+            /**
+             * Persona Parameter
+             * @description Show on persona edit page
+             */
+            persona_parameter?: boolean | null;
+            /**
+             * Document Parameter
+             * @description Show on document edit page
+             */
+            document_parameter?: boolean | null;
+            /**
+             * Scenario Parameter
+             * @description Show on scenario edit page
+             */
+            scenario_parameter?: boolean | null;
+            /**
+             * Video Parameter
+             * @description Show on video edit page
+             */
+            video_parameter?: boolean | null;
         };
         /**
          * CreatePersonaApiRequest
@@ -18954,6 +18811,11 @@ export interface components {
              * @description Client-provided UUID for the new persona
              */
             id?: string | null;
+            /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
             /**
              * Name Id
              * @description UUID of an existing name resource
@@ -19055,20 +18917,42 @@ export interface components {
              */
             voices?: string[] | null;
         };
-        /** CreateProblemRequest */
-        CreateProblemRequest: {
-            /** Type */
+        /**
+         * CreateProblemApiRequest
+         * @description Request for creating a problem entry.
+         */
+        CreateProblemApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, or other
+             */
             type: string;
-            /** Message */
+            /**
+             * Message
+             * @description Problem description message
+             */
             message: string;
         };
-        /** CreateProblemResponse */
-        CreateProblemResponse: {
-            /** Problem Id */
+        /**
+         * CreateProblemApiResponse
+         * @description Response for creating a problem entry.
+         */
+        CreateProblemApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description ID of the created problem
+             */
             problem_id: string;
-            /** Success */
+            /**
+             * Success
+             * @description Whether the problem was created successfully
+             */
             success: boolean;
-            /** Message */
+            /**
+             * Message
+             * @description Status message
+             */
             message: string;
         };
         /**
@@ -19115,6 +18999,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description UUID of the name resource
              */
@@ -19130,10 +19019,10 @@ export interface components {
              */
             request_limit_id?: string | null;
             /**
-             * Flag Id
+             * Active Flag Id
              * @description UUID of the flag option
              */
-            flag_id?: string | null;
+            active_flag_id?: string | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -19150,10 +19039,10 @@ export interface components {
              */
             email_ids?: string[] | null;
             /**
-             * Role Ids
-             * @description Role resource UUIDs
+             * Role Id
+             * @description Role resource UUID
              */
-            role_ids?: string[] | null;
+            role_id?: string | null;
         };
         /**
          * CreateProviderApiRequest
@@ -19198,6 +19087,11 @@ export interface components {
              * @description Optional pre-assigned identifier
              */
             id?: string | null;
+            /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
             /**
              * Name Id
              * @description Name resource identifier
@@ -19249,10 +19143,25 @@ export interface components {
              */
             key_ids?: string[] | null;
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids?: string[] | null;
+            value_id?: string | null;
+            /**
+             * Endpoint
+             * @description Provider API endpoint URL
+             */
+            endpoint?: string | null;
+            /**
+             * Key
+             * @description Provider API key
+             */
+            key?: string | null;
+            /**
+             * Value
+             * @description Provider identifier value
+             */
+            value?: string | null;
         };
         /**
          * CreateRubricApiRequest
@@ -19298,6 +19207,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description Name resource UUID
              */
@@ -19328,6 +19242,26 @@ export interface components {
              */
             active_flag?: boolean | null;
             /**
+             * Simulation Rubric Flag
+             * @description Whether this is a simulation rubric
+             */
+            simulation_rubric_flag?: boolean | null;
+            /**
+             * Simulation Rubric Flag Id
+             * @description Simulation rubric flag resource UUID
+             */
+            simulation_rubric_flag_id?: string | null;
+            /**
+             * Video Rubric Flag
+             * @description Whether this is a video rubric
+             */
+            video_rubric_flag?: boolean | null;
+            /**
+             * Video Rubric Flag Id
+             * @description Video rubric flag resource UUID
+             */
+            video_rubric_flag_id?: string | null;
+            /**
              * Department Ids
              * @description Department UUIDs
              */
@@ -19337,6 +19271,16 @@ export interface components {
              * @description Department names for resolution
              */
             departments?: string[] | null;
+            /**
+             * Total Points
+             * @description Total points for rubric
+             */
+            total_points?: number | null;
+            /**
+             * Pass Points
+             * @description Points required to pass
+             */
+            pass_points?: number | null;
             /**
              * Point Ids
              * @description Point UUIDs
@@ -19398,6 +19342,11 @@ export interface components {
              * @description Client-provided UUID for the scenario
              */
             id?: string | null;
+            /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -19514,6 +19463,31 @@ export interface components {
              */
             active_flag?: boolean | null;
             /**
+             * Images Enabled Flag
+             * @description Whether images are enabled
+             */
+            images_enabled_flag?: boolean | null;
+            /**
+             * Objectives Enabled Flag
+             * @description Whether objectives are enabled
+             */
+            objectives_enabled_flag?: boolean | null;
+            /**
+             * Problem Statement Enabled Flag
+             * @description Whether problem statement is enabled
+             */
+            problem_statement_enabled_flag?: boolean | null;
+            /**
+             * Questions Enabled Flag
+             * @description Whether questions are enabled
+             */
+            questions_enabled_flag?: boolean | null;
+            /**
+             * Video Enabled Flag
+             * @description Whether video is enabled
+             */
+            video_enabled_flag?: boolean | null;
+            /**
              * Departments
              * @description Department names for matching
              */
@@ -19601,9 +19575,14 @@ export interface components {
         CreateSettingItem: {
             /**
              * Id
-             * @description Optional preset UUID for the new setting
+             * @description Optional preset UUID for the new setting artifact
              */
             id?: string | null;
+            /**
+             * Resource Id
+             * @description Optional preset UUID for the settings_resource snapshot
+             */
+            resource_id?: string | null;
             /**
              * Name Id
              * @description UUID of the name resource
@@ -19736,6 +19715,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description UUID of the name resource
              */
@@ -19755,11 +19739,6 @@ export interface components {
              * @description Description text value
              */
             description?: string | null;
-            /**
-             * Flag Ids
-             * @description Associated flag UUIDs
-             */
-            flag_ids?: string[] | null;
             /**
              * Department Ids
              * @description Associated department UUIDs
@@ -19791,15 +19770,25 @@ export interface components {
              */
             scenario_time_limit_ids?: string[] | null;
             /**
-             * Is Inactive
-             * @description Whether the simulation is inactive
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
              */
-            is_inactive?: boolean | null;
+            active_flag_id?: string | null;
             /**
-             * Is Practice
+             * Active Flag
+             * @description Whether the simulation is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
+            /**
+             * Practice Flag
              * @description Whether this is a practice simulation
              */
-            is_practice?: boolean | null;
+            practice_flag?: boolean | null;
+            /**
+             * Practice Flag Id
+             * @description Practice flag resource UUID
+             */
+            practice_flag_id?: string | null;
             /**
              * Departments
              * @description Department names for matching
@@ -19857,6 +19846,11 @@ export interface components {
              */
             id?: string | null;
             /**
+             * Resource Id
+             * @description Optional preset UUID for the resource snapshot
+             */
+            resource_id?: string | null;
+            /**
              * Name Id
              * @description Name resource identifier
              */
@@ -19902,20 +19896,35 @@ export interface components {
              */
             args_outputs_ids?: string[] | null;
             /**
-             * Artifact Ids
-             * @description Artifact identifiers
+             * Permission Ids
+             * @description Permission identifiers
              */
-            artifact_ids?: string[] | null;
+            permission_ids?: string[] | null;
             /**
-             * Operation Ids
-             * @description Operation identifiers
+             * Instruction Id
+             * @description Response template instruction resource UUID
              */
-            operation_ids?: string[] | null;
+            instruction_id?: string | null;
+            /**
+             * Agent Id
+             * @description Delegate agent for tool execution
+             */
+            agent_id?: string | null;
             /**
              * Tool Ids
              * @description Related tool identifiers
              */
             tool_ids?: string[] | null;
+            /**
+             * Active Flag
+             * @description Whether this tool is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
         };
         /**
          * DashboardBundleResponse
@@ -21068,10 +21077,10 @@ export interface components {
          */
         DeletePersonaApiRequest: {
             /**
-             * Persona Ids
+             * Ids
              * @description List of persona UUIDs to delete
              */
-            persona_ids: string[];
+            ids: string[];
         };
         /**
          * DeletePersonaApiResponse
@@ -21095,11 +21104,11 @@ export interface components {
              */
             success: boolean;
             /**
-             * Persona Id
+             * Id
              * Format: uuid
              * @description UUID of the deleted persona
              */
-            persona_id: string;
+            id: string;
             /**
              * Message
              * @description Human-readable result message
@@ -21417,39 +21426,6 @@ export interface components {
         /** DepartmentDescriptionSection */
         DepartmentDescriptionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected description resource
              */
@@ -21553,39 +21529,6 @@ export interface components {
         /** DepartmentFlagSection */
         DepartmentFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned flag configs
              */
@@ -21598,39 +21541,6 @@ export interface components {
         };
         /** DepartmentNameSection */
         DepartmentNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected name resource
@@ -21670,39 +21580,6 @@ export interface components {
         };
         /** DepartmentSettingSection */
         DepartmentSettingSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned settings
@@ -21824,39 +21701,6 @@ export interface components {
         /** DocumentDepartmentSection */
         DocumentDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected departments
              */
@@ -21890,39 +21734,6 @@ export interface components {
         };
         /** DocumentDescriptionSection */
         DocumentDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected description resource */
             resource?: components["schemas"]["DocumentDescriptionResource"] | null;
             /**
@@ -22032,39 +21843,6 @@ export interface components {
         /** DocumentFieldSection */
         DocumentFieldSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected parameter fields
              */
@@ -22137,39 +21915,6 @@ export interface components {
         /** DocumentFlagSection */
         DocumentFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected flag configs
              */
@@ -22198,39 +21943,6 @@ export interface components {
         };
         /** DocumentImageSection */
         DocumentImageSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected images
@@ -22265,39 +21977,6 @@ export interface components {
         };
         /** DocumentNameSection */
         DocumentNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected name resource */
             resource?: components["schemas"]["DocumentNameResource"] | null;
             /**
@@ -22344,39 +22023,6 @@ export interface components {
         };
         /** DocumentParameterSection */
         DocumentParameterSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected parameters
@@ -22433,39 +22079,6 @@ export interface components {
         /** DocumentTextSection */
         DocumentTextSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected text resources
              */
@@ -22478,39 +22091,6 @@ export interface components {
         };
         /** DocumentUploadSection */
         DocumentUploadSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected file uploads
@@ -22542,6 +22122,7 @@ export interface components {
          * @description Full form state after draft patch — server is source of truth.
          *
          *     Client replaces its local form state with this after every successful patch.
+         *     Includes both resolved IDs and echoed values for AI model feedback.
          */
         DraftFormState: {
             /**
@@ -22550,25 +22131,50 @@ export interface components {
              */
             name_id?: string | null;
             /**
+             * Name
+             * @description Name value that was saved
+             */
+            name?: string | null;
+            /**
              * Description Id
              * @description Currently selected description resource UUID
              */
             description_id?: string | null;
+            /**
+             * Description
+             * @description Description value that was saved
+             */
+            description?: string | null;
             /**
              * Instructions Id
              * @description Currently selected instruction resource UUID
              */
             instructions_id?: string | null;
             /**
+             * Instructions
+             * @description Instructions value that was saved
+             */
+            instructions?: string | null;
+            /**
              * Color Id
              * @description Currently selected color resource UUID
              */
             color_id?: string | null;
             /**
+             * Color
+             * @description Color value that was saved (hex code)
+             */
+            color?: string | null;
+            /**
              * Icon Id
              * @description Currently selected icon resource UUID
              */
             icon_id?: string | null;
+            /**
+             * Icon
+             * @description Icon value that was saved
+             */
+            icon?: string | null;
             /**
              * Active Flag Id
              * @description Currently selected flag option UUID
@@ -23037,11 +22643,11 @@ export interface components {
          */
         DuplicatePersonaApiRequest: {
             /**
-             * Persona Id
+             * Id
              * Format: uuid
              * @description UUID of the persona to duplicate
              */
-            persona_id: string;
+            id: string;
         };
         /**
          * DuplicatePersonaApiResponse
@@ -23054,11 +22660,11 @@ export interface components {
              */
             success: boolean;
             /**
-             * Persona Id
+             * Id
              * Format: uuid
              * @description UUID of the newly created duplicate persona
              */
-            persona_id: string;
+            id: string;
             /**
              * Message
              * @description Human-readable result message
@@ -23530,39 +23136,6 @@ export interface components {
         /** EvalDepartmentSection */
         EvalDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected departments
              */
@@ -23575,39 +23148,6 @@ export interface components {
         };
         /** EvalDescriptionSection */
         EvalDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -23721,39 +23261,6 @@ export interface components {
         };
         /** EvalFlagSection */
         EvalFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected flag config */
             resource?: components["schemas"]["EvalFlagConfig"] | null;
             /**
@@ -23764,39 +23271,6 @@ export interface components {
         };
         /** EvalModelFlagSection */
         EvalModelFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected model flags
@@ -23811,39 +23285,6 @@ export interface components {
         /** EvalModelPositionSection */
         EvalModelPositionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected model positions
              */
@@ -23856,39 +23297,6 @@ export interface components {
         };
         /** EvalModelRubricSection */
         EvalModelRubricSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected model rubrics
@@ -23903,39 +23311,6 @@ export interface components {
         /** EvalModelSection */
         EvalModelSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected models
              */
@@ -23948,39 +23323,6 @@ export interface components {
         };
         /** EvalNameSection */
         EvalNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected name resource
@@ -25171,39 +24513,6 @@ export interface components {
         /** FieldConditionalParameterSection */
         FieldConditionalParameterSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned conditional parameters
              */
@@ -25217,39 +24526,6 @@ export interface components {
         /** FieldDepartmentSection */
         FieldDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned departments
              */
@@ -25262,39 +24538,6 @@ export interface components {
         };
         /** FieldDescriptionSection */
         FieldDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -25403,39 +24646,6 @@ export interface components {
         };
         /** FieldFlagSection */
         FieldFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected flag config */
             resource?: components["schemas"]["FieldFlagConfig"] | null;
             /**
@@ -25446,39 +24656,6 @@ export interface components {
         };
         /** FieldNameSection */
         FieldNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected name resource
@@ -25515,6 +24692,120 @@ export interface components {
              * @description Per-field validation errors
              */
             errors?: components["schemas"]["FieldFieldError"][] | null;
+        };
+        /**
+         * FileDownloadAttemptApiRequest
+         * @description Request model for attempt file download endpoint.
+         */
+        FileDownloadAttemptApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_entry to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadDocumentApiRequest
+         * @description Request model for document file download endpoint.
+         */
+        FileDownloadDocumentApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadGroupApiRequest
+         * @description Request model for group file download endpoint.
+         */
+        FileDownloadGroupApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FileDownloadScenarioApiRequest
+         * @description Request model for scenario file download endpoint.
+         */
+        FileDownloadScenarioApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to download
+             */
+            file_id: string;
+        };
+        /**
+         * FilePreviewAttemptApiRequest
+         * @description Request model for attempt file preview endpoint.
+         */
+        FilePreviewAttemptApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_entry to preview
+             */
+            file_id: string;
+        };
+        /**
+         * FilePreviewDocumentApiRequest
+         * @description Request model for document file preview endpoint.
+         */
+        FilePreviewDocumentApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to preview
+             */
+            file_id: string;
+        };
+        /**
+         * FilePreviewGroupApiRequest
+         * @description Request model for group file preview endpoint.
+         */
+        FilePreviewGroupApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to preview
+             */
+            file_id: string;
+        };
+        /**
+         * FilePreviewScenarioApiRequest
+         * @description Request model for scenario file preview endpoint.
+         */
+        FilePreviewScenarioApiRequest: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the files_resource to preview
+             */
+            file_id: string;
+        };
+        /**
+         * FileUploadDocumentApiResponse
+         * @description Response model for document file upload endpoint.
+         */
+        FileUploadDocumentApiResponse: {
+            /**
+             * File Id
+             * Format: uuid
+             * @description UUID of the created files_resource
+             */
+            file_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             * @description UUID of the uploads_entry (file on disk)
+             */
+            upload_id: string;
         };
         /**
          * FilterOption
@@ -25853,25 +25144,41 @@ export interface components {
         /**
          * GeneratePayload
          * @description Unified client-to-server payload for the `generate` WebSocket event.
+         *
+         *     Permissions — which tools the AI can use (provide one or both):
+         *       permissions: [("persona", "create"), ...]  — human-readable pairs
+         *       permission_ids: ["uuid", ...]              — direct permission resource UUIDs
+         *
+         *     Resources — field-level filter within artifact tools:
+         *       resources: ["names", "descriptions"]       — only these fields are processed
+         *       (empty or omitted = all fields)
+         *
+         *     Legacy fields (artifact_types, resource_types, entry_types) are still
+         *     accepted for backward compatibility and converted to the new format.
          */
         GeneratePayload: {
+            /** Permissions */
+            permissions?: components["schemas"]["PermissionPair"][] | null;
+            /** Permission Ids */
+            permission_ids?: string[] | null;
+            /** Resources */
+            resources?: string[] | null;
             /** Artifact Types */
-            artifact_types: components["schemas"]["ArtifactTypeItem"][];
+            artifact_types?: components["schemas"]["ArtifactTypeItem"][] | null;
+            /** Resource Types */
+            resource_types?: components["schemas"]["ResourceTypeItem"][] | null;
+            /** Entry Types */
+            entry_types?: components["schemas"]["EntryTypeItem"][] | null;
             /** Artifact Id */
             artifact_id?: unknown | null;
             /** Draft Id */
             draft_id?: unknown | null;
-            /** Resource Types */
-            resource_types: components["schemas"]["ResourceTypeItem"][];
-            /** Entry Types */
-            entry_types?: components["schemas"]["EntryTypeItem"][] | null;
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            } | null;
             /** User Instructions */
             user_instructions?: string[] | null;
-            /**
-             * Save
-             * @default false
-             */
-            save: boolean;
             /** Run Id */
             run_id?: string | null;
             /** Group Id */
@@ -26186,11 +25493,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description UUID of the owning group
              */
@@ -26258,11 +25560,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description UUID of the owning group
              */
@@ -26312,11 +25609,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -26705,11 +25997,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -26758,11 +26045,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -26793,11 +26075,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -26891,11 +26168,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -27120,11 +26392,6 @@ export interface components {
              * @description UUID of the group
              */
             group_id: string;
-            /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
             /** @description Name section data */
             names?: components["schemas"]["ChatNameSection"] | null;
             /** @description Description section data */
@@ -27223,11 +26490,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Associated group UUID
              */
@@ -27297,11 +26559,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Associated group UUID
              */
@@ -27353,11 +26610,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -27484,11 +26736,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -27530,11 +26777,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -27561,11 +26803,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -27678,11 +26915,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Associated group UUID
              */
@@ -27742,11 +26974,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Associated group UUID
              */
@@ -27788,11 +27015,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -27930,11 +27152,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Associated group UUID
              */
@@ -27996,11 +27213,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Associated group UUID
              */
@@ -28044,11 +27256,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -28186,11 +27393,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -28237,11 +27439,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -28270,11 +27467,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -28523,6 +27715,83 @@ export interface components {
              */
             profiles?: components["schemas"]["GroupDetailResourceItem"][];
         };
+        /**
+         * GetGroupListRequest
+         * @description Request for group list/search endpoint.
+         */
+        GetGroupListRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Agent Id
+             * @description Filter by agent UUID
+             */
+            agent_id?: string | null;
+            /**
+             * Model Id
+             * @description Filter by model UUID
+             */
+            model_id?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Sort By
+             * @description 'date' | 'cost' | 'tokens' | 'runs'
+             * @default date
+             */
+            sort_by: string;
+            /**
+             * Sort Order
+             * @description Sort order: 'asc' or 'desc'
+             * @default desc
+             */
+            sort_order: string;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GetGroupListResponse
+         * @description Response for group list endpoint.
+         */
+        GetGroupListResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Group list items
+             */
+            items?: components["schemas"]["GroupListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching groups
+             * @default 0
+             */
+            total_count: number;
+        };
         /** GetHealthResponse */
         GetHealthResponse: {
             /**
@@ -28702,11 +27971,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the model
              */
@@ -28777,11 +28041,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the model
              */
@@ -28834,11 +28093,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -28928,10 +28182,10 @@ export interface components {
              */
             temperature_level_ids: string[];
             /**
-             * Value Ids
-             * @description Associated value UUIDs
+             * Value Id
+             * @description Associated value UUID
              */
-            value_ids: string[];
+            value_id?: string | null;
             /**
              * Voice Ids
              * @description Associated voice UUIDs
@@ -28991,11 +28245,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the parameter
              */
@@ -29047,11 +28296,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the parameter
              */
@@ -29085,11 +28329,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -29168,11 +28407,11 @@ export interface components {
         /** GetParameterResponse */
         GetParameterResponse: {
             /**
-             * Id
+             * Parameter Id
              * Format: uuid
              * @description UUID of the parameter
              */
-            id: string;
+            parameter_id: string;
             /**
              * Name
              * @description Parameter name
@@ -29246,66 +28485,39 @@ export interface components {
          */
         GetPersonaApiRequest: {
             /**
-             * Persona Id
+             * Id
              * @description UUID of the persona to retrieve
              */
-            persona_id?: string | null;
+            id?: string | null;
             /**
              * Draft Id
              * @description UUID of the draft to load instead of published state
              */
             draft_id?: string | null;
-            /**
-             * Color Search
-             * @description Filter color options by search text
-             */
-            color_search?: string | null;
-            /**
-             * Icon Search
-             * @description Filter icon options by search text
-             */
-            icon_search?: string | null;
-            /**
-             * Descriptions Search
-             * @description Filter description options by search text
-             */
-            descriptions_search?: string | null;
-            /**
-             * Instructions Search
-             * @description Filter instruction options by search text
-             */
-            instructions_search?: string | null;
-            /**
-             * Parameter Field Search
-             * @description Filter parameter field options by search text
-             */
-            parameter_field_search?: string | null;
-            /**
-             * Parameter Ids
-             * @description Parameter group IDs to expand in the response
-             */
-            parameter_ids?: string[] | null;
-            /**
-             * Color Show Selected
-             * @description When true, only return currently selected colors
-             */
-            color_show_selected?: boolean | null;
-            /**
-             * Icon Show Selected
-             * @description When true, only return currently selected icons
-             */
-            icon_show_selected?: boolean | null;
-            /**
-             * Parameter Field Show Selected
-             * @description When true, only return currently selected parameter fields
-             */
-            parameter_field_show_selected?: boolean | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for colors section */
+            colors?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for icons section */
+            icons?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for instructions section */
+            instructions?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for examples section */
+            examples?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for parameter fields section */
+            parameter_fields?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for voices section */
+            voices?: components["schemas"]["SectionFilter"] | null;
         };
         /**
          * GetPersonaApiResponse
          * @description Response model for get persona endpoint.
          */
-        "GetPersonaApiResponse-Input": {
+        GetPersonaApiResponse: {
             /**
              * Actor Name
              * @description Display name of the authenticated user
@@ -29327,135 +28539,70 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number for optimistic concurrency
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Generation group UUID for AI operations
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether AI generation is available for basic fields (name, color, icon)
+             * Show Ai Generate
+             * @description Whether AI generation is available
              */
-            basic_show_ai_generate?: boolean | null;
+            show_ai_generate?: boolean | null;
             /**
-             * Content Show Ai Generate
-             * @description Whether AI generation is available for content fields (description, instructions, examples)
+             * Names
+             * @description Name resources with selected/suggested flags
              */
-            content_show_ai_generate?: boolean | null;
+            names?: components["schemas"]["PersonaNameResource"][] | null;
             /**
-             * Parameters Step Show Ai Generate
-             * @description Whether AI generation is available for parameter fields
+             * Descriptions
+             * @description Description resources with selected/suggested flags
              */
-            parameters_step_show_ai_generate?: boolean | null;
-            /** @description Name resource section with current selection and options */
-            names?: components["schemas"]["PersonaNameSection"] | null;
-            /** @description Description resource section with current selection and options */
-            descriptions?: components["schemas"]["PersonaDescriptionSection"] | null;
-            /** @description Color resource section with current selection and options */
-            colors?: components["schemas"]["PersonaColorSection"] | null;
-            /** @description Icon resource section with current selection and options */
-            icons?: components["schemas"]["PersonaIconSection"] | null;
-            /** @description Instruction resource section with current selection and options */
-            instructions?: components["schemas"]["PersonaInstructionSection"] | null;
-            /** @description Boolean flag configuration section (e.g. active status) */
-            flags?: components["schemas"]["PersonaFlagSection"] | null;
-            /** @description Department association section with current selections and options */
-            departments?: components["schemas"]["PersonaDepartmentSection"] | null;
-            /** @description Parameter field section with current selections and options */
-            parameter_fields?: components["schemas"]["PersonaParameterFieldSection"] | null;
-            /** @description Example resource section with current selections and options */
-            examples?: components["schemas"]["PersonaExampleSection"] | null;
-            /** @description Parameter section with current selections and options */
-            parameters?: components["schemas"]["PersonaParameterSection"] | null;
-            /** @description Voice resource section with current selections and options */
-            voices?: components["schemas"]["PersonaVoiceSection"] | null;
+            descriptions?: components["schemas"]["PersonaDescriptionResource"][] | null;
             /**
-             * Fields
-             * @description All available field definitions (computed, never saved)
+             * Colors
+             * @description Color resources with selected/suggested flags
              */
-            fields?: components["schemas"]["GetFieldResponse"][] | null;
+            colors?: components["schemas"]["PersonaColorResource"][] | null;
             /**
-             * Resolved Parameter Ids
-             * @description Parameter IDs derived from saved parameter_fields
+             * Icons
+             * @description Icon resources with selected/suggested flags
              */
-            resolved_parameter_ids?: string[] | null;
-        };
-        /**
-         * GetPersonaApiResponse
-         * @description Response model for get persona endpoint.
-         */
-        "GetPersonaApiResponse-Output": {
+            icons?: components["schemas"]["PersonaIconResource"][] | null;
             /**
-             * Actor Name
-             * @description Display name of the authenticated user
+             * Instructions
+             * @description Instruction resources with selected/suggested flags
              */
-            actor_name?: string | null;
+            instructions?: components["schemas"]["PersonaInstructionResource"][] | null;
             /**
-             * Persona Exists
-             * @description Whether the requested persona exists
+             * Flags
+             * @description Boolean flag configs with selected flag (e.g. active status)
              */
-            persona_exists?: boolean | null;
+            flags?: components["schemas"]["PersonaFlagConfig"][] | null;
             /**
-             * Can Edit
-             * @description Whether the current user has edit permission
+             * Departments
+             * @description Department resources with selected/suggested flags
              */
-            can_edit?: boolean | null;
+            departments?: components["schemas"]["PersonaDepartmentResource"][] | null;
             /**
-             * Disabled Reason
-             * @description Human-readable reason if editing is disabled
+             * Parameter Fields
+             * @description Parameter field resources with selected/suggested flags
              */
-            disabled_reason?: string | null;
+            parameter_fields?: components["schemas"]["PersonaParameterFieldResource"][] | null;
             /**
-             * Draft Version
-             * @description Current draft version number for optimistic concurrency
+             * Examples
+             * @description Example resources with selected/suggested flags
              */
-            draft_version?: number | null;
+            examples?: components["schemas"]["PersonaExampleResource"][] | null;
             /**
-             * Group Id
-             * @description Generation group UUID for AI operations
+             * Parameters
+             * @description Parameter resources
              */
-            group_id?: string | null;
+            parameters?: unknown[] | null;
             /**
-             * Basic Show Ai Generate
-             * @description Whether AI generation is available for basic fields (name, color, icon)
+             * Voices
+             * @description Voice resources with selected/suggested flags
              */
-            basic_show_ai_generate?: boolean | null;
-            /**
-             * Content Show Ai Generate
-             * @description Whether AI generation is available for content fields (description, instructions, examples)
-             */
-            content_show_ai_generate?: boolean | null;
-            /**
-             * Parameters Step Show Ai Generate
-             * @description Whether AI generation is available for parameter fields
-             */
-            parameters_step_show_ai_generate?: boolean | null;
-            /** @description Name resource section with current selection and options */
-            names?: components["schemas"]["PersonaNameSection"] | null;
-            /** @description Description resource section with current selection and options */
-            descriptions?: components["schemas"]["PersonaDescriptionSection"] | null;
-            /** @description Color resource section with current selection and options */
-            colors?: components["schemas"]["PersonaColorSection"] | null;
-            /** @description Icon resource section with current selection and options */
-            icons?: components["schemas"]["PersonaIconSection"] | null;
-            /** @description Instruction resource section with current selection and options */
-            instructions?: components["schemas"]["PersonaInstructionSection"] | null;
-            /** @description Boolean flag configuration section (e.g. active status) */
-            flags?: components["schemas"]["PersonaFlagSection"] | null;
-            /** @description Department association section with current selections and options */
-            departments?: components["schemas"]["PersonaDepartmentSection"] | null;
-            /** @description Parameter field section with current selections and options */
-            parameter_fields?: components["schemas"]["PersonaParameterFieldSection"] | null;
-            /** @description Example resource section with current selections and options */
-            examples?: components["schemas"]["PersonaExampleSection"] | null;
-            /** @description Parameter section with current selections and options */
-            parameters?: components["schemas"]["PersonaParameterSection"] | null;
-            /** @description Voice resource section with current selections and options */
-            voices?: components["schemas"]["PersonaVoiceSection"] | null;
+            voices?: components["schemas"]["PersonaVoiceResource"][] | null;
             /**
              * Fields
              * @description All available field definitions (computed, never saved)
@@ -29475,11 +28622,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -29728,11 +28870,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -29798,11 +28935,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -29858,11 +28990,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -29985,11 +29112,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the provider
              */
@@ -30045,11 +29167,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the provider
              */
@@ -30087,11 +29204,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -30161,10 +29273,10 @@ export interface components {
              */
             profile_ids: string[];
             /**
-             * Value Ids
-             * @description Associated value UUIDs
+             * Value Id
+             * @description Associated value UUID
              */
-            value_ids: string[];
+            value_id?: string | null;
         };
         /**
          * GetProviderDraftsApiResponse
@@ -30212,11 +29324,6 @@ export interface components {
              * @description Reason editing is disabled
              */
             disabled_reason?: string | null;
-            /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
             /**
              * Group Id
              * @description Associated group UUID
@@ -30270,11 +29377,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Associated group UUID
              */
@@ -30312,11 +29414,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -30442,132 +29539,35 @@ export interface components {
          */
         GetScenarioApiRequest: {
             /**
-             * Scenario Id
+             * Id
              * @description UUID of the scenario to retrieve
              */
-            scenario_id?: string | null;
-            /**
-             * Document Ids
-             * @description Filter by document UUIDs
-             */
-            document_ids?: string[] | null;
-            /**
-             * Problem Statement Ids
-             * @description Filter by problem statement UUIDs
-             */
-            problem_statement_ids?: string[] | null;
-            /**
-             * Filter Department Ids
-             * @description Filter by department UUIDs
-             */
-            filter_department_ids?: string[] | null;
-            /**
-             * Filter Persona Ids
-             * @description Filter by persona UUIDs
-             */
-            filter_persona_ids?: string[] | null;
-            /**
-             * Filter Document Ids
-             * @description Filter by document UUIDs
-             */
-            filter_document_ids?: string[] | null;
-            /**
-             * Filter Parameter Ids
-             * @description Filter by parameter UUIDs
-             */
-            filter_parameter_ids?: string[] | null;
-            /**
-             * Filter Field Ids
-             * @description Filter by field UUIDs
-             */
-            filter_field_ids?: string[] | null;
-            /**
-             * Persona Search
-             * @description Search text to filter personas
-             */
-            persona_search?: string | null;
-            /**
-             * Document Search
-             * @description Search text to filter documents
-             */
-            document_search?: string | null;
-            /**
-             * Parameter Search
-             * @description Search text to filter parameters
-             */
-            parameter_search?: string | null;
-            /**
-             * Description Search
-             * @description Search text to filter descriptions
-             */
-            description_search?: string | null;
-            /**
-             * Problem Statement Search
-             * @description Search text to filter problem statements
-             */
-            problem_statement_search?: string | null;
-            /**
-             * Image Search
-             * @description Search text to filter images
-             */
-            image_search?: string | null;
-            /**
-             * Video Search
-             * @description Search text to filter videos
-             */
-            video_search?: string | null;
-            /**
-             * Question Search
-             * @description Search text to filter questions
-             */
-            question_search?: string | null;
-            /**
-             * Option Search
-             * @description Search text to filter options
-             */
-            option_search?: string | null;
-            /**
-             * Persona Show Selected
-             * @description Show only selected personas
-             */
-            persona_show_selected?: boolean | null;
-            /**
-             * Document Show Selected
-             * @description Show only selected documents
-             */
-            document_show_selected?: boolean | null;
-            /**
-             * Parameter Show Selected
-             * @description Show only selected parameters
-             */
-            parameter_show_selected?: boolean | null;
-            /**
-             * Field Show Selected By Param
-             * @description Field-level show_selected filters by parameter
-             */
-            field_show_selected_by_param?: components["schemas"]["ScenarioFieldParamFilter"][] | null;
+            id?: string | null;
             /**
              * Draft Id
-             * @description UUID of the draft to retrieve
+             * @description UUID of the draft
              */
             draft_id?: string | null;
-            /**
-             * Mcp
-             * @description Whether this is an MCP request
-             * @default false
-             */
-            mcp: boolean | null;
-            /**
-             * Parameter Ids
-             * @description Filter by parameter UUIDs
-             */
-            parameter_ids?: string[] | null;
+            names?: components["schemas"]["SectionFilter"] | null;
+            descriptions?: components["schemas"]["SectionFilter"] | null;
+            problem_statements?: components["schemas"]["SectionFilter"] | null;
+            flags?: components["schemas"]["SectionFilter"] | null;
+            departments?: components["schemas"]["SectionFilter"] | null;
+            personas?: components["schemas"]["SectionFilter"] | null;
+            documents?: components["schemas"]["SectionFilter"] | null;
+            parameters?: components["schemas"]["SectionFilter"] | null;
+            parameter_fields?: components["schemas"]["SectionFilter"] | null;
+            objectives?: components["schemas"]["SectionFilter"] | null;
+            images?: components["schemas"]["SectionFilter"] | null;
+            videos?: components["schemas"]["SectionFilter"] | null;
+            questions?: components["schemas"]["SectionFilter"] | null;
+            options?: components["schemas"]["SectionFilter"] | null;
         };
         /**
          * GetScenarioApiResponse
          * @description Response for getting a single scenario.
          */
-        "GetScenarioApiResponse-Input": {
+        GetScenarioApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current actor
@@ -30589,137 +29589,90 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description UUID of the owning group
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Show Ai Generate
+             * @description Whether AI generation is available
              */
-            basic_show_ai_generate?: boolean | null;
-            /**
-             * Content Show Ai Generate
-             * @description Show AI generate for content step
-             */
-            content_show_ai_generate?: boolean | null;
+            show_ai_generate?: boolean | null;
             /**
              * Resolved Parameter Ids
              * @description Resolved parameter IDs from saved fields
              */
             resolved_parameter_ids?: string[] | null;
-            /** @description Name section data */
-            names?: components["schemas"]["ScenarioNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["ScenarioDescriptionSection"] | null;
-            /** @description Problem statement section data */
-            problem_statements?: components["schemas"]["ScenarioProblemStatementSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["ScenarioFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["ScenarioDepartmentSection"] | null;
-            /** @description Persona section data */
-            personas?: components["schemas"]["ScenarioPersonaSection"] | null;
-            /** @description Document section data */
-            documents?: components["schemas"]["ScenarioDocumentSection"] | null;
-            /** @description Parameter section data */
-            parameters?: components["schemas"]["ScenarioParameterSection"] | null;
-            /** @description Parameter field section data */
-            parameter_fields?: components["schemas"]["ScenarioParameterFieldSection"] | null;
-            /** @description Objective section data */
-            objectives?: components["schemas"]["ScenarioObjectiveSection"] | null;
-            /** @description Image section data */
-            images?: components["schemas"]["ScenarioImageSection"] | null;
-            /** @description Video section data */
-            videos?: components["schemas"]["ScenarioVideoSection"] | null;
-            /** @description Question section data */
-            questions?: components["schemas"]["ScenarioQuestionSection"] | null;
-            /** @description Option section data */
-            options?: components["schemas"]["ScenarioOptionSection"] | null;
-        };
-        /**
-         * GetScenarioApiResponse
-         * @description Response for getting a single scenario.
-         */
-        "GetScenarioApiResponse-Output": {
             /**
-             * Actor Name
-             * @description Display name of the current actor
+             * Names
+             * @description Name resources
              */
-            actor_name?: string | null;
+            names?: components["schemas"]["ScenarioNameResource"][] | null;
             /**
-             * Scenario Exists
-             * @description Whether the scenario exists
+             * Descriptions
+             * @description Description resources
              */
-            scenario_exists?: boolean | null;
+            descriptions?: components["schemas"]["ScenarioDescriptionResource"][] | null;
             /**
-             * Can Edit
-             * @description Whether the current user can edit
+             * Problem Statements
+             * @description Problem statement resources
              */
-            can_edit?: boolean | null;
+            problem_statements?: components["schemas"]["ScenarioProblemStatement"][] | null;
             /**
-             * Disabled Reason
-             * @description Reason the scenario is disabled
+             * Flags
+             * @description Flag configs
              */
-            disabled_reason?: string | null;
+            flags?: components["schemas"]["ScenarioFlagConfig"][] | null;
             /**
-             * Draft Version
-             * @description Current draft version number
+             * Departments
+             * @description Department resources
              */
-            draft_version?: number | null;
+            departments?: components["schemas"]["ScenarioDepartment"][] | null;
             /**
-             * Group Id
-             * @description UUID of the owning group
+             * Personas
+             * @description Persona resources
              */
-            group_id?: string | null;
+            personas?: components["schemas"]["ScenarioPersona"][] | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Documents
+             * @description Document resources
              */
-            basic_show_ai_generate?: boolean | null;
+            documents?: components["schemas"]["ScenarioDocument"][] | null;
             /**
-             * Content Show Ai Generate
-             * @description Show AI generate for content step
+             * Parameters
+             * @description Parameter resources
              */
-            content_show_ai_generate?: boolean | null;
+            parameters?: unknown[] | null;
             /**
-             * Resolved Parameter Ids
-             * @description Resolved parameter IDs from saved fields
+             * Parameter Fields
+             * @description Parameter field resources
              */
-            resolved_parameter_ids?: string[] | null;
-            /** @description Name section data */
-            names?: components["schemas"]["ScenarioNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["ScenarioDescriptionSection"] | null;
-            /** @description Problem statement section data */
-            problem_statements?: components["schemas"]["ScenarioProblemStatementSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["ScenarioFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["ScenarioDepartmentSection"] | null;
-            /** @description Persona section data */
-            personas?: components["schemas"]["ScenarioPersonaSection"] | null;
-            /** @description Document section data */
-            documents?: components["schemas"]["ScenarioDocumentSection"] | null;
-            /** @description Parameter section data */
-            parameters?: components["schemas"]["ScenarioParameterSection"] | null;
-            /** @description Parameter field section data */
-            parameter_fields?: components["schemas"]["ScenarioParameterFieldSection"] | null;
-            /** @description Objective section data */
-            objectives?: components["schemas"]["ScenarioObjectiveSection"] | null;
-            /** @description Image section data */
-            images?: components["schemas"]["ScenarioImageSection"] | null;
-            /** @description Video section data */
-            videos?: components["schemas"]["ScenarioVideoSection"] | null;
-            /** @description Question section data */
-            questions?: components["schemas"]["ScenarioQuestionSection"] | null;
-            /** @description Option section data */
-            options?: components["schemas"]["ScenarioOptionSection"] | null;
+            parameter_fields?: components["schemas"]["ScenarioField"][] | null;
+            /**
+             * Objectives
+             * @description Objective resources
+             */
+            objectives?: components["schemas"]["ScenarioObjective"][] | null;
+            /**
+             * Images
+             * @description Image resources
+             */
+            images?: components["schemas"]["ScenarioImage"][] | null;
+            /**
+             * Videos
+             * @description Video resources
+             */
+            videos?: components["schemas"]["ScenarioVideo"][] | null;
+            /**
+             * Questions
+             * @description Question resources
+             */
+            questions?: components["schemas"]["ScenarioQuestion"][] | null;
+            /**
+             * Options
+             * @description Option resources
+             */
+            options?: components["schemas"]["ScenarioOption"][] | null;
         };
         /** GetScenarioDraftResponse */
         GetScenarioDraftResponse: {
@@ -30729,11 +29682,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -31020,11 +29968,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -31076,11 +30019,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group UUID for draft collaboration
              */
@@ -31114,11 +30052,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -31276,11 +30209,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description UUID of the owning group
              */
@@ -31340,11 +30268,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description UUID of the owning group
              */
@@ -31386,11 +30309,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -31525,11 +30443,6 @@ export interface components {
              * @default false
              */
             profile_has_access: boolean;
-            /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
             /**
              * Group Id
              * @description Associated group ID
@@ -31722,6 +30635,16 @@ export interface components {
              * Format: uuid
              */
             grade_id: string;
+            /**
+             * Call Id
+             * Format: uuid
+             */
+            call_id: string;
+            /**
+             * Tool Call Id
+             * Format: uuid
+             */
+            tool_call_id: string;
             /** Total */
             total: number;
             /** Feedback */
@@ -31998,6 +30921,8 @@ export interface components {
              * Format: uuid
              */
             test_id: string;
+            /** Call Id */
+            call_id: string | null;
             /** Eval Id */
             eval_id: string | null;
             /** Profile Id */
@@ -32058,11 +30983,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the tool
              */
@@ -32099,10 +31019,8 @@ export interface components {
             arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
             /** @description Argument output section */
             args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
-            /** @description Artifact section with resources */
-            artifacts?: components["schemas"]["ToolArtifactSection"] | null;
-            /** @description Operation section with resources */
-            operations?: components["schemas"]["ToolOperationSection"] | null;
+            /** @description Permission section with resources */
+            permissions?: components["schemas"]["ToolPermissionSection"] | null;
         };
         /** GetToolApiResponse */
         "GetToolApiResponse-Output": {
@@ -32127,11 +31045,6 @@ export interface components {
              */
             disabled_reason?: string | null;
             /**
-             * Draft Version
-             * @description Current draft version number
-             */
-            draft_version?: number | null;
-            /**
              * Group Id
              * @description Group identifier for the tool
              */
@@ -32168,10 +31081,8 @@ export interface components {
             arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
             /** @description Argument output section */
             args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
-            /** @description Artifact section with resources */
-            artifacts?: components["schemas"]["ToolArtifactSection"] | null;
-            /** @description Operation section with resources */
-            operations?: components["schemas"]["ToolOperationSection"] | null;
+            /** @description Permission section with resources */
+            permissions?: components["schemas"]["ToolPermissionSection"] | null;
         };
         /** GetToolDraftResponse */
         GetToolDraftResponse: {
@@ -32181,11 +31092,6 @@ export interface components {
              * @description UUID of the draft
              */
             id: string;
-            /**
-             * Version
-             * @description Draft version number
-             */
-            version: number;
             /**
              * Created At
              * Format: date-time
@@ -32235,11 +31141,6 @@ export interface components {
              */
             args_output_ids: string[];
             /**
-             * Artifact Ids
-             * @description Associated artifact UUIDs
-             */
-            artifact_ids: string[];
-            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -32260,15 +31161,20 @@ export interface components {
              */
             name_ids: string[];
             /**
-             * Operation Ids
-             * @description Associated operation UUIDs
+             * Permission Ids
+             * @description Associated permission UUIDs
              */
-            operation_ids: string[];
+            permission_ids: string[];
             /**
              * Profile Ids
              * @description Associated profile UUIDs
              */
             profile_ids: string[];
+            /**
+             * Agent Ids
+             * @description Associated agent UUIDs
+             */
+            agent_ids?: string[];
         };
         /**
          * GetToolDraftsApiResponse
@@ -32457,7 +31363,7 @@ export interface components {
         };
         /**
          * GroupDetailMessageItem
-         * @description A message with upload IDs by media type.
+         * @description A message with resource IDs by media type.
          */
         GroupDetailMessageItem: {
             /**
@@ -32471,35 +31377,35 @@ export interface components {
              */
             role?: string | null;
             /**
-             * Text Upload Ids
-             * @description Text upload UUIDs
+             * Text Ids
+             * @description Text resource UUIDs
              */
-            text_upload_ids?: string[];
+            text_ids?: string[];
             /**
-             * Audio Upload Ids
-             * @description Audio upload UUIDs
+             * Audio Ids
+             * @description Audio resource UUIDs
              */
-            audio_upload_ids?: string[];
+            audio_ids?: string[];
             /**
-             * Image Upload Ids
-             * @description Image upload UUIDs
+             * Image Ids
+             * @description Image resource UUIDs
              */
-            image_upload_ids?: string[];
+            image_ids?: string[];
             /**
-             * Video Upload Ids
-             * @description Video upload UUIDs
+             * Video Ids
+             * @description Video resource UUIDs
              */
-            video_upload_ids?: string[];
+            video_ids?: string[];
             /**
-             * File Upload Ids
-             * @description File upload UUIDs
+             * File Ids
+             * @description File resource UUIDs
              */
-            file_upload_ids?: string[];
+            file_ids?: string[];
             /**
-             * Call Upload Ids
-             * @description Call upload UUIDs
+             * Call Ids
+             * @description Call resource UUIDs
              */
-            call_upload_ids?: string[];
+            call_ids?: string[];
             /**
              * Calls
              * @description Tool calls in this message
@@ -32624,6 +31530,110 @@ export interface components {
              * @description Index where previous context starts
              */
             previous_context_start_index?: number | null;
+        };
+        /**
+         * GroupListItem
+         * @description Single group in the list response with hydrated metadata.
+         */
+        GroupListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Profile Id
+             * @description UUID of the user profile
+             */
+            profile_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the group
+             */
+            group_name?: string | null;
+            /**
+             * First Run At
+             * @description Timestamp of the first run
+             */
+            first_run_at?: string | null;
+            /**
+             * Last Run At
+             * @description Timestamp of the last run
+             */
+            last_run_at?: string | null;
+            /**
+             * Run Count
+             * @description Number of runs in the group
+             * @default 0
+             */
+            run_count: number;
+            /**
+             * Unique Agents
+             * @description Number of unique agents used
+             * @default 0
+             */
+            unique_agents: number;
+            /**
+             * Unique Models
+             * @description Number of unique models used
+             * @default 0
+             */
+            unique_models: number;
+            /**
+             * Total Input Tokens
+             * @description Total input tokens consumed
+             * @default 0
+             */
+            total_input_tokens: number;
+            /**
+             * Total Output Tokens
+             * @description Total output tokens generated
+             * @default 0
+             */
+            total_output_tokens: number;
+            /**
+             * Total Tokens
+             * @description Total tokens used
+             * @default 0
+             */
+            total_tokens: number;
+            /**
+             * Total Cost
+             * @description Total cost of the group
+             * @default 0
+             */
+            total_cost: string;
+            /**
+             * Agent Ids
+             * @description UUIDs of agents used
+             */
+            agent_ids?: string[] | null;
+            /**
+             * Model Ids
+             * @description UUIDs of models used
+             */
+            model_ids?: string[] | null;
+            /**
+             * Profile Name
+             * @description Display name of the user profile
+             */
+            profile_name?: string | null;
+            /**
+             * Agent Names
+             * @description Names of agents used
+             */
+            agent_names?: string[] | null;
+            /**
+             * Model Names
+             * @description Names of models used
+             */
+            model_names?: string[] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -32920,6 +31930,42 @@ export interface components {
             profile_options?: components["schemas"]["FilterOption"][] | null;
         };
         /**
+         * ImageDownloadAttemptApiRequest
+         * @description Request model for attempt image download endpoint.
+         */
+        ImageDownloadAttemptApiRequest: {
+            /**
+             * Image Id
+             * Format: uuid
+             * @description UUID of the images_resource to download
+             */
+            image_id: string;
+        };
+        /**
+         * ImageDownloadGroupApiRequest
+         * @description Request model for group image download endpoint.
+         */
+        ImageDownloadGroupApiRequest: {
+            /**
+             * Image Id
+             * Format: uuid
+             * @description UUID of the images_resource to download
+             */
+            image_id: string;
+        };
+        /**
+         * ImageDownloadScenarioApiRequest
+         * @description Request model for scenario image download endpoint.
+         */
+        ImageDownloadScenarioApiRequest: {
+            /**
+             * Image Id
+             * Format: uuid
+             * @description UUID of the images_resource to download
+             */
+            image_id: string;
+        };
+        /**
          * ImageEntry
          * @description Image entry with resource metadata.
          */
@@ -32944,6 +31990,24 @@ export interface components {
              * @description Description of the image
              */
             description?: string | null;
+        };
+        /**
+         * ImageUploadScenarioApiResponse
+         * @description Response model for scenario image upload endpoint.
+         */
+        ImageUploadScenarioApiResponse: {
+            /**
+             * Image Id
+             * Format: uuid
+             * @description UUID of the created images_resource
+             */
+            image_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             * @description UUID of the uploads_entry (file on disk)
+             */
+            upload_id: string;
         };
         /**
          * LeaderboardAccoladeWinner
@@ -35022,9 +34086,14 @@ export interface components {
             name?: string | null;
             /**
              * Role
-             * @description User role (e.g. admin, user, viewer)
+             * @description User role enum (e.g. admin, member, custom)
              */
             role?: string | null;
+            /**
+             * Role Name
+             * @description Display name of the role (from roles_resource)
+             */
+            role_name?: string | null;
             /**
              * Initials
              * @description User initials for avatar display
@@ -36276,39 +35345,6 @@ export interface components {
         /** ModelDepartmentSection */
         ModelDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned departments
              */
@@ -36321,39 +35357,6 @@ export interface components {
         };
         /** ModelDescriptionSection */
         ModelDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -36401,10 +35404,10 @@ export interface components {
              */
             pricing_ids: string[];
             /**
-             * Provider Ids
-             * @description Provider identifiers
+             * Provider Id
+             * @description Provider identifier
              */
-            provider_ids: string[];
+            provider_id?: string | null;
             /**
              * Quality Ids
              * @description Quality level identifiers
@@ -36421,10 +35424,10 @@ export interface components {
              */
             temperature_level_ids: string[];
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids: string[];
+            value_id?: string | null;
             /**
              * Voice Ids
              * @description Voice identifiers
@@ -36498,39 +35501,6 @@ export interface components {
         /** ModelFlagSection */
         ModelFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently active flag configs
              */
@@ -36543,39 +35513,6 @@ export interface components {
         };
         /** ModelModalitySection */
         ModelModalitySection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned modalities
@@ -36590,39 +35527,6 @@ export interface components {
         /** ModelNameSection */
         ModelNameSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected name resource
              */
@@ -36635,39 +35539,6 @@ export interface components {
         };
         /** ModelPricingSection */
         ModelPricingSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned pricing tiers
@@ -36682,39 +35553,6 @@ export interface components {
         /** ModelProviderSection */
         ModelProviderSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected provider resource
              */
@@ -36728,39 +35566,6 @@ export interface components {
         /** ModelQualitySection */
         ModelQualitySection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned quality levels
              */
@@ -36773,39 +35578,6 @@ export interface components {
         };
         /** ModelReasoningLevelSection */
         ModelReasoningLevelSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned reasoning levels
@@ -36846,39 +35618,6 @@ export interface components {
         /** ModelTemperatureLevelSection */
         ModelTemperatureLevelSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned temperature levels
              */
@@ -36892,39 +35631,6 @@ export interface components {
         /** ModelValueSection */
         ModelValueSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected value resource
              */
@@ -36937,39 +35643,6 @@ export interface components {
         };
         /** ModelVoiceSection */
         ModelVoiceSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned voices
@@ -36998,6 +35671,45 @@ export interface components {
              * @description List of columns in the view
              */
             columns: components["schemas"]["ColumnInfo"][];
+        };
+        /**
+         * NameGroupApiRequest
+         * @description Request model for group name endpoint.
+         */
+        NameGroupApiRequest: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the group to name
+             */
+            group_id: string;
+            /**
+             * Name
+             * @description New name for the group
+             */
+            name: string;
+        };
+        /**
+         * NameGroupApiResponse
+         * @description Response model for group name endpoint.
+         */
+        NameGroupApiResponse: {
+            /**
+             * Success
+             * @description Whether the operation succeeded
+             */
+            success: boolean;
+            /**
+             * Group Name Id
+             * Format: uuid
+             * @description UUID of the created group_names entry
+             */
+            group_name_id: string;
+            /**
+             * Name
+             * @description The name that was set
+             */
+            name: string;
         };
         /** NextAttemptApiResponse */
         NextAttemptApiResponse: {
@@ -37157,39 +35869,6 @@ export interface components {
         /** ParameterDepartmentSection */
         ParameterDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned departments
              */
@@ -37223,39 +35902,6 @@ export interface components {
         };
         /** ParameterDescriptionSection */
         ParameterDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected description resource */
             resource?: components["schemas"]["ParameterDescriptionResource"] | null;
             /**
@@ -37345,39 +35991,6 @@ export interface components {
         /** ParameterFieldSection */
         ParameterFieldSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned fields
              */
@@ -37439,39 +36052,6 @@ export interface components {
         /** ParameterFlagSection */
         ParameterFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently active flag configs
              */
@@ -37505,39 +36085,6 @@ export interface components {
         };
         /** ParameterNameSection */
         ParameterNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected name resource */
             resource?: components["schemas"]["ParameterNameResource"] | null;
             /**
@@ -37834,10 +36381,10 @@ export interface components {
          *     Dual-mode for creatable resources only:
          *       - name/name_id, description/description_id
          *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, model_ids, tool_ids, reasoning_level_ids,
+         *       - flag_ids, department_ids, model_id, tool_ids, reasoning_level_ids,
          *         temperature_level_ids, voice_ids, rubric_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchAgentDraftApiRequest: {
             /**
@@ -37850,12 +36397,6 @@ export interface components {
              * @description UUID of the input draft
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic lock
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Display name value
@@ -37887,10 +36428,10 @@ export interface components {
              */
             department_ids?: string[] | null;
             /**
-             * Model Ids
-             * @description Associated model UUIDs
+             * Model Id
+             * @description Associated model UUID
              */
-            model_ids?: string[] | null;
+            model_id?: string | null;
             /**
              * Tool Ids
              * @description Associated tool UUIDs
@@ -37934,11 +36475,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -37955,7 +36491,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_id, department_ids, protocol_ids, slug_ids, item_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchAuthDraftApiRequest: {
             /**
@@ -37963,12 +36499,6 @@ export interface components {
              * @description Existing draft UUID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic locking
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to resolve or create
@@ -38032,11 +36562,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -38054,7 +36579,7 @@ export interface components {
          *     Multi-select creatables: objectives, images, videos, questions, options
          *       → values create resources, created IDs are merged with existing IDs.
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchChatDraftApiRequest: {
             /**
@@ -38062,12 +36587,6 @@ export interface components {
              * @description UUID of the input draft
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected version for optimistic locking
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to create
@@ -38206,11 +36725,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New version number after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Response message
              */
@@ -38229,7 +36743,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_id, department_ids, simulation_ids, profile_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchCohortDraftApiRequest: {
             /**
@@ -38237,12 +36751,6 @@ export interface components {
              * @description Existing draft UUID to patch
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency control
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to create a resource
@@ -38331,11 +36839,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number after patch
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -38352,7 +36855,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_id, setting_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchDepartmentDraftApiRequest: {
             /**
@@ -38360,12 +36863,6 @@ export interface components {
              * @description Existing draft UUID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic locking
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to resolve or create
@@ -38414,11 +36911,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -38437,7 +36929,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_ids, department_ids, image_ids, parameter_field_ids, parameter_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchDocumentDraftApiRequest: {
             /**
@@ -38445,12 +36937,6 @@ export interface components {
              * @description Existing draft UUID to patch
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency control
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to create a resource
@@ -38534,11 +37020,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number after patch
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -38555,7 +37036,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_ids, department_ids, model_ids, rubric_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchEvalDraftApiRequest: {
             /**
@@ -38563,12 +37044,6 @@ export interface components {
              * @description Existing draft UUID to patch
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency control
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to create a resource
@@ -38627,11 +37102,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number after patch
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -38648,7 +37118,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_id, department_ids, conditional_parameter_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchFieldDraftApiRequest: {
             /**
@@ -38656,12 +37126,6 @@ export interface components {
              * @description Existing draft UUID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic locking
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to resolve or create
@@ -38715,11 +37179,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -38734,10 +37193,10 @@ export interface components {
          *     Dual-mode for creatable resources only:
          *       - name/name_id, description/description_id
          *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, modality_ids, pricing_ids, provider_ids,
-         *         quality_ids, reasoning_level_ids, temperature_level_ids, value_ids, voice_ids
+         *       - flag_ids, department_ids, modality_ids, pricing_ids, provider_id,
+         *         quality_ids, reasoning_level_ids, temperature_level_ids, value_id, voice_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchModelDraftApiRequest: {
             /**
@@ -38745,12 +37204,6 @@ export interface components {
              * @description Existing draft ID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Display name value
@@ -38792,10 +37245,10 @@ export interface components {
              */
             pricing_ids?: string[] | null;
             /**
-             * Provider Ids
-             * @description Provider identifiers
+             * Provider Id
+             * @description Provider identifier
              */
-            provider_ids?: string[] | null;
+            provider_id?: string | null;
             /**
              * Quality Ids
              * @description Quality level identifiers
@@ -38812,10 +37265,10 @@ export interface components {
              */
             temperature_level_ids?: string[] | null;
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids?: string[] | null;
+            value_id?: string | null;
             /**
              * Voice Ids
              * @description Voice identifiers
@@ -38839,11 +37292,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -38860,7 +37308,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_ids, department_ids, field_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchParameterDraftApiRequest: {
             /**
@@ -38868,12 +37316,6 @@ export interface components {
              * @description Existing draft ID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Display name value
@@ -38927,11 +37369,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -38941,27 +37378,17 @@ export interface components {
         };
         /**
          * PatchPersonaDraftApiRequest
-         * @description Request model for new-style persona draft endpoint.
+         * @description Request model for persona draft endpoint.
          *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id, instructions/instructions_id, examples/example_ids
-         *     ID-only for non-creatable resources:
-         *       - color_id, icon_id, flag_id, department_ids, parameter_field_ids, voice_ids
-         *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     All resources accept value or ID, matching create/update.
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchPersonaDraftApiRequest: {
             /**
-             * Input Draft Id
+             * Draft Id
              * @description Existing draft UUID to patch (omit to create a new draft)
              */
-            input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic concurrency control
-             * @default 0
-             */
-            expected_version: number;
+            draft_id?: string | null;
             /**
              * Name
              * @description Display name text (creates new name resource)
@@ -38983,6 +37410,26 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Color
+             * @description Hex color code (creates new resource if color_id not provided)
+             */
+            color?: string | null;
+            /**
+             * Color Id
+             * @description UUID of a color resource to select
+             */
+            color_id?: string | null;
+            /**
+             * Icon
+             * @description Icon identifier value (creates new resource if icon_id not provided)
+             */
+            icon?: string | null;
+            /**
+             * Icon Id
+             * @description UUID of an icon resource to select
+             */
+            icon_id?: string | null;
+            /**
              * Instructions
              * @description Instruction template text (creates new instruction resource)
              */
@@ -38992,6 +37439,16 @@ export interface components {
              * @description UUID of an existing instruction resource to select
              */
             instructions_id?: string | null;
+            /**
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
+             */
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the persona is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
             /**
              * Examples
              * @description Example texts (creates new example resources)
@@ -39003,35 +37460,35 @@ export interface components {
              */
             example_ids?: string[] | null;
             /**
-             * Color Id
-             * @description UUID of a color resource to select
-             */
-            color_id?: string | null;
-            /**
-             * Icon Id
-             * @description UUID of an icon resource to select
-             */
-            icon_id?: string | null;
-            /**
-             * Flag Id
-             * @description UUID of a flag option to set
-             */
-            flag_id?: string | null;
-            /**
              * Department Ids
              * @description Department UUIDs to associate
              */
             department_ids?: string[] | null;
+            /**
+             * Departments
+             * @description Department names (resolved to UUIDs server-side)
+             */
+            departments?: string[] | null;
             /**
              * Parameter Field Ids
              * @description Parameter field UUIDs to associate
              */
             parameter_field_ids?: string[] | null;
             /**
+             * Parameter Fields
+             * @description Parameter field names (resolved to UUIDs server-side)
+             */
+            parameter_fields?: string[] | null;
+            /**
              * Voice Ids
              * @description Voice resource UUIDs to associate
              */
             voice_ids?: string[] | null;
+            /**
+             * Voices
+             * @description Voice values (resolved to UUIDs server-side)
+             */
+            voices?: string[] | null;
         };
         /**
          * PatchPersonaDraftApiResponse
@@ -39050,11 +37507,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number after this patch
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -39069,9 +37521,9 @@ export interface components {
          *     Dual-mode for creatable resources only:
          *       - name/name_id
          *     ID-only for non-creatable resources:
-         *       - flag_id, department_ids, email_ids, role_ids, request_limit_ids
+         *       - active_flag_id, department_ids, email_ids, role_id, request_limit_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchProfileDraftApiRequest: {
             /**
@@ -39079,12 +37531,6 @@ export interface components {
              * @description Existing draft UUID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic locking
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to resolve or create
@@ -39106,10 +37552,10 @@ export interface components {
              */
             request_limit?: number | null;
             /**
-             * Flag Id
+             * Active Flag Id
              * @description UUID of the flag option
              */
-            flag_id?: string | null;
+            active_flag_id?: string | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -39121,10 +37567,10 @@ export interface components {
              */
             email_ids?: string[] | null;
             /**
-             * Role Ids
-             * @description Role resource UUIDs
+             * Role Id
+             * @description Role resource UUID
              */
-            role_ids?: string[] | null;
+            role_id?: string | null;
             /**
              * Request Limit Ids
              * @description Request limit resource UUIDs
@@ -39148,11 +37594,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -39167,9 +37608,9 @@ export interface components {
          *     Dual-mode for creatable resources only:
          *       - name/name_id, description/description_id
          *     ID-only for non-creatable resources:
-         *       - flag_id, department_ids, endpoint_ids, key_ids, value_ids
+         *       - flag_id, department_ids, endpoint_ids, key_ids, value_id
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchProviderDraftApiRequest: {
             /**
@@ -39177,12 +37618,6 @@ export interface components {
              * @description Existing draft ID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Display name value
@@ -39224,10 +37659,10 @@ export interface components {
              */
             key_ids?: string[] | null;
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids?: string[] | null;
+            value_id?: string | null;
         };
         /**
          * PatchProviderDraftApiResponse
@@ -39246,11 +37681,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -39267,7 +37697,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_id, department_ids, point_ids, standard_group_ids, standard_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchRubricDraftApiRequest: {
             /**
@@ -39275,12 +37705,6 @@ export interface components {
              * @description Existing draft UUID to patch
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency control
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to create a resource
@@ -39344,11 +37768,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number after patch
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -39370,7 +37789,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchScenarioDraftApiRequest: {
             /**
@@ -39378,12 +37797,6 @@ export interface components {
              * @description UUID of the input draft
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic lock
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Display name value
@@ -39507,11 +37920,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -39529,7 +37937,7 @@ export interface components {
          *       - flag_id, department_ids, color_ids, profile_ids, auth_ids,
          *         provider_key_ids, auth_item_key_ids, threshold_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchSettingDraftApiRequest: {
             /**
@@ -39537,12 +37945,6 @@ export interface components {
              * @description Existing draft UUID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic locking
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Name value to resolve or create
@@ -39621,11 +38023,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
@@ -39645,7 +38042,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_ids, department_ids, scenario_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchSimulationDraftApiRequest: {
             /**
@@ -39653,12 +38050,6 @@ export interface components {
              * @description UUID of the input draft
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for optimistic lock
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Display name value
@@ -39752,11 +38143,6 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version number
-             */
-            new_version: number;
-            /**
              * Message
              * @description Human-readable result message
              */
@@ -39773,7 +38159,7 @@ export interface components {
          *     ID-only for non-creatable resources:
          *       - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids
          *
-         *     Client always sends full state (append-only — each write is a new version snapshot).
+         *     Client always sends full state (append-only — each write is a new snapshot).
          */
         PatchToolDraftApiRequest: {
             /**
@@ -39781,12 +38167,6 @@ export interface components {
              * @description Existing draft ID to update
              */
             input_draft_id?: string | null;
-            /**
-             * Expected Version
-             * @description Expected draft version for concurrency
-             * @default 0
-             */
-            expected_version: number;
             /**
              * Name
              * @description Display name value
@@ -39833,15 +38213,15 @@ export interface components {
              */
             args_output_ids?: string[] | null;
             /**
-             * Artifact Ids
-             * @description Artifact identifiers
+             * Permission Ids
+             * @description Permission identifiers
              */
-            artifact_ids?: string[] | null;
+            permission_ids?: string[] | null;
             /**
-             * Operation Ids
-             * @description Operation identifiers
+             * Agent Id
+             * @description Delegate agent for tool execution
              */
-            operation_ids?: string[] | null;
+            agent_id?: string | null;
         };
         /**
          * PatchToolDraftApiResponse
@@ -39860,17 +38240,22 @@ export interface components {
              */
             draft_id: string;
             /**
-             * New Version
-             * @description New draft version after save
-             */
-            new_version: number;
-            /**
              * Message
              * @description Result message
              */
             message: string;
             /** @description Server-authoritative form state */
             form_state?: components["schemas"]["ToolDraftFormState"] | null;
+        };
+        /**
+         * PermissionPair
+         * @description Human-readable (artifact, operation) pair.
+         */
+        PermissionPair: {
+            /** Artifact */
+            artifact: string;
+            /** Operation */
+            operation: string;
         };
         /** PersonaChartRow */
         PersonaChartRow: {
@@ -39939,45 +38324,16 @@ export interface components {
             hex_code?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaColorSection */
-        PersonaColorSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            resource?: components["schemas"]["PersonaColorResource"] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaColorResource"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaDepartmentResource
@@ -39992,46 +38348,16 @@ export interface components {
             description?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaDepartmentSection */
-        PersonaDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["PersonaDepartmentResource"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaDepartmentResource"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaDescriptionResource
@@ -40044,45 +38370,16 @@ export interface components {
             description?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaDescriptionSection */
-        PersonaDescriptionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            resource?: components["schemas"]["PersonaDescriptionResource"] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaDescriptionResource"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaEntry
@@ -40131,46 +38428,16 @@ export interface components {
             example?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaExampleSection */
-        PersonaExampleSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["PersonaExampleResource"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaExampleResource"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaFieldError
@@ -40215,45 +38482,11 @@ export interface components {
             required: boolean;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaFlagSection */
-        PersonaFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            current?: components["schemas"]["PersonaFlagConfig"] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaFlagConfig"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaGenerationProgressEvent
@@ -40344,45 +38577,16 @@ export interface components {
             value?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaIconSection */
-        PersonaIconSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            resource?: components["schemas"]["PersonaIconResource"] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaIconResource"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaInstructionResource
@@ -40395,45 +38599,16 @@ export interface components {
             template?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaInstructionSection */
-        PersonaInstructionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            resource?: components["schemas"]["PersonaInstructionResource"] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaInstructionResource"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaNameResource
@@ -40446,45 +38621,16 @@ export interface components {
             name?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaNameSection */
-        PersonaNameSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            resource?: components["schemas"]["PersonaNameResource"] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaNameResource"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaParameterFieldResource
@@ -40501,88 +38647,20 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+            /** Conditional Parameter Id */
+            conditional_parameter_id?: string | null;
             /** Generated */
             generated?: boolean | null;
-        };
-        /** PersonaParameterFieldSection */
-        PersonaParameterFieldSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Suggested
              * @default false
              */
-            show: boolean;
+            suggested: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Selected
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["PersonaParameterFieldResource"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaParameterFieldResource"][] | null;
-        };
-        /** PersonaParameterSection */
-        PersonaParameterSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["GetParameterResponse"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["GetParameterResponse"][] | null;
+            selected: boolean;
         };
         /**
          * PersonaResultItem
@@ -40595,10 +38673,10 @@ export interface components {
              */
             success: boolean;
             /**
-             * Persona Id
+             * Id
              * @description UUID of the affected persona
              */
-            persona_id?: string | null;
+            id?: string | null;
             /**
              * Message
              * @description Human-readable result message
@@ -40644,46 +38722,23 @@ export interface components {
             voice?: string | null;
             /** Generated */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @default false
+             */
+            selected: boolean;
         };
-        /** PersonaVoiceSection */
-        PersonaVoiceSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** Current */
-            current?: components["schemas"]["PersonaVoiceResource"][] | null;
-            /** Resources */
-            resources?: components["schemas"]["PersonaVoiceResource"][] | null;
+        /** PreviousAttemptApiResponse */
+        PreviousAttemptApiResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
         };
         /**
          * PreviousChatOption
@@ -41180,6 +39235,11 @@ export interface components {
              */
             session_id?: string | null;
             /**
+             * Group Id
+             * @description Active group UUID for generation panel
+             */
+            group_id?: string | null;
+            /**
              * Is Emulation
              * @description Whether user is in emulation mode
              */
@@ -41224,39 +39284,6 @@ export interface components {
         /** ProfileDepartmentSection */
         ProfileDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned departments
              */
@@ -41278,10 +39305,10 @@ export interface components {
              */
             name_id?: string | null;
             /**
-             * Flag Id
+             * Active Flag Id
              * @description Resolved flag option UUID
              */
-            flag_id?: string | null;
+            active_flag_id?: string | null;
             /**
              * Department Ids
              * @description Assigned department UUIDs
@@ -41293,10 +39320,10 @@ export interface components {
              */
             email_ids: string[];
             /**
-             * Role Ids
-             * @description Assigned role resource UUIDs
+             * Role Id
+             * @description Assigned role resource UUID
              */
-            role_ids: string[];
+            role_id?: string | null;
             /**
              * Request Limit Ids
              * @description Assigned request limit UUIDs
@@ -41326,39 +39353,6 @@ export interface components {
         };
         /** ProfileEmailSection */
         ProfileEmailSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned emails
@@ -41436,39 +39430,6 @@ export interface components {
         };
         /** ProfileFlagSection */
         ProfileFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected flag config */
             current?: components["schemas"]["ProfileFlagConfig"] | null;
             /**
@@ -41500,39 +39461,6 @@ export interface components {
         };
         /** ProfileNameSection */
         ProfileNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected name resource */
             resource?: components["schemas"]["ProfileNameResource"] | null;
             /**
@@ -41564,39 +39492,6 @@ export interface components {
         };
         /** ProfileRequestLimitSection */
         ProfileRequestLimitSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected request limit */
             resource?: components["schemas"]["ProfileRequestLimitResource"] | null;
             /**
@@ -41670,39 +39565,6 @@ export interface components {
         /** ProfileRoleSection */
         ProfileRoleSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned roles
              */
@@ -41762,39 +39624,6 @@ export interface components {
         /** ProviderDepartmentSection */
         ProviderDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned departments
              */
@@ -41807,39 +39636,6 @@ export interface components {
         };
         /** ProviderDescriptionSection */
         ProviderDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -41887,46 +39683,13 @@ export interface components {
              */
             key_ids: string[];
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids: string[];
+            value_id?: string | null;
         };
         /** ProviderEndpointSection */
         ProviderEndpointSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected endpoint resource
@@ -42005,39 +39768,6 @@ export interface components {
         /** ProviderFlagSection */
         ProviderFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently active flag configs
              */
@@ -42051,39 +39781,6 @@ export interface components {
         /** ProviderKeySection */
         ProviderKeySection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected key resource
              */
@@ -42096,39 +39793,6 @@ export interface components {
         };
         /** ProviderNameSection */
         ProviderNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected name resource
@@ -42168,39 +39832,6 @@ export interface components {
         };
         /** ProviderValueSection */
         ProviderValueSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected value resource
@@ -43348,31 +40979,44 @@ export interface components {
              */
             profile_metrics?: unknown[];
         };
-        /** ResolveProblemRequest */
-        ResolveProblemRequest: {
+        /**
+         * ResolveProblemApiRequest
+         * @description Request for resolving a problem entry.
+         */
+        ResolveProblemApiRequest: {
             /**
              * Problem Id
              * Format: uuid
+             * @description ID of the problem to resolve
              */
             problem_id: string;
             /**
              * Resolved
+             * @description Whether the problem is resolved
              * @default true
              */
             resolved: boolean;
         };
-        /** ResolveProblemResponse */
-        ResolveProblemResponse: {
+        /**
+         * ResolveProblemApiResponse
+         * @description Response for resolving a problem entry.
+         */
+        ResolveProblemApiResponse: {
             /**
              * Problem Id
              * Format: uuid
+             * @description ID of the resolved problem
              */
             problem_id: string;
-            /** Resolved */
+            /**
+             * Resolved
+             * @description Current resolved status
+             */
             resolved: boolean;
             /**
              * Updated At
              * Format: date-time
+             * @description Timestamp of the update
              */
             updated_at: string;
         };
@@ -43403,39 +41047,6 @@ export interface components {
         /** RubricDepartmentSection */
         RubricDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected departments
              */
@@ -43448,39 +41059,6 @@ export interface components {
         };
         /** RubricDescriptionSection */
         RubricDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -43630,39 +41208,6 @@ export interface components {
         };
         /** RubricFlagSection */
         RubricFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected flag configs
@@ -43821,39 +41366,6 @@ export interface components {
         /** RubricNameSection */
         RubricNameSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected name resource
              */
@@ -43866,39 +41378,6 @@ export interface components {
         };
         /** RubricPointsSection */
         RubricPointsSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected points resource
@@ -43939,39 +41418,6 @@ export interface components {
         /** RubricStandardGroupsSection */
         RubricStandardGroupsSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected standard groups
              */
@@ -43984,39 +41430,6 @@ export interface components {
         };
         /** RubricStandardsSection */
         RubricStandardsSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected standards
@@ -44179,52 +41592,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioDepartmentSection */
-        ScenarioDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected departments
-             */
-            current?: components["schemas"]["ScenarioDepartment"][] | null;
-            /**
-             * Resources
-             * @description Available departments
-             */
-            resources?: components["schemas"]["ScenarioDepartment"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioDescriptionResource
@@ -44246,49 +41623,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioDescriptionSection */
-        ScenarioDescriptionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** @description Currently selected description resource */
-            resource?: components["schemas"]["ScenarioDescriptionResource"] | null;
-            /**
-             * Resources
-             * @description Available description resources
-             */
-            resources?: components["schemas"]["ScenarioDescriptionResource"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioDocument
@@ -44355,52 +41699,21 @@ export interface components {
              * @description Has linked parameter with video disabled
              */
             non_video_document?: boolean | null;
-        };
-        /** ScenarioDocumentSection */
-        ScenarioDocumentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected documents
-             */
-            current?: components["schemas"]["ScenarioDocument"][] | null;
-            /**
-             * Resources
-             * @description Available documents
-             */
-            resources?: components["schemas"]["ScenarioDocument"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioDraftFormState
@@ -44546,6 +41859,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Suggested
+             * @default false
+             */
+            suggested: boolean;
         };
         /**
          * ScenarioFieldError
@@ -44562,22 +41885,6 @@ export interface components {
              * @description Human-readable error message
              */
             message: string;
-        };
-        /**
-         * ScenarioFieldParamFilter
-         * @description Field parameter filter for show_selected filtering.
-         */
-        ScenarioFieldParamFilter: {
-            /**
-             * Parameter Id
-             * @description UUID of the parameter to filter by
-             */
-            parameter_id?: string | null;
-            /**
-             * Show Selected
-             * @description Whether to show only selected items
-             */
-            show_selected?: boolean | null;
         };
         /**
          * ScenarioFlagConfig
@@ -44627,56 +41934,20 @@ export interface components {
              */
             generated?: boolean | null;
             /**
+             * Selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Suggested
+             * @default false
+             */
+            suggested: boolean;
+            /**
              * Video Flag
              * @description Whether this flag only shows when video is enabled
              */
             video_flag?: boolean | null;
-        };
-        /** ScenarioFlagSection */
-        ScenarioFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected flags
-             */
-            current?: components["schemas"]["ScenarioFlagConfig"][] | null;
-            /**
-             * Resources
-             * @description Available flag configs
-             */
-            resources?: components["schemas"]["ScenarioFlagConfig"][] | null;
         };
         /**
          * ScenarioImage
@@ -44713,52 +41984,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioImageSection */
-        ScenarioImageSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected images
-             */
-            current?: components["schemas"]["ScenarioImage"][] | null;
-            /**
-             * Resources
-             * @description Available images
-             */
-            resources?: components["schemas"]["ScenarioImage"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioNameResource
@@ -44780,49 +42015,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioNameSection */
-        ScenarioNameSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** @description Currently selected name resource */
-            resource?: components["schemas"]["ScenarioNameResource"] | null;
-            /**
-             * Resources
-             * @description Available name resources
-             */
-            resources?: components["schemas"]["ScenarioNameResource"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioObjective
@@ -44844,52 +42046,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioObjectiveSection */
-        ScenarioObjectiveSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected objectives
-             */
-            current?: components["schemas"]["ScenarioObjective"][] | null;
-            /**
-             * Resources
-             * @description Available objectives
-             */
-            resources?: components["schemas"]["ScenarioObjective"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioOption
@@ -44921,195 +42087,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioOptionSection */
-        ScenarioOptionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected options
-             */
-            current?: components["schemas"]["ScenarioOption"][] | null;
-            /**
-             * Resources
-             * @description Available options
-             */
-            resources?: components["schemas"]["ScenarioOption"][] | null;
-        };
-        /**
-         * ScenarioParameter
-         * @description Parameter for scenario.
-         */
-        ScenarioParameter: {
-            /**
-             * Parameter Id
-             * @description UUID of the parameter
-             */
-            parameter_id?: string | null;
-            /**
-             * Name
-             * @description Parameter name
-             */
-            name?: string | null;
-            /**
-             * Description
-             * @description Parameter description text
-             */
-            description?: string | null;
-            /**
-             * Document Parameter
-             * @description Whether this is a document parameter
-             */
-            document_parameter?: boolean | null;
-            /**
-             * Persona Parameter
-             * @description Whether this is a persona parameter
-             */
-            persona_parameter?: boolean | null;
-            /**
-             * Scenario Parameter
-             * @description Whether this is a scenario parameter
-             */
-            scenario_parameter?: boolean | null;
-            /**
-             * Video Parameter
-             * @description Whether this is a video parameter
-             */
-            video_parameter?: boolean | null;
-            /**
-             * Non Video Parameter
-             * @description Inverse of video_parameter for frontend filtering
-             */
-            non_video_parameter?: boolean | null;
-            /**
-             * Conditional
-             * @description Whether this parameter is conditional
-             */
-            conditional?: boolean | null;
-        };
-        /** ScenarioParameterFieldSection */
-        ScenarioParameterFieldSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected parameter fields
-             */
-            current?: components["schemas"]["ScenarioField"][] | null;
-            /**
-             * Resources
-             * @description Available parameter fields
-             */
-            resources?: components["schemas"]["ScenarioField"][] | null;
-        };
-        /** ScenarioParameterSection */
-        ScenarioParameterSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected parameters
-             */
-            current?: components["schemas"]["ScenarioParameter"][] | null;
-            /**
-             * Resources
-             * @description Available parameters
-             */
-            resources?: components["schemas"]["ScenarioParameter"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioPersona
@@ -45171,52 +42158,21 @@ export interface components {
              * @description Has linked parameter with video disabled
              */
             non_video_persona?: boolean | null;
-        };
-        /** ScenarioPersonaSection */
-        ScenarioPersonaSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected personas
-             */
-            current?: components["schemas"]["ScenarioPersona"][] | null;
-            /**
-             * Resources
-             * @description Available personas
-             */
-            resources?: components["schemas"]["ScenarioPersona"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioProblemStatement
@@ -45243,49 +42199,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioProblemStatementSection */
-        ScenarioProblemStatementSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /** @description Currently selected problem statement */
-            resource?: components["schemas"]["ScenarioProblemStatement"] | null;
-            /**
-             * Resources
-             * @description Available problem statements
-             */
-            resources?: components["schemas"]["ScenarioProblemStatement"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioQuestion
@@ -45312,52 +42235,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioQuestionSection */
-        ScenarioQuestionSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected questions
-             */
-            current?: components["schemas"]["ScenarioQuestion"][] | null;
-            /**
-             * Resources
-             * @description Available questions
-             */
-            resources?: components["schemas"]["ScenarioQuestion"][] | null;
+            suggested: boolean;
         };
         /**
          * ScenarioResultItem
@@ -45420,52 +42307,16 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** ScenarioVideoSection */
-        ScenarioVideoSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
+             * Selected
              * @default false
              */
-            show: boolean;
+            selected: boolean;
             /**
-             * Required
-             * @description Whether this section requires a selection
+             * Suggested
              * @default false
              */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently selected videos
-             */
-            current?: components["schemas"]["ScenarioVideo"][] | null;
-            /**
-             * Resources
-             * @description Available videos
-             */
-            resources?: components["schemas"]["ScenarioVideo"][] | null;
+            suggested: boolean;
         };
         /**
          * SearchAgentApiRequest
@@ -45810,35 +42661,35 @@ export interface components {
              */
             message_created_at: string;
             /**
-             * Text Upload Ids
-             * @description UUIDs of text uploads
+             * Text Ids
+             * @description UUIDs of text resources
              */
-            text_upload_ids: string[];
+            text_ids: string[];
             /**
-             * Audio Upload Ids
-             * @description UUIDs of audio uploads
+             * Audio Ids
+             * @description UUIDs of audio resources
              */
-            audio_upload_ids: string[];
+            audio_ids: string[];
             /**
-             * Image Upload Ids
-             * @description UUIDs of image uploads
+             * Image Ids
+             * @description UUIDs of image resources
              */
-            image_upload_ids: string[];
+            image_ids: string[];
             /**
-             * Video Upload Ids
-             * @description UUIDs of video uploads
+             * Video Ids
+             * @description UUIDs of video resources
              */
-            video_upload_ids: string[];
+            video_ids: string[];
             /**
-             * File Upload Ids
-             * @description UUIDs of file uploads
+             * File Ids
+             * @description UUIDs of file resources
              */
-            file_upload_ids: string[];
+            file_ids: string[];
             /**
-             * Call Upload Ids
-             * @description UUIDs of call uploads
+             * Call Ids
+             * @description UUIDs of call resources
              */
-            call_upload_ids: string[];
+            call_ids: string[];
         };
         /**
          * SearchModelApiRequest
@@ -46626,6 +43477,42 @@ export interface components {
             status: string;
         };
         /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Parameter group IDs to filter by (parameter_fields section only)
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
          * SessionListItem
          * @description Single session in the list response with hydrated metadata.
          */
@@ -46760,39 +43647,6 @@ export interface components {
         /** SettingAuthItemKeySection */
         SettingAuthItemKeySection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned auth item keys
              */
@@ -46805,39 +43659,6 @@ export interface components {
         };
         /** SettingAuthSection */
         SettingAuthSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned auth providers
@@ -46852,39 +43673,6 @@ export interface components {
         /** SettingColorSection */
         SettingColorSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned colors
              */
@@ -46898,39 +43686,6 @@ export interface components {
         /** SettingDepartmentSection */
         SettingDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned departments
              */
@@ -46943,39 +43698,6 @@ export interface components {
         };
         /** SettingDescriptionSection */
         SettingDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -47111,39 +43833,6 @@ export interface components {
         };
         /** SettingFlagSection */
         SettingFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected flag config */
             current?: components["schemas"]["SettingFlagConfig"] | null;
             /**
@@ -47154,39 +43843,6 @@ export interface components {
         };
         /** SettingNameSection */
         SettingNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected name resource
@@ -47203,39 +43859,6 @@ export interface components {
         /** SettingProfileSection */
         SettingProfileSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned profiles
              */
@@ -47248,39 +43871,6 @@ export interface components {
         };
         /** SettingProviderKeySection */
         SettingProviderKeySection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned provider keys
@@ -47320,39 +43910,6 @@ export interface components {
         };
         /** SettingSystemSection */
         SettingSystemSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned systems
@@ -47449,39 +44006,6 @@ export interface components {
         /** SimulationDepartmentSection */
         SimulationDepartmentSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected departments
              */
@@ -47515,39 +44039,6 @@ export interface components {
         };
         /** SimulationDescriptionSection */
         SimulationDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected description resource */
             resource?: components["schemas"]["SimulationDescriptionResource"] | null;
             /**
@@ -47683,39 +44174,6 @@ export interface components {
         /** SimulationFlagSection */
         SimulationFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected flags
              */
@@ -47749,39 +44207,6 @@ export interface components {
         };
         /** SimulationNameSection */
         SimulationNameSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently selected name resource */
             resource?: components["schemas"]["SimulationNameResource"] | null;
             /**
@@ -47952,39 +44377,6 @@ export interface components {
         /** SimulationScenarioFlagSection */
         SimulationScenarioFlagSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected scenario flags
              */
@@ -48023,39 +44415,6 @@ export interface components {
         };
         /** SimulationScenarioPositionSection */
         SimulationScenarioPositionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected scenario positions
@@ -48096,39 +44455,6 @@ export interface components {
         /** SimulationScenarioRubricSection */
         SimulationScenarioRubricSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently selected scenario rubrics
              */
@@ -48141,39 +44467,6 @@ export interface components {
         };
         /** SimulationScenarioSection */
         SimulationScenarioSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected scenarios
@@ -48218,39 +44511,6 @@ export interface components {
         };
         /** SimulationScenarioTimeLimitSection */
         SimulationScenarioTimeLimitSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently selected scenario time limits
@@ -49019,6 +45279,11 @@ export interface components {
              * @description Message entry payloads
              */
             messages?: components["schemas"]["SearchMessageResponse"][] | null;
+            /**
+             * Calls
+             * @description Tool call entries from original run
+             */
+            calls?: unknown[] | null;
         };
         /**
          * TestGroupPayload
@@ -49271,6 +45536,15 @@ export interface components {
              * @description Quality resources keyed by ID
              */
             qualities?: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            /**
+             * Standard Groups
+             * @description Standard group resources keyed by ID
+             */
+            standard_groups?: {
                 [key: string]: {
                     [key: string]: unknown;
                 };
@@ -49548,6 +45822,81 @@ export interface components {
             message?: string | null;
         };
         /**
+         * TextDownloadAttemptApiRequest
+         * @description Request model for attempt text download endpoint.
+         */
+        TextDownloadAttemptApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_entry to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadDocumentApiRequest
+         * @description Request model for document text download endpoint.
+         */
+        TextDownloadDocumentApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadGroupApiRequest
+         * @description Request model for group text download endpoint.
+         */
+        TextDownloadGroupApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextDownloadScenarioApiRequest
+         * @description Request model for scenario text download endpoint.
+         */
+        TextDownloadScenarioApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the texts_resource to download
+             */
+            text_id: string;
+        };
+        /** TextDownloadTestApiRequest */
+        TextDownloadTestApiRequest: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the text resource to download
+             */
+            text_id: string;
+        };
+        /**
+         * TextUploadDocumentApiResponse
+         * @description Response model for document text upload endpoint.
+         */
+        TextUploadDocumentApiResponse: {
+            /**
+             * Text Id
+             * Format: uuid
+             * @description UUID of the created texts_resource
+             */
+            text_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             * @description UUID of the uploads_entry (file on disk)
+             */
+            upload_id: string;
+        };
+        /**
          * ThemePrimitives
          * @description Raw theme color primitives (hex values) from settings.
          *
@@ -49650,39 +45999,6 @@ export interface components {
         /** ToolArgOutputSection */
         ToolArgOutputSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned argument outputs
              */
@@ -49695,39 +46011,6 @@ export interface components {
         };
         /** ToolArgPositionSection */
         ToolArgPositionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Current
              * @description Currently assigned argument positions
@@ -49742,39 +46025,6 @@ export interface components {
         /** ToolArgSection */
         ToolArgSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Current
              * @description Currently assigned arguments
              */
@@ -49785,87 +46035,8 @@ export interface components {
              */
             resources?: unknown[] | null;
         };
-        /** ToolArtifactSection */
-        ToolArtifactSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
-             * Current
-             * @description Currently assigned artifacts
-             */
-            current?: unknown[] | null;
-            /**
-             * Resources
-             * @description Available artifacts
-             */
-            resources?: unknown[] | null;
-        };
         /** ToolDescriptionSection */
         ToolDescriptionSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /**
              * Resource
              * @description Currently selected description resource
@@ -49918,15 +46089,15 @@ export interface components {
              */
             args_output_ids: string[];
             /**
-             * Artifact Ids
-             * @description Artifact identifiers
+             * Permission Ids
+             * @description Permission identifiers
              */
-            artifact_ids: string[];
+            permission_ids: string[];
             /**
-             * Operation Ids
-             * @description Operation identifiers
+             * Agent Id
+             * @description Delegate agent identifier
              */
-            operation_ids: string[];
+            agent_id?: string | null;
         };
         /**
          * ToolFieldError
@@ -49994,39 +46165,6 @@ export interface components {
         };
         /** ToolFlagSection */
         ToolFlagSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
             /** @description Currently active flag config */
             current?: components["schemas"]["ToolFlagConfig"] | null;
             /**
@@ -50038,39 +46176,6 @@ export interface components {
         /** ToolNameSection */
         ToolNameSection: {
             /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
-            /**
              * Resource
              * @description Currently selected name resource
              */
@@ -50081,49 +46186,16 @@ export interface components {
              */
             resources?: unknown[] | null;
         };
-        /** ToolOperationSection */
-        ToolOperationSection: {
-            /**
-             * Show
-             * @description Whether this section is visible in the UI
-             * @default false
-             */
-            show: boolean;
-            /**
-             * Required
-             * @description Whether this section requires a selection
-             * @default false
-             */
-            required: boolean;
-            /**
-             * Suggestions
-             * @description Suggested resource UUIDs for this section
-             */
-            suggestions?: string[] | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available for this section
-             * @default false
-             */
-            show_ai_generate: boolean;
-            /**
-             * Tool Id
-             * @description UUID of the create tool for this resource
-             */
-            tool_id?: string | null;
-            /**
-             * Link Tool Id
-             * @description UUID of the link tool for this resource
-             */
-            link_tool_id?: string | null;
+        /** ToolPermissionSection */
+        ToolPermissionSection: {
             /**
              * Current
-             * @description Currently assigned operations
+             * @description Currently assigned permissions
              */
             current?: unknown[] | null;
             /**
              * Resources
-             * @description Available operations
+             * @description Available permissions
              */
             resources?: unknown[] | null;
         };
@@ -50244,15 +46316,25 @@ export interface components {
              */
             departments?: string[] | null;
             /**
+             * Active Flag
+             * @description Whether this agent is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Ids
              * @description Associated flag UUIDs
              */
             flag_ids?: string[] | null;
             /**
-             * Model Ids
-             * @description Associated model UUIDs
+             * Model Id
+             * @description Associated model UUID
              */
-            model_ids?: string[] | null;
+            model_id?: string | null;
             /**
              * Reasoning Level Ids
              * @description Associated reasoning level UUIDs
@@ -50494,10 +46576,15 @@ export interface components {
              */
             profile_persona_ids?: string[] | null;
             /**
-             * Is Inactive
-             * @description Whether the cohort is inactive
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
              */
-            is_inactive?: boolean | null;
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the cohort is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
             /**
              * Departments
              * @description Department names for resolution
@@ -50671,10 +46758,25 @@ export interface components {
              */
             flag_id?: string | null;
             /**
-             * Is Inactive
-             * @description Whether the document is inactive
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
              */
-            is_inactive?: boolean | null;
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the document is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
+            /**
+             * Template Flag
+             * @description Whether this is a template document
+             */
+            template_flag?: boolean | null;
+            /**
+             * Template Flag Id
+             * @description Template flag resource UUID
+             */
+            template_flag_id?: string | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -50686,10 +46788,10 @@ export interface components {
              */
             departments?: string[] | null;
             /**
-             * Field Ids
+             * Parameter Field Ids
              * @description Parameter field UUIDs
              */
-            field_ids?: string[] | null;
+            parameter_field_ids?: string[] | null;
             /**
              * Upload Ids
              * @description File upload UUIDs
@@ -50807,6 +46909,16 @@ export interface components {
              * @description Model position UUIDs
              */
             model_position_ids?: string[] | null;
+            /**
+             * Active Flag
+             * @description Whether this eval is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
         };
         /**
          * UpdateFieldApiRequest
@@ -50874,6 +46986,16 @@ export interface components {
              * @description Description value to resolve or create
              */
             description?: string | null;
+            /**
+             * Active Flag
+             * @description Whether this field is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
             /**
              * Flag Id
              * @description UUID of the flag option
@@ -50977,6 +47099,16 @@ export interface components {
              */
             departments?: string[] | null;
             /**
+             * Active Flag
+             * @description Whether this model is active
+             */
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
+            /**
              * Flag Ids
              * @description Flag option identifiers
              */
@@ -50992,10 +47124,10 @@ export interface components {
              */
             pricing_ids?: string[] | null;
             /**
-             * Provider Ids
-             * @description Provider identifiers
+             * Provider Id
+             * @description Provider identifier
              */
-            provider_ids?: string[] | null;
+            provider_id?: string | null;
             /**
              * Quality Ids
              * @description Quality level identifiers
@@ -51012,10 +47144,10 @@ export interface components {
              */
             temperature_level_ids?: string[] | null;
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids?: string[] | null;
+            value_id?: string | null;
             /**
              * Voice Ids
              * @description Voice identifiers
@@ -51147,17 +47279,17 @@ export interface components {
         };
         /**
          * UpdatePersonaItem
-         * @description Single persona item for update — persona_id required, all fields optional.
+         * @description Single persona item for update — id required, all fields optional.
          *
          *     Only provided fields are updated (partial update).
          */
         UpdatePersonaItem: {
             /**
-             * Persona Id
+             * Id
              * Format: uuid
              * @description UUID of the persona to update (required)
              */
-            persona_id: string;
+            id: string;
             /**
              * Name Id
              * @description UUID of an existing name resource to select
@@ -51319,10 +47451,10 @@ export interface components {
              */
             request_limit_id?: string | null;
             /**
-             * Flag Id
+             * Active Flag Id
              * @description UUID of the flag option
              */
-            flag_id?: string | null;
+            active_flag_id?: string | null;
             /**
              * Department Ids
              * @description Department UUIDs to assign
@@ -51339,10 +47471,10 @@ export interface components {
              */
             email_ids?: string[] | null;
             /**
-             * Role Ids
-             * @description Role resource UUIDs
+             * Role Id
+             * @description Role resource UUID
              */
-            role_ids?: string[] | null;
+            role_id?: string | null;
         };
         /**
          * UpdateProviderApiRequest
@@ -51439,10 +47571,10 @@ export interface components {
              */
             key_ids?: string[] | null;
             /**
-             * Value Ids
-             * @description Value resource identifiers
+             * Value Id
+             * @description Value resource identifier
              */
-            value_ids?: string[] | null;
+            value_id?: string | null;
         };
         /**
          * UpdateRubricApiRequest
@@ -51518,6 +47650,26 @@ export interface components {
              * @description Active flag boolean value
              */
             active_flag?: boolean | null;
+            /**
+             * Simulation Rubric Flag
+             * @description Whether this is a simulation rubric
+             */
+            simulation_rubric_flag?: boolean | null;
+            /**
+             * Simulation Rubric Flag Id
+             * @description Simulation rubric flag resource UUID
+             */
+            simulation_rubric_flag_id?: string | null;
+            /**
+             * Video Rubric Flag
+             * @description Whether this is a video rubric
+             */
+            video_rubric_flag?: boolean | null;
+            /**
+             * Video Rubric Flag Id
+             * @description Video rubric flag resource UUID
+             */
+            video_rubric_flag_id?: string | null;
             /**
              * Department Ids
              * @description Department UUIDs
@@ -51705,6 +47857,31 @@ export interface components {
              * @description Active flag boolean value
              */
             active_flag?: boolean | null;
+            /**
+             * Images Enabled Flag
+             * @description Whether images are enabled
+             */
+            images_enabled_flag?: boolean | null;
+            /**
+             * Objectives Enabled Flag
+             * @description Whether objectives are enabled
+             */
+            objectives_enabled_flag?: boolean | null;
+            /**
+             * Problem Statement Enabled Flag
+             * @description Whether problem statement is enabled
+             */
+            problem_statement_enabled_flag?: boolean | null;
+            /**
+             * Questions Enabled Flag
+             * @description Whether questions are enabled
+             */
+            questions_enabled_flag?: boolean | null;
+            /**
+             * Video Enabled Flag
+             * @description Whether video is enabled
+             */
+            video_enabled_flag?: boolean | null;
             /**
              * Departments
              * @description Department names for matching
@@ -51950,11 +48127,6 @@ export interface components {
              */
             description?: string | null;
             /**
-             * Flag Ids
-             * @description Associated flag UUIDs
-             */
-            flag_ids?: string[] | null;
-            /**
              * Department Ids
              * @description Associated department UUIDs
              */
@@ -51985,15 +48157,25 @@ export interface components {
              */
             scenario_time_limit_ids?: string[] | null;
             /**
-             * Is Inactive
-             * @description Whether the simulation is inactive
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
              */
-            is_inactive?: boolean | null;
+            active_flag_id?: string | null;
             /**
-             * Is Practice
+             * Active Flag
+             * @description Whether the simulation is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
+            /**
+             * Practice Flag
              * @description Whether this is a practice simulation
              */
-            is_practice?: boolean | null;
+            practice_flag?: boolean | null;
+            /**
+             * Practice Flag Id
+             * @description Practice flag resource UUID
+             */
+            practice_flag_id?: string | null;
             /**
              * Departments
              * @description Department names for matching
@@ -52097,35 +48279,25 @@ export interface components {
              */
             args_outputs_ids?: string[] | null;
             /**
-             * Artifact Ids
-             * @description Artifact identifiers
+             * Permission Ids
+             * @description Permission identifiers
              */
-            artifact_ids?: string[] | null;
-            /**
-             * Operation Ids
-             * @description Operation identifiers
-             */
-            operation_ids?: string[] | null;
+            permission_ids?: string[] | null;
             /**
              * Tool Ids
              * @description Related tool identifiers
              */
             tool_ids?: string[] | null;
-        };
-        /** UploadResponse */
-        UploadResponse: {
             /**
-             * Upload Id
-             * Format: uuid
+             * Active Flag
+             * @description Whether this tool is active
              */
-            upload_id: string;
-        };
-        /** UsePreviousAttemptApiResponse */
-        UsePreviousAttemptApiResponse: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message?: string | null;
+            active_flag?: boolean | null;
+            /**
+             * Active Flag Id
+             * @description Active flag resource UUID
+             */
+            active_flag_id?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -52135,6 +48307,42 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VideoDownloadAttemptApiRequest
+         * @description Request model for attempt video download endpoint.
+         */
+        VideoDownloadAttemptApiRequest: {
+            /**
+             * Video Id
+             * Format: uuid
+             * @description UUID of the videos_entry to download
+             */
+            video_id: string;
+        };
+        /**
+         * VideoDownloadGroupApiRequest
+         * @description Request model for group video download endpoint.
+         */
+        VideoDownloadGroupApiRequest: {
+            /**
+             * Video Id
+             * Format: uuid
+             * @description UUID of the videos_resource to download
+             */
+            video_id: string;
+        };
+        /**
+         * VideoDownloadScenarioApiRequest
+         * @description Request model for scenario video download endpoint.
+         */
+        VideoDownloadScenarioApiRequest: {
+            /**
+             * Video Id
+             * Format: uuid
+             * @description UUID of the videos_resource to download
+             */
+            video_id: string;
         };
         /**
          * VideoEntry
@@ -52161,6 +48369,24 @@ export interface components {
              * @description Description of the video
              */
             description?: string | null;
+        };
+        /**
+         * VideoUploadScenarioApiResponse
+         * @description Response model for scenario video upload endpoint.
+         */
+        VideoUploadScenarioApiResponse: {
+            /**
+             * Video Id
+             * Format: uuid
+             * @description UUID of the created videos_resource
+             */
+            video_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             * @description UUID of the uploads_entry (file on disk)
+             */
+            upload_id: string;
         };
         /**
          * ContentEntry
@@ -52463,7 +48689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetPersonaApiResponse-Output"];
+                    "application/json": components["schemas"]["GetPersonaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52675,7 +48901,7 @@ export interface operations {
             };
         };
     };
-    patch_persona_draft_personas_draft_patch: {
+    patch_persona_draft_personas_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -52833,7 +49059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetScenarioApiResponse-Output"];
+                    "application/json": components["schemas"]["GetScenarioApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53184,14 +49410,21 @@ export interface operations {
             };
         };
     };
-    upload_scenarios_upload_post: {
+    upload_image_scenarios_image_upload_post: {
         parameters: {
-            query?: never;
+            query?: {
+                name?: string | null;
+                description?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_image_scenarios_image_upload_post"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -53199,21 +49432,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadResponse"];
+                    "application/json": components["schemas"]["ImageUploadScenarioApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    download_scenarios_download__upload_id__get: {
+    download_image_scenarios_image_download_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                upload_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageDownloadScenarioApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -53235,16 +49479,153 @@ export interface operations {
             };
         };
     };
-    preview_scenarios_preview__upload_id__get: {
+    upload_video_scenarios_video_upload_post: {
+        parameters: {
+            query?: {
+                name?: string | null;
+                description?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_video_scenarios_video_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoUploadScenarioApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_video_scenarios_video_download_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                upload_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoDownloadScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_scenarios_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_scenarios_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_file_scenarios_file_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FilePreviewScenarioApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -54006,14 +50387,18 @@ export interface operations {
             };
         };
     };
-    upload_documents_upload_post: {
+    upload_text_documents_text_upload_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_text_documents_text_upload_post"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -54021,21 +50406,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UploadResponse"];
+                    "application/json": components["schemas"]["TextUploadDocumentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    download_documents_download__upload_id__get: {
+    download_text_documents_text_download_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                upload_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadDocumentApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -54057,16 +50453,84 @@ export interface operations {
             };
         };
     };
-    preview_documents_preview__upload_id__get: {
+    upload_file_documents_file_upload_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                upload_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_file_documents_file_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileUploadDocumentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_documents_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadDocumentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_file_documents_file_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FilePreviewDocumentApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -58191,6 +54655,92 @@ export interface operations {
             };
         };
     };
+    get_profile_context_profiles_context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileContextApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    emulate_profile_profiles_emulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmulateProfileApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmulateProfileApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unemulate_profile_profiles_unemulate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnemulateProfileApiResponse"];
+                };
+            };
+        };
+    };
     get_auth_auths_get_post: {
         parameters: {
             query?: never;
@@ -58931,6 +55481,39 @@ export interface operations {
             };
         };
     };
+    search_groups_group_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetGroupListRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetGroupListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     group_refresh_group_refresh_post: {
         parameters: {
             query?: never;
@@ -59017,16 +55600,282 @@ export interface operations {
             };
         };
     };
-    download_group_download__upload_id__get: {
+    generate_group_generate_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                upload_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerateApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    name_group_group_name_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NameGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NameGroupApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_image_group_image_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageDownloadGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_video_group_video_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoDownloadGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_group_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_group_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_file_group_file_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FilePreviewGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_audio_group_audio_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioDownloadGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_call_group_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadGroupApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -59650,7 +56499,7 @@ export interface operations {
             };
         };
     };
-    attempt_join_attempt_join_post: {
+    search_attempt_attempt_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59659,7 +56508,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AttemptJoinRequest"];
+                "application/json": components["schemas"]["SearchAttemptApiRequest"];
             };
         };
         responses: {
@@ -59669,40 +56518,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AttemptJoinResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_leave_attempt_leave_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptLeaveRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttemptLeaveResponse"];
+                    "application/json": components["schemas"]["SearchAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60119,7 +56935,7 @@ export interface operations {
             };
         };
     };
-    attempt_use_previous_attempt_use_previous_post: {
+    attempt_previous_attempt_previous_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60138,7 +56954,73 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UsePreviousAttemptApiResponse"];
+                    "application/json": components["schemas"]["PreviousAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_join_attempt_join_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptJoinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptJoinResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_leave_attempt_leave_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptLeaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttemptLeaveResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60284,16 +57166,18 @@ export interface operations {
             };
         };
     };
-    search_attempt_attempt_search_post: {
+    upload_audio_attempt_audio_upload_post: {
         parameters: {
-            query?: never;
+            query?: {
+                length_seconds?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SearchAttemptApiRequest"];
+                "multipart/form-data": components["schemas"]["Body_upload_audio_attempt_audio_upload_post"];
             };
         };
         responses: {
@@ -60303,7 +57187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SearchAttemptApiResponse"];
+                    "application/json": components["schemas"]["AudioUploadAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60317,16 +57201,183 @@ export interface operations {
             };
         };
     };
-    download_attempt_download__upload_id__get: {
+    download_audio_attempt_audio_download_post: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                upload_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioDownloadAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_image_attempt_image_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageDownloadAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_video_attempt_video_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideoDownloadAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_text_attempt_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_file_attempt_file_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FileDownloadAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_file_attempt_file_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FilePreviewAttemptApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -61118,7 +58169,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ResolveProblemRequest"];
+                "application/json": components["schemas"]["ResolveProblemApiRequest"];
             };
         };
         responses: {
@@ -61128,7 +58179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResolveProblemResponse"];
+                    "application/json": components["schemas"]["ResolveProblemApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61182,6 +58233,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComposedDocsResponse-Output"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_problem_activity_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProblemApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateProblemApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61856,6 +58940,142 @@ export interface operations {
             };
         };
     };
+    create_grade_test_grade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGradeApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_feedback_test_feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFeedbackApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_text_download_test_text_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextDownloadTestApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_call_download_test_call_download_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallDownloadTestApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     connect_connect_post: {
         parameters: {
             query?: never;
@@ -61896,158 +59116,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DisconnectResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_context_context_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileContextApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileContextApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_problem_problem_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateProblemRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateProblemResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    emulate_profile_emulate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EmulateProfileApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EmulateProfileApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unemulate_profile_unemulate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UnemulateProfileApiResponse"];
-                };
-            };
-        };
-    };
-    generate_generate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GeneratePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GenerateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69842,7 +66910,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetPersonaApiResponse-Input"];
+                "application/json": components["schemas"]["GetPersonaApiResponse"];
             };
         };
         responses: {
@@ -70332,7 +67400,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetScenarioApiResponse-Input"];
+                "application/json": components["schemas"]["GetScenarioApiResponse"];
             };
         };
         responses: {

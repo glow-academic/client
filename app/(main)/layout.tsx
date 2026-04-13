@@ -15,7 +15,9 @@ import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
   exitEmulation,
+  getGroupMessages,
   getLayoutContextData,
+  searchGroups,
   searchProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
@@ -87,6 +89,8 @@ export default async function MainLayout({
         exitEmulationAction={exitEmulation}
         createFeedbackAction={createFeedback}
         searchProfilesAction={searchProfiles}
+        searchGroupsAction={searchGroups}
+        getGroupMessagesAction={getGroupMessages}
       >
         <Suspense
           key={`suspense-${pathname}`}

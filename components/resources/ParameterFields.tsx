@@ -53,6 +53,7 @@ export interface ParameterFieldsProps {
 
 // Represents an available field option
 type AvailableFieldOption = {
+  id: string;
   field_id: string;
   parameter_id: string;
   name: string;
@@ -139,8 +140,10 @@ export function ParameterFields({
       const existingResourceId = selectedFieldKeyToResourceId.get(key) ?? localKeyToResourceId.get(key);
 
       if (checked) {
-        if (existingResourceId) {
-          setResourceIds((prev) => new Map(prev).set(existingResourceId, existingResourceId));
+        const resolvedId = existingResourceId ?? option.id;
+        if (resolvedId) {
+          setResourceIds((prev) => new Map(prev).set(resolvedId, resolvedId));
+          setLocalKeyToResourceId((prev) => new Map(prev).set(key, resolvedId));
         } else {
           void createParameterField(option.parameter_id, option.field_id);
         }
@@ -228,6 +231,7 @@ export function ParameterFields({
         const parameterId = field.parameter_id as string;
         if (!map.has(parameterId)) map.set(parameterId, []);
         map.get(parameterId)!.push({
+          id: field.id as string,
           field_id: field.field_id as string,
           parameter_id: parameterId,
           name: field.name as string,

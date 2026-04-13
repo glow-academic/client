@@ -22,7 +22,7 @@ async function fetchTextContent(uploadId: string, baseUrl: string): Promise<stri
   return res.text();
 }
 
-/** Hook: resolve text_upload_ids → displayable strings for each message. */
+/** Hook: resolve text_ids → displayable strings for each message. */
 function useTextContents(messages: GroupMessage[], downloadBaseUrl: string) {
   const [contentMap, setContentMap] = useState<Record<string, string[]>>({});
   const fetchedRef = useRef<Set<string>>(new Set());
@@ -33,7 +33,7 @@ function useTextContents(messages: GroupMessage[], downloadBaseUrl: string) {
     for (const msg of messages) {
       const mid = msg.message_id;
       if (!mid || fetchedRef.current.has(mid)) continue;
-      const ids = msg.text_upload_ids;
+      const ids = msg.text_ids;
       if (!ids || ids.length === 0) continue;
       toFetch.push({ messageId: mid, uploadIds: ids });
       fetchedRef.current.add(mid);
@@ -97,7 +97,7 @@ export function MessageTimeline({
           : undefined;
         const content = texts?.join("\n") ?? "";
         const isLoadingContent =
-          !texts && (msg.text_upload_ids?.length ?? 0) > 0;
+          !texts && (msg.text_ids?.length ?? 0) > 0;
         const time = msg.message_created_at
           ? new Date(msg.message_created_at).toLocaleTimeString([], {
               hour: "2-digit",

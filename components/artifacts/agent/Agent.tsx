@@ -416,9 +416,6 @@ export default function Agent({
   const lastPatchedFormStateRef = useRef<Record<string, unknown>>(
     initialDraftState as Record<string, unknown>,
   );
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion = sectionData?.draft_version ?? null;
-
   // Track previous initialDraftState content to avoid unnecessary updates
   const prevInitialDraftStateRef = useRef<string>(
     JSON.stringify(initialDraftState),
@@ -455,7 +452,7 @@ export default function Agent({
   const patchActionRef = useRef<
     | ((
         payload: Record<string, unknown>,
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
@@ -498,7 +495,6 @@ export default function Agent({
   const buildPatchPayload = useCallback(
     (
       nextDraftId: string | null,
-      expectedVersion: number,
       flushResults: Record<string, unknown> = {},
     ) => {
       const currentDraftState = formStateRef.current as unknown as DraftState;
@@ -513,7 +509,6 @@ export default function Agent({
           referenceState: lastPatchedFormStateRef.current,
           flushResults,
         }),
-        expected_version: expectedVersion,
       };
 
       // Overlay value fields (single-select values clear the corresponding ID)
@@ -544,7 +539,6 @@ export default function Agent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: typeof draftVersion === "number" ? draftVersion : null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,

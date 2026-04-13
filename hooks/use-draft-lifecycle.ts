@@ -9,13 +9,11 @@ import { toast } from "sonner";
 
 interface PatchResult {
   draft_id?: string | null;
-  new_version?: number | null;
 }
 
 /**
  * Manages the complete draft autosave lifecycle:
  * - draftId tracking from GenericForm URL state
- * - Version tracking for optimistic concurrency
  * - Deduplication via draftPatchKey
  * - Debounced autosave effect (1s)
  * - beforeunload warning for unsaved changes
@@ -31,15 +29,12 @@ export function useDraftLifecycle(config: {
     ((payload: Record<string, unknown>) => Promise<PatchResult>) | undefined
   >;
   isAutosaveEnabled: boolean;
-  /** Build the full patch payload given draftId, expectedVersion, and optional flush results */
+  /** Build the full patch payload given draftId and optional flush results */
   buildPatchPayload: (
     draftId: string | null,
-    expectedVersion: number,
     flushResults?: Record<string, unknown>
   ) => Record<string, unknown>;
   setSelectedDraftId: (id: string | null) => void;
-  /** draft_version from server data (null for new entities) */
-  serverDraftVersion: number | null;
   /** Whether the form has any resource IDs at all (gate for patching) */
   hasResourceIds: boolean;
   flushRegistryRef: MutableRefObject<
@@ -55,7 +50,6 @@ export function useDraftLifecycle(config: {
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
@@ -94,25 +88,6 @@ export function useDraftLifecycle(config: {
     [setSelectedDraftId]
   );
 
-  // --- Version tracking ---
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = useRef(0);
-  useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-
-  const versionSyncedRef = useRef(false);
-  useEffect(() => {
-    if (
-      typeof serverDraftVersion === "number" &&
-      serverDraftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(serverDraftVersion);
-      lastSavedVersionRef.current = serverDraftVersion;
-    }
-    versionSyncedRef.current = true;
-  }, [serverDraftVersion]);
-
   // --- draftPatchKey dedup ---
   // Prepend draftId to the caller-provided formStateKey to get the full dedup key
   const draftPatchKey = `{"draftId":${JSON.stringify(draftId ?? null)},${formStateKey.slice(1)}`;
@@ -124,13 +99,6 @@ export function useDraftLifecycle(config: {
   // --- Debounced autosave effect ---
   useEffect(() => {
     if (!hasResourceIds || !patchActionRef.current) {
-      return;
-    }
-
-    if (
-      typeof serverDraftVersion === "number" &&
-      !versionSyncedRef.current
-    ) {
       return;
     }
 
@@ -164,10 +132,7 @@ export function useDraftLifecycle(config: {
       try {
         if (!patchActionRef.current) return;
 
-        const payload = buildPatchPayload(
-          draftId,
-          lastSavedVersionRef.current
-        );
+        const payload = buildPatchPayload(draftId);
         const result = await patchActionRef.current(payload);
 
         lastPatchedKeyRef.current = draftPatchKey;
@@ -179,11 +144,6 @@ export function useDraftLifecycle(config: {
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         } else if (result.draft_id && result.draft_id !== draftId) {
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
         }
 
         hasPendingChangesRef.current = false;
@@ -273,21 +233,10 @@ export function useDraftLifecycle(config: {
         // 2. Patch draft
         let isNewDraft = false;
         if (patchActionRef.current) {
-          const payload = buildPatchPayload(
-            draftId,
-            lastSavedVersionRef.current,
-            mergedFlushResults
-          );
+          const payload = buildPatchPayload(draftId, mergedFlushResults);
           const result = await patchActionRef.current(payload);
 
           lastPatchedKeyRef.current = draftPatchKey;
-          if (
-            result.new_version !== undefined &&
-            result.new_version !== null
-          ) {
-            lastSavedVersionRef.current = result.new_version;
-            setLastSavedVersion(result.new_version);
-          }
 
           if (!draftId && result.draft_id) {
             setUrlFormDataRef.current?.({ draftId: result.draft_id });

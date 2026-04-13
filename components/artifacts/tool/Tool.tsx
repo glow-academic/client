@@ -507,27 +507,6 @@ function ToolComponent({
   // Prevent autosave re-trigger when syncing form_state from server
   const serverSyncPendingRef = React.useRef(false);
 
-  // Draft version tracking for optimistic concurrency control
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion =
-    toolData && "draft_version" in toolData
-      ? (toolData as { draft_version?: number | null }).draft_version
-      : null;
-  React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-  }, [draftVersion]);
-
   const draftPatchKey = useMemo(
     () => {
       if (serverSyncPendingRef.current) return undefined;
@@ -605,7 +584,6 @@ function ToolComponent({
           args_output_ids: fs.args_outputs_ids,
           artifact_ids: fs.artifact_ids,
           operation_ids: fs.operation_ids,
-          expected_version: lastSavedVersionRef.current,
         };
 
         // Value field overlay — send raw value instead of ID for creatables
@@ -626,12 +604,6 @@ function ToolComponent({
 
         if (result.draft_id && result.draft_id !== draftId) {
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
-        }
-
-        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
-          setLastSavedVersion(result.new_version ?? 0);
-          lastSavedVersionRef.current = result.new_version ?? 0;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         }
 
         // Sync form_state from server (resolved IDs for creatables)

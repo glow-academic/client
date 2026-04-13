@@ -265,10 +265,8 @@ function RubricComponent({
     if (serverSyncPendingRef.current) return undefined;
     return JSON.stringify(formState);
   }, [formState]);
-  const draftVersion = s?.draft_version ?? null;
-
   const patchActionRef = React.useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
   useEffect(() => {
     if (!patchRubricDraftAction) {
@@ -305,7 +303,6 @@ function RubricComponent({
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const payload: Record<string, unknown> = {
@@ -316,7 +313,6 @@ function RubricComponent({
           referenceState: lastPatchedFormStateRef.current,
           flushResults: flushResults ?? {},
         }),
-        expected_version: expectedVersion,
       };
       const fs = formStateRef.current as unknown as RubricFormState;
       if (fs.name) {
@@ -339,7 +335,6 @@ function RubricComponent({
       isAutosaveEnabled,
       buildPatchPayload,
       setSelectedDraftId,
-      serverDraftVersion: draftVersion,
       hasResourceIds,
       flushRegistryRef,
       formStateRef,

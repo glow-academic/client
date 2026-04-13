@@ -10,12 +10,12 @@ import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfileContextIn = InputOf<"/api/v5/context", "post">;
-type ProfileContextOut = OutputOf<"/api/v5/context", "post">;
+type ProfileContextIn = InputOf<"/api/v5/profiles/context", "post">;
+type ProfileContextOut = OutputOf<"/api/v5/profiles/context", "post">;
 
-type EmulateProfileIn = InputOf<"/api/v5/emulate", "post">;
-type CreateFeedbackIn = InputOf<"/api/v5/problem", "post">;
-type CreateFeedbackOut = OutputOf<"/api/v5/problem", "post">;
+type EmulateProfileIn = InputOf<"/api/v5/profiles/emulate", "post">;
+type CreateFeedbackIn = InputOf<"/api/v5/activity/problem", "post">;
+type CreateFeedbackOut = OutputOf<"/api/v5/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
 const REFRESH_ENDPOINT_MAP: Record<string, string> = {
   chat: "/chat/refresh",
@@ -48,7 +48,7 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
 export const getProfileContext = cache(
   async (): Promise<ProfileContextOut> => {
     const extraHeaders = await buildAuthHeaders();
-    return api.post("/context", { body: {} } as ProfileContextIn, { headers: extraHeaders });
+    return api.post("/profiles/context", { body: {} } as ProfileContextIn, { headers: extraHeaders });
   }
 );
 
@@ -61,6 +61,17 @@ export async function getGroupMessages(
   input: GroupMessagesIn
 ): Promise<GroupMessagesOut> {
   return api.post("/group/get", input);
+}
+
+/** ---- Group search server action (canonical: /artifacts/group/search) ---- */
+type GroupSearchIn = InputOf<"/group/search", "post">;
+type GroupSearchOut = OutputOf<"/group/search", "post">;
+
+export async function searchGroups(
+  input: GroupSearchIn
+): Promise<GroupSearchOut> {
+  "use server";
+  return api.post("/group/search", input);
 }
 
 
@@ -146,7 +157,7 @@ export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
   try {
-    const res = await api.post("/emulate", {
+    const res = await api.post("/profiles/emulate", {
       body: {
         target_profile_id: input.targetProfileId,
       },
@@ -176,7 +187,7 @@ type ExitEmulationResult = {
  */
 export async function exitEmulation(): Promise<ExitEmulationResult> {
   try {
-    const res = await api.post("/unemulate", {
+    const res = await api.post("/profiles/unemulate", {
       body: {},
     });
 
@@ -201,7 +212,7 @@ export async function clearSessionCookies(): Promise<void> {
 export async function createFeedback(
   input: CreateFeedbackIn
 ): Promise<CreateFeedbackOut> {
-  return api.post("/problem", input);
+  return api.post("/activity/problem", input);
 }
 
 /** ---- Strongly-typed server actions for Analytics (single source of truth) ---- */
@@ -259,6 +270,8 @@ export type {
   ExitEmulationResult,
   GroupMessagesIn,
   GroupMessagesOut,
+  GroupSearchIn,
+  GroupSearchOut,
   SearchProfilesIn,
   SearchProfilesOut,
   SwitchEffectiveProfileParams,

@@ -461,7 +461,7 @@ function SimulationComponent({
   const patchActionRef = React.useRef<
     | ((
         payload: Record<string, unknown>,
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
@@ -519,7 +519,6 @@ function SimulationComponent({
   const buildPatchPayload = useCallback(
     (
       draftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const current =
@@ -558,18 +557,11 @@ function SimulationComponent({
       return {
         input_draft_id: draftId || null,
         ...idPayload,
-        expected_version: expectedVersion,
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [stableSimulationDataFields],
   );
-
-  const draftVersion =
-    stableSimulationDataFields && "draft_version" in stableSimulationDataFields
-      ? (stableSimulationDataFields as { draft_version?: number | null })
-          .draft_version
-      : null;
 
   const {
     setUrlFormDataRef,
@@ -582,7 +574,6 @@ function SimulationComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: draftVersion ?? null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,

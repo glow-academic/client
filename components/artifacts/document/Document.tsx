@@ -290,24 +290,6 @@ function DocumentComponent({
     getInitialFormState,
   ]);
 
-  // Draft version tracking for optimistic concurrency control
-  const [lastSavedVersion, setLastSavedVersion] = useState(0);
-  const lastSavedVersionRef = React.useRef(0);
-  React.useEffect(() => {
-    lastSavedVersionRef.current = lastSavedVersion;
-  }, [lastSavedVersion]);
-  // Sync draft_version from server to avoid unintended draft forks.
-  const draftVersion = documentDetail?.draft_version;
-  React.useEffect(() => {
-    if (
-      typeof draftVersion === "number" &&
-      draftVersion !== lastSavedVersionRef.current
-    ) {
-      setLastSavedVersion(draftVersion);
-      lastSavedVersionRef.current = draftVersion;
-    }
-  }, [draftVersion]);
-
   const formStateRef = React.useRef(formState as Record<string, unknown>);
   React.useEffect(() => {
     formStateRef.current = formState as Record<string, unknown>;
@@ -318,7 +300,7 @@ function DocumentComponent({
   );
 
   const patchActionRef = React.useRef<
-    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+    ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
 
   const formStateKey = React.useMemo(
@@ -348,7 +330,6 @@ function DocumentComponent({
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
       const payload: Record<string, unknown> = {
@@ -362,7 +343,6 @@ function DocumentComponent({
             > | null,
           flushResults: (flushResults ?? {}) as Record<string, unknown>,
         }),
-        expected_version: expectedVersion,
       };
       // Overlay value fields (name/description) if set
       const currentFormState = formStateRef.current;
@@ -400,7 +380,6 @@ function DocumentComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: draftVersion ?? null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,

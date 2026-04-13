@@ -200,7 +200,7 @@ export default function Provider({
   const patchActionRef = React.useRef<
     | ((
         payload: Record<string, unknown>
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
   useEffect(() => {
@@ -240,7 +240,6 @@ export default function Provider({
       isAutosaveEnabled,
       buildPatchPayload: (
         inputDraftId: string | null,
-        expectedVersion: number,
         flushResults?: Record<string, unknown>
       ) => {
         const payload: Record<string, unknown> = {
@@ -257,7 +256,6 @@ export default function Provider({
             >,
             flushResults: flushResults ?? {},
           }),
-          expected_version: expectedVersion,
         };
 
         // Value field overlay: send raw value instead of ID when set
@@ -274,7 +272,6 @@ export default function Provider({
         return payload;
       },
       setSelectedDraftId,
-      serverDraftVersion: s?.draft_version ?? null,
       hasResourceIds,
       flushRegistryRef,
       formStateRef: formStateRef as React.MutableRefObject<Record<string, unknown>>,

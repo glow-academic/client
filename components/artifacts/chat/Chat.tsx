@@ -126,9 +126,6 @@ export default function Chat({
   const [draftId, setDraftId] = useState<string | null>(
     urlParams.draftId || null,
   );
-  const [draftVersion, setDraftVersion] = useState<number>(
-    s.draft_version ?? 0,
-  );
   const [isSaving, setIsSaving] = useState(false);
 
   const infiniteMode = urlParams.infiniteMode ?? false;
@@ -192,7 +189,6 @@ export default function Chat({
       // Build payload — ID fields + value fields for creatables
       const payload: Record<string, unknown> = {
         input_draft_id: draftId,
-        expected_version: draftVersion,
         department_ids: formState.department_ids,
         persona_ids: formState.persona_ids,
         document_ids: formState.document_ids,
@@ -221,9 +217,6 @@ export default function Chat({
 
       if (result.draft_id) {
         setDraftId(result.draft_id);
-      }
-      if (typeof result.new_version === "number") {
-        setDraftVersion(result.new_version);
       }
 
       // Sync form_state from server response (server is source of truth)
@@ -264,7 +257,7 @@ export default function Chat({
     } finally {
       savingRef.current = false;
     }
-  }, [draftId, draftVersion, formState, patchChatDraftAction]);
+  }, [draftId, formState, patchChatDraftAction]);
 
   // Debounced autosave on form state change
   useEffect(() => {

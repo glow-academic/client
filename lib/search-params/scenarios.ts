@@ -42,6 +42,13 @@ export const scenarioSearchParams = {
   personaShowSelected: parseAsBoolean,
   parameterShowSelected: parseAsBoolean,
 
+  // Section visibility toggles (URL-backed, persists across refreshes)
+  videoEnabled: parseAsBoolean,
+  imagesEnabled: parseAsBoolean,
+  objectivesEnabled: parseAsBoolean,
+  questionsEnabled: parseAsBoolean,
+  problemStatementEnabled: parseAsBoolean,
+
   // Range values
   personaMin: parseAsInteger,
   personaMax: parseAsInteger,

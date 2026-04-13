@@ -17,6 +17,7 @@ import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { GenerationPanelProvider } from "@/contexts/generation-panel-context";
+import { GroupProviderClient } from "@/contexts/group-context";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
 import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
@@ -25,6 +26,10 @@ import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
   ExitEmulationResult,
+  GroupMessagesIn,
+  GroupMessagesOut,
+  GroupSearchIn,
+  GroupSearchOut,
   SafeSessionSnapshot,
   SearchProfilesIn,
   SearchProfilesOut,
@@ -40,6 +45,8 @@ function MainLayoutContent({
   exitEmulationAction,
   createFeedbackAction,
   searchProfilesAction,
+  searchGroupsAction,
+  getGroupMessagesAction,
 }: {
   children: React.ReactNode;
   initialSidebarOpen?: boolean;
@@ -51,6 +58,12 @@ function MainLayoutContent({
   searchProfilesAction: (
     input: SearchProfilesIn
   ) => Promise<SearchProfilesOut>;
+  searchGroupsAction: (
+    input: GroupSearchIn
+  ) => Promise<GroupSearchOut>;
+  getGroupMessagesAction: (
+    input: GroupMessagesIn
+  ) => Promise<GroupMessagesOut>;
 }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
@@ -117,7 +130,7 @@ function MainLayoutContent({
             <div className="flex flex-1 flex-col gap-4">{children}</div>
           </SidebarInset>
         </SidebarProvider>
-        <GenerationPanel panelOpen={panelOpen} onToggle={togglePanel} />
+        <GenerationPanel panelOpen={panelOpen} onToggle={togglePanel} searchGroupsAction={searchGroupsAction} getGroupMessagesAction={getGroupMessagesAction} />
       </div>
     </GenerationPanelProvider>
   );
@@ -132,6 +145,8 @@ export function MainLayoutClient({
   exitEmulationAction,
   createFeedbackAction,
   searchProfilesAction,
+  searchGroupsAction,
+  getGroupMessagesAction,
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
@@ -146,6 +161,12 @@ export function MainLayoutClient({
   searchProfilesAction: (
     input: SearchProfilesIn
   ) => Promise<SearchProfilesOut>;
+  searchGroupsAction: (
+    input: GroupSearchIn
+  ) => Promise<GroupSearchOut>;
+  getGroupMessagesAction: (
+    input: GroupMessagesIn
+  ) => Promise<GroupMessagesOut>;
 }) {
   const pathname = usePathname();
 
@@ -187,15 +208,19 @@ export function MainLayoutClient({
           initial={profileData}
           sessionSnapshot={sessionSnapshot}
         >
+          <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
           <MainLayoutContent
             initialSidebarOpen={initialSidebarOpen}
             switchEffectiveProfileAction={switchEffectiveProfileAction}
             exitEmulationAction={exitEmulationAction}
             createFeedbackAction={createFeedbackAction}
             searchProfilesAction={searchProfilesAction}
+            searchGroupsAction={searchGroupsAction}
+            getGroupMessagesAction={getGroupMessagesAction}
           >
             {children}
           </MainLayoutContent>
+          </GroupProviderClient>
         </ProfileProviderClient>
       </SocketProviderClient>
     </>

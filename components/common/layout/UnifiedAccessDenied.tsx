@@ -87,7 +87,7 @@ export function UnifiedAccessDenied({
             <CardContent className="text-center space-y-4">
               <div className="flex flex-col gap-2">
                 <Button asChild className="w-full">
-                  <Link href="/">Go to Home</Link>
+                  <Link href={`/?return_to=${encodeURIComponent(pathname)}`}>Log In</Link>
                 </Button>
               </div>
             </CardContent>

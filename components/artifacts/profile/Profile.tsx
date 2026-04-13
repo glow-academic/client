@@ -57,7 +57,6 @@ import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 type PatchProfileDraftIn = InputOf<"/profiles/draft", "patch">;
 type PatchProfileDraftOut = {
   draft_id?: string | null;
-  new_version?: number | null;
 };
 
 type CreateProfileIn = InputOf<"/profiles/create", "post">;
@@ -443,7 +442,7 @@ function ProfileComponent({
   const patchActionRef = React.useRef<
     | ((
         payload: Record<string, unknown>
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
@@ -481,7 +480,6 @@ function ProfileComponent({
   const buildPatchPayload = useCallback(
     (
       draftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
       const current = computeEffectiveFormState(
@@ -534,7 +532,6 @@ function ProfileComponent({
       const payload: Record<string, unknown> = {
         input_draft_id: draftId || null,
         ...draftFields,
-        expected_version: expectedVersion,
       };
       // Overlay name value field if set
       const currentFormState = formStateRef.current;
@@ -565,7 +562,6 @@ function ProfileComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: currentProfileData?.draft_version ?? null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,

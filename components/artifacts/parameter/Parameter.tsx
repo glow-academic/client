@@ -318,7 +318,7 @@ function ParameterComponent({
   const patchActionRef = React.useRef<
     ((
       payload: Record<string, unknown>
-    ) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
+    ) => Promise<{ draft_id?: string | null }>) | undefined
   >(undefined);
 
   useEffect(() => {
@@ -368,7 +368,6 @@ function ParameterComponent({
   const buildPatchPayload = useCallback(
     (
       inputDraftId: string | null,
-      expectedVersion: number,
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
       const currentFormState = formStateRef.current as unknown as ParameterFormState;
@@ -398,7 +397,6 @@ function ParameterComponent({
                 effectiveFlags.length > 0 ? effectiveFlags : null,
             }
           : {}),
-        expected_version: expectedVersion,
       };
 
       // Overlay value fields (single-select values clear the corresponding ID)
@@ -428,7 +426,6 @@ function ParameterComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: s?.draft_version ?? null,
     hasResourceIds,
     flushRegistryRef,
     formStateRef,
