@@ -52,7 +52,7 @@ async function patchPersonaDraft(
   input: PatchPersonaDraftIn
 ): Promise<PatchPersonaDraftOut> {
   "use server";
-  return api.patch("/personas/draft", input);
+  return api.post("/personas/draft", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -110,14 +110,14 @@ export default async function NewPersonaPage({
     body: {
       persona_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-      color_search: q.colorSearch ?? null,
-      icon_search: q.iconSearch ?? null,
+      colors_search: q.colorSearch ?? null,
+      icons_search: q.iconSearch ?? null,
       descriptions_search: q.descriptionSearch ?? null,
       instructions_search: q.instructionsSearch ?? null,
-      field_search: q.fieldSearch ?? null,
-      color_show_selected: q.colorShowSelected ?? null,
-      icon_show_selected: q.iconShowSelected ?? null,
-      field_show_selected: q.fieldShowSelected ?? null,
+      parameter_fields_search: q.fieldSearch ?? null,
+      colors_selected_only: q.colorShowSelected ?? null,
+      icons_selected_only: q.iconShowSelected ?? null,
+      parameter_fields_selected_only: q.fieldShowSelected ?? null,
       parameter_ids: q.parameterIds ?? null,
     } as GetPersonaIn["body"],
   };
