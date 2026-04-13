@@ -796,51 +796,21 @@ function PersonaComponent({
       const fs = formStateRef.current as unknown as PersonaFormState;
 
       // Validate required fields (check value OR ID for creatables)
-      if (
-        personaData?.names?.required &&
-        !fs.name_id &&
-        !fs.name
-      ) {
+      if (!fs.name_id && !fs.name) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
-      if (personaData?.colors?.required && !fs.color_id) {
+      if (!fs.color_id) {
         toast.error("Persona color is required");
         throw new Error("Persona color is required");
       }
-      if (personaData?.icons?.required && !fs.icon_id) {
+      if (!fs.icon_id) {
         toast.error("Persona icon is required");
         throw new Error("Persona icon is required");
       }
-      if (
-        personaData?.instructions?.required &&
-        !fs.instructions_id &&
-        !fs.instructions
-      ) {
+      if (!fs.instructions_id && !fs.instructions) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
-      }
-      if (
-        personaData?.departments?.required &&
-        (!fs.department_ids || fs.department_ids.length === 0)
-      ) {
-        toast.error("Departments are required");
-        throw new Error("Departments are required");
-      }
-      if (
-        personaData?.parameter_fields?.required &&
-        (!fs.parameter_field_ids || fs.parameter_field_ids.length === 0)
-      ) {
-        toast.error("Parameter fields are required");
-        throw new Error("Parameter fields are required");
-      }
-      if (
-        personaData?.examples?.required &&
-        (!fs.example_ids || fs.example_ids.length === 0) &&
-        fs.examples.length === 0
-      ) {
-        toast.error("Examples are required");
-        throw new Error("Examples are required");
       }
 
       if (!profile?.id) {
@@ -901,13 +871,6 @@ function PersonaComponent({
       profile?.id,
       createPersonaAction,
       updatePersonaAction,
-      personaData?.names,
-      personaData?.colors,
-      personaData?.icons,
-      personaData?.instructions,
-      personaData?.departments,
-      personaData?.parameter_fields,
-      personaData?.examples,
       router,
     ],
   );
@@ -1073,7 +1036,7 @@ function PersonaComponent({
                 <Names
                   name_id={formState.name_id ?? null}
                   name_resource={s?.names?.resource ?? null}
-                  show_name={s?.names?.show ?? true}
+                  show_name={true}
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
@@ -1087,7 +1050,7 @@ function PersonaComponent({
                   onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Enthusiastic Student"
                   defaultName="New Persona"
-                  required={s?.names?.required ?? false}
+                  required={true}
                   hideDescription={true}
 
                   showAiGenerate={s?.show_ai_generate ?? false}
@@ -1115,7 +1078,7 @@ function PersonaComponent({
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={s?.descriptions?.resource ?? null}
-                  show_description={s?.descriptions?.show ?? true}
+                  show_description={true}
                   descriptions={s?.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
@@ -1138,7 +1101,7 @@ function PersonaComponent({
                   onGenerate={generateHandlers["descriptions"]}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
-                  required={s?.descriptions?.required ?? false}
+                  required={false}
                   rows={4}
                   data-testid="input-persona-description"
 
@@ -1148,14 +1111,14 @@ function PersonaComponent({
                 <Departments
                   department_ids={formState.department_ids ?? []}
                   department_resources={s?.departments?.current ?? []}
-                  show_departments={s?.departments?.show ?? false}
+                  show_departments={true}
                   departments={s?.departments?.resources ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   onGenerate={generateHandlers["departments"]}
-                  required={s?.departments?.required ?? false}
+                  required={false}
 
                   showAiGenerate={s?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1163,7 +1126,7 @@ function PersonaComponent({
                 <Flags
                   flags={s?.flags?.resources ?? []}
                   flag_id={formState.active_flag_id}
-                  show_flags={s?.flags?.show ?? false}
+                  show_flags={true}
                   columns={1}
                   label="Flags"
                   disabled={disabled}
@@ -1247,7 +1210,7 @@ function PersonaComponent({
                 showAiGenerate={
                   s?.show_ai_generate ?? false
                 }
-                required={s?.parameter_fields?.required ?? false}
+                required={false}
                 onGenerate={generateHandlers["parameter_fields"]}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -1303,7 +1266,7 @@ function PersonaComponent({
               <Colors
                 color_id={formState.color_id ?? null}
                 color_resource={s?.colors?.resource ?? null}
-                show_color={s?.colors?.show ?? false}
+                show_color={true}
                 colors={s?.colors?.resources ?? []}
                 disabled={disabled}
                 onColorIdChange={(colorId) =>
@@ -1323,7 +1286,7 @@ function PersonaComponent({
                 }
 
                 showAiGenerate={s?.show_ai_generate ?? false}
-                required={s?.colors?.required ?? false}
+                required={true}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
@@ -1378,7 +1341,7 @@ function PersonaComponent({
               <Icons
                 icon_id={formState.icon_id ?? null}
                 icon_resource={s?.icons?.resource ?? null}
-                show_icon={s?.icons?.show ?? false}
+                show_icon={true}
                 icons={s?.icons?.resources ?? []}
                 disabled={disabled}
                 onIconIdChange={(iconId) =>
@@ -1398,7 +1361,7 @@ function PersonaComponent({
                 }
 
                 showAiGenerate={s?.show_ai_generate ?? false}
-                required={s?.icons?.required ?? false}
+                required={true}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
@@ -1438,7 +1401,7 @@ function PersonaComponent({
                     ? (s?.instructions?.resource ?? null)
                     : null
                 }
-                show_instructions={s?.instructions?.show ?? true}
+                show_instructions={true}
                 instructions={s?.instructions?.resources ?? []}
                 disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
@@ -1461,7 +1424,7 @@ function PersonaComponent({
                 onGenerate={generateHandlers["instructions"]}
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
-                required={s?.instructions?.required ?? false}
+                required={true}
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
@@ -1472,7 +1435,7 @@ function PersonaComponent({
               <Examples
                 example_ids={formState.example_ids ?? []}
                 example_resources={s?.examples?.current ?? []}
-                show_examples={s?.examples?.show ?? false}
+                show_examples={true}
                 examples={s?.examples?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -1489,7 +1452,7 @@ function PersonaComponent({
                 itemPlaceholder="Message"
 
                 showAiGenerate={s?.show_ai_generate ?? false}
-                required={s?.examples?.required ?? false}
+                required={false}
                 exampleMapping={
                   s?.examples?.resources && formState.example_ids
                     ? Object.fromEntries(
@@ -1506,7 +1469,7 @@ function PersonaComponent({
               <Voices
                 voice_ids={formState.voice_ids ?? []}
                 voice_resources={s?.voices?.current ?? []}
-                show_voices={s?.voices?.show ?? false}
+                show_voices={true}
                 voices={s?.voices?.resources ?? []}
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>
