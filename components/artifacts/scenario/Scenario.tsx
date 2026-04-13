@@ -244,6 +244,11 @@ function ScenarioComponent({
       documentShowSelected: parseAsBoolean,
       parameterShowSelected: parseAsBoolean,
       parameterIds: parseAsArrayOf(parseAsString),
+      videoEnabled: parseAsBoolean,
+      imagesEnabled: parseAsBoolean,
+      objectivesEnabled: parseAsBoolean,
+      questionsEnabled: parseAsBoolean,
+      problemStatementEnabled: parseAsBoolean,
     }),
     [],
   );
@@ -286,7 +291,7 @@ function ScenarioComponent({
       };
     }
 
-    const selectedFlags = scenarioData.flags?.current ?? [];
+    const selectedFlags = scenarioData.flags?.filter((f: any) => f.selected) ?? [];
     const selectedFlagId = (key: string): string | null => {
       const match = selectedFlags.find((flag) => flag?.key === key);
       const id = match?.flag_option_id;
@@ -294,15 +299,15 @@ function ScenarioComponent({
     };
 
     return {
-      name_id: scenarioData.names?.resource?.id
-        ? String(scenarioData.names.resource.id)
+      name_id: scenarioData.names?.find((n: any) => n.selected)?.id
+        ? String(scenarioData.names.find((n: any) => n.selected).id)
         : null,
-      description_id: scenarioData.descriptions?.resource?.id
-        ? String(scenarioData.descriptions.resource.id)
+      description_id: scenarioData.descriptions?.find((d: any) => d.selected)?.id
+        ? String(scenarioData.descriptions.find((d: any) => d.selected).id)
         : null,
-      problem_statement_id: scenarioData.problem_statements?.resource
+      problem_statement_id: scenarioData.problem_statements?.find((p: any) => p.selected)
         ?.problem_statement_id
-        ? String(scenarioData.problem_statements.resource.problem_statement_id)
+        ? String(scenarioData.problem_statements.find((p: any) => p.selected).problem_statement_id)
         : null,
       active_flag_id: selectedFlagId("scenario_active"),
       objectives_enabled_flag_id: selectedFlagId("objectives_enabled"),
@@ -312,40 +317,40 @@ function ScenarioComponent({
       problem_statement_enabled_flag_id: selectedFlagId(
         "problem_statement_enabled",
       ),
-      department_ids: (scenarioData.departments?.current ?? [])
-        .map((item) => item.department_id)
+      department_ids: (scenarioData.departments?.filter((d: any) => d.selected) ?? [])
+        .map((item: any) => item.department_id)
         .filter(Boolean)
         .map(String),
-      persona_ids: (scenarioData.personas?.current ?? [])
-        .map((item) => item.persona_id)
+      persona_ids: (scenarioData.personas?.filter((p: any) => p.selected) ?? [])
+        .map((item: any) => item.persona_id)
         .filter(Boolean)
         .map(String),
-      document_ids: (scenarioData.documents?.current ?? [])
-        .map((item) => item.document_id)
+      document_ids: (scenarioData.documents?.filter((d: any) => d.selected) ?? [])
+        .map((item: any) => item.document_id)
         .filter(Boolean)
         .map(String),
-      parameter_field_ids: (scenarioData.parameter_fields?.current ?? [])
-        .map((item) => item.field_id)
+      parameter_field_ids: (scenarioData.parameter_fields?.filter((f: any) => f.selected) ?? [])
+        .map((item: any) => item.field_id)
         .filter(Boolean)
         .map(String),
-      image_ids: (scenarioData.images?.current ?? [])
-        .map((item) => item.image_id)
+      image_ids: (scenarioData.images?.filter((i: any) => i.selected) ?? [])
+        .map((item: any) => item.image_id)
         .filter(Boolean)
         .map(String),
-      objective_ids: (scenarioData.objectives?.current ?? [])
-        .map((item) => item.id)
+      objective_ids: (scenarioData.objectives?.filter((o: any) => o.selected) ?? [])
+        .map((item: any) => item.id)
         .filter(Boolean)
         .map(String),
-      video_ids: (scenarioData.videos?.current ?? [])
-        .map((item) => item.video_id)
+      video_ids: (scenarioData.videos?.filter((v: any) => v.selected) ?? [])
+        .map((item: any) => item.video_id)
         .filter(Boolean)
         .map(String),
-      question_ids: (scenarioData.questions?.current ?? [])
-        .map((item) => item.question_id)
+      question_ids: (scenarioData.questions?.filter((q: any) => q.selected) ?? [])
+        .map((item: any) => item.question_id)
         .filter(Boolean)
         .map(String),
-      option_ids: (scenarioData.options?.current ?? [])
-        .map((item: { option_id?: string | null }) => item.option_id)
+      option_ids: (scenarioData.options?.filter((o: any) => o.selected) ?? [])
+        .map((item: { option_id?: string | null; selected?: boolean }) => item.option_id)
         .filter(Boolean)
         .map(String),
       name: null,
@@ -413,8 +418,8 @@ function ScenarioComponent({
   const scenarioDepartmentIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.departments?.current ?? [])
-          .map((item) => item.department_id)
+        (scenarioData?.departments?.filter((d: any) => d.selected) ?? [])
+          .map((item: any) => item.department_id)
           .filter(Boolean),
       ),
     [scenarioData?.departments],
@@ -422,8 +427,8 @@ function ScenarioComponent({
   const scenarioPersonaIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.personas?.current ?? [])
-          .map((item) => item.persona_id)
+        (scenarioData?.personas?.filter((p: any) => p.selected) ?? [])
+          .map((item: any) => item.persona_id)
           .filter(Boolean),
       ),
     [scenarioData?.personas],
@@ -431,8 +436,8 @@ function ScenarioComponent({
   const scenarioDocumentIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.documents?.current ?? [])
-          .map((item) => item.document_id)
+        (scenarioData?.documents?.filter((d: any) => d.selected) ?? [])
+          .map((item: any) => item.document_id)
           .filter(Boolean),
       ),
     [scenarioData?.documents],
@@ -440,8 +445,8 @@ function ScenarioComponent({
   const scenarioParameterFieldIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.parameter_fields?.current ?? [])
-          .map((item) => item.field_id)
+        (scenarioData?.parameter_fields?.filter((f: any) => f.selected) ?? [])
+          .map((item: any) => item.field_id)
           .filter(Boolean),
       ),
     [scenarioData?.parameter_fields],
@@ -449,8 +454,8 @@ function ScenarioComponent({
   const scenarioImageIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.images?.current ?? [])
-          .map((item) => item.image_id)
+        (scenarioData?.images?.filter((i: any) => i.selected) ?? [])
+          .map((item: any) => item.image_id)
           .filter(Boolean),
       ),
     [scenarioData?.images],
@@ -458,8 +463,8 @@ function ScenarioComponent({
   const scenarioObjectiveIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.objectives?.current ?? [])
-          .map((item) => item.id)
+        (scenarioData?.objectives?.filter((o: any) => o.selected) ?? [])
+          .map((item: any) => item.id)
           .filter(Boolean),
       ),
     [scenarioData?.objectives],
@@ -467,8 +472,8 @@ function ScenarioComponent({
   const scenarioVideoIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.videos?.current ?? [])
-          .map((item) => item.video_id)
+        (scenarioData?.videos?.filter((v: any) => v.selected) ?? [])
+          .map((item: any) => item.video_id)
           .filter(Boolean),
       ),
     [scenarioData?.videos],
@@ -476,8 +481,8 @@ function ScenarioComponent({
   const scenarioQuestionIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.questions?.current ?? [])
-          .map((item) => item.question_id)
+        (scenarioData?.questions?.filter((q: any) => q.selected) ?? [])
+          .map((item: any) => item.question_id)
           .filter(Boolean),
       ),
     [scenarioData?.questions],
@@ -485,8 +490,8 @@ function ScenarioComponent({
   const scenarioOptionIdsStr = useMemo(
     () =>
       JSON.stringify(
-        (scenarioData?.options?.current ?? [])
-          .map((item: { option_id?: string | null }) => item.option_id)
+        (scenarioData?.options?.filter((o: any) => o.selected) ?? [])
+          .map((item: { option_id?: string | null; selected?: boolean }) => item.option_id)
           .filter(Boolean),
       ),
     [scenarioData?.options],
@@ -502,7 +507,7 @@ function ScenarioComponent({
   const patchActionRef = useRef<
     | ((
         payload: Record<string, unknown>,
-      ) => Promise<{ draft_id?: string | null; new_version?: number | null }>)
+      ) => Promise<{ draft_id?: string | null }>)
     | undefined
   >(undefined);
 
@@ -583,7 +588,6 @@ function ScenarioComponent({
   const buildPatchPayload = useCallback(
     (
       draftId: string | null,
-      expectedVersion: number,
     ): Record<string, unknown> => {
       const current = formStateRef.current as unknown as ScenarioFormState;
       const ref = lastPatchedFormStateRef.current;
@@ -654,16 +658,10 @@ function ScenarioComponent({
         input_draft_id: draftId || null,
         ...idPayload,
         ...flagPayload,
-        expected_version: expectedVersion,
       };
     },
     [],
   );
-
-  const draftVersion =
-    scenarioData && "draft_version" in scenarioData
-      ? (scenarioData as { draft_version?: number | null }).draft_version
-      : null;
 
   const onPatchSuccess = useCallback(() => {
     lastPatchedFormStateRef.current = {
@@ -686,7 +684,6 @@ function ScenarioComponent({
     isAutosaveEnabled,
     buildPatchPayload,
     setSelectedDraftId,
-    serverDraftVersion: draftVersion ?? null,
     hasResourceIds,
     flushRegistryRef: emptyFlushRef,
     formStateRef,
@@ -801,10 +798,13 @@ function ScenarioComponent({
   const hasInitializedParameterIds = useRef(false);
   useEffect(() => {
     const resolvedIds = (scenarioData as GetScenarioOut & { resolved_parameter_ids?: string[] | null })?.resolved_parameter_ids;
-    if (resolvedIds && resolvedIds.length > 0 && !hasInitializedParameterIds.current) {
+    if (!hasInitializedParameterIds.current) {
       hasInitializedParameterIds.current = true;
       if (setUrlFormDataRef.current) {
-        setUrlFormDataRef.current({ parameterIds: resolvedIds });
+        // Set resolved IDs, or null to remove empty ?parameterIds= from URL
+        setUrlFormDataRef.current({
+          parameterIds: resolvedIds && resolvedIds.length > 0 ? resolvedIds : null,
+        });
       }
     }
   }, [scenarioData, setUrlFormDataRef]);
@@ -829,8 +829,7 @@ function ScenarioComponent({
       options: scenarioData.options,
       can_edit: scenarioData.can_edit,
       disabled_reason: scenarioData.disabled_reason,
-      basic_show_ai_generate: scenarioData.basic_show_ai_generate,
-      content_show_ai_generate: scenarioData.content_show_ai_generate,
+      show_ai_generate: scenarioData.show_ai_generate,
     };
   }, [scenarioData]);
 
@@ -865,31 +864,35 @@ function ScenarioComponent({
       if (!stableScenarioDataFields) return false;
       switch (resourceType as ScenarioResourceType) {
         case "names":
-          return stableScenarioDataFields.names?.resource?.generated ?? false;
+          return stableScenarioDataFields.names?.find((n: any) => n.selected)?.generated ?? false;
         case "descriptions":
           return (
-            stableScenarioDataFields.descriptions?.resource?.generated ?? false
+            stableScenarioDataFields.descriptions?.find((d: any) => d.selected)?.generated ?? false
           );
         case "problem_statements":
           return (
-            stableScenarioDataFields.problem_statements?.resource?.generated ??
+            stableScenarioDataFields.problem_statements?.find((p: any) => p.selected)?.generated ??
             false
           );
         case "objectives":
           return (
-            stableScenarioDataFields.objectives?.current?.some(
+            stableScenarioDataFields.objectives?.filter(
+              (o: any) => o.selected,
+            )?.some(
               (o: { generated?: boolean | null }) => o.generated,
             ) ?? false
           );
         case "scenario_flags":
           return (
-            stableScenarioDataFields.flags?.resources?.some(
+            stableScenarioDataFields.flags?.some(
               (f: { generated?: boolean | null }) => f.generated,
             ) ?? false
           );
         case "departments":
           return (
-            stableScenarioDataFields.departments?.current?.some(
+            stableScenarioDataFields.departments?.filter(
+              (d: any) => d.selected,
+            )?.some(
               (d: { generated?: boolean | null }) => d.generated,
             ) ?? false
           );
@@ -904,25 +907,33 @@ function ScenarioComponent({
           return false;
         case "parameter_fields":
           return (
-            stableScenarioDataFields.parameter_fields?.current?.some(
+            stableScenarioDataFields.parameter_fields?.filter(
+              (f: any) => f.selected,
+            )?.some(
               (f: { generated?: boolean | null }) => f.generated,
             ) ?? false
           );
         case "images":
           return (
-            stableScenarioDataFields.images?.current?.some(
+            stableScenarioDataFields.images?.filter(
+              (i: any) => i.selected,
+            )?.some(
               (i: { generated?: boolean | null }) => i.generated,
             ) ?? false
           );
         case "videos":
           return (
-            stableScenarioDataFields.videos?.current?.some(
+            stableScenarioDataFields.videos?.filter(
+              (v: any) => v.selected,
+            )?.some(
               (v: { generated?: boolean | null }) => v.generated,
             ) ?? false
           );
         case "questions":
           return (
-            stableScenarioDataFields.questions?.current?.some(
+            stableScenarioDataFields.questions?.filter(
+              (q: any) => q.selected,
+            )?.some(
               (q: { generated?: boolean | null }) => q.generated,
             ) ?? false
           );
@@ -1039,7 +1050,7 @@ function ScenarioComponent({
       },
     ];
 
-    if (stableScenarioDataFields?.personas?.show) {
+    if (true) {
       items.push({
         id: "personas",
         title: "Personas",
@@ -1048,7 +1059,7 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.documents?.show) {
+    if (true) {
       items.push({
         id: "documents",
         title: "Documents",
@@ -1057,7 +1068,7 @@ function ScenarioComponent({
       });
     }
 
-    if (stableScenarioDataFields?.parameters?.show) {
+    if (true) {
       items.push({
         id: "parameters",
         title: "Parameters",
@@ -1066,7 +1077,13 @@ function ScenarioComponent({
       });
     }
 
-    if (showProblemStatementSection || showObjectivesSection || showImagesSection) {
+    const serverShowProblemStatement = true;
+    const serverShowObjectives = true;
+    const serverShowImages = true;
+    const serverShowVideos = true;
+    const serverShowQuestions = true;
+
+    if (serverShowProblemStatement || serverShowObjectives || serverShowImages) {
       items.push({
         id: "context",
         title: "Context",
@@ -1081,7 +1098,7 @@ function ScenarioComponent({
       });
     }
 
-    if (showVideosSection || showQuestionsSection) {
+    if (serverShowVideos || serverShowQuestions) {
       items.push({
         id: "video",
         title: "Video",
@@ -1093,14 +1110,7 @@ function ScenarioComponent({
 
     return items;
   }, [
-    stableScenarioDataFields?.personas?.show,
-    stableScenarioDataFields?.documents?.show,
-    stableScenarioDataFields?.parameters?.show,
-    showProblemStatementSection,
-    showObjectivesSection,
-    showImagesSection,
-    showVideosSection,
-    showQuestionsSection,
+    stableScenarioDataFields,
   ]);
 
   const formFieldKeys = useMemo(
@@ -1210,14 +1220,14 @@ function ScenarioComponent({
     async (_formData: Record<string, unknown>) => {
       // Check for name (either ID or value)
       const hasName = !!formState.name_id || !!formState.name;
-      if (stableScenarioDataFields?.names?.required && !hasName) {
+      if (true && !hasName) {
         toast.error("Scenario name is required");
         throw new Error("Scenario name is required");
       }
 
       const hasDescription = !!formState.description_id || !!formState.description;
       if (
-        stableScenarioDataFields?.descriptions?.required &&
+        false &&
         !hasDescription
       ) {
         toast.error("Scenario description is required");
@@ -1226,7 +1236,7 @@ function ScenarioComponent({
 
       const hasProblemStatement = !!formState.problem_statement_id || !!formState.problem_statement;
       if (
-        stableScenarioDataFields?.problem_statements?.required &&
+        false &&
         !hasProblemStatement
       ) {
         toast.error("Problem statement is required");
@@ -1234,7 +1244,7 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.objectives?.required &&
+        false &&
         formState.objective_ids.length === 0
       ) {
         toast.error("Objectives are required");
@@ -1242,7 +1252,7 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.departments?.required &&
+        false &&
         formState.department_ids.length === 0
       ) {
         toast.error("Departments are required");
@@ -1250,7 +1260,7 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.personas?.required &&
+        false &&
         formState.persona_ids.length === 0
       ) {
         toast.error("Personas are required");
@@ -1258,7 +1268,7 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.documents?.required &&
+        false &&
         formState.document_ids.length === 0
       ) {
         toast.error("Documents are required");
@@ -1266,7 +1276,7 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.images?.required &&
+        false &&
         formState.image_ids.length === 0
       ) {
         toast.error("Images are required");
@@ -1274,7 +1284,7 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.videos?.required &&
+        false &&
         formState.video_ids.length === 0
       ) {
         toast.error("Videos are required");
@@ -1282,7 +1292,7 @@ function ScenarioComponent({
       }
 
       if (
-        stableScenarioDataFields?.questions?.required &&
+        false &&
         formState.question_ids.length === 0
       ) {
         toast.error("Questions are required");
@@ -1379,16 +1389,6 @@ function ScenarioComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       formState,
-      stableScenarioDataFields?.names?.required,
-      stableScenarioDataFields?.descriptions?.required,
-      stableScenarioDataFields?.problem_statements?.required,
-      stableScenarioDataFields?.objectives?.required,
-      stableScenarioDataFields?.departments?.required,
-      stableScenarioDataFields?.personas?.required,
-      stableScenarioDataFields?.documents?.required,
-      stableScenarioDataFields?.images?.required,
-      stableScenarioDataFields?.videos?.required,
-      stableScenarioDataFields?.questions?.required,
       profile?.id,
       createScenarioAction,
       updateScenarioAction,
@@ -1491,6 +1491,18 @@ function ScenarioComponent({
       const parameterShowSelected =
         (formData["parameterShowSelected"] as boolean | undefined) ?? false;
 
+      // Section visibility from URL state (source of truth)
+      const urlVideoEnabled =
+        (formData["videoEnabled"] as boolean | undefined) ?? false;
+      const urlImagesEnabled =
+        (formData["imagesEnabled"] as boolean | undefined) ?? false;
+      const urlObjectivesEnabled =
+        (formData["objectivesEnabled"] as boolean | undefined) ?? false;
+      const urlQuestionsEnabled =
+        (formData["questionsEnabled"] as boolean | undefined) ?? false;
+      const urlProblemStatementEnabled =
+        (formData["problemStatementEnabled"] as boolean | undefined) ?? false;
+
       const resetProps = onReset ? { onReset, resetLabel: "Reset" } : {};
 
       switch (stepId) {
@@ -1506,10 +1518,10 @@ function ScenarioComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={s?.names?.resource ?? null}
-                  show_name={s?.names?.show ?? true}
-                  name_suggestions={s?.names?.suggestions ?? []}
-                  names={s?.names?.resources ?? []}
+                  name_resource={s?.names?.find((n: any) => n.selected) ?? null}
+                  show_name={true}
+                  name_suggestions={[]}
+                  names={s?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
@@ -1520,15 +1532,15 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Customer Support Escalation"
                   defaultName="New Scenario"
-                  required={s?.names?.required ?? false}
+                  required={true}
                   hideDescription={true}
-                  showAiGenerate={s?.names?.show_ai_generate ?? false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
                 />
               }
               resetFields={["name", "description", "departments"]}
               actions={
                 stepResources["basic"]?.length &&
-                (s?.basic_show_ai_generate ?? false) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="basic"
                     resourceTypes={stepResources["basic"]}
@@ -1544,10 +1556,10 @@ function ScenarioComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={s?.descriptions?.resource ?? null}
-                  show_description={s?.descriptions?.show ?? true}
-                  description_suggestions={s?.descriptions?.suggestions ?? []}
-                  descriptions={s?.descriptions?.resources ?? []}
+                  description_resource={s?.descriptions?.find((d: any) => d.selected) ?? null}
+                  show_description={true}
+                  description_suggestions={[]}
+                  descriptions={s?.descriptions ?? []}
                   searchTerm={descriptionSearch}
                   onSearchChange={(term: string) =>
                     setFormData({ descriptionSearch: term || null })
@@ -1570,45 +1582,51 @@ function ScenarioComponent({
                   onGenerate={generateHandlers["descriptions"]}
                   label="Description"
                   placeholder="Describe the scenario"
-                  required={s?.descriptions?.required ?? false}
-                  showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
+                  required={false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
                 />
 
                 <Departments
                   department_ids={formState.department_ids}
-                  department_resources={s?.departments?.current ?? []}
-                  show_departments={s?.departments?.show ?? false}
-                  department_suggestions={s?.departments?.suggestions ?? []}
-                  departments={s?.departments?.resources ?? []}
+                  department_resources={s?.departments?.filter((d: any) => d.selected) ?? []}
+                  show_departments={true}
+                  department_suggestions={[]}
+                  departments={s?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   label="Departments"
-                  required={s?.departments?.required ?? false}
-                  showAiGenerate={s?.departments?.show_ai_generate ?? false}
+                  required={false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
                   onGenerate={generateHandlers["departments"]}
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
                 {/* Filter out video_flag flags when video is not enabled */}
                 <Flags
-                  flags={(s?.flags?.resources ?? []).filter(
+                  flags={(s?.flags ?? []).filter(
                     (f: { video_flag?: boolean | null }) =>
-                      !f.video_flag || videoEnabled,
+                      !f.video_flag || urlVideoEnabled,
                   )}
-                  flag_ids={{
-                    scenario_active: formState.active_flag_id ?? null,
-                    video_enabled: formState.video_enabled_flag_id ?? null,
-                    problem_statement_enabled:
-                      formState.problem_statement_enabled_flag_id ?? null,
-                    objectives_enabled:
-                      formState.objectives_enabled_flag_id ?? null,
-                    images_enabled: formState.images_enabled_flag_id ?? null,
-                    questions_enabled:
-                      formState.questions_enabled_flag_id ?? null,
-                  }}
-                  show_flags={s?.flags?.show ?? false}
+                  flag_ids={(() => {
+                    // Resolve flag UUID from available flags when URL says ON but no saved draft
+                    const resolve = (formValue: string | null, urlValue: boolean, key: string) => {
+                      if (formValue) return formValue;
+                      if (!urlValue) return null;
+                      const flag = (s?.flags ?? []).find((f: { key?: string }) => f.key === key);
+                      return flag?.flag_option_id ? String(flag.flag_option_id) : null;
+                    };
+                    return {
+                      scenario_active: formState.active_flag_id ?? null,
+                      video_enabled: resolve(formState.video_enabled_flag_id, urlVideoEnabled, "video_enabled"),
+                      problem_statement_enabled: resolve(formState.problem_statement_enabled_flag_id, urlProblemStatementEnabled, "problem_statement_enabled"),
+                      objectives_enabled: resolve(formState.objectives_enabled_flag_id, urlObjectivesEnabled, "objectives_enabled"),
+                      images_enabled: resolve(formState.images_enabled_flag_id, urlImagesEnabled, "images_enabled"),
+                      questions_enabled: resolve(formState.questions_enabled_flag_id, urlQuestionsEnabled, "questions_enabled"),
+                    };
+                  })()}
+                  show_flags={true}
                   columns={2}
                   label="Flags"
                   disabled={disabled}
@@ -1626,9 +1644,21 @@ function ScenarioComponent({
                     if (field) {
                       setFormState((prev) => ({ ...prev, [field]: flagId }));
                     }
+                    // Sync toggle flags to URL for server-side filtering
+                    const urlMap: Record<string, string> = {
+                      video_enabled: "videoEnabled",
+                      images_enabled: "imagesEnabled",
+                      objectives_enabled: "objectivesEnabled",
+                      questions_enabled: "questionsEnabled",
+                      problem_statement_enabled: "problemStatementEnabled",
+                    };
+                    const urlKey = urlMap[key];
+                    if (urlKey) {
+                      setFormData({ [urlKey]: !!flagId });
+                    }
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
-                  showAiGenerate={s?.flags?.show_ai_generate ?? false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
 
                 />
               </div>
@@ -1646,9 +1676,7 @@ function ScenarioComponent({
               resetFields={["problem_statement", "objectives", "images"]}
               actions={
                 stepResources["context"]?.length &&
-                ((s?.images?.show_ai_generate ?? false) ||
-                  (s?.problem_statements?.show_ai_generate ?? false) ||
-                  (s?.objectives?.show_ai_generate ?? false)) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="context"
                     resourceTypes={stepResources["context"]}
@@ -1662,14 +1690,14 @@ function ScenarioComponent({
               {...resetProps}
             >
               <div className="space-y-4">
-                {showImagesSection && (
+                {urlImagesEnabled && (
                   <Images
                     image_ids={formState.image_ids}
-                    image_resources={s?.images?.current ?? []}
-                    show_images={showImagesSection}
-                    images_required={s?.images?.required ?? false}
-                    image_suggestions={s?.images?.suggestions ?? []}
-                    images={s?.images?.resources ?? []}
+                    image_resources={s?.images?.filter((i: any) => i.selected) ?? []}
+                    show_images={urlImagesEnabled}
+                    images_required={false}
+                    image_suggestions={[]}
+                    images={s?.images ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, image_ids: ids }))
@@ -1681,7 +1709,7 @@ function ScenarioComponent({
                       }))
                     }
                     onGenerate={generateHandlers["images"]}
-                    showAiGenerate={s?.images?.show_ai_generate ?? false}
+                    showAiGenerate={s?.show_ai_generate ?? false}
                     multiSelect={true}
                     maxImages={3}
                     isAutosaveEnabled={isAutosaveEnabled}
@@ -1689,19 +1717,17 @@ function ScenarioComponent({
                     uploadFileAction={uploadFileAction}
                   />
                 )}
-                {showProblemStatementSection && (
+                {urlProblemStatementEnabled && (
                   <ProblemStatements
                     problem_statement_id={
                       formState.problem_statement_id ?? null
                     }
                     problem_statement_resource={
-                      s?.problem_statements?.resource ?? null
+                      s?.problem_statements?.find((p: any) => p.selected) ?? null
                     }
-                    show_problem_statement={showProblemStatementSection}
-                    problem_statement_suggestions={
-                      s?.problem_statements?.suggestions ?? []
-                    }
-                    problem_statements={s?.problem_statements?.resources ?? []}
+                    show_problem_statement={urlProblemStatementEnabled}
+                    problem_statement_suggestions={[]}
+                    problem_statements={s?.problem_statements ?? []}
                     disabled={disabled}
                     onProblemStatementIdChange={(problemStatementId) =>
                       setFormState((prev) => ({
@@ -1720,23 +1746,23 @@ function ScenarioComponent({
                     onGenerate={generateHandlers["problem_statements"]}
                     label="Problem Statement"
                     placeholder="Define the core problem"
-                    required={s?.problem_statements?.required ?? false}
+                    required={false}
                     searchTerm={problemStatementSearch ?? undefined}
                     onSearchChange={(term: string) =>
                       setFormData({ problemStatementSearch: term || null })
                     }
-                    showAiGenerate={s?.problem_statements?.show_ai_generate ?? false}
+                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
-                {showObjectivesSection && (
+                {urlObjectivesEnabled && (
                   <Objectives
                     objective_ids={formState.objective_ids}
-                    objective_resources={s?.objectives?.current ?? []}
-                    show_objectives={showObjectivesSection}
-                    objectives_required={s?.objectives?.required ?? false}
-                    objective_suggestions={s?.objectives?.suggestions ?? []}
-                    objectives={s?.objectives?.resources ?? []}
+                    objective_resources={s?.objectives?.filter((o: any) => o.selected) ?? []}
+                    show_objectives={urlObjectivesEnabled}
+                    objectives_required={false}
+                    objective_suggestions={[]}
+                    objectives={s?.objectives ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, objective_ids: ids }))
@@ -1747,7 +1773,7 @@ function ScenarioComponent({
                         objectives: objectives.length > 0 ? objectives : null,
                       }))
                     }
-                    showAiGenerate={s?.objectives?.show_ai_generate ?? false}
+                    showAiGenerate={s?.show_ai_generate ?? false}
                     onGenerate={generateHandlers["objectives"]}
                     isAutosaveEnabled={isAutosaveEnabled}
                   />
@@ -1782,7 +1808,7 @@ function ScenarioComponent({
               }
               actions={
                 stepResources["personas"]?.length &&
-                (s?.personas?.show_ai_generate ?? false) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="personas"
                     resourceTypes={stepResources["personas"]}
@@ -1798,18 +1824,18 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Personas
                   persona_ids={formState.persona_ids}
-                  persona_resources={s?.personas?.current ?? []}
-                  show_personas={s?.personas?.show ?? false}
-                  persona_suggestions={s?.personas?.suggestions ?? []}
-                  personas={s?.personas?.resources ?? []}
+                  persona_resources={s?.personas?.filter((p: any) => p.selected) ?? []}
+                  show_personas={true}
+                  persona_suggestions={[]}
+                  personas={s?.personas ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, persona_ids: ids }))
                   }
-                  required={s?.personas?.required ?? false}
+                  required={false}
                   onGenerate={generateHandlers["personas"]}
-                  showAiGenerate={s?.personas?.show_ai_generate ?? false}
-                  videoEnabled={videoEnabled}
+                  showAiGenerate={s?.show_ai_generate ?? false}
+                  videoEnabled={urlVideoEnabled}
 
                 />
               </div>
@@ -1842,7 +1868,7 @@ function ScenarioComponent({
               }
               actions={
                 stepResources["documents"]?.length &&
-                (s?.documents?.show_ai_generate ?? false) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="documents"
                     resourceTypes={stepResources["documents"]}
@@ -1858,18 +1884,18 @@ function ScenarioComponent({
               <div className="space-y-6">
                 <Documents
                   document_ids={formState.document_ids}
-                  document_resources={s?.documents?.current ?? []}
-                  show_documents={s?.documents?.show ?? false}
-                  document_suggestions={s?.documents?.suggestions ?? []}
-                  documents={s?.documents?.resources ?? []}
+                  document_resources={s?.documents?.filter((d: any) => d.selected) ?? []}
+                  show_documents={true}
+                  document_suggestions={[]}
+                  documents={s?.documents ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, document_ids: ids }))
                   }
-                  required={s?.documents?.required ?? false}
+                  required={false}
                   onGenerate={generateHandlers["documents"]}
-                  showAiGenerate={s?.documents?.show_ai_generate ?? false}
-                  videoEnabled={videoEnabled}
+                  showAiGenerate={s?.show_ai_generate ?? false}
+                  videoEnabled={urlVideoEnabled}
 
                 />
               </div>
@@ -1905,8 +1931,7 @@ function ScenarioComponent({
               }
               actions={
                 stepResources["parameters"]?.length &&
-                ((s?.parameters?.show_ai_generate ?? false) ||
-                  (s?.parameter_fields?.show_ai_generate ?? false)) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="parameters"
                     resourceTypes={stepResources["parameters"]}
@@ -1923,9 +1948,9 @@ function ScenarioComponent({
                 <ParameterFields
                   parameterIds={urlParameterIds}
                   parameterFieldIds={formState.parameter_field_ids}
-                  parameterFieldResources={s?.parameter_fields?.current ?? []}
-                  allParameters={s?.parameters?.resources ?? []}
-                  availableFields={s?.parameter_fields?.resources ?? []}
+                  parameterFieldResources={s?.parameter_fields?.filter((f: any) => f.selected) ?? []}
+                  allParameters={s?.parameters ?? []}
+                  availableFields={s?.parameter_fields ?? []}
                   onToggleParameter={(parameterId, open) => {
                     const current = urlParameterIds;
                     if (open) {
@@ -1941,8 +1966,8 @@ function ScenarioComponent({
                     }))
                   }
                   disabled={disabled}
-                  showAiGenerate={s?.parameter_fields?.show_ai_generate ?? false}
-                  required={s?.parameter_fields?.required ?? false}
+                  showAiGenerate={s?.show_ai_generate ?? false}
+                  required={false}
                 />
               </div>
             </StepCard>
@@ -1960,8 +1985,7 @@ function ScenarioComponent({
               resetFields={["videos", "questions"]}
               actions={
                 stepResources["video"]?.length &&
-                ((s?.videos?.show_ai_generate ?? false) ||
-                  (s?.questions?.show_ai_generate ?? false)) ? (
+                (s?.show_ai_generate ?? false) ? (
                   <StepCardAiButton
                     stepId="video"
                     resourceTypes={stepResources["video"]}
@@ -1975,14 +1999,14 @@ function ScenarioComponent({
               {...resetProps}
             >
               <div className="space-y-4">
-                {showVideosSection && (
+                {urlVideoEnabled && (
                   <Videos
                     video_ids={formState.video_ids}
-                    video_resources={s?.videos?.current ?? []}
-                    show_videos={showVideosSection}
-                    videos_required={s?.videos?.required ?? false}
-                    video_suggestions={s?.videos?.suggestions ?? []}
-                    videos={s?.videos?.resources ?? []}
+                    video_resources={s?.videos?.filter((v: any) => v.selected) ?? []}
+                    show_videos={urlVideoEnabled}
+                    videos_required={false}
+                    video_suggestions={[]}
+                    videos={s?.videos ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, video_ids: ids }))
@@ -1994,20 +2018,20 @@ function ScenarioComponent({
                       }))
                     }
                     onGenerate={generateHandlers["videos"]}
-                    showAiGenerate={s?.videos?.show_ai_generate ?? false}
+                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                     uploadBasePath={uploadBasePath}
                     uploadFileAction={uploadFileAction}
                   />
                 )}
-                {showQuestionsSection && (
+                {urlQuestionsEnabled && (
                   <Questions
                     question_ids={formState.question_ids}
-                    question_resources={s?.questions?.current ?? []}
-                    show_questions={showQuestionsSection}
-                    questions_required={s?.questions?.required ?? false}
-                    question_suggestions={s?.questions?.suggestions ?? []}
-                    questions={s?.questions?.resources ?? []}
+                    question_resources={s?.questions?.filter((q: any) => q.selected) ?? []}
+                    show_questions={urlQuestionsEnabled}
+                    questions_required={false}
+                    question_suggestions={[]}
+                    questions={s?.questions ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
                       setFormState((prev) => ({
@@ -2022,7 +2046,7 @@ function ScenarioComponent({
                       }))
                     }
                     onGenerate={generateHandlers["questions"]}
-                    showAiGenerate={s?.questions?.show_ai_generate ?? false}
+                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                     onInternalQuestionsChange={setInternalQuestions}
                   />
@@ -2030,11 +2054,11 @@ function ScenarioComponent({
                 {showQuestionsSection && internalQuestions.length > 0 && (
                   <Options
                     option_ids={formState.option_ids}
-                    option_resources={s?.options?.current ?? []}
+                    option_resources={s?.options?.filter((o: any) => o.selected) ?? []}
                     show_options={true}
-                    options={s?.options?.resources ?? []}
+                    options={s?.options ?? []}
                     question_ids={formState.question_ids}
-                    question_resources={s?.questions?.current ?? []}
+                    question_resources={s?.questions?.filter((q: any) => q.selected) ?? []}
                     internalQuestions={internalQuestions}
                     disabled={disabled}
                     onChange={(ids) =>
@@ -2046,7 +2070,7 @@ function ScenarioComponent({
                         options: opts.length > 0 ? opts : null,
                       }))
                     }
-                    showAiGenerate={s?.options?.show_ai_generate ?? false}
+                    showAiGenerate={s?.show_ai_generate ?? false}
                     isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
