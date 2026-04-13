@@ -265,9 +265,14 @@ export function Qualities({
                   </span>
                 )}
                 {isSuggested(item.id) && !isSelected && !isAiSuggested && (
-                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                    Suggested
-                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Suggested</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="truncate">{item.name}</div>

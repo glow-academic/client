@@ -26,6 +26,7 @@ export interface DepartmentResourceItem {
   name?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 export interface DepartmentItem {
@@ -38,8 +39,7 @@ export interface DepartmentsProps {
   department_ids?: string[]; // Current department resource IDs (standardized prop name)
   department_resources?: DepartmentResourceItem[]; // Selected department resources (each includes generated field)
   show_departments?: boolean; // Whether to show this resource picker
-  department_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  departments?: DepartmentResourceItem[]; // All available departments from API (each includes generated field)
+  departments?: DepartmentResourceItem[]; // All available departments from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update department_ids in form state
   label?: string;
@@ -62,7 +62,6 @@ export function Departments({
   department_ids,
   department_resources,
   show_departments = false,
-  department_suggestions,
   departments,
   disabled = false,
   onChange,
@@ -85,10 +84,6 @@ export function Departments({
   );
   const show = show_departments ?? false;
   const allDepartments = useMemo(() => departments ?? [], [departments]);
-  const suggestionsList = useMemo(
-    () => department_suggestions ?? [],
-    [department_suggestions]
-  );
 
   // Socket-based AI suggestion handling via shared hook
   const {
@@ -122,10 +117,13 @@ export function Departments({
       }));
   }, [allDepartments]);
 
-  // Check if a department is suggested
+  // Check if a department is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (departmentId: string) => suggestionsList.includes(departmentId),
-    [suggestionsList]
+    (departmentId: string) => {
+      const dept = allDepartments.find((d) => d.department_id === departmentId);
+      return dept?.suggested === true;
+    },
+    [allDepartments]
   );
 
   const handleSelect = useCallback(
@@ -280,11 +278,16 @@ export function Departments({
                 </div>
               )}
 
-              {/* Suggested badge - top right */}
+              {/* Suggested dot indicator - top right */}
               {isSuggested(item.id) && !isSelected && !isAiSuggested && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
-                  Suggested
-                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               <div className="flex flex-col justify-center gap-1 flex-1 overflow-hidden">

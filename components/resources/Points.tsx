@@ -485,9 +485,14 @@ export function Points({
               </div>
             )}
             {!isSelected && isSuggested(item.id) && (
-              <div className="absolute right-2 top-2 rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
-                Suggested
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Suggested</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             <div className="text-lg font-semibold">
               {item.value !== null && item.value !== undefined

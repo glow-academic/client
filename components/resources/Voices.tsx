@@ -247,44 +247,38 @@ export function Voices({
         selectedIds={ids}
         onSelect={handleGridSelect}
         getId={(item) => (item.type === "voice" ? item.id : "__add__")}
+        itemClassName="w-[100px]"
         renderItem={(item, isSelected) => {
           if (item.type !== "voice") return null;
 
           const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 
           return (
-            <div
-              className={cn(
-                "relative flex flex-col gap-2 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                "hover:shadow-md hover:bg-accent/50",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
-              )}
-            >
-              {/* Check icon - top right */}
-              {isSelected && (
-                <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                  <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                </div>
-              )}
+            <div className="flex items-center justify-center">
+              <div
+                className={cn(
+                  "relative flex items-center justify-center h-20 w-20 rounded-full border bg-card text-card-foreground shadow-sm transition-all",
+                  "hover:shadow-md hover:bg-accent/50",
+                  isSelected && "ring-2 ring-primary bg-accent",
+                  isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                )}
+              >
+                {/* Suggested dot indicator */}
+                {!isSelected && !isAiSuggested && isSuggested(item.id) && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="absolute top-0 right-0 z-10 h-2 w-2 rounded-full bg-primary" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Suggested</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
 
-              {/* AI Suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI
-                </div>
-              )}
-
-              {/* Suggested badge - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                  Suggested
-                </div>
-              )}
-
-              <h3 className="font-medium text-sm leading-tight pr-6">
-                {item.voice}
-              </h3>
+                <span className="font-medium text-xs leading-tight text-center px-1">
+                  {item.voice}
+                </span>
+              </div>
             </div>
           );
         }}

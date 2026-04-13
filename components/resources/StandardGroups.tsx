@@ -452,9 +452,14 @@ export function StandardGroups({
               </div>
             )}
             {!isSelected && !aiSuggestedIds.has(item.id) && isSuggested(item.id) && (
-              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                Suggested
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">Suggested</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">{item.name}</div>

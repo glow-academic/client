@@ -258,11 +258,16 @@ export function Models({
                 </div>
               )}
 
-              {/* Suggested badge - top right */}
+              {/* Suggested dot indicator - top right */}
               {isSuggested(model.id) && !isSelected && !isAiSuggested && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
-                  Suggested
-                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               <div className="flex items-start gap-3">

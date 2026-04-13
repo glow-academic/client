@@ -17,21 +17,21 @@ import {
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Loader2, PlusCircle, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ExampleResourceItem {
   id?: string | null;
   example?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 export interface ExamplesProps {
   example_ids?: string[]; // Current example resource IDs (standardized prop name)
   example_resources?: ExampleResourceItem[]; // Selected example resources (each includes generated field)
   show_examples?: boolean; // Whether to show this resource picker
-  example_suggestions?: string[]; // Array of suggested example IDs (UUIDs) - consistent with other suggestions
-  examples?: ExampleResourceItem[]; // All available examples from API (each includes generated field)
+  examples?: ExampleResourceItem[]; // All available examples from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update example_ids in form state
   label?: string;
@@ -49,7 +49,6 @@ export interface ExamplesProps {
   onExamplesChange?: (examples: string[]) => void; // Report raw text values upward
   // Legacy props for backward compatibility
   exampleIds?: string[];
-  suggestions?: string[]; // History suggestions for autocomplete (legacy)
   aiExampleResources?: Pick<ExampleResourceItem, "id" | "example">[] | null;
 }
 
@@ -57,7 +56,6 @@ export function Examples({
   example_ids,
   example_resources: _example_resources,
   show_examples = false,
-  example_suggestions,
   examples,
   disabled = false,
   onChange: _onChange,
@@ -75,7 +73,6 @@ export function Examples({
   onExamplesChange,
   // Legacy props for backward compatibility
   exampleIds,
-  suggestions = [],
   aiExampleResources: _aiExampleResources,
 }: ExamplesProps) {
   // Use standardized props with fallback to legacy props
@@ -103,41 +100,23 @@ export function Examples({
     return mapping;
   }, [exampleMapping, ids, allExamples]);
 
-  // Convert example_suggestions (UUIDs) to example strings by looking them up
-  // Use effectiveExampleMapping which maps example_id -> example text from current persona's examples
-  // Note: This only works for suggestions that are in the current persona's examples array
-  // For suggestions from other personas, they won't appear until those examples are added to current persona
+  // Get suggested example texts from items with suggested=true
   const suggestionsList = useMemo(() => {
-    if (example_suggestions && example_suggestions.length > 0) {
-      // Look up example text from suggestion IDs using the mapping
-      return example_suggestions
-        .map((id) => effectiveExampleMapping[id])
-        .filter(
-          (text): text is string =>
-            text !== null && text !== undefined && text.trim() !== ""
-        );
-    }
-    return suggestions;
-  }, [example_suggestions, effectiveExampleMapping, suggestions]);
+    return allExamples
+      .filter((e) => e.suggested && e.example && e.example.trim() !== "")
+      .map((e) => e.example!);
+  }, [allExamples]);
 
   // Reverse map: suggestion text -> existing resource ID (for linking instead of creating)
   const suggestionTextToIdMap = useMemo(() => {
     const map = new Map<string, string>();
-    if (example_suggestions && example_suggestions.length > 0) {
-      for (const suggestionId of example_suggestions) {
-        const text = effectiveExampleMapping[suggestionId];
-        if (text && text.trim()) {
-          map.set(text, suggestionId);
-        }
-        // Also check allExamples array for text->id mapping
-        const exampleObj = allExamples.find((e) => e.id === suggestionId);
-        if (exampleObj?.example && exampleObj.example.trim()) {
-          map.set(exampleObj.example, suggestionId);
-        }
-      }
-    }
+    allExamples
+      .filter((e) => e.suggested && e.id && e.example && e.example.trim())
+      .forEach((e) => {
+        map.set(e.example!, e.id!);
+      });
     return map;
-  }, [example_suggestions, effectiveExampleMapping, allExamples]);
+  }, [allExamples]);
 
   // Internal state for display texts (synced with example_ids via exampleMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -253,11 +232,12 @@ export function Examples({
   return (
     <div className="space-y-2">
       {label && (
-        <div className="flex items-center gap-2">
-          <Label htmlFor={id} className="flex items-center gap-1">
-            {label}
-            {required && <span className="text-destructive">*</span>}
-          </Label>
+        <div className="flex items-end justify-between">
+          <div className="flex items-center gap-2">
+            <Label htmlFor={id} className="flex items-center gap-1">
+              {label}
+              {required && <span className="text-destructive">*</span>}
+            </Label>
           {onGenerate && showAiGenerate && (
             <TooltipProvider>
               <Tooltip>
@@ -319,6 +299,19 @@ export function Examples({
               </TooltipProvider>
             </>
           )}
+          </div>
+          {internalTexts.length < maxItems && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => handleItemsChange([...internalTexts, ""])}
+              disabled={disabled}
+            >
+              {addButtonLabel} <PlusCircle className="h-3.5 w-3.5 ml-1.5" />
+            </Button>
+          )}
         </div>
       )}
       {/* AI-suggested examples preview */}
@@ -348,6 +341,7 @@ export function Examples({
         addButtonLabel={addButtonLabel}
         disabled={disabled}
         itemPlaceholder={itemPlaceholder}
+        hideAddButton
       />
     </div>
   );

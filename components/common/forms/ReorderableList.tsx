@@ -23,6 +23,7 @@ export interface ReorderableListProps<T extends string = string> {
   addButtonLabel?: string;
   disabled?: boolean;
   itemPlaceholder?: string;
+  hideAddButton?: boolean;
 }
 
 // Component for item input with ghost autocomplete
@@ -144,6 +145,7 @@ export function ReorderableList<T extends string>({
   addButtonLabel = "Add item",
   disabled = false,
   itemPlaceholder = "Item",
+  hideAddButton = false,
 }: ReorderableListProps<T>) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -205,7 +207,7 @@ export function ReorderableList<T extends string>({
 
   return (
     <div className="space-y-2">
-      {items.length === 0 && (
+      {items.length === 0 && !hideAddButton && (
         <div>
           <Button
             type="button"
@@ -231,7 +233,7 @@ export function ReorderableList<T extends string>({
           : defaultRenderItem(item, index)
       )}
 
-      {items.length < maxItems && items.length > 0 && (
+      {items.length < maxItems && items.length > 0 && !hideAddButton && (
         <div>
           <Button
             type="button"

@@ -259,9 +259,14 @@ export function Runs({
                       </span>
                     )}
                     {isSuggested(item.id) && !isSelected && !isAiSuggested && (
-                      <span className="text-xs text-muted-foreground">
-                        Suggested
-                      </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top">Suggested</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                   {item.description && (

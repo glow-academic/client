@@ -1053,7 +1053,7 @@ function PersonaComponent({
                   required={true}
                   hideDescription={true}
 
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               }
@@ -1105,7 +1105,7 @@ function PersonaComponent({
                   rows={4}
                   data-testid="input-persona-description"
 
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Departments
@@ -1120,7 +1120,7 @@ function PersonaComponent({
                   onGenerate={generateHandlers["departments"]}
                   required={false}
 
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Flags
@@ -1131,7 +1131,7 @@ function PersonaComponent({
                   label="Flags"
                   disabled={disabled}
 
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                   isAutosaveEnabled={isAutosaveEnabled}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
@@ -1207,9 +1207,7 @@ function PersonaComponent({
                 }
                 disabled={disabled}
 
-                showAiGenerate={
-                  s?.show_ai_generate ?? false
-                }
+                showAiGenerate={false}
                 required={false}
                 onGenerate={generateHandlers["parameter_fields"]}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -1285,7 +1283,7 @@ function PersonaComponent({
                   setStepFormData({ colorShowSelected: value || null })
                 }
 
-                showAiGenerate={s?.show_ai_generate ?? false}
+                showAiGenerate={false}
                 required={true}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -1360,7 +1358,7 @@ function PersonaComponent({
                   setStepFormData({ iconShowSelected: value || null })
                 }
 
-                showAiGenerate={s?.show_ai_generate ?? false}
+                showAiGenerate={false}
                 required={true}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
@@ -1426,10 +1424,9 @@ function PersonaComponent({
                 placeholder="Instructions that define how the persona should behave and respond."
                 required={true}
                 rows={8}
-                helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
 
-                showAiGenerate={s?.show_ai_generate ?? false}
+                showAiGenerate={false}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
               <Examples
@@ -1451,7 +1448,7 @@ function PersonaComponent({
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
 
-                showAiGenerate={s?.show_ai_generate ?? false}
+                showAiGenerate={false}
                 required={false}
                 exampleMapping={
                   s?.examples && formState.example_ids
@@ -1476,7 +1473,7 @@ function PersonaComponent({
                   setFormState((prev) => ({ ...prev, voice_ids: ids }))
                 }
 
-                showAiGenerate={s?.show_ai_generate ?? false}
+                showAiGenerate={false}
                 onGenerate={generateHandlers["voices"]}
                 isAutosaveEnabled={isAutosaveEnabled}
               />

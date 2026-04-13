@@ -28,6 +28,7 @@ export interface IconResourceItem {
   value?: string | null;
   description?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 export interface IconItem {
@@ -41,8 +42,7 @@ export interface IconsProps {
   icon_id?: string | null; // Current icon_id (standardized prop name)
   icon_resource?: IconResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_icon?: boolean; // Whether to show this resource picker
-  icon_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  icons?: IconResourceItem[]; // All available icons from API (each includes generated field)
+  icons?: IconResourceItem[]; // All available icons from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onIconIdChange: (iconId: string | null) => void; // Update icon_id in parent form state
   label?: string;
@@ -61,15 +61,12 @@ export interface IconsProps {
   iconResource?: IconResourceItem | null;
   iconId?: string | null;
   allIcons?: string[];
-  suggestedIcons?: string[];
-  iconSuggestions?: string[];
 }
 
 export function Icons({
   icon_id,
   icon_resource,
   show_icon = false,
-  icon_suggestions,
   icons,
   disabled = false,
   onIconIdChange,
@@ -88,17 +85,11 @@ export function Icons({
   iconResource,
   iconId: _iconId,
   allIcons,
-  suggestedIcons = [],
-  iconSuggestions,
 }: IconsProps) {
   // Use standardized props with fallback to legacy props
   const resource = icon_resource ?? iconResource ?? null;
   const currentId = icon_id ?? _iconId ?? null;
   const show = show_icon ?? false;
-  const suggestionsList = useMemo(
-    () => icon_suggestions ?? iconSuggestions ?? [],
-    [icon_suggestions, iconSuggestions]
-  );
   const allIconsArray = useMemo(() => icons ?? [], [icons]);
 
   // Socket-based AI suggestion handling via shared hook
@@ -146,27 +137,13 @@ export function Icons({
     return [];
   }, [allIconsArray, allIcons]);
 
-  // Get suggested icon IDs
-  const suggestedIconIds = useMemo(() => {
-    if (suggestionsList.length > 0) {
-      return new Set(suggestionsList);
-    }
-    // Legacy: suggestedIcons are icon values, need to map to IDs
-    if (suggestedIcons.length > 0 && iconItems.length > 0) {
-      const ids = new Set<string>();
-      suggestedIcons.forEach((iconValue) => {
-        const item = iconItems.find((i) => i.value === iconValue);
-        if (item) ids.add(item.id);
-      });
-      return ids;
-    }
-    return new Set<string>();
-  }, [suggestionsList, suggestedIcons, iconItems]);
-
-  // Check if an icon is suggested
+  // Check if an icon is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
-    (iconId: string) => suggestedIconIds.has(iconId),
-    [suggestedIconIds]
+    (iconId: string) => {
+      const icon = allIconsArray.find((i) => i.id === iconId);
+      return icon?.suggested === true;
+    },
+    [allIconsArray]
   );
 
   // Filter icons based on search term and showSelectedFilter
@@ -319,11 +296,16 @@ export function Icons({
                 </div>
               )}
 
-              {/* Suggested badge - top right */}
+              {/* Suggested dot indicator - top right */}
               {isSuggested(item.id) && !isSelected && !isAiSuggested && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
-                  Suggested
-                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">Suggested</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
 
               <div className="flex flex-col items-center justify-center gap-1 flex-1 overflow-hidden">

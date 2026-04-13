@@ -18,6 +18,7 @@ export interface SelectableGridProps<T> {
   className?: string;
   disabled?: boolean;
   horizontal?: boolean; // Enable horizontal scrolling with 5 items visible
+  itemClassName?: string; // Override default item button class (e.g. width)
 }
 
 export function SelectableGrid<T>({
@@ -32,6 +33,7 @@ export function SelectableGrid<T>({
   className,
   disabled = false,
   horizontal = false,
+  itemClassName,
 }: SelectableGridProps<T>) {
   const handleSelect = (item: T) => {
     if (disabled) return;
@@ -70,7 +72,8 @@ export function SelectableGrid<T>({
                 onClick={() => handleSelect(item)}
                 disabled={disabled ?? false}
                 className={cn(
-                  "relative text-left flex-shrink-0 w-[200px]",
+                  "relative text-left flex-shrink-0",
+                  itemClassName || "w-[200px]",
                   disabled && "pointer-events-none opacity-50"
                 )}
               >

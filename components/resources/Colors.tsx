@@ -29,6 +29,7 @@ export interface ColorResourceItem {
   description?: string | null;
   hex_code?: string | null;
   generated?: boolean | null;
+  suggested?: boolean | null;
 }
 
 export interface ColorItem {
@@ -42,8 +43,7 @@ export interface ColorsProps {
   color_id?: string | null; // Current color_id (standardized prop name)
   color_resource?: ColorResourceItem | null; // Resource data from server (standardized prop name; includes generated field)
   show_color?: boolean; // Whether to show this resource picker
-  color_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  colors?: ColorResourceItem[]; // All available colors from API (each includes generated field)
+  colors?: ColorResourceItem[]; // All available colors from API (each includes generated and suggested fields)
   disabled?: boolean; // Based on can_edit flag
   onColorIdChange?: (colorId: string | null) => void; // Update color_id in parent form state (single-select)
   color_ids?: string[]; // Current color resource IDs (multi-select)
@@ -74,14 +74,12 @@ export interface ColorsProps {
   } | null;
   colorId?: string | null;
   presetColors?: ColorItem[];
-  colorSuggestions?: string[];
 }
 
 export function Colors({
   color_id,
   color_resource,
   show_color = false,
-  color_suggestions,
   colors,
   disabled = false,
   onColorIdChange,
@@ -106,16 +104,11 @@ export function Colors({
   colorResource,
   colorId: _colorId,
   presetColors,
-  colorSuggestions,
 }: ColorsProps) {
   // Use standardized props with fallback to legacy props
   const resource = color_resource ?? colorResource ?? null;
   const _resourceId = color_id ?? _colorId ?? null;
   const show = show_color ?? false;
-  const suggestionsList = useMemo(
-    () => color_suggestions ?? colorSuggestions ?? [],
-    [color_suggestions, colorSuggestions]
-  );
   const ids = useMemo(() => color_ids ?? [], [color_ids]);
 
   // AI suggestion via shared hook
@@ -245,18 +238,17 @@ export function Colors({
     }
   }, [colors, onColorIdChange]);
 
-  // Map suggestion UUIDs to hex codes
+  // Build a set of suggested hex codes from colors with suggested=true
   const suggestedHexCodes = useMemo(() => {
-    if (suggestionsList.length === 0 || !colors) return new Set<string>();
+    if (!colors) return new Set<string>();
     const suggestedSet = new Set<string>();
-    suggestionsList.forEach((suggestionId) => {
-      const color = colors.find((c) => c.id === suggestionId);
-      if (color?.hex_code) {
+    colors.forEach((color) => {
+      if (color.suggested && color.hex_code) {
         suggestedSet.add(color.hex_code.toLowerCase());
       }
     });
     return suggestedSet;
-  }, [suggestionsList, colors]);
+  }, [colors]);
 
   // Filter colors by search term
   const filteredColors = useMemo(() => {
@@ -316,8 +308,11 @@ export function Colors({
 
   // Check if a color is suggested (multi-select)
   const isSuggested = useCallback(
-    (colorId: string) => suggestionsList.includes(colorId),
-    [suggestionsList]
+    (colorId: string) => {
+      const color = colors?.find((c) => c.id === colorId);
+      return color?.suggested === true;
+    },
+    [colors]
   );
 
   const handleSelectMulti = useCallback(
@@ -392,9 +387,14 @@ export function Colors({
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 {isSuggested(item.id) && !isSelected && (
-                  <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                    Suggested
-                  </span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Suggested</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
                 {item.hex_code && (
                   <div
@@ -574,13 +574,18 @@ export function Colors({
                 </div>
               )}
 
-              {/* Suggested badge - top right */}
+              {/* Suggested dot indicator - top right */}
               {!isSelected &&
                 !isAiSuggested &&
                 suggestedHexCodes.has(color.hex.toLowerCase()) && (
-                  <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] rounded">
-                    Suggested
-                  </div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="absolute top-2 right-2 z-10 h-1.5 w-1.5 rounded-full bg-primary" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Suggested</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
 
               <div className="flex items-center gap-2 flex-1 overflow-hidden">
