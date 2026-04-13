@@ -35,7 +35,7 @@ import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Voices } from "@/components/resources/Voices";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useGroupId } from "@/contexts/group-context";
+import { useGenerationPanelContext } from "@/contexts/generation-panel-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
@@ -90,6 +90,8 @@ type PersonaFormState = {
 
 export interface PersonaProps {
   personaId?: string;
+  // Server-provided group ID (SSR-hydrated from /personas/group)
+  groupId?: string | null;
   // Server-provided data (for server-side rendering)
   personaData?: PersonaData;
   // Server actions — separate create/update for explicit intent
@@ -98,6 +100,8 @@ export interface PersonaProps {
   patchPersonaDraftAction?: (
     input: PatchPersonaDraftIn,
   ) => Promise<PatchPersonaDraftOut>;
+  // Generation action (artifact-specific)
+  generateAction?: (input: any) => Promise<any>;
 }
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
@@ -159,16 +163,46 @@ const PERSONA_RESOURCES: ResourceConfig[] = [
 
 function PersonaComponent({
   personaId,
+  groupId: groupIdProp,
   personaData,
   createPersonaAction,
   updatePersonaAction,
   patchPersonaDraftAction,
+  generateAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
   const { profile } = useProfile();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
-  const { groupId } = useGroupId();
+  const groupId = groupIdProp ?? null;
+
+  // Register groupId + onGenerate in the generation panel context
+  const panelContext = useGenerationPanelContext();
+  useEffect(() => {
+    if (panelContext && groupId) {
+      panelContext.setGroupId(groupId);
+    }
+    return () => {
+      if (panelContext) panelContext.setGroupId(null);
+    };
+  }, [groupId, panelContext]);
+
+  useEffect(() => {
+    if (panelContext && generateAction && groupId) {
+      panelContext.setOnGenerate(async (params) => {
+        await generateAction({
+          body: {
+            group_id: groupId,
+            resource_types: params.resource_types,
+            user_instructions: params.instructions ? [params.instructions] : [],
+          },
+        });
+      });
+    }
+    return () => {
+      if (panelContext) panelContext.setOnGenerate(null);
+    };
+  }, [generateAction, groupId, panelContext]);
 
   // Empty flush registry — resource creation is handled by the unified draft endpoint
   const emptyFlushRegistryRef = useRef<
