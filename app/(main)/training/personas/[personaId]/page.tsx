@@ -121,15 +121,25 @@ export default async function PersonaEditPage({
       body: {
         persona_id: personaId,
         draft_id: q.draftId ?? null,
-        colors_search: q.colorSearch ?? null,
-        icons_search: q.iconSearch ?? null,
-        descriptions_search: q.descriptionSearch ?? null,
-        instructions_search: q.instructionsSearch ?? null,
-        parameter_fields_search: q.fieldSearch ?? null,
-        colors_selected_only: q.colorShowSelected ?? null,
-        icons_selected_only: q.iconShowSelected ?? null,
-        parameter_fields_selected_only: q.fieldShowSelected ?? null,
         parameter_ids: q.parameterIds ?? null,
+        colors: q.colorSearch || q.colorShowSelected ? {
+          search: q.colorSearch ?? undefined,
+          selected: q.colorShowSelected ?? undefined,
+        } : undefined,
+        icons: q.iconSearch || q.iconShowSelected ? {
+          search: q.iconSearch ?? undefined,
+          selected: q.iconShowSelected ?? undefined,
+        } : undefined,
+        descriptions: q.descriptionSearch ? {
+          search: q.descriptionSearch,
+        } : undefined,
+        instructions: q.instructionsSearch ? {
+          search: q.instructionsSearch,
+        } : undefined,
+        parameter_fields: q.fieldSearch || q.fieldShowSelected ? {
+          search: q.fieldSearch ?? undefined,
+          selected: q.fieldShowSelected ?? undefined,
+        } : undefined,
       } as GetPersonaIn["body"],
     };
     const [personaDetail, docs, draftsResult] = await Promise.all([
