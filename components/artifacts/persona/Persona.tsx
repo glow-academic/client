@@ -252,44 +252,44 @@ function PersonaComponent({
       if (!stablePersonaDataFields) return false;
       switch (resourceType) {
         case "names":
-          return stablePersonaDataFields.names?.resource?.generated ?? false;
+          return stablePersonaDataFields.names?.find((n: any) => n.selected)?.generated ?? false;
         case "descriptions":
           return (
-            stablePersonaDataFields.descriptions?.resource?.generated ?? false
+            stablePersonaDataFields.descriptions?.find((d: any) => d.selected)?.generated ?? false
           );
         case "colors":
-          return stablePersonaDataFields.colors?.resource?.generated ?? false;
+          return stablePersonaDataFields.colors?.find((c: any) => c.selected)?.generated ?? false;
         case "icons":
-          return stablePersonaDataFields.icons?.resource?.generated ?? false;
+          return stablePersonaDataFields.icons?.find((i: any) => i.selected)?.generated ?? false;
         case "instructions":
           return (
-            stablePersonaDataFields.instructions?.resource?.generated ?? false
+            stablePersonaDataFields.instructions?.find((i: any) => i.selected)?.generated ?? false
           );
         case "flags":
           return (
-            stablePersonaDataFields.flags?.resources?.[0]?.generated ?? false
+            stablePersonaDataFields.flags?.[0]?.generated ?? false
           );
         case "departments":
           return (
-            stablePersonaDataFields.departments?.current?.some(
+            stablePersonaDataFields.departments?.filter((d: any) => d.selected)?.some(
               (d) => d.generated,
             ) ?? false
           );
         case "parameter_fields":
           return (
-            stablePersonaDataFields.parameter_fields?.current?.some(
+            stablePersonaDataFields.parameter_fields?.filter((p: any) => p.selected)?.some(
               (f) => f.generated,
             ) ?? false
           );
         case "examples":
           return (
-            stablePersonaDataFields.examples?.current?.some(
+            stablePersonaDataFields.examples?.filter((e: any) => e.selected)?.some(
               (e) => e.generated,
             ) ?? false
           );
         case "voices":
           return (
-            stablePersonaDataFields.voices?.current?.some(
+            stablePersonaDataFields.voices?.filter((v: any) => v.selected)?.some(
               (v) => v.generated,
             ) ?? false
           );
@@ -322,22 +322,22 @@ function PersonaComponent({
     }
 
     return {
-      name_id: data.names?.resource?.id ?? null,
-      description_id: data.descriptions?.resource?.id ?? null,
-      color_id: data.colors?.resource?.id ?? null,
-      icon_id: data.icons?.resource?.id ?? null,
-      instructions_id: data.instructions?.resource?.id ?? null,
-      active_flag_id: data.flags?.current?.flag_option_id ?? null,
-      department_ids: (data.departments?.current ?? [])
+      name_id: data.names?.find((n: any) => n.selected)?.id ?? null,
+      description_id: data.descriptions?.find((d: any) => d.selected)?.id ?? null,
+      color_id: data.colors?.find((c: any) => c.selected)?.id ?? null,
+      icon_id: data.icons?.find((i: any) => i.selected)?.id ?? null,
+      instructions_id: data.instructions?.find((i: any) => i.selected)?.id ?? null,
+      active_flag_id: data.flags?.find((f: any) => f.selected)?.flag_option_id ?? null,
+      department_ids: (data.departments?.filter((d: any) => d.selected) ?? [])
         .map((d) => d.department_id)
         .filter(Boolean) as string[],
-      parameter_field_ids: (data.parameter_fields?.current ?? [])
+      parameter_field_ids: (data.parameter_fields?.filter((p: any) => p.selected) ?? [])
         .map((f) => f.field_id)
         .filter(Boolean) as string[],
-      example_ids: (data.examples?.current ?? [])
+      example_ids: (data.examples?.filter((e: any) => e.selected) ?? [])
         .map((e) => e.id)
         .filter(Boolean) as string[],
-      voice_ids: (data.voices?.current ?? [])
+      voice_ids: (data.voices?.filter((v: any) => v.selected) ?? [])
         .map((v) => v.id)
         .filter(Boolean) as string[],
       // Value fields start null — IDs from server are the source of truth on load
@@ -363,26 +363,26 @@ function PersonaComponent({
   // Memoize stringified array dependencies
   const departmentIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.departments?.current ?? [])
+      (personaData?.departments?.filter((d: any) => d.selected) ?? [])
         .map((d) => d.department_id)
         .filter(Boolean),
     );
   }, [personaData?.departments]);
   const parameterFieldIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.parameter_fields?.current ?? [])
+      (personaData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
         .map((f) => f.field_id)
         .filter(Boolean),
     );
   }, [personaData?.parameter_fields]);
   const exampleIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.examples?.current ?? []).map((e) => e.id).filter(Boolean),
+      (personaData?.examples?.filter((e: any) => e.selected) ?? []).map((e) => e.id).filter(Boolean),
     );
   }, [personaData?.examples]);
   const voiceIdsStr = React.useMemo(() => {
     return JSON.stringify(
-      (personaData?.voices?.current ?? []).map((v) => v.id).filter(Boolean),
+      (personaData?.voices?.filter((v: any) => v.selected) ?? []).map((v) => v.id).filter(Boolean),
     );
   }, [personaData?.voices]);
 
@@ -1035,9 +1035,9 @@ function PersonaComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={s?.names?.resource ?? null}
+                  name_resource={s?.names?.find((n: any) => n.selected) ?? null}
                   show_name={true}
-                  names={s?.names?.resources ?? []}
+                  names={s?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({
@@ -1077,9 +1077,9 @@ function PersonaComponent({
               <div className="space-y-4">
                 <Descriptions
                   description_id={formState.description_id ?? null}
-                  description_resource={s?.descriptions?.resource ?? null}
+                  description_resource={s?.descriptions?.find((d: any) => d.selected) ?? null}
                   show_description={true}
-                  descriptions={s?.descriptions?.resources ?? []}
+                  descriptions={s?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -1110,9 +1110,9 @@ function PersonaComponent({
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={s?.departments?.current ?? []}
+                  department_resources={s?.departments?.filter((d: any) => d.selected) ?? []}
                   show_departments={true}
-                  departments={s?.departments?.resources ?? []}
+                  departments={s?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
@@ -1124,7 +1124,7 @@ function PersonaComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
                 <Flags
-                  flags={s?.flags?.resources ?? []}
+                  flags={s?.flags ?? []}
                   flag_id={formState.active_flag_id}
                   show_flags={true}
                   columns={1}
@@ -1182,9 +1182,9 @@ function PersonaComponent({
               <ParameterFields
                 parameterIds={urlParameterIds}
                 parameterFieldIds={formState.parameter_field_ids}
-                parameterFieldResources={s?.parameter_fields?.current ?? []}
-                allParameters={s?.parameters?.resources ?? []}
-                availableFields={s?.parameter_fields?.resources ?? []}
+                parameterFieldResources={s?.parameter_fields?.filter((p: any) => p.selected) ?? []}
+                allParameters={s?.parameters ?? []}
+                availableFields={s?.parameter_fields ?? []}
                 onToggleParameter={(parameterId, open) => {
                   const current = urlParameterIds;
                   if (open) {
@@ -1265,9 +1265,9 @@ function PersonaComponent({
             >
               <Colors
                 color_id={formState.color_id ?? null}
-                color_resource={s?.colors?.resource ?? null}
+                color_resource={s?.colors?.find((c: any) => c.selected) ?? null}
                 show_color={true}
-                colors={s?.colors?.resources ?? []}
+                colors={s?.colors ?? []}
                 disabled={disabled}
                 onColorIdChange={(colorId) =>
                   setFormState((prev) => ({ ...prev, color_id: colorId }))
@@ -1340,9 +1340,9 @@ function PersonaComponent({
             >
               <Icons
                 icon_id={formState.icon_id ?? null}
-                icon_resource={s?.icons?.resource ?? null}
+                icon_resource={s?.icons?.find((i: any) => i.selected) ?? null}
                 show_icon={true}
-                icons={s?.icons?.resources ?? []}
+                icons={s?.icons ?? []}
                 disabled={disabled}
                 onIconIdChange={(iconId) =>
                   setFormState((prev) => ({ ...prev, icon_id: iconId }))
@@ -1398,11 +1398,11 @@ function PersonaComponent({
                 instructions_id={formState.instructions_id ?? null}
                 instructions_resource={
                   formState.instructions_id
-                    ? (s?.instructions?.resource ?? null)
+                    ? (s?.instructions?.find((i: any) => i.selected) ?? null)
                     : null
                 }
                 show_instructions={true}
-                instructions={s?.instructions?.resources ?? []}
+                instructions={s?.instructions ?? []}
                 disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
                   setFormState((prev) => ({
@@ -1434,9 +1434,9 @@ function PersonaComponent({
               />
               <Examples
                 example_ids={formState.example_ids ?? []}
-                example_resources={s?.examples?.current ?? []}
+                example_resources={s?.examples?.filter((e: any) => e.selected) ?? []}
                 show_examples={true}
-                examples={s?.examples?.resources ?? []}
+                examples={s?.examples ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({
@@ -1454,9 +1454,9 @@ function PersonaComponent({
                 showAiGenerate={s?.show_ai_generate ?? false}
                 required={false}
                 exampleMapping={
-                  s?.examples?.resources && formState.example_ids
+                  s?.examples && formState.example_ids
                     ? Object.fromEntries(
-                        s.examples.resources
+                        s.examples
                           .map((ex, idx) => [
                             formState.example_ids?.[idx] || "",
                             ex.example || "",
@@ -1468,9 +1468,9 @@ function PersonaComponent({
               />
               <Voices
                 voice_ids={formState.voice_ids ?? []}
-                voice_resources={s?.voices?.current ?? []}
+                voice_resources={s?.voices?.filter((v: any) => v.selected) ?? []}
                 show_voices={true}
-                voices={s?.voices?.resources ?? []}
+                voices={s?.voices ?? []}
                 disabled={disabled}
                 onVoiceIdsChange={(ids) =>
                   setFormState((prev) => ({ ...prev, voice_ids: ids }))
@@ -1558,36 +1558,36 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
   const prevData = prevProps.personaData;
   const nextData = nextProps.personaData;
   const prevIds = {
-    name_id: prevData?.names?.resource?.id ?? null,
-    description_id: prevData?.descriptions?.resource?.id ?? null,
-    color_id: prevData?.colors?.resource?.id ?? null,
-    icon_id: prevData?.icons?.resource?.id ?? null,
-    instructions_id: prevData?.instructions?.resource?.id ?? null,
-    active_flag_id: prevData?.flags?.current?.flag_option_id ?? null,
-    department_ids: (prevData?.departments?.current ?? [])
+    name_id: prevData?.names?.find((n: any) => n.selected)?.id ?? null,
+    description_id: prevData?.descriptions?.find((d: any) => d.selected)?.id ?? null,
+    color_id: prevData?.colors?.find((c: any) => c.selected)?.id ?? null,
+    icon_id: prevData?.icons?.find((i: any) => i.selected)?.id ?? null,
+    instructions_id: prevData?.instructions?.find((i: any) => i.selected)?.id ?? null,
+    active_flag_id: prevData?.flags?.find((f: any) => f.selected)?.flag_option_id ?? null,
+    department_ids: (prevData?.departments?.filter((d: any) => d.selected) ?? [])
       .map((d) => d.department_id)
       .filter(Boolean),
-    parameter_field_ids: (prevData?.parameter_fields?.current ?? [])
+    parameter_field_ids: (prevData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
       .map((f) => f.field_id)
       .filter(Boolean),
-    example_ids: (prevData?.examples?.current ?? [])
+    example_ids: (prevData?.examples?.filter((e: any) => e.selected) ?? [])
       .map((e) => e.id)
       .filter(Boolean),
   };
   const nextIds = {
-    name_id: nextData?.names?.resource?.id ?? null,
-    description_id: nextData?.descriptions?.resource?.id ?? null,
-    color_id: nextData?.colors?.resource?.id ?? null,
-    icon_id: nextData?.icons?.resource?.id ?? null,
-    instructions_id: nextData?.instructions?.resource?.id ?? null,
-    active_flag_id: nextData?.flags?.current?.flag_option_id ?? null,
-    department_ids: (nextData?.departments?.current ?? [])
+    name_id: nextData?.names?.find((n: any) => n.selected)?.id ?? null,
+    description_id: nextData?.descriptions?.find((d: any) => d.selected)?.id ?? null,
+    color_id: nextData?.colors?.find((c: any) => c.selected)?.id ?? null,
+    icon_id: nextData?.icons?.find((i: any) => i.selected)?.id ?? null,
+    instructions_id: nextData?.instructions?.find((i: any) => i.selected)?.id ?? null,
+    active_flag_id: nextData?.flags?.find((f: any) => f.selected)?.flag_option_id ?? null,
+    department_ids: (nextData?.departments?.filter((d: any) => d.selected) ?? [])
       .map((d) => d.department_id)
       .filter(Boolean),
-    parameter_field_ids: (nextData?.parameter_fields?.current ?? [])
+    parameter_field_ids: (nextData?.parameter_fields?.filter((p: any) => p.selected) ?? [])
       .map((f) => f.field_id)
       .filter(Boolean),
-    example_ids: (nextData?.examples?.current ?? [])
+    example_ids: (nextData?.examples?.filter((e: any) => e.selected) ?? [])
       .map((e) => e.id)
       .filter(Boolean),
   };
