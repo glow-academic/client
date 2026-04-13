@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
-import { Check, Power, Sparkles, X } from "lucide-react";
+import { Check, Power, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface FlagResourceItem {
@@ -49,9 +49,6 @@ interface CommonFlagsProps {
   columns?: 1 | 2 | 3 | 4; // Columns per row (default: 2)
   label?: string; // Section label
   disabled?: boolean;
-  group_id?: string | null;
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  onGenerate?: () => void | Promise<void>;
 }
 
 // Single-flag mode props - uses flag_id (optional) without flag_ids
@@ -79,10 +76,7 @@ export function Flags(props: FlagsProps) {
     columns = 2,
     label,
     disabled = false,
-    showAiGenerate = false,
-    group_id,
     onChange,
-    onGenerate,
   } = props;
 
   // Determine mode based on props
@@ -99,12 +93,6 @@ export function Flags(props: FlagsProps) {
   // Detect pending items
   const hasPending = useMemo(
     () => visibleFlags.some((flag) => flag.pending),
-    [visibleFlags]
-  );
-
-  // Check if any flag has been generated
-  const hasGenerated = useMemo(
-    () => visibleFlags.some((flag) => flag.generated),
     [visibleFlags]
   );
 
@@ -172,31 +160,9 @@ export function Flags(props: FlagsProps) {
   return (
     <div className="space-y-2 pt-2">
       {/* Section header with label and generate button */}
-      {(label || onGenerate) && (
+      {label && (
         <div className="flex items-center gap-2">
           {label && <Label className="text-sm font-medium">{label}</Label>}
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || showDiff}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>

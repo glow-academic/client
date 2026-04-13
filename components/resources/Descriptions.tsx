@@ -1,7 +1,7 @@
 /**
  * Descriptions.tsx
  * Resource component for description textarea fields
- * Full UI component with Label + Textarea + optional AI generate button
+ * Full UI component with Label + Textarea + accept/reject for pending changes
  * Pure UI component that reports value changes upward via onDescriptionChange
  */
 
@@ -18,7 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface DescriptionResourceItem {
@@ -148,7 +148,6 @@ export interface DescriptionsProps {
   descriptions?: DescriptionResourceItem[]; // Array of description resources (each item has suggested field)
   disabled?: boolean; // Based on can_edit flag
   onDescriptionIdChange: (descriptionId: string | null) => void; // Update description_id in parent form state
-  onGenerate?: () => Promise<void>;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -156,9 +155,6 @@ export interface DescriptionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onDescriptionChange?: (description: string) => void; // Report value changes to parent
   searchTerm?: string; // Search term for filtering descriptions
   onSearchChange?: (term: string) => void; // Callback when search term changes
@@ -173,7 +169,6 @@ export function Descriptions({
   descriptions,
   disabled = false,
   onDescriptionIdChange,
-  onGenerate,
   label = "Description",
   placeholder = "Enter description",
   required = false,
@@ -181,9 +176,6 @@ export function Descriptions({
   id = "description",
   "data-testid": dataTestId,
   helpText,
-  group_id,
-  _create_tool_id,
-  showAiGenerate = false,
   onDescriptionChange,
   searchTerm,
   onSearchChange,
@@ -336,27 +328,6 @@ export function Descriptions({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || showDiff}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {resource?.generated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>

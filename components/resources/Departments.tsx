@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface DepartmentResourceItem {
@@ -47,9 +47,6 @@ export interface DepartmentsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
-  group_id?: string | null; // Group ID for linking resources
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  onGenerate?: () => void | Promise<void>;
   aiDepartmentResources?: Array<{
     department_id?: string | null;
     name?: string | null;
@@ -60,7 +57,7 @@ export interface DepartmentsProps {
 
 export function Departments({
   department_ids,
-  department_resources,
+  department_resources: _department_resources,
   show_departments = false,
   departments,
   disabled = false,
@@ -70,9 +67,6 @@ export function Departments({
   required = false,
   placeholder: _placeholder = "Select departments...",
   description,
-  group_id,
-  showAiGenerate = false,
-  onGenerate,
   aiDepartmentResources: _aiDepartmentResources,
   // Legacy props for backward compatibility
   departmentIds,
@@ -135,11 +129,6 @@ export function Departments({
     onChange(newIds);
   }, [ids, pendingIds, onChange]);
 
-  // Check if any department resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return department_resources?.some((d) => d.generated) ?? false;
-  }, [department_resources]);
-
   // Don't render if show_departments is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -158,27 +147,6 @@ export function Departments({
               </span>
             )}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || showDiff}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -258,7 +226,7 @@ export function Departments({
               )}
 
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && !isPending && (
+              {isSuggested(item.id) && !isSelected && !isPending && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

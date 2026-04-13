@@ -1,7 +1,7 @@
 /**
  * Names.tsx
  * Resource component for name input fields
- * Header-style input with optional AI generate button
+ * Header-style input with accept/reject for pending changes
  * Pure UI component that reports value changes upward via onNameChange
  */
 
@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Check, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface NameResourceItem {
@@ -32,16 +32,12 @@ export interface NamesProps {
   names?: NameResourceItem[]; // Array of name suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
   onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
-  onGenerate?: () => Promise<void>;
   placeholder?: string;
   required?: boolean;
   id?: string;
   "data-testid"?: string;
   defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
   hideDescription?: boolean; // Hide the "Click to edit" description text (useful when parent provides description)
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onNameChange?: (name: string) => void; // Report value changes upward
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
@@ -54,16 +50,12 @@ export function Names({
   names,
   disabled = false,
   onNameIdChange,
-  onGenerate,
   placeholder = "Enter name",
   required = false,
   id = "name",
   "data-testid": dataTestId,
   defaultName,
   hideDescription = false,
-  group_id,
-  _create_tool_id,
-  showAiGenerate = false,
   onNameChange,
   isAutosaveEnabled = true,
 }: NamesProps) {
@@ -275,27 +267,6 @@ export function Names({
               </span>
             )}
           </div>
-        )}
-        {onGenerate && showAiGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={onGenerate}
-                  disabled={disabled || showDiff}
-                >
-                  <Sparkles className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {resource?.generated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         )}
         {showDiff && (
           <>
