@@ -110,6 +110,8 @@ type ScenarioFormState = {
   videos: Array<{ name: string; description: string; upload_id: string; length_seconds: number }> | null;
   questions: Array<{ question_text: string; time: number; allow_multiple: boolean }> | null;
   options: Array<{ option_text: string; is_correct: boolean; question_id: string }> | null;
+  // Pending resource IDs (connections with active=false, awaiting acceptance)
+  pending_ids: string[];
 };
 
 export interface ScenarioProps {
@@ -288,6 +290,7 @@ function ScenarioComponent({
         videos: null,
         questions: null,
         options: null,
+        pending_ids: [],
       };
     }
 
@@ -361,6 +364,22 @@ function ScenarioComponent({
       videos: null,
       questions: null,
       options: null,
+      // Collect all pending resource IDs from the API response
+      pending_ids: [
+        ...((scenarioData.names ?? []).filter((n: any) => n.pending).map((n: any) => n.id).filter(Boolean)),
+        ...((scenarioData.descriptions ?? []).filter((d: any) => d.pending).map((d: any) => d.id).filter(Boolean)),
+        ...((scenarioData.problem_statements ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
+        ...((scenarioData.flags ?? []).filter((f: any) => f.pending).map((f: any) => f.flag_option_id).filter(Boolean)),
+        ...((scenarioData.departments ?? []).filter((d: any) => d.pending).map((d: any) => d.department_id).filter(Boolean)),
+        ...((scenarioData.personas ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
+        ...((scenarioData.documents ?? []).filter((d: any) => d.pending).map((d: any) => d.id).filter(Boolean)),
+        ...((scenarioData.objectives ?? []).filter((o: any) => o.pending).map((o: any) => o.id).filter(Boolean)),
+        ...((scenarioData.images ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
+        ...((scenarioData.videos ?? []).filter((v: any) => v.pending).map((v: any) => v.id).filter(Boolean)),
+        ...((scenarioData.questions ?? []).filter((q: any) => q.pending).map((q: any) => q.id).filter(Boolean)),
+        ...((scenarioData.options ?? []).filter((o: any) => o.pending).map((o: any) => o.id).filter(Boolean)),
+        ...((scenarioData.parameter_fields ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
+      ],
     };
   }, [scenarioData]);
 
@@ -654,10 +673,13 @@ function ScenarioComponent({
         }
       }
 
+      // Include pending_ids if any resources are still pending
+      const currentPendingIds = (formStateRef.current as unknown as ScenarioFormState).pending_ids;
       return {
         input_draft_id: draftId || null,
         ...idPayload,
         ...flagPayload,
+        ...(currentPendingIds?.length ? { pending_ids: currentPendingIds } : {}),
       };
     },
     [],
@@ -1031,6 +1053,93 @@ function ScenarioComponent({
       }
     },
     [stepResources, handleGenerateResources],
+  );
+
+  // --- Pending state helpers per step ---
+  const stepHasPending = useCallback(
+    (stepId: string): boolean => {
+      const pendingSet = new Set(formState.pending_ids);
+      if (pendingSet.size === 0) return false;
+      const data = scenarioDataRef.current;
+      if (!data) return false;
+      const resources = stepResources[stepId] ?? [];
+      for (const rt of resources) {
+        const items = (data as any)[rt] ?? [];
+        for (const item of items) {
+          const itemId = item.id ?? item.department_id ?? item.persona_id ?? item.document_id ?? item.field_id ?? item.image_id ?? item.video_id ?? item.question_id ?? item.option_id ?? item.flag_option_id;
+          if (itemId && pendingSet.has(itemId)) return true;
+        }
+      }
+      return false;
+    },
+    [formState.pending_ids, stepResources],
+  );
+
+  const handleAcceptAllForStep = useCallback(
+    (stepId: string) => {
+      const data = scenarioDataRef.current;
+      if (!data) return;
+      const resources = stepResources[stepId] ?? [];
+      const idsToAccept: string[] = [];
+      for (const rt of resources) {
+        const items = (data as any)[rt] ?? [];
+        for (const item of items) {
+          if (item.pending) {
+            const itemId = item.id ?? item.department_id ?? item.persona_id ?? item.document_id ?? item.field_id ?? item.image_id ?? item.video_id ?? item.question_id ?? item.option_id ?? item.flag_option_id;
+            if (itemId) idsToAccept.push(itemId);
+          }
+        }
+      }
+      // Remove accepted IDs from pending_ids (keep in form state = confirmed)
+      setFormState((prev) => ({
+        ...prev,
+        pending_ids: prev.pending_ids.filter((id) => !idsToAccept.includes(id)),
+      }));
+    },
+    [stepResources],
+  );
+
+  const handleRejectAllForStep = useCallback(
+    (stepId: string) => {
+      const data = scenarioDataRef.current;
+      if (!data) return;
+      const resources = stepResources[stepId] ?? [];
+      const idsToReject: string[] = [];
+      for (const rt of resources) {
+        const items = (data as any)[rt] ?? [];
+        for (const item of items) {
+          if (item.pending) {
+            const itemId = item.id ?? item.department_id ?? item.persona_id ?? item.document_id ?? item.field_id ?? item.image_id ?? item.video_id ?? item.question_id ?? item.option_id ?? item.flag_option_id;
+            if (itemId) idsToReject.push(itemId);
+          }
+        }
+      }
+      const rejectSet = new Set(idsToReject);
+      // Remove from both form state and pending_ids
+      setFormState((prev) => ({
+        ...prev,
+        name_id: rejectSet.has(prev.name_id ?? "") ? null : prev.name_id,
+        description_id: rejectSet.has(prev.description_id ?? "") ? null : prev.description_id,
+        problem_statement_id: rejectSet.has(prev.problem_statement_id ?? "") ? null : prev.problem_statement_id,
+        active_flag_id: rejectSet.has(prev.active_flag_id ?? "") ? null : prev.active_flag_id,
+        objectives_enabled_flag_id: rejectSet.has(prev.objectives_enabled_flag_id ?? "") ? null : prev.objectives_enabled_flag_id,
+        images_enabled_flag_id: rejectSet.has(prev.images_enabled_flag_id ?? "") ? null : prev.images_enabled_flag_id,
+        video_enabled_flag_id: rejectSet.has(prev.video_enabled_flag_id ?? "") ? null : prev.video_enabled_flag_id,
+        questions_enabled_flag_id: rejectSet.has(prev.questions_enabled_flag_id ?? "") ? null : prev.questions_enabled_flag_id,
+        problem_statement_enabled_flag_id: rejectSet.has(prev.problem_statement_enabled_flag_id ?? "") ? null : prev.problem_statement_enabled_flag_id,
+        department_ids: prev.department_ids.filter((id) => !rejectSet.has(id)),
+        persona_ids: prev.persona_ids.filter((id) => !rejectSet.has(id)),
+        document_ids: prev.document_ids.filter((id) => !rejectSet.has(id)),
+        parameter_field_ids: prev.parameter_field_ids.filter((id) => !rejectSet.has(id)),
+        image_ids: prev.image_ids.filter((id) => !rejectSet.has(id)),
+        objective_ids: prev.objective_ids.filter((id) => !rejectSet.has(id)),
+        video_ids: prev.video_ids.filter((id) => !rejectSet.has(id)),
+        question_ids: prev.question_ids.filter((id) => !rejectSet.has(id)),
+        option_ids: prev.option_ids.filter((id) => !rejectSet.has(id)),
+        pending_ids: prev.pending_ids.filter((id) => !rejectSet.has(id)),
+      }));
+    },
+    [stepResources],
   );
 
   // --- Steps / Form Config ---
@@ -1524,7 +1633,12 @@ function ScenarioComponent({
                   names={s?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      name_id: nameId,
+                      name: null,
+                      pending_ids: prev.pending_ids.filter((id) => id !== prev.name_id),
+                    }))
                   }
                   onNameChange={(name) =>
                     setFormState((prev) => ({ ...prev, name: name || null, name_id: null }))
@@ -1548,6 +1662,9 @@ function ScenarioComponent({
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("basic")}
+                    onAcceptAll={() => handleAcceptAllForStep("basic")}
+                    onRejectAll={() => handleRejectAllForStep("basic")}
                   />
                 ) : undefined
               }
@@ -1570,6 +1687,7 @@ function ScenarioComponent({
                       ...prev,
                       description_id: descriptionId,
                       description: null,
+                      pending_ids: prev.pending_ids.filter((id) => id !== prev.description_id),
                     }))
                   }
                   onDescriptionChange={(desc) =>
@@ -1594,7 +1712,14 @@ function ScenarioComponent({
                   departments={s?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                    setFormState((prev) => {
+                      const removedIds = prev.department_ids.filter((id) => !ids.includes(id));
+                      return {
+                        ...prev,
+                        department_ids: ids,
+                        pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                      };
+                    })
                   }
                   label="Departments"
                   required={false}
@@ -1684,6 +1809,9 @@ function ScenarioComponent({
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("context")}
+                    onAcceptAll={() => handleAcceptAllForStep("context")}
+                    onRejectAll={() => handleRejectAllForStep("context")}
                   />
                 ) : undefined
               }
@@ -1700,7 +1828,14 @@ function ScenarioComponent({
                     images={s?.images ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
-                      setFormState((prev) => ({ ...prev, image_ids: ids }))
+                      setFormState((prev) => {
+                        const removedIds = prev.image_ids.filter((id) => !ids.includes(id));
+                        return {
+                          ...prev,
+                          image_ids: ids,
+                          pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                        };
+                      })
                     }
                     onImageUploadValue={(img) =>
                       setFormState((prev) => ({
@@ -1734,6 +1869,7 @@ function ScenarioComponent({
                         ...prev,
                         problem_statement_id: problemStatementId,
                         problem_statement: null,
+                        pending_ids: prev.pending_ids.filter((id) => id !== prev.problem_statement_id),
                       }))
                     }
                     onProblemStatementChange={(ps) =>
@@ -1765,7 +1901,14 @@ function ScenarioComponent({
                     objectives={s?.objectives ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
-                      setFormState((prev) => ({ ...prev, objective_ids: ids }))
+                      setFormState((prev) => {
+                        const removedIds = prev.objective_ids.filter((id) => !ids.includes(id));
+                        return {
+                          ...prev,
+                          objective_ids: ids,
+                          pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                        };
+                      })
                     }
                     onObjectivesChange={(objectives) =>
                       setFormState((prev) => ({
@@ -1816,6 +1959,9 @@ function ScenarioComponent({
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("personas")}
+                    onAcceptAll={() => handleAcceptAllForStep("personas")}
+                    onRejectAll={() => handleRejectAllForStep("personas")}
                   />
                 ) : undefined
               }
@@ -1830,7 +1976,14 @@ function ScenarioComponent({
                   personas={s?.personas ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, persona_ids: ids }))
+                    setFormState((prev) => {
+                      const removedIds = prev.persona_ids.filter((id) => !ids.includes(id));
+                      return {
+                        ...prev,
+                        persona_ids: ids,
+                        pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                      };
+                    })
                   }
                   required={false}
                   onGenerate={generateHandlers["personas"]}
@@ -1876,6 +2029,9 @@ function ScenarioComponent({
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("documents")}
+                    onAcceptAll={() => handleAcceptAllForStep("documents")}
+                    onRejectAll={() => handleRejectAllForStep("documents")}
                   />
                 ) : undefined
               }
@@ -1890,7 +2046,14 @@ function ScenarioComponent({
                   documents={s?.documents ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, document_ids: ids }))
+                    setFormState((prev) => {
+                      const removedIds = prev.document_ids.filter((id) => !ids.includes(id));
+                      return {
+                        ...prev,
+                        document_ids: ids,
+                        pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                      };
+                    })
                   }
                   required={false}
                   onGenerate={generateHandlers["documents"]}
@@ -1939,6 +2102,9 @@ function ScenarioComponent({
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("parameters")}
+                    onAcceptAll={() => handleAcceptAllForStep("parameters")}
+                    onRejectAll={() => handleRejectAllForStep("parameters")}
                   />
                 ) : undefined
               }
@@ -1960,10 +2126,14 @@ function ScenarioComponent({
                     }
                   }}
                   onChange={(ids) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      parameter_field_ids: ids,
-                    }))
+                    setFormState((prev) => {
+                      const removedIds = prev.parameter_field_ids.filter((id) => !ids.includes(id));
+                      return {
+                        ...prev,
+                        parameter_field_ids: ids,
+                        pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                      };
+                    })
                   }
                   disabled={disabled}
                   showAiGenerate={s?.show_ai_generate ?? false}
@@ -1993,6 +2163,9 @@ function ScenarioComponent({
                     isGenerating={isGeneratingStepResource}
                     onOpenModal={handleDirectStepGenerate}
                     disabled={disabled}
+                    hasPending={stepHasPending("video")}
+                    onAcceptAll={() => handleAcceptAllForStep("video")}
+                    onRejectAll={() => handleRejectAllForStep("video")}
                   />
                 ) : undefined
               }
@@ -2009,7 +2182,14 @@ function ScenarioComponent({
                     videos={s?.videos ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
-                      setFormState((prev) => ({ ...prev, video_ids: ids }))
+                      setFormState((prev) => {
+                        const removedIds = prev.video_ids.filter((id) => !ids.includes(id));
+                        return {
+                          ...prev,
+                          video_ids: ids,
+                          pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                        };
+                      })
                     }
                     onVideoUploadValue={(vid) =>
                       setFormState((prev) => ({
@@ -2034,10 +2214,14 @@ function ScenarioComponent({
                     questions={s?.questions ?? []}
                     disabled={disabled}
                     onChange={(ids) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        question_ids: ids,
-                      }))
+                      setFormState((prev) => {
+                        const removedIds = prev.question_ids.filter((id) => !ids.includes(id));
+                        return {
+                          ...prev,
+                          question_ids: ids,
+                          pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                        };
+                      })
                     }
                     onQuestionsChange={(qs) =>
                       setFormState((prev) => ({
@@ -2062,7 +2246,14 @@ function ScenarioComponent({
                     internalQuestions={internalQuestions}
                     disabled={disabled}
                     onChange={(ids) =>
-                      setFormState((prev) => ({ ...prev, option_ids: ids }))
+                      setFormState((prev) => {
+                        const removedIds = prev.option_ids.filter((id) => !ids.includes(id));
+                        return {
+                          ...prev,
+                          option_ids: ids,
+                          pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                        };
+                      })
                     }
                     onOptionsChange={(opts) =>
                       setFormState((prev) => ({
@@ -2093,6 +2284,9 @@ function ScenarioComponent({
       handleDirectStepGenerate,
       canRegenerate,
       stepResources,
+      stepHasPending,
+      handleAcceptAllForStep,
+      handleRejectAllForStep,
       showImagesSection,
       showVideosSection,
       showQuestionsSection,
