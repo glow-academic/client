@@ -161,7 +161,7 @@ export function Voices({
           {label}
           {required && <span className="text-destructive">*</span>}
         </Label>
-        {onGenerate && showAiGenerate && create_tool_id && (
+        {onGenerate && showAiGenerate && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
