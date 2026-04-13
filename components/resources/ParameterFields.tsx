@@ -16,9 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, ChevronDown, ChevronRight, Loader2, Sparkles, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ParameterFieldResourceItem {
@@ -43,14 +42,9 @@ export interface ParameterFieldsProps {
   onToggleParameter: (parameterId: string, open: boolean) => void;
   onChange: (ids: string[]) => void;          // emit parameter_field_ids
   disabled?: boolean;
-  group_id?: string | null;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
   isAutosaveEnabled?: boolean;
-  create_tool_id?: string | null;
   required?: boolean;
   label?: string;
-  aiParameterFieldResources?: Array<Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">> | null;
 }
 
 // Represents an available field option
@@ -72,14 +66,9 @@ export function ParameterFields({
   onToggleParameter,
   onChange,
   disabled = false,
-  group_id,
-  showAiGenerate = false,
-  onGenerate,
   _isAutosaveEnabled = true,
-  _create_tool_id,
   required = false,
   label = "Parameter Fields",
-  aiParameterFieldResources,
 }: ParameterFieldsProps) {
   const availableFields = useMemo(() => availableFieldsProp ?? [], [availableFieldsProp]);
   const selectedResources = useMemo(() => parameterFieldResources ?? [], [parameterFieldResources]);
@@ -186,43 +175,32 @@ export function ParameterFields({
     [selectedFieldKeyToResourceId, localKeyToResourceId, resourceIds, pendingSelections]
   );
 
-  // AI suggestion handling
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "parameter_fields",
-    groupId: group_id,
-  });
-
-  type AiFieldSuggestion = Pick<ParameterFieldResourceItem, "id" | "field_id" | "parameter_id">;
-  const effectiveAiParameterFieldResources: AiFieldSuggestion[] | null =
-    (aiSuggestion as AiFieldSuggestion[] | null) ?? aiParameterFieldResources ?? null;
-  const showDiff = !!effectiveAiParameterFieldResources?.length;
-  const aiSuggestedFieldIds = useMemo(
-    () => new Set(
-      effectiveAiParameterFieldResources
-        ?.map((f: AiFieldSuggestion) => f.field_id)
-        .filter(Boolean) as string[]
-    ),
-    [effectiveAiParameterFieldResources]
+  // Pending items: fields with pending=true from the API
+  const pendingItems = useMemo(() => {
+    return availableFields.filter((f) => f.pending);
+  }, [availableFields]);
+  const pendingFieldIds = useMemo(
+    () => new Set(pendingItems.map((f) => f.field_id).filter(Boolean) as string[]),
+    [pendingItems]
   );
+  const showDiff = pendingItems.length > 0;
 
-  const handleAcceptAi = useCallback(() => {
-    if (!effectiveAiParameterFieldResources?.length) return;
-    const newIds = effectiveAiParameterFieldResources
-      .map((f: AiFieldSuggestion) => f.id)
-      .filter((id): id is string => !!id && !resourceIds.has(id));
-    if (newIds.length > 0) {
-      setResourceIds((prev) => {
-        const next = new Map(prev);
-        newIds.forEach((id) => next.set(id, id));
-        return next;
-      });
-    }
-    clearAi();
-  }, [effectiveAiParameterFieldResources, resourceIds, clearAi]);
+  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
+  const handleAccept = useCallback(() => {
+    // Pending items are already in the selection; accepting is a no-op for form state.
+  }, []);
 
-  const handleRejectAi = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  // Reject pending — remove pending item IDs from selection
+  const handleReject = useCallback(() => {
+    const pendingResourceIds = new Set(
+      pendingItems.map((f) => f.id).filter((id): id is string => !!id)
+    );
+    setResourceIds((prev) => {
+      const next = new Map(prev);
+      pendingResourceIds.forEach((id) => next.delete(id));
+      return next;
+    });
+  }, [pendingItems]);
 
   // Group available fields by parameter_id
   const fieldOptionsByParameter = useMemo(() => {
@@ -256,10 +234,6 @@ export function ParameterFields({
       }));
   }, [allParameters]);
 
-  const hasGenerated = useMemo(() => {
-    return selectedResources.some((field) => field.generated);
-  }, [selectedResources]);
-
   const expandedSet = useMemo(() => new Set(parameterIds), [parameterIds]);
 
   // Visible groups: root (non-conditional) params always visible,
@@ -283,31 +257,6 @@ export function ParameterFields({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -318,7 +267,7 @@ export function ParameterFields({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 text-success hover:text-success"
-                      onClick={handleAcceptAi}
+                      onClick={handleAccept}
                     >
                       <Check className="h-3.5 w-3.5" />
                     </Button>
@@ -334,7 +283,7 @@ export function ParameterFields({
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 text-destructive hover:text-destructive"
-                      onClick={handleRejectAi}
+                      onClick={handleReject}
                     >
                       <X className="h-3.5 w-3.5" />
                     </Button>
@@ -395,7 +344,7 @@ export function ParameterFields({
                     }}
                     getId={(item) => item.field_id}
                     renderItem={(item, isSelected) => {
-                      const isAiSuggested = showDiff && aiSuggestedFieldIds.has(item.field_id);
+                      const isPendingField = showDiff && pendingFieldIds.has(item.field_id);
                       const hasExplore = !!item.conditional_parameter_id;
                       const isExploreExpanded = hasExplore && expandedSet.has(item.conditional_parameter_id!);
                       return (
@@ -405,7 +354,7 @@ export function ParameterFields({
                             "hover:shadow-md hover:bg-accent/50",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             isSelected && "ring-2 ring-primary bg-accent",
-                            isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                            isPendingField && !isSelected && "ring-2 ring-success bg-success/10"
                           )}
                         >
                           {isSelected && (
@@ -413,9 +362,9 @@ export function ParameterFields({
                               <Check className="h-3 w-3 text-primary-foreground" />
                             </div>
                           )}
-                          {isAiSuggested && !isSelected && (
+                          {isPendingField && !isSelected && (
                             <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                              AI Suggested
+                              Pending
                             </div>
                           )}
                           <div className="flex-1 min-w-0 overflow-hidden">

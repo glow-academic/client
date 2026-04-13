@@ -17,10 +17,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 
 export interface InstructionResourceItem {
   id?: string | null;
@@ -150,7 +149,6 @@ export interface InstructionsProps {
   instructions?: InstructionResourceItem[]; // Array of instruction resources (each item has suggested field)
   disabled?: boolean; // Based on can_edit flag
   onInstructionsIdChange: (instructionsId: string | null) => void; // Update instructions_id in parent form state
-  onGenerate?: () => Promise<void>;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -158,9 +156,6 @@ export interface InstructionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   onInstructionsChange?: (instructions: string) => void; // Report value changes to parent
   searchTerm?: string; // Search term for filtering instructions
   onSearchChange?: (term: string) => void; // Callback when search term changes
@@ -178,7 +173,6 @@ export function Instructions({
   instructions,
   disabled = false,
   onInstructionsIdChange,
-  onGenerate,
   label = "Instructions",
   placeholder = "Enter instructions",
   required = false,
@@ -186,9 +180,6 @@ export function Instructions({
   id = "instructions",
   "data-testid": dataTestId,
   helpText,
-  group_id,
-  _create_tool_id,
-  showAiGenerate = false,
   onInstructionsChange,
   searchTerm,
   onSearchChange,
@@ -211,12 +202,7 @@ export function Instructions({
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(resourceTemplate);
 
-  // Detect pending items
-  const hasPending = useMemo(() => {
-    return instructions?.some((item) => item.pending) ?? false;
-  }, [instructions]);
-
-  // Check if current instructions resource is pending
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
   const isPending = resource?.pending === true;
 
   const instructionsById = useMemo(() => {
@@ -279,35 +265,28 @@ export function Instructions({
     onInstructionsChange?.(newValue);
   }, [onInstructionsChange]);
 
-  // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "instructions",
-    groupId: group_id,
-  });
-
-  // AI diff view state
-  const showDiff = !!aiSuggestion?.template;
+  // Pending diff view state
+  const showDiff = isPending;
   const currentText = internalValue || "";
-  const aiText = aiSuggestion?.template || "";
+  const pendingText = resource?.template || "";
 
-  // Accept AI suggestion - update internal value and notify parent
+  // Accept pending — confirm the pending resource as the active selection
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.id) return;
+    if (!resource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = aiSuggestion.template || "";
+    const text = resource.template || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onInstructionsIdChange(aiSuggestion.id);
-    clearAi();
-  }, [aiSuggestion, onInstructionsIdChange, clearAi]);
+    onInstructionsIdChange(resource.id);
+  }, [resource, onInstructionsIdChange]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove the pending resource from form state
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onInstructionsIdChange(null);
+  }, [onInstructionsIdChange]);
 
   // Use instructions array if available
   const suggestionsMapping = useMemo(() => {
@@ -344,31 +323,6 @@ export function Instructions({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {resource?.generated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -445,7 +399,7 @@ export function Instructions({
       </div>
       {/* Conditional: DiffView when AI suggestion pending, otherwise Textarea */}
       {showDiff ? (
-        <DiffView current={currentText} proposed={aiText} rows={rows} />
+        <DiffView current={currentText} proposed={pendingText} rows={rows} />
       ) : (
         <Textarea
           id={id}
@@ -456,7 +410,6 @@ export function Instructions({
           required={required}
           disabled={disabled}
           rows={rows}
-          className={cn(isPending && "ring-2 ring-amber-500 bg-amber-50")}
         />
       )}
       {helpText && (

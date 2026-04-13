@@ -15,9 +15,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { cn } from "@/lib/utils";
-import { Check, Loader2, PlusCircle, Sparkles, X } from "lucide-react";
+import { Check, PlusCircle, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ExampleResourceItem {
@@ -41,16 +39,11 @@ export interface ExamplesProps {
   maxItems?: number;
   addButtonLabel?: string;
   itemPlaceholder?: string;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  onGenerate?: () => void | Promise<void>;
   // Optional: mapping of example_id -> example text (for initial display)
   exampleMapping?: Record<string, string>;
   onExamplesChange?: (examples: string[]) => void; // Report raw text values upward
   // Legacy props for backward compatibility
   exampleIds?: string[];
-  aiExampleResources?: Pick<ExampleResourceItem, "id" | "example">[] | null;
 }
 
 export function Examples({
@@ -66,15 +59,10 @@ export function Examples({
   maxItems = 10,
   addButtonLabel = "Add example",
   itemPlaceholder = "Message",
-  group_id,
-  create_tool_id: _create_tool_id,
-  showAiGenerate = false,
-  onGenerate,
   exampleMapping = {},
   onExamplesChange,
   // Legacy props for backward compatibility
   exampleIds,
-  aiExampleResources: _aiExampleResources,
 }: ExamplesProps) {
   // Use standardized props with fallback to legacy props
   const ids = useMemo(
@@ -186,44 +174,26 @@ export function Examples({
     setInternalTexts(newItems);
   }, [suggestionTextToIdMap]);
 
-  // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "examples",
-    groupId: group_id,
-    accumulate: true,
-  });
+  // Pending items: examples with pending=true from the API
+  const pendingItems = useMemo(() => {
+    return allExamples.filter((e) => e.pending);
+  }, [allExamples]);
+  const pendingIds = useMemo(() => {
+    return new Set(pendingItems.map((e) => e.id).filter((id): id is string => !!id));
+  }, [pendingItems]);
+  const showDiff = pendingItems.length > 0;
 
-  // Check if any example resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return _example_resources?.some((e) => e.generated) ?? false;
-  }, [_example_resources]);
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested examples to internal texts
+  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
   const handleAccept = useCallback(() => {
-    if (!aiSuggestions.length) return;
-    // Add AI examples to internal texts
-    const newTexts = aiSuggestions
-      .map((e) => e.example)
-      .filter((text): text is string => !!text);
-    if (newTexts.length > 0) {
-      setInternalTexts((prev) => [...prev.filter((t) => t.trim()), ...newTexts]);
-      // Map the new example IDs
-      aiSuggestions.forEach((e) => {
-        if (e.id && e.example) {
-          exampleIdMapRef.current.set(e.example, e.id);
-        }
-      });
-    }
-    clearAi();
-  }, [aiSuggestions, clearAi]);
+    // Pending items are already in the selection; accepting is a no-op for form state.
+    // The parent will clear the pending flag on the server side.
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending item IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const currentIds = ids.filter((id) => !pendingIds.has(id));
+    _onChange(currentIds);
+  }, [ids, pendingIds, _onChange]);
 
   // Don't render if show_examples is false (AFTER all hooks)
   if (!show) {
@@ -239,31 +209,6 @@ export function Examples({
               {label}
               {required && <span className="text-destructive">*</span>}
             </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -313,25 +258,6 @@ export function Examples({
               {addButtonLabel} <PlusCircle className="h-3.5 w-3.5 ml-1.5" />
             </Button>
           )}
-        </div>
-      )}
-      {/* AI-suggested examples preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Examples</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.example || ""}
-              </div>
-            ))}
-          </div>
         </div>
       )}
       <ReorderableList

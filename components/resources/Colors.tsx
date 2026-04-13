@@ -19,8 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { cn } from "@/lib/utils";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ColorResourceItem {
@@ -51,7 +50,6 @@ export interface ColorsProps {
   color_resources?: ColorResourceItem[]; // Selected color resources (multi-select)
   onChange?: (ids: string[]) => void; // Update color_ids in parent form state (multi-select)
   multiSelect?: boolean; // Whether to use multi-select mode
-  onGenerate?: () => void | Promise<void>;
   label?: string;
   id?: string;
   required?: boolean;
@@ -60,9 +58,6 @@ export interface ColorsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   // Legacy props for backward compatibility
@@ -88,7 +83,6 @@ export function Colors({
   color_resources,
   onChange,
   multiSelect = false,
-  onGenerate,
   label = "Color",
   id = "color",
   required = false,
@@ -97,9 +91,6 @@ export function Colors({
   searchPlaceholder: _searchPlaceholder = "Search colors...",
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
-  group_id,
-  _create_tool_id,
-  showAiGenerate = false,
   isAutosaveEnabled = true,
   // Legacy props for backward compatibility
   colorResource,
@@ -112,33 +103,28 @@ export function Colors({
   const show = show_color ?? false;
   const ids = useMemo(() => color_ids ?? [], [color_ids]);
 
-  // AI suggestion via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "colors",
-    groupId: group_id,
-  });
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
+  const isPending = resource?.pending === true;
+  const showDiff = isPending;
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.id;
-  const aiSuggestedId = aiSuggestion?.id || null;
-
-  // Accept AI suggestion - update color selection
-  const handleAcceptAi = useCallback(() => {
-    if (!aiSuggestion?.id) return;
+  // Accept pending — confirm the pending resource as the active selection
+  const handleAccept = useCallback(() => {
+    if (!resource?.id) return;
     if (onColorIdChange) {
-      onColorIdChange(aiSuggestion.id);
+      onColorIdChange(resource.id);
     }
-    if (aiSuggestion.hex_code) {
-      setInternalValue(aiSuggestion.hex_code);
-      lastSavedValueRef.current = aiSuggestion.hex_code;
+    if (resource.hex_code) {
+      setInternalValue(resource.hex_code);
+      lastSavedValueRef.current = resource.hex_code;
     }
-    clearAi();
-  }, [aiSuggestion, onColorIdChange, clearAi]);
+  }, [resource, onColorIdChange]);
 
-  // Reject AI suggestion - just clear the pending state
-  const handleRejectAi = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  // Reject pending — remove the pending resource from form state
+  const handleReject = useCallback(() => {
+    if (onColorIdChange) {
+      onColorIdChange(null);
+    }
+  }, [onColorIdChange]);
   
   // Track which color IDs have already had resources created (multi-select)
   const createdColorIdsRef = useRef<Set<string>>(new Set());
@@ -148,11 +134,6 @@ export function Colors({
     ids.forEach((id) => createdColorIdsRef.current.add(id));
   }, [ids]);
   
-  // Check if any color resource is generated (multi-select)
-  const hasGenerated = useMemo(() => {
-    return color_resources?.some((c) => c.generated) ?? false;
-  }, [color_resources]);
-
   // Convert colors array from API format to ColorItem format
   const presetColorsList = useMemo(() => {
     if (colors && colors.length > 0) {
@@ -347,31 +328,6 @@ export function Colors({
                 </span>
               )}
             </Label>
-            {onGenerate && showAiGenerate && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={onGenerate}
-                      disabled={disabled || aiIsGenerating}
-                    >
-                      {aiIsGenerating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {hasGenerated ? "Regenerate" : "Generate"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
           </div>
         )}
         <GenericPicker<{ id: string; name: string; description?: string; hex_code?: string }>
@@ -440,31 +396,6 @@ export function Colors({
           {label}
           {required && <span className="text-destructive">*</span>}
         </Label>
-        {onGenerate && showAiGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating || showDiff}
-                >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {resource?.generated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
         {showDiff && (
           <>
             <TooltipProvider>
@@ -475,7 +406,7 @@ export function Colors({
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 text-success hover:text-success"
-                    onClick={handleAcceptAi}
+                    onClick={handleAccept}
                   >
                     <Check className="h-3.5 w-3.5" />
                   </Button>
@@ -491,7 +422,7 @@ export function Colors({
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 text-destructive hover:text-destructive"
-                    onClick={handleRejectAi}
+                    onClick={handleReject}
                   >
                     <X className="h-3.5 w-3.5" />
                   </Button>
@@ -549,16 +480,13 @@ export function Colors({
               : undefined
           }
           renderItem={(color, isSelected) => {
-            const isAiSuggested = showDiff && color.id === aiSuggestedId;
-
             return (
             <div
               className={cn(
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isSelected && "ring-2 ring-primary bg-accent"
               )}
             >
               {/* Check icon - top right */}
@@ -568,16 +496,8 @@ export function Colors({
                 </div>
               )}
 
-              {/* AI suggested badge - top right */}
-              {isAiSuggested && !isSelected && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
-                </div>
-              )}
-
               {/* Suggested dot indicator - top right */}
               {!isSelected &&
-                !isAiSuggested &&
                 suggestedHexCodes.has(color.hex.toLowerCase()) && (
                   <TooltipProvider>
                     <Tooltip>

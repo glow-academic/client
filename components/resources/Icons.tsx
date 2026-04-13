@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ICON_MAP } from "@/utils/icons";
-import { useResourceAi } from "@/hooks/use-resource-ai";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface IconResourceItem {
@@ -53,9 +52,6 @@ export interface IconsProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   showSelectedFilter?: boolean; // Whether to filter to show only selected
   onShowSelectedChange?: (value: boolean) => void; // Callback when show selected filter changes
-  group_id?: string | null; // Group ID for linking resources
-  showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  onGenerate?: () => void | Promise<void>;
   /** When false, skip automatic link tracking (manual save mode) */
   isAutosaveEnabled?: boolean;
   // Legacy props for backward compatibility
@@ -78,9 +74,6 @@ export function Icons({
   onSearchChange: _onSearchChange,
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
-  group_id,
-  showAiGenerate = false,
-  onGenerate,
   _isAutosaveEnabled = true,
   // Legacy props for backward compatibility
   iconResource,
@@ -93,27 +86,20 @@ export function Icons({
   const show = show_icon ?? false;
   const allIconsArray = useMemo(() => icons ?? [], [icons]);
 
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "icons",
-    groupId: group_id,
-  });
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
+  const isPending = resource?.pending === true;
+  const showDiff = isPending;
 
-  // AI suggestion state
-  const showDiff = !!aiSuggestion?.id;
-  const aiSuggestedId = aiSuggestion?.id || null;
-
-  // Accept AI suggestion - update icon selection
+  // Accept pending — confirm the pending resource as the active selection
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.id) return;
-    onIconIdChange(aiSuggestion.id);
-    clearAi();
-  }, [aiSuggestion, onIconIdChange, clearAi]);
+    if (!resource?.id) return;
+    onIconIdChange(resource.id);
+  }, [resource, onIconIdChange]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove the pending resource from form state
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onIconIdChange(null);
+  }, [onIconIdChange]);
 
   // Convert icons array to IconItem format for SelectableGrid
   const iconItems = useMemo(() => {
@@ -137,20 +123,6 @@ export function Icons({
     }
     return [];
   }, [allIconsArray, allIcons]);
-
-  // Detect pending items
-  const hasPending = useMemo(() => {
-    return allIconsArray?.some((item) => item.pending) ?? false;
-  }, [allIconsArray]);
-
-  // Check if an icon is pending
-  const isPendingIcon = useCallback(
-    (iconId: string) => {
-      const icon = allIconsArray.find((i) => i.id === iconId);
-      return icon?.pending === true;
-    },
-    [allIconsArray]
-  );
 
   // Check if an icon is suggested (derived from item.suggested field)
   const isSuggested = useCallback(
@@ -193,11 +165,6 @@ export function Icons({
     [currentId, onIconIdChange]
   );
 
-  // Check if any icon resource is generated
-  const hasGenerated = useMemo(() => {
-    return resource?.generated ?? false;
-  }, [resource]);
-
   // Don't render if show_icon is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -211,31 +178,6 @@ export function Icons({
             {label}
             {required && <span className="text-destructive">*</span>}
           </Label>
-          {onGenerate && showAiGenerate && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
-                  >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {hasGenerated ? "Regenerate" : "Generate"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {showDiff && (
             <>
               <TooltipProvider>
@@ -285,18 +227,13 @@ export function Icons({
             ICON_MAP[item.value as keyof typeof ICON_MAP];
           if (!IconComponent) return null;
 
-          const isAiSuggested = showDiff && item.id === aiSuggestedId;
-          const isPending = isPendingIcon(item.id);
-
           return (
             <div
               className={cn(
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10",
-                isPending && !isSelected && "ring-2 ring-amber-500 bg-amber-50"
+                isSelected && "ring-2 ring-primary bg-accent"
               )}
             >
               {/* Check icon - top right */}
@@ -306,22 +243,8 @@ export function Icons({
                 </div>
               )}
 
-              {/* Pending badge - top right */}
-              {isPending && !isSelected && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-amber-500/20 text-amber-600 text-[10px] rounded font-medium">
-                  Pending
-                </div>
-              )}
-
-              {/* AI suggested badge - top right */}
-              {isAiSuggested && !isSelected && !isPending && (
-                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  AI Suggested
-                </div>
-              )}
-
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && !isAiSuggested && !isPending && (
+              {isSuggested(item.id) && !isSelected && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>

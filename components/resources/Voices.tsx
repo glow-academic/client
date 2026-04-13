@@ -15,9 +15,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface VoiceResourceItem {
@@ -25,6 +24,7 @@ export interface VoiceResourceItem {
   voice?: string | null;
   generated?: boolean | null;
   suggested?: boolean | null;
+  pending?: boolean | null;
 }
 
 export interface VoiceItem {
@@ -45,13 +45,8 @@ export interface VoicesProps {
   label?: string;
   id?: string;
   required?: boolean;
-  group_id?: string | null; // Group ID for linking resources
-  create_tool_id?: string | null; // Tool ID for AI generation/creation
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  showAiGenerate?: boolean;
-  onGenerate?: () => void | Promise<void>;
-  aiVoiceResources?: Array<{ id?: string | null; voice?: string | null }> | null;
 }
 
 export function Voices({
@@ -64,22 +59,11 @@ export function Voices({
   label = "Voices",
   id = "voices",
   required = false,
-  group_id,
-  create_tool_id,
   isAutosaveEnabled: _isAutosaveEnabled = true,
-  showAiGenerate = false,
-  onGenerate,
 }: VoicesProps) {
   const ids = useMemo(() => voice_ids ?? [], [voice_ids]);
   const show = show_voices ?? false;
   const allVoices = useMemo(() => voices ?? [], [voices]);
-
-  // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "voices",
-    groupId: group_id,
-    accumulate: true,
-  });
 
   // Build grid items: voice cards
   const gridItems = useMemo<GridItem[]>(() => {
@@ -98,10 +82,13 @@ export function Voices({
     [allVoices]
   );
 
-  // Check if a voice is AI-suggested
-  const aiSuggestedIds = useMemo(() => {
-    return new Set(aiSuggestions.map((v) => v.id).filter((id): id is string => !!id));
-  }, [aiSuggestions]);
+  // Pending items: voices with pending=true from the API
+  const pendingItems = useMemo(() => {
+    return allVoices.filter((v) => v.pending);
+  }, [allVoices]);
+  const pendingIds = useMemo(() => {
+    return new Set(pendingItems.map((v) => v.id).filter((id): id is string => !!id));
+  }, [pendingItems]);
 
   const handleSelect = useCallback(
     (selectedIds: string[]) => {
@@ -122,30 +109,19 @@ export function Voices({
     [ids, handleSelect]
   );
 
-  // Check if any voice resource is generated (must be before early return)
-  const hasGenerated = useMemo(() => {
-    return voice_resources?.some((v) => v.generated) ?? false;
-  }, [voice_resources]);
+  // Pending state
+  const showDiff = pendingItems.length > 0;
 
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-
-  // Accept AI suggestion - add AI-suggested voices to selection
+  // Accept pending — pending items are already in selection, just confirm (no-op for form state)
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
-    const newIds = aiSuggestions
-      .map((v) => v.id)
-      .filter((id): id is string => !!id);
-    if (newIds.length > 0) {
-      onVoiceIdsChange([...ids, ...newIds]);
-    }
-    clearAi();
-  }, [aiSuggestions, ids, onVoiceIdsChange, clearAi]);
+    // Pending items are already in the selection; accepting is a no-op for form state.
+  }, []);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove pending item IDs from selection
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    const currentIds = ids.filter((id) => !pendingIds.has(id));
+    onVoiceIdsChange(currentIds);
+  }, [ids, pendingIds, onVoiceIdsChange]);
 
   // Don't render if show_voices is false (AFTER all hooks)
   if (!show) {
@@ -159,31 +135,6 @@ export function Voices({
           {label}
           {required && <span className="text-destructive">*</span>}
         </Label>
-        {onGenerate && showAiGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
-                  onClick={onGenerate}
-                  disabled={disabled || aiIsGenerating || showDiff}
-                >
-                  {aiIsGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {hasGenerated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
         {showDiff && (
           <>
             <TooltipProvider>
@@ -221,25 +172,6 @@ export function Voices({
           </>
         )}
       </div>
-      {/* AI-suggested voices preview */}
-      {showDiff && aiSuggestions.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <p className="text-sm font-medium text-success">AI Suggested Voices</p>
-          <div className="space-y-2">
-            {aiSuggestions.map((item, idx) => (
-              <div
-                key={item.id || idx}
-                className={cn(
-                  "p-3 rounded-lg border-2 border-success bg-success/10",
-                  "text-sm"
-                )}
-              >
-                {item.voice || ""}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       <SelectableGrid<GridItem>
         horizontal
         items={gridItems}
@@ -251,7 +183,7 @@ export function Voices({
         renderItem={(item, isSelected) => {
           if (item.type !== "voice") return null;
 
-          const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
+          const isPendingVoice = showDiff && pendingIds.has(item.id);
 
           return (
             <div className="flex items-center justify-center">
@@ -260,11 +192,11 @@ export function Voices({
                   "relative flex items-center justify-center h-20 w-20 rounded-full border bg-card text-card-foreground shadow-sm transition-all",
                   "hover:shadow-md hover:bg-accent/50",
                   isSelected && "ring-2 ring-primary bg-accent",
-                  isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                  isPendingVoice && !isSelected && "ring-2 ring-success bg-success/10"
                 )}
               >
                 {/* Suggested dot indicator */}
-                {!isSelected && !isAiSuggested && isSuggested(item.id) && (
+                {!isSelected && !isPendingVoice && isSuggested(item.id) && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
