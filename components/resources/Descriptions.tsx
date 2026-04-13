@@ -17,9 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface DescriptionResourceItem {
@@ -207,14 +206,6 @@ export function Descriptions({
   // Keep a stable "server identity" for when we should accept server as source of truth
   const lastServerTextRef = useRef<string>(resourceDescription);
 
-  // Detect pending items
-  const hasPending = useMemo(() => {
-    return descriptions?.some((item) => item.pending) ?? false;
-  }, [descriptions]);
-
-  // Check if current description resource is pending
-  const isPending = resource?.pending === true;
-
   const descriptionsById = useMemo(() => {
     const mapping: Record<string, string> = {};
     (descriptions ?? []).forEach((desc) => {
@@ -276,35 +267,29 @@ export function Descriptions({
     onDescriptionChange?.(newValue);
   }, [onDescriptionChange]);
 
-  // AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
-    resourceType: "descriptions",
-    groupId: group_id,
-  });
+  // Pending state: current resource has pending=true (soft draft, awaiting acceptance)
+  const isPending = resource?.pending === true;
+  const showDiff = isPending;
+  const currentText = "";
+  const pendingText = resource?.description || "";
 
-  // AI diff view state
-  const showDiff = !!aiSuggestion?.description;
-  const currentText = internalValue || "";
-  const aiText = aiSuggestion?.description || "";
-
-  // Accept AI suggestion - update internal value and notify parent
+  // Accept pending — confirm the pending resource
   const handleAccept = useCallback(() => {
-    if (!aiSuggestion?.id) return;
+    if (!resource?.id) return;
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     saveSeqRef.current += 1;
-    const text = aiSuggestion.description || "";
+    const text = resource.description || "";
     setInternalValue(text);
     lastSavedValueRef.current = text;
     lastServerTextRef.current = text;
     isDirtyRef.current = false;
-    onDescriptionIdChange(aiSuggestion.id);
-    clearAi();
-  }, [aiSuggestion, onDescriptionIdChange, clearAi]);
+    onDescriptionIdChange(resource.id);
+  }, [resource, onDescriptionIdChange]);
 
-  // Reject AI suggestion - just clear the pending state
+  // Reject pending — remove the pending resource
   const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+    onDescriptionIdChange(null);
+  }, [onDescriptionIdChange]);
 
   // Use descriptions array if available
   const suggestionsMapping = useMemo(() => {
@@ -361,13 +346,9 @@ export function Descriptions({
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
+                    disabled={disabled || showDiff}
                   >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
+                    <Sparkles className="h-3.5 w-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -435,10 +416,6 @@ export function Descriptions({
             }
             isDirtyRef.current = false;
             onDescriptionIdChange(selectedId);
-            // Clear any pending AI suggestion when picker selection changes
-            if (showDiff) {
-              clearAi();
-            }
           }}
           getId={(item) => {
             if (typeof item === "string") {
@@ -484,7 +461,7 @@ export function Descriptions({
       </div>
       {/* Conditional: DiffView when AI suggestion pending, otherwise Textarea */}
       {showDiff ? (
-        <DiffView current={currentText} proposed={aiText} rows={rows} />
+        <DiffView current={currentText} proposed={pendingText} rows={rows} />
       ) : (
         <Textarea
           id={id}

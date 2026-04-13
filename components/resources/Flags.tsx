@@ -18,10 +18,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useResourceAi } from "@/hooks/use-resource-ai";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
-import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
+import { Check, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 export interface FlagResourceItem {
@@ -109,21 +108,15 @@ export function Flags(props: FlagsProps) {
     [visibleFlags]
   );
 
-  // AI suggestion handling via shared hook (accumulate mode: each event = one flag)
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
-    resourceType: "flags",
-    groupId: group_id,
-    accumulate: true,
-  });
-
-  // AI suggestion state
-  const showDiff = aiSuggestions.length > 0;
-  const aiSuggestedFlagIds = useMemo(
-    () =>
-      new Set(
-        aiSuggestions.map((f) => f.id).filter(Boolean) as string[]
-      ),
-    [aiSuggestions]
+  // Pending state: flags with pending=true from soft draft connections
+  const pendingFlags = useMemo(
+    () => visibleFlags.filter((f) => f.pending),
+    [visibleFlags]
+  );
+  const showDiff = pendingFlags.length > 0;
+  const pendingFlagIds = useMemo(
+    () => new Set(pendingFlags.map((f) => f.flag_option_id).filter(Boolean) as string[]),
+    [pendingFlags]
   );
 
   // Get the checked state for a flag
@@ -154,36 +147,22 @@ export function Flags(props: FlagsProps) {
     [isMultiMode, onChange]
   );
 
-  // Accept AI suggestion - apply all AI-suggested flags
+  // Accept pending — confirm pending flags in form state
   const handleAccept = useCallback(() => {
-    if (aiSuggestions.length === 0) return;
+    // Pending flags are already reflected in form state — nothing to change
+    // The next draft save will persist them as active
+  }, []);
 
-    for (const aiFlag of aiSuggestions) {
-      if (!aiFlag.id) continue;
-      // Find which flag this applies to and set it
-      const targetFlag = visibleFlags.find(
-        (f) => f.flag_option_id === aiFlag.id
-      );
-      if (targetFlag) {
-        if (isMultiMode) {
-          (onChange as (key: string, flagId: string | null) => void)(
-            targetFlag.key,
-            aiFlag.id
-          );
-        } else {
-          // In single mode, only apply the first flag suggestion
-          (onChange as (flagId: string | null) => void)(aiFlag.id);
-          break;
-        }
+  // Reject pending — unset pending flags
+  const handleReject = useCallback(() => {
+    for (const flag of pendingFlags) {
+      if (isMultiMode) {
+        (onChange as (key: string, flagId: string | null) => void)(flag.key, null);
+      } else {
+        (onChange as (flagId: string | null) => void)(null);
       }
     }
-    clearAi();
-  }, [aiSuggestions, visibleFlags, isMultiMode, onChange, clearAi]);
-
-  // Reject AI suggestion - just clear the pending state
-  const handleReject = useCallback(() => {
-    clearAi();
-  }, [clearAi]);
+  }, [pendingFlags, isMultiMode, onChange]);
 
   // Don't render if show_flags is false or no visible flags
   if (!show_flags || visibleFlags.length === 0) {
@@ -206,12 +185,9 @@ export function Flags(props: FlagsProps) {
                     size="icon"
                     className="h-6 w-6"
                     onClick={onGenerate}
-                    disabled={disabled || aiIsGenerating || showDiff}
+                    disabled={disabled || showDiff}
                   >
-                    {aiIsGenerating ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
+                    <Sparkles className="h-3.5 w-3.5" />
                     )}
                   </Button>
                 </TooltipTrigger>
@@ -283,19 +259,13 @@ export function Flags(props: FlagsProps) {
 
           const checked = isChecked(flag);
           const isPending = flag.pending === true;
-          const isAiSuggested =
-            showDiff &&
-            !!flag.flag_option_id &&
-            aiSuggestedFlagIds.has(flag.flag_option_id);
-          const wouldChange = isAiSuggested && !checked; // AI wants to turn this ON
 
           return (
             <div
               key={flag.key}
               className={cn(
                 "space-y-1 p-2 rounded-lg transition-all",
-                isAiSuggested && "ring-2 ring-success bg-success/10",
-                isPending && !checked && "ring-2 ring-amber-500 bg-amber-50"
+                isPending && "ring-2 ring-success bg-success/10",
               )}
             >
               <div className="flex items-center gap-2">
@@ -308,14 +278,9 @@ export function Flags(props: FlagsProps) {
                   {flag.required && (
                     <span className="text-destructive">*</span>
                   )}
-                  {isPending && !checked && (
-                    <span className="ml-2 text-xs text-amber-600 font-medium">
-                      Pending
-                    </span>
-                  )}
-                  {isAiSuggested && !isPending && (
+                  {isPending && (
                     <span className="ml-2 text-xs text-success font-medium">
-                      → {wouldChange ? "ON" : "OFF"} (AI)
+                      Pending
                     </span>
                   )}
                 </Label>
