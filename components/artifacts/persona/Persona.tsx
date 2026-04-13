@@ -84,6 +84,8 @@ type PersonaFormState = {
   description: string | null;
   instructions: string | null;
   examples: string[];
+  // Pending resource IDs (connections with active=false, awaiting acceptance)
+  pending_ids: string[];
 };
 
 export interface PersonaProps {
@@ -318,6 +320,7 @@ function PersonaComponent({
         description: null,
         instructions: null,
         examples: [],
+        pending_ids: [],
       };
     }
 
@@ -345,6 +348,19 @@ function PersonaComponent({
       description: null,
       instructions: null,
       examples: [],
+      // Collect all pending resource IDs from the API response
+      pending_ids: [
+        ...((data.names ?? []).filter((n: any) => n.pending).map((n: any) => n.id).filter(Boolean)),
+        ...((data.descriptions ?? []).filter((d: any) => d.pending).map((d: any) => d.id).filter(Boolean)),
+        ...((data.colors ?? []).filter((c: any) => c.pending).map((c: any) => c.id).filter(Boolean)),
+        ...((data.icons ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
+        ...((data.instructions ?? []).filter((i: any) => i.pending).map((i: any) => i.id).filter(Boolean)),
+        ...((data.flags ?? []).filter((f: any) => f.pending).map((f: any) => f.flag_option_id).filter(Boolean)),
+        ...((data.departments ?? []).filter((d: any) => d.pending).map((d: any) => d.department_id).filter(Boolean)),
+        ...((data.parameter_fields ?? []).filter((p: any) => p.pending).map((p: any) => p.id).filter(Boolean)),
+        ...((data.examples ?? []).filter((e: any) => e.pending).map((e: any) => e.id).filter(Boolean)),
+        ...((data.voices ?? []).filter((v: any) => v.pending).map((v: any) => v.id).filter(Boolean)),
+      ],
     };
   }, []);
 
@@ -519,9 +535,12 @@ function PersonaComponent({
         }
       }
 
+      // Include pending_ids if any resources are still pending
+      const currentPendingIds = (formStateRef.current as unknown as PersonaFormState).pending_ids;
       return {
         input_draft_id: draftId || null,
         ...idPayload,
+        ...(currentPendingIds?.length ? { pending_ids: currentPendingIds } : {}),
       };
     },
     [],
@@ -1044,6 +1063,11 @@ function PersonaComponent({
                       ...prev,
                       name_id: nameId,
                       name: null,
+                      // If accepting, remove from pending; if rejecting (null), also remove
+                      pending_ids: prev.pending_ids.filter((id) => {
+                        const prevNameId = prev.name_id;
+                        return id !== prevNameId;
+                      }),
                     }))
                   }
                   onNameChange={handleNameChange}
@@ -1086,6 +1110,7 @@ function PersonaComponent({
                       ...prev,
                       description_id: descriptionId,
                       description: null,
+                      pending_ids: prev.pending_ids.filter((id) => id !== prev.description_id),
                     }))
                   }
                   onDescriptionChange={handleDescriptionChange}
@@ -1115,9 +1140,16 @@ function PersonaComponent({
                   departments={s?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                    setFormState((prev) => {
+                      // Remove accepted/rejected department IDs from pending
+                      const removedIds = prev.department_ids.filter((id) => !ids.includes(id));
+                      return {
+                        ...prev,
+                        department_ids: ids,
+                        pending_ids: prev.pending_ids.filter((id) => !removedIds.includes(id)),
+                      };
+                    })
                   }
-                  onGenerate={generateHandlers["departments"]}
                   required={false}
 
                   showAiGenerate={false}
@@ -1137,6 +1169,7 @@ function PersonaComponent({
                     setFormState((prev) => ({
                       ...prev,
                       active_flag_id: flagId,
+                      pending_ids: prev.pending_ids.filter((id) => id !== prev.active_flag_id),
                     }))
                   }
                   onGenerate={generateHandlers["flags"]}
