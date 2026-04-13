@@ -121,7 +121,6 @@ export default async function PersonaEditPage({
       body: {
         id: personaId,
         draft_id: q.draftId ?? null,
-        parameter_ids: q.parameterIds ?? null,
         colors: q.colorSearch || q.colorShowSelected ? {
           search: q.colorSearch ?? undefined,
           selected: q.colorShowSelected ?? undefined,
@@ -136,9 +135,10 @@ export default async function PersonaEditPage({
         instructions: q.instructionsSearch ? {
           search: q.instructionsSearch,
         } : undefined,
-        parameter_fields: q.fieldSearch || q.fieldShowSelected ? {
+        parameter_fields: q.fieldSearch || q.fieldShowSelected || q.parameterIds ? {
           search: q.fieldSearch ?? undefined,
           selected: q.fieldShowSelected ?? undefined,
+          parameter_ids: q.parameterIds ?? undefined,
         } : undefined,
       } as GetPersonaIn["body"],
     };

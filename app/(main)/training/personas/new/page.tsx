@@ -110,7 +110,6 @@ export default async function NewPersonaPage({
     body: {
       id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-      parameter_ids: q.parameterIds ?? null,
       colors: q.colorSearch || q.colorShowSelected ? {
         search: q.colorSearch ?? undefined,
         selected: q.colorShowSelected ?? undefined,
@@ -125,9 +124,10 @@ export default async function NewPersonaPage({
       instructions: q.instructionsSearch ? {
         search: q.instructionsSearch,
       } : undefined,
-      parameter_fields: q.fieldSearch || q.fieldShowSelected ? {
+      parameter_fields: q.fieldSearch || q.fieldShowSelected || q.parameterIds ? {
         search: q.fieldSearch ?? undefined,
         selected: q.fieldShowSelected ?? undefined,
+        parameter_ids: q.parameterIds ?? undefined,
       } : undefined,
     } as GetPersonaIn["body"],
   };
