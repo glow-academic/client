@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
 import { CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Plus, Search, Send, Video, Wrench, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,11 +23,10 @@ import {
   SidebarProvider,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { useGroupId } from "@/contexts/group-context";
+import { useGenerationPanelContext } from "@/contexts/generation-panel-context";
 import { useSocket } from "@/contexts/socket-context";
 import { useGenerate } from "@/hooks/use-generate";
 import type { GenerateMessage } from "@/hooks/use-generate";
-import { deriveGenerationConfig } from "@/lib/generation/derive-config";
 import type { GroupMessagesIn, GroupMessagesOut, GroupSearchIn, GroupSearchOut } from "@/app/(main)/layout-server";
 
 // ---------------------------------------------------------------------------
@@ -116,8 +114,10 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
   const [instructions, setInstructions] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Group context — fresh group per page load, or scoped to draft
-  const { groupId: contextGroupId } = useGroupId();
+  // Group ID + generate callback from context (set by artifact pages)
+  const panelContext = useGenerationPanelContext();
+  const contextGroupId = panelContext?.groupId ?? null;
+  const onGenerateProp = panelContext?.onGenerate ?? null;
   const { socket, isConnected } = useSocket();
 
   // Selected group — defaults to context, can be changed via picker
@@ -260,18 +260,10 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     }
   }, [instructions]);
 
-  // Derive generation config from current route
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const generationConfig = useMemo(
-    () => deriveGenerationConfig(pathname, searchParams),
-    [pathname, searchParams],
-  );
-
-  // AI generation hook — permissions + params derived from route
-  const { generate: runGenerate, messages: liveMessages, isGenerating, clearMessages } = useGenerate({
-    permissions: generationConfig?.permissions ?? [],
-    resources: [], // empty = all (server defaults)
+  // AI generation hook — event listening for streaming messages
+  const { generate: runGenerateSocket, messages: liveMessages, isGenerating, clearMessages } = useGenerate({
+    permissions: [],
+    resources: [],
     groupId: activeGroupId,
   });
 
@@ -297,13 +289,18 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     clearMessages();
   }, [clearMessages]);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!instructions.trim()) return;
-    runGenerate(instructions.trim(), {
-      params: generationConfig?.params,
-    });
+    const text = instructions.trim();
     setInstructions("");
-  }, [instructions, runGenerate, generationConfig]);
+    if (onGenerateProp) {
+      // HTTP-based generation (artifact-specific endpoint)
+      await onGenerateProp({ resource_types: [], instructions: text });
+    } else {
+      // Fallback: socket-based generation
+      runGenerateSocket(text);
+    }
+  }, [instructions, onGenerateProp, runGenerateSocket]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
