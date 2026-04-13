@@ -119,7 +119,7 @@ export default async function PersonaEditPage({
   try {
     const input: GetPersonaIn = {
       body: {
-        persona_id: personaId,
+        id: personaId,
         draft_id: q.draftId ?? null,
         parameter_ids: q.parameterIds ?? null,
         colors: q.colorSearch || q.colorShowSelected ? {

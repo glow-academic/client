@@ -108,7 +108,7 @@ export default async function NewPersonaPage({
   // Fetch default persona detail server-side with filter params and draft_id
   const input: GetPersonaIn = {
     body: {
-      persona_id: null, // NULL for new mode
+      id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
       parameter_ids: q.parameterIds ?? null,
       colors: q.colorSearch || q.colorShowSelected ? {
