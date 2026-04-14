@@ -195,6 +195,7 @@ function PersonaComponent({
             group_id: groupId,
             resource_types: params.resource_types,
             user_instructions: params.instructions ? [params.instructions] : [],
+            dangerous: params.dangerous ?? false,
           },
         });
       });

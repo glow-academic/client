@@ -5,6 +5,7 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 interface GenerateParams {
   resource_types: string[];
   instructions?: string;
+  dangerous?: boolean;
 }
 
 interface GenerationPanelContextType {

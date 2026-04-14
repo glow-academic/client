@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Plus, Search, Send, Video, Wrench, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Plus, Search, Send, ShieldAlert, ShieldCheck, Video, Wrench, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -112,6 +112,7 @@ function flattenMessages(res: GroupMessagesOut): HistoricalMessage[] {
 
 export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGroupMessagesAction }: GenerationPanelProps) {
   const [instructions, setInstructions] = useState("");
+  const [dangerousMode, setDangerousMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Group ID + generate callback from context (set by artifact pages)
@@ -295,12 +296,14 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     setInstructions("");
     if (onGenerateProp) {
       // HTTP-based generation (artifact-specific endpoint)
-      await onGenerateProp({ resource_types: [], instructions: text });
+      // dangerousMode=true bypasses soft (immediate execution)
+      // dangerousMode=false uses soft (review first)
+      await onGenerateProp({ resource_types: [], instructions: text, dangerous: dangerousMode });
     } else {
       // Fallback: socket-based generation
       runGenerateSocket(text);
     }
-  }, [instructions, onGenerateProp, runGenerateSocket]);
+  }, [instructions, dangerousMode, onGenerateProp, runGenerateSocket]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -571,6 +574,20 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
         <SidebarFooter className="p-0">
           <div className="border-t p-3">
             <div className="flex gap-2">
+              <Button
+                size="icon"
+                variant={dangerousMode ? "destructive" : "outline"}
+                className="self-end shrink-0"
+                onClick={() => setDangerousMode((prev) => !prev)}
+                title={dangerousMode ? "Dangerous mode: executes immediately" : "Safe mode: review before accepting"}
+              >
+                {dangerousMode ? (
+                  <ShieldAlert className="h-4 w-4" />
+                ) : (
+                  <ShieldCheck className="h-4 w-4" />
+                )}
+                <span className="sr-only">{dangerousMode ? "Switch to safe mode" : "Switch to dangerous mode"}</span>
+              </Button>
               <Textarea
                 ref={textareaRef}
                 value={instructions}
@@ -584,7 +601,7 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
                 size="icon"
                 className="self-end"
                 onClick={handleSend}
-                disabled={isGenerating || !instructions.trim() || !generationConfig}
+                disabled={isGenerating || !instructions.trim()}
               >
                 {isGenerating ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
