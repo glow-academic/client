@@ -25,39 +25,24 @@ import type {
   AuthProfileResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  ExitEmulationResult,
   GroupMessagesIn,
   GroupMessagesOut,
   GroupSearchIn,
   GroupSearchOut,
   SafeSessionSnapshot,
-  SearchProfilesIn,
-  SearchProfilesOut,
-  SwitchEffectiveProfileParams,
-  SwitchEffectiveProfileResult,
 } from "./layout-server";
 
 // Inner component that uses the role context
 function MainLayoutContent({
   children,
   initialSidebarOpen,
-  switchEffectiveProfileAction,
-  exitEmulationAction,
   createFeedbackAction,
-  searchProfilesAction,
   searchGroupsAction,
   getGroupMessagesAction,
 }: {
   children: React.ReactNode;
   initialSidebarOpen?: boolean;
-  switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams
-  ) => Promise<SwitchEffectiveProfileResult>;
-  exitEmulationAction: () => Promise<ExitEmulationResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  searchProfilesAction: (
-    input: SearchProfilesIn
-  ) => Promise<SearchProfilesOut>;
   searchGroupsAction: (
     input: GroupSearchIn
   ) => Promise<GroupSearchOut>;
@@ -121,10 +106,7 @@ function MainLayoutContent({
           <UnifiedSidebar
             activeSection={activeSection}
             onSectionChange={handleSectionChange}
-            switchEffectiveProfile={switchEffectiveProfileAction}
-            exitEmulation={exitEmulationAction}
             createFeedback={createFeedbackAction}
-            searchProfiles={searchProfilesAction}
           />
           <SidebarInset>
             <div className="flex flex-1 flex-col gap-4">{children}</div>
@@ -141,10 +123,7 @@ export function MainLayoutClient({
   profileData,
   sessionSnapshot,
   initialSidebarOpen,
-  switchEffectiveProfileAction,
-  exitEmulationAction,
   createFeedbackAction,
-  searchProfilesAction,
   searchGroupsAction,
   getGroupMessagesAction,
 }: {
@@ -153,14 +132,7 @@ export function MainLayoutClient({
   sessionSnapshot: SafeSessionSnapshot;
   /** Initial sidebar open state from SSR cookie */
   initialSidebarOpen?: boolean;
-  switchEffectiveProfileAction: (
-    input: SwitchEffectiveProfileParams
-  ) => Promise<SwitchEffectiveProfileResult>;
-  exitEmulationAction: () => Promise<ExitEmulationResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  searchProfilesAction: (
-    input: SearchProfilesIn
-  ) => Promise<SearchProfilesOut>;
   searchGroupsAction: (
     input: GroupSearchIn
   ) => Promise<GroupSearchOut>;
@@ -211,10 +183,7 @@ export function MainLayoutClient({
           <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
           <MainLayoutContent
             initialSidebarOpen={initialSidebarOpen}
-            switchEffectiveProfileAction={switchEffectiveProfileAction}
-            exitEmulationAction={exitEmulationAction}
             createFeedbackAction={createFeedbackAction}
-            searchProfilesAction={searchProfilesAction}
             searchGroupsAction={searchGroupsAction}
             getGroupMessagesAction={getGroupMessagesAction}
           >

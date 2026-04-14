@@ -27,6 +27,9 @@ type GetProfileIn = InputOf<"/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/profiles/get", "post">;
 type ProcessCSVIn = InputOf<"/profiles/bulk/process", "post">;
 type ProcessCSVOut = OutputOf<"/profiles/bulk/process", "post">;
+type EmulateProfileIn = InputOf<"/profiles/emulate", "post">;
+type EmulateProfileOut = OutputOf<"/profiles/emulate", "post">;
+type UnemulateProfileOut = OutputOf<"/profiles/unemulate", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<ProfilesListOut["profiles"]>[number];
 type SearchProfileItem = NonNullable<SearchProfileOut["profiles"]>[number];
@@ -83,6 +86,47 @@ async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   return api.post("/profiles/bulk/process", input);
 }
 
+/** ---- Emulation server actions ---- */
+type EmulateProfileActionIn = { targetProfileId: string };
+type EmulateProfileActionOut = { ok: boolean; reason?: string };
+
+async function emulateProfile(
+  input: EmulateProfileActionIn
+): Promise<EmulateProfileActionOut> {
+  "use server";
+  try {
+    const res: EmulateProfileOut = await api.post("/profiles/emulate", {
+      body: { target_profile_id: input.targetProfileId },
+    } as EmulateProfileIn);
+    if (!res.allowed) {
+      return { ok: false, reason: res.reason ?? "Emulation not allowed" };
+    }
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    return { ok: false, reason: msg };
+  }
+}
+
+async function unemulateProfile(
+  input: EmulateProfileActionIn
+): Promise<EmulateProfileActionOut> {
+  "use server";
+  try {
+    // target_profile_id will be accepted once backend is updated
+    const res: UnemulateProfileOut = await api.post("/profiles/unemulate", {
+      body: { target_profile_id: input.targetProfileId },
+    } as never);
+    if (!res.ok) {
+      return { ok: false, reason: res.reason ?? "Failed to exit emulation" };
+    }
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    return { ok: false, reason: msg };
+  }
+}
+
 /** ---- Docs types for page metadata ---- */
 type DocsIn = InputOf<"/profiles/docs", "post">;
 type DocsOut = OutputOf<"/profiles/docs", "post">;
@@ -123,6 +167,8 @@ export default async function ProfilesPage() {
           deleteProfileAction={deleteProfile}
           bulkDeleteProfileAction={bulkDeleteProfile}
           processCSVAction={processCSV}
+          emulateProfileAction={emulateProfile}
+          unemulateProfileAction={unemulateProfile}
         />
       </div>
     </>
@@ -136,6 +182,8 @@ export type {
   CSVColumnMapping,
   DeleteProfileIn,
   DeleteProfileOut,
+  EmulateProfileActionIn,
+  EmulateProfileActionOut,
   GetProfileIn,
   GetProfileOut,
   ProcessCSVIn,

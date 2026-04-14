@@ -14,12 +14,9 @@ import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
-  exitEmulation,
   getGroupMessages,
   getLayoutContextData,
   searchGroups,
-  searchProfiles,
-  switchEffectiveProfile,
 } from "./layout-server";
 import { LogoutGuard } from "./logout-guard";
 
@@ -85,10 +82,7 @@ export default async function MainLayout({
         profileData={profileData}
         sessionSnapshot={snapshot}
         initialSidebarOpen={initialSidebarOpen}
-        switchEffectiveProfileAction={switchEffectiveProfile}
-        exitEmulationAction={exitEmulation}
         createFeedbackAction={createFeedback}
-        searchProfilesAction={searchProfiles}
         searchGroupsAction={searchGroups}
         getGroupMessagesAction={getGroupMessages}
       >

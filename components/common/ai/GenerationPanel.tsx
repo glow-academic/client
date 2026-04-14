@@ -99,7 +99,7 @@ function flattenMessages(res: GroupMessagesOut): HistoricalMessage[] {
         callIds: ((msg.call_ids as string[]) ?? []).map(String),
         calls: ((msg.calls as Array<Record<string, unknown>>) ?? []).map((c) => ({
           id: String(c.id),
-          templateName: (c.template_name as string) ?? null,
+          templateName: (c.template_name as string) ?? (c.tool_name as string) ?? null,
         })),
       });
     }

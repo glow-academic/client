@@ -34941,6 +34941,16 @@ export interface components {
              * @description Whether the actor can delete this profile
              */
             can_delete?: boolean | null;
+            /**
+             * Can Emulate
+             * @description Whether the actor can emulate this profile
+             */
+            can_emulate?: boolean | null;
+            /**
+             * Is Emulated
+             * @description Whether this profile is currently being emulated by the actor
+             */
+            is_emulated?: boolean | null;
         };
         /**
          * ListProfilesApiResponse

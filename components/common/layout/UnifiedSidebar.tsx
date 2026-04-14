@@ -7,11 +7,6 @@
 import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
-  ExitEmulationResult,
-  SearchProfilesIn,
-  SearchProfilesOut,
-  SwitchEffectiveProfileParams,
-  SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
 import { getSidebarSections } from "@/lib/sidebar-config";
 import ReportProblem from "@/components/common/layout/ReportProblem";
@@ -27,7 +22,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
@@ -67,7 +61,6 @@ import {
   Sparkles,
   Target,
   Trophy,
-  UserX,
 } from "lucide-react";
 
 /** Local icon map for sidebar nav sections (hardcoded config, not from DB). */
@@ -79,21 +72,13 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { EmulateProfileModal } from "./EmulateProfileModal";
 import { SidebarSkeleton } from "./SidebarSkeleton";
 
 export interface UnifiedSidebarProps
   extends React.ComponentProps<typeof Sidebar> {
   activeSection: string;
   onSectionChange?: (section: string) => void;
-  switchEffectiveProfile: (
-    input: SwitchEffectiveProfileParams
-  ) => Promise<SwitchEffectiveProfileResult>;
-  exitEmulation: () => Promise<ExitEmulationResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  searchProfiles: (
-    input: SearchProfilesIn
-  ) => Promise<SearchProfilesOut>;
 }
 
 interface ClassData {
@@ -132,17 +117,13 @@ const getInitials = (name?: string): string => {
 export function UnifiedSidebar({
   activeSection,
   onSectionChange,
-  switchEffectiveProfile,
-  exitEmulation,
   createFeedback,
-  searchProfiles,
   ...props
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
-  const [isEmulateModalOpen, setIsEmulateModalOpen] = useState(false);
   const federatedLogout = useFederatedLogout();
 
   // Preserve scroll position across navigation
@@ -159,9 +140,8 @@ export function UnifiedSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const { profile, isAuthenticated, isEmulation, roleArtifacts } =
+  const { profile, roleArtifacts } =
     useProfile();
-  const [isExitingEmulation, setIsExitingEmulation] = useState(false);
   const navMain = useMemo(() => {
     if (!profile) return [];
 
@@ -272,27 +252,6 @@ export function UnifiedSidebar({
     [router, onSectionChange, isNavigating, isMobile, setOpenMobile]
   );
 
-  // Check if user can emulate (instructional and higher, and must be authenticated)
-  // Guest/default account users can't emulate even if they have the right role
-  const canEmulate = isAuthenticated && !!profile;
-
-  const handleExitEmulation = useCallback(async () => {
-    setIsExitingEmulation(true);
-    try {
-      const result = await exitEmulation();
-      if (!result.ok) {
-        toast.error(result.reason || "Failed to exit emulation");
-        return;
-      }
-      toast.success("Exiting emulation...");
-      window.location.reload();
-    } catch {
-      toast.error("Failed to exit emulation");
-    } finally {
-      setIsExitingEmulation(false);
-    }
-  }, [exitEmulation]);
-
   // Restore scroll position synchronously before paint to prevent flash
   useLayoutEffect(() => {
     const savedScrollFromStorage = sessionStorage.getItem(
@@ -388,32 +347,6 @@ export function UnifiedSidebar({
                   className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                   align="start"
                 >
-                  {canEmulate ? (
-                    <>
-                      <DropdownMenuItem
-                        onClick={() => setIsEmulateModalOpen(true)}
-                      >
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Emulate
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  ) : null}
-                  {isEmulation ? (
-                    <>
-                      <DropdownMenuItem
-                        onClick={handleExitEmulation}
-                        disabled={isExitingEmulation}
-                        className={
-                          isExitingEmulation ? "opacity-70 cursor-not-allowed" : ""
-                        }
-                      >
-                        <UserX className="h-4 w-4 mr-2" />
-                        {isExitingEmulation ? "Exiting..." : "Exit Emulation"}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  ) : null}
                   <DropdownMenuItem
                     onClick={handleLoginOrLogout}
                     disabled={isLoggingOut}
@@ -545,14 +478,6 @@ export function UnifiedSidebar({
 
         <SidebarRail />
       </Sidebar>
-
-      {/* Emulate Profile Modal */}
-      <EmulateProfileModal
-        open={isEmulateModalOpen}
-        onOpenChange={setIsEmulateModalOpen}
-        searchProfiles={searchProfiles}
-        switchEffectiveProfile={switchEffectiveProfile}
-      />
     </>
   );
 }

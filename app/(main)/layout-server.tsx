@@ -13,7 +13,6 @@ import { cache } from "react";
 type ProfileContextIn = InputOf<"/api/v5/profiles/context", "post">;
 type ProfileContextOut = OutputOf<"/api/v5/profiles/context", "post">;
 
-type EmulateProfileIn = InputOf<"/api/v5/profiles/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v5/activity/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v5/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
@@ -29,8 +28,6 @@ const REFRESH_ENDPOINT_MAP: Record<string, string> = {
 };
 type AttemptFullIn = InputOf<"/attempt/get", "post">;
 type AttemptFullOut = OutputOf<"/attempt/get", "post">;
-type SearchProfilesIn = InputOf<"/profiles/search", "post">;
-type SearchProfilesOut = OutputOf<"/profiles/search", "post">;
 /** ---- Response type alias ---- */
 export type AuthProfileResponse = ProfileContextOut;
 
@@ -138,71 +135,6 @@ export async function getLayoutContextData(session?: Session | null) {
   return { profileData, snapshot };
 }
 
-/** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */
-type SwitchEffectiveProfileParams = {
-  targetProfileId: string;
-};
-
-type SwitchEffectiveProfileResult = {
-  ok: boolean;
-  reason?: string;
-};
-
-/**
- * Server action to start emulation.
- * Creates a grant in the DB — resolve_identity() picks it up on next request.
- * Client just needs to reload the page after this succeeds.
- */
-export async function switchEffectiveProfile(
-  input: SwitchEffectiveProfileParams
-): Promise<SwitchEffectiveProfileResult> {
-  try {
-    const res = await api.post("/profiles/emulate", {
-      body: {
-        target_profile_id: input.targetProfileId,
-      },
-    } as EmulateProfileIn);
-
-    if (!res.allowed) {
-      return { ok: false, reason: res.reason ?? "Emulation not allowed" };
-    }
-
-    return { ok: true };
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return { ok: false, reason: errorMessage };
-  }
-}
-
-type ExitEmulationResult = {
-  ok: boolean;
-  reason?: string;
-};
-
-/**
- * Server action to exit the innermost emulation layer.
- * Consumes the innermost grant — resolve_identity() peels one layer on next request.
- * Client just needs to reload the page after this succeeds.
- */
-export async function exitEmulation(): Promise<ExitEmulationResult> {
-  try {
-    const res = await api.post("/profiles/unemulate", {
-      body: {},
-    });
-
-    if (!res.ok) {
-      return { ok: false, reason: res.reason ?? "Failed to exit emulation" };
-    }
-
-    return { ok: true };
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    return { ok: false, reason: errorMessage };
-  }
-}
-
 /** Server action to clear session state. */
 export async function clearSessionCookies(): Promise<void> {
   "use server";
@@ -251,13 +183,6 @@ export async function exportPage(
   return api.post(endpoint as Parameters<typeof api.post>[0], { body: filters }) as Promise<{ content: string; file_name: string; mime_type: string; row_count: number }>;
 }
 
-/** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
-export async function searchProfiles(
-  input: SearchProfilesIn
-): Promise<SearchProfilesOut> {
-  return api.post("/profiles/search", input);
-}
-
 /** ---- Export types for client component (type-only imports) ---- */
 export type RefreshPageFn = (page: string) => Promise<void>;
 export type ExportPageFn = typeof exportPage;
@@ -267,13 +192,8 @@ export type {
   AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  ExitEmulationResult,
   GroupMessagesIn,
   GroupMessagesOut,
   GroupSearchIn,
   GroupSearchOut,
-  SearchProfilesIn,
-  SearchProfilesOut,
-  SwitchEffectiveProfileParams,
-  SwitchEffectiveProfileResult,
 };

@@ -98,11 +98,13 @@ import {
   Eye,
   FileUp,
   Map,
+  Play,
   RefreshCw,
   Shield,
   Trash2,
   Upload,
   User as UserIcon,
+  UserX,
   X,
 } from "lucide-react";
 
@@ -113,6 +115,8 @@ import type {
   CSVColumnMapping,
   DeleteProfileIn,
   DeleteProfileOut,
+  EmulateProfileActionIn,
+  EmulateProfileActionOut,
   GetProfileOut,
   ProcessCSVIn,
   ProcessCSVOut,
@@ -134,6 +138,9 @@ export type SearchProfileAction = (
   input: SearchProfileIn
 ) => Promise<SearchProfileOut>;
 export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
+export type EmulateProfileAction = (
+  input: EmulateProfileActionIn
+) => Promise<EmulateProfileActionOut>;
 export interface ProfilesProps {
   // Server-provided data (fetched server-side, no client fetching)
   listData: ProfilesListOut;
@@ -142,6 +149,8 @@ export interface ProfilesProps {
   deleteProfileAction?: DeleteProfileAction;
   bulkDeleteProfileAction?: BulkDeleteProfileAction;
   processCSVAction?: ProcessCSVAction;
+  emulateProfileAction?: EmulateProfileAction;
+  unemulateProfileAction?: EmulateProfileAction;
 }
 
 // Helper functions
@@ -359,6 +368,8 @@ export default function Profiles({
   deleteProfileAction,
   bulkDeleteProfileAction,
   processCSVAction,
+  emulateProfileAction,
+  unemulateProfileAction,
 }: ProfilesProps) {
   const router = useRouter();
   const {
@@ -383,6 +394,51 @@ export default function Profiles({
   const [showSingleDeleteDialog, setShowSingleDeleteDialog] = useState(false);
   const [deleteProfileMember, setDeleteProfileMember] =
     useState<ProfileListItem | null>(null);
+
+  // Emulation state
+  const [emulatingProfileId, setEmulatingProfileId] = useState<string | null>(null);
+
+  const handleEmulate = useCallback(
+    async (profileId: string) => {
+      if (!emulateProfileAction) return;
+      setEmulatingProfileId(profileId);
+      try {
+        const result = await emulateProfileAction({ targetProfileId: profileId });
+        if (!result.ok) {
+          toast.error(result.reason || "Emulation not allowed");
+          return;
+        }
+        toast.success("Emulating profile...");
+        window.location.reload();
+      } catch {
+        toast.error("Failed to emulate profile");
+      } finally {
+        setEmulatingProfileId(null);
+      }
+    },
+    [emulateProfileAction]
+  );
+
+  const handleUnemulate = useCallback(
+    async (profileId: string) => {
+      if (!unemulateProfileAction) return;
+      setEmulatingProfileId(profileId);
+      try {
+        const result = await unemulateProfileAction({ targetProfileId: profileId });
+        if (!result.ok) {
+          toast.error(result.reason || "Failed to exit emulation");
+          return;
+        }
+        toast.success("Exiting emulation...");
+        window.location.reload();
+      } catch {
+        toast.error("Failed to exit emulation");
+      } finally {
+        setEmulatingProfileId(null);
+      }
+    },
+    [unemulateProfileAction]
+  );
 
   // CSV Import state
   const [showCSVImportModal, setShowCSVImportModal] = useState(false);
@@ -1129,6 +1185,9 @@ export default function Profiles({
         const profile = row.original;
         const canDeleteProfile = profile.can_delete ?? false;
         const canEditProfile = profile.can_edit ?? false;
+        const canEmulateProfile = profile.can_emulate ?? false;
+        const isEmulated = profile.is_emulated ?? false;
+        const isThisEmulating = emulatingProfileId === profile.profile_id;
         return (
           <div className="flex items-center justify-center gap-1">
             <Tooltip>
@@ -1199,6 +1258,47 @@ export default function Profiles({
                 </TooltipContent>
               </Tooltip>
             )}
+            {canEmulateProfile && profile.profile_id && (
+              isEmulated ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => handleUnemulate(profile.profile_id!)}
+                      disabled={isThisEmulating}
+                      data-testid="btn-unemulate-profile"
+                    >
+                      <UserX className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Exit Emulation</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      onClick={() => handleEmulate(profile.profile_id!)}
+                      disabled={isThisEmulating}
+                      data-testid="btn-emulate-profile"
+                    >
+                      <Play className="h-3 w-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Emulate</p>
+                  </TooltipContent>
+                </Tooltip>
+              )
+            )}
           </div>
         );
       },
@@ -1210,7 +1310,8 @@ export default function Profiles({
       (c) => c.id !== "select" && c.id !== "actions"
     );
     return [checkboxColumn, ...filtered, actionsColumn];
-  }, [columns, selectedProfileIds, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns, selectedProfileIds, router, emulatingProfileId, handleEmulate, handleUnemulate]);
 
   const table = useReactTable({
     data: profiles,
