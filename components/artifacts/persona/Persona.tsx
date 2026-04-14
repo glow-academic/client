@@ -102,6 +102,7 @@ export interface PersonaProps {
   ) => Promise<PatchPersonaDraftOut>;
   // Generation action (artifact-specific)
   generateAction?: (input: any) => Promise<any>;
+  getGroupHistoryAction?: (groupId: string) => Promise<any>;
 }
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
@@ -169,6 +170,7 @@ function PersonaComponent({
   updatePersonaAction,
   patchPersonaDraftAction,
   generateAction,
+  getGroupHistoryAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
@@ -182,11 +184,15 @@ function PersonaComponent({
     if (panelContext && groupId) {
       panelContext.setGroupId(groupId);
       panelContext.setGroupCompletedEvent("persona.group.completed");
+      if (getGroupHistoryAction) {
+        panelContext.setGetGroupHistory(getGroupHistoryAction);
+      }
     }
     return () => {
       if (panelContext) {
         panelContext.setGroupId(null);
         panelContext.setGroupCompletedEvent(null);
+        panelContext.setGetGroupHistory(null);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

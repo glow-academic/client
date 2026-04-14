@@ -200,9 +200,13 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     let cancelled = false;
     setIsLoadingHistory(true);
 
-    getGroupMessagesAction({
-      body: { group_id: groupToFetch },
-    })
+    // Use artifact-specific history if available, fall back to generic
+    const contextGetHistory = panelContext?.getGroupHistory;
+    const fetchHistory = contextGetHistory
+      ? contextGetHistory(groupToFetch)
+      : getGroupMessagesAction({ body: { group_id: groupToFetch } });
+
+    fetchHistory
       .then(async (res) => {
         if (cancelled) return;
         const messages = flattenMessages(res);

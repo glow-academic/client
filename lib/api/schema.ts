@@ -5344,6 +5344,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/attempt/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Attempt
+         * @description Trigger attempt generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_attempt_attempt_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Attempt
+         * @description List attempt generation groups — composable infra architecture.
+         */
+        post: operations["generations_attempt_attempt_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Group Attempt
+         * @description Resolve or create an attempt group with optional naming.
+         */
+        post: operations["group_attempt_attempt_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Attempt
+         * @description Report an attempt problem — composable infra architecture.
+         */
+        post: operations["problem_attempt_attempt_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/attempt/start": {
         parameters: {
             query?: never;
@@ -13981,6 +14061,20 @@ export interface components {
             metadata?: {
                 [key: string]: unknown;
             } | null;
+            /** Sid */
+            sid?: string | null;
+            /**
+             * Dangerous
+             * @default false
+             */
+            dangerous: boolean;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ArtifactGenerateResponse
@@ -13989,6 +14083,8 @@ export interface components {
         ArtifactGenerateResponse: {
             /** Group Id */
             group_id: string;
+            /** Idempotency Key */
+            idempotency_key?: string | null;
         };
         /**
          * ArtifactSessionGroup
@@ -18987,6 +19083,17 @@ export interface components {
              * @description List of persona items to create
              */
             personas: components["schemas"]["CreatePersonaItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreatePersonaApiResponse
@@ -18998,6 +19105,11 @@ export interface components {
              * @description Per-persona creation results
              */
             results: components["schemas"]["PersonaResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreatePersonaApiResponse
@@ -19009,6 +19121,11 @@ export interface components {
              * @description Per-persona creation results
              */
             results: components["schemas"]["PersonaResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreatePersonaItem
@@ -21292,6 +21409,17 @@ export interface components {
              * @description List of persona UUIDs to delete
              */
             ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeletePersonaApiResponse
@@ -21303,6 +21431,11 @@ export interface components {
              * @description Per-persona deletion results
              */
             results: components["schemas"]["DeletePersonaResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeletePersonaResult
@@ -21816,6 +21949,8 @@ export interface components {
         DocsApiRequest: {
             /** Entity Id */
             entity_id?: string | null;
+            /** Snapshot Key */
+            snapshot_key?: string | null;
         };
         /** DocsApiResponse */
         DocsApiResponse: {
@@ -22859,6 +22994,17 @@ export interface components {
              * @description UUID of the persona to duplicate
              */
             id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicatePersonaApiResponse
@@ -22881,6 +23027,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** DuplicateProfileApiRequest */
         DuplicateProfileApiRequest: {
@@ -24165,6 +24316,11 @@ export interface components {
              * @description UUID of a specific persona to export (omit for bulk export)
              */
             persona_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
             /**
              * Search
              * @description Filter personas by search text
@@ -25663,10 +25819,97 @@ export interface components {
             artifact_id?: string | null;
         };
         /**
+         * GenerationsAttemptApiRequest
+         * @description Request model for attempt generations endpoint.
+         */
+        GenerationsAttemptApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsAttemptApiResponse
+         * @description Response model for attempt generations endpoint.
+         */
+        GenerationsAttemptApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsAttemptListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsAttemptListItem
+         * @description Single generation group in the attempt generations response.
+         */
+        GenerationsAttemptListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
          * GenerationsPersonaApiRequest
          * @description Request model for persona generations endpoint.
          */
         GenerationsPersonaApiRequest: {
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
             /**
              * Search
              * @description Name search (ILIKE)
@@ -26005,12 +26248,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -26472,12 +26709,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -26564,12 +26795,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -27007,12 +27232,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -27199,12 +27418,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -27411,12 +27624,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -27653,12 +27860,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -27863,12 +28064,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -28490,12 +28685,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -28726,12 +28915,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -28869,6 +29052,11 @@ export interface components {
              * @description UUID of the draft to load instead of published state
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
             /** @description Filter options for names section */
             names?: components["schemas"]["SectionFilter"] | null;
             /** @description Filter options for descriptions section */
@@ -29018,12 +29206,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -29437,12 +29619,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -29651,12 +29827,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -29860,12 +30030,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -30128,12 +30292,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -30564,12 +30722,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -30820,12 +30972,6 @@ export interface components {
              * @description Whether this draft is active
              */
             active: boolean;
-            /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
             /**
              * Session Id
              * Format: uuid
@@ -31602,12 +31748,6 @@ export interface components {
              */
             active: boolean;
             /**
-             * Group Id
-             * Format: uuid
-             * @description Generation group UUID
-             */
-            group_id: string;
-            /**
              * Session Id
              * Format: uuid
              * @description Associated session UUID
@@ -31820,6 +31960,57 @@ export interface components {
             feedback_by_standard_id?: {
                 [key: string]: string;
             } | null;
+        };
+        /**
+         * GroupAttemptApiRequest
+         * @description Request model for attempt group endpoint.
+         */
+        GroupAttemptApiRequest: {
+            /**
+             * Group Id
+             * @description Existing group UUID (omit to create or reuse via time window)
+             */
+            group_id?: string | null;
+            /**
+             * Name
+             * @description Optional name for the group
+             */
+            name?: string | null;
+        };
+        /**
+         * GroupAttemptApiResponse
+         * @description Response model for attempt group endpoint.
+         */
+        GroupAttemptApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Resolved or newly created group UUID
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * @description UUID of the created group_names entry (if name was provided)
+             */
+            group_name_id?: string | null;
+            /**
+             * Name
+             * @description The name that was set (if provided)
+             */
+            name?: string | null;
+        };
+        /**
+         * GroupCall
+         * @description Tool call within a message.
+         */
+        GroupCall: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Tool Name */
+            tool_name?: string | null;
         };
         /**
          * GroupDetailCallItem
@@ -32124,6 +32315,27 @@ export interface components {
             model_names?: string[] | null;
         };
         /**
+         * GroupMessage
+         * @description Message within a run.
+         */
+        GroupMessage: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Role */
+            role: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Text Ids */
+            text_ids?: string[];
+            /** Call Ids */
+            call_ids?: string[];
+            /** Calls */
+            calls?: components["schemas"]["GroupCall"][];
+        };
+        /**
          * GroupPersonaApiRequest
          * @description Request model for persona group endpoint.
          */
@@ -32138,6 +32350,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupPersonaApiResponse
@@ -32160,6 +32383,31 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+            /**
+             * Runs
+             * @description Conversation history (populated when resolving existing group)
+             */
+            runs?: components["schemas"]["GroupRun"][] | null;
+        };
+        /**
+         * GroupRun
+         * @description Run within a group.
+         */
+        GroupRun: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Messages */
+            messages?: components["schemas"]["GroupMessage"][];
         };
         /**
          * GroupScenarioApiRequest
@@ -38078,6 +38326,17 @@ export interface components {
              * @description Resource IDs to keep as pending (active=false on connection)
              */
             pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant draft
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchPersonaDraftApiResponse
@@ -38095,6 +38354,12 @@ export interface components {
              * @description UUID of the created or updated draft
              */
             draft_id: string;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation (same as draft entry ID)
+             */
+            idempotency_key: string;
             /**
              * Message
              * @description Human-readable result message
@@ -39804,6 +40069,46 @@ export interface components {
             avg_pct?: number | null;
         };
         /**
+         * ProblemAttemptApiRequest
+         * @description Request model for attempt problem endpoint.
+         */
+        ProblemAttemptApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemAttemptApiResponse
+         * @description Response model for attempt problem endpoint.
+         */
+        ProblemAttemptApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
          * ProblemPersonaApiRequest
          * @description Request model for persona problem endpoint.
          */
@@ -39818,6 +40123,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemPersonaApiResponse
@@ -39842,6 +40158,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemScenarioApiRequest
@@ -40801,6 +41122,11 @@ export interface components {
             refreshed_views: string[];
             /** Invalidated Tags */
             invalidated_tags: string[];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ReplacementEntry
@@ -43545,6 +43871,11 @@ export interface components {
          * @description Request model for persona search endpoint.
          */
         SearchPersonaApiRequest: {
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
             /**
              * Search
              * @description Full-text search query for personas
@@ -48043,6 +48374,17 @@ export interface components {
              * @description List of persona items to update
              */
             personas: components["schemas"]["UpdatePersonaItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdatePersonaApiResponse
@@ -48054,6 +48396,11 @@ export interface components {
              * @description Per-persona update results
              */
             results: components["schemas"]["PersonaResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdatePersonaApiResponse
@@ -48065,6 +48412,11 @@ export interface components {
              * @description Per-persona update results
              */
             results: components["schemas"]["PersonaResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdatePersonaItem
@@ -57691,6 +58043,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_attempt_attempt_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_attempt_attempt_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_attempt_attempt_group_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_attempt_attempt_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemAttemptApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */

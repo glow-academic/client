@@ -22,6 +22,8 @@ interface GenerationPanelContextType {
   setGroupCompletedEvent: (event: string | null) => void;
   generationListener: GenerationListener | null;
   setGenerationListener: (listener: GenerationListener | null) => void;
+  getGroupHistory: ((groupId: string) => Promise<any>) | null;
+  setGetGroupHistory: (fn: ((groupId: string) => Promise<any>) | null) => void;
 }
 
 const GenerationPanelContext = createContext<GenerationPanelContextType | null>(null);
@@ -47,6 +49,10 @@ export function GenerationPanelProvider({
   const [onGenerateFn, setOnGenerateFn] = useState<((params: GenerateParams) => Promise<void>) | null>(null);
   const [groupCompletedEvent, setGroupCompletedEvent] = useState<string | null>(null);
   const [generationListener, setGenerationListener] = useState<GenerationListener | null>(null);
+  const [getGroupHistoryFn, setGetGroupHistoryFn] = useState<((groupId: string) => Promise<any>) | null>(null);
+  const setGetGroupHistory = useCallback((fn: ((groupId: string) => Promise<any>) | null) => {
+    setGetGroupHistoryFn(() => fn);
+  }, []);
 
   // Wrapper to handle React setState quirk with function values
   const setOnGenerate = useCallback((fn: ((params: GenerateParams) => Promise<void>) | null) => {
@@ -54,8 +60,8 @@ export function GenerationPanelProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate, groupCompletedEvent, setGroupCompletedEvent, generationListener, setGenerationListener }),
-    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate, groupCompletedEvent, generationListener],
+    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate, groupCompletedEvent, setGroupCompletedEvent, generationListener, setGenerationListener, getGroupHistory: getGroupHistoryFn, setGetGroupHistory }),
+    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate, groupCompletedEvent, generationListener, getGroupHistoryFn],
   );
   return (
     <GenerationPanelContext.Provider value={value}>
