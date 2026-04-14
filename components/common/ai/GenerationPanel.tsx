@@ -3,12 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, ChevronsUpDown, FileText, Image, Loader2, Mic, Plus, Search, Send, ShieldAlert, ShieldCheck, Video, Wrench, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -589,48 +583,33 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
                 rows={2}
                 className="min-h-0 max-h-32 flex-1 resize-none overflow-y-auto text-sm"
               />
-              <TooltipProvider>
-                <div className="flex flex-col gap-1 self-end shrink-0">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant={dangerousMode ? "destructive" : "outline"}
-                        className="h-9 w-9"
-                        onClick={() => setDangerousMode((prev) => !prev)}
-                      >
-                        {dangerousMode ? (
-                          <ShieldAlert className="h-4 w-4" />
-                        ) : (
-                          <ShieldCheck className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>{dangerousMode ? "Dangerous: executes immediately" : "Safe: review before accepting"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        className="h-9 w-9"
-                        onClick={handleSend}
-                        disabled={isGenerating || !instructions.trim()}
-                      >
-                        {isGenerating ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Generate</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </TooltipProvider>
+              <div className="flex flex-col gap-1 self-end shrink-0">
+                <Button
+                  size="icon"
+                  variant={dangerousMode ? "destructive" : "outline"}
+                  className="h-9 w-9"
+                  onClick={() => setDangerousMode((prev) => !prev)}
+                  title={dangerousMode ? "Dangerous mode: executes immediately" : "Safe mode: review before accepting"}
+                >
+                  {dangerousMode ? (
+                    <ShieldAlert className="h-4 w-4" />
+                  ) : (
+                    <ShieldCheck className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={handleSend}
+                  disabled={isGenerating || !instructions.trim()}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </SidebarFooter>
