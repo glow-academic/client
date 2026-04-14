@@ -127,9 +127,10 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
   const activeGroupId = selectedGroupId ?? contextGroupId;
 
-  // Listen for group.name.completed to update the displayed name in real-time
+  // Listen for group completed event (artifact-specific, set by page via context)
+  const groupCompletedEvent = panelContext?.groupCompletedEvent ?? null;
   useEffect(() => {
-    if (!socket || !isConnected) return;
+    if (!socket || !isConnected || !groupCompletedEvent) return;
 
     const s = socket as unknown as {
       on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
@@ -143,9 +144,9 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
       }
     };
 
-    s.on("group.name.completed", handleNameCompleted);
-    return () => { s.off("group.name.completed", handleNameCompleted); };
-  }, [socket, isConnected]);
+    s.on(groupCompletedEvent, handleNameCompleted);
+    return () => { s.off(groupCompletedEvent, handleNameCompleted); };
+  }, [socket, isConnected, groupCompletedEvent]);
 
   // Historical messages from /group/get
   const [historicalMessages, setHistoricalMessages] = useState<HistoricalMessage[]>([]);

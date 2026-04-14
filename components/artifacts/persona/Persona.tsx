@@ -181,9 +181,13 @@ function PersonaComponent({
   useEffect(() => {
     if (panelContext && groupId) {
       panelContext.setGroupId(groupId);
+      panelContext.setGroupCompletedEvent("persona.group.completed");
     }
     return () => {
-      if (panelContext) panelContext.setGroupId(null);
+      if (panelContext) {
+        panelContext.setGroupId(null);
+        panelContext.setGroupCompletedEvent(null);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupId]);

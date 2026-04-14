@@ -16,6 +16,8 @@ interface GenerationPanelContextType {
   setGroupId: (id: string | null) => void;
   onGenerate: ((params: GenerateParams) => Promise<void>) | null;
   setOnGenerate: (fn: ((params: GenerateParams) => Promise<void>) | null) => void;
+  groupCompletedEvent: string | null;
+  setGroupCompletedEvent: (event: string | null) => void;
 }
 
 const GenerationPanelContext = createContext<GenerationPanelContextType | null>(null);
@@ -39,6 +41,7 @@ export function GenerationPanelProvider({
 }) {
   const [groupId, setGroupId] = useState<string | null>(null);
   const [onGenerateFn, setOnGenerateFn] = useState<((params: GenerateParams) => Promise<void>) | null>(null);
+  const [groupCompletedEvent, setGroupCompletedEvent] = useState<string | null>(null);
 
   // Wrapper to handle React setState quirk with function values
   const setOnGenerate = useCallback((fn: ((params: GenerateParams) => Promise<void>) | null) => {
@@ -46,8 +49,8 @@ export function GenerationPanelProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate }),
-    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate],
+    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate, groupCompletedEvent, setGroupCompletedEvent }),
+    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate, groupCompletedEvent],
   );
   return (
     <GenerationPanelContext.Provider value={value}>
