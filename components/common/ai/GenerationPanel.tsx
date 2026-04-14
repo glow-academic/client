@@ -148,6 +148,26 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     return () => { s.off(groupCompletedEvent, handleNameCompleted); };
   }, [socket, isConnected, groupCompletedEvent]);
 
+  // AI generation — use artifact-specific listener from context, fall back to generic useGenerate
+  const contextListener = panelContext?.generationListener ?? null;
+  const { generate: runGenerateSocket, messages: fallbackMessages, isGenerating: fallbackIsGenerating, clearMessages: fallbackClearMessages } = useGenerate({
+    permissions: [],
+    resources: [],
+    groupId: activeGroupId,
+  });
+
+  const liveMessages = contextListener
+    ? contextListener.messages.map((m) => ({
+        role: m.role,
+        text: m.text,
+        type: m.type,
+        toolName: m.toolName,
+        toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
+      } as GenerateMessage))
+    : fallbackMessages;
+  const isGenerating = contextListener ? contextListener.isGenerating : fallbackIsGenerating;
+  const clearMessages = contextListener ? contextListener.clearMessages : fallbackClearMessages;
+
   // Historical messages from /group/get
   const [historicalMessages, setHistoricalMessages] = useState<HistoricalMessage[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -277,26 +297,6 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
       textarea.style.height = `${Math.min(textarea.scrollHeight, 128)}px`;
     }
   }, [instructions]);
-
-  // AI generation — use artifact-specific listener from context, fall back to generic useGenerate
-  const contextListener = panelContext?.generationListener ?? null;
-  const { generate: runGenerateSocket, messages: fallbackMessages, isGenerating: fallbackIsGenerating, clearMessages: fallbackClearMessages } = useGenerate({
-    permissions: [],
-    resources: [],
-    groupId: activeGroupId,
-  });
-
-  const liveMessages = contextListener
-    ? contextListener.messages.map((m) => ({
-        role: m.role,
-        text: m.text,
-        type: m.type,
-        toolName: m.toolName,
-        toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
-      } as GenerateMessage))
-    : fallbackMessages;
-  const isGenerating = contextListener ? contextListener.isGenerating : fallbackIsGenerating;
-  const clearMessages = contextListener ? contextListener.clearMessages : fallbackClearMessages;
 
   const handleSelectGroupWithClear = useCallback(
     (group: GroupSearchItem) => {
