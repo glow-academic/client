@@ -223,7 +223,7 @@ function PersonaComponent({
         { artifact: "persona", operation: "draft" },
         { artifact: "persona", operation: "get" },
         { artifact: "persona", operation: "docs" },
-        { artifact: "group", operation: "name" },
+        { artifact: "persona", operation: "group" },
       ],
       resources: [],
       groupId: groupId,

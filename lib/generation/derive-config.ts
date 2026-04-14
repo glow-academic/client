@@ -70,7 +70,7 @@ export function deriveGenerationConfig(
   const operations = MODE_OPERATIONS[mode];
   const permissions = [
     ...operations.map((op) => ({ artifact: artifactType, operation: op })),
-    { artifact: "group", operation: "name" },
+    { artifact: artifactType, operation: "group" },
   ];
 
   // Params from URL
