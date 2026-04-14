@@ -1,11 +1,13 @@
 "use client";
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import type { GenerationListener } from "@/hooks/use-persona-generation";
 
 interface GenerateParams {
   resource_types: string[];
   instructions?: string;
   dangerous?: boolean;
+  sid?: string;
 }
 
 interface GenerationPanelContextType {
@@ -18,6 +20,8 @@ interface GenerationPanelContextType {
   setOnGenerate: (fn: ((params: GenerateParams) => Promise<void>) | null) => void;
   groupCompletedEvent: string | null;
   setGroupCompletedEvent: (event: string | null) => void;
+  generationListener: GenerationListener | null;
+  setGenerationListener: (listener: GenerationListener | null) => void;
 }
 
 const GenerationPanelContext = createContext<GenerationPanelContextType | null>(null);
@@ -42,6 +46,7 @@ export function GenerationPanelProvider({
   const [groupId, setGroupId] = useState<string | null>(null);
   const [onGenerateFn, setOnGenerateFn] = useState<((params: GenerateParams) => Promise<void>) | null>(null);
   const [groupCompletedEvent, setGroupCompletedEvent] = useState<string | null>(null);
+  const [generationListener, setGenerationListener] = useState<GenerationListener | null>(null);
 
   // Wrapper to handle React setState quirk with function values
   const setOnGenerate = useCallback((fn: ((params: GenerateParams) => Promise<void>) | null) => {
@@ -49,8 +54,8 @@ export function GenerationPanelProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate, groupCompletedEvent, setGroupCompletedEvent }),
-    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate, groupCompletedEvent],
+    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate, groupCompletedEvent, setGroupCompletedEvent, generationListener, setGenerationListener }),
+    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate, groupCompletedEvent, generationListener],
   );
   return (
     <GenerationPanelContext.Provider value={value}>

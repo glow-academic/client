@@ -1,141 +1,54 @@
 /**
- * usePersonaGeneration — persona-specific hook for streaming field updates
- * during AI generation.
+ * usePersonaGeneration — persona-specific generation listener.
  *
- * Listens for `persona.draft.started` events to provide live field updates
- * as the AI generates them (streaming feel), and `persona.draft.completed`
- * for confirmed state.
+ * Listens for namespaced persona.generate.* events and returns the
+ * primitive GenerationListener interface for the GenerationPanel.
  *
- * The "started" event carries the raw field values being saved — the client
- * can optimistically apply these to the form before the full save roundtrip.
- * The "completed" event confirms what was actually persisted.
+ * Events:
+ *   persona.generate.started       → generation started
+ *   persona.generate.completed     → generation done
+ *   persona.generate.failed        → generation error
+ *   persona.generate.text.progress → streaming text delta
+ *   persona.generate.text.complete → text done
+ *   persona.generate.call.start    → tool call started (spinner)
+ *   persona.generate.call.complete → tool call done (check/X)
  */
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSocket } from "@/contexts/socket-context";
 
 // ---------------------------------------------------------------------------
-// Types
+// Primitive interface — any artifact generation hook implements this
 // ---------------------------------------------------------------------------
 
-/** Fields that can stream in from persona.draft.started */
-export interface PersonaStreamingFields {
-  name?: string;
-  name_id?: string;
-  description?: string;
-  description_id?: string;
-  color?: string;
-  color_id?: string;
-  icon?: string;
-  icon_id?: string;
-  instructions?: string;
-  instructions_id?: string;
-  active_flag?: string;
-  active_flag_id?: string;
-  departments?: string;
-  department_ids?: string;
-  examples?: string;
-  example_ids?: string;
-  voices?: string;
-  voice_ids?: string;
-  parameter_fields?: string;
-  parameter_field_ids?: string;
+export interface GenerationMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  type: "text" | "tool";
+  toolName?: string;
+  toolStatus?: "pending" | "success" | "error";
 }
 
-/** Confirmed form state from persona.draft.completed */
-export interface PersonaDraftFormState {
-  name_id?: string | null;
-  name?: string | null;
-  description_id?: string | null;
-  description?: string | null;
-  instructions_id?: string | null;
-  instructions?: string | null;
-  color_id?: string | null;
-  color?: string | null;
-  icon_id?: string | null;
-  icon?: string | null;
-  active_flag_id?: string | null;
-  department_ids?: string[];
-  example_ids?: string[];
-  parameter_field_ids?: string[];
-  voice_ids?: string[];
-}
-
-interface DraftCompletedEvent {
-  success: boolean;
-  draft_id: string;
-  form_state: PersonaDraftFormState;
-}
-
-interface UsePersonaGenerationConfig {
-  /** Group ID to filter events */
-  groupId: string | null;
-  /**
-   * Called when a draft starts saving — carries the raw field values.
-   * Use this to optimistically update form fields (streaming feel).
-   */
-  onFieldsStreaming?: (fields: Partial<PersonaStreamingFields>) => void;
-  /**
-   * Called when a draft is confirmed saved — carries the resolved form state.
-   * Use this to set the confirmed state and trigger refetch.
-   */
-  onDraftSaved?: (draftId: string, formState: PersonaDraftFormState) => void;
-}
-
-// ---------------------------------------------------------------------------
-// Field extraction
-// ---------------------------------------------------------------------------
-
-/** Keys we care about from the started event (filter out metadata) */
-const PERSONA_FIELD_KEYS = new Set([
-  "name", "name_id",
-  "description", "description_id",
-  "color", "color_id",
-  "icon", "icon_id",
-  "instructions", "instructions_id",
-  "active_flag", "active_flag_id",
-  "departments", "department_ids",
-  "examples", "example_ids",
-  "voices", "voice_ids",
-  "parameter_fields", "parameter_field_ids",
-]);
-
-function extractStreamingFields(
-  data: Record<string, unknown>,
-): Partial<PersonaStreamingFields> | null {
-  const fields: Record<string, unknown> = {};
-  let hasFields = false;
-
-  for (const [key, value] of Object.entries(data)) {
-    if (PERSONA_FIELD_KEYS.has(key) && value != null && value !== "") {
-      fields[key] = value;
-      hasFields = true;
-    }
-  }
-
-  return hasFields ? (fields as Partial<PersonaStreamingFields>) : null;
+export interface GenerationListener {
+  messages: GenerationMessage[];
+  isGenerating: boolean;
+  clearMessages: () => void;
 }
 
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
-export function usePersonaGeneration({
-  groupId,
-  onFieldsStreaming,
-  onDraftSaved,
-}: UsePersonaGenerationConfig): void {
+export function usePersonaGeneration(groupId: string | null): GenerationListener {
   const { socket, isConnected } = useSocket();
-
+  const [messages, setMessages] = useState<GenerationMessage[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
   const groupIdRef = useRef(groupId);
   groupIdRef.current = groupId;
 
-  const onStreamingRef = useRef(onFieldsStreaming);
-  onStreamingRef.current = onFieldsStreaming;
-
-  const onSavedRef = useRef(onDraftSaved);
-  onSavedRef.current = onDraftSaved;
+  const clearMessages = useCallback(() => setMessages([]), []);
 
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -145,33 +58,113 @@ export function usePersonaGeneration({
       off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
     };
 
-    const matchesGroup = (data: Record<string, unknown>): boolean => {
-      if (!groupIdRef.current) return false;
-      return data.group_id === groupIdRef.current;
+    // --- Generation lifecycle ---
+
+    const handleStarted = (_data: Record<string, unknown>) => {
+      setIsGenerating(true);
     };
 
-    const handleStarted = (data: Record<string, unknown>) => {
-      if (!matchesGroup(data)) return;
-      const fields = extractStreamingFields(data);
-      if (fields) {
-        onStreamingRef.current?.(fields);
-      }
+    const handleCompleted = (_data: Record<string, unknown>) => {
+      setIsGenerating(false);
     };
 
-    const handleCompleted = (data: Record<string, unknown>) => {
-      if (!matchesGroup(data)) return;
-      const event = data as unknown as DraftCompletedEvent;
-      if (event.success && event.draft_id && event.form_state) {
-        onSavedRef.current?.(event.draft_id, event.form_state);
-      }
+    const handleFailed = (data: Record<string, unknown>) => {
+      setIsGenerating(false);
+      const message = (data.message as string) || "Generation failed";
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: message,
+          type: "text",
+        },
+      ]);
     };
 
-    s.on("persona.draft.started", handleStarted);
-    s.on("persona.draft.completed", handleCompleted);
+    // --- Text modality ---
+
+    const handleTextProgress = (data: Record<string, unknown>) => {
+      const delta = data.delta as string;
+      if (!delta) return;
+
+      setMessages((prev) => {
+        // Append to existing streaming text message, or create new one
+        const last = prev[prev.length - 1];
+        if (last && last.type === "text" && last.role === "assistant") {
+          const updated = [...prev];
+          updated[updated.length - 1] = { ...last, text: last.text + delta };
+          return updated;
+        }
+        return [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            text: delta,
+            type: "text",
+          },
+        ];
+      });
+    };
+
+    const handleTextComplete = (_data: Record<string, unknown>) => {
+      // Text streaming finished — message already accumulated via deltas
+    };
+
+    // --- Call modality (tool calls) ---
+
+    const handleCallStart = (data: Record<string, unknown>) => {
+      const toolCallId = data.tool_call_id as string;
+      const toolName = data.tool_name as string;
+      if (!toolCallId) return;
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: toolCallId,
+          role: "assistant",
+          text: "",
+          type: "tool",
+          toolName: toolName || "tool_call",
+          toolStatus: "pending",
+        },
+      ]);
+    };
+
+    const handleCallComplete = (data: Record<string, unknown>) => {
+      const toolCallId = data.tool_call_id as string;
+      const success = data.success as boolean;
+      if (!toolCallId) return;
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === toolCallId
+            ? { ...msg, toolStatus: success ? "success" : "error" }
+            : msg,
+        ),
+      );
+    };
+
+    // Subscribe
+    s.on("persona.generate.started", handleStarted);
+    s.on("persona.generate.completed", handleCompleted);
+    s.on("persona.generate.failed", handleFailed);
+    s.on("persona.generate.text.progress", handleTextProgress);
+    s.on("persona.generate.text.complete", handleTextComplete);
+    s.on("persona.generate.call.start", handleCallStart);
+    s.on("persona.generate.call.complete", handleCallComplete);
 
     return () => {
-      s.off("persona.draft.started", handleStarted);
-      s.off("persona.draft.completed", handleCompleted);
+      s.off("persona.generate.started", handleStarted);
+      s.off("persona.generate.completed", handleCompleted);
+      s.off("persona.generate.failed", handleFailed);
+      s.off("persona.generate.text.progress", handleTextProgress);
+      s.off("persona.generate.text.complete", handleTextComplete);
+      s.off("persona.generate.call.start", handleCallStart);
+      s.off("persona.generate.call.complete", handleCallComplete);
     };
   }, [socket, isConnected]);
+
+  return { messages, isGenerating, clearMessages };
 }

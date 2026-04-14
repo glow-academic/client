@@ -263,12 +263,25 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     }
   }, [instructions]);
 
-  // AI generation hook — event listening for streaming messages
-  const { generate: runGenerateSocket, messages: liveMessages, isGenerating, clearMessages } = useGenerate({
+  // AI generation — use artifact-specific listener from context, fall back to generic useGenerate
+  const contextListener = panelContext?.generationListener ?? null;
+  const { generate: runGenerateSocket, messages: fallbackMessages, isGenerating: fallbackIsGenerating, clearMessages: fallbackClearMessages } = useGenerate({
     permissions: [],
     resources: [],
     groupId: activeGroupId,
   });
+
+  const liveMessages = contextListener
+    ? contextListener.messages.map((m) => ({
+        role: m.role,
+        text: m.text,
+        type: m.type,
+        toolName: m.toolName,
+        toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
+      } as GenerateMessage))
+    : fallbackMessages;
+  const isGenerating = contextListener ? contextListener.isGenerating : fallbackIsGenerating;
+  const clearMessages = contextListener ? contextListener.clearMessages : fallbackClearMessages;
 
   const handleSelectGroupWithClear = useCallback(
     (group: GroupSearchItem) => {
@@ -301,7 +314,8 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
       // HTTP-based generation (artifact-specific endpoint)
       // dangerousMode=true bypasses soft (immediate execution)
       // dangerousMode=false uses soft (review first)
-      await onGenerateProp({ resource_types: [], instructions: text, dangerous: dangerousMode });
+      const socketId = (socket as any)?.id as string | undefined;
+      await onGenerateProp({ resource_types: [], instructions: text, dangerous: dangerousMode, sid: socketId });
     } else {
       // Fallback: socket-based generation
       runGenerateSocket(text);

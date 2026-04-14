@@ -207,6 +207,7 @@ function PersonaComponent({
             resource_types: params.resource_types,
             user_instructions: params.instructions ? [params.instructions] : [],
             dangerous: params.dangerous ?? false,
+            sid: params.sid,
           },
         });
       });
@@ -659,24 +660,17 @@ function PersonaComponent({
     },
   });
 
-  // --- AI Persona Streaming (persona-specific: live field updates) ---
-  usePersonaGeneration({
-    groupId: groupId,
-    onFieldsStreaming: (fields) => {
-      setFormState((prev) => {
-        const next = { ...prev };
-        if (fields.color_id) next.color_id = fields.color_id as string;
-        if (fields.name) next.name = fields.name as string;
-        if (fields.name_id) next.name_id = fields.name_id as string;
-        if (fields.description) next.description = fields.description as string;
-        if (fields.description_id) next.description_id = fields.description_id as string;
-        if (fields.icon_id) next.icon_id = fields.icon_id as string;
-        if (fields.instructions) next.instructions = fields.instructions as string;
-        if (fields.instructions_id) next.instructions_id = fields.instructions_id as string;
-        return next;
-      });
-    },
-  });
+  // --- AI Persona Generation Listener (for GenerationPanel messages) ---
+  const personaGeneration = usePersonaGeneration(groupId);
+  useEffect(() => {
+    if (panelContext) {
+      panelContext.setGenerationListener(personaGeneration);
+    }
+    return () => {
+      if (panelContext) panelContext.setGenerationListener(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personaGeneration.messages, personaGeneration.isGenerating]);
 
   // Update form state when server data changes
   useEffect(() => {
