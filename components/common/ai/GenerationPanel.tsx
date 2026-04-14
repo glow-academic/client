@@ -248,17 +248,18 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
   const [isSearching, setIsSearching] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch groups from server action
+  // Fetch groups — use artifact-specific override if available
+  const contextSearchGroups = panelContext?.searchGroupsOverride ?? null;
   const fetchGroups = useCallback(
     async (query: string) => {
       setIsSearching(true);
       try {
-        const res = await searchGroupsAction({
-          body: { search: query.trim() || null },
-        });
-        const mapped = (res.items ?? []).map((item) => ({
+        const res = contextSearchGroups
+          ? await contextSearchGroups(query.trim())
+          : await searchGroupsAction({ body: { search: query.trim() || null } });
+        const mapped = (res.items ?? []).map((item: Record<string, unknown>) => ({
           id: String(item.group_id),
-          name: item.group_name || "Untitled",
+          name: (item.group_name as string) || "Untitled",
           updatedAt: formatRelativeTime(item.last_run_at as unknown as string),
         }));
         mapped.sort((a, b) => {
@@ -273,7 +274,7 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
         setIsSearching(false);
       }
     },
-    [searchGroupsAction],
+    [searchGroupsAction, contextSearchGroups],
   );
 
   const handleDropdownOpen = useCallback(

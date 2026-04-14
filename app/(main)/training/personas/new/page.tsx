@@ -71,6 +71,14 @@ async function getPersonaGroupHistory(groupId: string): Promise<GroupPersonaOut>
   return api.post("/personas/group", { body: { group_id: groupId } } as GroupPersonaIn);
 }
 
+type GenerationsIn = InputOf<"/personas/generations", "post">;
+type GenerationsOut = OutputOf<"/personas/generations", "post">;
+
+async function searchPersonaGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/personas/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
 /** ---- Docs types for page metadata ---- */
 type DocsIn = InputOf<"/personas/docs", "post">;
 type DocsOut = OutputOf<"/personas/docs", "post">;
@@ -176,6 +184,7 @@ export default async function NewPersonaPage({
           patchPersonaDraftAction={patchPersonaDraft}
           generateAction={generatePersona}
           getGroupHistoryAction={getPersonaGroupHistory}
+          searchGroupsAction={searchPersonaGroups}
         />
       </div>
     </DraftProviderClient>

@@ -103,6 +103,7 @@ export interface PersonaProps {
   // Generation action (artifact-specific)
   generateAction?: (input: any) => Promise<any>;
   getGroupHistoryAction?: (groupId: string) => Promise<any>;
+  searchGroupsAction?: (query: string) => Promise<any>;
 }
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
@@ -171,6 +172,7 @@ function PersonaComponent({
   patchPersonaDraftAction,
   generateAction,
   getGroupHistoryAction,
+  searchGroupsAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
@@ -187,12 +189,16 @@ function PersonaComponent({
       if (getGroupHistoryAction) {
         panelContext.setGetGroupHistory(getGroupHistoryAction);
       }
+      if (searchGroupsAction) {
+        panelContext.setSearchGroupsOverride(searchGroupsAction);
+      }
     }
     return () => {
       if (panelContext) {
         panelContext.setGroupId(null);
         panelContext.setGroupCompletedEvent(null);
         panelContext.setGetGroupHistory(null);
+        panelContext.setSearchGroupsOverride(null);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

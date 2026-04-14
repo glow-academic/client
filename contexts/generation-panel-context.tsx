@@ -24,6 +24,8 @@ interface GenerationPanelContextType {
   setGenerationListener: (listener: GenerationListener | null) => void;
   getGroupHistory: ((groupId: string) => Promise<any>) | null;
   setGetGroupHistory: (fn: ((groupId: string) => Promise<any>) | null) => void;
+  searchGroupsOverride: ((query: string) => Promise<any>) | null;
+  setSearchGroupsOverride: (fn: ((query: string) => Promise<any>) | null) => void;
 }
 
 const GenerationPanelContext = createContext<GenerationPanelContextType | null>(null);
@@ -53,6 +55,10 @@ export function GenerationPanelProvider({
   const setGetGroupHistory = useCallback((fn: ((groupId: string) => Promise<any>) | null) => {
     setGetGroupHistoryFn(() => fn);
   }, []);
+  const [searchGroupsOverrideFn, setSearchGroupsOverrideFn] = useState<((query: string) => Promise<any>) | null>(null);
+  const setSearchGroupsOverride = useCallback((fn: ((query: string) => Promise<any>) | null) => {
+    setSearchGroupsOverrideFn(() => fn);
+  }, []);
 
   // Wrapper to handle React setState quirk with function values
   const setOnGenerate = useCallback((fn: ((params: GenerateParams) => Promise<void>) | null) => {
@@ -60,8 +66,8 @@ export function GenerationPanelProvider({
   }, []);
 
   const value = useMemo(
-    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate, groupCompletedEvent, setGroupCompletedEvent, generationListener, setGenerationListener, getGroupHistory: getGroupHistoryFn, setGetGroupHistory }),
-    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate, groupCompletedEvent, generationListener, getGroupHistoryFn],
+    () => ({ togglePanel, panelOpen, groupId, setGroupId, onGenerate: onGenerateFn, setOnGenerate, groupCompletedEvent, setGroupCompletedEvent, generationListener, setGenerationListener, getGroupHistory: getGroupHistoryFn, setGetGroupHistory, searchGroupsOverride: searchGroupsOverrideFn, setSearchGroupsOverride }),
+    [togglePanel, panelOpen, groupId, setGroupId, onGenerateFn, setOnGenerate, groupCompletedEvent, generationListener, getGroupHistoryFn, searchGroupsOverrideFn],
   );
   return (
     <GenerationPanelContext.Provider value={value}>
