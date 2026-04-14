@@ -154,19 +154,34 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
   // Text content cache: textUploadId → text string
   const [textContent, setTextContent] = useState<Record<string, string>>({});
 
-  // Fetch historical messages when a group is selected
+  // Fetch historical messages when a group is active (selected or context)
+  // Also refetch after generation completes to pick up new messages
+  const prevIsGenerating = useRef(false);
   useEffect(() => {
-    if (!selectedGroupId) {
+    // Detect generation completion (was generating, now not)
+    const justFinished = prevIsGenerating.current && !isGenerating;
+    prevIsGenerating.current = isGenerating;
+
+    const groupToFetch = selectedGroupId ?? contextGroupId;
+    if (!groupToFetch) {
       setHistoricalMessages([]);
       setTextContent({});
       return;
+    }
+
+    // Only fetch on mount, group change, or generation completion
+    if (!justFinished && historicalMessages.length > 0) return;
+
+    // Clear live messages when refetching (they'll be in history now)
+    if (justFinished) {
+      clearMessages();
     }
 
     let cancelled = false;
     setIsLoadingHistory(true);
 
     getGroupMessagesAction({
-      body: { group_id: selectedGroupId },
+      body: { group_id: groupToFetch },
     })
       .then(async (res) => {
         if (cancelled) return;
@@ -201,7 +216,7 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
       });
 
     return () => { cancelled = true; };
-  }, [selectedGroupId, getGroupMessagesAction]);
+  }, [selectedGroupId, contextGroupId, isGenerating, getGroupMessagesAction]);
 
   // Search state
   const [chatSearch, setChatSearch] = useState("");
