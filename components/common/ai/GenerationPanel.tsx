@@ -593,7 +593,7 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Instructions (optional)..."
+                placeholder="Instructions..."
                 rows={1}
                 className="min-h-0 max-h-32 flex-1 resize-none overflow-y-auto text-sm"
               />
