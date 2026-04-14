@@ -198,6 +198,12 @@ function PersonaComponent({
         await generateAction({
           body: {
             group_id: groupId,
+            permissions: [
+              { artifact: "persona", operation: "draft" },
+              { artifact: "persona", operation: "get" },
+              { artifact: "persona", operation: "docs" },
+              { artifact: "persona", operation: "group" },
+            ],
             resource_types: params.resource_types,
             user_instructions: params.instructions ? [params.instructions] : [],
             dangerous: params.dangerous ?? false,

@@ -296,6 +296,7 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     if (!instructions.trim()) return;
     const text = instructions.trim();
     setInstructions("");
+    console.log("handleSend — onGenerateProp:", onGenerateProp, "dangerousMode:", dangerousMode);
     if (onGenerateProp) {
       // HTTP-based generation (artifact-specific endpoint)
       // dangerousMode=true bypasses soft (immediate execution)
@@ -308,11 +309,14 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
   }, [instructions, dangerousMode, onGenerateProp, runGenerateSocket]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    console.log("keyDown:", e.key);
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   }, [handleSend]);
+
+  console.log("GenerationPanel render — onGenerateProp:", !!onGenerateProp, "dangerousMode:", dangerousMode);
 
   const displayName = selectedGroupName ?? "New Chat";
   const displaySubtext = selectedGroupId ? "Previous session" : "Current session";
