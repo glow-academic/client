@@ -601,26 +601,28 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
                         )}
                       </Button>
                     </TooltipTrigger>
-                    <TooltipContent side="left">
+                    <TooltipContent>
                       <p>{dangerousMode ? "Dangerous: executes immediately" : "Safe: review before accepting"}</p>
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        size="icon"
-                        className="h-9 w-9"
-                        onClick={handleSend}
-                        disabled={isGenerating || !instructions.trim()}
-                      >
-                        {isGenerating ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <span tabIndex={0}>
+                        <Button
+                          size="icon"
+                          className="h-9 w-9"
+                          onClick={handleSend}
+                          disabled={isGenerating || !instructions.trim()}
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </span>
                     </TooltipTrigger>
-                    <TooltipContent side="left">
+                    <TooltipContent>
                       <p>Generate</p>
                     </TooltipContent>
                   </Tooltip>
