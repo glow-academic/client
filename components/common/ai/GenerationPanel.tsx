@@ -574,42 +574,42 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
         <SidebarFooter className="p-0">
           <div className="border-t p-3">
             <div className="flex gap-2">
-              <Button
-                size="icon"
-                variant={dangerousMode ? "destructive" : "outline"}
-                className="self-end shrink-0"
-                onClick={() => setDangerousMode((prev) => !prev)}
-                title={dangerousMode ? "Dangerous mode: executes immediately" : "Safe mode: review before accepting"}
-              >
-                {dangerousMode ? (
-                  <ShieldAlert className="h-4 w-4" />
-                ) : (
-                  <ShieldCheck className="h-4 w-4" />
-                )}
-                <span className="sr-only">{dangerousMode ? "Switch to safe mode" : "Switch to dangerous mode"}</span>
-              </Button>
               <Textarea
                 ref={textareaRef}
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Instructions..."
-                rows={1}
+                rows={2}
                 className="min-h-0 max-h-32 flex-1 resize-none overflow-y-auto text-sm"
               />
-              <Button
-                size="icon"
-                className="self-end"
-                onClick={handleSend}
-                disabled={isGenerating || !instructions.trim()}
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-                <span className="sr-only">Generate</span>
-              </Button>
+              <div className="flex flex-col gap-1 self-end shrink-0">
+                <Button
+                  size="icon"
+                  variant={dangerousMode ? "destructive" : "outline"}
+                  className="h-8 w-8"
+                  onClick={() => setDangerousMode((prev) => !prev)}
+                  title={dangerousMode ? "Dangerous mode: executes immediately" : "Safe mode: review before accepting"}
+                >
+                  {dangerousMode ? (
+                    <ShieldAlert className="h-3.5 w-3.5" />
+                  ) : (
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+                <Button
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleSend}
+                  disabled={isGenerating || !instructions.trim()}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </SidebarFooter>
