@@ -322,7 +322,11 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     setSearchResults([]);
     setInstructions("");
     clearMessages();
-  }, [clearMessages]);
+    // Clear context group so next generation creates a fresh one
+    if (panelContext) {
+      panelContext.setGroupId(null);
+    }
+  }, [clearMessages, panelContext]);
 
   const handleSend = useCallback(async () => {
     if (!instructions.trim()) return;
