@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { components } from "@/lib/api/schema";
 import { cn } from "@/lib/utils";
-import { getIconComponent } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import {
   AlertCircle,
   ArrowDown,
@@ -589,10 +589,8 @@ export function MessagesView({
                         const displayIcon = contentEntry.icon;
                         const contentText = contentEntry.content || "";
 
-                        // Get icon component
-                        const IconComponent = displayIcon
-                          ? getIconComponent(displayIcon) || (isQuery ? User : MessageSquare)
-                          : isQuery ? User : MessageSquare;
+                        // Get fallback icon component
+                        const FallbackIcon = isQuery ? User : MessageSquare;
 
                         // Generate gradient style if color is available
                         const buttonStyle = displayColor
@@ -654,7 +652,11 @@ export function MessagesView({
                                         style={buttonStyle}
                                         tabIndex={-1}
                                       >
-                                        <IconComponent className="h-4 w-4" />
+                                        {displayIcon ? (
+                                          <SvgIcon svg={displayIcon} className="h-4 w-4" fallback={<FallbackIcon className="h-4 w-4" />} />
+                                        ) : (
+                                          <FallbackIcon className="h-4 w-4" />
+                                        )}
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -739,7 +741,11 @@ export function MessagesView({
                                         style={buttonStyle}
                                         tabIndex={-1}
                                       >
-                                        <IconComponent className="h-4 w-4 text-white" />
+                                        {displayIcon ? (
+                                          <SvgIcon svg={displayIcon} className="h-4 w-4 text-white" fallback={<FallbackIcon className="h-4 w-4 text-white" />} />
+                                        ) : (
+                                          <FallbackIcon className="h-4 w-4 text-white" />
+                                        )}
                                       </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>

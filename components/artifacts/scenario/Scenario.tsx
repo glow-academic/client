@@ -1648,7 +1648,7 @@ function ScenarioComponent({
                   defaultName="New Scenario"
                   required={true}
                   hideDescription={true}
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1701,7 +1701,7 @@ function ScenarioComponent({
                   label="Description"
                   placeholder="Describe the scenario"
                   required={false}
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                 />
 
                 <Departments
@@ -1723,7 +1723,7 @@ function ScenarioComponent({
                   }
                   label="Departments"
                   required={false}
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                   onGenerate={generateHandlers["departments"]}
                 />
 
@@ -1783,7 +1783,7 @@ function ScenarioComponent({
                     }
                   }}
                   onGenerate={generateHandlers["scenario_flags"]}
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
 
                 />
               </div>
@@ -2124,7 +2124,7 @@ function ScenarioComponent({
                     })
                   }
                   disabled={disabled}
-                  showAiGenerate={s?.show_ai_generate ?? false}
+                  showAiGenerate={false}
                   required={false}
                 />
               </div>

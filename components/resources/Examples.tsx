@@ -183,6 +183,18 @@ export function Examples({
   }, [pendingItems]);
   const showDiff = pendingItems.length > 0;
 
+  // Map pending IDs to internalTexts indices
+  const pendingIndices = useMemo(() => {
+    if (!showDiff) return undefined;
+    const indices = new Set<number>();
+    ids.forEach((id, idx) => {
+      if (pendingIds.has(id) && idx < internalTexts.length) {
+        indices.add(idx);
+      }
+    });
+    return indices.size > 0 ? indices : undefined;
+  }, [showDiff, ids, pendingIds, internalTexts.length]);
+
   // Accept pending — pending items are already in selection, just confirm (no-op for form state)
   const handleAccept = useCallback(() => {
     // Pending items are already in the selection; accepting is a no-op for form state.
@@ -269,6 +281,7 @@ export function Examples({
         disabled={disabled}
         itemPlaceholder={itemPlaceholder}
         hideAddButton
+        pendingIndices={pendingIndices}
       />
     </div>
   );

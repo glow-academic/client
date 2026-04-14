@@ -262,8 +262,8 @@ export function Documents({
                 "relative aspect-square rounded-xl border bg-card text-card-foreground shadow-sm transition-all overflow-hidden",
                 "hover:shadow-md",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary",
-                isPending && !isSelected && "ring-2 ring-success"
+                isPending && "ring-2 ring-success bg-success/10",
+                isSelected && !isPending && "ring-2 ring-primary"
               )}
             >
               {/* Preview button - top left */}
@@ -287,16 +287,16 @@ export function Documents({
               </div>
 
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
 
-              {/* AI suggested badge - top right */}
-              {isPending && !isSelected && (
+              {/* Pending badge - top right */}
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  Suggested
+                  Pending
                 </div>
               )}
 

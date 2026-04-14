@@ -88,7 +88,7 @@ import {
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useProfile } from "@/contexts/profile-context";
 import { cn } from "@/lib/utils";
-import { ICON_MAP } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import {
   Check,
   CheckCircle2,
@@ -502,13 +502,12 @@ export default function Profiles({
       baseRoles
         ?.filter((role) => role?.role)
         .map((role) => {
-          const iconKey = role.icon_value ?? "";
-          const IconComponent = ICON_MAP[iconKey] ?? UserIcon;
           return {
             id: role.role ?? "",
             name: role.name ?? role.role ?? "Role",
             description: role.description ?? "",
-            icon: IconComponent,
+            iconSvg: role.icon_value ?? null,
+            icon: UserIcon,
             color: role.color_hex ?? "#64748b",
           };
         }) ?? []
@@ -1882,7 +1881,7 @@ export default function Profiles({
                                         `${role.name} ${role.description || ""}`
                                       }
                                       renderItem={(role, isSelected) => {
-                                        const IconComponent =
+                                        const FallbackIcon =
                                           role.icon || UserIcon;
                                         const hexColor =
                                           role.color || "#64748b";
@@ -1897,7 +1896,11 @@ export default function Profiles({
                                                   ),
                                               }}
                                             >
-                                              <IconComponent className="h-4 w-4 text-white" />
+                                              {"iconSvg" in role && role.iconSvg ? (
+                                                <SvgIcon svg={role.iconSvg} className="h-4 w-4 text-white" />
+                                              ) : (
+                                                <FallbackIcon className="h-4 w-4 text-white" />
+                                              )}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                               <div className="font-medium truncate">
@@ -1924,7 +1927,7 @@ export default function Profiles({
                                         if (selectedItems.length === 0)
                                           return "Select role...";
                                         const role = selectedItems[0];
-                                        const IconComponent =
+                                        const FallbackIcon =
                                           role?.icon || UserIcon;
                                         const hexColor =
                                           role?.color || "#64748b";
@@ -1939,7 +1942,11 @@ export default function Profiles({
                                                   ),
                                               }}
                                             >
-                                              <IconComponent className="h-3.5 w-3.5 text-white" />
+                                              {role && "iconSvg" in role && role.iconSvg ? (
+                                                <SvgIcon svg={role.iconSvg} className="h-3.5 w-3.5 text-white" />
+                                              ) : (
+                                                <FallbackIcon className="h-3.5 w-3.5 text-white" />
+                                              )}
                                             </div>
                                             <span className="truncate">
                                               {role?.name || "Select role"}

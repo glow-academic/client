@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { getIconComponent } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import { Brain, Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
@@ -242,7 +242,6 @@ export function Personas({
         renderItem={(item, isSelected) => {
           const suggested = isSuggested(item.id);
           const isPending = showDiff && pendingIds.has(item.id);
-          const IconComponent = getIconComponent(item.icon || "") || Brain;
           const hexColor = item.color || "#64748b";
 
           return (
@@ -251,23 +250,21 @@ export function Personas({
                 "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent",
-                isPending &&
-                  !isSelected &&
-                  "ring-2 ring-success bg-success/10"
+                isPending && "ring-2 ring-success bg-success/10",
+                isSelected && !isPending && "ring-2 ring-primary bg-accent"
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPending && (
                 <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
 
               {/* Pending badge - top right */}
-              {isPending && !isSelected && (
+              {isPending && (
                 <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                  Suggested
+                  Pending
                 </div>
               )}
 
@@ -290,7 +287,7 @@ export function Personas({
                     background: generateGradientFromHex(hexColor),
                   }}
                 >
-                  <IconComponent className="h-5 w-5 text-white" />
+                  <SvgIcon svg={item.icon} className="h-5 w-5 text-white" fallback={<Brain className="h-5 w-5 text-white" />} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-sm leading-tight">

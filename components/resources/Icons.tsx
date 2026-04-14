@@ -17,7 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { ICON_MAP } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import { Check, X } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
@@ -223,9 +223,7 @@ export function Icons({
         onSelect={(iconId) => handleSelect(iconId)}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => {
-          const IconComponent =
-            ICON_MAP[item.value as keyof typeof ICON_MAP];
-          if (!IconComponent) return null;
+          const isPendingIcon = showDiff && resource?.id === item.id;
 
           return (
             <div
@@ -233,18 +231,26 @@ export function Icons({
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
+                isSelected && !isPendingIcon && "ring-2 ring-primary bg-accent",
+                isPendingIcon && "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPendingIcon && (
                 <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
 
+              {/* Pending badge - top right */}
+              {isPendingIcon && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+
               {/* Suggested dot indicator - top right */}
-              {isSuggested(item.id) && !isSelected && (
+              {isSuggested(item.id) && !isSelected && !isPendingIcon && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -256,7 +262,7 @@ export function Icons({
               )}
 
               <div className="flex flex-col items-center justify-center gap-1 flex-1 overflow-hidden">
-                <IconComponent className="h-7 w-7 text-foreground shrink-0" />
+                <SvgIcon svg={item.value} className="h-7 w-7 text-foreground shrink-0" />
                 <span className="text-xs font-medium text-center truncate w-full">
                   {item.name}
                 </span>

@@ -16,7 +16,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useResourceAi } from "@/hooks/use-resource-ai";
-import { getIconComponent } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Power, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -585,9 +585,6 @@ export function ScenarioFlags({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {scenarioOptions.map((option) => {
                   const isSelected = selectedFlags.has(option.id);
-                  const IconComponent = option.icon
-                    ? getIconComponent(option.icon)
-                    : null;
                   const isAiSuggested =
                     showDiff && aiSuggestedFlagIds.has(option.id);
                   const wouldChange = isAiSuggested && !isSelected; // AI wants to turn this ON
@@ -604,8 +601,8 @@ export function ScenarioFlags({
                           htmlFor={`flag-${scenarioId}-${option.id}`}
                           className="text-sm flex items-center gap-1 flex-1"
                         >
-                          {IconComponent ? (
-                            <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
+                          {option.icon ? (
+                            <SvgIcon svg={option.icon} className="h-3.5 w-3.5 text-muted-foreground" />
                           ) : (
                             <Power className="h-3.5 w-3.5 text-muted-foreground" />
                           )}

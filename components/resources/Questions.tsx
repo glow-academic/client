@@ -550,7 +550,7 @@ export function Questions({
                       handleQuestionTextChange(index, e.target.value)
                     }
                     placeholder={`${itemPlaceholder} ${index + 1}`}
-                    className="flex-1 w-full"
+                    className={cn("flex-1 w-full", showDiff && question.id && pendingIds.has(question.id) && "ring-2 ring-success bg-success/5")}
                     disabled={disabled}
                     onDragStart={(e) => e.preventDefault()}
                   />

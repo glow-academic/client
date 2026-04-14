@@ -236,6 +236,29 @@ export function ParameterFields({
 
   const expandedSet = useMemo(() => new Set(parameterIds), [parameterIds]);
 
+  // Local UI-only collapsed state (visual collapse, doesn't affect data loading)
+  // Initialize: parameters NOT in expandedSet start collapsed
+  const [collapsedSet, setCollapsedSet] = useState<Set<string>>(() => {
+    const initial = new Set<string>();
+    (allParameters ?? []).forEach((p) => {
+      if (p.parameter_id && !parameterIds.includes(p.parameter_id)) {
+        initial.add(p.parameter_id);
+      }
+    });
+    return initial;
+  });
+  const toggleCollapsed = useCallback((parameterId: string) => {
+    setCollapsedSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(parameterId)) {
+        next.delete(parameterId);
+      } else {
+        next.add(parameterId);
+      }
+      return next;
+    });
+  }, []);
+
   // Visible groups: root (non-conditional) params always visible,
   // conditional params visible when explicitly in URL parameterIds
   const visibleParameterGroups = useMemo(() => {
@@ -303,6 +326,8 @@ export function ParameterFields({
             (opt) => isFieldSelected(opt.parameter_id, opt.field_id)
           ).length;
 
+          const isCollapsed = collapsedSet.has(param.parameter_id);
+
           return (
             <div key={param.parameter_id}>
               <button
@@ -311,13 +336,19 @@ export function ParameterFields({
                   "w-full flex items-center gap-2 py-2 text-left transition-colors rounded-md",
                   "hover:bg-accent/50"
                 )}
-                onClick={() => onToggleParameter(param.parameter_id, !isExpanded)}
+                onClick={() => {
+                  if (!isExpanded) {
+                    // First open: load data from server via URL
+                    onToggleParameter(param.parameter_id, true);
+                  }
+                  toggleCollapsed(param.parameter_id);
+                }}
                 disabled={disabled}
               >
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                ) : (
+                {isCollapsed ? (
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                 )}
                 <span className="font-medium text-sm flex-1">{param.name}</span>
                 {selectedCount > 0 && (
@@ -327,7 +358,7 @@ export function ParameterFields({
                 )}
               </button>
 
-              {isExpanded && parameterOptions.length > 0 && (
+              {!isCollapsed && parameterOptions.length > 0 && (
                 <div className="pb-2 pt-1">
                   <SelectableGrid<AvailableFieldOption>
                     items={parameterOptions}
@@ -353,16 +384,16 @@ export function ParameterFields({
                             "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                             "hover:shadow-md hover:bg-accent/50",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                            isSelected && "ring-2 ring-primary bg-accent",
-                            isPendingField && !isSelected && "ring-2 ring-success bg-success/10"
+                            isPendingField && "ring-2 ring-success bg-success/10",
+                            isSelected && !isPendingField && "ring-2 ring-primary bg-accent"
                           )}
                         >
-                          {isSelected && (
+                          {isSelected && !isPendingField && (
                             <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                               <Check className="h-3 w-3 text-primary-foreground" />
                             </div>
                           )}
-                          {isPendingField && !isSelected && (
+                          {isPendingField && (
                             <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
                               Pending
                             </div>
@@ -412,7 +443,7 @@ export function ParameterFields({
                 </div>
               )}
 
-              {isExpanded && parameterOptions.length === 0 && (
+              {!isCollapsed && parameterOptions.length === 0 && (
                 <div className="pb-2 pt-1 text-sm text-muted-foreground">
                   No fields available for this parameter.
                 </div>

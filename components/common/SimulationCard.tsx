@@ -31,7 +31,7 @@ import {
 import { useSocket } from "@/contexts/socket-context";
 import { useAttemptLifecycle } from "@/hooks/use-attempt-lifecycle";
 import type { AttemptStartedEvent, AttemptChatStartedEvent, AttemptErrorEvent } from "@/hooks/use-attempt-lifecycle";
-import { getIconComponent } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import {
   ChevronLeft,
   ChevronRight,
@@ -208,9 +208,9 @@ export default function SimulationCard({
     [homeId, practiceId, socket, isConnected, startAttempt]
   );
 
-  // Get persona configuration and icon based on persona data
-  const IconComponent =
-    type === "default" ? (icon ? getIconComponent(icon) : User) : Users;
+  // Determine which Lucide fallback icon to use (when no SVG icon is provided)
+  const FallbackIcon = type === "default" ? User : Users;
+  const hasSvgIcon = type === "default" && !!icon;
 
   // Determine gradient class based on completion status and persona color
   const getGradientClass = () => {
@@ -282,7 +282,11 @@ export default function SimulationCard({
                     }),
                 }}
               >
-                <IconComponent className="h-5 w-5 text-white" />
+                {hasSvgIcon ? (
+                  <SvgIcon svg={icon} className="h-5 w-5 text-white" />
+                ) : (
+                  <FallbackIcon className="h-5 w-5 text-white" />
+                )}
               </div>
             ) : (
               <Button
@@ -294,7 +298,11 @@ export default function SimulationCard({
                   minWidth: 40,
                 }}
               >
-                <IconComponent className="h-5 w-5" />
+                {hasSvgIcon ? (
+                  <SvgIcon svg={icon} className="h-5 w-5" />
+                ) : (
+                  <FallbackIcon className="h-5 w-5" />
+                )}
               </Button>
             )}
             <div className="flex flex-col items-end space-y-1 flex-1 min-h-[40px] justify-between">

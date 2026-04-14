@@ -191,10 +191,22 @@ export function Voices({
                 className={cn(
                   "relative flex items-center justify-center h-20 w-20 rounded-full border bg-card text-card-foreground shadow-sm transition-all",
                   "hover:shadow-md hover:bg-accent/50",
-                  isSelected && "ring-2 ring-primary bg-accent",
-                  isPendingVoice && !isSelected && "ring-2 ring-success bg-success/10"
+                  isPendingVoice && "ring-2 ring-success bg-success/10",
+                  isSelected && !isPendingVoice && "ring-2 ring-primary bg-accent"
                 )}
               >
+                {/* Pending badge */}
+                {isPendingVoice && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="absolute top-0 right-0 z-10 h-2 w-2 rounded-full bg-success" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Pending</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
                 {/* Suggested dot indicator */}
                 {!isSelected && !isPendingVoice && isSuggested(item.id) && (
                   <TooltipProvider>

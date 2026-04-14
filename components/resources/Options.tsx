@@ -614,7 +614,7 @@ export function Options({
                     handleOptionTextChange(qId, optIdx, e.target.value)
                   }
                   placeholder={`Option ${optIdx + 1}`}
-                  className="flex-1 min-w-0"
+                  className={cn("flex-1 min-w-0", showDiff && option.option_id && pendingIds.has(option.option_id) && "ring-2 ring-success bg-success/5")}
                   disabled={disabled}
                   onDragStart={(e) => e.preventDefault()}
                 />

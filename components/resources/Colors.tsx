@@ -480,24 +480,35 @@ export function Colors({
               : undefined
           }
           renderItem={(color, isSelected) => {
+            const isPendingColor = showDiff && resource?.hex_code?.toLowerCase() === color.hex.toLowerCase();
+
             return (
             <div
               className={cn(
                 "relative flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left h-[88px]",
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                isSelected && "ring-2 ring-primary bg-accent"
+                isSelected && !isPendingColor && "ring-2 ring-primary bg-accent",
+                isPendingColor && "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
-              {isSelected && (
+              {isSelected && !isPendingColor && (
                 <div className="absolute top-2 right-2 z-10 h-5 w-5 bg-primary rounded-full flex items-center justify-center">
                   <Check className="h-3 w-3 text-primary-foreground" />
                 </div>
               )}
 
+              {/* Pending badge - top right */}
+              {isPendingColor && (
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                  Pending
+                </div>
+              )}
+
               {/* Suggested dot indicator - top right */}
               {!isSelected &&
+                !isPendingColor &&
                 suggestedHexCodes.has(color.hex.toLowerCase()) && (
                   <TooltipProvider>
                     <Tooltip>

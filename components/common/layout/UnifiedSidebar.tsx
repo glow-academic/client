@@ -48,18 +48,33 @@ import {
 } from "@/components/ui/sidebar";
 import { useProfile } from "@/contexts/profile-context";
 import { useFederatedLogout } from "@/hooks/useFederatedLogout";
-import { getIconComponent } from "@/utils/icons";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import {
+  Activity,
   AlertCircle,
   ChevronRight,
   ChevronsUpDown,
+  ClipboardList,
+  Gauge,
+  GraduationCap,
   Home,
   LogOut,
+  PieChart,
   Search,
+  Server,
+  Settings,
   Sparkles,
+  Target,
+  Trophy,
   UserX,
 } from "lucide-react";
+
+/** Local icon map for sidebar nav sections (hardcoded config, not from DB). */
+const SIDEBAR_ICONS: Record<string, LucideIcon> = {
+  Home, Target, Trophy, PieChart, GraduationCap, ClipboardList,
+  Sparkles, Server, Activity, Gauge, Settings,
+};
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -152,7 +167,7 @@ export function UnifiedSidebar({
 
     const sections = getSidebarSections(roleArtifacts);
     const menu: NavSection[] = sections.map((section) => {
-      const IconComponent = getIconComponent(section.icon) || Home;
+      const IconComponent = SIDEBAR_ICONS[section.icon] ?? Home;
       const items: MenuItem[] | undefined = section.items
         ? section.items.map((item) => ({
             title: item.title,

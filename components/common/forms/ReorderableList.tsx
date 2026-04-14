@@ -24,6 +24,7 @@ export interface ReorderableListProps<T extends string = string> {
   disabled?: boolean;
   itemPlaceholder?: string;
   hideAddButton?: boolean;
+  pendingIndices?: Set<number>;
 }
 
 // Component for item input with ghost autocomplete
@@ -40,6 +41,7 @@ function ItemInputWithAutocomplete({
   onDrop,
   onRemove,
   totalItems,
+  pending,
 }: {
   index: number;
   value: string;
@@ -53,6 +55,7 @@ function ItemInputWithAutocomplete({
   onDrop: (e: React.DragEvent) => void;
   onRemove: () => void;
   totalItems: number;
+  pending?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -105,7 +108,7 @@ function ItemInputWithAutocomplete({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="flex-1"
+            className={cn("flex-1", pending && "ring-2 ring-success bg-success/5")}
             disabled={disabled}
             onDragStart={(e) => e.preventDefault()}
           />
@@ -146,6 +149,7 @@ export function ReorderableList<T extends string>({
   disabled = false,
   itemPlaceholder = "Item",
   hideAddButton = false,
+  pendingIndices,
 }: ReorderableListProps<T>) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -202,6 +206,7 @@ export function ReorderableList<T extends string>({
       onDrop={(e) => handleDrop(e, index)}
       onRemove={() => removeItem(index)}
       totalItems={items.length}
+      pending={pendingIndices?.has(index)}
     />
   );
 

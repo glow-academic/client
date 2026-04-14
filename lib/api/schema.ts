@@ -224,6 +224,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/personas/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Persona
+         * @description Trigger persona generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_persona_personas_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/personas/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Persona
+         * @description List persona generation groups — composable infra architecture.
+         */
+        post: operations["generations_persona_personas_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/personas/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Group Persona
+         * @description Resolve or create a persona group with optional naming.
+         */
+        post: operations["group_persona_personas_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/personas/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Persona
+         * @description Report a persona problem — composable infra architecture.
+         */
+        post: operations["problem_persona_personas_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/personas/refresh": {
         parameters: {
             query?: never;
@@ -444,6 +524,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/scenarios/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Scenario
+         * @description Trigger scenario generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_scenario_scenarios_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Scenario
+         * @description List scenario generation groups — composable infra architecture.
+         */
+        post: operations["generations_scenario_scenarios_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/scenarios/docs": {
         parameters: {
             query?: never;
@@ -458,6 +578,46 @@ export interface paths {
          * @description Get composed documentation for the scenario artifact.
          */
         post: operations["get_scenario_docs_endpoint_scenarios_docs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Group Scenario
+         * @description Resolve or create a scenario group with optional naming.
+         */
+        post: operations["group_scenario_scenarios_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scenarios/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Scenario
+         * @description Report a scenario problem — composable infra architecture.
+         */
+        post: operations["problem_scenario_scenarios_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13780,6 +13940,57 @@ export interface components {
             updated_count: number;
         };
         /**
+         * ArtifactGenerateRequest
+         * @description Per-artifact generate request.
+         *
+         *     The artifact_type is implicit from the endpoint (e.g. /personas/generate).
+         *     permission_ids controls which tools the AI agent receives during generation.
+         *     resources is the field-level filter (e.g. ["names", "descriptions"]).
+         */
+        ArtifactGenerateRequest: {
+            /** Permissions */
+            permissions?: components["schemas"]["PermissionPair"][] | null;
+            /** Permission Ids */
+            permission_ids?: string[] | null;
+            /** Resources */
+            resources?: string[] | null;
+            /** Artifact Id */
+            artifact_id?: unknown | null;
+            /** Draft Id */
+            draft_id?: unknown | null;
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            } | null;
+            /** User Instructions */
+            user_instructions?: string[] | null;
+            /** Run Id */
+            run_id?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /**
+             * Modality
+             * @default call
+             */
+            modality: string;
+            /** Extra Messages */
+            extra_messages?: {
+                [key: string]: string;
+            }[] | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ArtifactGenerateResponse
+         * @description Response from a per-artifact generate endpoint.
+         */
+        ArtifactGenerateResponse: {
+            /** Group Id */
+            group_id: string;
+        };
+        /**
          * ArtifactSessionGroup
          * @description Single group entry for a session.
          */
@@ -25452,6 +25663,170 @@ export interface components {
             artifact_id?: string | null;
         };
         /**
+         * GenerationsPersonaApiRequest
+         * @description Request model for persona generations endpoint.
+         */
+        GenerationsPersonaApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsPersonaApiResponse
+         * @description Response model for persona generations endpoint.
+         */
+        GenerationsPersonaApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsPersonaListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsPersonaListItem
+         * @description Single generation group in the persona generations response.
+         */
+        GenerationsPersonaListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsScenarioApiRequest
+         * @description Request model for scenario generations endpoint.
+         */
+        GenerationsScenarioApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsScenarioApiResponse
+         * @description Response model for scenario generations endpoint.
+         */
+        GenerationsScenarioApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsScenarioListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsScenarioListItem
+         * @description Single generation group in the scenario generations response.
+         */
+        GenerationsScenarioListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
          * GetAgentApiRequest
          * @description Request model for get agent endpoint.
          */
@@ -28710,6 +29085,56 @@ export interface components {
              * @description Associated voice UUIDs
              */
             voice_ids: string[];
+            /**
+             * Pending Color Ids
+             * @description Pending color UUIDs
+             */
+            pending_color_ids?: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Example Ids
+             * @description Pending example UUIDs
+             */
+            pending_example_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Icon Ids
+             * @description Pending icon UUIDs
+             */
+            pending_icon_ids?: string[];
+            /**
+             * Pending Instruction Ids
+             * @description Pending instruction UUIDs
+             */
+            pending_instruction_ids?: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Parameter Field Ids
+             * @description Pending parameter field UUIDs
+             */
+            pending_parameter_field_ids?: string[];
+            /**
+             * Pending Voice Ids
+             * @description Pending voice UUIDs
+             */
+            pending_voice_ids?: string[];
         };
         /**
          * GetPersonaDraftsApiResponse
@@ -29785,6 +30210,71 @@ export interface components {
              * @description Associated video UUIDs
              */
             video_ids: string[];
+            /**
+             * Pending Name Ids
+             * @description Pending name UUIDs
+             */
+            pending_name_ids?: string[];
+            /**
+             * Pending Description Ids
+             * @description Pending description UUIDs
+             */
+            pending_description_ids?: string[];
+            /**
+             * Pending Problem Statement Ids
+             * @description Pending problem statement UUIDs
+             */
+            pending_problem_statement_ids?: string[];
+            /**
+             * Pending Department Ids
+             * @description Pending department UUIDs
+             */
+            pending_department_ids?: string[];
+            /**
+             * Pending Persona Ids
+             * @description Pending persona UUIDs
+             */
+            pending_persona_ids?: string[];
+            /**
+             * Pending Document Ids
+             * @description Pending document UUIDs
+             */
+            pending_document_ids?: string[];
+            /**
+             * Pending Objective Ids
+             * @description Pending objective UUIDs
+             */
+            pending_objective_ids?: string[];
+            /**
+             * Pending Image Ids
+             * @description Pending image UUIDs
+             */
+            pending_image_ids?: string[];
+            /**
+             * Pending Video Ids
+             * @description Pending video UUIDs
+             */
+            pending_video_ids?: string[];
+            /**
+             * Pending Question Ids
+             * @description Pending question UUIDs
+             */
+            pending_question_ids?: string[];
+            /**
+             * Pending Option Ids
+             * @description Pending option UUIDs
+             */
+            pending_option_ids?: string[];
+            /**
+             * Pending Flag Ids
+             * @description Pending flag UUIDs
+             */
+            pending_flag_ids?: string[];
+            /**
+             * Pending Parameter Field Ids
+             * @description Pending parameter field UUIDs
+             */
+            pending_parameter_field_ids?: string[];
         };
         /**
          * GetScenarioDraftsApiResponse
@@ -30671,8 +31161,6 @@ export interface components {
              * Format: uuid
              */
             invocation_id: string;
-            /** Run Id */
-            run_id: string | null;
             /**
              * Created At
              * Format: date-time
@@ -31634,6 +32122,82 @@ export interface components {
              * @description Names of models used
              */
             model_names?: string[] | null;
+        };
+        /**
+         * GroupPersonaApiRequest
+         * @description Request model for persona group endpoint.
+         */
+        GroupPersonaApiRequest: {
+            /**
+             * Group Id
+             * @description Existing group UUID (omit to create or reuse via time window)
+             */
+            group_id?: string | null;
+            /**
+             * Name
+             * @description Optional name for the group
+             */
+            name?: string | null;
+        };
+        /**
+         * GroupPersonaApiResponse
+         * @description Response model for persona group endpoint.
+         */
+        GroupPersonaApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Resolved or newly created group UUID
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * @description UUID of the created group_names entry (if name was provided)
+             */
+            group_name_id?: string | null;
+            /**
+             * Name
+             * @description The name that was set (if provided)
+             */
+            name?: string | null;
+        };
+        /**
+         * GroupScenarioApiRequest
+         * @description Request model for scenario group endpoint.
+         */
+        GroupScenarioApiRequest: {
+            /**
+             * Group Id
+             * @description Existing group UUID (omit to create or reuse via time window)
+             */
+            group_id?: string | null;
+            /**
+             * Name
+             * @description Optional name for the group
+             */
+            name?: string | null;
+        };
+        /**
+         * GroupScenarioApiResponse
+         * @description Response model for scenario group endpoint.
+         */
+        GroupScenarioApiResponse: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description Resolved or newly created group UUID
+             */
+            group_id: string;
+            /**
+             * Group Name Id
+             * @description UUID of the created group_names entry (if name was provided)
+             */
+            group_name_id?: string | null;
+            /**
+             * Name
+             * @description The name that was set (if provided)
+             */
+            name?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -36263,13 +36827,23 @@ export interface components {
             /**
              * Upload Id
              * Format: uuid
+             * @description UUID of the uploaded CSV file
              */
             upload_id: string;
-            /** Items */
+            /**
+             * Items
+             * @description Parsed persona items for preview
+             */
             items: components["schemas"]["CreatePersonaItem"][];
-            /** Mapped Fields */
+            /**
+             * Mapped Fields
+             * @description Column keys that were auto-mapped
+             */
             mapped_fields: string[];
-            /** Row Count */
+            /**
+             * Row Count
+             * @description Number of data rows parsed
+             */
             row_count: number;
         };
         /**
@@ -36314,13 +36888,23 @@ export interface components {
             /**
              * Upload Id
              * Format: uuid
+             * @description UUID of the uploaded CSV file
              */
             upload_id: string;
-            /** Items */
+            /**
+             * Items
+             * @description Parsed scenario items for preview
+             */
             items: components["schemas"]["CreateScenarioItem"][];
-            /** Mapped Fields */
+            /**
+             * Mapped Fields
+             * @description Column keys that were auto-mapped
+             */
             mapped_fields: string[];
-            /** Row Count */
+            /**
+             * Row Count
+             * @description Number of data rows parsed
+             */
             row_count: number;
         };
         /**
@@ -37489,6 +38073,11 @@ export interface components {
              * @description Voice values (resolved to UUIDs server-side)
              */
             voices?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep as pending (active=false on connection)
+             */
+            pending_ids?: string[] | null;
         };
         /**
          * PatchPersonaDraftApiResponse
@@ -37902,6 +38491,11 @@ export interface components {
              * @description Associated parameter field UUIDs
              */
             parameter_field_ids?: string[] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep as pending (active=false on connection)
+             */
+            pending_ids?: string[] | null;
         };
         /**
          * PatchScenarioDraftApiResponse
@@ -38334,6 +38928,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaDepartmentResource
@@ -38358,6 +38957,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaDescriptionResource
@@ -38380,6 +38984,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaEntry
@@ -38438,6 +39047,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaFieldError
@@ -38487,6 +39101,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaGenerationProgressEvent
@@ -38587,6 +39206,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaInstructionResource
@@ -38609,6 +39233,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaNameResource
@@ -38631,6 +39260,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaParameterFieldResource
@@ -38661,6 +39295,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * PersonaResultItem
@@ -38732,6 +39371,11 @@ export interface components {
              * @default false
              */
             selected: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /** PreviousAttemptApiResponse */
         PreviousAttemptApiResponse: {
@@ -39158,6 +39802,86 @@ export interface components {
              * @description Average percentage score
              */
             avg_pct?: number | null;
+        };
+        /**
+         * ProblemPersonaApiRequest
+         * @description Request model for persona problem endpoint.
+         */
+        ProblemPersonaApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemPersonaApiResponse
+         * @description Response model for persona problem endpoint.
+         */
+        ProblemPersonaApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
+         * ProblemScenarioApiRequest
+         * @description Request model for scenario problem endpoint.
+         */
+        ProblemScenarioApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemScenarioApiResponse
+         * @description Response model for scenario problem endpoint.
+         */
+        ProblemScenarioApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
         };
         /**
          * ProblemStatementEntry
@@ -41602,6 +42326,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioDescriptionResource
@@ -41633,6 +42362,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioDocument
@@ -41714,6 +42448,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioDraftFormState
@@ -41869,6 +42608,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioFieldError
@@ -41944,6 +42688,11 @@ export interface components {
              */
             suggested: boolean;
             /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
+            /**
              * Video Flag
              * @description Whether this flag only shows when video is enabled
              */
@@ -41994,6 +42743,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioNameResource
@@ -42025,6 +42779,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioObjective
@@ -42056,6 +42815,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioOption
@@ -42097,6 +42861,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioPersona
@@ -42173,6 +42942,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioProblemStatement
@@ -42209,6 +42983,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioQuestion
@@ -42245,6 +43024,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * ScenarioResultItem
@@ -42317,6 +43101,11 @@ export interface components {
              * @default false
              */
             suggested: boolean;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SearchAgentApiRequest
@@ -49020,6 +49809,138 @@ export interface operations {
             };
         };
     };
+    generate_persona_personas_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_persona_personas_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsPersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsPersonaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_persona_personas_group_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupPersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupPersonaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_persona_personas_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemPersonaApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemPersonaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     persona_refresh_personas_refresh_post: {
         parameters: {
             query?: never;
@@ -49357,6 +50278,72 @@ export interface operations {
             };
         };
     };
+    generate_scenario_scenarios_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_scenario_scenarios_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsScenarioApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_scenario_docs_endpoint_scenarios_docs_post: {
         parameters: {
             query?: never;
@@ -49377,6 +50364,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComposedDocsResponse-Output"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    group_scenario_scenarios_group_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupScenarioApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_scenario_scenarios_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemScenarioApiResponse"];
                 };
             };
             /** @description Validation Error */

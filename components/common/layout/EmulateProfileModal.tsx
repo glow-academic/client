@@ -32,7 +32,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProfile } from "@/contexts/profile-context";
-import { ICON_MAP } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 
 export interface EmulateProfileModalProps {
   open: boolean;
@@ -68,18 +68,18 @@ export function EmulateProfileModal({
       {
         name: string;
         description: string;
+        iconSvg?: string | null;
         icon: typeof User;
         color: string;
       }
     >();
     roleResources.forEach((resource) => {
       if (!resource?.role) return;
-      const iconKey = resource.icon_value ?? "";
-      const IconComponent = ICON_MAP[iconKey] ?? User;
       map.set(resource.role, {
         name: resource.name ?? resource.role ?? "Role",
         description: resource.description ?? "",
-        icon: IconComponent,
+        iconSvg: resource.icon_value ?? null,
+        icon: User,
         color: resource.color_hex ?? "#64748b",
       });
     });
@@ -305,7 +305,7 @@ export function EmulateProfileModal({
                                 <Badge variant="outline">{profile.role}</Badge>
                               );
                             }
-                            const IconComponent = roleInfo.icon;
+                            const FallbackIcon = roleInfo.icon;
                             const gradientStyle = generateGradientFromHex(
                               roleInfo.color,
                             );
@@ -316,7 +316,11 @@ export function EmulateProfileModal({
                                   className="p-1.5 rounded-md shadow-sm flex-shrink-0"
                                   style={{ background: gradientStyle }}
                                 >
-                                  <IconComponent className="h-3.5 w-3.5 text-white" />
+                                  {"iconSvg" in roleInfo && roleInfo.iconSvg ? (
+                                    <SvgIcon svg={roleInfo.iconSvg} className="h-3.5 w-3.5 text-white" />
+                                  ) : (
+                                    <FallbackIcon className="h-3.5 w-3.5 text-white" />
+                                  )}
                                 </div>
                                 <span className="text-sm">
                                   {roleInfo.name}

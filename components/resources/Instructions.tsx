@@ -397,9 +397,11 @@ export function Instructions({
           onSearchChange={onSearchChange}
         />
       </div>
-      {/* Conditional: DiffView when AI suggestion pending, otherwise Textarea */}
+      {/* Conditional: DiffView when pending, otherwise Textarea */}
       {showDiff ? (
-        <DiffView current={currentText} proposed={pendingText} rows={rows} />
+        <div className="ring-2 ring-success rounded-md">
+          <DiffView current={currentText} proposed={pendingText} rows={rows} />
+        </div>
       ) : (
         <Textarea
           id={id}

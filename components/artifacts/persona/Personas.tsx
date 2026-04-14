@@ -10,7 +10,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { getIconComponent } from "@/utils/icons";
+import { SvgIcon } from "@/components/common/SvgIcon";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -937,8 +937,6 @@ export default function Personas({
 
   const renderPersonaCard = (persona: (typeof personas)[0]) => {
     // Get the icon component from the persona's stored icon name
-    const IconComponent = getIconComponent(persona.icon || "") || Brain;
-
     // Use the hex color directly with CSS custom properties
     const hexColor = persona.color || "#64748b"; // Default to slate if no color
     const gradientStyle = generateGradientFromHex(hexColor);
@@ -992,9 +990,11 @@ export default function Personas({
                     background: gradientStyle,
                   }}
                 >
-                  <IconComponent
+                  <SvgIcon
+                    svg={persona.icon}
                     className="h-4 w-4"
                     style={{ color: iconColor }}
+                    fallback={<Brain className="h-4 w-4" style={{ color: iconColor }} />}
                   />
                 </div>
                 <CardTitle className="text-lg truncate">
@@ -1544,11 +1544,10 @@ export default function Personas({
                 emptyMessage="No icons found."
                 groupHeading="Icons"
                 renderItem={(ic, isSelected) => {
-                  const Ic = getIconComponent(ic.value || ic.name) || Brain;
                   return (
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
-                        <Ic className="h-4 w-4 flex-shrink-0" />
+                        <SvgIcon svg={ic.value || ic.name} className="h-4 w-4 flex-shrink-0" fallback={<Brain className="h-4 w-4 flex-shrink-0" />} />
                         <span className="truncate">{ic.name}</span>
                       </div>
                       <Check className={`ml-auto flex-shrink-0 h-4 w-4 ${isSelected ? "opacity-100" : "opacity-0"}`} />

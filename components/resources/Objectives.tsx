@@ -54,6 +54,7 @@ function ObjectiveInputWithAutocomplete({
   onRemove,
   totalObjectives,
   maxObjectives: _maxObjectives,
+  pending,
 }: {
   index: number;
   value: string;
@@ -68,6 +69,7 @@ function ObjectiveInputWithAutocomplete({
   onRemove?: () => void;
   totalObjectives: number;
   maxObjectives: number;
+  pending?: boolean;
 }) {
   const ghostMatch = useMemo(() => {
     const trimmed = value.trim();
@@ -114,7 +116,7 @@ function ObjectiveInputWithAutocomplete({
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="flex-1"
+            className={cn("flex-1", pending && "ring-2 ring-success bg-success/5")}
             disabled={disabled}
             onDragStart={(e) => e.preventDefault()}
           />
@@ -459,6 +461,18 @@ export function Objectives({
   );
   const showDiff = pendingItems.length > 0;
 
+  // Map pending IDs to internalTexts indices
+  const pendingIndices = useMemo(() => {
+    if (!showDiff) return undefined;
+    const indices = new Set<number>();
+    ids.forEach((id, idx) => {
+      if (pendingIds.has(id) && idx < internalTexts.length) {
+        indices.add(idx);
+      }
+    });
+    return indices.size > 0 ? indices : undefined;
+  }, [showDiff, ids, pendingIds, internalTexts.length]);
+
   // Accept pending — pending items are already in selection, no-op
   const handleAccept = useCallback(() => {
     // no-op: pending items already in selection
@@ -556,6 +570,7 @@ export function Objectives({
           })}
           totalObjectives={internalTexts.length}
           maxObjectives={maxItems}
+          pending={pendingIndices?.has(index)}
         />
       ))}
 
