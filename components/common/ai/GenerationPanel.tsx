@@ -587,26 +587,26 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
                 <Button
                   size="icon"
                   variant={dangerousMode ? "destructive" : "outline"}
-                  className="h-8 w-8"
+                  className="h-9 w-9"
                   onClick={() => setDangerousMode((prev) => !prev)}
                   title={dangerousMode ? "Dangerous mode: executes immediately" : "Safe mode: review before accepting"}
                 >
                   {dangerousMode ? (
-                    <ShieldAlert className="h-3.5 w-3.5" />
+                    <ShieldAlert className="h-4 w-4" />
                   ) : (
-                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <ShieldCheck className="h-4 w-4" />
                   )}
                 </Button>
                 <Button
                   size="icon"
-                  className="h-8 w-8"
+                  className="h-9 w-9"
                   onClick={handleSend}
                   disabled={isGenerating || !instructions.trim()}
                 >
                   {isGenerating ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Send className="h-3.5 w-3.5" />
+                    <Send className="h-4 w-4" />
                   )}
                 </Button>
               </div>
