@@ -503,6 +503,7 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     <SidebarProvider
       open={panelOpen}
       onOpenChange={onToggle}
+      cookieName="glow_panel"
       className="!min-h-0 !w-auto flex-none"
       style={{ "--sidebar-width": "18rem" } as React.CSSProperties}
     >
