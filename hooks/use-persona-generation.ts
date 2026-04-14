@@ -35,6 +35,7 @@ export interface GenerationListener {
   messages: GenerationMessage[];
   isGenerating: boolean;
   clearMessages: () => void;
+  setGenerating: (value: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -108,8 +109,37 @@ export function usePersonaGeneration(groupId: string | null): GenerationListener
       });
     };
 
-    const handleTextComplete = (_data: Record<string, unknown>) => {
-      // Text streaming finished — message already accumulated via deltas
+    const handleTextComplete = (data: Record<string, unknown>) => {
+      const role = (data.role as string) || "assistant";
+      const text = data.text as string;
+      if (!text) return;
+
+      // Skip system/developer messages — they're prompt context
+      if (role === "system" || role === "developer") return;
+
+      // If this is a user message (from prepare), add it directly
+      if (role === "user") {
+        setMessages((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: "user", text, type: "text" },
+        ]);
+        return;
+      }
+
+      // For assistant text.complete, replace the last streaming message
+      // (accumulated from text.progress deltas) with the final text
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last && last.type === "text" && last.role === "assistant") {
+          const updated = [...prev];
+          updated[updated.length - 1] = { ...last, text };
+          return updated;
+        }
+        return [
+          ...prev,
+          { id: crypto.randomUUID(), role: "assistant", text, type: "text" },
+        ];
+      });
     };
 
     // --- Call modality (tool calls) ---
@@ -166,5 +196,5 @@ export function usePersonaGeneration(groupId: string | null): GenerationListener
     };
   }, [socket, isConnected]);
 
-  return { messages, isGenerating, clearMessages };
+  return { messages, isGenerating, clearMessages, setGenerating: setIsGenerating };
 }

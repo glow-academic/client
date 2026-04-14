@@ -309,18 +309,17 @@ export function GenerationPanel({ panelOpen, onToggle, searchGroupsAction, getGr
     if (!instructions.trim()) return;
     const text = instructions.trim();
     setInstructions("");
-    console.log("handleSend — onGenerateProp:", onGenerateProp, "dangerousMode:", dangerousMode);
+    // Optimistic: set generating immediately
+    if (contextListener?.setGenerating) {
+      contextListener.setGenerating(true);
+    }
     if (onGenerateProp) {
-      // HTTP-based generation (artifact-specific endpoint)
-      // dangerousMode=true bypasses soft (immediate execution)
-      // dangerousMode=false uses soft (review first)
       const socketId = (socket as any)?.id as string | undefined;
       await onGenerateProp({ resource_types: [], instructions: text, dangerous: dangerousMode, sid: socketId });
     } else {
-      // Fallback: socket-based generation
       runGenerateSocket(text);
     }
-  }, [instructions, dangerousMode, onGenerateProp, runGenerateSocket]);
+  }, [instructions, dangerousMode, onGenerateProp, runGenerateSocket, contextListener, socket]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     console.log("keyDown:", e.key);
