@@ -185,7 +185,8 @@ function PersonaComponent({
     return () => {
       if (panelContext) panelContext.setGroupId(null);
     };
-  }, [groupId, panelContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
 
   useEffect(() => {
     if (panelContext && generateAction && groupId) {
@@ -203,7 +204,8 @@ function PersonaComponent({
     return () => {
       if (panelContext) panelContext.setOnGenerate(null);
     };
-  }, [generateAction, groupId, panelContext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generateAction, groupId]);
 
   // Empty flush registry — resource creation is handled by the unified draft endpoint
   const emptyFlushRegistryRef = useRef<
