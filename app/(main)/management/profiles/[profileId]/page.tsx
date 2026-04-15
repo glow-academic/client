@@ -1,12 +1,14 @@
 /**
  * app/(main)/management/profiles/[profileId]/page.tsx
- * Profile edit page for editing a profile.
- * @AshokSaravanan222
- * 12/04/2025
+ * Profile edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Profile from "@/components/artifacts/profile/Profile";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -14,7 +16,10 @@ import { DraftProviderClient } from "@/contexts/draft-context";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetProfileIn = InputOf<"/profiles/get", "post">;
@@ -37,38 +42,24 @@ type CreateDraftRequestLimitsOut = OutputOf<
 >;
 type PatchProfileDraftIn = InputOf<"/profiles/draft", "patch">;
 type PatchProfileDraftOut = OutputOf<"/profiles/draft", "patch">;
+type GroupProfileIn = InputOf<"/profiles/group", "post">;
+type GroupProfileOut = OutputOf<"/profiles/group", "post">;
+type GenerateProfileIn = InputOf<"/profiles/generate", "post">;
+type GenerateProfileOut = OutputOf<"/profiles/generate", "post">;
+type ProblemProfileIn = InputOf<"/profiles/problem", "post">;
+type ProblemProfileOut = OutputOf<"/profiles/problem", "post">;
+type ContextIn = InputOf<"/profiles/context", "post">;
+type ContextOut = OutputOf<"/profiles/context", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getProfile = async (input: GetProfileIn): Promise<GetProfileOut> => {
   return api.post("/profiles/get", input, {
     cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
+    headers: { "X-Bypass-Cache": "1" },
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/profiles/docs", "post">;
-type DocsOut = OutputOf<"/profiles/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/profiles/docs", input);
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ profileId: string }>;
-}): Promise<Metadata> {
-  const { profileId } = await params;
-  const docs = await getDocs({ body: { entity_id: profileId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
-}
-
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createProfile(input: CreateProfileIn): Promise<CreateProfileOut> {
   "use server";
   return api.post("/profiles/create", input);
@@ -83,7 +74,6 @@ async function createDraftNames(
   input: CreateDraftNamesIn
 ): Promise<CreateDraftNamesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
 }
 
@@ -91,7 +81,6 @@ async function createDraftEmails(
   input: CreateDraftEmailsIn
 ): Promise<CreateDraftEmailsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/emails", input);
 }
 
@@ -99,7 +88,6 @@ async function createDraftRequestLimits(
   input: CreateDraftRequestLimitsIn
 ): Promise<CreateDraftRequestLimitsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/request_limits", input);
 }
 
@@ -107,11 +95,52 @@ async function patchProfileDraft(
   input: PatchProfileDraftIn
 ): Promise<PatchProfileDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/profiles/draft", input);
 }
 
-/** ---- Server renders client with typed data and actions ---- */
+async function generateProfile(
+  input: GenerateProfileIn
+): Promise<GenerateProfileOut> {
+  "use server";
+  return api.post("/profiles/generate", input);
+}
+
+async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
+  "use server";
+  return api.post("/profiles/group", { body: { group_id: groupId } } as GroupProfileIn);
+}
+
+type GenerationsIn = InputOf<"/profiles/generations", "post">;
+type GenerationsOut = OutputOf<"/profiles/generations", "post">;
+
+async function searchProfileGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/profiles/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemProfileOut> {
+  "use server";
+  return api.post("/profiles/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ profileId: string }>;
+}): Promise<Metadata> {
+  const { profileId } = await params;
+  const context = await api.post("/profiles/context", { body: { entity_id: profileId } } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.detail.title,
+    description: context.page_metadata?.detail.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
 export default async function ProfileEditPage({
   params,
   searchParams,
@@ -120,8 +149,18 @@ export default async function ProfileEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { profileId } = await params;
-  // Access control handled server-side in layout
-  // currentProfileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -135,14 +174,12 @@ export default async function ProfileEditPage({
     }
   });
 
-  // Inline server-side parsers for profile search params
   const profileSearchParams = {
     draftId: parseAsString,
   };
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
-  // Fetch profile detail (always fresh - source of truth) with draft_id
   try {
     const input: GetProfileIn = {
       body: {
@@ -150,45 +187,68 @@ export default async function ProfileEditPage({
         draft_id: q.draftId ?? null,
       } as GetProfileIn["body"],
     };
-    const [profileDetail, docs, draftsResult] = await Promise.all([
+
+    const [profileDetail, context, draftsResult, groupResult] = await Promise.all([
       getProfile(input),
-      getDocs({ body: { entity_id: profileId } }),
-      api.post("/profiles/drafts", {})
+      api.post("/profiles/context", { body: { entity_id: profileId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/profiles/drafts", {}),
+      api.post("/profiles/group", { body: {} } as GroupProfileIn),
     ]);
 
-    const entityName = docs.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title;
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <PageHeader
+        <FullPageLayout
+          profileData={profileData}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "profile",
+            createFeedback: createProfileProblem,
+          }}
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
             { title: "Profiles", section: "profiles", url: "/management/profiles" },
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-        />
-        <div
-          className="space-y-6 px-4"
-          data-page="profile-edit"
-          data-profile-id={profileId}
+          panelProps={{
+            artifactType: "profile",
+            groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateProfile,
+            permissions: [
+              { artifact: "profile", operation: "draft" },
+              { artifact: "profile", operation: "get" },
+              { artifact: "profile", operation: "docs" },
+              { artifact: "profile", operation: "group" },
+            ],
+            getGroupHistory: getProfileGroupHistory,
+            searchGroups: searchProfileGroups,
+          }}
         >
-          <Profile
-            key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-            profileId={profileId}
-            profileData={profileDetail}
-            createProfileAction={createProfile}
-            updateProfileAction={updateProfile}
-            patchProfileDraftAction={patchProfileDraft}
-            createNamesAction={createDraftNames}
-            createEmailsAction={createDraftEmails}
-            createRequestLimitsAction={createDraftRequestLimits}
-          />
-        </div>
+          <div
+            className="space-y-6 px-4"
+            data-page="profile-edit"
+            data-profile-id={profileId}
+          >
+            <Profile
+              key={q.draftId || "no-draft"}
+              profileId={profileId}
+              profileData={profileDetail}
+              createProfileAction={createProfile}
+              updateProfileAction={updateProfile}
+              patchProfileDraftAction={patchProfileDraft}
+              createNamesAction={createDraftNames}
+              createEmailsAction={createDraftEmails}
+              createRequestLimitsAction={createDraftRequestLimits}
+            />
+          </div>
+        </FullPageLayout>
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
@@ -203,9 +263,6 @@ export default async function ProfileEditPage({
         />
       );
     }
-    // Re-throw other errors
     throw error;
   }
 }
-
-// Types are now defined inline in components using InputOf/OutputOf

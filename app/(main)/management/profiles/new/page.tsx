@@ -1,20 +1,25 @@
 /**
  * app/(main)/management/profiles/new/page.tsx
- * Profiles new page for creating a new profile.
- * @AshokSaravanan222
- * 12/04/2025
+ * New profile page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
  */
 
-import Profile from "@/components/artifacts/profile/Profile";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Profile from "@/components/artifacts/profile/Profile";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetProfileIn = InputOf<"/profiles/get", "post">;
@@ -35,6 +40,14 @@ type CreateDraftRequestLimitsOut = OutputOf<
 >;
 type PatchProfileDraftIn = InputOf<"/profiles/draft", "patch">;
 type PatchProfileDraftOut = OutputOf<"/profiles/draft", "patch">;
+type GroupProfileIn = InputOf<"/profiles/group", "post">;
+type GroupProfileOut = OutputOf<"/profiles/group", "post">;
+type GenerateProfileIn = InputOf<"/profiles/generate", "post">;
+type GenerateProfileOut = OutputOf<"/profiles/generate", "post">;
+type ProblemProfileIn = InputOf<"/profiles/problem", "post">;
+type ProblemProfileOut = OutputOf<"/profiles/problem", "post">;
+type ContextIn = InputOf<"/profiles/context", "post">;
+type ContextOut = OutputOf<"/profiles/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getProfileDefault = cache(
@@ -48,7 +61,7 @@ const getProfileDefault = cache(
   }
 );
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createProfile(input: CreateProfileIn): Promise<CreateProfileOut> {
   "use server";
   return api.post("/profiles/create", input);
@@ -58,7 +71,6 @@ async function createDraftNames(
   input: CreateDraftNamesIn
 ): Promise<CreateDraftNamesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
 }
 
@@ -66,7 +78,6 @@ async function createDraftEmails(
   input: CreateDraftEmailsIn
 ): Promise<CreateDraftEmailsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/emails", input);
 }
 
@@ -74,7 +85,6 @@ async function createDraftRequestLimits(
   input: CreateDraftRequestLimitsIn
 ): Promise<CreateDraftRequestLimitsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/request_limits", input);
 }
 
@@ -82,32 +92,64 @@ async function patchProfileDraft(
   input: PatchProfileDraftIn
 ): Promise<PatchProfileDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/profiles/draft", input);
 }
 
-/** ---- Metadata ---- */
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/profiles/docs", "post">;
-type DocsOut = OutputOf<"/profiles/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/profiles/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function generateProfile(
+  input: GenerateProfileIn
+): Promise<GenerateProfileOut> {
+  "use server";
+  return api.post("/profiles/generate", input);
 }
 
-/** ---- Server renders client with typed data and actions ---- */
+async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
+  "use server";
+  return api.post("/profiles/group", { body: { group_id: groupId } } as GroupProfileIn);
+}
+
+type GenerationsIn = InputOf<"/profiles/generations", "post">;
+type GenerationsOut = OutputOf<"/profiles/generations", "post">;
+
+async function searchProfileGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/profiles/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemProfileOut> {
+  "use server";
+  return api.post("/profiles/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/profiles/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
 export default async function NewProfilePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -121,52 +163,73 @@ export default async function NewProfilePage({
     }
   });
 
-  // Inline server-side parsers for profile search params
   const profileSearchParams = {
     draftId: parseAsString,
   };
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
-  // Fetch default profile detail server-side with draft_id
+  // SSR data fetches
   const input: GetProfileIn = {
     body: {
-      target_profile_id: null, // NULL for new mode
+      target_profile_id: null,
       draft_id: q.draftId ?? null,
     } as GetProfileIn["body"],
   };
-  const [profileDetailDefault, draftsResult] = await Promise.all([
+
+  const [profileDetailDefault, draftsResult, groupResult] = await Promise.all([
     getProfileDefault(input),
-    api.post("/profiles/drafts", {})
+    api.post("/profiles/drafts", {}),
+    api.post("/profiles/group", { body: {} } as GroupProfileIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "profile",
+          createFeedback: createProfileProblem,
+        }}
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
           { title: "Profiles", section: "profiles", url: "/management/profiles" },
           { title: "New Profile" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="profile-new"
-        aria-label="Create new profile page"
+        panelProps={{
+          artifactType: "profile",
+          groupId: (groupResult as GroupProfileOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateProfile,
+          permissions: [
+            { artifact: "profile", operation: "draft" },
+            { artifact: "profile", operation: "get" },
+            { artifact: "profile", operation: "docs" },
+            { artifact: "profile", operation: "group" },
+          ],
+          getGroupHistory: getProfileGroupHistory,
+          searchGroups: searchProfileGroups,
+        }}
       >
-        <Profile
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          profileData={profileDetailDefault}
-          createProfileAction={createProfile}
-          patchProfileDraftAction={patchProfileDraft}
-          createNamesAction={createDraftNames}
-          createEmailsAction={createDraftEmails}
-          createRequestLimitsAction={createDraftRequestLimits}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="profile-new"
+          aria-label="Create new profile page"
+        >
+          <Profile
+            key={q.draftId || "no-draft"}
+            profileData={profileDetailDefault}
+            createProfileAction={createProfile}
+            patchProfileDraftAction={patchProfileDraft}
+            createNamesAction={createDraftNames}
+            createEmailsAction={createDraftEmails}
+            createRequestLimitsAction={createDraftRequestLimits}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }
-
-// Types are now defined inline in components using InputOf/OutputOf

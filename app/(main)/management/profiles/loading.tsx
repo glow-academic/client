@@ -1,9 +1,11 @@
 /**
  * app/(main)/management/profiles/loading.tsx
- * Loading skeleton for profiles page
+ * Loading skeleton for profiles list page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
+import { cookies } from "next/headers";
+import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -14,31 +16,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default function Loading() {
+function ProfilesListSkeleton() {
   return (
-    <div className="space-y-6">
-      {/* Data Table Section */}
+    <div className="space-y-6 px-4">
       <div className="space-y-2">
         {/* Toolbar skeleton */}
         <div className="flex items-center justify-between">
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="mb-2 w-full md:w-auto">
-              {/* Search input */}
               <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
             </div>
-
             <div className="flex items-center space-x-2 flex-wrap mb-2">
-              {/* Filter buttons: Role, Department */}
               <Skeleton className="h-8 w-[100px]" />
               <Skeleton className="h-8 w-[120px]" />
             </div>
           </div>
           <div className="flex items-center space-x-2 mb-2">
-            {/* CSV Import button */}
             <Skeleton className="h-8 w-[100px]" />
-            {/* Refresh button */}
             <Skeleton className="h-8 w-8" />
-            {/* Column visibility */}
             <Skeleton className="h-8 w-8" />
           </div>
         </div>
@@ -151,5 +146,17 @@ export default function Loading() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default async function Loading() {
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("glow_sidebar")?.value !== "false";
+  const panelOpen = cookieStore.get("glow_panel")?.value === "true";
+
+  return (
+    <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
+      <ProfilesListSkeleton />
+    </FullPageSkeleton>
   );
 }
