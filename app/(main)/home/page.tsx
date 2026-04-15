@@ -7,6 +7,7 @@
 
 import { getSession } from "@/auth";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Home from "@/components/artifacts/home/Home";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
@@ -104,6 +105,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const panelCookie = cookieStore.get(PANEL_COOKIE);
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
+  try {
   // Profile data for providers
   const context = await api.post("/home/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
@@ -262,6 +264,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </div>
     </FullPageLayout>
   );
+
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="not-logged-in"
+          pathname="/home"
+        />
+      );
+    }
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

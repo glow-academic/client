@@ -172,7 +172,7 @@ export function useAttemptVoice({
   const sendFrame = useCallback(
     (audio: ArrayBuffer) => {
       if (!socket || !chatIdRef.current) return;
-      socket.emit("attempt.chat.frame", { chat_id: chatIdRef.current, audio });
+      socket.emit("attempt.chat.send", { chat_id: chatIdRef.current, audio });
     },
     [socket, chatIdRef],
   );
