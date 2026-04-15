@@ -1,23 +1,37 @@
 /**
  * app/(main)/system/evals/page.tsx
- * Evals list page - server-side filtering with nuqs URL-backed state
+ * Evals list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222
  * 01/26/2025
  */
-import Evals from "@/components/artifacts/eval/Evals";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Evals from "@/components/artifacts/eval/Evals";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 
 /** ---- Strong types from OpenAPI ---- */
 type EvalsListOut = OutputOf<"/evals/search", "post">;
 type DeleteEvalIn = InputOf<"/evals/delete", "post">;
 type DeleteEvalOut = OutputOf<"/evals/delete", "post">;
+type GroupEvalIn = InputOf<"/evals/group", "post">;
+type GroupEvalOut = OutputOf<"/evals/group", "post">;
+type GenerateEvalIn = InputOf<"/evals/generate", "post">;
+type GenerateEvalOut = OutputOf<"/evals/generate", "post">;
+type GenerationsIn = InputOf<"/evals/generations", "post">;
+type GenerationsOut = OutputOf<"/evals/generations", "post">;
+type ProblemEvalIn = InputOf<"/evals/problem", "post">;
+type ProblemEvalOut = OutputOf<"/evals/problem", "post">;
+type ContextIn = InputOf<"/evals/context", "post">;
+type ContextOut = OutputOf<"/evals/context", "post">;
 
 /** ---- Body type for evals list request ---- */
 type EvalsListBody = {
@@ -48,30 +62,60 @@ const getEvalsList = async (body: EvalsListBody): Promise<EvalsListOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/evals/delete", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/evals/docs", "post">;
-type DocsOut = OutputOf<"/evals/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/evals/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateEval(
+  input: GenerateEvalIn
+): Promise<GenerateEvalOut> {
+  "use server";
+  return api.post("/evals/generate", input);
 }
+
+async function getEvalGroupHistory(groupId: string): Promise<GroupEvalOut> {
+  "use server";
+  return api.post("/evals/group", { body: { group_id: groupId } } as GroupEvalIn);
+}
+
+async function searchEvalGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/evals/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> {
+  "use server";
+  return api.post("/evals/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/evals/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface EvalsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function EvalsPage({ searchParams }: EvalsPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -102,19 +146,42 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getEvalsList(body);
+  // Fetch list data and group in parallel
+  const [listData, groupResult] = await Promise.all([
+    getEvalsList(body),
+    api.post("/evals/group", { body: {} } as GroupEvalIn),
+  ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
-          { title: "Evals" },
-        ]}
-        toolbar={<NewArtifactButton label="New Eval" href="/system/evals/new" />}
-      />
-      <div className="space-y-6 px-4">
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "eval",
+        createFeedback: createEvalProblem,
+      }}
+      breadcrumbs={[
+        { title: "System", section: "system", url: "/system" },
+        { title: "Evals" },
+      ]}
+      toolbar={<NewArtifactButton label="New Eval" href="/system/evals/new" />}
+      panelProps={{
+        artifactType: "eval",
+        groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateEval,
+        permissions: [
+          { artifact: "eval", operation: "draft" },
+          { artifact: "eval", operation: "get" },
+          { artifact: "eval", operation: "docs" },
+          { artifact: "eval", operation: "group" },
+        ],
+        getGroupHistory: getEvalGroupHistory,
+        searchGroups: searchEvalGroups,
+      }}
+    >
+      <div className="space-y-6 px-4" data-page="evals-index">
         <Evals
           listData={listData}
           deleteEvalAction={deleteEval}
@@ -124,7 +191,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           departmentSearch={q.departmentSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

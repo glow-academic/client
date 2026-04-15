@@ -1,28 +1,30 @@
 /**
  * app/(main)/system/departments/new/page.tsx
- * New department page for the departments section.
+ * New department page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import Department from "@/components/artifacts/department/Department";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Department from "@/components/artifacts/department/Department";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
-import { cache } from "react";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetDepartmentIn = InputOf<"/departments/get", "post">;
 type GetDepartmentOut = OutputOf<"/departments/get", "post">;
-
 type CreateDepartmentIn = InputOf<"/departments/create", "post">;
 type CreateDepartmentOut = OutputOf<"/departments/create", "post">;
-
 type PatchDepartmentDraftIn = InputOf<"/departments/draft", "patch">;
 type PatchDepartmentDraftOut = OutputOf<"/departments/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -35,18 +37,24 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v5/resources/descriptions",
   "post"
 >;
+type GroupDepartmentIn = InputOf<"/departments/group", "post">;
+type GroupDepartmentOut = OutputOf<"/departments/group", "post">;
+type GenerateDepartmentIn = InputOf<"/departments/generate", "post">;
+type GenerateDepartmentOut = OutputOf<"/departments/generate", "post">;
+type ProblemDepartmentIn = InputOf<"/departments/problem", "post">;
+type ProblemDepartmentOut = OutputOf<"/departments/problem", "post">;
+type ContextIn = InputOf<"/departments/context", "post">;
+type ContextOut = OutputOf<"/departments/context", "post">;
 
-/** ---- Cached fetch used by both page + metadata (prevents double hit) ---- */
-const getDepartmentDefault = cache(
-  async (input: GetDepartmentIn): Promise<GetDepartmentOut> => {
-    return api.post("/departments/get", input, {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    });
-  }
-);
+/** ---- Direct fetch (no caching - source of truth) ---- */
+const getDepartmentDefault = async (
+  input: GetDepartmentIn
+): Promise<GetDepartmentOut> => {
+  return api.post("/departments/get", input, {
+    cache: "no-store",
+    headers: { "X-Bypass-Cache": "1" },
+  });
+};
 
 /** ---- Strongly-typed server actions ---- */
 async function createDepartment(
@@ -74,23 +82,46 @@ async function patchDepartmentDraft(
   input: PatchDepartmentDraftIn
 ): Promise<PatchDepartmentDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/departments/draft", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/departments/docs", "post">;
-type DocsOut = OutputOf<"/departments/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/departments/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function generateDepartment(
+  input: GenerateDepartmentIn
+): Promise<GenerateDepartmentOut> {
+  "use server";
+  return api.post("/departments/generate", input);
 }
+
+async function getDepartmentGroupHistory(groupId: string): Promise<GroupDepartmentOut> {
+  "use server";
+  return api.post("/departments/group", { body: { group_id: groupId } } as GroupDepartmentIn);
+}
+
+type GenerationsIn = InputOf<"/departments/generations", "post">;
+type GenerationsOut = OutputOf<"/departments/generations", "post">;
+
+async function searchDepartmentGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/departments/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
+  "use server";
+  return api.post("/departments/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/departments/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewDepartmentPage({
@@ -98,8 +129,18 @@ export default async function NewDepartmentPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control is handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -127,35 +168,58 @@ export default async function NewDepartmentPage({
       draft_id: q.draftId ?? null,
     } as GetDepartmentIn["body"],
   };
-  const [departmentDetailDefault, draftsResult] = await Promise.all([
+  const [departmentDetailDefault, draftsResult, groupResult] = await Promise.all([
     getDepartmentDefault(input),
-    api.post("/departments/drafts", {})
+    api.post("/departments/drafts", {}),
+    api.post("/departments/group", { body: {} } as GroupDepartmentIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "department",
+          createFeedback: createDepartmentProblem,
+        }}
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
           { title: "Departments", section: "departments", url: "/system/departments" },
           { title: "New Department" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="department-new"
-        aria-label="Create new department page"
+        panelProps={{
+          artifactType: "department",
+          groupId: (groupResult as GroupDepartmentOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateDepartment,
+          permissions: [
+            { artifact: "department", operation: "draft" },
+            { artifact: "department", operation: "get" },
+            { artifact: "department", operation: "docs" },
+            { artifact: "department", operation: "group" },
+          ],
+          getGroupHistory: getDepartmentGroupHistory,
+          searchGroups: searchDepartmentGroups,
+        }}
       >
-        <Department
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          departmentData={departmentDetailDefault}
-          createDepartmentAction={createDepartment}
-          patchDepartmentDraftAction={patchDepartmentDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="department-new"
+          aria-label="Create new department page"
+        >
+          <Department
+            key={q.draftId || "no-draft"}
+            departmentData={departmentDetailDefault}
+            createDepartmentAction={createDepartment}
+            patchDepartmentDraftAction={patchDepartmentDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }

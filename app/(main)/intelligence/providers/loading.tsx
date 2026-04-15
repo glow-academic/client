@@ -1,15 +1,17 @@
 /**
  * app/(main)/intelligence/providers/loading.tsx
- * Loading skeleton for providers page
+ * Loading skeleton for providers list page
  * @AshokSaravanan222 & @siladiea
  * 02/15/2026
  */
+import { cookies } from "next/headers";
+import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Loading() {
+function ProvidersListSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4">
       {/* Toolbar skeleton */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
@@ -81,5 +83,17 @@ export default function Loading() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default async function Loading() {
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("glow_sidebar")?.value !== "false";
+  const panelOpen = cookieStore.get("glow_panel")?.value === "true";
+
+  return (
+    <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
+      <ProvidersListSkeleton />
+    </FullPageSkeleton>
   );
 }

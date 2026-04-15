@@ -1,18 +1,25 @@
 /**
  * app/(main)/system/auth/[authId]/page.tsx
- * Auth edit page - uses unified get/save endpoints and Auth component
+ * Auth edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
+ * @AshokSaravanan222 & @siladiea
+ * 04/14/2026
  */
 
-import Auth from "@/components/artifacts/auth/Auth";
+import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
+import Auth from "@/components/artifacts/auth/Auth";
 import { DraftProviderClient } from "@/contexts/draft-context";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetAuthIn = InputOf<"/auths/get", "post">;
@@ -37,10 +44,18 @@ type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
 type CreateDraftProtocolsOut = OutputOf<"/api/v5/resources/protocols", "post">;
 type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
 type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
+type GroupAuthIn = InputOf<"/auths/group", "post">;
+type GroupAuthOut = OutputOf<"/auths/group", "post">;
+type GenerateAuthIn = InputOf<"/auths/generate", "post">;
+type GenerateAuthOut = OutputOf<"/auths/generate", "post">;
+type GenerationsIn = InputOf<"/auths/generations", "post">;
+type GenerationsOut = OutputOf<"/auths/generations", "post">;
+type ProblemAuthIn = InputOf<"/auths/problem", "post">;
+type ProblemAuthOut = OutputOf<"/auths/problem", "post">;
+type ContextIn = InputOf<"/auths/context", "post">;
+type ContextOut = OutputOf<"/auths/context", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
   return api.post("/auths/get", input, {
     cache: "no-store",
@@ -49,24 +64,6 @@ const getAuth = async (input: GetAuthIn): Promise<GetAuthOut> => {
     },
   });
 };
-
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/auths/docs", "post">;
-type DocsOut = OutputOf<"/auths/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/auths/docs", input);
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ authId: string }>;
-}): Promise<Metadata> {
-  const { authId } = await params;
-  const docs = await getDocs({ body: { entity_id: authId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
-}
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
@@ -83,7 +80,6 @@ async function patchAuthDraft(
   input: PatchAuthDraftIn
 ): Promise<PatchAuthDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/auths/draft", input);
 }
 
@@ -91,7 +87,6 @@ async function createDraftNames(
   input: CreateDraftNamesIn
 ): Promise<CreateDraftNamesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
 }
 
@@ -99,7 +94,6 @@ async function createDraftDescriptions(
   input: CreateDraftDescriptionsIn
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/descriptions", input);
 }
 
@@ -107,7 +101,6 @@ async function createDraftProtocols(
   input: CreateDraftProtocolsIn
 ): Promise<CreateDraftProtocolsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/protocols", input);
 }
 
@@ -115,9 +108,48 @@ async function createDraftSlugs(
   input: CreateDraftSlugsIn
 ): Promise<CreateDraftSlugsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/slugs", input);
 }
+
+async function generateAuth(
+  input: GenerateAuthIn
+): Promise<GenerateAuthOut> {
+  "use server";
+  return api.post("/auths/generate", input);
+}
+
+async function getAuthGroupHistory(groupId: string): Promise<GroupAuthOut> {
+  "use server";
+  return api.post("/auths/group", { body: { group_id: groupId } } as GroupAuthIn);
+}
+
+async function searchAuthGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/auths/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> {
+  "use server";
+  return api.post("/auths/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ authId: string }>;
+}): Promise<Metadata> {
+  const { authId } = await params;
+  const context = await api.post("/auths/context", { body: { entity_id: authId } } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.detail.title,
+    description: context.page_metadata?.detail.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function AuthEditPage({
@@ -128,8 +160,18 @@ export default async function AuthEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { authId } = await params;
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -158,38 +200,61 @@ export default async function AuthEditPage({
         draft_id: q.draftId ?? null,
       } as GetAuthIn["body"],
     };
-    const [authData, docs, draftsResult] = await Promise.all([
+    const [authData, context, draftsResult, groupResult] = await Promise.all([
       getAuth(input),
-      getDocs({ body: { entity_id: authId } }),
-      api.post("/auths/drafts", {})
+      api.post("/auths/context", { body: { entity_id: authId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/auths/drafts", {}),
+      api.post("/auths/group", { body: {} } as GroupAuthIn),
     ]);
 
-    const entityName = docs.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title;
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <PageHeader
+        <FullPageLayout
+          profileData={profileData}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "auth",
+            createFeedback: createAuthProblem,
+          }}
           breadcrumbs={[
             { title: "System", section: "system", url: "/system" },
             { title: "Auth", section: "auth", url: "/system/auth" },
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-        />
-        <div className="space-y-6 px-4" data-page="auth-edit" data-auth-id={authId}>
-          <Auth
-            key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-            authId={authId}
-            authData={authData}
-            createAuthAction={createAuth}
-            updateAuthAction={updateAuth}
-            patchAuthDraftAction={patchAuthDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createProtocolsAction={createDraftProtocols}
-            createSlugsAction={createDraftSlugs}
-          />
-        </div>
+          panelProps={{
+            artifactType: "auth",
+            groupId: (groupResult as GroupAuthOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateAuth,
+            permissions: [
+              { artifact: "auth", operation: "draft" },
+              { artifact: "auth", operation: "get" },
+              { artifact: "auth", operation: "docs" },
+              { artifact: "auth", operation: "group" },
+            ],
+            getGroupHistory: getAuthGroupHistory,
+            searchGroups: searchAuthGroups,
+          }}
+        >
+          <div className="space-y-6 px-4" data-page="auth-edit" data-auth-id={authId}>
+            <Auth
+              key={q.draftId || "no-draft"}
+              authId={authId}
+              authData={authData}
+              createAuthAction={createAuth}
+              updateAuthAction={updateAuth}
+              patchAuthDraftAction={patchAuthDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+              createProtocolsAction={createDraftProtocols}
+              createSlugsAction={createDraftSlugs}
+            />
+          </div>
+        </FullPageLayout>
       </DraftProviderClient>
     );
   } catch (error: unknown) {

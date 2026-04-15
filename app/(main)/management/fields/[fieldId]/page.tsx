@@ -1,12 +1,14 @@
 /**
  * app/(main)/management/fields/[fieldId]/page.tsx
- * Field edit page - uses unified get/save endpoints
+ * Field edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 12/05/2025
  */
 
+import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Field from "@/components/artifacts/field/Field";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -14,7 +16,10 @@ import { DraftProviderClient } from "@/contexts/draft-context";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetFieldIn = InputOf<"/fields/get", "post">;
@@ -33,12 +38,19 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v5/resources/descriptions",
   "post"
 >;
+type GroupFieldIn = InputOf<"/fields/group", "post">;
+type GroupFieldOut = OutputOf<"/fields/group", "post">;
+type GenerateFieldIn = InputOf<"/fields/generate", "post">;
+type GenerateFieldOut = OutputOf<"/fields/generate", "post">;
+type ProblemFieldIn = InputOf<"/fields/problem", "post">;
+type ProblemFieldOut = OutputOf<"/fields/problem", "post">;
+type ContextIn = InputOf<"/fields/context", "post">;
+type ContextOut = OutputOf<"/fields/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) with timeout ---- */
 const getField = async (input: GetFieldIn): Promise<GetFieldOut> => {
-  // Use timeout wrapper for robust API calls
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const result = await api.post("/fields/get", input, {
@@ -59,25 +71,7 @@ const getField = async (input: GetFieldIn): Promise<GetFieldOut> => {
   }
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/fields/docs", "post">;
-type DocsOut = OutputOf<"/fields/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/fields/docs", input);
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ fieldId: string }>;
-}): Promise<Metadata> {
-  const { fieldId } = await params;
-  const docs = await getDocs({ body: { entity_id: fieldId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
-}
-
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
   "use server";
   return api.post("/fields/update", input);
@@ -87,8 +81,6 @@ async function patchFieldDraft(
   input: PatchFieldDraftIn
 ): Promise<PatchFieldDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/fields/draft", input);
 }
 
@@ -106,6 +98,49 @@ async function createDescriptions(
   return api.post("/resources/descriptions", input);
 }
 
+async function generateField(
+  input: GenerateFieldIn
+): Promise<GenerateFieldOut> {
+  "use server";
+  return api.post("/fields/generate", input);
+}
+
+async function getFieldGroupHistory(groupId: string): Promise<GroupFieldOut> {
+  "use server";
+  return api.post("/fields/group", { body: { group_id: groupId } } as GroupFieldIn);
+}
+
+type GenerationsIn = InputOf<"/fields/generations", "post">;
+type GenerationsOut = OutputOf<"/fields/generations", "post">;
+
+async function searchFieldGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/fields/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOut> {
+  "use server";
+  return api.post("/fields/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ fieldId: string }>;
+}): Promise<Metadata> {
+  const { fieldId } = await params;
+  const context = await api.post("/fields/context", { body: { entity_id: fieldId } } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.detail.title,
+    description: context.page_metadata?.detail.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function FieldEditPage({
   params,
@@ -115,8 +150,17 @@ export default async function FieldEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { fieldId } = await params;
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -141,7 +185,6 @@ export default async function FieldEditPage({
   const loadFieldSearchParams = createLoader(fieldSearchParams);
   const q = loadFieldSearchParams(searchParamsObj);
 
-  // Fetch field data (always fresh - source of truth) with draft_id
   try {
     const input: GetFieldIn = {
       body: {
@@ -153,39 +196,66 @@ export default async function FieldEditPage({
           q.conditionalParameterShowSelected ?? null,
       } as GetFieldIn["body"],
     };
-    const [fieldData, docs, draftsResult] = await Promise.all([
+
+    const [fieldData, context, draftsResult, groupResult] = await Promise.all([
       getField(input),
-      getDocs({ body: { entity_id: fieldId } }),
-      api.post("/fields/drafts", {})
+      api.post("/fields/context", { body: { entity_id: fieldId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/fields/drafts", {}),
+      api.post("/fields/group", { body: {} } as GroupFieldIn),
     ]);
 
-    const entityName = docs.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title;
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <PageHeader
+        <FullPageLayout
+          profileData={profileData}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "field",
+            createFeedback: createFieldProblem,
+          }}
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
             { title: "Fields", section: "fields", url: "/management/fields" },
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-        />
-        <div className="space-y-6 px-4" data-page="field-edit" data-field-id={fieldId}>
-          <Field
-            key={q.draftId || "no-draft"} // Force remount when draftId changes
-            fieldId={fieldId}
-            fieldData={fieldData}
-            updateFieldAction={updateField}
-            patchFieldDraftAction={patchFieldDraft}
-            createNamesAction={createNames}
-            createDescriptionsAction={createDescriptions}
-          />
-        </div>
+          panelProps={{
+            artifactType: "field",
+            groupId: (groupResult as GroupFieldOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateField,
+            permissions: [
+              { artifact: "field", operation: "draft" },
+              { artifact: "field", operation: "get" },
+              { artifact: "field", operation: "docs" },
+              { artifact: "field", operation: "group" },
+            ],
+            getGroupHistory: getFieldGroupHistory,
+            searchGroups: searchFieldGroups,
+          }}
+        >
+          <div
+            className="space-y-6 px-4"
+            data-page="field-edit"
+            data-field-id={fieldId}
+          >
+            <Field
+              key={q.draftId || "no-draft"}
+              fieldId={fieldId}
+              fieldData={fieldData}
+              updateFieldAction={updateField}
+              patchFieldDraftAction={patchFieldDraft}
+              createNamesAction={createNames}
+              createDescriptionsAction={createDescriptions}
+            />
+          </div>
+        </FullPageLayout>
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
@@ -200,7 +270,6 @@ export default async function FieldEditPage({
         />
       );
     }
-    // Re-throw other errors
     throw error;
   }
 }

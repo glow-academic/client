@@ -1,19 +1,24 @@
 /**
- * app/(main)/engine/models/new/page.tsx
- * New model page
+ * app/(main)/intelligence/models/new/page.tsx
+ * New model page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import Model from "@/components/artifacts/model/Model";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Model from "@/components/artifacts/model/Model";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetModelIn = InputOf<"/models/get", "post">;
@@ -38,6 +43,14 @@ type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
 type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
 type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
+type GroupModelIn = InputOf<"/models/group", "post">;
+type GroupModelOut = OutputOf<"/models/group", "post">;
+type GenerateModelIn = InputOf<"/models/generate", "post">;
+type GenerateModelOut = OutputOf<"/models/generate", "post">;
+type ProblemModelIn = InputOf<"/models/problem", "post">;
+type ProblemModelOut = OutputOf<"/models/problem", "post">;
+type ContextIn = InputOf<"/models/context", "post">;
+type ContextOut = OutputOf<"/models/context", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
@@ -45,27 +58,11 @@ const getModelDetailDefault = async (
 ): Promise<GetModelOut> => {
   return api.post("/models/get", input, {
     cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
+    headers: { "X-Bypass-Cache": "1" },
   });
 };
 
-/** ---- Metadata ---- */
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/models/docs", "post">;
-type DocsOut = OutputOf<"/models/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/models/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
-}
-
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
   "use server";
   return api.post("/models/create", input);
@@ -75,8 +72,6 @@ async function patchModelDraft(
   input: PatchModelDraftIn
 ): Promise<PatchModelDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/models/draft", input);
 }
 
@@ -115,14 +110,62 @@ async function createDraftVoices(
   return api.post("/resources/voices", input);
 }
 
+async function generateModel(
+  input: GenerateModelIn
+): Promise<GenerateModelOut> {
+  "use server";
+  return api.post("/models/generate", input);
+}
+
+async function getModelGroupHistory(groupId: string): Promise<GroupModelOut> {
+  "use server";
+  return api.post("/models/group", { body: { group_id: groupId } } as GroupModelIn);
+}
+
+type GenerationsIn = InputOf<"/models/generations", "post">;
+type GenerationsOut = OutputOf<"/models/generations", "post">;
+
+async function searchModelGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/models/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {
+  "use server";
+  return api.post("/models/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/models/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewModelPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -150,33 +193,56 @@ export default async function NewModelPage({
       draft_id: q.draftId ?? null,
     },
   };
-  const [modelDetailDefault, draftsResult] = await Promise.all([
+  const [modelDetailDefault, draftsResult, groupResult] = await Promise.all([
     getModelDetailDefault(input),
-    api.post("/models/drafts", {})
+    api.post("/models/drafts", {}),
+    api.post("/models/group", { body: {} } as GroupModelIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "model",
+          createFeedback: createModelProblem,
+        }}
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Models", section: "models", url: "/intelligence/models" },
           { title: "New Model" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div className="space-y-6 px-4">
-        <Model
-          modelDetailDefault={modelDetailDefault}
-          createModelAction={createModel}
-          patchModelDraftAction={patchModelDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createValuesAction={createDraftValues}
-          createPricingAction={createDraftPricing}
-          createVoicesAction={createDraftVoices}
-        />
-      </div>
+        panelProps={{
+          artifactType: "model",
+          groupId: (groupResult as GroupModelOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateModel,
+          permissions: [
+            { artifact: "model", operation: "draft" },
+            { artifact: "model", operation: "get" },
+            { artifact: "model", operation: "docs" },
+            { artifact: "model", operation: "group" },
+          ],
+          getGroupHistory: getModelGroupHistory,
+          searchGroups: searchModelGroups,
+        }}
+      >
+        <div className="space-y-6 px-4" data-page="model-new" aria-label="Create new model page">
+          <Model
+            modelDetailDefault={modelDetailDefault}
+            createModelAction={createModel}
+            patchModelDraftAction={patchModelDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createValuesAction={createDraftValues}
+            createPricingAction={createDraftPricing}
+            createVoicesAction={createDraftVoices}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }

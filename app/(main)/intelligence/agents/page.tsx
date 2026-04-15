@@ -1,17 +1,22 @@
 /**
- * app/(main)/system/agents/page.tsx
- * System Agent list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/intelligence/agents/page.tsx
+ * Agent list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import Agents from "@/components/artifacts/agent/Agents";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Agents from "@/components/artifacts/agent/Agents";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -20,6 +25,16 @@ type DuplicateAgentIn = InputOf<"/agents/duplicate", "post">;
 type DuplicateAgentOut = OutputOf<"/agents/duplicate", "post">;
 type DeleteAgentIn = InputOf<"/agents/delete", "post">;
 type DeleteAgentOut = OutputOf<"/agents/delete", "post">;
+type GroupAgentIn = InputOf<"/agents/group", "post">;
+type GroupAgentOut = OutputOf<"/agents/group", "post">;
+type GenerateAgentIn = InputOf<"/agents/generate", "post">;
+type GenerateAgentOut = OutputOf<"/agents/generate", "post">;
+type GenerationsIn = InputOf<"/agents/generations", "post">;
+type GenerationsOut = OutputOf<"/agents/generations", "post">;
+type ProblemAgentIn = InputOf<"/agents/problem", "post">;
+type ProblemAgentOut = OutputOf<"/agents/problem", "post">;
+type ContextIn = InputOf<"/agents/context", "post">;
+type ContextOut = OutputOf<"/agents/context", "post">;
 
 /** ---- Body type for agents list request ---- */
 type AgentsListBody = {
@@ -34,10 +49,7 @@ type AgentsListBody = {
   page_offset: number | null;
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
+/** ---- Direct fetch (no Next.js cache) ---- */
 const getAgentsList = async (body: AgentsListBody): Promise<AgentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -46,49 +58,76 @@ const getAgentsList = async (body: AgentsListBody): Promise<AgentsListOut> => {
     {
       cache: "no-store",
       ...(bypassCache && {
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
+        headers: { "X-Bypass-Cache": "1" },
       }),
     },
   );
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function duplicateAgent(
   input: DuplicateAgentIn,
 ): Promise<DuplicateAgentOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/agents/duplicate", input);
 }
 
 async function deleteAgent(input: DeleteAgentIn): Promise<DeleteAgentOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/agents/delete", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/agents/docs", "post">;
-type DocsOut = OutputOf<"/agents/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/agents/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateAgent(
+  input: GenerateAgentIn
+): Promise<GenerateAgentOut> {
+  "use server";
+  return api.post("/agents/generate", input);
 }
+
+async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
+  "use server";
+  return api.post("/agents/group", { body: { group_id: groupId } } as GroupAgentIn);
+}
+
+async function searchAgentGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/agents/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
+  "use server";
+  return api.post("/agents/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/agents/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface AgentsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function AgentsPage({ searchParams }: AgentsPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -123,18 +162,41 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getAgentsList(body);
+  // Fetch list data and group in parallel
+  const [listData, groupResult] = await Promise.all([
+    getAgentsList(body),
+    api.post("/agents/group", { body: {} } as GroupAgentIn),
+  ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-          { title: "Agents" },
-        ]}
-        toolbar={<NewArtifactButton label="New Agent" href="/intelligence/agents/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "agent",
+        createFeedback: createAgentProblem,
+      }}
+      breadcrumbs={[
+        { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+        { title: "Agents" },
+      ]}
+      toolbar={<NewArtifactButton label="New Agent" href="/intelligence/agents/new" />}
+      panelProps={{
+        artifactType: "agent",
+        groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateAgent,
+        permissions: [
+          { artifact: "agent", operation: "draft" },
+          { artifact: "agent", operation: "get" },
+          { artifact: "agent", operation: "docs" },
+          { artifact: "agent", operation: "group" },
+        ],
+        getGroupHistory: getAgentGroupHistory,
+        searchGroups: searchAgentGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="agents-index">
         <Agents
           listData={listData}
@@ -148,7 +210,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
           toolSearch={q.toolSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

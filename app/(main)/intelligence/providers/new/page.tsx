@@ -1,17 +1,24 @@
 /**
- * app/(main)/system/providers/new/page.tsx
- * New provider page for the providers section.
+ * app/(main)/intelligence/providers/new/page.tsx
+ * New provider page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
  */
 
-import Provider from "@/components/artifacts/provider/Provider";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Provider from "@/components/artifacts/provider/Provider";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetProviderIn = InputOf<"/providers/get", "post">;
@@ -34,6 +41,14 @@ type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
 type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
 type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
+type GroupProviderIn = InputOf<"/providers/group", "post">;
+type GroupProviderOut = OutputOf<"/providers/group", "post">;
+type GenerateProviderIn = InputOf<"/providers/generate", "post">;
+type GenerateProviderOut = OutputOf<"/providers/generate", "post">;
+type ProblemProviderIn = InputOf<"/providers/problem", "post">;
+type ProblemProviderOut = OutputOf<"/providers/problem", "post">;
+type ContextIn = InputOf<"/providers/context", "post">;
+type ContextOut = OutputOf<"/providers/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -94,26 +109,61 @@ async function createEndpoints(
   return api.post("/resources/endpoints", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/providers/docs", "post">;
-type DocsOut = OutputOf<"/providers/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/providers/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function generateProvider(
+  input: GenerateProviderIn
+): Promise<GenerateProviderOut> {
+  "use server";
+  return api.post("/providers/generate", input);
 }
+
+async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
+  "use server";
+  return api.post("/providers/group", { body: { group_id: groupId } } as GroupProviderIn);
+}
+
+type GenerationsIn = InputOf<"/providers/generations", "post">;
+type GenerationsOut = OutputOf<"/providers/generations", "post">;
+
+async function searchProviderGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/providers/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
+  "use server";
+  return api.post("/providers/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/providers/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function NewProviderPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control is handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -141,37 +191,60 @@ export default async function NewProviderPage({
       draft_id: q.draftId ?? null,
     } as GetProviderIn["body"],
   };
-  const [providerDetailDefault, draftsResult] = await Promise.all([
+  const [providerDetailDefault, draftsResult, groupResult] = await Promise.all([
     getProviderDefault(input),
-    api.post("/providers/drafts", {})
+    api.post("/providers/drafts", {}),
+    api.post("/providers/group", { body: {} } as GroupProviderIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "provider",
+          createFeedback: createProviderProblem,
+        }}
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Providers", section: "providers", url: "/intelligence/providers" },
           { title: "New Provider" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="provider-new"
-        aria-label="Create new provider page"
+        panelProps={{
+          artifactType: "provider",
+          groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateProvider,
+          permissions: [
+            { artifact: "provider", operation: "draft" },
+            { artifact: "provider", operation: "get" },
+            { artifact: "provider", operation: "docs" },
+            { artifact: "provider", operation: "group" },
+          ],
+          getGroupHistory: getProviderGroupHistory,
+          searchGroups: searchProviderGroups,
+        }}
       >
-        <Provider
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          providerData={providerDetailDefault}
-          createProviderAction={createProvider}
-          patchProviderDraftAction={patchProviderDraft}
-          createNamesAction={createNames}
-          createDescriptionsAction={createDescriptions}
-          createValuesAction={createValues}
-          createEndpointsAction={createEndpoints}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="provider-new"
+          aria-label="Create new provider page"
+        >
+          <Provider
+            key={q.draftId || "no-draft"}
+            providerData={providerDetailDefault}
+            createProviderAction={createProvider}
+            patchProviderDraftAction={patchProviderDraft}
+            createNamesAction={createNames}
+            createDescriptionsAction={createDescriptions}
+            createValuesAction={createValues}
+            createEndpointsAction={createEndpoints}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }

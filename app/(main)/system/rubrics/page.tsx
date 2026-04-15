@@ -1,17 +1,22 @@
 /**
- * app/(main)/engine/rubrics/page.tsx
- * Rubric list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/system/rubrics/page.tsx
+ * Rubric list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import Rubrics from "@/components/artifacts/rubric/Rubrics";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Rubrics from "@/components/artifacts/rubric/Rubrics";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -20,6 +25,17 @@ type DuplicateRubricIn = InputOf<"/rubrics/duplicate", "post">;
 type DuplicateRubricOut = OutputOf<"/rubrics/duplicate", "post">;
 type DeleteRubricIn = InputOf<"/rubrics/delete", "post">;
 type DeleteRubricOut = OutputOf<"/rubrics/delete", "post">;
+type GroupRubricIn = InputOf<"/rubrics/group", "post">;
+type GroupRubricOut = OutputOf<"/rubrics/group", "post">;
+type GenerateRubricIn = InputOf<"/rubrics/generate", "post">;
+type GenerateRubricOut = OutputOf<"/rubrics/generate", "post">;
+type GenerationsIn = InputOf<"/rubrics/generations", "post">;
+type GenerationsOut = OutputOf<"/rubrics/generations", "post">;
+type ProblemRubricIn = InputOf<"/rubrics/problem", "post">;
+type ProblemRubricOut = OutputOf<"/rubrics/problem", "post">;
+type ContextIn = InputOf<"/rubrics/context", "post">;
+type ContextOut = OutputOf<"/rubrics/context", "post">;
+
 /** ---- Body type for rubrics list request ---- */
 type RubricsListBody = {
   search?: string | null;
@@ -31,10 +47,7 @@ type RubricsListBody = {
   page_offset: number | null;
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
+/** ---- Direct fetch (no Next.js cache) ---- */
 const getRubricsList = async (body: RubricsListBody): Promise<RubricsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -43,53 +56,78 @@ const getRubricsList = async (body: RubricsListBody): Promise<RubricsListOut> =>
     {
       cache: "no-store",
       ...(bypassCache && {
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
+        headers: { "X-Bypass-Cache": "1" },
       }),
     }
   );
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
-export async function duplicateRubric(
+/** ---- Strongly-typed server actions ---- */
+async function duplicateRubric(
   input: DuplicateRubricIn
 ): Promise<DuplicateRubricOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/duplicate", input);
 }
 
-export async function deleteRubric(
+async function deleteRubric(
   input: DeleteRubricIn
 ): Promise<DeleteRubricOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/rubrics/delete", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/rubrics/docs", "post">;
-type DocsOut = OutputOf<"/rubrics/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/rubrics/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateRubric(
+  input: GenerateRubricIn
+): Promise<GenerateRubricOut> {
+  "use server";
+  return api.post("/rubrics/generate", input);
 }
+
+async function getRubricGroupHistory(groupId: string): Promise<GroupRubricOut> {
+  "use server";
+  return api.post("/rubrics/group", { body: { group_id: groupId } } as GroupRubricIn);
+}
+
+async function searchRubricGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/rubrics/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubricOut> {
+  "use server";
+  return api.post("/rubrics/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/rubrics/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface RubricsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function RubricsPage({ searchParams }: RubricsPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -122,18 +160,41 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getRubricsList(body);
+  // Fetch list data and group in parallel
+  const [listData, groupResult] = await Promise.all([
+    getRubricsList(body),
+    api.post("/rubrics/group", { body: {} } as GroupRubricIn),
+  ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "System", section: "system", url: "/system" },
-          { title: "Rubrics" },
-        ]}
-        toolbar={<NewArtifactButton label="New Rubric" href="/system/rubrics/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "rubric",
+        createFeedback: createRubricProblem,
+      }}
+      breadcrumbs={[
+        { title: "System", section: "system", url: "/system" },
+        { title: "Rubrics" },
+      ]}
+      toolbar={<NewArtifactButton label="New Rubric" href="/system/rubrics/new" />}
+      panelProps={{
+        artifactType: "rubric",
+        groupId: (groupResult as GroupRubricOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateRubric,
+        permissions: [
+          { artifact: "rubric", operation: "draft" },
+          { artifact: "rubric", operation: "get" },
+          { artifact: "rubric", operation: "docs" },
+          { artifact: "rubric", operation: "group" },
+        ],
+        getGroupHistory: getRubricGroupHistory,
+        searchGroups: searchRubricGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="rubrics-index">
         <Rubrics
           listData={listData}
@@ -146,7 +207,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           simulationSearch={q.simulationSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

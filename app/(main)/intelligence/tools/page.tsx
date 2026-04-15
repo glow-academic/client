@@ -1,15 +1,22 @@
 /**
- * app/(main)/engine/tools/page.tsx
- * Tools list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/intelligence/tools/page.tsx
+ * Tools list page — full SSR rendering with FullPageLayout.
+ * @AshokSaravanan222 & @siladiea
+ * 06/09/2025
  */
-import Tools from "@/components/artifacts/tool/Tools";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Tools from "@/components/artifacts/tool/Tools";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -19,6 +26,16 @@ type DeleteToolIn = InputOf<"/tools/delete", "post">;
 type DeleteToolOut = OutputOf<"/tools/delete", "post">;
 type DuplicateToolIn = InputOf<"/tools/duplicate", "post">;
 type DuplicateToolOut = OutputOf<"/tools/duplicate", "post">;
+type GroupToolIn = InputOf<"/tools/group", "post">;
+type GroupToolOut = OutputOf<"/tools/group", "post">;
+type GenerateToolIn = InputOf<"/tools/generate", "post">;
+type GenerateToolOut = OutputOf<"/tools/generate", "post">;
+type GenerationsIn = InputOf<"/tools/generations", "post">;
+type GenerationsOut = OutputOf<"/tools/generations", "post">;
+type ProblemToolIn = InputOf<"/tools/problem", "post">;
+type ProblemToolOut = OutputOf<"/tools/problem", "post">;
+type ContextIn = InputOf<"/tools/context", "post">;
+type ContextOut = OutputOf<"/tools/context", "post">;
 
 /** ---- Body type for tools list request ---- */
 type ToolsListBody = {
@@ -55,8 +72,6 @@ const getToolsList = async (body: ToolsListBody): Promise<ToolsListOut> => {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function deleteTool(input: DeleteToolIn): Promise<DeleteToolOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/tools/delete", input);
 }
 
@@ -64,30 +79,60 @@ async function duplicateTool(
   input: DuplicateToolIn
 ): Promise<DuplicateToolOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/tools/duplicate", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/tools/docs", "post">;
-type DocsOut = OutputOf<"/tools/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/tools/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateTool(
+  input: GenerateToolIn
+): Promise<GenerateToolOut> {
+  "use server";
+  return api.post("/tools/generate", input);
 }
+
+async function getToolGroupHistory(groupId: string): Promise<GroupToolOut> {
+  "use server";
+  return api.post("/tools/group", { body: { group_id: groupId } } as GroupToolIn);
+}
+
+async function searchToolGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/tools/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> {
+  "use server";
+  return api.post("/tools/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/tools/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface ToolsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ToolsPage({ searchParams }: ToolsPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -121,18 +166,41 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getToolsList(body);
+  // Fetch list data, and group in parallel
+  const [listData, groupResult] = await Promise.all([
+    getToolsList(body),
+    api.post("/tools/group", { body: {} } as GroupToolIn),
+  ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-          { title: "Tools" },
-        ]}
-        toolbar={<NewArtifactButton label="New Tool" href="/intelligence/tools/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "tool",
+        createFeedback: createToolProblem,
+      }}
+      breadcrumbs={[
+        { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+        { title: "Tools" },
+      ]}
+      toolbar={<NewArtifactButton label="New Tool" href="/intelligence/tools/new" />}
+      panelProps={{
+        artifactType: "tool",
+        groupId: (groupResult as GroupToolOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateTool,
+        permissions: [
+          { artifact: "tool", operation: "draft" },
+          { artifact: "tool", operation: "get" },
+          { artifact: "tool", operation: "docs" },
+          { artifact: "tool", operation: "group" },
+        ],
+        getGroupHistory: getToolGroupHistory,
+        searchGroups: searchToolGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="tools-index">
         <Tools
           listData={listData}
@@ -145,7 +213,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
           agentSearch={q.agentSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

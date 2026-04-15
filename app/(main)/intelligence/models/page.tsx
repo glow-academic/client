@@ -1,17 +1,22 @@
 /**
- * app/(main)/engine/models/page.tsx
- * Models list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/intelligence/models/page.tsx
+ * Models list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import Models from "@/components/artifacts/model/Models";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Models from "@/components/artifacts/model/Models";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -20,6 +25,16 @@ type DuplicateModelIn = InputOf<"/models/duplicate", "post">;
 type DuplicateModelOut = OutputOf<"/models/duplicate", "post">;
 type DeleteModelIn = InputOf<"/models/delete", "post">;
 type DeleteModelOut = OutputOf<"/models/delete", "post">;
+type GroupModelIn = InputOf<"/models/group", "post">;
+type GroupModelOut = OutputOf<"/models/group", "post">;
+type GenerateModelIn = InputOf<"/models/generate", "post">;
+type GenerateModelOut = OutputOf<"/models/generate", "post">;
+type GenerationsIn = InputOf<"/models/generations", "post">;
+type GenerationsOut = OutputOf<"/models/generations", "post">;
+type ProblemModelIn = InputOf<"/models/problem", "post">;
+type ProblemModelOut = OutputOf<"/models/problem", "post">;
+type ContextIn = InputOf<"/models/context", "post">;
+type ContextOut = OutputOf<"/models/context", "post">;
 
 /** ---- Body type for models list request ---- */
 type ModelsListBody = {
@@ -34,10 +49,7 @@ type ModelsListBody = {
   page_offset: number | null;
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
+/** ---- Direct fetch (no Next.js cache) ---- */
 const getModelsList = async (body: ModelsListBody): Promise<ModelsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -46,49 +58,76 @@ const getModelsList = async (body: ModelsListBody): Promise<ModelsListOut> => {
     {
       cache: "no-store",
       ...(bypassCache && {
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
+        headers: { "X-Bypass-Cache": "1" },
       }),
     },
   );
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function duplicateModel(
   input: DuplicateModelIn,
 ): Promise<DuplicateModelOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/models/duplicate", input);
 }
 
 async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/models/delete", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/models/docs", "post">;
-type DocsOut = OutputOf<"/models/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/models/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateModel(
+  input: GenerateModelIn
+): Promise<GenerateModelOut> {
+  "use server";
+  return api.post("/models/generate", input);
 }
+
+async function getModelGroupHistory(groupId: string): Promise<GroupModelOut> {
+  "use server";
+  return api.post("/models/group", { body: { group_id: groupId } } as GroupModelIn);
+}
+
+async function searchModelGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/models/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {
+  "use server";
+  return api.post("/models/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/models/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface ModelsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ModelsPage({ searchParams }: ModelsPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -123,18 +162,41 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getModelsList(body);
+  // Fetch list data and group in parallel
+  const [listData, groupResult] = await Promise.all([
+    getModelsList(body),
+    api.post("/models/group", { body: {} } as GroupModelIn),
+  ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-          { title: "Models" },
-        ]}
-        toolbar={<NewArtifactButton label="New Model" href="/intelligence/models/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "model",
+        createFeedback: createModelProblem,
+      }}
+      breadcrumbs={[
+        { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+        { title: "Models" },
+      ]}
+      toolbar={<NewArtifactButton label="New Model" href="/intelligence/models/new" />}
+      panelProps={{
+        artifactType: "model",
+        groupId: (groupResult as GroupModelOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateModel,
+        permissions: [
+          { artifact: "model", operation: "draft" },
+          { artifact: "model", operation: "get" },
+          { artifact: "model", operation: "docs" },
+          { artifact: "model", operation: "group" },
+        ],
+        getGroupHistory: getModelGroupHistory,
+        searchGroups: searchModelGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="models-index">
         <Models
           listData={listData}
@@ -148,7 +210,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
           agentSearch={q.agentSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

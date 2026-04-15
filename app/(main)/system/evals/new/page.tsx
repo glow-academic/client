@@ -1,22 +1,26 @@
 /**
  * app/(main)/system/evals/new/page.tsx
- * New eval page
+ * New eval page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222
  * 01/26/2025
  */
-import Eval from "@/components/artifacts/eval/Eval";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Eval from "@/components/artifacts/eval/Eval";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import {
   createLoader,
   parseAsBoolean,
   parseAsString,
 } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetEvalIn = InputOf<"/evals/get", "post">;
@@ -25,6 +29,16 @@ type CreateEvalIn = InputOf<"/evals/create", "post">;
 type CreateEvalOut = OutputOf<"/evals/create", "post">;
 type PatchEvalDraftIn = InputOf<"/evals/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/evals/draft", "patch">;
+type GroupEvalIn = InputOf<"/evals/group", "post">;
+type GroupEvalOut = OutputOf<"/evals/group", "post">;
+type GenerateEvalIn = InputOf<"/evals/generate", "post">;
+type GenerateEvalOut = OutputOf<"/evals/generate", "post">;
+type GenerationsIn = InputOf<"/evals/generations", "post">;
+type GenerationsOut = OutputOf<"/evals/generations", "post">;
+type ProblemEvalIn = InputOf<"/evals/problem", "post">;
+type ProblemEvalOut = OutputOf<"/evals/problem", "post">;
+type ContextIn = InputOf<"/evals/context", "post">;
+type ContextOut = OutputOf<"/evals/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getEvalDefault = async (input: GetEvalIn): Promise<GetEvalOut> => {
@@ -36,20 +50,6 @@ const getEvalDefault = async (input: GetEvalIn): Promise<GetEvalOut> => {
   });
 };
 
-/** ---- Metadata ---- */
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/evals/docs", "post">;
-type DocsOut = OutputOf<"/evals/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/evals/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
-}
-
 /** ---- Strongly-typed server actions ---- */
 async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
@@ -60,9 +60,43 @@ async function patchEvalDraft(
   input: PatchEvalDraftIn
 ): Promise<PatchEvalDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/evals/draft", input);
 }
+
+async function generateEval(
+  input: GenerateEvalIn
+): Promise<GenerateEvalOut> {
+  "use server";
+  return api.post("/evals/generate", input);
+}
+
+async function getEvalGroupHistory(groupId: string): Promise<GroupEvalOut> {
+  "use server";
+  return api.post("/evals/group", { body: { group_id: groupId } } as GroupEvalIn);
+}
+
+async function searchEvalGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/evals/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> {
+  "use server";
+  return api.post("/evals/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/evals/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewEvalPage({
@@ -70,8 +104,18 @@ export default async function NewEvalPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -109,32 +153,55 @@ export default async function NewEvalPage({
       available_model_runs_search: q.modelRunSearch ?? null,
     } as GetEvalIn["body"],
   };
-  const [evalDetailDefault, draftsResult] = await Promise.all([
+  const [evalDetailDefault, draftsResult, groupResult] = await Promise.all([
     getEvalDefault(input),
-    api.post("/evals/drafts", {})
+    api.post("/evals/drafts", {}),
+    api.post("/evals/group", { body: {} } as GroupEvalIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "eval",
+          createFeedback: createEvalProblem,
+        }}
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
           { title: "Evals", section: "evals", url: "/system/evals" },
           { title: "New Eval" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="eval-new"
-        aria-label="Create new eval page"
+        panelProps={{
+          artifactType: "eval",
+          groupId: (groupResult as GroupEvalOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateEval,
+          permissions: [
+            { artifact: "eval", operation: "draft" },
+            { artifact: "eval", operation: "get" },
+            { artifact: "eval", operation: "docs" },
+            { artifact: "eval", operation: "group" },
+          ],
+          getGroupHistory: getEvalGroupHistory,
+          searchGroups: searchEvalGroups,
+        }}
       >
-        <Eval
-          evalDetailDefault={evalDetailDefault}
-          createEvalAction={createEval}
-          patchEvalDraftAction={patchEvalDraft}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="eval-new"
+          aria-label="Create new eval page"
+        >
+          <Eval
+            evalDetailDefault={evalDetailDefault}
+            createEvalAction={createEval}
+            patchEvalDraftAction={patchEvalDraft}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }

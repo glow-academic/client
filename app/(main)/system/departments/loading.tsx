@@ -1,15 +1,17 @@
 /**
  * app/(main)/system/departments/loading.tsx
- * Loading skeleton for departments page
+ * Loading skeleton for departments list page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
+import { cookies } from "next/headers";
+import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Loading() {
+function DepartmentsListSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4">
       <div className="space-y-4">
         {/* Toolbar skeleton */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
@@ -89,5 +91,17 @@ export default function Loading() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default async function Loading() {
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("glow_sidebar")?.value !== "false";
+  const panelOpen = cookieStore.get("glow_panel")?.value === "true";
+
+  return (
+    <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
+      <DepartmentsListSkeleton />
+    </FullPageSkeleton>
   );
 }

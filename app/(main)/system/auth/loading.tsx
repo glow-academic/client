@@ -1,15 +1,17 @@
 /**
  * app/(main)/system/auth/loading.tsx
- * Loading skeleton for auth page
+ * Loading skeleton for auth list page — wraps in FullPageSkeleton.
  * @AshokSaravanan222 & @siladiea
- * 02/15/2026
+ * 04/14/2026
  */
+import { cookies } from "next/headers";
+import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Loading() {
+function AuthListSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4">
       {/* Auth Cards Grid skeleton — no toolbar, no pagination */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(6)].map((_, i) => (
@@ -39,5 +41,17 @@ export default function Loading() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default async function Loading() {
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("glow_sidebar")?.value !== "false";
+  const panelOpen = cookieStore.get("glow_panel")?.value === "true";
+
+  return (
+    <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
+      <AuthListSkeleton />
+    </FullPageSkeleton>
   );
 }

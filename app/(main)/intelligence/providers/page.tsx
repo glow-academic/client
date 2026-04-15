@@ -1,21 +1,38 @@
 /**
- * app/(main)/system/providers/page.tsx
- * Providers list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/intelligence/providers/page.tsx
+ * Providers list page — full SSR rendering with FullPageLayout.
+ * @AshokSaravanan222 & @siladiea
+ * 06/09/2025
  */
-import Providers from "@/components/artifacts/provider/Providers";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Providers from "@/components/artifacts/provider/Providers";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 
 /** ---- Strong types from OpenAPI ---- */
 type ProvidersListOut = OutputOf<"/providers/search", "post">;
 type DeleteProviderIn = InputOf<"/providers/delete", "post">;
 type DeleteProviderOut = OutputOf<"/providers/delete", "post">;
+type GroupProviderIn = InputOf<"/providers/group", "post">;
+type GroupProviderOut = OutputOf<"/providers/group", "post">;
+type GenerateProviderIn = InputOf<"/providers/generate", "post">;
+type GenerateProviderOut = OutputOf<"/providers/generate", "post">;
+type GenerationsIn = InputOf<"/providers/generations", "post">;
+type GenerationsOut = OutputOf<"/providers/generations", "post">;
+type ProblemProviderIn = InputOf<"/providers/problem", "post">;
+type ProblemProviderOut = OutputOf<"/providers/problem", "post">;
+type ContextIn = InputOf<"/providers/context", "post">;
+type ContextOut = OutputOf<"/providers/context", "post">;
 
 /** ---- Body type for providers list request ---- */
 type ProvidersListBody = {
@@ -61,25 +78,57 @@ async function deleteProvider(
   });
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/providers/docs", "post">;
-type DocsOut = OutputOf<"/providers/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/providers/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateProvider(
+  input: GenerateProviderIn
+): Promise<GenerateProviderOut> {
+  "use server";
+  return api.post("/providers/generate", input);
 }
+
+async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
+  "use server";
+  return api.post("/providers/group", { body: { group_id: groupId } } as GroupProviderIn);
+}
+
+async function searchProviderGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/providers/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
+  "use server";
+  return api.post("/providers/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/providers/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface ProvidersPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ProvidersPage({ searchParams }: ProvidersPageProps) {
-  // Access control is handled server-side in layout
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -113,18 +162,41 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
     page_offset: offset,
   };
 
-  // Fetch list data server-side with filters
-  const listData = await getProvidersList(body);
+  // Fetch list data, and group in parallel
+  const [listData, groupResult] = await Promise.all([
+    getProvidersList(body),
+    api.post("/providers/group", { body: {} } as GroupProviderIn),
+  ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
-          { title: "Providers" },
-        ]}
-        toolbar={<NewArtifactButton label="New Provider" href="/intelligence/providers/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "provider",
+        createFeedback: createProviderProblem,
+      }}
+      breadcrumbs={[
+        { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+        { title: "Providers" },
+      ]}
+      toolbar={<NewArtifactButton label="New Provider" href="/intelligence/providers/new" />}
+      panelProps={{
+        artifactType: "provider",
+        groupId: (groupResult as GroupProviderOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateProvider,
+        permissions: [
+          { artifact: "provider", operation: "draft" },
+          { artifact: "provider", operation: "get" },
+          { artifact: "provider", operation: "docs" },
+          { artifact: "provider", operation: "group" },
+        ],
+        getGroupHistory: getProviderGroupHistory,
+        searchGroups: searchProviderGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="providers-index">
         <Providers
           listData={listData}
@@ -136,7 +208,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
           modelSearch={q.modelSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

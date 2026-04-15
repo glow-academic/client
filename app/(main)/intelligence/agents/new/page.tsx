@@ -1,19 +1,24 @@
 /**
- * app/(main)/management/agents/new/page.tsx
- * New agent page for the agents section.
+ * app/(main)/intelligence/agents/new/page.tsx
+ * New agent page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import Agent from "@/components/artifacts/agent/Agent";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Agent from "@/components/artifacts/agent/Agent";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetAgentIn = InputOf<"/agents/get", "post">;
@@ -24,20 +29,26 @@ type PatchAgentDraftIn = InputOf<"/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/agents/draft", "patch">;
 type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
+type GroupAgentIn = InputOf<"/agents/group", "post">;
+type GroupAgentOut = OutputOf<"/agents/group", "post">;
+type GenerateAgentIn = InputOf<"/agents/generate", "post">;
+type GenerateAgentOut = OutputOf<"/agents/generate", "post">;
+type GenerationsIn = InputOf<"/agents/generations", "post">;
+type GenerationsOut = OutputOf<"/agents/generations", "post">;
+type ProblemAgentIn = InputOf<"/agents/problem", "post">;
+type ProblemAgentOut = OutputOf<"/agents/problem", "post">;
+type ContextIn = InputOf<"/agents/context", "post">;
+type ContextOut = OutputOf<"/agents/context", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
   return api.post("/agents/get", input, {
     cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
+    headers: { "X-Bypass-Cache": "1" },
   });
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
   return api.post("/agents/create", input);
@@ -45,36 +56,66 @@ async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
 
 async function patchAgentDraft(input: PatchAgentDraftIn): Promise<PatchAgentDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/agents/draft", input);
 }
 
-
 async function createDraftVoices(input: CreateDraftVoicesIn): Promise<CreateDraftVoicesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/voices", input);
 }
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/agents/docs", "post">;
-type DocsOut = OutputOf<"/agents/docs", "post">;
 
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/agents/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function generateAgent(
+  input: GenerateAgentIn
+): Promise<GenerateAgentOut> {
+  "use server";
+  return api.post("/agents/generate", input);
 }
+
+async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
+  "use server";
+  return api.post("/agents/group", { body: { group_id: groupId } } as GroupAgentIn);
+}
+
+async function searchAgentGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/agents/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
+  "use server";
+  return api.post("/agents/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/agents/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function NewAgentPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -95,41 +136,65 @@ export default async function NewAgentPage({
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
 
-  // Fetch default agent detail server-side with draft_id (agent_id = null for new mode)
+  // SSR data fetches
   const input: GetAgentIn = {
     body: {
       agent_id: null,
       draft_id: q.draftId ?? null,
     } as GetAgentIn["body"],
   };
-  const [agentDetailDefault, draftsResult] = await Promise.all([
+
+  const [agentDetailDefault, draftsResult, groupResult] = await Promise.all([
     getAgent(input),
-    api.post("/agents/drafts", {})
+    api.post("/agents/drafts", {}),
+    api.post("/agents/group", { body: {} } as GroupAgentIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "agent",
+          createFeedback: createAgentProblem,
+        }}
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Agents", section: "agents", url: "/intelligence/agents" },
           { title: "New Agent" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="agent-new"
-        aria-label="Create new agent page"
+        panelProps={{
+          artifactType: "agent",
+          groupId: (groupResult as GroupAgentOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateAgent,
+          permissions: [
+            { artifact: "agent", operation: "draft" },
+            { artifact: "agent", operation: "get" },
+            { artifact: "agent", operation: "docs" },
+            { artifact: "agent", operation: "group" },
+          ],
+          getGroupHistory: getAgentGroupHistory,
+          searchGroups: searchAgentGroups,
+        }}
       >
-        <Agent
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          agentDetailDefault={agentDetailDefault}
-          createAgentAction={createAgent}
-          patchAgentDraftAction={patchAgentDraft}
-          createVoicesAction={createDraftVoices}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="agent-new"
+          aria-label="Create new agent page"
+        >
+          <Agent
+            key={q.draftId || "no-draft"}
+            agentDetailDefault={agentDetailDefault}
+            createAgentAction={createAgent}
+            patchAgentDraftAction={patchAgentDraft}
+            createVoicesAction={createDraftVoices}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }
