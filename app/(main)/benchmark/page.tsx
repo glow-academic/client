@@ -1,19 +1,23 @@
 /**
  * app/(main)/benchmark/page.tsx
- * Benchmark page for running evaluations.
+ * Benchmark page for running evaluations — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 01/XX/2025
  */
 
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Benchmark from "@/components/artifacts/benchmark/Benchmark";
 import EvalHistory from "@/components/artifacts/benchmark/EvalHistory";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -41,6 +45,18 @@ type EvalsListOut = {
   date_range_latest: string | null;
 };
 
+/** ---- Generation types from OpenAPI ---- */
+type ContextIn = InputOf<"/benchmark/context", "post">;
+type ContextOut = OutputOf<"/benchmark/context", "post">;
+type GenerateBenchmarkIn = InputOf<"/benchmark/generate", "post">;
+type GenerateBenchmarkOut = OutputOf<"/benchmark/generate", "post">;
+type GenerationsIn = InputOf<"/benchmark/generations", "post">;
+type GenerationsOut = OutputOf<"/benchmark/generations", "post">;
+type GroupBenchmarkIn = InputOf<"/benchmark/group", "post">;
+type GroupBenchmarkOut = OutputOf<"/benchmark/group", "post">;
+type ProblemBenchmarkIn = InputOf<"/benchmark/problem", "post">;
+type ProblemBenchmarkOut = OutputOf<"/benchmark/problem", "post">;
+
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getBenchmarkOverview = async (
   input: BenchmarkOverviewIn
@@ -58,18 +74,41 @@ const getBenchmarkOverview = async (
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/benchmark/docs", "post">;
-type DocsOut = OutputOf<"/benchmark/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/benchmark/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+/** ---- Strongly-typed server actions ---- */
+async function generateBenchmark(
+  input: GenerateBenchmarkIn
+): Promise<GenerateBenchmarkOut> {
+  "use server";
+  return api.post("/benchmark/generate", input);
 }
+
+async function getBenchmarkGroupHistory(groupId: string): Promise<GroupBenchmarkOut> {
+  "use server";
+  return api.post("/benchmark/group", { body: { group_id: groupId } } as GroupBenchmarkIn);
+}
+
+async function searchBenchmarkGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/benchmark/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createBenchmarkProblem(input: ProblemBenchmarkIn): Promise<ProblemBenchmarkOut> {
+  "use server";
+  return api.post("/benchmark/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/benchmark/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface BenchmarkPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -78,6 +117,18 @@ interface BenchmarkPageProps {
 export default async function BenchmarkPage({
   searchParams,
 }: BenchmarkPageProps) {
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params via nuqs loader
   const q = loadBenchmarkSearchParams(await searchParams);
 
@@ -111,8 +162,11 @@ export default async function BenchmarkPage({
     },
   };
 
-  // Fetch benchmark overview server-side (includes embedded history)
-  const overviewData = await getBenchmarkOverview(overviewFilters);
+  // Fetch benchmark overview and group in parallel
+  const [overviewData, groupResult] = await Promise.all([
+    getBenchmarkOverview(overviewFilters),
+    api.post("/benchmark/group", { body: {} } as GroupBenchmarkIn),
+  ]);
 
   // Extract inline analytics facets
   const facets = overviewData.analytics;
@@ -295,18 +349,38 @@ export default async function BenchmarkPage({
   const dataArray = historyData?.data || [];
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Benchmark", section: "benchmark", url: "/benchmark" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "benchmark",
+        createFeedback: createBenchmarkProblem,
+      }}
+      breadcrumbs={[
+        { title: "Benchmark", section: "benchmark", url: "/benchmark" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "benchmark",
+        groupId: (groupResult as GroupBenchmarkOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateBenchmark,
+        permissions: [
+          { artifact: "benchmark", operation: "draft" },
+          { artifact: "benchmark", operation: "get" },
+          { artifact: "benchmark", operation: "docs" },
+          { artifact: "benchmark", operation: "group" },
+        ],
+        getGroupHistory: getBenchmarkGroupHistory,
+        searchGroups: searchBenchmarkGroups,
+      }}
+    >
       <div className="space-y-6 px-4">
         <Benchmark
           evalsData={evalsData}
@@ -327,7 +401,7 @@ export default async function BenchmarkPage({
           </div>
         </div>
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

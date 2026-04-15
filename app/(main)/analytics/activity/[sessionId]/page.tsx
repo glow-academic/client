@@ -1,20 +1,35 @@
 /**
- * app/(main)/session/[sessionId]/page.tsx
- * Canonical session detail page — shows groups timeline.
+ * app/(main)/analytics/activity/[sessionId]/page.tsx
+ * Session detail page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222
  * 02/06/2026
  */
 
+import { getSession } from "@/auth";
 import Session from "@/components/artifacts/session/Session";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type SessionDetailIn = InputOf<"/session/get", "post">;
 type SessionDetailOut = OutputOf<"/session/get", "post">;
+type ContextIn = InputOf<"/session/context", "post">;
+type ContextOut = OutputOf<"/session/context", "post">;
+type GenerateSessionIn = InputOf<"/session/generate", "post">;
+type GenerateSessionOut = OutputOf<"/session/generate", "post">;
+type GenerationsIn = InputOf<"/session/generations", "post">;
+type GenerationsOut = OutputOf<"/session/generations", "post">;
+type GroupSessionIn = InputOf<"/session/group", "post">;
+type GroupSessionOut = OutputOf<"/session/group", "post">;
+type ProblemSessionIn = InputOf<"/session/problem", "post">;
+type ProblemSessionOut = OutputOf<"/session/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -35,23 +50,43 @@ const getSessionDetail = async (
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/activity/docs", "post">;
-type DocsOut = OutputOf<"/activity/docs", "post">;
+/** ---- Strongly-typed server actions ---- */
+async function generateSession(
+  input: GenerateSessionIn
+): Promise<GenerateSessionOut> {
+  "use server";
+  return api.post("/session/generate", input);
+}
 
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/activity/docs", input);
-};
+async function getSessionGroupHistory(groupId: string): Promise<GroupSessionOut> {
+  "use server";
+  return api.post("/session/group", { body: { group_id: groupId } } as GroupSessionIn);
+}
 
+async function searchSessionGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/session/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createSessionProblem(input: ProblemSessionIn): Promise<ProblemSessionOut> {
+  "use server";
+  return api.post("/session/problem", input);
+}
+
+/** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ sessionId: string }>;
 }): Promise<Metadata> {
   const { sessionId } = await params;
-  const docs = await getDocs({ body: { entity_id: sessionId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
+  const context = await api.post("/session/context", { body: { entity_id: sessionId } } as ContextIn) as ContextOut;
+  return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function SessionDetailPage({
   params,
@@ -59,29 +94,67 @@ export default async function SessionDetailPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
+  const session = await getSession();
 
   if (!sessionId) {
     return null;
   }
 
-  const sessionDetail = await getSessionDetail({
-    body: {
-      session_id: sessionId,
-    },
-  });
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
+  const [sessionDetail, context, groupResult] = await Promise.all([
+    getSessionDetail({
+      body: {
+        session_id: sessionId,
+      },
+    }),
+    api.post("/session/context", { body: { entity_id: sessionId } } as ContextIn) as Promise<ContextOut>,
+    api.post("/session/group", { body: {} } as GroupSessionIn),
+  ]);
+
+  const _entityName = context.page_metadata?.detail.title;
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Activity", section: "analytics", url: "/analytics/activity" },
-          { title: "Session" },
-        ]}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "activity",
+        createFeedback: createSessionProblem,
+      }}
+      breadcrumbs={[
+        { title: "Analytics", section: "analytics", url: "/analytics" },
+        { title: "Activity", section: "activity", url: "/analytics/activity" },
+        { title: "Session" },
+      ]}
+      panelProps={{
+        artifactType: "session",
+        groupId: (groupResult as GroupSessionOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateSession,
+        permissions: [
+          { artifact: "session", operation: "draft" },
+          { artifact: "session", operation: "get" },
+          { artifact: "session", operation: "docs" },
+          { artifact: "session", operation: "group" },
+        ],
+        getGroupHistory: getSessionGroupHistory,
+        searchGroups: searchSessionGroups,
+      }}
+    >
       <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
         <Session sessionDetail={sessionDetail} />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

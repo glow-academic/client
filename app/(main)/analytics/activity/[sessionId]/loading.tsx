@@ -1,12 +1,12 @@
 /**
- * app/(main)/home/loading.tsx
- * Loading skeleton for home page
- * @AshokSaravanan222 & @siladiea
- * 01/20/2025
+ * app/(main)/analytics/activity/[sessionId]/loading.tsx
+ * Loading skeleton for session detail page — wraps in FullPageSkeleton.
+ * @AshokSaravanan222
+ * 02/06/2026
  */
 import { cookies } from "next/headers";
 import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
-import { HomeSkeleton } from "@/components/artifacts/home/Home";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function Loading() {
   const cookieStore = await cookies();
@@ -15,7 +15,11 @@ export default async function Loading() {
 
   return (
     <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
-      <HomeSkeleton />
+      <div className="space-y-6 px-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </div>
     </FullPageSkeleton>
   );
 }

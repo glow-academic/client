@@ -6,13 +6,17 @@
  * 02/2025
  */
 
+import { getSession } from "@/auth";
 import Invocation, {
   type InvocationData,
 } from "@/components/artifacts/invocation/Invocation";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetBenchmarkBundleOut = OutputOf<
@@ -27,6 +31,8 @@ type PatchBenchmarkDraftOut = OutputOf<
   "/invocation/draft",
   "patch"
 >;
+type ProblemTestIn = InputOf<"/test/problem", "post">;
+type ProblemTestOut = OutputOf<"/test/problem", "post">;
 
 const getBenchmarkBundle = async (
   bundleId: string,
@@ -56,12 +62,21 @@ async function patchBenchmarkDraft(
   return api.patch("/invocation/draft", input);
 }
 
+async function createTestProblem(input: ProblemTestIn): Promise<ProblemTestOut> {
+  "use server";
+  return api.post("/test/problem", input);
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Customize Benchmark",
     description: "Customize resources for a benchmark run.",
   };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function InvocationPage({
   params,
@@ -80,17 +95,36 @@ export default async function InvocationPage({
         ? (rawDraftId[0] ?? null)
         : null;
 
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   const bundleData = await getBenchmarkBundle(invocationId, draftId);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Benchmark", section: "benchmark", url: "/benchmark" },
-          { title: "Test", url: `/test/${testId}` },
-          { title: "Invocation" },
-        ]}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "benchmark",
+        createFeedback: createTestProblem,
+      }}
+      breadcrumbs={[
+        { title: "Benchmark", section: "benchmark", url: "/benchmark" },
+        { title: "Test", url: `/test/${testId}` },
+        { title: "Invocation" },
+      ]}
+    >
       <div className="px-4">
         <Invocation
           bundleData={bundleData as InvocationData}
@@ -98,6 +132,6 @@ export default async function InvocationPage({
           patchBenchmarkDraftAction={patchBenchmarkDraft}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }

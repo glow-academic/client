@@ -5,22 +5,38 @@
  * 08/10/2025
  */
 
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { PricingRunsClient } from "@/components/artifacts/pricing/PricingRunsClient";
 import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
 import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadPricingSearchParams } from "@/lib/search-params/pricing";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type PricingIn = InputOf<"/pricing/get", "post">;
 type PricingOut = OutputOf<"/pricing/get", "post">;
 type PricingRunsOut = NonNullable<PricingOut["history"]>;
+
+/** ---- Generation types ---- */
+type ContextIn = InputOf<"/pricing/context", "post">;
+type ContextOut = OutputOf<"/pricing/context", "post">;
+type GeneratePricingIn = InputOf<"/pricing/generate", "post">;
+type GeneratePricingOut = OutputOf<"/pricing/generate", "post">;
+type GenerationsIn = InputOf<"/pricing/generations", "post">;
+type GenerationsOut = OutputOf<"/pricing/generations", "post">;
+type GroupPricingIn = InputOf<"/pricing/group", "post">;
+type GroupPricingOut = OutputOf<"/pricing/group", "post">;
+type ProblemPricingIn = InputOf<"/pricing/problem", "post">;
+type ProblemPricingOut = OutputOf<"/pricing/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
@@ -36,24 +52,36 @@ const getPricingAnalytics = async (input: PricingIn): Promise<PricingOut> => {
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/pricing/docs", "post">;
-type DocsOut = OutputOf<"/pricing/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/pricing/docs", input);
-};
-
+/** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+  const context = await api.post("/pricing/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface PricingPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function PricingPage({ searchParams }: PricingPageProps) {
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params via nuqs loader
   const q = loadPricingSearchParams(await searchParams);
 
@@ -70,26 +98,27 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   // Use first model ID if provided (endpoint accepts single model_id)
   const modelId = pricingModelIds?.[0] ?? null;
 
-  // Read view cookie for column visibility
-  const initialColumnVisibility = await readViewCookie("pricing");
-
-  // Fetch summary + embedded group history in a single API call
-  const pricingData = await getPricingAnalytics({
-    body: {
-      start_date: q.startDate ?? undefined,
-      end_date: q.endDate ?? undefined,
-      department_ids: q.departmentIds ?? [],
-      roles: q.roles ?? [],
-      page_limit: 100,
-      page_offset: 0,
-      // Embedded group history params
-      history_page: pricingPage,
-      history_page_size: pricingPageSize,
-      history_sort_by: sortBy,
-      history_sort_order: pricingSortOrder,
-      history_model_id: modelId,
-    },
-  });
+  // Fetch pricing data, view cookie, and group in parallel
+  const [pricingData, initialColumnVisibility, groupResult] = await Promise.all([
+    getPricingAnalytics({
+      body: {
+        start_date: q.startDate ?? undefined,
+        end_date: q.endDate ?? undefined,
+        department_ids: q.departmentIds ?? [],
+        roles: q.roles ?? [],
+        page_limit: 100,
+        page_offset: 0,
+        // Embedded group history params
+        history_page: pricingPage,
+        history_page_size: pricingPageSize,
+        history_sort_by: sortBy,
+        history_sort_order: pricingSortOrder,
+        history_model_id: modelId,
+      },
+    }),
+    readViewCookie("pricing"),
+    api.post("/pricing/group", { body: {} } as GroupPricingIn),
+  ]);
 
   // Extract inline analytics facets
   const facets = pricingData.analytics;
@@ -101,25 +130,68 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   };
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Analytics", section: "analytics", url: "/analytics" },
-          { title: "Pricing" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "pricing",
+        createFeedback: createPricingProblem,
+      }}
+      breadcrumbs={[
+        { title: "Analytics", section: "analytics", url: "/analytics" },
+        { title: "Pricing" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "pricing",
+        groupId: (groupResult as GroupPricingOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generatePricing,
+        permissions: [
+          { artifact: "pricing", operation: "draft" },
+          { artifact: "pricing", operation: "get" },
+          { artifact: "pricing", operation: "docs" },
+          { artifact: "pricing", operation: "group" },
+        ],
+        getGroupHistory: getPricingGroupHistory,
+        searchGroups: searchPricingGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="pricing-index">
         <PricingSummary pricingData={pricingData} />
         <PricingRunsClient runsData={runsData} isLoading={false} initialColumnVisibility={initialColumnVisibility} />
       </div>
-    </>
+    </FullPageLayout>
   );
+}
+
+/** ---- Strongly-typed server actions ---- */
+async function generatePricing(
+  input: GeneratePricingIn
+): Promise<GeneratePricingOut> {
+  "use server";
+  return api.post("/pricing/generate", input);
+}
+
+async function getPricingGroupHistory(groupId: string): Promise<GroupPricingOut> {
+  "use server";
+  return api.post("/pricing/group", { body: { group_id: groupId } } as GroupPricingIn);
+}
+
+async function searchPricingGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/pricing/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createPricingProblem(input: ProblemPricingIn): Promise<ProblemPricingOut> {
+  "use server";
+  return api.post("/pricing/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

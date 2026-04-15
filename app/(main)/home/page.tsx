@@ -1,26 +1,39 @@
 /**
  * app/(main)/home/page.tsx
- * Home page for the user.
+ * Home page for the user — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Home from "@/components/artifacts/home/Home";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
 import { refreshPage } from "@/app/(main)/layout-server";
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
 /** ---- Strong types from OpenAPI ---- */
 type HomeIn = InputOf<"/home/get", "post">;
 type HomeOut = OutputOf<"/home/get", "post">;
 type HomeHistoryOut = NonNullable<HomeOut["history"]>;
+type ContextIn = InputOf<"/home/context", "post">;
+type ContextOut = OutputOf<"/home/context", "post">;
+type GenerateHomeIn = InputOf<"/home/generate", "post">;
+type GenerateHomeOut = OutputOf<"/home/generate", "post">;
+type GenerationsIn = InputOf<"/home/generations", "post">;
+type GenerationsOut = OutputOf<"/home/generations", "post">;
+type GroupHomeIn = InputOf<"/home/group", "post">;
+type GroupHomeOut = OutputOf<"/home/group", "post">;
+type ProblemHomeIn = InputOf<"/home/problem", "post">;
+type ProblemHomeOut = OutputOf<"/home/problem", "post">;
 
 /** ---- Direct fetch for home data (cards + embedded history) ---- */
 const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
@@ -36,19 +49,60 @@ const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
   });
 };
 
+/** ---- Strongly-typed server actions ---- */
+async function generateHome(
+  input: GenerateHomeIn
+): Promise<GenerateHomeOut> {
+  "use server";
+  return api.post("/home/generate", input);
+}
+
+async function getHomeGroupHistory(groupId: string): Promise<GroupHomeOut> {
+  "use server";
+  return api.post("/home/group", { body: { group_id: groupId } } as GroupHomeIn);
+}
+
+async function searchHomeGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/home/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createHomeProblem(input: ProblemHomeIn): Promise<ProblemHomeOut> {
+  "use server";
+  return api.post("/home/problem", input);
+}
+
+/** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/home/context", { body: {} } as ContextIn) as ContextOut;
   return {
-    title: "Home",
-    description:
+    title: context.page_metadata?.list.title ?? "Home",
+    description: context.page_metadata?.list.description ??
       "Comprehensive learning and development dashboard for graduate teaching assistants. Track simulation-based practice sessions, review pedagogical assessments, and monitor teaching performance metrics.",
   };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface HomePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params via nuqs loader
   const q = loadHomeSearchParams(await searchParams);
 
@@ -62,23 +116,26 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Single fetch: cards + embedded history
-  const homeData = await getHomeData({
-    body: {
-      history_page: historyPage,
-      history_page_size: historyPageSize,
-      history_sort_by: historySortBy,
-      history_sort_order: historySortOrder,
-      ...(historySearch && { history_simulation_search: historySearch }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          history_scenario_ids: historyScenarioIds,
+  // Single fetch: cards + embedded history + group in parallel
+  const [homeData, groupResult] = await Promise.all([
+    getHomeData({
+      body: {
+        history_page: historyPage,
+        history_page_size: historyPageSize,
+        history_sort_by: historySortBy,
+        history_sort_order: historySortOrder,
+        ...(historySearch && { history_simulation_search: historySearch }),
+        ...(historyScenarioIds &&
+          historyScenarioIds.length > 0 && {
+            history_scenario_ids: historyScenarioIds,
+          }),
+        ...(historyInfiniteMode !== undefined && {
+          history_infinite_mode: historyInfiniteMode,
         }),
-      ...(historyInfiniteMode !== undefined && {
-        history_infinite_mode: historyInfiniteMode,
-      }),
-    },
-  });
+      },
+    }),
+    api.post("/home/group", { body: {} } as GroupHomeIn),
+  ]);
 
   // Extract history from embedded response
   const historyData: HomeHistoryOut = homeData.history || {
@@ -144,18 +201,38 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   };
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Home", section: "home", url: "/home" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "home",
+        createFeedback: createHomeProblem,
+      }}
+      breadcrumbs={[
+        { title: "Home", section: "home", url: "/home" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "home",
+        groupId: (groupResult as GroupHomeOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateHome,
+        permissions: [
+          { artifact: "home", operation: "draft" },
+          { artifact: "home", operation: "get" },
+          { artifact: "home", operation: "docs" },
+          { artifact: "home", operation: "group" },
+        ],
+        getGroupHistory: getHomeGroupHistory,
+        searchGroups: searchHomeGroups,
+      }}
+    >
       <div className="space-y-6 px-4">
         <Home homeData={homeData} />
 
@@ -178,7 +255,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           />
         </div>
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

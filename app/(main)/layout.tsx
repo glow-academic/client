@@ -41,6 +41,17 @@ const FULL_PAGE_ROUTES = [
   "/system/evals",
   "/system/auth",
   "/settings",
+  "/home",
+  "/practice",
+  "/leaderboard",
+  "/health",
+  "/benchmark",
+  "/analytics/dashboard",
+  "/analytics/reports",
+  "/analytics/activity",
+  "/analytics/pricing",
+  "/attempt",
+  "/test",
 ];
 
 // Force dynamic rendering to ensure layout re-renders on route changes

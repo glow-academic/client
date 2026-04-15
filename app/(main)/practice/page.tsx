@@ -1,26 +1,39 @@
 /**
  * app/(main)/practice/page.tsx
- * Practice page for the user.
+ * Practice page for the user — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Practice from "@/components/artifacts/practice/Practice";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
 import { refreshPage } from "@/app/(main)/layout-server";
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
 /** ---- Strong types from OpenAPI ---- */
 type PracticeIn = InputOf<"/practice/get", "post">;
 type PracticeOut = OutputOf<"/practice/get", "post">;
 type PracticeHistoryOut = NonNullable<PracticeOut["history"]>;
+type GeneratePracticeIn = InputOf<"/practice/generate", "post">;
+type GeneratePracticeOut = OutputOf<"/practice/generate", "post">;
+type GenerationsIn = InputOf<"/practice/generations", "post">;
+type GenerationsOut = OutputOf<"/practice/generations", "post">;
+type GroupPracticeIn = InputOf<"/practice/group", "post">;
+type GroupPracticeOut = OutputOf<"/practice/group", "post">;
+type ProblemPracticeIn = InputOf<"/practice/problem", "post">;
+type ProblemPracticeOut = OutputOf<"/practice/problem", "post">;
+type ContextIn = InputOf<"/practice/context", "post">;
+type ContextOut = OutputOf<"/practice/context", "post">;
 
 /** ---- Direct fetch for practice data (cards + embedded history) ---- */
 const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
@@ -36,13 +49,41 @@ const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
   });
 };
 
+/** ---- Strongly-typed server actions ---- */
+async function generatePractice(
+  input: GeneratePracticeIn
+): Promise<GeneratePracticeOut> {
+  "use server";
+  return api.post("/practice/generate", input);
+}
+
+async function getPracticeGroupHistory(groupId: string): Promise<GroupPracticeOut> {
+  "use server";
+  return api.post("/practice/group", { body: { group_id: groupId } } as GroupPracticeIn);
+}
+
+async function searchPracticeGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/practice/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createPracticeProblem(input: ProblemPracticeIn): Promise<ProblemPracticeOut> {
+  "use server";
+  return api.post("/practice/problem", input);
+}
+
+/** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/practice/context", { body: {} } as ContextIn) as ContextOut;
   return {
-    title: "Practice",
-    description:
-      "Simulation-based practice sessions for teaching assistant training. Engage in realistic student interaction scenarios to practice pedagogical techniques, improve communication skills, and enhance teaching effectiveness through hands-on learning experiences.",
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
   };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface PracticePageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -51,6 +92,18 @@ interface PracticePageProps {
 export default async function PracticePage({
   searchParams,
 }: PracticePageProps) {
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params via nuqs loader
   const q = loadPracticeSearchParams(await searchParams);
 
@@ -64,23 +117,26 @@ export default async function PracticePage({
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
 
-  // Single fetch: cards + embedded history
-  const practiceData = await getPracticeData({
-    body: {
-      history_page: historyPage,
-      history_page_size: historyPageSize,
-      history_sort_by: historySortBy,
-      history_sort_order: historySortOrder,
-      ...(historySearch && { history_simulation_search: historySearch }),
-      ...(historyScenarioIds &&
-        historyScenarioIds.length > 0 && {
-          history_scenario_ids: historyScenarioIds,
+  // Single fetch: cards + embedded history + group in parallel
+  const [practiceData, groupResult] = await Promise.all([
+    getPracticeData({
+      body: {
+        history_page: historyPage,
+        history_page_size: historyPageSize,
+        history_sort_by: historySortBy,
+        history_sort_order: historySortOrder,
+        ...(historySearch && { history_simulation_search: historySearch }),
+        ...(historyScenarioIds &&
+          historyScenarioIds.length > 0 && {
+            history_scenario_ids: historyScenarioIds,
+          }),
+        ...(historyInfiniteMode !== undefined && {
+          history_infinite_mode: historyInfiniteMode,
         }),
-      ...(historyInfiniteMode !== undefined && {
-        history_infinite_mode: historyInfiniteMode,
-      }),
-    },
-  });
+      },
+    }),
+    api.post("/practice/group", { body: {} } as GroupPracticeIn),
+  ]);
 
   // Check if user is a guest (no items means no access / guest)
   const isGuest = !practiceData.items || practiceData.items.length === 0;
@@ -156,18 +212,38 @@ export default async function PracticePage({
   });
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Practice", section: "practice", url: "/practice" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "practice",
+        createFeedback: createPracticeProblem,
+      }}
+      breadcrumbs={[
+        { title: "Practice", section: "practice", url: "/practice" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "practice",
+        groupId: (groupResult as GroupPracticeOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generatePractice,
+        permissions: [
+          { artifact: "practice", operation: "draft" },
+          { artifact: "practice", operation: "get" },
+          { artifact: "practice", operation: "docs" },
+          { artifact: "practice", operation: "group" },
+        ],
+        getGroupHistory: getPracticeGroupHistory,
+        searchGroups: searchPracticeGroups,
+      }}
+    >
       <div className="space-y-6 px-4">
         <Practice practiceData={practiceData} isGuest={isGuest} />
 
@@ -194,7 +270,7 @@ export default async function PracticePage({
           </div>
         )}
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

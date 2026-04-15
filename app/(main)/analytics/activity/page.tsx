@@ -5,15 +5,19 @@
  * 01/20/2025
  */
 
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Activity from "@/components/artifacts/activity/Activity";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
 import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadActivitySearchParams } from "@/lib/search-params/activity";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type ActivityBundleIn = InputOf<"/activity/get", "post">;
@@ -24,6 +28,18 @@ export type ActivityOut = {
   bundleData: ActivityBundleOut | null;
   activityData: ActivityListOut | null;
 };
+
+/** ---- Generation types ---- */
+type ContextIn = InputOf<"/activity/context", "post">;
+type ContextOut = OutputOf<"/activity/context", "post">;
+type GenerateActivityIn = InputOf<"/activity/generate", "post">;
+type GenerateActivityOut = OutputOf<"/activity/generate", "post">;
+type GenerationsIn = InputOf<"/activity/generations", "post">;
+type GenerationsOut = OutputOf<"/activity/generations", "post">;
+type GroupActivityIn = InputOf<"/activity/group", "post">;
+type GroupActivityOut = OutputOf<"/activity/group", "post">;
+type ProblemActivityIn = InputOf<"/activity/problem", "post">;
+type ProblemActivityOut = OutputOf<"/activity/problem", "post">;
 
 /** ---- Direct fetch functions ---- */
 const getActivityBundle = async (
@@ -41,18 +57,18 @@ const getActivityBundle = async (
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/activity/docs", "post">;
-type DocsOut = OutputOf<"/activity/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/activity/docs", input);
-};
-
+/** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+  const context = await api.post("/activity/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface ActivityPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -61,6 +77,18 @@ interface ActivityPageProps {
 export default async function ActivityPage({
   searchParams,
 }: ActivityPageProps) {
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params via nuqs loader
   const q = loadActivitySearchParams(await searchParams);
 
@@ -74,23 +102,26 @@ export default async function ActivityPage({
     ? rawParams.summaryProfileId
     : undefined;
 
-  // Fetch bundle + embedded session history in a single API call
-  const bundleData = await getActivityBundle({
-    body: {
-      ...(q.startDate && { date_from: q.startDate }),
-      ...(q.endDate && { date_to: q.endDate }),
-      ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
-      ...(q.roles?.length && { roles: q.roles }),
-      page_limit: 50,
-      page_offset: 0,
-      summary_profile_id: summaryProfileId,
-      // Embedded session history params
-      history_page: activityPage,
-      history_page_size: activityPageSize,
-      history_sort_by: "date",
-      history_sort_order: "desc",
-    },
-  });
+  // Fetch bundle + embedded session history and group in parallel
+  const [bundleData, groupResult] = await Promise.all([
+    getActivityBundle({
+      body: {
+        ...(q.startDate && { date_from: q.startDate }),
+        ...(q.endDate && { date_to: q.endDate }),
+        ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+        ...(q.roles?.length && { roles: q.roles }),
+        page_limit: 50,
+        page_offset: 0,
+        summary_profile_id: summaryProfileId,
+        // Embedded session history params
+        history_page: activityPage,
+        history_page_size: activityPageSize,
+        history_sort_by: "date",
+        history_sort_order: "desc",
+      },
+    }),
+    api.post("/activity/group", { body: {} } as GroupActivityIn),
+  ]);
 
   // Extract inline analytics facets from response
   const facets = bundleData.analytics;
@@ -105,19 +136,39 @@ export default async function ActivityPage({
   };
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Analytics", section: "analytics", url: "/analytics" },
-          { title: "Activity" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "activity",
+        createFeedback: createActivityProblem,
+      }}
+      breadcrumbs={[
+        { title: "Analytics", section: "analytics", url: "/analytics" },
+        { title: "Activity" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "activity",
+        groupId: (groupResult as GroupActivityOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateActivity,
+        permissions: [
+          { artifact: "activity", operation: "draft" },
+          { artifact: "activity", operation: "get" },
+          { artifact: "activity", operation: "docs" },
+          { artifact: "activity", operation: "group" },
+        ],
+        getGroupHistory: getActivityGroupHistory,
+        searchGroups: searchActivityGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="activity-index">
         <Activity
           activityData={{
@@ -127,8 +178,31 @@ export default async function ActivityPage({
           isLoading={false}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
+}
+
+/** ---- Strongly-typed server actions ---- */
+async function generateActivity(
+  input: GenerateActivityIn
+): Promise<GenerateActivityOut> {
+  "use server";
+  return api.post("/activity/generate", input);
+}
+
+async function getActivityGroupHistory(groupId: string): Promise<GroupActivityOut> {
+  "use server";
+  return api.post("/activity/group", { body: { group_id: groupId } } as GroupActivityIn);
+}
+
+async function searchActivityGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/activity/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createActivityProblem(input: ProblemActivityIn): Promise<ProblemActivityOut> {
+  "use server";
+  return api.post("/activity/problem", input);
 }
 
 /** ---- Export types for client (type-only imports) ---- */

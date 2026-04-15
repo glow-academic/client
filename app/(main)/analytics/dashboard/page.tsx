@@ -6,16 +6,20 @@
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
 import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/dashboard/get", "post">;
@@ -30,6 +34,18 @@ type BulkArchiveAttemptsOut = OutputOf<
   "post"
 >;
 
+/** ---- Generation types ---- */
+type ContextIn = InputOf<"/dashboard/context", "post">;
+type ContextOut = OutputOf<"/dashboard/context", "post">;
+type GenerateDashboardIn = InputOf<"/dashboard/generate", "post">;
+type GenerateDashboardOut = OutputOf<"/dashboard/generate", "post">;
+type GenerationsIn = InputOf<"/dashboard/generations", "post">;
+type GenerationsOut = OutputOf<"/dashboard/generations", "post">;
+type GroupDashboardIn = InputOf<"/dashboard/group", "post">;
+type GroupDashboardOut = OutputOf<"/dashboard/group", "post">;
+type ProblemDashboardIn = InputOf<"/dashboard/problem", "post">;
+type ProblemDashboardOut = OutputOf<"/dashboard/problem", "post">;
+
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   const bypassCache = await isHardRefresh();
@@ -39,18 +55,18 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/dashboard/docs", "post">;
-type DocsOut = OutputOf<"/dashboard/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/dashboard/docs", input);
-};
-
+/** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+  const context = await api.post("/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface DashboardPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -59,6 +75,18 @@ interface DashboardPageProps {
 export default async function DashboardPage({
   searchParams,
 }: DashboardPageProps) {
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params via nuqs loader
   const q = loadDashboardSearchParams(await searchParams);
 
@@ -90,39 +118,43 @@ export default async function DashboardPage({
   const historySimulationSearch = q.historySimulationSearch ?? undefined;
   const historyScenarioSearch = q.historyScenarioSearch ?? undefined;
 
-  // Single API call returning all dashboard data
-  const data = await getDashboard({
-    body: {
-      ...(q.startDate && { start_date: q.startDate }),
-      ...(q.endDate && { end_date: q.endDate }),
-      ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
-      ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
-      ...(q.roles?.length && { roles: q.roles }),
-      ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
-      page_limit: 50,
-      page_offset: 0,
-      // Section pickers (canonical)
-      ...(rubricIds?.length && { rubric_ids: rubricIds }),
-      ...(rubricSearch && { rubric_search: rubricSearch }),
-      ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
-      ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
-      ...(parameterIds?.length && { parameter_ids: parameterIds }),
-      ...(parameterSearch && { parameter_search: parameterSearch }),
-      ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
-      ...(scenarioSearch && { scenario_search: scenarioSearch }),
-      // History
-      history_page: historyPage,
-      history_page_size: historyPageSize,
-      history_sort_by: historySortBy,
-      history_sort_order: historySortOrder,
-      ...(historySearch && { history_simulation_search: historySearch }),
-      ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
-      ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
-      ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
-      ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
-      ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
-    },
-  });
+  // Single API call returning all dashboard data + group in parallel
+  const [data, initialHistoryVisibility, groupResult] = await Promise.all([
+    getDashboard({
+      body: {
+        ...(q.startDate && { start_date: q.startDate }),
+        ...(q.endDate && { end_date: q.endDate }),
+        ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+        ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+        ...(q.roles?.length && { roles: q.roles }),
+        ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
+        page_limit: 50,
+        page_offset: 0,
+        // Section pickers (canonical)
+        ...(rubricIds?.length && { rubric_ids: rubricIds }),
+        ...(rubricSearch && { rubric_search: rubricSearch }),
+        ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
+        ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
+        ...(parameterIds?.length && { parameter_ids: parameterIds }),
+        ...(parameterSearch && { parameter_search: parameterSearch }),
+        ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
+        ...(scenarioSearch && { scenario_search: scenarioSearch }),
+        // History
+        history_page: historyPage,
+        history_page_size: historyPageSize,
+        history_sort_by: historySortBy,
+        history_sort_order: historySortOrder,
+        ...(historySearch && { history_simulation_search: historySearch }),
+        ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
+        ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
+        ...(historyProfileSearch && { history_profile_search: historyProfileSearch }),
+        ...(historySimulationSearch && { history_simulation_search: historySimulationSearch }),
+        ...(historyScenarioSearch && { history_scenario_search: historyScenarioSearch }),
+      },
+    }),
+    readViewCookie("history"),
+    api.post("/dashboard/group", { body: {} } as GroupDashboardIn),
+  ]);
 
   // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
   const facets = data.analytics;
@@ -152,22 +184,40 @@ export default async function DashboardPage({
     roles: q.roles ?? [],
   };
 
-  const initialHistoryVisibility = await readViewCookie("history");
-
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Analytics", section: "analytics", url: "/analytics" },
-          { title: "Dashboard" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "dashboard",
+        createFeedback: createDashboardProblem,
+      }}
+      breadcrumbs={[
+        { title: "Analytics", section: "analytics", url: "/analytics" },
+        { title: "Dashboard" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "dashboard",
+        groupId: (groupResult as GroupDashboardOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateDashboard,
+        permissions: [
+          { artifact: "dashboard", operation: "draft" },
+          { artifact: "dashboard", operation: "get" },
+          { artifact: "dashboard", operation: "docs" },
+          { artifact: "dashboard", operation: "group" },
+        ],
+        getGroupHistory: getDashboardGroupHistory,
+        searchGroups: searchDashboardGroups,
+      }}
+    >
       <div className="px-4">
         <Dashboard
           data={data}
@@ -193,16 +243,38 @@ export default async function DashboardPage({
           historyScenarioSearch={historyScenarioSearch}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 
-/** ---- Strongly-typed server actions for Dashboard (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {
   "use server";
   return api.post("/attempts/simulation/archive", input);
+}
+
+async function generateDashboard(
+  input: GenerateDashboardIn
+): Promise<GenerateDashboardOut> {
+  "use server";
+  return api.post("/dashboard/generate", input);
+}
+
+async function getDashboardGroupHistory(groupId: string): Promise<GroupDashboardOut> {
+  "use server";
+  return api.post("/dashboard/group", { body: { group_id: groupId } } as GroupDashboardIn);
+}
+
+async function searchDashboardGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/dashboard/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createDashboardProblem(input: ProblemDashboardIn): Promise<ProblemDashboardOut> {
+  "use server";
+  return api.post("/dashboard/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

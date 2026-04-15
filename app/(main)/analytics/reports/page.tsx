@@ -5,20 +5,36 @@
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Reports from "@/components/artifacts/reports/Reports";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
 import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadReportsSearchParams } from "@/lib/search-params/reports";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type ReportsIn = InputOf<"/reports/search", "post">;
 type ReportsOut = OutputOf<"/reports/search", "post">;
+
+/** ---- Generation types ---- */
+type ContextIn = InputOf<"/reports/context", "post">;
+type ContextOut = OutputOf<"/reports/context", "post">;
+type GenerateReportsIn = InputOf<"/reports/generate", "post">;
+type GenerateReportsOut = OutputOf<"/reports/generate", "post">;
+type GenerationsIn = InputOf<"/reports/generations", "post">;
+type GenerationsOut = OutputOf<"/reports/generations", "post">;
+type GroupReportsIn = InputOf<"/reports/group", "post">;
+type GroupReportsOut = OutputOf<"/reports/group", "post">;
+type ProblemReportsIn = InputOf<"/reports/problem", "post">;
+type ProblemReportsOut = OutputOf<"/reports/problem", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Reports responses exceed Next.js 2MB cache limit (~3.2MB).
@@ -38,18 +54,18 @@ const getReports = async (input: ReportsIn): Promise<ReportsOut> => {
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/reports/docs", "post">;
-type DocsOut = OutputOf<"/reports/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/reports/docs", input);
-};
-
+/** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+  const context = await api.post("/reports/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface ReportsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -58,6 +74,18 @@ interface ReportsPageProps {
 export default async function ReportsFullPage({
   searchParams,
 }: ReportsPageProps) {
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params via nuqs loader
   const q = loadReportsSearchParams(await searchParams);
 
@@ -96,34 +124,38 @@ export default async function ReportsFullPage({
   const reportsSortBy = q.reportsSortBy ?? "averageScore";
   const reportsSortOrder = q.reportsSortOrder ?? "desc";
 
-  // Single API call returning all reports data (with inline analytics facets)
-  const reportsData = await getReports({
-    body: {
-      start_date: filters.startDate,
-      end_date: filters.endDate,
-      ...(filters.cohortIds.length > 0 && { cohort_ids: filters.cohortIds }),
-      ...(filters.departmentIds.length > 0 && { department_ids: filters.departmentIds }),
-      ...(filters.roles.length > 0 && { roles: filters.roles }),
-      ...(filters.simulationFilters.length > 0 && { simulation_filters: filters.simulationFilters }),
-      page_limit: reportsPageSize,
-      page_offset: reportsPage * reportsPageSize,
-      ...(reportsSearch && { search: reportsSearch }),
-      sort_by: reportsSortBy,
-      sort_order: reportsSortOrder,
-      ...(reportsProfileIds &&
-        reportsProfileIds.length > 0 && {
-          profile_ids: reportsProfileIds,
-        }),
-      ...(reportsSimulationIds &&
-        reportsSimulationIds.length > 0 && {
-          simulation_ids: reportsSimulationIds,
-        }),
-      ...(reportsScenarioIds &&
-        reportsScenarioIds.length > 0 && {
-          scenario_ids: reportsScenarioIds,
-        }),
-    },
-  });
+  // Fetch reports data, view cookie, and group in parallel
+  const [reportsData, initialColumnVisibility, groupResult] = await Promise.all([
+    getReports({
+      body: {
+        start_date: filters.startDate,
+        end_date: filters.endDate,
+        ...(filters.cohortIds.length > 0 && { cohort_ids: filters.cohortIds }),
+        ...(filters.departmentIds.length > 0 && { department_ids: filters.departmentIds }),
+        ...(filters.roles.length > 0 && { roles: filters.roles }),
+        ...(filters.simulationFilters.length > 0 && { simulation_filters: filters.simulationFilters }),
+        page_limit: reportsPageSize,
+        page_offset: reportsPage * reportsPageSize,
+        ...(reportsSearch && { search: reportsSearch }),
+        sort_by: reportsSortBy,
+        sort_order: reportsSortOrder,
+        ...(reportsProfileIds &&
+          reportsProfileIds.length > 0 && {
+            profile_ids: reportsProfileIds,
+          }),
+        ...(reportsSimulationIds &&
+          reportsSimulationIds.length > 0 && {
+            simulation_ids: reportsSimulationIds,
+          }),
+        ...(reportsScenarioIds &&
+          reportsScenarioIds.length > 0 && {
+            scenario_ids: reportsScenarioIds,
+          }),
+      },
+    }),
+    readViewCookie("reports"),
+    api.post("/reports/group", { body: {} } as GroupReportsIn),
+  ]);
 
   // Extract inline analytics facets from response (replaces computeAnalyticsDefaults)
   const facets = reportsData.analytics;
@@ -172,23 +204,40 @@ export default async function ReportsFullPage({
         )
       : [];
 
-  // Read view cookie for column visibility
-  const initialColumnVisibility = await readViewCookie("reports");
-
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Analytics", section: "analytics", url: "/analytics" },
-          { title: "Reports" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "reports",
+        createFeedback: createReportsProblem,
+      }}
+      breadcrumbs={[
+        { title: "Analytics", section: "analytics", url: "/analytics" },
+        { title: "Reports" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "reports",
+        groupId: (groupResult as GroupReportsOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateReports,
+        permissions: [
+          { artifact: "reports", operation: "draft" },
+          { artifact: "reports", operation: "get" },
+          { artifact: "reports", operation: "docs" },
+          { artifact: "reports", operation: "group" },
+        ],
+        getGroupHistory: getReportsGroupHistory,
+        searchGroups: searchReportsGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="reports-index">
         <Reports
           reportsData={reportsData}
@@ -200,8 +249,31 @@ export default async function ReportsFullPage({
           initialColumnVisibility={initialColumnVisibility}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
+}
+
+/** ---- Strongly-typed server actions ---- */
+async function generateReports(
+  input: GenerateReportsIn
+): Promise<GenerateReportsOut> {
+  "use server";
+  return api.post("/reports/generate", input);
+}
+
+async function getReportsGroupHistory(groupId: string): Promise<GroupReportsOut> {
+  "use server";
+  return api.post("/reports/group", { body: { group_id: groupId } } as GroupReportsIn);
+}
+
+async function searchReportsGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/reports/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createReportsProblem(input: ProblemReportsIn): Promise<ProblemReportsOut> {
+  "use server";
+  return api.post("/reports/problem", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

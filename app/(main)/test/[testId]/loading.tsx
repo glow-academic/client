@@ -1,12 +1,6 @@
-/**
- * app/(main)/home/loading.tsx
- * Loading skeleton for home page
- * @AshokSaravanan222 & @siladiea
- * 01/20/2025
- */
 import { cookies } from "next/headers";
 import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
-import { HomeSkeleton } from "@/components/artifacts/home/Home";
+import { FormSkeleton } from "@/components/common/forms/FormSkeleton";
 
 export default async function Loading() {
   const cookieStore = await cookies();
@@ -15,7 +9,7 @@ export default async function Loading() {
 
   return (
     <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
-      <HomeSkeleton />
+      <FormSkeleton steps={5} />
     </FullPageSkeleton>
   );
 }

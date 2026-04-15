@@ -1,26 +1,41 @@
 /**
- * app/(main)/record/[recordId]/page.tsx
- * Canonical record (profile) page — dashboard report for a specific profile.
+ * app/(main)/analytics/reports/[recordId]/page.tsx
+ * Record (profile) detail page — full SSR rendering with FullPageLayout.
  * Uses a single /dashboard/get endpoint that returns all sections at once.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import Record from "@/components/artifacts/record/Record";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { getProfileContext, refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { loadProfileReportSearchParams } from "@/lib/search-params/profile-report";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/dashboard/get", "post">;
 type DashboardOut = OutputOf<"/dashboard/get", "post">;
 type ReportHistoryOut = NonNullable<DashboardOut["history"]>;
+type ContextIn = InputOf<"/record/context", "post">;
+type ContextOut = OutputOf<"/record/context", "post">;
+type GenerateRecordIn = InputOf<"/record/generate", "post">;
+type GenerateRecordOut = OutputOf<"/record/generate", "post">;
+type GenerationsIn = InputOf<"/record/generations", "post">;
+type GenerationsOut = OutputOf<"/record/generations", "post">;
+type GroupRecordIn = InputOf<"/record/group", "post">;
+type GroupRecordOut = OutputOf<"/record/group", "post">;
+type ProblemRecordIn = InputOf<"/record/problem", "post">;
+type ProblemRecordOut = OutputOf<"/record/problem", "post">;
 
 /** ---- Fetch function ---- */
 const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
@@ -31,23 +46,43 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/reports/docs", "post">;
-type DocsOut = OutputOf<"/reports/docs", "post">;
+/** ---- Strongly-typed server actions ---- */
+async function generateRecord(
+  input: GenerateRecordIn
+): Promise<GenerateRecordOut> {
+  "use server";
+  return api.post("/record/generate", input);
+}
 
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/reports/docs", input);
-};
+async function getRecordGroupHistory(groupId: string): Promise<GroupRecordOut> {
+  "use server";
+  return api.post("/record/group", { body: { group_id: groupId } } as GroupRecordIn);
+}
 
+async function searchRecordGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/record/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createRecordProblem(input: ProblemRecordIn): Promise<ProblemRecordOut> {
+  "use server";
+  return api.post("/record/problem", input);
+}
+
+/** ---- Page metadata ---- */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ recordId: string }>;
 }): Promise<Metadata> {
   const { recordId } = await params;
-  const docs = await getDocs({ body: { entity_id: recordId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
+  const context = await api.post("/record/context", { body: { entity_id: recordId } } as ContextIn) as ContextOut;
+  return { title: context.page_metadata?.detail.title, description: context.page_metadata?.detail.description };
 }
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface RecordPageProps {
   params: Promise<{ recordId: string }>;
@@ -59,6 +94,17 @@ export default async function RecordPage({
   searchParams,
 }: RecordPageProps) {
   const { recordId } = await params;
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params via nuqs loader
   const q = loadProfileReportSearchParams(await searchParams);
@@ -106,37 +152,43 @@ export default async function RecordPage({
   const historySortOrder = q.historySortOrder ?? "desc";
 
   // Single API call returning all dashboard data
-  const data = await getDashboard({
-    body: {
-      start_date: defaultStartDate,
-      end_date: defaultEndDate,
-      ...(q.cohortIds && q.cohortIds.length > 0 && { cohort_ids: q.cohortIds }),
-      ...(q.departmentIds && q.departmentIds.length > 0 && { department_ids: q.departmentIds }),
-      ...(q.roles && q.roles.length > 0 && { roles: q.roles }),
-      ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
-      target_profile_id: recordId,
-      actor_profile_id: profileContext.id || recordId,
-      page_limit: 50,
-      page_offset: 0,
-      // Section pickers (canonical)
-      ...(rubricIds?.length && { rubric_ids: rubricIds }),
-      ...(rubricSearch && { rubric_search: rubricSearch }),
-      ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
-      ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
-      ...(parameterIds?.length && { parameter_ids: parameterIds }),
-      ...(parameterSearch && { parameter_search: parameterSearch }),
-      ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
-      ...(scenarioSearch && { scenario_search: scenarioSearch }),
-      // History
-      history_page: historyPage,
-      history_page_size: historyPageSize,
-      history_sort_by: historySortBy,
-      history_sort_order: historySortOrder,
-      ...(historySearch && { history_simulation_search: historySearch }),
-      ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
-      ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
-    },
-  });
+  const [data, context, groupResult] = await Promise.all([
+    getDashboard({
+      body: {
+        start_date: defaultStartDate,
+        end_date: defaultEndDate,
+        ...(q.cohortIds && q.cohortIds.length > 0 && { cohort_ids: q.cohortIds }),
+        ...(q.departmentIds && q.departmentIds.length > 0 && { department_ids: q.departmentIds }),
+        ...(q.roles && q.roles.length > 0 && { roles: q.roles }),
+        ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
+        target_profile_id: recordId,
+        actor_profile_id: profileContext.id || recordId,
+        page_limit: 50,
+        page_offset: 0,
+        // Section pickers (canonical)
+        ...(rubricIds?.length && { rubric_ids: rubricIds }),
+        ...(rubricSearch && { rubric_search: rubricSearch }),
+        ...(simulationPickerIds?.length && { simulation_picker_ids: simulationPickerIds }),
+        ...(simulationPickerSearch && { simulation_picker_search: simulationPickerSearch }),
+        ...(parameterIds?.length && { parameter_ids: parameterIds }),
+        ...(parameterSearch && { parameter_search: parameterSearch }),
+        ...(scenarioIds?.length && { scenario_ids: scenarioIds }),
+        ...(scenarioSearch && { scenario_search: scenarioSearch }),
+        // History
+        history_page: historyPage,
+        history_page_size: historyPageSize,
+        history_sort_by: historySortBy,
+        history_sort_order: historySortOrder,
+        ...(historySearch && { history_simulation_search: historySearch }),
+        ...(historyScenarioIds?.length && { history_scenario_ids: historyScenarioIds }),
+        ...(historyInfiniteMode !== undefined && { history_infinite_mode: historyInfiniteMode }),
+      },
+    }),
+    api.post("/record/context", { body: { entity_id: recordId } } as ContextIn) as Promise<ContextOut>,
+    api.post("/record/group", { body: {} } as GroupRecordIn),
+  ]);
+
+  const _entityName = context.page_metadata?.detail.title;
 
   // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
   const facets = data.analytics;
@@ -149,7 +201,7 @@ export default async function RecordPage({
     simulationFilters: q.simulationFilters ?? ["general"],
   };
 
-  const profileData = {
+  const recordProfileData = {
     name: data.profile_name || null,
     emails: data.profile_emails || null,
     primary_email: data.profile_primary_email || null,
@@ -157,23 +209,44 @@ export default async function RecordPage({
   };
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Reports", section: "analytics", url: "/analytics/reports" },
-          { title: "Profile" },
-        ]}
-        toolbar={
-          <AnalyticsFilters
-            refreshPage={refreshPage}
-            analyticsFilters={facets}
-          />
-        }
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "reports",
+        createFeedback: createRecordProblem,
+      }}
+      breadcrumbs={[
+        { title: "Analytics", section: "analytics", url: "/analytics" },
+        { title: "Reports", section: "reports", url: "/analytics/reports" },
+        { title: "Profile" },
+      ]}
+      toolbar={
+        <AnalyticsFilters
+          refreshPage={refreshPage}
+          analyticsFilters={facets}
+        />
+      }
+      panelProps={{
+        artifactType: "record",
+        groupId: (groupResult as GroupRecordOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateRecord,
+        permissions: [
+          { artifact: "record", operation: "draft" },
+          { artifact: "record", operation: "get" },
+          { artifact: "record", operation: "docs" },
+          { artifact: "record", operation: "group" },
+        ],
+        getGroupHistory: getRecordGroupHistory,
+        searchGroups: searchRecordGroups,
+      }}
+    >
       <div className="px-4">
         <Record
           data={data}
-          profileData={profileData}
+          profileData={recordProfileData}
           profileId={recordId}
           rubricIds={rubricIds}
           rubricSearch={rubricSearch}
@@ -193,7 +266,7 @@ export default async function RecordPage({
           initialColumnVisibility={await readViewCookie("history")}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 
