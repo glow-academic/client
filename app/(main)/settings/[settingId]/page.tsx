@@ -1,10 +1,14 @@
 /**
  * app/(main)/settings/[settingId]/page.tsx
- * Settings edit page for the settings page.
+ * Setting edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Setting from "@/components/artifacts/setting/Setting";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -12,7 +16,10 @@ import { DraftProviderClient } from "@/contexts/draft-context";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSettingIn = InputOf<"/settings/get", "post">;
@@ -48,6 +55,16 @@ type CreateAuthItemKeysOut = OutputOf<
   "/api/v5/resources/auth_item_keys",
   "post"
 >;
+type GroupSettingIn = InputOf<"/settings/group", "post">;
+type GroupSettingOut = OutputOf<"/settings/group", "post">;
+type GenerateSettingIn = InputOf<"/settings/generate", "post">;
+type GenerateSettingOut = OutputOf<"/settings/generate", "post">;
+type GenerationsIn = InputOf<"/settings/generations", "post">;
+type GenerationsOut = OutputOf<"/settings/generations", "post">;
+type ProblemSettingIn = InputOf<"/settings/problem", "post">;
+type ProblemSettingOut = OutputOf<"/settings/problem", "post">;
+type ContextIn = InputOf<"/settings/context", "post">;
+type ContextOut = OutputOf<"/settings/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -60,24 +77,6 @@ const getSetting = async (input: GetSettingIn): Promise<GetSettingOut> => {
     },
   });
 };
-
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/settings/docs", "post">;
-type DocsOut = OutputOf<"/settings/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/settings/docs", input);
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ settingId: string }>;
-}): Promise<Metadata> {
-  const { settingId } = await params;
-  const docs = await getDocs({ body: { entity_id: settingId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
-}
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createSetting(input: CreateSettingIn): Promise<CreateSettingOut> {
@@ -94,7 +93,6 @@ async function patchSettingDraft(
   input: PatchSettingDraftIn
 ): Promise<PatchSettingDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/settings/draft", input);
 }
 
@@ -102,7 +100,6 @@ async function createDraftNames(
   input: CreateDraftNamesIn
 ): Promise<CreateDraftNamesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
 }
 
@@ -110,7 +107,6 @@ async function createDraftDescriptions(
   input: CreateDraftDescriptionsIn
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/descriptions", input);
 }
 
@@ -118,7 +114,6 @@ async function createDraftColors(
   input: CreateDraftColorsIn
 ): Promise<CreateDraftColorsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/colors", input);
 }
 
@@ -136,6 +131,45 @@ async function createAuthItemKeys(
   return api.post("/resources/auth_item_keys", input);
 }
 
+async function generateSetting(
+  input: GenerateSettingIn
+): Promise<GenerateSettingOut> {
+  "use server";
+  return api.post("/settings/generate", input);
+}
+
+async function getSettingGroupHistory(groupId: string): Promise<GroupSettingOut> {
+  "use server";
+  return api.post("/settings/group", { body: { group_id: groupId } } as GroupSettingIn);
+}
+
+async function searchSettingGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/settings/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createSettingProblem(input: ProblemSettingIn): Promise<ProblemSettingOut> {
+  "use server";
+  return api.post("/settings/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ settingId: string }>;
+}): Promise<Metadata> {
+  const { settingId } = await params;
+  const context = await api.post("/settings/context", { body: { entity_id: settingId } } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.detail.title,
+    description: context.page_metadata?.detail.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 /** ---- Server renders client with typed data and actions ---- */
 export default async function SettingEditPage({
@@ -146,8 +180,18 @@ export default async function SettingEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { settingId } = await params;
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -178,47 +222,70 @@ export default async function SettingEditPage({
         color_search: q.colorSearch ?? null,
       } as GetSettingIn["body"],
     };
-    const [settingDetail, docs, draftsResult] = await Promise.all([
+    const [settingDetail, context, draftsResult, groupResult] = await Promise.all([
       getSetting(input),
-      getDocs({ body: { entity_id: settingId } }),
-      api.post("/settings/drafts", {})
+      api.post("/settings/context", { body: { entity_id: settingId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/settings/drafts", {}),
+      api.post("/settings/group", { body: {} } as GroupSettingIn),
     ]);
 
-    const entityName = docs.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title;
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <PageHeader
+        <FullPageLayout
+          profileData={profileData}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "setting",
+            createFeedback: createSettingProblem,
+          }}
           breadcrumbs={[
             { title: "Settings", section: "settings", url: "/settings" },
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-        />
-        <div
-          className="space-y-6 px-4"
-          data-page="setting-edit"
-          data-setting-id={settingId}
+          panelProps={{
+            artifactType: "setting",
+            groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateSetting,
+            permissions: [
+              { artifact: "setting", operation: "draft" },
+              { artifact: "setting", operation: "get" },
+              { artifact: "setting", operation: "docs" },
+              { artifact: "setting", operation: "group" },
+            ],
+            getGroupHistory: getSettingGroupHistory,
+            searchGroups: searchSettingGroups,
+          }}
         >
-          <Setting
-            settingId={settingId}
-            settingData={settingDetail}
-            createSettingAction={createSetting}
-            updateSettingAction={updateSetting}
-            patchSettingDraftAction={patchSettingDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createColorsAction={createDraftColors}
-            createProviderKeysAction={async (input) => {
-              "use server";
-              return createProviderKeys({ body: { ...input, mcp: false } });
-            }}
-            createAuthItemKeysAction={async (input) => {
-              "use server";
-              return createAuthItemKeys({ body: { ...input, mcp: false } });
-            }}
-          />
-        </div>
+          <div
+            className="space-y-6 px-4"
+            data-page="setting-edit"
+            data-setting-id={settingId}
+          >
+            <Setting
+              settingId={settingId}
+              settingData={settingDetail}
+              createSettingAction={createSetting}
+              updateSettingAction={updateSetting}
+              patchSettingDraftAction={patchSettingDraft}
+              createNamesAction={createDraftNames}
+              createDescriptionsAction={createDraftDescriptions}
+              createColorsAction={createDraftColors}
+              createProviderKeysAction={async (input) => {
+                "use server";
+                return createProviderKeys({ body: { ...input, mcp: false } });
+              }}
+              createAuthItemKeysAction={async (input) => {
+                "use server";
+                return createAuthItemKeys({ body: { ...input, mcp: false } });
+              }}
+            />
+          </div>
+        </FullPageLayout>
       </DraftProviderClient>
     );
   } catch (error: unknown) {

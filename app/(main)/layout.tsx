@@ -40,6 +40,7 @@ const FULL_PAGE_ROUTES = [
   "/system/rubrics",
   "/system/evals",
   "/system/auth",
+  "/settings",
 ];
 
 // Force dynamic rendering to ensure layout re-renders on route changes
