@@ -19,6 +19,9 @@ class SseMultiplexer {
     this.authToken = token;
     if (this.source) return;
 
+    // SSR guard — EventSource only exists in the browser
+    if (typeof window === "undefined" || typeof EventSource === "undefined") return;
+
     // SSE endpoint — server multiplexes all events for this profile
     const url = new URL("/stream/", INTERNAL_HTTP_BASE);
     if (token) url.searchParams.set("token", token);

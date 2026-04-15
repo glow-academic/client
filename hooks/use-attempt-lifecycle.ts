@@ -126,21 +126,21 @@ export function useAttemptLifecycle({
     };
 
     socket.on("attempt.started", handleStarted);
-    socket.on("attempt.chat_started", handleChatStarted);
-    socket.on("attempt.chat_ended", handleChatEnded);
+    socket.on("attempt.chat.started", handleChatStarted);
+    socket.on("attempt.chat.ended", handleChatEnded);
     socket.on("attempt.ended", handleEnded);
-    socket.on("attempt.grade_complete", handleGradeComplete);
+    socket.on("attempt.chat.grade_complete", handleGradeComplete);
     socket.on("attempt.error", handleError);
-    socket.on("attempt.response_result", handleResponseResult);
+    socket.on("attempt.chat.response_result", handleResponseResult);
 
     return () => {
       socket.off("attempt.started", handleStarted);
-      socket.off("attempt.chat_started", handleChatStarted);
-      socket.off("attempt.chat_ended", handleChatEnded);
+      socket.off("attempt.chat.started", handleChatStarted);
+      socket.off("attempt.chat.ended", handleChatEnded);
       socket.off("attempt.ended", handleEnded);
-      socket.off("attempt.grade_complete", handleGradeComplete);
+      socket.off("attempt.chat.grade_complete", handleGradeComplete);
       socket.off("attempt.error", handleError);
-      socket.off("attempt.response_result", handleResponseResult);
+      socket.off("attempt.chat.response_result", handleResponseResult);
     };
   }, [socket, attemptId, chatId, chatIdRef]);
 
@@ -180,7 +180,7 @@ export function useAttemptLifecycle({
       opts?: { grade?: boolean },
     ) => {
       if (!socket) return;
-      socket.emit("attempt.end", {
+      socket.emit("attempt.chat.end", {
         attempt_id: attemptIdArg,
         chat_id: chatIdArg,
         grade: opts?.grade ?? true,
@@ -192,7 +192,7 @@ export function useAttemptLifecycle({
   const endAll = useCallback(
     (attemptIdArg: string) => {
       if (!socket) return;
-      socket.emit("attempt.end_all", {
+      socket.emit("attempt.end", {
         attempt_id: attemptIdArg,
       });
     },

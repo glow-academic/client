@@ -22,15 +22,7 @@ export function useFederatedLogout() {
       // 1. Clear local session
       await signOut({ redirect: false });
 
-      // 2. Clear session cookies
-      try {
-        const { clearSessionCookies } = await import(
-          "@/app/(main)/layout-server"
-        );
-        await clearSessionCookies();
-      } catch {
-        // Ignore errors - cookies might not exist
-      }
+      // 2. Clear session cookies (handled by signOut)
 
       // 3. Standard OIDC logout redirect
       const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";

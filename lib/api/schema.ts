@@ -7504,32 +7504,9 @@ export interface paths {
         put?: never;
         /**
          * End Attempt
-         * @description End a single chat within an attempt.
-         *
-         *     Browser client: sends grade=True, internal AI generates full grade.
-         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
-         */
-        post: operations["end_attempt_attempt_end_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/end/all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * End All Attempt
          * @description End all remaining chats in an attempt.
          */
-        post: operations["end_all_attempt_attempt_end_all_post"];
+        post: operations["end_attempt_attempt_end_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7550,92 +7527,6 @@ export interface paths {
          * @description Find and end all expired attempt chats.
          */
         post: operations["expire_attempt_expire_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/message": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Message
-         * @description Send a message in an attempt chat.
-         *
-         *     Browser client: sends message only, internal AI generates response + hints.
-         *     Agent: can optionally provide assistant_content, hints, contents to skip AI.
-         */
-        post: operations["attempt_message_attempt_message_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/grade": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Grade
-         * @description Trigger grading for an attempt chat.
-         *
-         *     Browser client: sends chat_id only, internal AI generates full grade.
-         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
-         */
-        post: operations["attempt_grade_attempt_grade_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Stop
-         * @description Stop message generation for an attempt chat.
-         */
-        post: operations["attempt_stop_attempt_stop_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/attempt/response": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Response
-         * @description Submit a video question response.
-         */
-        post: operations["attempt_response_attempt_response_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7702,7 +7593,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/attempt/audio/start": {
+    "/attempt/chat/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -7712,17 +7603,20 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Audio Start
-         * @description Start an audio session for an attempt chat.
+         * Chat End
+         * @description End a single chat within an attempt.
+         *
+         *     Browser client: sends grade=True, internal AI generates full grade.
+         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
          */
-        post: operations["audio_start_attempt_audio_start_post"];
+        post: operations["chat_end_attempt_chat_end_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/audio/frame": {
+    "/attempt/chat/grade": {
         parameters: {
             query?: never;
             header?: never;
@@ -7732,17 +7626,20 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Audio Frame
-         * @description Push audio bytes into the session inbound queue.
+         * Chat Grade
+         * @description Trigger grading for an attempt chat.
+         *
+         *     Browser client: sends chat_id only, internal AI generates full grade.
+         *     Agent: can optionally provide score, feedbacks, strengths, etc. to skip AI.
          */
-        post: operations["audio_frame_attempt_audio_frame_post"];
+        post: operations["chat_grade_attempt_chat_grade_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/audio/stop": {
+    "/attempt/chat/response": {
         parameters: {
             query?: never;
             header?: never;
@@ -7752,17 +7649,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Audio Stop
-         * @description Stop an audio session for an attempt chat.
+         * Chat Response
+         * @description Submit a video question response.
          */
-        post: operations["audio_stop_attempt_audio_stop_post"];
+        post: operations["chat_response_attempt_chat_response_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/attempt/audio/mute": {
+    "/attempt/chat/send": {
         parameters: {
             query?: never;
             header?: never;
@@ -7772,10 +7669,113 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Audio Mute
-         * @description Toggle microphone mute for an audio session.
+         * Chat Send
+         * @description Send a message in an attempt chat.
+         *
+         *     Browser client: sends message only, internal AI generates response + hints.
+         *     Agent: can optionally provide assistant_content, hints, contents to skip AI.
          */
-        post: operations["audio_mute_attempt_audio_mute_post"];
+        post: operations["chat_send_attempt_chat_send_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Stop
+         * @description Stop message generation for an attempt chat.
+         */
+        post: operations["chat_stop_attempt_chat_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Voice
+         * @description Start a voice session for an attempt chat.
+         */
+        post: operations["chat_voice_attempt_chat_voice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/frame": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Frame
+         * @description Send an audio segment into the voice session via audio_id reference.
+         */
+        post: operations["chat_frame_attempt_chat_frame_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Mute
+         * @description Toggle microphone mute for a voice session.
+         */
+        post: operations["chat_mute_attempt_chat_mute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/chat/silence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Silence
+         * @description End a voice session for an attempt chat.
+         */
+        post: operations["chat_silence_attempt_chat_silence_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18238,41 +18238,6 @@ export interface components {
              */
             audio_id: string;
         };
-        /** AudioFramePayload */
-        AudioFramePayload: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Audio */
-            audio?: string | null;
-        };
-        /** AudioFrameResponse */
-        AudioFrameResponse: {
-            /** Accepted */
-            accepted: boolean;
-        };
-        /** AudioMutePayload */
-        AudioMutePayload: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /**
-             * Muted
-             * @default false
-             */
-            muted: boolean;
-        };
-        /** AudioMuteResponse */
-        AudioMuteResponse: {
-            /** Accepted */
-            accepted: boolean;
-        };
         /**
          * AudioStartInternalResult
          * @description Structured result for audio start orchestration.
@@ -18287,14 +18252,6 @@ export interface components {
             /** Attempt Id */
             attempt_id: string;
         };
-        /** AudioStartPayload */
-        AudioStartPayload: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-        };
         /**
          * AudioStopInternalResult
          * @description Structured result for audio stop orchestration.
@@ -18307,14 +18264,6 @@ export interface components {
              * @default true
              */
             stopped: boolean;
-        };
-        /** AudioStopPayload */
-        AudioStopPayload: {
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
         };
         /**
          * AudioUploadAttemptApiResponse
@@ -19736,6 +19685,24 @@ export interface components {
              */
             resources?: unknown[] | null;
         };
+        /** ChatFrameRequest */
+        ChatFrameRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Audio Id
+             * Format: uuid
+             */
+            audio_id: string;
+        };
+        /** ChatFrameResponse */
+        ChatFrameResponse: {
+            /** Accepted */
+            accepted: boolean;
+        };
         /** ChatImageSection */
         ChatImageSection: {
             /**
@@ -19771,6 +19738,24 @@ export interface components {
              * @description Available image resources
              */
             resources?: unknown[] | null;
+        };
+        /** ChatMuteRequest */
+        ChatMuteRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /**
+             * Muted
+             * @default false
+             */
+            muted: boolean;
+        };
+        /** ChatMuteResponse */
+        ChatMuteResponse: {
+            /** Accepted */
+            accepted: boolean;
         };
         /** ChatNameSection */
         ChatNameSection: {
@@ -20060,6 +20045,52 @@ export interface components {
              */
             resources?: unknown[] | null;
         };
+        /** ChatSendApiRequest */
+        ChatSendApiRequest: {
+            /**
+             * Attempt Id
+             * Format: uuid
+             */
+            attempt_id: string;
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+            /** Message */
+            message: string;
+            /** Parent Message Id */
+            parent_message_id?: string | null;
+            /** Assistant Content */
+            assistant_content?: string | null;
+            /** Hints */
+            hints?: components["schemas"]["app__routes__attempt__chat__send__HintEntry"][] | null;
+            /** Contents */
+            contents?: components["schemas"]["app__routes__attempt__chat__send__ContentEntry"][] | null;
+        };
+        /** ChatSendApiResponse */
+        ChatSendApiResponse: {
+            /** Chat Id */
+            chat_id: string;
+            /** User Message Id */
+            user_message_id?: string | null;
+            /** Assistant Message Id */
+            assistant_message_id?: string | null;
+            /** Assistant Content */
+            assistant_content?: string | null;
+            /** Hints */
+            hints?: {
+                [key: string]: unknown;
+            }[] | null;
+        };
+        /** ChatSilenceRequest */
+        ChatSilenceRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
+        };
         /**
          * ChatSimulationOperational
          * @description Simulation data for starting a chat session.
@@ -20225,6 +20256,14 @@ export interface components {
              * @description Available video resources
              */
             resources?: unknown[] | null;
+        };
+        /** ChatVoiceRequest */
+        ChatVoiceRequest: {
+            /**
+             * Chat Id
+             * Format: uuid
+             */
+            chat_id: string;
         };
         /**
          * CohortDepartment
@@ -23168,6 +23207,17 @@ export interface components {
              * @description List of simulations to create
              */
             simulations: components["schemas"]["CreateSimulationItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateSimulationApiResponse
@@ -23179,6 +23229,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["SimulationResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateSimulationApiResponse
@@ -23190,6 +23245,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["SimulationResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateSimulationItem
@@ -24882,6 +24942,17 @@ export interface components {
              * @description UUIDs of simulations to delete
              */
             simulation_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteSimulationApiResponse
@@ -24893,6 +24964,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DeleteSimulationResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteSimulationResult
@@ -26337,6 +26413,17 @@ export interface components {
              * @description UUID of the simulation to duplicate
              */
             simulation_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateSimulationApiResponse
@@ -26359,6 +26446,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** DuplicateToolApiRequest */
         DuplicateToolApiRequest: {
@@ -26473,8 +26565,8 @@ export interface components {
              */
             expires_at?: string | null;
         };
-        /** EndAllAttemptApiResponse */
-        EndAllAttemptApiResponse: {
+        /** EndAttemptApiResponse */
+        EndAttemptApiResponse: {
             /** Attempt Id */
             attempt_id: string;
             /** Success */
@@ -26487,8 +26579,8 @@ export interface components {
             /** Message */
             message?: string | null;
         };
-        /** EndAttemptApiRequest */
-        EndAttemptApiRequest: {
+        /** EndChatApiRequest */
+        EndChatApiRequest: {
             /**
              * Attempt Id
              * Format: uuid
@@ -26553,8 +26645,8 @@ export interface components {
              */
             replacements?: components["schemas"]["AttemptGradeReplacementEntry"][] | null;
         };
-        /** EndAttemptApiResponse */
-        EndAttemptApiResponse: {
+        /** EndChatApiResponse */
+        EndChatApiResponse: {
             /**
              * Chat Id
              * @description ID of the ended chat
@@ -38888,6 +38980,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupSimulationApiResponse
@@ -38910,6 +39013,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupTestApiRequest
@@ -42494,44 +42602,6 @@ export interface components {
              */
             can_delete?: boolean | null;
         };
-        /** MessageAttemptApiRequest */
-        MessageAttemptApiRequest: {
-            /**
-             * Attempt Id
-             * Format: uuid
-             */
-            attempt_id: string;
-            /**
-             * Chat Id
-             * Format: uuid
-             */
-            chat_id: string;
-            /** Message */
-            message: string;
-            /** Parent Message Id */
-            parent_message_id?: string | null;
-            /** Assistant Content */
-            assistant_content?: string | null;
-            /** Hints */
-            hints?: components["schemas"]["app__routes__attempt__message__HintEntry"][] | null;
-            /** Contents */
-            contents?: components["schemas"]["app__routes__attempt__message__ContentEntry"][] | null;
-        };
-        /** MessageAttemptApiResponse */
-        MessageAttemptApiResponse: {
-            /** Chat Id */
-            chat_id: string;
-            /** User Message Id */
-            user_message_id?: string | null;
-            /** Assistant Message Id */
-            assistant_message_id?: string | null;
-            /** Assistant Content */
-            assistant_content?: string | null;
-            /** Hints */
-            hints?: {
-                [key: string]: unknown;
-            }[] | null;
-        };
         /**
          * MessageData
          * @description Message with contents, feedbacks, and hints.
@@ -45636,7 +45706,7 @@ export interface components {
             scenario_time_limits?: components["schemas"]["DraftScenarioTimeLimitValue"][] | null;
             /**
              * Pending Ids
-             * @description Resource IDs to keep as pending (not supported by current simulation draft black boxes)
+             * @description Resource IDs to keep as pending where supported by the tool layer
              */
             pending_ids?: string[] | null;
             /**
@@ -47899,6 +47969,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemSimulationApiResponse
@@ -47923,6 +48004,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemStatementEntry
@@ -49038,6 +49124,28 @@ export interface components {
             /**
              * Targets
              * @description MV targets to refresh (omit for all). Options: scenario_drafts_mv, runs_mv, messages_mv, calls_mv, groups_mv, group_names_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * RefreshSimulationApiRequest
+         * @description Request model for simulation refresh endpoint.
+         */
+        RefreshSimulationApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: simulation_drafts_mv, runs_mv, messages_mv, calls_mv, groups_mv, group_names_mv
              */
             targets?: string[] | null;
             /**
@@ -53740,8 +53848,8 @@ export interface components {
             /** Test Id */
             test_id: string;
         };
-        /** StopAttemptApiResponse */
-        StopAttemptApiResponse: {
+        /** StopChatApiResponse */
+        StopChatApiResponse: {
             /** Chat Id */
             chat_id: string;
             /** Success */
@@ -57143,6 +57251,17 @@ export interface components {
              * @description List of simulations to update
              */
             simulations: components["schemas"]["UpdateSimulationItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateSimulationApiResponse
@@ -57154,6 +57273,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["SimulationResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateSimulationApiResponse
@@ -57165,6 +57289,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["SimulationResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateSimulationItem
@@ -58091,7 +58220,7 @@ export interface components {
          * ContentEntry
          * @description Agent-provided content entry for a message.
          */
-        app__routes__attempt__message__ContentEntry: {
+        app__routes__attempt__chat__send__ContentEntry: {
             /** Content */
             content: string;
             /** Persona Id */
@@ -58101,7 +58230,7 @@ export interface components {
          * HintEntry
          * @description Agent-provided hint for a message.
          */
-        app__routes__attempt__message__HintEntry: {
+        app__routes__attempt__chat__send__HintEntry: {
             /** Hint */
             hint: string;
             /** Message Id */
@@ -59933,7 +60062,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshSimulationApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -59942,6 +60075,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -69849,39 +69991,6 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EndAttemptApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EndAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    end_all_attempt_attempt_end_all_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
                 "application/json": components["schemas"]["AttemptEndAllPayload"];
             };
         };
@@ -69892,7 +70001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EndAllAttemptApiResponse"];
+                    "application/json": components["schemas"]["EndAttemptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69922,138 +70031,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    attempt_message_attempt_message_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MessageAttemptApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MessageAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_grade_attempt_grade_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GradeAttemptRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GradeAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_stop_attempt_stop_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptStopPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StopAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_response_attempt_response_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttemptResponsePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResponseAttemptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -70157,7 +70134,7 @@ export interface operations {
             };
         };
     };
-    audio_start_attempt_audio_start_post: {
+    chat_end_attempt_chat_end_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70166,7 +70143,172 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AudioStartPayload"];
+                "application/json": components["schemas"]["EndChatApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndChatApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_grade_attempt_chat_grade_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeAttemptRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradeAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_response_attempt_chat_response_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptResponsePayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResponseAttemptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_send_attempt_chat_send_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSendApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatSendApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_stop_attempt_chat_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttemptStopPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StopChatApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_voice_attempt_chat_voice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatVoiceRequest"];
             };
         };
         responses: {
@@ -70190,7 +70332,7 @@ export interface operations {
             };
         };
     };
-    audio_frame_attempt_audio_frame_post: {
+    chat_frame_attempt_chat_frame_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70199,7 +70341,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AudioFramePayload"];
+                "application/json": components["schemas"]["ChatFrameRequest"];
             };
         };
         responses: {
@@ -70209,7 +70351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AudioFrameResponse"];
+                    "application/json": components["schemas"]["ChatFrameResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70223,7 +70365,7 @@ export interface operations {
             };
         };
     };
-    audio_stop_attempt_audio_stop_post: {
+    chat_mute_attempt_chat_mute_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70232,7 +70374,40 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AudioStopPayload"];
+                "application/json": components["schemas"]["ChatMuteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatMuteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_silence_attempt_chat_silence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatSilenceRequest"];
             };
         };
         responses: {
@@ -70243,39 +70418,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AudioStopInternalResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    audio_mute_attempt_audio_mute_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AudioMutePayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AudioMuteResponse"];
                 };
             };
             /** @description Validation Error */
