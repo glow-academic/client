@@ -1,12 +1,14 @@
 /**
- * app/(main)/create/simulations/new/page.tsx
- * New simulation page for the simulations section.
+ * app/(main)/training/simulations/new/page.tsx
+ * New simulation page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 01/12/2026
  */
 
+import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -14,7 +16,10 @@ import { DraftProviderClient } from "@/contexts/draft-context";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/simulations/get", "post">;
@@ -65,15 +70,21 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
   "/api/v5/resources/scenario_time_limits",
   "post"
 >;
+type GroupSimulationIn = InputOf<"/simulations/group", "post">;
+type GroupSimulationOut = OutputOf<"/simulations/group", "post">;
+type GenerateSimulationIn = InputOf<"/simulations/generate", "post">;
+type GenerateSimulationOut = OutputOf<"/simulations/generate", "post">;
+type ProblemSimulationIn = InputOf<"/simulations/problem", "post">;
+type ProblemSimulationOut = OutputOf<"/simulations/problem", "post">;
+type ContextIn = InputOf<"/simulations/context", "post">;
+type ContextOut = OutputOf<"/simulations/context", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for new pages.
- */
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getSimulationDefault = async (
   input: GetSimulationIn
 ): Promise<GetSimulationOut> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const result = await api.post("/simulations/get", input, {
@@ -94,7 +105,7 @@ const getSimulationDefault = async (
   }
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createSimulation(
   input: CreateSimulationIn
 ): Promise<CreateSimulationOut> {
@@ -106,8 +117,6 @@ async function patchSimulationDraft(
   input: PatchSimulationDraftIn
 ): Promise<PatchSimulationDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/simulations/draft", input);
 }
 
@@ -115,7 +124,6 @@ async function createDraftNames(
   input: CreateDraftNamesIn
 ): Promise<CreateDraftNamesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
 }
 
@@ -123,7 +131,6 @@ async function createDraftDescriptions(
   input: CreateDraftDescriptionsIn
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/descriptions", input);
 }
 
@@ -131,7 +138,6 @@ async function createDraftScenarioFlags(
   input: CreateDraftScenarioFlagsIn
 ): Promise<CreateDraftScenarioFlagsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/scenario_flags", input);
 }
 
@@ -139,7 +145,6 @@ async function createDraftScenarioPositions(
   input: CreateDraftScenarioPositionsIn
 ): Promise<CreateDraftScenarioPositionsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/scenario_positions", input);
 }
 
@@ -147,7 +152,6 @@ async function createDraftScenarioRubrics(
   input: CreateDraftScenarioRubricsIn
 ): Promise<CreateDraftScenarioRubricsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/scenario_rubrics", input);
 }
 
@@ -155,30 +159,64 @@ async function createDraftScenarioTimeLimits(
   input: CreateDraftScenarioTimeLimitsIn
 ): Promise<CreateDraftScenarioTimeLimitsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/scenario_time_limits", input);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/simulations/docs", "post">;
-type DocsOut = OutputOf<"/simulations/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/simulations/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function generateSimulation(
+  input: GenerateSimulationIn
+): Promise<GenerateSimulationOut> {
+  "use server";
+  return api.post("/simulations/generate", input);
 }
+
+async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
+  "use server";
+  return api.post("/simulations/group", { body: { group_id: groupId } } as GroupSimulationIn);
+}
+
+type GenerationsIn = InputOf<"/simulations/generations", "post">;
+type GenerationsOut = OutputOf<"/simulations/generations", "post">;
+
+async function searchSimulationGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/simulations/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
+  "use server";
+  return api.post("/simulations/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/simulations/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function NewSimulationPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -192,10 +230,8 @@ export default async function NewSimulationPage({
     }
   });
 
-  // Inline server-side parsers for simulation search params (navigation/search params only)
   const simulationSearchParams = {
     draftId: parseAsString,
-    // Search/filter params
     scenarioSearch: parseAsString,
     scenarioShowSelected: parseAsBoolean,
   };
@@ -205,11 +241,11 @@ export default async function NewSimulationPage({
   // Fetch default simulation detail server-side with filter params and draft_id
   const input: GetSimulationIn = {
     body: {
-      simulation_id: null, // NULL for new mode
+      simulation_id: null,
       draft_id: q.draftId ?? null,
       scenario_search: q.scenarioSearch ?? null,
       scenario_show_selected: q.scenarioShowSelected ?? null,
-      filter_scenario_ids: null, // Not used in new mode
+      filter_scenario_ids: null,
     } as GetSimulationIn["body"],
   };
 
@@ -219,7 +255,6 @@ export default async function NewSimulationPage({
   try {
     simulationDataDefault = await getSimulationDefault(input);
   } catch (error) {
-    // Check for 403 (access denied) - show UnifiedAccessDenied component
     if (
       error instanceof Error &&
       (error.message.includes("403") ||
@@ -228,44 +263,61 @@ export default async function NewSimulationPage({
     ) {
       return <UnifiedAccessDenied reason="department" resourceType="simulation" redirectPath="/training/simulations" />;
     }
-    // Re-throw other errors
     throw error;
   }
 
+  const groupResult = await api.post("/simulations/group", { body: {} } as GroupSimulationIn);
+
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "simulation",
+          createFeedback: createSimulationProblem,
+        }}
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
           { title: "Simulations", section: "simulations", url: "/training/simulations" },
           { title: "New Simulation" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="simulation-new"
-        aria-label="Create new simulation page"
+        panelProps={{
+          artifactType: "simulation",
+          groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateSimulation,
+          permissions: [
+            { artifact: "simulation", operation: "draft" },
+            { artifact: "simulation", operation: "get" },
+            { artifact: "simulation", operation: "docs" },
+            { artifact: "simulation", operation: "group" },
+          ],
+          getGroupHistory: getSimulationGroupHistory,
+          searchGroups: searchSimulationGroups,
+        }}
       >
-        <Simulation
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          simulationData={simulationDataDefault}
-          createSimulationAction={createSimulation}
-          patchSimulationDraftAction={patchSimulationDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createScenarioFlagsAction={createDraftScenarioFlags}
-          createScenarioPositionsAction={createDraftScenarioPositions}
-          createScenarioRubricsAction={
-            createDraftScenarioRubrics
-          }
-          createScenarioTimeLimitsAction={
-            createDraftScenarioTimeLimits
-          }
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="simulation-new"
+          aria-label="Create new simulation page"
+        >
+          <Simulation
+            key={q.draftId || "no-draft"}
+            simulationData={simulationDataDefault}
+            createSimulationAction={createSimulation}
+            patchSimulationDraftAction={patchSimulationDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createScenarioFlagsAction={createDraftScenarioFlags}
+            createScenarioPositionsAction={createDraftScenarioPositions}
+            createScenarioRubricsAction={createDraftScenarioRubrics}
+            createScenarioTimeLimitsAction={createDraftScenarioTimeLimits}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }
-
-// Types are now defined inline in components using InputOf/OutputOf

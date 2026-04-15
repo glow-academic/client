@@ -1,19 +1,25 @@
 /**
- * app/(main)/create/simulations/page.tsx
- * Simulation list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/training/simulations/page.tsx
+ * Simulation list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import { Simulations } from "@/components/artifacts/simulation/Simulations";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { Simulations } from "@/components/artifacts/simulation/Simulations";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadSimulationsListSearchParams } from "@/lib/search-params/simulations";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
 type SimulationsListOut = OutputOf<"/simulations/search", "post">;
@@ -25,7 +31,16 @@ type CreateSimulationIn = InputOf<"/simulations/create", "post">;
 type CreateSimulationOut = OutputOf<"/simulations/create", "post">;
 type UpdateSimulationIn = InputOf<"/simulations/update", "post">;
 type UpdateSimulationOut = OutputOf<"/simulations/update", "post">;
-import type { ParseCsvResult } from "@/components/common/BulkImport";
+type GroupSimulationIn = InputOf<"/simulations/group", "post">;
+type GroupSimulationOut = OutputOf<"/simulations/group", "post">;
+type GenerateSimulationIn = InputOf<"/simulations/generate", "post">;
+type GenerateSimulationOut = OutputOf<"/simulations/generate", "post">;
+type GenerationsIn = InputOf<"/simulations/generations", "post">;
+type GenerationsOut = OutputOf<"/simulations/generations", "post">;
+type ProblemSimulationIn = InputOf<"/simulations/problem", "post">;
+type ProblemSimulationOut = OutputOf<"/simulations/problem", "post">;
+type ContextIn = InputOf<"/simulations/context", "post">;
+type ContextOut = OutputOf<"/simulations/context", "post">;
 
 /** ---- Body type for simulations list request ---- */
 type SimulationsListBody = {
@@ -61,12 +76,11 @@ const getSimulationsList = async (body: SimulationsListBody): Promise<Simulation
   );
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function duplicateSimulation(
   input: DuplicateSimulationIn,
 ): Promise<DuplicateSimulationOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/simulations/duplicate", input);
 }
 
@@ -74,7 +88,6 @@ async function deleteSimulation(
   input: DeleteSimulationIn,
 ): Promise<DeleteSimulationOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/simulations/delete", input);
 }
 
@@ -93,26 +106,57 @@ async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   return api.post("/simulations/csv", { formData });
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/simulations/docs", "post">;
-type DocsOut = OutputOf<"/simulations/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/simulations/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateSimulation(
+  input: GenerateSimulationIn
+): Promise<GenerateSimulationOut> {
+  "use server";
+  return api.post("/simulations/generate", input);
 }
+
+async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
+  "use server";
+  return api.post("/simulations/group", { body: { group_id: groupId } } as GroupSimulationIn);
+}
+
+async function searchSimulationGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/simulations/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
+  "use server";
+  return api.post("/simulations/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/simulations/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface SimulationsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function SimulationsPage({ searchParams }: SimulationsPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -148,21 +192,42 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
     page_offset: offset,
   };
 
-  // Fetch list data and view cookie in parallel
-  const [listData, initialColumnVisibility] = await Promise.all([
+  // Fetch list data, view cookie, and group in parallel
+  const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getSimulationsList(body),
     readViewCookie("simulations"),
+    api.post("/simulations/group", { body: {} } as GroupSimulationIn),
   ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Simulations" },
-        ]}
-        toolbar={<NewArtifactButton label="New Simulation" href="/training/simulations/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "simulation",
+        createFeedback: createSimulationProblem,
+      }}
+      breadcrumbs={[
+        { title: "Training", section: "training", url: "/training" },
+        { title: "Simulations" },
+      ]}
+      toolbar={<NewArtifactButton label="New Simulation" href="/training/simulations/new" />}
+      panelProps={{
+        artifactType: "simulation",
+        groupId: (groupResult as GroupSimulationOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateSimulation,
+        permissions: [
+          { artifact: "simulation", operation: "draft" },
+          { artifact: "simulation", operation: "get" },
+          { artifact: "simulation", operation: "docs" },
+          { artifact: "simulation", operation: "group" },
+        ],
+        getGroupHistory: getSimulationGroupHistory,
+        searchGroups: searchSimulationGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="simulations-index">
         <Simulations
           listData={listData}
@@ -182,7 +247,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           flagSearch={q.flagSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 
