@@ -22,6 +22,9 @@ import { LogoutGuard } from "./logout-guard";
 
 const SIDEBAR_COOKIE = "glow_sidebar";
 
+/** Routes that render their own full layout via FullPageLayout */
+const FULL_PAGE_ROUTES = ["/training/personas", "/training/scenarios", "/training/cohorts"];
+
 // Force dynamic rendering to ensure layout re-renders on route changes
 // This fixes the issue where children don't update on client-side navigation
 export const dynamic = "force-dynamic";
@@ -69,6 +72,22 @@ export default async function MainLayout({
           fullWidth={true}
         />
       </LogoutGuard>
+    );
+  }
+
+  // Full-page routes render their own layout via FullPageLayout — skip sidebar/panel chrome
+  const isFullPage = FULL_PAGE_ROUTES.some((r) => pathname.startsWith(r));
+
+  if (isFullPage) {
+    return (
+      <div key={`layout-wrapper-${pathname}`} data-route-pathname={pathname}>
+        <Suspense
+          key={`suspense-${pathname}`}
+          fallback={<AppShell.ContentSkeleton />}
+        >
+          {children}
+        </Suspense>
+      </div>
     );
   }
 

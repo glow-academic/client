@@ -35,13 +35,11 @@ import { Names } from "@/components/resources/Names";
 import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Voices } from "@/components/resources/Voices";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useGenerationPanelContext } from "@/contexts/generation-panel-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { useGenerate } from "@/hooks/use-generate";
 import { useGenerationDraft } from "@/hooks/use-generation-draft";
-import { usePersonaGeneration } from "@/hooks/use-persona-generation";
 
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
 
@@ -100,10 +98,6 @@ export interface PersonaProps {
   patchPersonaDraftAction?: (
     input: PatchPersonaDraftIn,
   ) => Promise<PatchPersonaDraftOut>;
-  // Generation action (artifact-specific)
-  generateAction?: (input: any) => Promise<any>;
-  getGroupHistoryAction?: (groupId: string) => Promise<any>;
-  searchGroupsAction?: (query: string) => Promise<any>;
 }
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
@@ -170,65 +164,12 @@ function PersonaComponent({
   createPersonaAction,
   updatePersonaAction,
   patchPersonaDraftAction,
-  generateAction,
-  getGroupHistoryAction,
-  searchGroupsAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
   const { profile } = useProfile();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
   const groupId = groupIdProp ?? null;
-
-  // Register groupId + onGenerate in the generation panel context
-  const panelContext = useGenerationPanelContext();
-  useEffect(() => {
-    if (panelContext && groupId) {
-      panelContext.setGroupId(groupId);
-      panelContext.setGroupCompletedEvent("persona.group.completed");
-      if (getGroupHistoryAction) {
-        panelContext.setGetGroupHistory(getGroupHistoryAction);
-      }
-      if (searchGroupsAction) {
-        panelContext.setSearchGroupsOverride(searchGroupsAction);
-      }
-    }
-    return () => {
-      if (panelContext) {
-        panelContext.setGroupId(null);
-        panelContext.setGroupCompletedEvent(null);
-        panelContext.setGetGroupHistory(null);
-        panelContext.setSearchGroupsOverride(null);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [groupId]);
-
-  useEffect(() => {
-    if (panelContext && generateAction && groupId) {
-      panelContext.setOnGenerate(async (params) => {
-        await generateAction({
-          body: {
-            group_id: groupId,
-            permissions: [
-              { artifact: "persona", operation: "draft" },
-              { artifact: "persona", operation: "get" },
-              { artifact: "persona", operation: "docs" },
-              { artifact: "persona", operation: "group" },
-            ],
-            resource_types: params.resource_types,
-            user_instructions: params.instructions ? [params.instructions] : [],
-            dangerous: params.dangerous ?? false,
-            sid: params.sid,
-          },
-        });
-      });
-    }
-    return () => {
-      if (panelContext) panelContext.setOnGenerate(null);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [generateAction, groupId]);
 
   // Empty flush registry — resource creation is handled by the unified draft endpoint
   const emptyFlushRegistryRef = useRef<
@@ -671,18 +612,6 @@ function PersonaComponent({
       toast.error("AI draft failed", { description: message });
     },
   });
-
-  // --- AI Persona Generation Listener (for GenerationPanel messages) ---
-  const personaGeneration = usePersonaGeneration(groupId);
-  useEffect(() => {
-    if (panelContext) {
-      panelContext.setGenerationListener(personaGeneration);
-    }
-    return () => {
-      if (panelContext) panelContext.setGenerationListener(null);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [personaGeneration.messages, personaGeneration.isGenerating]);
 
   // Update form state when server data changes
   useEffect(() => {

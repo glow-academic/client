@@ -1,12 +1,14 @@
 /**
  * app/(main)/training/scenarios/[scenarioId]/page.tsx
- * Scenario editing page with server actions
+ * Scenario edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
 
+import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Scenario from "@/components/artifacts/scenario/Scenario";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -14,11 +16,14 @@ import { DraftProviderClient } from "@/contexts/draft-context";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import {
   csvToArray,
   extractFieldShowSelectedByParam,
   loadScenarioSearchParams,
 } from "@/lib/search-params/scenarios";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/scenarios/get", "post">;
@@ -27,6 +32,14 @@ type UpdateScenarioIn = InputOf<"/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/scenarios/update", "post">;
 type PatchScenarioDraftIn = InputOf<"/scenarios/draft", "patch">;
 type PatchScenarioDraftOut = OutputOf<"/scenarios/draft", "patch">;
+type GroupScenarioIn = InputOf<"/scenarios/group", "post">;
+type GroupScenarioOut = OutputOf<"/scenarios/group", "post">;
+type GenerateScenarioIn = InputOf<"/scenarios/generate", "post">;
+type GenerateScenarioOut = OutputOf<"/scenarios/generate", "post">;
+type ProblemScenarioIn = InputOf<"/scenarios/problem", "post">;
+type ProblemScenarioOut = OutputOf<"/scenarios/problem", "post">;
+type ContextIn = InputOf<"/scenarios/context", "post">;
+type ContextOut = OutputOf<"/scenarios/context", "post">;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
@@ -44,25 +57,7 @@ const getScenario = async (input: GetScenarioIn): Promise<GetScenarioOut> => {
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/scenarios/docs", "post">;
-type DocsOut = OutputOf<"/scenarios/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/scenarios/docs", input);
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ scenarioId: string }>;
-}): Promise<Metadata> {
-  const { scenarioId } = await params;
-  const docs = await getDocs({ body: { entity_id: scenarioId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
-}
-
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function uploadFile(formData: FormData): Promise<UploadResult> {
   "use server";
   try {
@@ -108,6 +103,49 @@ async function patchScenarioDraft(
   return api.patch("/scenarios/draft", input);
 }
 
+async function generateScenario(
+  input: GenerateScenarioIn
+): Promise<GenerateScenarioOut> {
+  "use server";
+  return api.post("/scenarios/generate", input);
+}
+
+async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
+  "use server";
+  return api.post("/scenarios/group", { body: { group_id: groupId } } as GroupScenarioIn);
+}
+
+type GenerationsIn = InputOf<"/scenarios/generations", "post">;
+type GenerationsOut = OutputOf<"/scenarios/generations", "post">;
+
+async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/scenarios/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
+  "use server";
+  return api.post("/scenarios/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ scenarioId: string }>;
+}): Promise<Metadata> {
+  const { scenarioId } = await params;
+  const context = await api.post("/scenarios/context", { body: { entity_id: scenarioId } } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.detail.title,
+    description: context.page_metadata?.detail.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditScenarioPage({
   params,
@@ -117,8 +155,18 @@ export default async function EditScenarioPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { scenarioId } = await params;
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -188,39 +236,62 @@ export default async function EditScenarioPage({
       } as GetScenarioIn["body"],
     };
 
-    const [scenarioDetail, docs, draftsResult] = await Promise.all([
+    const [scenarioDetail, context, draftsResult, groupResult] = await Promise.all([
       getScenario(input),
-      getDocs({ body: { entity_id: scenarioId } }),
-      api.post("/scenarios/drafts", {})
+      api.post("/scenarios/context", { body: { entity_id: scenarioId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/scenarios/drafts", {}),
+      api.post("/scenarios/group", { body: {} } as GroupScenarioIn),
     ]);
 
-    // Entity name from docs (already resolved server-side)
-    const entityName = docs.page_metadata?.detail.title;
+    // Entity name from context (already resolved server-side)
+    const entityName = context.page_metadata?.detail.title;
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <PageHeader
+        <FullPageLayout
+          profileData={profileData}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "scenario",
+            createFeedback: createScenarioProblem,
+          }}
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
             { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-        />
-        <div
-          className="space-y-6 px-4"
-          data-page="scenario-edit"
-          data-scenario-id={scenarioId}
+          panelProps={{
+            artifactType: "scenario",
+            groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generateScenario,
+            permissions: [
+              { artifact: "scenario", operation: "draft" },
+              { artifact: "scenario", operation: "get" },
+              { artifact: "scenario", operation: "docs" },
+              { artifact: "scenario", operation: "group" },
+            ],
+            getGroupHistory: getScenarioGroupHistory,
+            searchGroups: searchScenarioGroups,
+          }}
         >
-          <Scenario
-            scenarioId={scenarioId}
-            scenarioDetail={scenarioDetail}
-            updateScenarioAction={updateScenario}
-            patchScenarioDraftAction={patchScenarioDraft}
-            uploadBasePath="/scenarios"
-            uploadFileAction={uploadFile}
-          />
-        </div>
+          <div
+            className="space-y-6 px-4"
+            data-page="scenario-edit"
+            data-scenario-id={scenarioId}
+          >
+            <Scenario
+              scenarioId={scenarioId}
+              scenarioDetail={scenarioDetail}
+              updateScenarioAction={updateScenario}
+              patchScenarioDraftAction={patchScenarioDraft}
+              uploadBasePath="/scenarios"
+              uploadFileAction={uploadFile}
+            />
+          </div>
+        </FullPageLayout>
       </DraftProviderClient>
     );
   } catch (error: unknown) {

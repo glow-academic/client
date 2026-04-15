@@ -1,26 +1,25 @@
 /**
  * app/(main)/training/personas/loading.tsx
- * Loading skeleton for personas page
+ * Loading skeleton for personas list page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
+import { cookies } from "next/headers";
+import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Loading() {
+function PersonasListSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4">
       <div className="space-y-4">
         {/* Toolbar skeleton */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
             <div className="w-full md:w-auto">
-              {/* Search input */}
               <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
             </div>
-
             <div className="flex items-center space-x-2 flex-wrap">
-              {/* Filter buttons: Scenario, Field, Department */}
               <Skeleton className="h-8 w-[100px]" />
               <Skeleton className="h-8 w-[80px]" />
               <Skeleton className="h-8 w-[110px]" />
@@ -62,21 +61,6 @@ export default function Loading() {
         </div>
 
         {/* Pagination skeleton */}
-        {/* Mobile */}
-        <div className="flex items-center px-2 md:hidden">
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-8 w-[70px]" />
-          </div>
-          <div className="flex-1 flex items-center justify-center">
-            <Skeleton className="h-4 w-[80px]" />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Skeleton className="h-8 w-8" />
-            <Skeleton className="h-8 w-8" />
-          </div>
-        </div>
-        {/* Desktop */}
         <div className="hidden md:flex items-center px-2">
           <div className="flex-1" />
           <div className="flex items-center space-x-6 lg:space-x-8">
@@ -95,5 +79,17 @@ export default function Loading() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default async function Loading() {
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("glow_sidebar")?.value !== "false";
+  const panelOpen = cookieStore.get("glow_panel")?.value === "true";
+
+  return (
+    <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
+      <PersonasListSkeleton />
+    </FullPageSkeleton>
   );
 }

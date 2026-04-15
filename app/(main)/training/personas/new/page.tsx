@@ -1,24 +1,29 @@
 /**
- * app/(main)/create/personas/new/page.tsx
- * New persona page for the personas section.
+ * app/(main)/training/personas/new/page.tsx
+ * New persona page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import Persona from "@/components/artifacts/persona/Persona";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Persona from "@/components/artifacts/persona/Persona";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import {
   createLoader,
   parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
 } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/personas/get", "post">;
@@ -31,22 +36,22 @@ type GroupPersonaIn = InputOf<"/personas/group", "post">;
 type GroupPersonaOut = OutputOf<"/personas/group", "post">;
 type GeneratePersonaIn = InputOf<"/personas/generate", "post">;
 type GeneratePersonaOut = OutputOf<"/personas/generate", "post">;
+type ProblemPersonaIn = InputOf<"/personas/problem", "post">;
+type ProblemPersonaOut = OutputOf<"/personas/problem", "post">;
+type ContextIn = InputOf<"/personas/context", "post">;
+type ContextOut = OutputOf<"/personas/context", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getPersonaDefault = async (
   input: GetPersonaIn
 ): Promise<GetPersonaOut> => {
   return api.post("/personas/get", input, {
     cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
+    headers: { "X-Bypass-Cache": "1" },
   });
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> {
   "use server";
   return api.post("/personas/create", input);
@@ -79,26 +84,41 @@ async function searchPersonaGroups(query: string): Promise<GenerationsOut> {
   return api.post("/personas/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/personas/docs", "post">;
-type DocsOut = OutputOf<"/personas/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/personas/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
+  "use server";
+  return api.post("/personas/problem", input);
 }
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/personas/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function NewPersonaPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers (until /personas/context returns full profile)
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -112,10 +132,8 @@ export default async function NewPersonaPage({
     }
   });
 
-  // Inline server-side parsers for persona search params (navigation/search params only)
   const personaSearchParams = {
     draftId: parseAsString,
-    // Search/filter params
     colorSearch: parseAsString,
     iconSearch: parseAsString,
     descriptionSearch: parseAsString,
@@ -129,10 +147,10 @@ export default async function NewPersonaPage({
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
 
-  // Fetch default persona detail server-side with filter params and draft_id
+  // SSR data fetches
   const input: GetPersonaIn = {
     body: {
-      id: null, // NULL for new mode
+      id: null,
       draft_id: q.draftId ?? null,
       colors: q.colorSearch || q.colorShowSelected ? {
         search: q.colorSearch ?? undefined,
@@ -155,6 +173,7 @@ export default async function NewPersonaPage({
       } : undefined,
     } as GetPersonaIn["body"],
   };
+
   const [personaDetailDefault, draftsResult, groupResult] = await Promise.all([
     getPersonaDefault(input),
     api.post("/personas/drafts", {}),
@@ -163,30 +182,49 @@ export default async function NewPersonaPage({
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "persona",
+          createFeedback: createPersonaProblem,
+        }}
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
           { title: "Personas", section: "personas", url: "/training/personas" },
           { title: "New Persona" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="persona-new"
-        aria-label="Create new persona page"
+        panelProps={{
+          artifactType: "persona",
+          groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generatePersona,
+          permissions: [
+            { artifact: "persona", operation: "draft" },
+            { artifact: "persona", operation: "get" },
+            { artifact: "persona", operation: "docs" },
+            { artifact: "persona", operation: "group" },
+          ],
+          getGroupHistory: getPersonaGroupHistory,
+          searchGroups: searchPersonaGroups,
+        }}
       >
-        <Persona
-          key={q.draftId || "no-draft"}
-          groupId={(groupResult as any)?.group_id ?? null}
-          personaData={personaDetailDefault}
-          createPersonaAction={createPersona}
-          patchPersonaDraftAction={patchPersonaDraft}
-          generateAction={generatePersona}
-          getGroupHistoryAction={getPersonaGroupHistory}
-          searchGroupsAction={searchPersonaGroups}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="persona-new"
+          aria-label="Create new persona page"
+        >
+          <Persona
+            key={q.draftId || "no-draft"}
+            groupId={(groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null}
+            personaData={personaDetailDefault}
+            createPersonaAction={createPersona}
+            patchPersonaDraftAction={patchPersonaDraft}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }

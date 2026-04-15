@@ -1,19 +1,25 @@
 /**
- * app/(main)/create/scenarios/page.tsx
- * Scenario list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/training/scenarios/page.tsx
+ * Scenario list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import { Scenarios } from "@/components/artifacts/scenario/Scenarios";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { Scenarios } from "@/components/artifacts/scenario/Scenarios";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadScenariosListSearchParams } from "@/lib/search-params/scenarios-list";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
 type ScenariosListOut = OutputOf<"/scenarios/search", "post">;
@@ -25,7 +31,16 @@ type CreateScenarioIn = InputOf<"/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/scenarios/update", "post">;
-import type { ParseCsvResult } from "@/components/common/BulkImport";
+type GroupScenarioIn = InputOf<"/scenarios/group", "post">;
+type GroupScenarioOut = OutputOf<"/scenarios/group", "post">;
+type GenerateScenarioIn = InputOf<"/scenarios/generate", "post">;
+type GenerateScenarioOut = OutputOf<"/scenarios/generate", "post">;
+type GenerationsIn = InputOf<"/scenarios/generations", "post">;
+type GenerationsOut = OutputOf<"/scenarios/generations", "post">;
+type ProblemScenarioIn = InputOf<"/scenarios/problem", "post">;
+type ProblemScenarioOut = OutputOf<"/scenarios/problem", "post">;
+type ContextIn = InputOf<"/scenarios/context", "post">;
+type ContextOut = OutputOf<"/scenarios/context", "post">;
 
 /** ---- Body type for scenarios list request ---- */
 type ScenariosListBody = {
@@ -61,12 +76,11 @@ const getScenariosList = async (body: ScenariosListBody): Promise<ScenariosListO
   );
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function duplicateScenario(
   input: DuplicateScenarioIn,
 ): Promise<DuplicateScenarioOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/scenarios/duplicate", input);
 }
 
@@ -74,7 +88,6 @@ async function deleteScenario(
   input: DeleteScenarioIn,
 ): Promise<DeleteScenarioOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/scenarios/delete", input);
 }
 
@@ -93,26 +106,57 @@ async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   return api.post("/scenarios/csv", { formData });
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/scenarios/docs", "post">;
-type DocsOut = OutputOf<"/scenarios/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/scenarios/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateScenario(
+  input: GenerateScenarioIn
+): Promise<GenerateScenarioOut> {
+  "use server";
+  return api.post("/scenarios/generate", input);
 }
+
+async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
+  "use server";
+  return api.post("/scenarios/group", { body: { group_id: groupId } } as GroupScenarioIn);
+}
+
+async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/scenarios/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
+  "use server";
+  return api.post("/scenarios/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/scenarios/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface ScenariosPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function ScenariosPage({ searchParams }: ScenariosPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -148,21 +192,42 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
     page_offset: offset,
   };
 
-  // Fetch list data and view cookie in parallel
-  const [listData, initialColumnVisibility] = await Promise.all([
+  // Fetch list data, view cookie, and group in parallel
+  const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getScenariosList(body),
     readViewCookie("scenarios"),
+    api.post("/scenarios/group", { body: {} } as GroupScenarioIn),
   ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Scenarios" },
-        ]}
-        toolbar={<NewArtifactButton label="New Scenario" href="/training/scenarios/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "scenario",
+        createFeedback: createScenarioProblem,
+      }}
+      breadcrumbs={[
+        { title: "Training", section: "training", url: "/training" },
+        { title: "Scenarios" },
+      ]}
+      toolbar={<NewArtifactButton label="New Scenario" href="/training/scenarios/new" />}
+      panelProps={{
+        artifactType: "scenario",
+        groupId: (groupResult as GroupScenarioOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateScenario,
+        permissions: [
+          { artifact: "scenario", operation: "draft" },
+          { artifact: "scenario", operation: "get" },
+          { artifact: "scenario", operation: "docs" },
+          { artifact: "scenario", operation: "group" },
+        ],
+        getGroupHistory: getScenarioGroupHistory,
+        searchGroups: searchScenarioGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="scenarios-index">
         <Scenarios
           listData={listData}
@@ -182,7 +247,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
           flagSearch={q.flagSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

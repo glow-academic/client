@@ -1,19 +1,24 @@
 /**
- * app/(main)/create/cohorts/new/page.tsx
- * New cohort page for the cohorts section.
+ * app/(main)/training/cohorts/new/page.tsx
+ * New cohort page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 01/12/2026
  */
 
-import Cohort from "@/components/artifacts/cohort/Cohort";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Cohort from "@/components/artifacts/cohort/Cohort";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetCohortIn = InputOf<"/cohorts/get", "post">;
@@ -48,11 +53,16 @@ type CreateDraftProfilePersonasOut = OutputOf<
   "/api/v5/resources/profile_personas",
   "post"
 >;
+type GroupCohortIn = InputOf<"/cohorts/group", "post">;
+type GroupCohortOut = OutputOf<"/cohorts/group", "post">;
+type GenerateCohortIn = InputOf<"/cohorts/generate", "post">;
+type GenerateCohortOut = OutputOf<"/cohorts/generate", "post">;
+type ProblemCohortIn = InputOf<"/cohorts/problem", "post">;
+type ProblemCohortOut = OutputOf<"/cohorts/problem", "post">;
+type ContextIn = InputOf<"/cohorts/context", "post">;
+type ContextOut = OutputOf<"/cohorts/context", "post">;
 
-
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getCohortDefault = async (input: GetCohortIn): Promise<GetCohortOut> => {
   return api.post("/cohorts/get", input, {
     cache: "no-store",
@@ -62,7 +72,7 @@ const getCohortDefault = async (input: GetCohortIn): Promise<GetCohortOut> => {
   });
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
   "use server";
   return api.post("/cohorts/create", input);
@@ -72,8 +82,6 @@ async function patchCohortDraft(
   input: PatchCohortDraftIn
 ): Promise<PatchCohortDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/cohorts/draft", input);
 }
 
@@ -81,7 +89,6 @@ async function createDraftNames(
   input: CreateDraftNamesIn
 ): Promise<CreateDraftNamesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
 }
 
@@ -89,7 +96,6 @@ async function createDraftDescriptions(
   input: CreateDraftDescriptionsIn
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/descriptions", input);
 }
 
@@ -97,7 +103,6 @@ async function createDraftSimulationPositions(
   input: CreateDraftSimulationPositionsIn
 ): Promise<CreateDraftSimulationPositionsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/simulation_positions", input);
 }
 
@@ -108,27 +113,61 @@ async function createDraftProfilePersonas(
   return api.post("/resources/profile_personas", input);
 }
 
-
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/cohorts/docs", "post">;
-type DocsOut = OutputOf<"/cohorts/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/cohorts/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function generateCohort(
+  input: GenerateCohortIn
+): Promise<GenerateCohortOut> {
+  "use server";
+  return api.post("/cohorts/generate", input);
 }
+
+async function getCohortGroupHistory(groupId: string): Promise<GroupCohortOut> {
+  "use server";
+  return api.post("/cohorts/group", { body: { group_id: groupId } } as GroupCohortIn);
+}
+
+type GenerationsIn = InputOf<"/cohorts/generations", "post">;
+type GenerationsOut = OutputOf<"/cohorts/generations", "post">;
+
+async function searchCohortGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/cohorts/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohortOut> {
+  "use server";
+  return api.post("/cohorts/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function NewCohortPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers (until /cohorts/context returns full profile)
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -145,7 +184,6 @@ export default async function NewCohortPage({
   // Inline server-side parsers for cohort search params
   const cohortSearchParams = {
     draftId: parseAsString,
-    // Search/filter params
     descriptionSearch: parseAsString,
     simulationSearch: parseAsString,
     simulationShowSelected: parseAsBoolean,
@@ -156,7 +194,6 @@ export default async function NewCohortPage({
   const q = loadCohortSearchParams(searchParamsObj);
 
   // Fetch default cohort detail server-side with filter params and draft_id
-  // Note: cohort_id is null for new mode
   const input: GetCohortIn = {
     body: {
       cohort_id: null,
@@ -169,37 +206,61 @@ export default async function NewCohortPage({
       mcp: false,
     } as GetCohortIn["body"],
   };
-  const [cohortData, draftsResult] = await Promise.all([
+
+  const [cohortData, draftsResult, groupResult] = await Promise.all([
     getCohortDefault(input),
-    api.post("/cohorts/drafts", {})
+    api.post("/cohorts/drafts", {}),
+    api.post("/cohorts/group", { body: {} } as GroupCohortIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "cohort",
+          createFeedback: createCohortProblem,
+        }}
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
           { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
           { title: "New Cohort" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="cohort-new"
-        aria-label="Create new cohort page"
+        panelProps={{
+          artifactType: "cohort",
+          groupId: (groupResult as GroupCohortOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateCohort,
+          permissions: [
+            { artifact: "cohort", operation: "draft" },
+            { artifact: "cohort", operation: "get" },
+            { artifact: "cohort", operation: "docs" },
+            { artifact: "cohort", operation: "group" },
+          ],
+          getGroupHistory: getCohortGroupHistory,
+          searchGroups: searchCohortGroups,
+        }}
       >
-        <Cohort
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          cohortData={cohortData}
-          createCohortAction={createCohort}
-          patchCohortDraftAction={patchCohortDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createSimulationPositionsAction={createDraftSimulationPositions}
-          createProfilePersonasAction={createDraftProfilePersonas}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="cohort-new"
+          aria-label="Create new cohort page"
+        >
+          <Cohort
+            key={q.draftId || "no-draft"}
+            cohortData={cohortData}
+            createCohortAction={createCohort}
+            patchCohortDraftAction={patchCohortDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createSimulationPositionsAction={createDraftSimulationPositions}
+            createProfilePersonasAction={createDraftProfilePersonas}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }

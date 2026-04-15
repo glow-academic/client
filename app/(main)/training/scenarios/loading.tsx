@@ -1,26 +1,25 @@
 /**
  * app/(main)/training/scenarios/loading.tsx
- * Loading skeleton for scenarios page
+ * Loading skeleton for scenarios list page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
+import { cookies } from "next/headers";
+import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function Loading() {
+function ScenariosListSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4">
       <div className="space-y-4">
         {/* Toolbar skeleton */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div className="flex flex-col md:flex-row md:flex-1 md:items-center md:space-x-2 gap-2 md:gap-0">
             <div className="w-full md:w-auto">
-              {/* Search input */}
               <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
             </div>
-
             <div className="flex items-center space-x-2 flex-wrap">
-              {/* Filter buttons: Simulation, Persona, Department */}
               <Skeleton className="h-8 w-[100px]" />
               <Skeleton className="h-8 w-[90px]" />
               <Skeleton className="h-8 w-[110px]" />
@@ -96,5 +95,17 @@ export default function Loading() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default async function Loading() {
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("glow_sidebar")?.value !== "false";
+  const panelOpen = cookieStore.get("glow_panel")?.value === "true";
+
+  return (
+    <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
+      <ScenariosListSkeleton />
+    </FullPageSkeleton>
   );
 }

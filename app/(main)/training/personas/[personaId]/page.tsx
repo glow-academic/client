@@ -1,12 +1,14 @@
 /**
  * app/(main)/training/personas/[personaId]/page.tsx
- * Persona edit page for the persona page.
+ * Persona edit page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
+import { getSession } from "@/auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Persona from "@/components/artifacts/persona/Persona";
 import { DraftProviderClient } from "@/contexts/draft-context";
@@ -14,12 +16,15 @@ import { DraftProviderClient } from "@/contexts/draft-context";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import {
   createLoader,
   parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
 } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/personas/get", "post">;
@@ -32,37 +37,20 @@ type GroupPersonaIn = InputOf<"/personas/group", "post">;
 type GroupPersonaOut = OutputOf<"/personas/group", "post">;
 type GeneratePersonaIn = InputOf<"/personas/generate", "post">;
 type GeneratePersonaOut = OutputOf<"/personas/generate", "post">;
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
+type ProblemPersonaIn = InputOf<"/personas/problem", "post">;
+type ProblemPersonaOut = OutputOf<"/personas/problem", "post">;
+type ContextIn = InputOf<"/personas/context", "post">;
+type ContextOut = OutputOf<"/personas/context", "post">;
+
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
   return api.post("/personas/get", input, {
     cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
+    headers: { "X-Bypass-Cache": "1" },
   });
 };
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/personas/docs", "post">;
-type DocsOut = OutputOf<"/personas/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/personas/docs", input);
-};
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ personaId: string }>;
-}): Promise<Metadata> {
-  const { personaId } = await params;
-  const docs = await getDocs({ body: { entity_id: personaId } });
-  return { title: docs.page_metadata?.detail.title, description: docs.page_metadata?.detail.description };
-}
-
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
   "use server";
   return api.post("/personas/update", input);
@@ -72,7 +60,6 @@ async function patchPersonaDraft(
   input: PatchPersonaDraftIn
 ): Promise<PatchPersonaDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/personas/draft", input);
 }
 
@@ -83,7 +70,42 @@ async function generatePersona(
   return api.post("/personas/generate", input);
 }
 
-/** ---- Server renders client with typed data and actions ---- */
+async function getPersonaGroupHistory(groupId: string): Promise<GroupPersonaOut> {
+  "use server";
+  return api.post("/personas/group", { body: { group_id: groupId } } as GroupPersonaIn);
+}
+
+type GenerationsIn = InputOf<"/personas/generations", "post">;
+type GenerationsOut = OutputOf<"/personas/generations", "post">;
+
+async function searchPersonaGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/personas/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
+  "use server";
+  return api.post("/personas/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ personaId: string }>;
+}): Promise<Metadata> {
+  const { personaId } = await params;
+  const context = await api.post("/personas/context", { body: { entity_id: personaId } } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.detail.title,
+    description: context.page_metadata?.detail.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
+
 export default async function PersonaEditPage({
   params,
   searchParams,
@@ -92,8 +114,18 @@ export default async function PersonaEditPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { personaId } = await params;
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -107,7 +139,6 @@ export default async function PersonaEditPage({
     }
   });
 
-  // Inline server-side parsers for persona search params
   const personaSearchParams = {
     draftId: parseAsString,
     colorSearch: parseAsString,
@@ -125,8 +156,6 @@ export default async function PersonaEditPage({
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
 
-  // Fetch persona detail (always fresh - source of truth) with filter params
-  // Note: OpenAPI schema may need regeneration to include new filter params
   try {
     const input: GetPersonaIn = {
       body: {
@@ -153,43 +182,64 @@ export default async function PersonaEditPage({
         } : undefined,
       } as GetPersonaIn["body"],
     };
-    const [personaDetail, docs, draftsResult, groupResult] = await Promise.all([
+
+    const [personaDetail, context, draftsResult, groupResult] = await Promise.all([
       getPersona(input),
-      getDocs({ body: { entity_id: personaId } }),
+      api.post("/personas/context", { body: { entity_id: personaId } } as ContextIn) as Promise<ContextOut>,
       api.post("/personas/drafts", {}),
       api.post("/personas/group", { body: {} } as GroupPersonaIn),
     ]);
 
-    const entityName = docs.page_metadata?.detail.title;
+    const entityName = context.page_metadata?.detail.title;
 
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
-        <PageHeader
+        <FullPageLayout
+          profileData={profileData}
+          sessionSnapshot={snapshot}
+          initialSidebarOpen={initialSidebarOpen}
+          initialPanelOpen={initialPanelOpen}
+          sidebarProps={{
+            activeSection: "persona",
+            createFeedback: createPersonaProblem,
+          }}
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
             { title: "Personas", section: "personas", url: "/training/personas" },
             { title: entityName },
           ]}
           toolbar={<SaveToolbar />}
-        />
-        <div
-          className="space-y-6 px-4"
-          data-page="persona-edit"
-          data-persona-id={personaId}
+          panelProps={{
+            artifactType: "persona",
+            groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
+            generateAction: generatePersona,
+            permissions: [
+              { artifact: "persona", operation: "draft" },
+              { artifact: "persona", operation: "get" },
+              { artifact: "persona", operation: "docs" },
+              { artifact: "persona", operation: "group" },
+            ],
+            getGroupHistory: getPersonaGroupHistory,
+            searchGroups: searchPersonaGroups,
+          }}
         >
-          <Persona
-            personaId={personaId}
-            groupId={(groupResult as any)?.group_id ?? null}
-            personaData={personaDetail}
-            updatePersonaAction={updatePersona}
-            patchPersonaDraftAction={patchPersonaDraft}
-            generateAction={generatePersona}
-          />
-        </div>
+          <div
+            className="space-y-6 px-4"
+            data-page="persona-edit"
+            data-persona-id={personaId}
+          >
+            <Persona
+              personaId={personaId}
+              groupId={(groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null}
+              personaData={personaDetail}
+              updatePersonaAction={updatePersona}
+              patchPersonaDraftAction={patchPersonaDraft}
+            />
+          </div>
+        </FullPageLayout>
       </DraftProviderClient>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
     if (
       error &&
       typeof error === "object" &&
@@ -204,9 +254,6 @@ export default async function PersonaEditPage({
         />
       );
     }
-    // Re-throw other errors
     throw error;
   }
 }
-
-// Types are now defined inline in components using InputOf/OutputOf

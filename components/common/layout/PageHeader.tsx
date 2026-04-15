@@ -23,10 +23,13 @@ export interface PageHeaderProps {
   breadcrumbs: BreadcrumbItem[];
   /** Optional toolbar content rendered on the right side of the header */
   toolbar?: React.ReactNode;
+  /** Direct toggle callback — used by FullPageLayout (bypasses context) */
+  onTogglePanel?: () => void;
 }
 
-export function PageHeader({ breadcrumbs, toolbar }: PageHeaderProps) {
+export function PageHeader({ breadcrumbs, toolbar, onTogglePanel }: PageHeaderProps) {
   const panelCtx = useGenerationPanelContext();
+  const handleToggle = onTogglePanel ?? panelCtx?.togglePanel;
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -36,13 +39,13 @@ export function PageHeader({ breadcrumbs, toolbar }: PageHeaderProps) {
         <NavigationBreadcrumbs breadcrumbs={breadcrumbs} />
       </div>
       {toolbar && <div className="flex items-center gap-2 pr-2">{toolbar}</div>}
-      {panelCtx && (
+      {handleToggle && (
         <div className="pr-4">
           <Button
             variant="ghost"
             size="icon"
             className="size-7"
-            onClick={panelCtx.togglePanel}
+            onClick={handleToggle}
           >
             <PanelRightIcon />
             <span className="sr-only">Toggle AI Panel</span>

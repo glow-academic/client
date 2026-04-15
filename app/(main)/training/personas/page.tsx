@@ -1,19 +1,25 @@
 /**
- * app/(main)/create/personas/page.tsx
- * Persona list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/training/personas/page.tsx
+ * Persona list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import Personas from "@/components/artifacts/persona/Personas";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Personas from "@/components/artifacts/persona/Personas";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadPersonasSearchParams } from "@/lib/search-params/personas";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
 type PersonasListOut = OutputOf<"/personas/search", "post">;
@@ -25,7 +31,16 @@ type CreatePersonaIn = InputOf<"/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/personas/create", "post">;
 type UpdatePersonaIn = InputOf<"/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
-import type { ParseCsvResult } from "@/components/common/BulkImport";
+type GroupPersonaIn = InputOf<"/personas/group", "post">;
+type GroupPersonaOut = OutputOf<"/personas/group", "post">;
+type GeneratePersonaIn = InputOf<"/personas/generate", "post">;
+type GeneratePersonaOut = OutputOf<"/personas/generate", "post">;
+type GenerationsIn = InputOf<"/personas/generations", "post">;
+type GenerationsOut = OutputOf<"/personas/generations", "post">;
+type ProblemPersonaIn = InputOf<"/personas/problem", "post">;
+type ProblemPersonaOut = OutputOf<"/personas/problem", "post">;
+type ContextIn = InputOf<"/personas/context", "post">;
+type ContextOut = OutputOf<"/personas/context", "post">;
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {
@@ -43,10 +58,7 @@ type PersonasListBody = {
   page_offset: number | null;
 };
 
-/** ---- Direct fetch (no Next.js cache) ----
- * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
- * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
- */
+/** ---- Direct fetch (no Next.js cache) ---- */
 const getPersonasList = async (body: PersonasListBody): Promise<PersonasListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
@@ -55,15 +67,13 @@ const getPersonasList = async (body: PersonasListBody): Promise<PersonasListOut>
     {
       cache: "no-store",
       ...(bypassCache && {
-        headers: {
-          "X-Bypass-Cache": "1",
-        },
+        headers: { "X-Bypass-Cache": "1" },
       }),
     }
   );
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
@@ -93,26 +103,57 @@ async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   return api.post("/personas/csv", { formData });
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/personas/docs", "post">;
-type DocsOut = OutputOf<"/personas/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/personas/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generatePersona(
+  input: GeneratePersonaIn
+): Promise<GeneratePersonaOut> {
+  "use server";
+  return api.post("/personas/generate", input);
 }
+
+async function getPersonaGroupHistory(groupId: string): Promise<GroupPersonaOut> {
+  "use server";
+  return api.post("/personas/group", { body: { group_id: groupId } } as GroupPersonaIn);
+}
+
+async function searchPersonaGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/personas/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
+  "use server";
+  return api.post("/personas/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/personas/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface PersonasPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function PersonasPage({ searchParams }: PersonasPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -150,21 +191,42 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
     page_offset: offset,
   };
 
-  // Fetch list data and view cookie in parallel
-  const [listData, initialColumnVisibility] = await Promise.all([
+  // Fetch list data, view cookie, and group in parallel
+  const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getPersonasList(body),
     readViewCookie("personas"),
+    api.post("/personas/group", { body: {} } as GroupPersonaIn),
   ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Personas" },
-        ]}
-        toolbar={<NewArtifactButton label="New Persona" href="/training/personas/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "persona",
+        createFeedback: createPersonaProblem,
+      }}
+      breadcrumbs={[
+        { title: "Training", section: "training", url: "/training" },
+        { title: "Personas" },
+      ]}
+      toolbar={<NewArtifactButton label="New Persona" href="/training/personas/new" />}
+      panelProps={{
+        artifactType: "persona",
+        groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generatePersona,
+        permissions: [
+          { artifact: "persona", operation: "draft" },
+          { artifact: "persona", operation: "get" },
+          { artifact: "persona", operation: "docs" },
+          { artifact: "persona", operation: "group" },
+        ],
+        getGroupHistory: getPersonaGroupHistory,
+        searchGroups: searchPersonaGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="personas-index">
         <Personas
           listData={listData}
@@ -186,7 +248,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
           voiceSearch={q.voiceSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 

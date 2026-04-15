@@ -11,7 +11,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";

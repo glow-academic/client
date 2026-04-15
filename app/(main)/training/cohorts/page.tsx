@@ -1,19 +1,25 @@
 /**
- * app/(main)/create/cohorts/page.tsx
- * Cohorts list page - server-side filtering with nuqs URL-backed state
+ * app/(main)/training/cohorts/page.tsx
+ * Cohorts list page — full SSR rendering with FullPageLayout.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import Cohorts from "@/components/artifacts/cohort/Cohorts";
+
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import Cohorts from "@/components/artifacts/cohort/Cohorts";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
+import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
 type CohortsListOut = OutputOf<"/cohorts/search", "post">;
@@ -25,7 +31,16 @@ type CreateCohortIn = InputOf<"/cohorts/create", "post">;
 type CreateCohortOut = OutputOf<"/cohorts/create", "post">;
 type UpdateCohortIn = InputOf<"/cohorts/update", "post">;
 type UpdateCohortOut = OutputOf<"/cohorts/update", "post">;
-import type { ParseCsvResult } from "@/components/common/BulkImport";
+type GroupCohortIn = InputOf<"/cohorts/group", "post">;
+type GroupCohortOut = OutputOf<"/cohorts/group", "post">;
+type GenerateCohortIn = InputOf<"/cohorts/generate", "post">;
+type GenerateCohortOut = OutputOf<"/cohorts/generate", "post">;
+type GenerationsIn = InputOf<"/cohorts/generations", "post">;
+type GenerationsOut = OutputOf<"/cohorts/generations", "post">;
+type ProblemCohortIn = InputOf<"/cohorts/problem", "post">;
+type ProblemCohortOut = OutputOf<"/cohorts/problem", "post">;
+type ContextIn = InputOf<"/cohorts/context", "post">;
+type ContextOut = OutputOf<"/cohorts/context", "post">;
 
 /** ---- Body type for cohorts list request ---- */
 type CohortsListBody = {
@@ -61,18 +76,16 @@ const getCohortsList = async (body: CohortsListBody): Promise<CohortsListOut> =>
   );
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function duplicateCohort(
   input: DuplicateCohortIn,
 ): Promise<DuplicateCohortOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/cohorts/duplicate", input);
 }
 
 async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/cohorts/delete", input);
 }
 
@@ -91,26 +104,57 @@ async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   return api.post("/cohorts/csv", { formData });
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/cohorts/docs", "post">;
-type DocsOut = OutputOf<"/cohorts/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/cohorts/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.list.title, description: docs.page_metadata?.list.description };
+async function generateCohort(
+  input: GenerateCohortIn
+): Promise<GenerateCohortOut> {
+  "use server";
+  return api.post("/cohorts/generate", input);
 }
+
+async function getCohortGroupHistory(groupId: string): Promise<GroupCohortOut> {
+  "use server";
+  return api.post("/cohorts/group", { body: { group_id: groupId } } as GroupCohortIn);
+}
+
+async function searchCohortGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/cohorts/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohortOut> {
+  "use server";
+  return api.post("/cohorts/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.list.title,
+    description: context.page_metadata?.list.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 interface CohortsPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function CohortsPage({ searchParams }: CohortsPageProps) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -146,21 +190,42 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
     page_offset: offset,
   };
 
-  // Fetch list data and view cookie in parallel
-  const [listData, initialColumnVisibility] = await Promise.all([
+  // Fetch list data, view cookie, and group in parallel
+  const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getCohortsList(body),
     readViewCookie("cohorts"),
+    api.post("/cohorts/group", { body: {} } as GroupCohortIn),
   ]);
 
   return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Cohorts" },
-        ]}
-        toolbar={<NewArtifactButton label="New Cohort" href="/training/cohorts/new" />}
-      />
+    <FullPageLayout
+      profileData={profileData}
+      sessionSnapshot={snapshot}
+      initialSidebarOpen={initialSidebarOpen}
+      initialPanelOpen={initialPanelOpen}
+      sidebarProps={{
+        activeSection: "cohort",
+        createFeedback: createCohortProblem,
+      }}
+      breadcrumbs={[
+        { title: "Training", section: "training", url: "/training" },
+        { title: "Cohorts" },
+      ]}
+      toolbar={<NewArtifactButton label="New Cohort" href="/training/cohorts/new" />}
+      panelProps={{
+        artifactType: "cohort",
+        groupId: (groupResult as GroupCohortOut & { group_id?: string })?.group_id ?? null,
+        generateAction: generateCohort,
+        permissions: [
+          { artifact: "cohort", operation: "draft" },
+          { artifact: "cohort", operation: "get" },
+          { artifact: "cohort", operation: "docs" },
+          { artifact: "cohort", operation: "group" },
+        ],
+        getGroupHistory: getCohortGroupHistory,
+        searchGroups: searchCohortGroups,
+      }}
+    >
       <div className="space-y-6 px-4" data-page="cohorts-index">
         <Cohorts
           listData={listData}
@@ -180,7 +245,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           flagSearch={q.flagSearch ?? ""}
         />
       </div>
-    </>
+    </FullPageLayout>
   );
 }
 
