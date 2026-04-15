@@ -9,7 +9,7 @@ import { getSession } from "@/auth";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Activity from "@/components/artifacts/activity/Activity";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { refreshPage } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -17,7 +17,6 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadActivitySearchParams } from "@/lib/search-params/activity";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type ActivityBundleIn = InputOf<"/activity/get", "post">;
@@ -87,7 +86,8 @@ export default async function ActivityPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/activity/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
   const q = loadActivitySearchParams(await searchParams);
@@ -137,7 +137,7 @@ export default async function ActivityPage({
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -151,7 +151,7 @@ export default async function ActivityPage({
       ]}
       toolbar={
         <AnalyticsFilters
-          refreshPage={refreshPage}
+          refreshAction={refreshActivity}
           analyticsFilters={facets}
         />
       }
@@ -183,6 +183,11 @@ export default async function ActivityPage({
 }
 
 /** ---- Strongly-typed server actions ---- */
+async function refreshActivity(): Promise<void> {
+  "use server";
+  await api.post("/activity/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
 async function generateActivity(
   input: GenerateActivityIn
 ): Promise<GenerateActivityOut> {

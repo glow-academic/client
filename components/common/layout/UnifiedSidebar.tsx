@@ -7,7 +7,7 @@
 import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
-} from "@/app/(main)/layout-server";
+} from "@/lib/actions/feedback";
 import { getSidebarSections } from "@/lib/sidebar-config";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

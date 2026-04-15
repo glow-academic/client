@@ -23,7 +23,7 @@ import {
   parseAsString,
 } from "nuqs/server";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/personas/get", "post">;
@@ -34,8 +34,6 @@ type PatchPersonaDraftIn = InputOf<"/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/personas/draft", "patch">;
 type GroupPersonaIn = InputOf<"/personas/group", "post">;
 type GroupPersonaOut = OutputOf<"/personas/group", "post">;
-type GeneratePersonaIn = InputOf<"/personas/generate", "post">;
-type GeneratePersonaOut = OutputOf<"/personas/generate", "post">;
 type ProblemPersonaIn = InputOf<"/personas/problem", "post">;
 type ProblemPersonaOut = OutputOf<"/personas/problem", "post">;
 type ContextIn = InputOf<"/personas/context", "post">;
@@ -62,26 +60,6 @@ async function patchPersonaDraft(
 ): Promise<PatchPersonaDraftOut> {
   "use server";
   return api.post("/personas/draft", input);
-}
-
-async function generatePersona(
-  input: GeneratePersonaIn
-): Promise<GeneratePersonaOut> {
-  "use server";
-  return api.post("/personas/generate", input);
-}
-
-async function getPersonaGroupHistory(groupId: string): Promise<GroupPersonaOut> {
-  "use server";
-  return api.post("/personas/group", { body: { group_id: groupId } } as GroupPersonaIn);
-}
-
-type GenerationsIn = InputOf<"/personas/generations", "post">;
-type GenerationsOut = OutputOf<"/personas/generations", "post">;
-
-async function searchPersonaGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/personas/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
@@ -117,7 +95,8 @@ export default async function NewPersonaPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers (until /personas/context returns full profile)
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/personas/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -183,7 +162,7 @@ export default async function NewPersonaPage({
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <FullPageLayout
-        profileData={profileData}
+        profileData={context.profile}
         sessionSnapshot={snapshot}
         initialSidebarOpen={initialSidebarOpen}
         initialPanelOpen={initialPanelOpen}
@@ -200,15 +179,12 @@ export default async function NewPersonaPage({
         panelProps={{
           artifactType: "persona",
           groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generatePersona,
           permissions: [
             { artifact: "persona", operation: "draft" },
             { artifact: "persona", operation: "get" },
             { artifact: "persona", operation: "docs" },
             { artifact: "persona", operation: "group" },
           ],
-          getGroupHistory: getPersonaGroupHistory,
-          searchGroups: searchPersonaGroups,
         }}
       >
         <div

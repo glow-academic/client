@@ -48,7 +48,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 // ProfileItem type derived from server response (single source of truth)
-import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { ProfileItem } from "@/contexts/profile-context";
 
 // Extract types from API response (single source of truth)
 // Note: Practice component transforms arrays to mappings before passing to SimulationCard

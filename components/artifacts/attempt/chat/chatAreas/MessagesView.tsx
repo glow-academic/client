@@ -5,7 +5,7 @@
  */
 "use client";
 
-import { createFeedback } from "@/app/(main)/layout-server";
+import { createFeedback } from "@/lib/actions/feedback";
 import HintDisplay from "@/components/artifacts/attempt/chat/HintDisplay";
 import Markdown from "@/components/common/markdown/Markdown";
 import ReportProblem from "@/components/common/layout/ReportProblem";

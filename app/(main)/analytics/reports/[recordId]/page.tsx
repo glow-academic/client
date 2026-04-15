@@ -11,7 +11,7 @@ import { getSession } from "@/auth";
 import Record from "@/components/artifacts/record/Record";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
-import { getProfileContext, refreshPage } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -20,7 +20,6 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadProfileReportSearchParams } from "@/lib/search-params/profile-report";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/dashboard/get", "post">;
@@ -47,6 +46,11 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
 };
 
 /** ---- Strongly-typed server actions ---- */
+async function refreshReports(): Promise<void> {
+  "use server";
+  await api.post("/reports/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
 async function generateRecord(
   input: GenerateRecordIn
 ): Promise<GenerateRecordOut> {
@@ -104,13 +108,13 @@ export default async function RecordPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const pageContext = await api.post("/record/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, pageContext.profile);
 
   // Parse search params via nuqs loader
   const q = loadProfileReportSearchParams(await searchParams);
 
-  // Get profile context for actor_profile_id (cache()-wrapped, no extra request)
-  const profileContext = await getProfileContext();
+  // actor_profile_id comes from the context call above
 
   // Compute initial date range from search params (with 30-day fallback)
   const defaultStartDate = (() => {
@@ -162,7 +166,7 @@ export default async function RecordPage({
         ...(q.roles && q.roles.length > 0 && { roles: q.roles }),
         ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
         target_profile_id: recordId,
-        actor_profile_id: profileContext.id || recordId,
+        actor_profile_id: pageContext.profile.id || recordId,
         page_limit: 50,
         page_offset: 0,
         // Section pickers (canonical)
@@ -210,7 +214,7 @@ export default async function RecordPage({
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={pageContext.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -225,7 +229,7 @@ export default async function RecordPage({
       ]}
       toolbar={
         <AnalyticsFilters
-          refreshPage={refreshPage}
+          refreshAction={refreshReports}
           analyticsFilters={facets}
         />
       }

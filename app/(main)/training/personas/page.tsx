@@ -17,7 +17,7 @@ import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { loadPersonasSearchParams } from "@/lib/search-params/personas";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
@@ -33,10 +33,6 @@ type UpdatePersonaIn = InputOf<"/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
 type GroupPersonaIn = InputOf<"/personas/group", "post">;
 type GroupPersonaOut = OutputOf<"/personas/group", "post">;
-type GeneratePersonaIn = InputOf<"/personas/generate", "post">;
-type GeneratePersonaOut = OutputOf<"/personas/generate", "post">;
-type GenerationsIn = InputOf<"/personas/generations", "post">;
-type GenerationsOut = OutputOf<"/personas/generations", "post">;
 type ProblemPersonaIn = InputOf<"/personas/problem", "post">;
 type ProblemPersonaOut = OutputOf<"/personas/problem", "post">;
 type ContextIn = InputOf<"/personas/context", "post">;
@@ -103,23 +99,6 @@ async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   return api.post("/personas/csv", { formData });
 }
 
-async function generatePersona(
-  input: GeneratePersonaIn
-): Promise<GeneratePersonaOut> {
-  "use server";
-  return api.post("/personas/generate", input);
-}
-
-async function getPersonaGroupHistory(groupId: string): Promise<GroupPersonaOut> {
-  "use server";
-  return api.post("/personas/group", { body: { group_id: groupId } } as GroupPersonaIn);
-}
-
-async function searchPersonaGroups(query: string): Promise<GenerationsOut> {
-  "use server";
-  return api.post("/personas/generations", { body: { search: query || null } } as GenerationsIn);
-}
-
 async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
   "use server";
   return api.post("/personas/problem", input);
@@ -153,7 +132,8 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/personas/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -200,7 +180,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -216,15 +196,12 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
       panelProps={{
         artifactType: "persona",
         groupId: (groupResult as GroupPersonaOut & { group_id?: string })?.group_id ?? null,
-        generateAction: generatePersona,
         permissions: [
           { artifact: "persona", operation: "draft" },
           { artifact: "persona", operation: "get" },
           { artifact: "persona", operation: "docs" },
           { artifact: "persona", operation: "group" },
         ],
-        getGroupHistory: getPersonaGroupHistory,
-        searchGroups: searchPersonaGroups,
       }}
     >
       <div className="space-y-6 px-4" data-page="personas-index">

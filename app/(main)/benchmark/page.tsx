@@ -11,8 +11,7 @@ import Benchmark from "@/components/artifacts/benchmark/Benchmark";
 import EvalHistory from "@/components/artifacts/benchmark/EvalHistory";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
-import { refreshPage } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -75,6 +74,11 @@ const getBenchmarkOverview = async (
 };
 
 /** ---- Strongly-typed server actions ---- */
+async function refreshBenchmark(): Promise<void> {
+  "use server";
+  await api.post("/benchmark/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
 async function generateBenchmark(
   input: GenerateBenchmarkIn
 ): Promise<GenerateBenchmarkOut> {
@@ -127,7 +131,8 @@ export default async function BenchmarkPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/benchmark/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
   const q = loadBenchmarkSearchParams(await searchParams);
@@ -350,7 +355,7 @@ export default async function BenchmarkPage({
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -363,7 +368,7 @@ export default async function BenchmarkPage({
       ]}
       toolbar={
         <AnalyticsFilters
-          refreshPage={refreshPage}
+          refreshAction={refreshBenchmark}
           analyticsFilters={facets}
         />
       }

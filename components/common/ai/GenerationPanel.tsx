@@ -24,12 +24,9 @@ import {
   SidebarProvider,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { useGenerationPanelContext } from "@/contexts/generation-panel-context";
-import { useSocket } from "@/contexts/socket-context";
+import { useTransport } from "@/lib/transport";
 import { useArtifactGeneration } from "@/hooks/use-artifact-generation";
-import { useGenerate } from "@/hooks/use-generate";
 import type { GenerateMessage } from "@/hooks/use-generate";
-import type { GroupMessagesIn, GroupMessagesOut, GroupSearchIn, GroupSearchOut } from "@/app/(main)/layout-server";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,16 +54,9 @@ interface HistoricalMessage {
 interface GenerationPanelProps {
   panelOpen: boolean;
   onToggle: () => void;
-  // Layout-level fallbacks (non-migrated pages)
-  searchGroupsAction?: (input: GroupSearchIn) => Promise<GroupSearchOut>;
-  getGroupMessagesAction?: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
-  // Direct props (migrated pages — when artifactType is provided)
-  artifactType?: string;
-  groupId?: string | null;
-  generateAction?: (input: Record<string, unknown>) => Promise<Record<string, unknown>>;
-  permissions?: Array<{ artifact: string; operation: string }>;
-  getGroupHistory?: (groupId: string) => Promise<Record<string, unknown>>;
-  searchGroups?: (query: string) => Promise<Record<string, unknown>>;
+  artifactType: string;
+  groupId: string | null;
+  permissions: Array<{ artifact: string; operation: string }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -122,83 +112,36 @@ function flattenMessages(res: GroupMessagesOut | Record<string, unknown>): Histo
 
 export function GenerationPanel({
   panelOpen, onToggle,
-  searchGroupsAction, getGroupMessagesAction,
-  artifactType, groupId: groupIdProp, generateAction, permissions,
-  getGroupHistory, searchGroups,
+  artifactType, groupId: groupIdProp, permissions,
 }: GenerationPanelProps) {
   const [instructions, setInstructions] = useState("");
   const [dangerousMode, setDangerousMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const isDirectMode = !!artifactType;
+  const transport = useTransport();
 
-  // Context fallback (non-migrated pages)
-  const panelContext = useGenerationPanelContext();
-  const { socket, isConnected } = useSocket();
-
-  // Resolve effective values: direct prop → context → null
-  const effectiveGroupId = groupIdProp ?? panelContext?.groupId ?? null;
-  const effectiveOnGenerate = generateAction ? null : (panelContext?.onGenerate ?? null);
-  const effectiveGroupCompletedEvent = isDirectMode
-    ? `${artifactType}.group.completed`
-    : (panelContext?.groupCompletedEvent ?? null);
-
-  // Selected group — defaults to effective, can be changed via picker
+  // Selected group — defaults to prop, can be changed via picker
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
-  const activeGroupId = selectedGroupId ?? effectiveGroupId;
+  const activeGroupId = selectedGroupId ?? groupIdProp;
 
-  // Listen for group completed event
+  // Listen for group completed event via transport
   useEffect(() => {
-    if (!socket || !isConnected || !effectiveGroupCompletedEvent) return;
-
-    const s = socket as unknown as {
-      on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-      off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-    };
-
-    const handleNameCompleted = (data: Record<string, unknown>) => {
+    return transport.on(`${artifactType}.group.completed`, (data) => {
       const name = data.name as string;
-      if (name) {
-        setSelectedGroupName(name);
-      }
-    };
+      if (name) setSelectedGroupName(name);
+    });
+  }, [transport, artifactType]);
 
-    s.on(effectiveGroupCompletedEvent, handleNameCompleted);
-    return () => { s.off(effectiveGroupCompletedEvent, handleNameCompleted); };
-  }, [socket, isConnected, effectiveGroupCompletedEvent]);
+  // AI generation — internal listener parameterized by artifactType
+  const listener = useArtifactGeneration(artifactType, activeGroupId);
 
-  // AI generation — direct mode uses internal listener, context mode uses external
-  const internalListener = useArtifactGeneration(
-    isDirectMode ? artifactType! : null,
-    activeGroupId,
-  );
-  const contextListener = panelContext?.generationListener ?? null;
-  const { generate: runGenerateSocket, messages: fallbackMessages, isGenerating: fallbackIsGenerating, clearMessages: fallbackClearMessages } = useGenerate({
-    permissions: [],
-    resources: [],
-    groupId: activeGroupId,
-  });
-
-  // Resolve live messages/state: direct → context → fallback
-  const liveMessages = isDirectMode
-    ? internalListener.messages.map((m) => ({
-        role: m.role, text: m.text, type: m.type,
-        toolName: m.toolName,
-        toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
-      } as GenerateMessage))
-    : contextListener
-      ? contextListener.messages.map((m) => ({
-          role: m.role, text: m.text, type: m.type,
-          toolName: m.toolName,
-          toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
-        } as GenerateMessage))
-      : fallbackMessages;
-  const isGenerating = isDirectMode
-    ? internalListener.isGenerating
-    : (contextListener ? contextListener.isGenerating : fallbackIsGenerating);
-  const clearMessages = isDirectMode
-    ? internalListener.clearMessages
-    : (contextListener ? contextListener.clearMessages : fallbackClearMessages);
+  const liveMessages = listener.messages.map((m) => ({
+    role: m.role, text: m.text, type: m.type,
+    toolName: m.toolName,
+    toolStatus: m.toolStatus === "pending" ? undefined : m.toolStatus,
+  } as GenerateMessage));
+  const isGenerating = listener.isGenerating;
+  const clearMessages = listener.clearMessages;
 
   // Historical messages from /group/get
   const [historicalMessages, setHistoricalMessages] = useState<HistoricalMessage[]>([]);
@@ -214,7 +157,7 @@ export function GenerationPanel({
     const justFinished = prevIsGenerating.current && !isGenerating;
     prevIsGenerating.current = isGenerating;
 
-    const groupToFetch = selectedGroupId ?? effectiveGroupId;
+    const groupToFetch = selectedGroupId ?? groupIdProp;
     if (!groupToFetch) {
       setHistoricalMessages([]);
       setTextContent({});
@@ -232,11 +175,7 @@ export function GenerationPanel({
     let cancelled = false;
     setIsLoadingHistory(true);
 
-    // Use direct prop → context override → layout fallback
-    const effectiveGetHistory = getGroupHistory ?? panelContext?.getGroupHistory;
-    const fetchHistory = effectiveGetHistory
-      ? effectiveGetHistory(groupToFetch)
-      : getGroupMessagesAction?.({ body: { group_id: groupToFetch } }) ?? Promise.resolve({ runs: [] });
+    const fetchHistory = transport.send(`/${artifactType}s/group`, { group_id: groupToFetch });
 
     fetchHistory
       .then(async (res) => {
@@ -273,7 +212,7 @@ export function GenerationPanel({
 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedGroupId, effectiveGroupId, isGenerating, getGroupMessagesAction, getGroupHistory]);
+  }, [selectedGroupId, groupIdProp, isGenerating, transport, artifactType]);
 
   // Search state
   const [chatSearch, setChatSearch] = useState("");
@@ -281,17 +220,12 @@ export function GenerationPanel({
   const [isSearching, setIsSearching] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch groups — direct prop → context override → layout fallback
-  const effectiveSearchGroups = searchGroups ?? panelContext?.searchGroupsOverride ?? null;
+  // Fetch groups via transport
   const fetchGroups = useCallback(
     async (query: string) => {
       setIsSearching(true);
       try {
-        const res = effectiveSearchGroups
-          ? await effectiveSearchGroups(query.trim())
-          : searchGroupsAction
-            ? await searchGroupsAction({ body: { search: query.trim() || null } })
-            : { items: [] };
+        const res = await transport.send(`/${artifactType}s/generations`, { search: query.trim() || null });
         const mapped = (res.items ?? []).map((item: Record<string, unknown>) => ({
           id: String(item.group_id),
           name: (item.group_name as string) || "Untitled",
@@ -309,7 +243,7 @@ export function GenerationPanel({
         setIsSearching(false);
       }
     },
-    [searchGroupsAction, effectiveSearchGroups],
+    [transport, artifactType],
   );
 
   const handleDropdownOpen = useCallback(
@@ -358,11 +292,7 @@ export function GenerationPanel({
     setSearchResults([]);
     setInstructions("");
     clearMessages();
-    // Clear context group so next generation creates a fresh one (non-direct mode)
-    if (!isDirectMode && panelContext) {
-      panelContext.setGroupId(null);
-    }
-  }, [clearMessages, panelContext, isDirectMode]);
+  }, [clearMessages]);
 
   const handleSend = useCallback(async () => {
     if (!instructions.trim()) return;
@@ -370,27 +300,15 @@ export function GenerationPanel({
     setInstructions("");
     const socketId = (socket as unknown as { id?: string })?.id;
 
-    if (isDirectMode && generateAction) {
-      // Direct mode — call server action with full request body
-      internalListener.setGenerating(true);
-      await generateAction({
-        body: {
-          group_id: activeGroupId,
-          permissions: permissions ?? [],
-          resource_types: [],
-          user_instructions: text ? [text] : [],
-          dangerous: dangerousMode,
-          sid: socketId,
-        },
-      });
-    } else if (effectiveOnGenerate) {
-      // Context mode — delegate to artifact page callback
-      if (contextListener?.setGenerating) contextListener.setGenerating(true);
-      await effectiveOnGenerate({ resource_types: [], instructions: text, dangerous: dangerousMode, sid: socketId });
-    } else {
-      runGenerateSocket(text);
-    }
-  }, [instructions, dangerousMode, generateAction, effectiveOnGenerate, runGenerateSocket, isDirectMode, activeGroupId, permissions, contextListener, internalListener, socket]);
+    listener.setGenerating(true);
+    await transport.send(`/${artifactType}s/generate`, {
+      group_id: activeGroupId,
+      permissions,
+      resource_types: [],
+      user_instructions: text ? [text] : [],
+      dangerous: dangerousMode,
+    });
+  }, [instructions, dangerousMode, transport, artifactType, activeGroupId, permissions, listener]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {

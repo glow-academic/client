@@ -12,7 +12,7 @@ import clsx from "clsx";
 import { ReactNode } from "react";
 
 // ProfileItem type derived from server response (single source of truth)
-import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { ProfileItem } from "@/contexts/profile-context";
 
 export interface AccoladeCardProps {
   icon: ReactNode;

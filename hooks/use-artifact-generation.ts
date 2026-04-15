@@ -1,9 +1,8 @@
 /**
  * useArtifactGeneration — general-purpose generation event listener.
  *
- * Listens for namespaced {artifactType}.generate.* events and returns
- * a GenerationListener interface. Used internally by GenerationPanel
- * when artifactType is provided as a direct prop.
+ * Subscribes via the Transport abstraction (WebSocket or SSE depending on mode).
+ * Returns a GenerationListener interface for the GenerationPanel.
  *
  * Events (parameterized by artifactType):
  *   {type}.generate.started       → generation started
@@ -17,16 +16,33 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useSocket } from "@/contexts/socket-context";
-import type { GenerationListener, GenerationMessage } from "@/hooks/use-persona-generation";
+import { useTransport } from "@/lib/transport";
 
-export { type GenerationListener, type GenerationMessage };
+// ---------------------------------------------------------------------------
+// Primitive interface — any artifact generation hook implements this
+// ---------------------------------------------------------------------------
+
+export interface GenerationMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  type: "text" | "tool";
+  toolName?: string;
+  toolStatus?: "pending" | "success" | "error";
+}
+
+export interface GenerationListener {
+  messages: GenerationMessage[];
+  isGenerating: boolean;
+  clearMessages: () => void;
+  setGenerating: (value: boolean) => void;
+}
 
 export function useArtifactGeneration(
   artifactType: string | null,
   groupId: string | null,
 ): GenerationListener {
-  const { socket, isConnected } = useSocket();
+  const transport = useTransport();
   const [messages, setMessages] = useState<GenerationMessage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const groupIdRef = useRef(groupId);
@@ -35,12 +51,7 @@ export function useArtifactGeneration(
   const clearMessages = useCallback(() => setMessages([]), []);
 
   useEffect(() => {
-    if (!artifactType || !socket || !isConnected) return;
-
-    const s = socket as unknown as {
-      on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-      off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-    };
+    if (!artifactType) return;
 
     const prefix = `${artifactType}.generate`;
 
@@ -129,24 +140,19 @@ export function useArtifactGeneration(
       );
     };
 
-    s.on(`${prefix}.started`, handleStarted);
-    s.on(`${prefix}.completed`, handleCompleted);
-    s.on(`${prefix}.failed`, handleFailed);
-    s.on(`${prefix}.text.progress`, handleTextProgress);
-    s.on(`${prefix}.text.complete`, handleTextComplete);
-    s.on(`${prefix}.call.start`, handleCallStart);
-    s.on(`${prefix}.call.complete`, handleCallComplete);
+    // Subscribe via transport — works for both WebSocket and SSE
+    const unsubs = [
+      transport.on(`${prefix}.started`, handleStarted),
+      transport.on(`${prefix}.completed`, handleCompleted),
+      transport.on(`${prefix}.failed`, handleFailed),
+      transport.on(`${prefix}.text.progress`, handleTextProgress),
+      transport.on(`${prefix}.text.complete`, handleTextComplete),
+      transport.on(`${prefix}.call.start`, handleCallStart),
+      transport.on(`${prefix}.call.complete`, handleCallComplete),
+    ];
 
-    return () => {
-      s.off(`${prefix}.started`, handleStarted);
-      s.off(`${prefix}.completed`, handleCompleted);
-      s.off(`${prefix}.failed`, handleFailed);
-      s.off(`${prefix}.text.progress`, handleTextProgress);
-      s.off(`${prefix}.text.complete`, handleTextComplete);
-      s.off(`${prefix}.call.start`, handleCallStart);
-      s.off(`${prefix}.call.complete`, handleCallComplete);
-    };
-  }, [artifactType, socket, isConnected]);
+    return () => unsubs.forEach((fn) => fn());
+  }, [artifactType, transport]);
 
   return { messages, isGenerating, clearMessages, setGenerating: setIsGenerating };
 }

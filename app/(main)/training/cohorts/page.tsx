@@ -17,7 +17,7 @@ import { readViewCookie } from "@/lib/view-cookie";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
@@ -154,7 +154,8 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -199,7 +200,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}

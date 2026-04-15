@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 
 // ProfileItem type derived from server response (single source of truth)
-import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { ProfileItem } from "@/contexts/profile-context";
 import type { OutputOf } from "@/lib/api/types";
 
 // Extract eval item type from benchmark overview response (single source of truth)

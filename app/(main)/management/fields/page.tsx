@@ -16,7 +16,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type FieldsListOut = OutputOf<"/fields/search", "post">;
@@ -111,7 +111,8 @@ export default async function FieldsPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/fields/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
@@ -121,7 +122,7 @@ export default async function FieldsPage() {
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}

@@ -10,7 +10,7 @@ import { getSession } from "@/auth";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { refreshPage } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -19,7 +19,6 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type DashboardIn = InputOf<"/dashboard/get", "post">;
@@ -85,7 +84,8 @@ export default async function DashboardPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/dashboard/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
   const q = loadDashboardSearchParams(await searchParams);
@@ -186,7 +186,7 @@ export default async function DashboardPage({
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -200,7 +200,7 @@ export default async function DashboardPage({
       ]}
       toolbar={
         <AnalyticsFilters
-          refreshPage={refreshPage}
+          refreshAction={refreshDashboard}
           analyticsFilters={facets}
         />
       }
@@ -248,6 +248,11 @@ export default async function DashboardPage({
 }
 
 /** ---- Strongly-typed server actions ---- */
+async function refreshDashboard(): Promise<void> {
+  "use server";
+  await api.post("/dashboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
 async function bulkArchiveAttempts(
   input: BulkArchiveAttemptsIn
 ): Promise<BulkArchiveAttemptsOut> {

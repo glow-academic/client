@@ -15,7 +15,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type SessionDetailIn = InputOf<"/session/get", "post">;
@@ -108,7 +108,8 @@ export default async function SessionDetailPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const pageContext = await api.post("/session/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, pageContext.profile);
 
   const [sessionDetail, context, groupResult] = await Promise.all([
     getSessionDetail({
@@ -124,7 +125,7 @@ export default async function SessionDetailPage({
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={pageContext.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}

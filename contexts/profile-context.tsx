@@ -7,11 +7,8 @@
  */
 "use client";
 
-import type {
-  AuthProfileResponse,
-  ProfileItem,
-  SafeSessionSnapshot,
-} from "@/app/(main)/layout-server";
+import type { components } from "@/lib/api/schema";
+import type { SafeSessionSnapshot } from "@/lib/auth";
 import React, {
   createContext,
   useContext,
@@ -22,9 +19,14 @@ import React, {
 // TYPES
 // ============================================================================
 
+/** Profile data from /{artifact}/context → .profile (ProfileSummary). */
+export type ContextProfile = components["schemas"]["ProfileSummary"];
+
 export type RoleResourceItem = NonNullable<
-  AuthProfileResponse["role_resources"]
+  ContextProfile["role_resources"]
 >[number];
+
+export type ProfileItem = Pick<ContextProfile, "id" | "name" | "role" | "active">;
 
 interface ProfileContextType {
   // Profile data
@@ -50,7 +52,7 @@ export const useProfile = () => {
 
 interface ProfileProviderClientProps {
   children: React.ReactNode;
-  initial: AuthProfileResponse | null;
+  initial: ContextProfile | null;
   sessionSnapshot: SafeSessionSnapshot;
 }
 
@@ -59,12 +61,12 @@ export function ProfileProviderClient({
   initial,
   sessionSnapshot,
 }: ProfileProviderClientProps) {
-  // Construct profile from AuthProfileResponse
+  // Construct profile from ProfileSummary
   const profile = useMemo<ProfileItem | null>(() => {
     if (!initial) return null;
     return {
       id: initial.id ?? "",
-      name: initial.name ?? null,
+      name: initial.name ?? "",
       role: initial.role ?? "guest",
       active: initial.active ?? false,
     };
@@ -77,7 +79,7 @@ export function ProfileProviderClient({
     isEmulation: !!initial?.is_emulation,
 
     // Permissions data (from server)
-    roleArtifacts: initial?.role_artifacts ?? [],
+    roleArtifacts: initial?.artifact_access ?? [],
     scopedRoles: initial?.scoped_roles ?? [],
     roleResources: initial?.role_resources ?? [],
   };

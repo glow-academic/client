@@ -14,9 +14,11 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData, createFeedback } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
+type ProblemAttemptIn = InputOf<"/attempt/problem", "post">;
+type ProblemAttemptOut = OutputOf<"/attempt/problem", "post">;
 type GetChatBundleOut = OutputOf<
   "/chat/get",
   "post"
@@ -54,6 +56,13 @@ const getChatBundle = async (
     },
   );
 };
+
+async function createAttemptProblem(
+  input: ProblemAttemptIn,
+): Promise<ProblemAttemptOut> {
+  "use server";
+  return api.post("/attempt/problem", input);
+}
 
 async function patchChatDraft(
   input: PatchChatDraftIn,
@@ -110,24 +119,23 @@ export default async function ChatPage({
   const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
   const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
 
-  // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
-
+  // Profile + entity context in parallel
   const [bundleData, context] = await Promise.all([
     getChatBundle(chatId, attemptId, draftId),
     api.post("/chat/context", { body: { entity_id: chatId } } as ContextIn) as Promise<ContextOut>,
   ]);
+  const snapshot = buildSnapshot(session, context.profile);
 
   const entityName = context.page_metadata?.detail.title;
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       sidebarProps={{
         activeSection: "practice",
-        createFeedback,
+        createFeedback: createAttemptProblem,
       }}
       breadcrumbs={[
         { title: "Attempt", url: `/attempt/${attemptId}` },

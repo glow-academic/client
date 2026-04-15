@@ -20,7 +20,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/simulations/get", "post">;
@@ -235,7 +235,8 @@ export default async function EditSimulationPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/simulations/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const paramsObj = await searchParams;
@@ -279,7 +280,7 @@ export default async function EditSimulationPage({
     return (
       <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <FullPageLayout
-          profileData={profileData}
+          profileData={context.profile}
           sessionSnapshot={snapshot}
           initialSidebarOpen={initialSidebarOpen}
           initialPanelOpen={initialPanelOpen}

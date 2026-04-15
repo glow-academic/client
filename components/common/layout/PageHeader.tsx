@@ -3,6 +3,7 @@
  *
  * Each page renders this with its own data instead of relying on a global
  * layout to infer breadcrumbs/toolbar from the pathname.
+ * Toggle callback is injected by FullPageLayout.
  */
 "use client";
 
@@ -10,7 +11,6 @@ import { PanelRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { useGenerationPanelContext } from "@/contexts/generation-panel-context";
 import { NavigationBreadcrumbs } from "./NavigationBreadcrumbs";
 
 export interface BreadcrumbItem {
@@ -23,14 +23,11 @@ export interface PageHeaderProps {
   breadcrumbs: BreadcrumbItem[];
   /** Optional toolbar content rendered on the right side of the header */
   toolbar?: React.ReactNode;
-  /** Direct toggle callback — used by FullPageLayout (bypasses context) */
+  /** Toggle callback for the right panel — injected by FullPageLayout */
   onTogglePanel?: () => void;
 }
 
 export function PageHeader({ breadcrumbs, toolbar, onTogglePanel }: PageHeaderProps) {
-  const panelCtx = useGenerationPanelContext();
-  const handleToggle = onTogglePanel ?? panelCtx?.togglePanel;
-
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
       <div className="flex items-center gap-2 px-4 flex-1">
@@ -39,13 +36,13 @@ export function PageHeader({ breadcrumbs, toolbar, onTogglePanel }: PageHeaderPr
         <NavigationBreadcrumbs breadcrumbs={breadcrumbs} />
       </div>
       {toolbar && <div className="flex items-center gap-2 pr-2">{toolbar}</div>}
-      {handleToggle && (
+      {onTogglePanel && (
         <div className="pr-4">
           <Button
             variant="ghost"
             size="icon"
             className="size-7"
-            onClick={handleToggle}
+            onClick={onTogglePanel}
           >
             <PanelRightIcon />
             <span className="sr-only">Toggle AI Panel</span>

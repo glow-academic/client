@@ -6258,6 +6258,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/group/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Group
+         * @description List group generation groups — composable infra architecture.
+         */
+        post: operations["generations_group_group_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/group/group": {
         parameters: {
             query?: never;
@@ -6292,6 +6312,26 @@ export interface paths {
          * @description Set or update a group's name.
          */
         post: operations["name_group_group_name_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/group/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Group
+         * @description Report a group problem — composable infra architecture.
+         */
+        post: operations["problem_group_group_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6541,6 +6581,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/session/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Session
+         * @description Trigger session generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_session_session_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Session
+         * @description List session generation groups — composable infra architecture.
+         */
+        post: operations["generations_session_session_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/session/group": {
         parameters: {
             query?: never;
@@ -6555,6 +6635,26 @@ export interface paths {
          * @description Resolve or create a session group with optional naming.
          */
         post: operations["group_session_session_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/session/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Session
+         * @description Report a session problem — composable infra architecture.
+         */
+        post: operations["problem_session_session_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6804,6 +6904,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/home/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Home Context
+         * @description Get page context for the home analytics.
+         *
+         *     Returns docs + profile identity + evaluated permissions in a single call.
+         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
+         */
+        post: operations["get_home_context_home_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home/docs": {
         parameters: {
             query?: never;
@@ -6824,6 +6947,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/home/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Home
+         * @description Trigger home generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_home_home_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Home
+         * @description List home generation groups — composable infra architecture.
+         */
+        post: operations["generations_home_home_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/home/group": {
         parameters: {
             query?: never;
@@ -6838,6 +7001,26 @@ export interface paths {
          * @description Resolve or create a home group with optional naming.
          */
         post: operations["group_home_home_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Home
+         * @description Report a home problem — composable infra architecture.
+         */
+        post: operations["problem_home_home_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6924,6 +7107,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/practice/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Practice Context
+         * @description Get page context for the practice analytics.
+         *
+         *     Returns docs + profile identity + evaluated permissions in a single call.
+         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
+         */
+        post: operations["get_practice_context_practice_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/practice/docs": {
         parameters: {
             query?: never;
@@ -6944,6 +7150,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/practice/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Practice
+         * @description Trigger practice generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_practice_practice_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/practice/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Practice
+         * @description List practice generation groups — composable infra architecture.
+         */
+        post: operations["generations_practice_practice_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/practice/group": {
         parameters: {
             query?: never;
@@ -6958,6 +7204,26 @@ export interface paths {
          * @description Resolve or create a practice group with optional naming.
          */
         post: operations["group_practice_practice_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/practice/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Practice
+         * @description Report a practice problem — composable infra architecture.
+         */
+        post: operations["problem_practice_practice_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7038,6 +7304,29 @@ export interface paths {
          * @description Refresh attempt materialized views and invalidate caches.
          */
         post: operations["attempt_refresh_attempt_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/attempt/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Attempt Context
+         * @description Get page context for the attempt artifact.
+         *
+         *     Returns docs + profile identity + evaluated permissions in a single call.
+         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
+         */
+        post: operations["get_attempt_context_attempt_context_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7713,6 +8002,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/record/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Record Context
+         * @description Get page context for the record analytics.
+         *
+         *     Returns docs + profile identity + evaluated permissions in a single call.
+         *     Superset of /docs — clients can migrate from /docs to /context incrementally.
+         */
+        post: operations["get_record_context_record_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/record/docs": {
         parameters: {
             query?: never;
@@ -7733,6 +8045,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/record/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Record
+         * @description Trigger record generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_record_record_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/record/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Record
+         * @description List record generation groups — composable infra architecture.
+         */
+        post: operations["generations_record_record_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/record/group": {
         parameters: {
             query?: never;
@@ -7747,6 +8099,26 @@ export interface paths {
          * @description Resolve or create a record group with optional naming.
          */
         post: operations["group_record_record_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/record/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Record
+         * @description Report a record problem — composable infra architecture.
+         */
+        post: operations["problem_record_record_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7893,6 +8265,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/dashboard/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Dashboard
+         * @description Trigger dashboard generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_dashboard_dashboard_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Dashboard
+         * @description List dashboard generation groups — composable infra architecture.
+         */
+        post: operations["generations_dashboard_dashboard_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/dashboard/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Dashboard
+         * @description Report a dashboard problem — composable infra architecture.
+         */
+        post: operations["problem_dashboard_dashboard_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/export": {
         parameters: {
             query?: never;
@@ -7913,6 +8345,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Reports
+         * @description Trigger reports generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_reports_reports_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Reports
+         * @description List reports generation groups — composable infra architecture.
+         */
+        post: operations["generations_reports_reports_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/group": {
         parameters: {
             query?: never;
@@ -7927,6 +8399,26 @@ export interface paths {
          * @description Resolve or create a reports group with optional naming.
          */
         post: operations["group_reports_reports_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Reports
+         * @description Report a reports problem — composable infra architecture.
+         */
+        post: operations["problem_reports_reports_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8093,6 +8585,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/leaderboard/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Leaderboard
+         * @description Trigger leaderboard generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_leaderboard_leaderboard_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/leaderboard/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Leaderboard
+         * @description List leaderboard generation groups — composable infra architecture.
+         */
+        post: operations["generations_leaderboard_leaderboard_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/leaderboard/docs": {
         parameters: {
             query?: never;
@@ -8150,6 +8682,26 @@ export interface paths {
          * @description Resolve or create a leaderboard group with optional naming.
          */
         post: operations["group_leaderboard_leaderboard_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/leaderboard/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Leaderboard
+         * @description Report a leaderboard problem — composable infra architecture.
+         */
+        post: operations["problem_leaderboard_leaderboard_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8299,6 +8851,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pricing/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Pricing
+         * @description Trigger pricing generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_pricing_pricing_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pricing/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Pricing
+         * @description List pricing generation groups — composable infra architecture.
+         */
+        post: operations["generations_pricing_pricing_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pricing/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Pricing
+         * @description Report a pricing problem — composable infra architecture.
+         */
+        post: operations["problem_pricing_pricing_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/activity/get": {
         parameters: {
             query?: never;
@@ -8390,6 +9002,46 @@ export interface paths {
          * @description Export all activity data as a clean, denormalized ZIP.
          */
         post: operations["export_activity_activity_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/activity/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Activity
+         * @description Trigger activity generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_activity_activity_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/activity/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Activity
+         * @description List activity generation groups — composable infra architecture.
+         */
+        post: operations["generations_activity_activity_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8602,6 +9254,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/health/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Health
+         * @description Trigger health generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_health_health_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Health
+         * @description List health generation groups — composable infra architecture.
+         */
+        post: operations["generations_health_health_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/health/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Health
+         * @description Report a health problem — composable infra architecture.
+         */
+        post: operations["problem_health_health_problem_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/benchmark/get": {
         parameters: {
             query?: never;
@@ -8739,6 +9451,66 @@ export interface paths {
          * @description Resolve or create a benchmark group with optional naming.
          */
         post: operations["group_benchmark_benchmark_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/benchmark/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Benchmark
+         * @description Trigger benchmark generation. Returns immediately; progress via events.
+         */
+        post: operations["generate_benchmark_benchmark_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/benchmark/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generations Benchmark
+         * @description List benchmark generation groups — composable infra architecture.
+         */
+        post: operations["generations_benchmark_benchmark_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/benchmark/problem": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Problem Benchmark
+         * @description Report a benchmark problem — composable infra architecture.
+         */
+        post: operations["problem_benchmark_benchmark_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -19479,6 +20251,21 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /** CohortDepartmentSection */
         CohortDepartmentSection: {
@@ -19513,6 +20300,21 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /** CohortDescriptionSection */
         CohortDescriptionSection: {
@@ -19537,45 +20339,105 @@ export interface components {
              */
             name_id?: string | null;
             /**
+             * Name
+             * @description Name value that was saved
+             */
+            name?: string | null;
+            /**
              * Description Id
              * @description Selected description resource UUID
              */
             description_id?: string | null;
+            /**
+             * Description
+             * @description Description value that was saved
+             */
+            description?: string | null;
             /**
              * Flag Id
              * @description Selected flag option UUID
              */
             flag_id?: string | null;
             /**
+             * Flag
+             * @description Flag value that was saved
+             */
+            flag?: string | null;
+            /**
+             * Active Flag Id
+             * @description Selected active flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the active flag was enabled
+             */
+            active_flag?: boolean | null;
+            /**
              * Department Ids
              * @description Selected department UUIDs
              */
             department_ids?: string[];
+            /**
+             * Departments
+             * @description Department values that were saved
+             */
+            departments?: string[];
             /**
              * Simulation Ids
              * @description Selected simulation UUIDs
              */
             simulation_ids?: string[];
             /**
+             * Simulations
+             * @description Simulation values that were saved
+             */
+            simulations?: string[];
+            /**
              * Simulation Position Ids
              * @description Selected simulation position UUIDs
              */
             simulation_position_ids?: string[];
+            /**
+             * Simulation Positions
+             * @description Simulation position values that were saved
+             */
+            simulation_positions?: components["schemas"]["DraftSimulationPositionValue"][];
             /**
              * Simulation Availability Ids
              * @description Selected simulation availability UUIDs
              */
             simulation_availability_ids?: string[];
             /**
+             * Simulation Availability
+             * @description Simulation availability values that were saved
+             */
+            simulation_availability?: components["schemas"]["DraftSimulationAvailabilityValue"][];
+            /**
              * Profile Ids
              * @description Selected profile UUIDs
              */
             profile_ids?: string[];
             /**
+             * Profiles
+             * @description Profile values that were saved
+             */
+            profiles?: string[];
+            /**
              * Profile Persona Ids
              * @description Selected profile persona UUIDs
              */
             profile_persona_ids?: string[];
+            /**
+             * Profile Personas
+             * @description Profile persona values that were saved
+             */
+            profile_personas?: components["schemas"]["DraftProfilePersonaValue"][];
+            /**
+             * Pending Ids
+             * @description Pending resource IDs retained on the draft
+             */
+            pending_ids?: string[];
         };
         /**
          * CohortFieldError
@@ -19638,6 +20500,21 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /** CohortFlagSection */
         CohortFlagSection: {
@@ -19669,6 +20546,21 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /** CohortNameSection */
         CohortNameSection: {
@@ -19710,6 +20602,21 @@ export interface components {
              * @description Whether created via MCP
              */
             mcp?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /**
          * CohortProfilePersona
@@ -19741,6 +20648,102 @@ export interface components {
              * @description Whether created via MCP
              */
             mcp?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
+        };
+        /**
+         * CohortPersonaResource
+         * @description Persona option exposed from cohort GET.
+         */
+        CohortPersonaResource: {
+            /**
+             * Id
+             * @description Persona UUID
+             */
+            id?: string | null;
+            /**
+             * Name
+             * @description Persona name
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description Persona description
+             */
+            description?: string | null;
+            /**
+             * Icon
+             * @description Persona icon
+             */
+            icon?: string | null;
+            /**
+             * Color
+             * @description Persona color
+             */
+            color?: string | null;
+            /**
+             * Department Ids
+             * @description Associated department UUIDs
+             */
+            department_ids?: string[] | null;
+            /**
+             * Instructions
+             * @description Persona instructions
+             */
+            instructions?: string | null;
+            /**
+             * Examples
+             * @description Persona examples
+             */
+            examples?: string[] | null;
+            /**
+             * Parameter Field Ids
+             * @description Associated parameter field UUIDs
+             */
+            parameter_field_ids?: string[] | null;
+            /**
+             * Active
+             * @description Whether the persona is active
+             */
+            active?: boolean | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Mcp
+             * @description Whether created via MCP
+             */
+            mcp?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /** CohortProfilePersonaSection */
         CohortProfilePersonaSection: {
@@ -19819,6 +20822,21 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /**
          * CohortSimulationAvailability
@@ -19855,6 +20873,21 @@ export interface components {
              * @description Whether created via MCP
              */
             mcp?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /** CohortSimulationAvailabilitySection */
         CohortSimulationAvailabilitySection: {
@@ -19875,6 +20908,11 @@ export interface components {
          */
         CohortSimulationPosition: {
             /**
+             * Id
+             * @description Unique identifier
+             */
+            id?: string | null;
+            /**
              * Simulation Id
              * @description Associated simulation UUID
              */
@@ -19894,6 +20932,21 @@ export interface components {
              * @description Whether created via MCP
              */
             mcp?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             */
+            suggested?: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             */
+            selected?: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             */
+            pending?: boolean;
         };
         /** CohortSimulationPositionSection */
         CohortSimulationPositionSection: {
@@ -28076,6 +29129,88 @@ export interface components {
             artifact_id?: string | null;
         };
         /**
+         * GenerationsActivityApiRequest
+         * @description Request model for activity generations endpoint.
+         */
+        GenerationsActivityApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Filter by creation date (>=)
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description Filter by creation date (<=)
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Max items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsActivityApiResponse
+         * @description Response model for activity generations endpoint.
+         */
+        GenerationsActivityApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsActivityListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsActivityListItem
+         * @description Single generation group in the activity generations response.
+         */
+        GenerationsActivityListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description Session that created this group
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Optional human-readable group name
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
          * GenerationsAgentApiRequest
          * @description Request model for agent generations endpoint.
          */
@@ -28322,6 +29457,88 @@ export interface components {
             created_at?: string | null;
         };
         /**
+         * GenerationsBenchmarkApiRequest
+         * @description Request model for benchmark generations endpoint.
+         */
+        GenerationsBenchmarkApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsBenchmarkApiResponse
+         * @description Response model for benchmark generations endpoint.
+         */
+        GenerationsBenchmarkApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsBenchmarkListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsBenchmarkListItem
+         * @description Single generation group in the benchmark generations response.
+         */
+        GenerationsBenchmarkListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
          * GenerationsCohortApiRequest
          * @description Request model for cohort generations endpoint.
          */
@@ -28381,6 +29598,88 @@ export interface components {
          * @description Single generation group in the cohort generations response.
          */
         GenerationsCohortListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsDashboardApiRequest
+         * @description Request model for dashboard generations endpoint.
+         */
+        GenerationsDashboardApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsDashboardApiResponse
+         * @description Response model for dashboard generations endpoint.
+         */
+        GenerationsDashboardApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsDashboardListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsDashboardListItem
+         * @description Single generation group in the dashboard generations response.
+         */
+        GenerationsDashboardListItem: {
             /**
              * Group Id
              * Format: uuid
@@ -28732,6 +30031,339 @@ export interface components {
             created_at?: string | null;
         };
         /**
+         * GenerationsGroupApiRequest
+         * @description Request model for group generations endpoint.
+         */
+        GenerationsGroupApiRequest: {
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsGroupApiResponse
+         * @description Response model for group generations endpoint.
+         */
+        GenerationsGroupApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsGroupListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsGroupListItem
+         * @description Single generation group in the group generations response.
+         */
+        GenerationsGroupListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsHealthApiRequest
+         * @description Request model for health generations endpoint.
+         */
+        GenerationsHealthApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsHealthApiResponse
+         * @description Response model for health generations endpoint.
+         */
+        GenerationsHealthApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsHealthListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsHealthListItem
+         * @description Single generation group in the health generations response.
+         */
+        GenerationsHealthListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsHomeApiRequest
+         * @description Request model for home generations endpoint.
+         */
+        GenerationsHomeApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsHomeApiResponse
+         * @description Response model for home generations endpoint.
+         */
+        GenerationsHomeApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsHomeListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsHomeListItem
+         * @description Single generation group in the home generations response.
+         */
+        GenerationsHomeListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsLeaderboardApiRequest
+         * @description Request model for leaderboard generations endpoint.
+         */
+        GenerationsLeaderboardApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsLeaderboardApiResponse
+         * @description Response model for leaderboard generations endpoint.
+         */
+        GenerationsLeaderboardApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsLeaderboardListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsLeaderboardListItem
+         * @description Single generation group in the leaderboard generations response.
+         */
+        GenerationsLeaderboardListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
          * GenerationsModelApiRequest
          * @description Request model for model generations endpoint.
          */
@@ -28983,6 +30615,170 @@ export interface components {
             created_at?: string | null;
         };
         /**
+         * GenerationsPracticeApiRequest
+         * @description Request model for practice generations endpoint.
+         */
+        GenerationsPracticeApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsPracticeApiResponse
+         * @description Response model for practice generations endpoint.
+         */
+        GenerationsPracticeApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsPracticeListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsPracticeListItem
+         * @description Single generation group in the practice generations response.
+         */
+        GenerationsPracticeListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsPricingApiRequest
+         * @description Request model for pricing generations endpoint.
+         */
+        GenerationsPricingApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsPricingApiResponse
+         * @description Response model for pricing generations endpoint.
+         */
+        GenerationsPricingApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsPricingListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsPricingListItem
+         * @description Single generation group in the pricing generations response.
+         */
+        GenerationsPricingListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
          * GenerationsProfileApiRequest
          * @description Request model for profile generations endpoint.
          */
@@ -29147,6 +30943,170 @@ export interface components {
             created_at?: string | null;
         };
         /**
+         * GenerationsRecordApiRequest
+         * @description Request model for record generations endpoint.
+         */
+        GenerationsRecordApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsRecordApiResponse
+         * @description Response model for record generations endpoint.
+         */
+        GenerationsRecordApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsRecordListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsRecordListItem
+         * @description Single generation group in the record generations response.
+         */
+        GenerationsRecordListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsReportsApiRequest
+         * @description Request model for reports generations endpoint.
+         */
+        GenerationsReportsApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsReportsApiResponse
+         * @description Response model for reports generations endpoint.
+         */
+        GenerationsReportsApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsReportsListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsReportsListItem
+         * @description Single generation group in the reports generations response.
+         */
+        GenerationsReportsListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
          * GenerationsRubricApiRequest
          * @description Request model for rubric generations endpoint.
          */
@@ -29288,6 +31248,88 @@ export interface components {
          * @description Single generation group in the scenario generations response.
          */
         GenerationsScenarioListItem: {
+            /**
+             * Group Id
+             * Format: uuid
+             * @description UUID of the generation group
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * @description UUID of the parent session
+             */
+            session_id?: string | null;
+            /**
+             * Group Name
+             * @description Name of the generation group
+             */
+            group_name?: string | null;
+            /**
+             * Created At
+             * @description Timestamp of the generation
+             */
+            created_at?: string | null;
+        };
+        /**
+         * GenerationsSessionApiRequest
+         * @description Request model for session generations endpoint.
+         */
+        GenerationsSessionApiRequest: {
+            /**
+             * Search
+             * @description Name search (ILIKE)
+             */
+            search?: string | null;
+            /**
+             * Date From
+             * @description Start date filter
+             */
+            date_from?: string | null;
+            /**
+             * Date To
+             * @description End date filter
+             */
+            date_to?: string | null;
+            /**
+             * Page Limit
+             * @description Maximum items per page
+             * @default 50
+             */
+            page_limit: number;
+            /**
+             * Page Offset
+             * @description Offset for pagination
+             * @default 0
+             */
+            page_offset: number;
+        };
+        /**
+         * GenerationsSessionApiResponse
+         * @description Response model for session generations endpoint.
+         */
+        GenerationsSessionApiResponse: {
+            /**
+             * Actor Name
+             * @description Display name of the current actor
+             */
+            actor_name?: string | null;
+            /**
+             * Items
+             * @description Generation groups
+             */
+            items?: components["schemas"]["GenerationsSessionListItem"][];
+            /**
+             * Total Count
+             * @description Total number of matching generations
+             * @default 0
+             */
+            total_count: number;
+        };
+        /**
+         * GenerationsSessionListItem
+         * @description Single generation group in the session generations response.
+         */
+        GenerationsSessionListItem: {
             /**
              * Group Id
              * Format: uuid
@@ -30598,40 +32640,100 @@ export interface components {
          */
         GetCohortApiRequest: {
             /**
-             * Cohort Id
+             * Id
              * @description Cohort UUID to retrieve
              */
+            id?: string | null;
+            /**
+             * Cohort Id
+             * @description Legacy alias for cohort UUID
+             */
             cohort_id?: string | null;
-            /**
-             * Descriptions Search
-             * @description Search query for descriptions
-             */
-            descriptions_search?: string | null;
-            /**
-             * Simulation Search
-             * @description Search query for simulations
-             */
-            simulation_search?: string | null;
-            /**
-             * Simulation Show Selected
-             * @description Whether to show only selected simulations
-             */
-            simulation_show_selected?: boolean | null;
-            /**
-             * Profile Search
-             * @description Search query for profiles
-             */
-            profile_search?: string | null;
-            /**
-             * Profile Show Selected
-             * @description Whether to show only selected profiles
-             */
-            profile_show_selected?: boolean | null;
             /**
              * Draft Id
              * @description Draft UUID to load from
              */
             draft_id?: string | null;
+            /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /**
+             * Names
+             * @description Filter options for names section
+             */
+            names?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Descriptions
+             * @description Filter options for descriptions section
+             */
+            descriptions?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Flags
+             * @description Filter options for flags section
+             */
+            flags?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Departments
+             * @description Filter options for departments section
+             */
+            departments?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Simulations
+             * @description Filter options for simulations section
+             */
+            simulations?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Simulation Positions
+             * @description Filter options for simulation positions section
+             */
+            simulation_positions?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Simulation Availability
+             * @description Filter options for simulation availability section
+             */
+            simulation_availability?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Profiles
+             * @description Filter options for profiles section
+             */
+            profiles?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Profile Personas
+             * @description Filter options for profile personas section
+             */
+            profile_personas?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Personas
+             * @description Filter options for personas section
+             */
+            personas?: components["schemas"]["SectionFilter"] | null;
+            /**
+             * Descriptions Search
+             * @description Legacy search query for descriptions
+             */
+            descriptions_search?: string | null;
+            /**
+             * Simulation Search
+             * @description Legacy search query for simulations
+             */
+            simulation_search?: string | null;
+            /**
+             * Simulation Show Selected
+             * @description Legacy selected-only flag for simulations
+             */
+            simulation_show_selected?: boolean | null;
+            /**
+             * Profile Search
+             * @description Legacy search query for profiles
+             */
+            profile_search?: string | null;
+            /**
+             * Profile Show Selected
+             * @description Legacy selected-only flag for profiles
+             */
+            profile_show_selected?: boolean | null;
         };
         /**
          * GetCohortApiResponse
@@ -30664,43 +32766,80 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Show Ai Generate
+             * @description Whether AI generation is available
+             */
+            show_ai_generate?: boolean | null;
+            /**
              * Basic Show Ai Generate
-             * @description Whether to show AI generate for basic step
+             * @description Legacy AI-generate flag for the basic step
              */
             basic_show_ai_generate?: boolean | null;
             /**
              * Simulations Step Show Ai Generate
-             * @description Whether to show AI generate for simulations step
+             * @description Legacy AI-generate flag for the simulations step
              */
             simulations_step_show_ai_generate?: boolean | null;
             /**
              * Profiles Step Show Ai Generate
-             * @description Whether to show AI generate for profiles step
+             * @description Legacy AI-generate flag for the profiles step
              */
             profiles_step_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["CohortNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["CohortDescriptionSection"] | null;
-            /** @description Flag section with resource and options */
-            flags?: components["schemas"]["CohortFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["CohortDepartmentSection"] | null;
-            /** @description Simulation section with selections and options */
-            simulations?: components["schemas"]["CohortSimulationSection"] | null;
-            /** @description Simulation position section */
-            simulation_positions?: components["schemas"]["CohortSimulationPositionSection"] | null;
-            /** @description Simulation availability section */
-            simulation_availability?: components["schemas"]["CohortSimulationAvailabilitySection"] | null;
-            /** @description Profile section with selections and options */
-            profiles?: components["schemas"]["CohortProfileSection"] | null;
-            /** @description Profile persona section */
-            profile_personas?: components["schemas"]["CohortProfilePersonaSection"] | null;
+            /**
+             * Names
+             * @description Name resources with selected/suggested flags
+             */
+            names?: components["schemas"]["CohortNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources with selected/suggested flags
+             */
+            descriptions?: components["schemas"]["CohortDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag resources with selected/suggested flags
+             */
+            flags?: components["schemas"]["CohortFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources with selected/suggested flags
+             */
+            departments?: components["schemas"]["CohortDepartment"][] | null;
+            /**
+             * Simulations
+             * @description Simulation resources with selected/suggested flags
+             */
+            simulations?: components["schemas"]["CohortSimulation"][] | null;
+            /**
+             * Simulation Positions
+             * @description Simulation position resources with selected/suggested flags
+             */
+            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
+            /**
+             * Simulation Availability
+             * @description Simulation availability resources with selected/suggested flags
+             */
+            simulation_availability?: components["schemas"]["CohortSimulationAvailability"][] | null;
+            /**
+             * Profiles
+             * @description Profile resources with selected/suggested flags
+             */
+            profiles?: components["schemas"]["CohortProfile"][] | null;
+            /**
+             * Profile Personas
+             * @description Profile persona resources with selected/suggested flags
+             */
+            profile_personas?: components["schemas"]["CohortProfilePersona"][] | null;
             /**
              * Personas
-             * @description List of available personas
+             * @description Persona resources with selected/suggested flags
              */
-            personas?: components["schemas"]["GetPersonaResponse"][] | null;
+            personas?: components["schemas"]["CohortPersonaResource"][] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource IDs from the draft, when available
+             */
+            pending_ids?: string[] | null;
         };
         /**
          * GetCohortApiResponse
@@ -30733,43 +32872,80 @@ export interface components {
              */
             group_id?: string | null;
             /**
+             * Show Ai Generate
+             * @description Whether AI generation is available
+             */
+            show_ai_generate?: boolean | null;
+            /**
              * Basic Show Ai Generate
-             * @description Whether to show AI generate for basic step
+             * @description Legacy AI-generate flag for the basic step
              */
             basic_show_ai_generate?: boolean | null;
             /**
              * Simulations Step Show Ai Generate
-             * @description Whether to show AI generate for simulations step
+             * @description Legacy AI-generate flag for the simulations step
              */
             simulations_step_show_ai_generate?: boolean | null;
             /**
              * Profiles Step Show Ai Generate
-             * @description Whether to show AI generate for profiles step
+             * @description Legacy AI-generate flag for the profiles step
              */
             profiles_step_show_ai_generate?: boolean | null;
-            /** @description Name section with resource and options */
-            names?: components["schemas"]["CohortNameSection"] | null;
-            /** @description Description section with resource and options */
-            descriptions?: components["schemas"]["CohortDescriptionSection"] | null;
-            /** @description Flag section with resource and options */
-            flags?: components["schemas"]["CohortFlagSection"] | null;
-            /** @description Department section with selections and options */
-            departments?: components["schemas"]["CohortDepartmentSection"] | null;
-            /** @description Simulation section with selections and options */
-            simulations?: components["schemas"]["CohortSimulationSection"] | null;
-            /** @description Simulation position section */
-            simulation_positions?: components["schemas"]["CohortSimulationPositionSection"] | null;
-            /** @description Simulation availability section */
-            simulation_availability?: components["schemas"]["CohortSimulationAvailabilitySection"] | null;
-            /** @description Profile section with selections and options */
-            profiles?: components["schemas"]["CohortProfileSection"] | null;
-            /** @description Profile persona section */
-            profile_personas?: components["schemas"]["CohortProfilePersonaSection"] | null;
+            /**
+             * Names
+             * @description Name resources with selected/suggested flags
+             */
+            names?: components["schemas"]["CohortNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources with selected/suggested flags
+             */
+            descriptions?: components["schemas"]["CohortDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag resources with selected/suggested flags
+             */
+            flags?: components["schemas"]["CohortFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources with selected/suggested flags
+             */
+            departments?: components["schemas"]["CohortDepartment"][] | null;
+            /**
+             * Simulations
+             * @description Simulation resources with selected/suggested flags
+             */
+            simulations?: components["schemas"]["CohortSimulation"][] | null;
+            /**
+             * Simulation Positions
+             * @description Simulation position resources with selected/suggested flags
+             */
+            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
+            /**
+             * Simulation Availability
+             * @description Simulation availability resources with selected/suggested flags
+             */
+            simulation_availability?: components["schemas"]["CohortSimulationAvailability"][] | null;
+            /**
+             * Profiles
+             * @description Profile resources with selected/suggested flags
+             */
+            profiles?: components["schemas"]["CohortProfile"][] | null;
+            /**
+             * Profile Personas
+             * @description Profile persona resources with selected/suggested flags
+             */
+            profile_personas?: components["schemas"]["CohortProfilePersona"][] | null;
             /**
              * Personas
-             * @description List of available personas
+             * @description Persona resources with selected/suggested flags
              */
-            personas?: components["schemas"]["GetPersonaResponse"][] | null;
+            personas?: components["schemas"]["CohortPersonaResource"][] | null;
+            /**
+             * Pending Ids
+             * @description Pending resource IDs from the draft, when available
+             */
+            pending_ids?: string[] | null;
         };
         /** GetCohortDraftResponse */
         GetCohortDraftResponse: {
@@ -42255,8 +44431,13 @@ export interface components {
          */
         PatchCohortDraftApiRequest: {
             /**
-             * Input Draft Id
+             * Draft Id
              * @description Existing draft UUID to patch
+             */
+            draft_id?: string | null;
+            /**
+             * Input Draft Id
+             * @description Legacy alias for existing draft UUID to patch
              */
             input_draft_id?: string | null;
             /**
@@ -42280,25 +44461,55 @@ export interface components {
              */
             description_id?: string | null;
             /**
+             * Flag
+             * @description Flag type or name to resolve
+             */
+            flag?: string | null;
+            /**
              * Flag Id
              * @description Flag option UUID
              */
             flag_id?: string | null;
+            /**
+             * Active Flag Id
+             * @description UUID of the flag option to set active status
+             */
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the cohort is active (resolved to flag_id)
+             */
+            active_flag?: boolean | null;
             /**
              * Department Ids
              * @description Department UUIDs
              */
             department_ids?: string[] | null;
             /**
+             * Departments
+             * @description Department names to resolve
+             */
+            departments?: string[] | null;
+            /**
              * Simulation Ids
              * @description Simulation UUIDs
              */
             simulation_ids?: string[] | null;
             /**
+             * Simulations
+             * @description Simulation names to resolve
+             */
+            simulations?: string[] | null;
+            /**
              * Profile Ids
              * @description Profile UUIDs
              */
             profile_ids?: string[] | null;
+            /**
+             * Profiles
+             * @description Profile names to resolve
+             */
+            profiles?: string[] | null;
             /**
              * Simulation Position Ids
              * @description Existing simulation position UUIDs
@@ -42329,6 +44540,21 @@ export interface components {
              * @description Profile persona values to create
              */
             profile_personas?: components["schemas"]["DraftProfilePersonaValue"][] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep as pending where supported by the tool layer
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack or retry
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject dormant draft state
+             */
+            accept?: boolean;
         };
         /**
          * PatchCohortDraftApiResponse
@@ -42346,6 +44572,12 @@ export interface components {
              * @description Draft UUID
              */
             draft_id: string;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key: string;
             /**
              * Message
              * @description Human-readable result message
@@ -44865,6 +47097,46 @@ export interface components {
             message: string;
         };
         /**
+         * ProblemBenchmarkApiRequest
+         * @description Request model for benchmark problem endpoint.
+         */
+        ProblemBenchmarkApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemBenchmarkApiResponse
+         * @description Response model for benchmark problem endpoint.
+         */
+        ProblemBenchmarkApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
          * ProblemCohortApiRequest
          * @description Request model for cohort problem endpoint.
          */
@@ -44885,6 +47157,46 @@ export interface components {
          * @description Response model for cohort problem endpoint.
          */
         ProblemCohortApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
+         * ProblemDashboardApiRequest
+         * @description Request model for dashboard problem endpoint.
+         */
+        ProblemDashboardApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemDashboardApiResponse
+         * @description Response model for dashboard problem endpoint.
+         */
+        ProblemDashboardApiResponse: {
             /**
              * Problem Id
              * Format: uuid
@@ -45065,6 +47377,182 @@ export interface components {
             message: string;
         };
         /**
+         * ProblemGroupApiRequest
+         * @description Request model for group problem endpoint.
+         */
+        ProblemGroupApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
+         * ProblemGroupApiResponse
+         * @description Response model for group problem endpoint.
+         */
+        ProblemGroupApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
+        };
+        /**
+         * ProblemHealthApiRequest
+         * @description Request model for health problem endpoint.
+         */
+        ProblemHealthApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemHealthApiResponse
+         * @description Response model for health problem endpoint.
+         */
+        ProblemHealthApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
+         * ProblemHomeApiRequest
+         * @description Request model for home problem endpoint.
+         */
+        ProblemHomeApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemHomeApiResponse
+         * @description Response model for home problem endpoint.
+         */
+        ProblemHomeApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
+         * ProblemLeaderboardApiRequest
+         * @description Request model for leaderboard problem endpoint.
+         */
+        ProblemLeaderboardApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemLeaderboardApiResponse
+         * @description Response model for leaderboard problem endpoint.
+         */
+        ProblemLeaderboardApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
          * ProblemModelApiRequest
          * @description Request model for model problem endpoint.
          */
@@ -45201,6 +47689,86 @@ export interface components {
             idempotency_key?: string | null;
         };
         /**
+         * ProblemPracticeApiRequest
+         * @description Request model for practice problem endpoint.
+         */
+        ProblemPracticeApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemPracticeApiResponse
+         * @description Response model for practice problem endpoint.
+         */
+        ProblemPracticeApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
+         * ProblemPricingApiRequest
+         * @description Request model for pricing problem endpoint.
+         */
+        ProblemPricingApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemPricingApiResponse
+         * @description Response model for pricing problem endpoint.
+         */
+        ProblemPricingApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
          * ProblemProfileApiRequest
          * @description Request model for profile problem endpoint.
          */
@@ -45281,6 +47849,86 @@ export interface components {
             message: string;
         };
         /**
+         * ProblemRecordApiRequest
+         * @description Request model for record problem endpoint.
+         */
+        ProblemRecordApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemRecordApiResponse
+         * @description Response model for record problem endpoint.
+         */
+        ProblemRecordApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
+         * ProblemReportsApiRequest
+         * @description Request model for reports problem endpoint.
+         */
+        ProblemReportsApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemReportsApiResponse
+         * @description Response model for reports problem endpoint.
+         */
+        ProblemReportsApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
          * ProblemRubricApiRequest
          * @description Request model for rubric problem endpoint.
          */
@@ -45341,6 +47989,46 @@ export interface components {
          * @description Response model for scenario problem endpoint.
          */
         ProblemScenarioApiResponse: {
+            /**
+             * Problem Id
+             * Format: uuid
+             * @description UUID of the created problem
+             */
+            problem_id: string;
+            /**
+             * Success
+             * @description Whether the problem was created
+             * @default true
+             */
+            success: boolean;
+            /**
+             * Message
+             * @description Status message
+             * @default Problem created successfully
+             */
+            message: string;
+        };
+        /**
+         * ProblemSessionApiRequest
+         * @description Request model for session problem endpoint.
+         */
+        ProblemSessionApiRequest: {
+            /**
+             * Type
+             * @description Problem type: feature, bug, question, other
+             */
+            type: string;
+            /**
+             * Message
+             * @description Problem description (max 1000 chars)
+             */
+            message: string;
+        };
+        /**
+         * ProblemSessionApiResponse
+         * @description Response model for session problem endpoint.
+         */
+        ProblemSessionApiResponse: {
             /**
              * Problem Id
              * Format: uuid
@@ -45939,6 +48627,10 @@ export interface components {
         /**
          * ProfileSummary
          * @description Caller identity derived from JWT — who you are on this page.
+         *
+         *     Superset of the old six-field version: now carries everything the client
+         *     needs so that ``/{artifact}/context`` fully replaces ``/profiles/context``
+         *     and the extra ``getLayoutContextData`` round-trip can be dropped.
          */
         ProfileSummary: {
             /**
@@ -45971,6 +48663,46 @@ export interface components {
              * @description Whether the user's profile is active
              */
             is_active: boolean;
+            /**
+             * Id
+             * Format: uuid
+             * @description Profile UUID (SocketProvider, ProfileProvider)
+             */
+            id: string;
+            /** @description Theme primitives (ThemeHydrator) */
+            theme?: components["schemas"]["ThemePrimitives"] | null;
+            /**
+             * Group Id
+             * @description Active generation group UUID (GroupProvider)
+             */
+            group_id?: string | null;
+            /**
+             * Session Id
+             * @description Current session UUID
+             */
+            session_id?: string | null;
+            /**
+             * Is Emulation
+             * @description Whether user is in emulation mode (ProfileProvider)
+             * @default false
+             */
+            is_emulation: boolean;
+            /**
+             * Role Resources
+             * @description All role resources for emulation display (ProfileProvider)
+             */
+            role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
+            /**
+             * Scoped Roles
+             * @description Roles the user can emulate (ProfileProvider)
+             */
+            scoped_roles?: string[] | null;
+            /**
+             * Active
+             * @description Alias for is_active (ProfileProvider uses this name)
+             * @default true
+             */
+            active: boolean;
         };
         /**
          * ProfileSummaryItem
@@ -64955,6 +67687,39 @@ export interface operations {
             };
         };
     };
+    generations_group_group_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsGroupApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     group_group_group_group_post: {
         parameters: {
             query?: never;
@@ -65008,6 +67773,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NameGroupApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_group_group_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemGroupApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemGroupApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65404,6 +68202,72 @@ export interface operations {
             };
         };
     };
+    generate_session_session_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_session_session_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsSessionApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsSessionApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     group_session_session_group_post: {
         parameters: {
             query?: never;
@@ -65424,6 +68288,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupSessionApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_session_session_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemSessionApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemSessionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65781,6 +68678,39 @@ export interface operations {
             };
         };
     };
+    get_home_context_home_context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposedContextResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_home_docs_endpoint_home_docs_post: {
         parameters: {
             query?: never;
@@ -65814,6 +68744,72 @@ export interface operations {
             };
         };
     };
+    generate_home_home_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_home_home_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsHomeApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsHomeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     group_home_home_group_post: {
         parameters: {
             query?: never;
@@ -65834,6 +68830,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupHomeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_home_home_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemHomeApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemHomeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -65953,6 +68982,39 @@ export interface operations {
             };
         };
     };
+    get_practice_context_practice_context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposedContextResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_practice_docs_endpoint_practice_docs_post: {
         parameters: {
             query?: never;
@@ -65986,6 +69048,72 @@ export interface operations {
             };
         };
     };
+    generate_practice_practice_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_practice_practice_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsPracticeApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsPracticeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     group_practice_practice_group_post: {
         parameters: {
             query?: never;
@@ -66006,6 +69134,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupPracticeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_practice_practice_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemPracticeApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemPracticeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66134,6 +69295,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RefreshResponse"];
+                };
+            };
+        };
+    };
+    get_attempt_context_attempt_context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposedContextResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -67203,6 +70397,39 @@ export interface operations {
             };
         };
     };
+    get_record_context_record_context_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComposedContextResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_record_docs_endpoint_record_docs_post: {
         parameters: {
             query?: never;
@@ -67236,6 +70463,72 @@ export interface operations {
             };
         };
     };
+    generate_record_record_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_record_record_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsRecordApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     group_record_record_group_post: {
         parameters: {
             query?: never;
@@ -67256,6 +70549,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_record_record_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemRecordApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67474,6 +70800,105 @@ export interface operations {
             };
         };
     };
+    generate_dashboard_dashboard_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_dashboard_dashboard_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsDashboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsDashboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_dashboard_dashboard_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemDashboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDashboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_reports_reports_export_post: {
         parameters: {
             query?: never;
@@ -67490,6 +70915,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportReportsApiResponse"];
+                };
+            };
+        };
+    };
+    generate_reports_reports_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_reports_reports_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsReportsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsReportsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -67514,6 +71005,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupReportsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_reports_reports_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemReportsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemReportsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67752,6 +71276,72 @@ export interface operations {
             };
         };
     };
+    generate_leaderboard_leaderboard_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_leaderboard_leaderboard_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsLeaderboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsLeaderboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_leaderboard_docs_endpoint_leaderboard_docs_post: {
         parameters: {
             query?: never;
@@ -67838,6 +71428,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupLeaderboardApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_leaderboard_leaderboard_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemLeaderboardApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemLeaderboardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68056,6 +71679,105 @@ export interface operations {
             };
         };
     };
+    generate_pricing_pricing_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_pricing_pricing_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsPricingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsPricingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_pricing_pricing_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemPricingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemPricingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_activity_activity_get_post: {
         parameters: {
             query?: never;
@@ -68191,6 +71913,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExportActivityApiResponse"];
+                };
+            };
+        };
+    };
+    generate_activity_activity_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_activity_activity_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsActivityApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsActivityApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -68499,6 +72287,105 @@ export interface operations {
             };
         };
     };
+    generate_health_health_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_health_health_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsHealthApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsHealthApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_health_health_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemHealthApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemHealthApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_benchmark_benchmark_get_post: {
         parameters: {
             query?: never;
@@ -68691,6 +72578,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GroupBenchmarkApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_benchmark_benchmark_generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArtifactGenerateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArtifactGenerateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generations_benchmark_benchmark_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerationsBenchmarkApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationsBenchmarkApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    problem_benchmark_benchmark_problem_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemBenchmarkApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemBenchmarkApiResponse"];
                 };
             };
             /** @description Validation Error */

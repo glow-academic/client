@@ -2,7 +2,7 @@
  * useGenerationDraft — generic hook for syncing draft state from AI generation.
  *
  * Listens for `{artifact}.draft.completed` and `{artifact}.draft.failed`
- * WebSocket events emitted during AI generation tool calls.
+ * events via the Transport abstraction (WebSocket or SSE).
  *
  * Keeps the client's draftId in sync with the server's append-only draft
  * entries. Each AI draft call creates a new entry — this hook picks up
@@ -13,7 +13,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useSocket } from "@/contexts/socket-context";
+import { useTransport } from "@/lib/transport";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,7 +73,7 @@ export function useGenerationDraft({
   onDraftCompleted,
   onDraftFailed,
 }: UseGenerationDraftConfig): void {
-  const { socket, isConnected } = useSocket();
+  const transport = useTransport();
 
   // Stable refs to avoid re-registering listeners on callback changes
   const groupIdRef = useRef(groupId);
@@ -86,16 +86,6 @@ export function useGenerationDraft({
   onFailedRef.current = onDraftFailed;
 
   useEffect(() => {
-    if (!socket || !isConnected) return;
-
-    const s = socket as unknown as {
-      on: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-      off: (event: string, handler: (data: Record<string, unknown>) => void) => void;
-    };
-
-    const completedEvent = `${artifactType}.draft.completed`;
-    const failedEvent = `${artifactType}.draft.failed`;
-
     const matchesGroup = (data: Record<string, unknown>): boolean => {
       if (!groupIdRef.current) return false;
       return data.group_id === groupIdRef.current;
@@ -114,12 +104,11 @@ export function useGenerationDraft({
       onFailedRef.current?.(event.message || "Draft save failed");
     };
 
-    s.on(completedEvent, handleCompleted);
-    s.on(failedEvent, handleFailed);
+    const unsubs = [
+      transport.on(`${artifactType}.draft.completed`, handleCompleted),
+      transport.on(`${artifactType}.draft.failed`, handleFailed),
+    ];
 
-    return () => {
-      s.off(completedEvent, handleCompleted);
-      s.off(failedEvent, handleFailed);
-    };
-  }, [socket, isConnected, artifactType]);
+    return () => unsubs.forEach((fn) => fn());
+  }, [transport, artifactType]);
 }

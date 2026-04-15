@@ -10,8 +10,7 @@ import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Practice from "@/components/artifacts/practice/Practice";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { refreshPage } from "@/app/(main)/layout-server";
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -50,6 +49,11 @@ const getPracticeData = async (input: PracticeIn): Promise<PracticeOut> => {
 };
 
 /** ---- Strongly-typed server actions ---- */
+async function refreshChat(): Promise<void> {
+  "use server";
+  await api.post("/chat/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
 async function generatePractice(
   input: GeneratePracticeIn
 ): Promise<GeneratePracticeOut> {
@@ -102,7 +106,8 @@ export default async function PracticePage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/practice/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
   const q = loadPracticeSearchParams(await searchParams);
@@ -213,7 +218,7 @@ export default async function PracticePage({
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -226,7 +231,7 @@ export default async function PracticePage({
       ]}
       toolbar={
         <AnalyticsFilters
-          refreshPage={refreshPage}
+          refreshAction={refreshChat}
           analyticsFilters={facets}
         />
       }

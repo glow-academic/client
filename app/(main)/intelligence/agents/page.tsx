@@ -16,7 +16,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -127,7 +127,8 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/agents/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -170,7 +171,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}

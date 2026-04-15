@@ -18,7 +18,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetCohortIn = InputOf<"/cohorts/get", "post">;
@@ -27,32 +27,6 @@ type CreateCohortIn = InputOf<"/cohorts/create", "post">;
 type CreateCohortOut = OutputOf<"/cohorts/create", "post">;
 type PatchCohortDraftIn = InputOf<"/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/cohorts/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftSimulationPositionsIn = InputOf<
-  "/api/v5/resources/simulation_positions",
-  "post"
->;
-type CreateDraftSimulationPositionsOut = OutputOf<
-  "/api/v5/resources/simulation_positions",
-  "post"
->;
-type CreateDraftProfilePersonasIn = InputOf<
-  "/api/v5/resources/profile_personas",
-  "post"
->;
-type CreateDraftProfilePersonasOut = OutputOf<
-  "/api/v5/resources/profile_personas",
-  "post"
->;
 type GroupCohortIn = InputOf<"/cohorts/group", "post">;
 type GroupCohortOut = OutputOf<"/cohorts/group", "post">;
 type GenerateCohortIn = InputOf<"/cohorts/generate", "post">;
@@ -83,34 +57,6 @@ async function patchCohortDraft(
 ): Promise<PatchCohortDraftOut> {
   "use server";
   return api.patch("/cohorts/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftSimulationPositions(
-  input: CreateDraftSimulationPositionsIn
-): Promise<CreateDraftSimulationPositionsOut> {
-  "use server";
-  return api.post("/resources/simulation_positions", input);
-}
-
-async function createDraftProfilePersonas(
-  input: CreateDraftProfilePersonasIn
-): Promise<CreateDraftProfilePersonasOut> {
-  "use server";
-  return api.post("/resources/profile_personas", input);
 }
 
 async function generateCohort(
@@ -166,7 +112,8 @@ export default async function NewCohortPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers (until /cohorts/context returns full profile)
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -194,55 +141,86 @@ export default async function NewCohortPage({
   const q = loadCohortSearchParams(searchParamsObj);
 
   // Fetch default cohort detail server-side with filter params and draft_id
-  const input: GetCohortIn = {
-    body: {
-      cohort_id: null,
-      draft_id: q.draftId ?? null,
-      descriptions_search: q.descriptionSearch ?? null,
-      simulation_search: q.simulationSearch ?? null,
-      simulation_show_selected: q.simulationShowSelected ?? null,
-      profile_search: q.profileSearch ?? null,
-      profile_show_selected: q.profileShowSelected ?? null,
-      mcp: false,
-    } as GetCohortIn["body"],
+  const body: GetCohortIn["body"] = {
+    id: null,
+    draft_id: q.draftId ?? null,
+    ...(q.descriptionSearch
+      ? {
+          descriptions: {
+            search: q.descriptionSearch,
+          },
+        }
+      : {}),
+    ...(q.simulationSearch || q.simulationShowSelected
+      ? {
+          simulations: {
+            ...(q.simulationSearch ? { search: q.simulationSearch } : {}),
+            ...(q.simulationShowSelected !== null
+              ? { selected: q.simulationShowSelected }
+              : {}),
+          },
+        }
+      : {}),
+    ...(q.profileSearch || q.profileShowSelected
+      ? {
+          profiles: {
+            ...(q.profileSearch ? { search: q.profileSearch } : {}),
+            ...(q.profileShowSelected !== null
+              ? { selected: q.profileShowSelected }
+              : {}),
+          },
+        }
+      : {}),
   };
+
+  const input = {
+    path: undefined,
+    body,
+  } as GetCohortIn;
 
   const [cohortData, draftsResult, groupResult] = await Promise.all([
     getCohortDefault(input),
-    api.post("/cohorts/drafts", {}),
+    api.post(
+      "/cohorts/drafts",
+      { path: undefined } as InputOf<"/cohorts/drafts", "post">,
+    ),
     api.post("/cohorts/group", { body: {} } as GroupCohortIn),
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.entries ?? []}>
+    <DraftProviderClient drafts={(draftsResult.entries ?? []) as any}>
       <FullPageLayout
-        profileData={profileData}
-        sessionSnapshot={snapshot}
-        initialSidebarOpen={initialSidebarOpen}
-        initialPanelOpen={initialPanelOpen}
-        sidebarProps={{
-          activeSection: "cohort",
-          createFeedback: createCohortProblem,
-        }}
-        breadcrumbs={[
-          { title: "Training", section: "training", url: "/training" },
-          { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
-          { title: "New Cohort" },
-        ]}
-        toolbar={<SaveToolbar />}
-        panelProps={{
-          artifactType: "cohort",
-          groupId: (groupResult as GroupCohortOut & { group_id?: string })?.group_id ?? null,
-          generateAction: generateCohort,
-          permissions: [
-            { artifact: "cohort", operation: "draft" },
-            { artifact: "cohort", operation: "get" },
-            { artifact: "cohort", operation: "docs" },
-            { artifact: "cohort", operation: "group" },
+        {...({
+          profileData: context.profile,
+          sessionSnapshot: snapshot,
+          initialSidebarOpen,
+          initialPanelOpen,
+          sidebarProps: {
+            activeSection: "cohort",
+            createFeedback: createCohortProblem as any,
+          },
+          breadcrumbs: [
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
+            { title: "New Cohort" },
           ],
-          getGroupHistory: getCohortGroupHistory,
-          searchGroups: searchCohortGroups,
-        }}
+          toolbar: <SaveToolbar />,
+          panelProps: {
+            artifactType: "cohort",
+            groupId:
+              (groupResult as GroupCohortOut & { group_id?: string })?.group_id ??
+              null,
+            generateAction: generateCohort,
+            permissions: [
+              { artifact: "cohort", operation: "draft" },
+              { artifact: "cohort", operation: "get" },
+              { artifact: "cohort", operation: "docs" },
+              { artifact: "cohort", operation: "group" },
+            ],
+            getGroupHistory: getCohortGroupHistory,
+            searchGroups: searchCohortGroups,
+          },
+        } as any)}
       >
         <div
           className="space-y-6 px-4"
@@ -254,10 +232,6 @@ export default async function NewCohortPage({
             cohortData={cohortData}
             createCohortAction={createCohort}
             patchCohortDraftAction={patchCohortDraft}
-            createNamesAction={createDraftNames}
-            createDescriptionsAction={createDraftDescriptions}
-            createSimulationPositionsAction={createDraftSimulationPositions}
-            createProfilePersonasAction={createDraftProfilePersonas}
           />
         </div>
       </FullPageLayout>

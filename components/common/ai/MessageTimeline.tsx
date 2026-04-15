@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { GroupMessage } from "@/hooks/use-generation-panel";
+import type { GroupMessage } from "@/components/common/ai/types";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

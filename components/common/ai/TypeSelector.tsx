@@ -2,7 +2,7 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { PanelTab } from "@/hooks/use-generation-panel";
+import type { PanelTab } from "@/components/common/ai/types";
 import type { TypeItem } from "@/components/common/ai/types";
 
 interface TypeSelectorProps {

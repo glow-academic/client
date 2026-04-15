@@ -9,8 +9,7 @@ import { getSession } from "@/auth";
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import Leaderboard from "@/components/artifacts/leaderboard/Leaderboard";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { refreshPage } from "@/app/(main)/layout-server";
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -55,6 +54,11 @@ const getLeaderboard = async (
 };
 
 /** ---- Strongly-typed server actions ---- */
+async function refreshLeaderboard(): Promise<void> {
+  "use server";
+  await api.post("/leaderboard/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
 async function generateLeaderboard(
   input: GenerateLeaderboardIn
 ): Promise<GenerateLeaderboardOut> {
@@ -107,7 +111,8 @@ export default async function LeaderboardPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/leaderboard/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
   const q = loadLeaderboardSearchParams(await searchParams);
@@ -138,7 +143,7 @@ export default async function LeaderboardPage({
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -151,7 +156,7 @@ export default async function LeaderboardPage({
       ]}
       toolbar={
         <AnalyticsFilters
-          refreshPage={refreshPage}
+          refreshAction={refreshLeaderboard}
           analyticsFilters={facets}
         />
       }

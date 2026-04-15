@@ -20,14 +20,14 @@ import { PageHeader, type BreadcrumbItem } from "@/components/common/layout/Page
 import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { ProfileProviderClient } from "@/contexts/profile-context";
+import type { ContextProfile } from "@/contexts/profile-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
 import { GroupProviderClient } from "@/contexts/group-context";
+import { TransportProvider } from "@/lib/transport";
+import type { TransportMode } from "@/lib/transport";
 import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
 
-import type {
-  AuthProfileResponse,
-  SafeSessionSnapshot,
-} from "@/app/(main)/layout-server";
+import type { SafeSessionSnapshot } from "@/lib/auth";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,15 +41,12 @@ interface SidebarProps {
 interface PanelProps {
   artifactType: string;
   groupId: string | null;
-  generateAction: (input: Record<string, unknown>) => Promise<Record<string, unknown>>;
   permissions: Array<{ artifact: string; operation: string }>;
-  getGroupHistory: (groupId: string) => Promise<Record<string, unknown>>;
-  searchGroups: (query: string) => Promise<Record<string, unknown>>;
 }
 
 export interface FullPageLayoutProps {
   // Auth/providers
-  profileData: AuthProfileResponse | null;
+  profileData: ContextProfile | null;
   sessionSnapshot: SafeSessionSnapshot;
   // Cookie-based initial state
   initialSidebarOpen?: boolean;
@@ -61,6 +58,8 @@ export interface FullPageLayoutProps {
   toolbar?: React.ReactNode;
   // Right panel (omit for pages without a generation panel)
   panelProps?: PanelProps;
+  // Transport mode override (default: auto-detect)
+  transportMode?: TransportMode;
   // Content
   children: React.ReactNode;
 }
@@ -78,6 +77,7 @@ export function FullPageLayout({
   breadcrumbs,
   toolbar,
   panelProps,
+  transportMode,
   children,
 }: FullPageLayoutProps) {
   const router = useRouter();
@@ -122,42 +122,44 @@ export function FullPageLayout({
         profileId={profileData?.id ?? null}
         idToken={sessionSnapshot?.idToken ?? null}
       >
-        <ProfileProviderClient
-          initial={profileData}
-          sessionSnapshot={sessionSnapshot}
+        <TransportProvider
+          mode={transportMode}
+          authToken={sessionSnapshot?.idToken}
         >
-          <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
-            <div className="flex min-h-svh w-full">
-              <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
-                <UnifiedSidebar
-                  activeSection={sidebarProps.activeSection}
-                  onSectionChange={handleSectionChange}
-                  createFeedback={sidebarProps.createFeedback}
-                />
-                <SidebarInset>
-                  <PageHeader
-                    breadcrumbs={breadcrumbs}
-                    toolbar={toolbar}
-                    onTogglePanel={panelProps ? togglePanel : undefined}
+          <ProfileProviderClient
+            initial={profileData}
+            sessionSnapshot={sessionSnapshot}
+          >
+            <GroupProviderClient initialGroupId={profileData?.group_id ?? null}>
+              <div className="flex min-h-svh w-full">
+                <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
+                  <UnifiedSidebar
+                    activeSection={sidebarProps.activeSection}
+                    onSectionChange={handleSectionChange}
+                    createFeedback={sidebarProps.createFeedback}
                   />
-                  <div className="flex flex-1 flex-col gap-4">{children}</div>
-                </SidebarInset>
-              </SidebarProvider>
-              {panelProps && (
-                <GenerationPanel
-                  panelOpen={panelOpen}
-                  onToggle={togglePanel}
-                  artifactType={panelProps.artifactType}
-                  groupId={panelProps.groupId}
-                  generateAction={panelProps.generateAction}
-                  permissions={panelProps.permissions}
-                  getGroupHistory={panelProps.getGroupHistory}
-                  searchGroups={panelProps.searchGroups}
-                />
-              )}
-            </div>
-          </GroupProviderClient>
-        </ProfileProviderClient>
+                  <SidebarInset>
+                    <PageHeader
+                      breadcrumbs={breadcrumbs}
+                      toolbar={toolbar}
+                      onTogglePanel={panelProps ? togglePanel : undefined}
+                    />
+                    <div className="flex flex-1 flex-col gap-4">{children}</div>
+                  </SidebarInset>
+                </SidebarProvider>
+                {panelProps && (
+                  <GenerationPanel
+                    panelOpen={panelOpen}
+                    onToggle={togglePanel}
+                    artifactType={panelProps.artifactType}
+                    groupId={panelProps.groupId}
+                    permissions={panelProps.permissions}
+                  />
+                )}
+              </div>
+            </GroupProviderClient>
+          </ProfileProviderClient>
+        </TransportProvider>
       </SocketProviderClient>
     </>
   );

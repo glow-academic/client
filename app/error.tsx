@@ -1,5 +1,5 @@
 "use client";
-import { createFeedback } from "@/app/(main)/layout-server";
+import { createFeedback } from "@/lib/actions/feedback";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Button } from "@/components/ui/button";
 import { ProfileContext } from "@/contexts/profile-context";

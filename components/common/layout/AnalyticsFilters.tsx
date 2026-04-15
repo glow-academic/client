@@ -7,7 +7,6 @@
 
 "use client";
 
-import type { RefreshPageFn } from "@/app/(main)/layout-server";
 import {
   PROFILE_ROLES,
   type ProfileRole,
@@ -33,22 +32,6 @@ import {
 import { DepartmentSelector } from "./analytics/DepartmentSelector";
 import { RoleSelector } from "./analytics/RoleSelector";
 
-/** Map pathname prefix to the refresh page key */
-function getRefreshPageFromPathname(pathname: string): string {
-  if (pathname.startsWith("/analytics/dashboard")) return "dashboard";
-  if (pathname.startsWith("/analytics/reports")) return "reports";
-  if (pathname.startsWith("/record/")) return "reports";
-  if (pathname.startsWith("/analytics/pricing")) return "pricing";
-  if (pathname.startsWith("/group/")) return "pricing";
-  if (pathname.startsWith("/analytics/activity")) return "activity";
-  if (pathname.startsWith("/session/")) return "activity";
-  if (pathname.startsWith("/leaderboard")) return "leaderboard";
-  if (pathname.startsWith("/benchmark")) return "benchmark";
-  if (pathname.startsWith("/health")) return "health";
-  // Home and practice pages use the training refresh
-  return "training";
-}
-
 /** Inline analytics facets from the artifact endpoint response */
 export interface AnalyticsFacetsData {
   fields?: {
@@ -67,12 +50,12 @@ export interface AnalyticsFacetsData {
 }
 
 export interface AnalyticsFiltersProps {
-  refreshPage: RefreshPageFn;
+  refreshAction: () => Promise<void>;
   /** Inline facets from the page's artifact endpoint */
   analyticsFilters: AnalyticsFacetsData | null | undefined;
 }
 
-export function AnalyticsFilters({ refreshPage, analyticsFilters }: AnalyticsFiltersProps) {
+export function AnalyticsFilters({ refreshAction, analyticsFilters }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const router = useRouter();
@@ -124,8 +107,7 @@ export function AnalyticsFilters({ refreshPage, analyticsFilters }: AnalyticsFil
 
     setIsRefreshing(true);
     try {
-      const page = getRefreshPageFromPathname(pathname);
-      await refreshPage(page);
+      await refreshAction();
     } catch {
       toast.error("Failed to refresh analytics data");
     } finally {

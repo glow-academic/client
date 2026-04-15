@@ -26,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
-} from "@/app/(main)/layout-server";
+} from "@/lib/actions/feedback";
 import { AlertCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";

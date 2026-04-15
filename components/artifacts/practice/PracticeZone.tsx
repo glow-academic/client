@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useState } from "react";
 
 // ProfileItem type derived from server response (single source of truth)
-import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { ProfileItem } from "@/contexts/profile-context";
 import type { PracticeOut } from "@/app/(main)/practice/page";
 
 // Extract item type from the merged PracticeOut type

@@ -146,7 +146,7 @@ function SidebarSkeleton() {
   );
 }
 
-// Header skeleton used during loading. Matches header structure from layout-client.tsx
+// Header skeleton used during loading. Matches header structure from FullPageLayout.tsx
 function HeaderSkeleton() {
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">

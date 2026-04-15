@@ -16,7 +16,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type AttemptDetailIn = InputOf<"/attempt/get", "post">;
@@ -129,7 +129,8 @@ export default async function AttemptPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/attempt/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   try {
     const [attemptData, context, groupResult] = await Promise.all([
@@ -152,7 +153,7 @@ export default async function AttemptPage({
 
     return (
       <FullPageLayout
-        profileData={profileData}
+        profileData={context.profile}
         sessionSnapshot={snapshot}
         initialSidebarOpen={initialSidebarOpen}
         initialPanelOpen={initialPanelOpen}

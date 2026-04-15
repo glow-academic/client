@@ -18,7 +18,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { createLoader, parseAsString } from "nuqs/server";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetAgentIn = InputOf<"/agents/get", "post">;
@@ -114,7 +114,8 @@ export default async function NewAgentPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/agents/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
   const params = await searchParams;
@@ -153,7 +154,7 @@ export default async function NewAgentPage({
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <FullPageLayout
-        profileData={profileData}
+        profileData={context.profile}
         sessionSnapshot={snapshot}
         initialSidebarOpen={initialSidebarOpen}
         initialPanelOpen={initialPanelOpen}

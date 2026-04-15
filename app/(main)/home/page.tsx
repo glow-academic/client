@@ -10,8 +10,7 @@ import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Home from "@/components/artifacts/home/Home";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { refreshPage } from "@/app/(main)/layout-server";
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -50,6 +49,11 @@ const getHomeData = async (input: HomeIn): Promise<HomeOut> => {
 };
 
 /** ---- Strongly-typed server actions ---- */
+async function refreshHome(): Promise<void> {
+  "use server";
+  await api.post("/home/refresh" as Parameters<typeof api.post>[0], { body: {} });
+}
+
 async function generateHome(
   input: GenerateHomeIn
 ): Promise<GenerateHomeOut> {
@@ -101,7 +105,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/home/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params via nuqs loader
   const q = loadHomeSearchParams(await searchParams);
@@ -202,7 +207,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <FullPageLayout
-      profileData={profileData}
+      profileData={context.profile}
       sessionSnapshot={snapshot}
       initialSidebarOpen={initialSidebarOpen}
       initialPanelOpen={initialPanelOpen}
@@ -215,7 +220,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       ]}
       toolbar={
         <AnalyticsFilters
-          refreshPage={refreshPage}
+          refreshAction={refreshHome}
           analyticsFilters={facets}
         />
       }

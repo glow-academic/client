@@ -36,7 +36,7 @@ import {
   Infinity,
 } from "lucide-react";
 // ProfileItem type derived from server response (single source of truth)
-import type { ProfileItem } from "@/app/(main)/layout-server";
+import type { ProfileItem } from "@/contexts/profile-context";
 
 export interface EvalCardProps {
   evalId: string;

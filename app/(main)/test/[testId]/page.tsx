@@ -15,7 +15,7 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
-import { getLayoutContextData } from "@/app/(main)/layout-server";
+import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
 export type TestArtifactOut = OutputOf<"/test/get", "post">;
@@ -108,7 +108,8 @@ export default async function TestPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const { profileData, snapshot } = await getLayoutContextData(session);
+  const context = await api.post("/test/context", { body: {} } as ContextIn) as ContextOut;
+  const snapshot = buildSnapshot(session, context.profile);
 
   try {
     const [testData, context, groupResult] = await Promise.all([
@@ -121,7 +122,7 @@ export default async function TestPage({
 
     return (
       <FullPageLayout
-        profileData={profileData}
+        profileData={context.profile}
         sessionSnapshot={snapshot}
         initialSidebarOpen={initialSidebarOpen}
         initialPanelOpen={initialPanelOpen}
