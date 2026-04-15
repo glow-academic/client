@@ -23,7 +23,7 @@ import { LogoutGuard } from "./logout-guard";
 const SIDEBAR_COOKIE = "glow_sidebar";
 
 /** Routes that render their own full layout via FullPageLayout */
-const FULL_PAGE_ROUTES = ["/training/personas", "/training/scenarios", "/training/cohorts", "/training/simulations"];
+const FULL_PAGE_ROUTES = ["/training/personas", "/training/scenarios", "/training/cohorts", "/training/simulations", "/management/documents"];
 
 // Force dynamic rendering to ensure layout re-renders on route changes
 // This fixes the issue where children don't update on client-side navigation

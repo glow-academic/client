@@ -1,19 +1,24 @@
 /**
  * app/(main)/management/documents/new/page.tsx
- * New document page for the documents section.
+ * New document page — full SSR rendering with FullPageLayout.
+ * Page owns all data fetching, server actions, and layout rendering.
  * @AshokSaravanan222
  * 01/12/2026
  */
 
-import Document from "@/components/artifacts/document/Document";
-import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getSession } from "@/auth";
+import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
+import Document from "@/components/artifacts/document/Document";
 
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
+
+import { getLayoutContextData } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetDocumentIn = InputOf<"/documents/get", "post">;
@@ -38,13 +43,19 @@ type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
 type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
 type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
+type GroupDocumentIn = InputOf<"/documents/group", "post">;
+type GroupDocumentOut = OutputOf<"/documents/group", "post">;
+type GenerateDocumentIn = InputOf<"/documents/generate", "post">;
+type GenerateDocumentOut = OutputOf<"/documents/generate", "post">;
+type ProblemDocumentIn = InputOf<"/documents/problem", "post">;
+type ProblemDocumentOut = OutputOf<"/documents/problem", "post">;
+type ContextIn = InputOf<"/documents/context", "post">;
+type ContextOut = OutputOf<"/documents/context", "post">;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
 
-/** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
- */
+/** ---- Direct fetch (no caching - source of truth) ---- */
 const getDocumentDefault = async (
   input: GetDocumentIn
 ): Promise<GetDocumentOut> => {
@@ -56,7 +67,7 @@ const getDocumentDefault = async (
   });
 };
 
-/** ---- Strongly-typed server actions (single source of truth) ---- */
+/** ---- Strongly-typed server actions ---- */
 async function createDocument(input: CreateDocumentIn): Promise<CreateDocumentOut> {
   "use server";
   return api.post("/documents/create", input);
@@ -66,7 +77,6 @@ async function patchDocumentDraft(
   input: PatchDocumentDraftIn
 ): Promise<PatchDocumentDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/documents/draft", input);
 }
 
@@ -74,7 +84,6 @@ async function createDraftNames(
   input: CreateDraftNamesIn
 ): Promise<CreateDraftNamesOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/names", input);
 }
 
@@ -82,7 +91,6 @@ async function createDraftDescriptions(
   input: CreateDraftDescriptionsIn
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/descriptions", input);
 }
 
@@ -90,7 +98,6 @@ async function createDraftUploads(
   input: CreateDraftUploadsIn
 ): Promise<CreateDraftUploadsOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/uploads", input);
 }
 
@@ -141,26 +148,61 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
   }
 }
 
-/** ---- Docs types for page metadata ---- */
-type DocsIn = InputOf<"/documents/docs", "post">;
-type DocsOut = OutputOf<"/documents/docs", "post">;
-
-const getDocs = async (input: DocsIn): Promise<DocsOut> => {
-  return api.post("/documents/docs", input);
-};
-
-export async function generateMetadata(): Promise<Metadata> {
-  const docs = await getDocs({ body: {} });
-  return { title: docs.page_metadata?.new.title, description: docs.page_metadata?.new.description };
+async function generateDocument(
+  input: GenerateDocumentIn
+): Promise<GenerateDocumentOut> {
+  "use server";
+  return api.post("/documents/generate", input);
 }
+
+async function getDocumentGroupHistory(groupId: string): Promise<GroupDocumentOut> {
+  "use server";
+  return api.post("/documents/group", { body: { group_id: groupId } } as GroupDocumentIn);
+}
+
+type GenerationsIn = InputOf<"/documents/generations", "post">;
+type GenerationsOut = OutputOf<"/documents/generations", "post">;
+
+async function searchDocumentGroups(query: string): Promise<GenerationsOut> {
+  "use server";
+  return api.post("/documents/generations", { body: { search: query || null } } as GenerationsIn);
+}
+
+async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemDocumentOut> {
+  "use server";
+  return api.post("/documents/problem", input);
+}
+
+/** ---- Page metadata ---- */
+export async function generateMetadata(): Promise<Metadata> {
+  const context = await api.post("/documents/context", { body: {} } as ContextIn) as ContextOut;
+  return {
+    title: context.page_metadata?.new.title,
+    description: context.page_metadata?.new.description,
+  };
+}
+
+/** ---- Cookies ---- */
+const SIDEBAR_COOKIE = "glow_sidebar";
+const PANEL_COOKIE = "glow_panel";
 
 export default async function NewDocumentPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Access control handled server-side in layout
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  const session = await getSession();
+
+  // Read UI preferences from cookies for SSR
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE);
+  const initialSidebarOpen = sidebarCookie ? sidebarCookie.value === "true" : undefined;
+  const panelCookie = cookieStore.get(PANEL_COOKIE);
+  const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
+
+  // Profile data for providers
+  const { profileData, snapshot } = await getLayoutContextData(session);
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -174,10 +216,8 @@ export default async function NewDocumentPage({
     }
   });
 
-  // Inline server-side parsers for document search params (navigation/search params only)
   const documentSearchParams = {
     draftId: parseAsString,
-    // Search/filter params
     descriptionSearch: parseAsString,
     fieldSearch: parseAsString,
     fieldShowSelected: parseAsBoolean,
@@ -185,50 +225,71 @@ export default async function NewDocumentPage({
   const loadDocumentSearchParams = createLoader(documentSearchParams);
   const q = loadDocumentSearchParams(searchParamsObj);
 
-  // Fetch default document detail server-side with filter params and draft_id
   const input: GetDocumentIn = {
     body: {
-      document_id: null, // NULL for new mode
+      document_id: null,
       draft_id: q.draftId ?? null,
     } as GetDocumentIn["body"],
   };
-  const [documentDetailDefault, draftsResult] = await Promise.all([
+
+  const [documentDetailDefault, draftsResult, groupResult] = await Promise.all([
     getDocumentDefault(input),
-    api.post("/documents/drafts", {})
+    api.post("/documents/drafts", {}),
+    api.post("/documents/group", { body: {} } as GroupDocumentIn),
   ]);
 
   return (
     <DraftProviderClient drafts={draftsResult.entries ?? []}>
-      <PageHeader
+      <FullPageLayout
+        profileData={profileData}
+        sessionSnapshot={snapshot}
+        initialSidebarOpen={initialSidebarOpen}
+        initialPanelOpen={initialPanelOpen}
+        sidebarProps={{
+          activeSection: "document",
+          createFeedback: createDocumentProblem,
+        }}
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
           { title: "Documents", section: "documents", url: "/management/documents" },
           { title: "New Document" },
         ]}
         toolbar={<SaveToolbar />}
-      />
-      <div
-        className="space-y-6 px-4"
-        data-page="document-new"
-        aria-label="Create new document page"
+        panelProps={{
+          artifactType: "document",
+          groupId: (groupResult as GroupDocumentOut & { group_id?: string })?.group_id ?? null,
+          generateAction: generateDocument,
+          permissions: [
+            { artifact: "document", operation: "draft" },
+            { artifact: "document", operation: "get" },
+            { artifact: "document", operation: "docs" },
+            { artifact: "document", operation: "group" },
+          ],
+          getGroupHistory: getDocumentGroupHistory,
+          searchGroups: searchDocumentGroups,
+        }}
       >
-        <Document
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          mode="create"
-          documentDetailDefault={documentDetailDefault}
-          createDocumentAction={createDocument}
-          patchDocumentDraftAction={patchDocumentDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createUploadsAction={createDraftUploads}
-          createImagesAction={createDraftImages}
-          createTextsAction={createDraftTexts}
-          uploadBasePath="/documents"
-          uploadFileAction={uploadFile}
-        />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="document-new"
+          aria-label="Create new document page"
+        >
+          <Document
+            key={q.draftId || "no-draft"}
+            mode="create"
+            documentDetailDefault={documentDetailDefault}
+            createDocumentAction={createDocument}
+            patchDocumentDraftAction={patchDocumentDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createUploadsAction={createDraftUploads}
+            createImagesAction={createDraftImages}
+            createTextsAction={createDraftTexts}
+            uploadBasePath="/documents"
+            uploadFileAction={uploadFile}
+          />
+        </div>
+      </FullPageLayout>
     </DraftProviderClient>
   );
 }
-
-// Types are now defined inline in components using InputOf/OutputOf

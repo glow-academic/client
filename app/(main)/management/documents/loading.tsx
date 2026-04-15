@@ -1,9 +1,11 @@
 /**
  * app/(main)/management/documents/loading.tsx
- * Loading skeleton for documents page
+ * Loading skeleton for documents list page
  * @AshokSaravanan222 & @siladiea
  * 01/20/2025
  */
+import { cookies } from "next/headers";
+import { FullPageSkeleton } from "@/components/common/layout/FullPageSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -14,19 +16,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default function Loading() {
+function DocumentsListSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4">
       <div className="space-y-4">
         {/* Toolbar skeleton */}
         <div className="flex items-center justify-between">
           <div className="flex flex-1 items-center space-x-2 flex-wrap">
             <div className="w-full md:w-auto mb-2 md:mb-0">
-              {/* Search input */}
               <Skeleton className="h-8 w-full md:w-[150px] lg:w-[250px]" />
             </div>
-
-            {/* Filter buttons: Scenarios, Department */}
             <Skeleton className="h-8 w-[110px]" />
             <Skeleton className="h-8 w-[120px]" />
           </div>
@@ -128,5 +127,17 @@ export default function Loading() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default async function Loading() {
+  const cookieStore = await cookies();
+  const sidebarOpen = cookieStore.get("glow_sidebar")?.value !== "false";
+  const panelOpen = cookieStore.get("glow_panel")?.value === "true";
+
+  return (
+    <FullPageSkeleton sidebarOpen={sidebarOpen} panelOpen={panelOpen}>
+      <DocumentsListSkeleton />
+    </FullPageSkeleton>
   );
 }
