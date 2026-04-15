@@ -1,6 +1,7 @@
 /**
- * app/(main)/invocation/[invocationId]/page.tsx
+ * app/(main)/test/[testId]/[invocationId]/page.tsx
  * Canonical invocation page (benchmark bundle customization).
+ * Nested under test — testId comes from route params.
  * @AshokSaravanan222 & @siladiea
  * 02/2025
  */
@@ -66,10 +67,10 @@ export default async function InvocationPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ invocationId: string }>;
+  params: Promise<{ testId: string; invocationId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { invocationId } = await params;
+  const { testId, invocationId } = await params;
   const sp = await searchParams;
   const rawDraftId = sp["draftId"];
   const draftId =
@@ -79,27 +80,21 @@ export default async function InvocationPage({
         ? (rawDraftId[0] ?? null)
         : null;
 
-  const rawTestId = sp["testId"];
-  const testId =
-    typeof rawTestId === "string"
-      ? rawTestId
-      : Array.isArray(rawTestId)
-        ? (rawTestId[0] ?? null)
-        : null;
-
   const bundleData = await getBenchmarkBundle(invocationId, draftId);
 
   return (
     <>
       <PageHeader
         breadcrumbs={[
+          { title: "Benchmark", section: "benchmark", url: "/benchmark" },
+          { title: "Test", url: `/test/${testId}` },
           { title: "Invocation" },
         ]}
       />
       <div className="px-4">
         <Invocation
           bundleData={bundleData as InvocationData}
-          testId={testId ?? ""}
+          testId={testId}
           patchBenchmarkDraftAction={patchBenchmarkDraft}
         />
       </div>

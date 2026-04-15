@@ -6,7 +6,7 @@
  */
 "use client";
 
-import type { SessionDetailOut } from "@/app/(main)/session/[sessionId]/page";
+import type { SessionDetailOut } from "@/app/(main)/analytics/activity/[sessionId]/page";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
