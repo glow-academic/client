@@ -20,19 +20,19 @@ import { buildSnapshot } from "@/lib/auth";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProvidersListOut = OutputOf<"/providers/search", "post">;
-type DeleteProviderIn = InputOf<"/providers/delete", "post">;
-type DeleteProviderOut = OutputOf<"/providers/delete", "post">;
-type GroupProviderIn = InputOf<"/providers/group", "post">;
-type GroupProviderOut = OutputOf<"/providers/group", "post">;
-type GenerateProviderIn = InputOf<"/providers/generate", "post">;
-type GenerateProviderOut = OutputOf<"/providers/generate", "post">;
-type GenerationsIn = InputOf<"/providers/generations", "post">;
-type GenerationsOut = OutputOf<"/providers/generations", "post">;
-type ProblemProviderIn = InputOf<"/providers/problem", "post">;
-type ProblemProviderOut = OutputOf<"/providers/problem", "post">;
-type ContextIn = InputOf<"/providers/context", "post">;
-type ContextOut = OutputOf<"/providers/context", "post">;
+type ProvidersListOut = OutputOf<"/provider/search", "post">;
+type DeleteProviderIn = InputOf<"/provider/delete", "post">;
+type DeleteProviderOut = OutputOf<"/provider/delete", "post">;
+type GroupProviderIn = InputOf<"/provider/group", "post">;
+type GroupProviderOut = OutputOf<"/provider/group", "post">;
+type GenerateProviderIn = InputOf<"/provider/generate", "post">;
+type GenerateProviderOut = OutputOf<"/provider/generate", "post">;
+type GenerationsIn = InputOf<"/provider/generations", "post">;
+type GenerationsOut = OutputOf<"/provider/generations", "post">;
+type ProblemProviderIn = InputOf<"/provider/problem", "post">;
+type ProblemProviderOut = OutputOf<"/provider/problem", "post">;
+type ContextIn = InputOf<"/provider/context", "post">;
+type ContextOut = OutputOf<"/provider/context", "post">;
 
 /** ---- Body type for providers list request ---- */
 type ProvidersListBody = {
@@ -53,7 +53,7 @@ type ProvidersListBody = {
 const getProvidersList = async (body: ProvidersListBody): Promise<ProvidersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/providers/search",
+    "/provider/search",
     { body },
     {
       cache: "no-store",
@@ -72,7 +72,7 @@ async function deleteProvider(
 ): Promise<DeleteProviderOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/providers/delete", {
+  return api.post("/provider/delete", {
     ...input,
     body: { ...input.body },
   });
@@ -82,27 +82,27 @@ async function generateProvider(
   input: GenerateProviderIn
 ): Promise<GenerateProviderOut> {
   "use server";
-  return api.post("/providers/generate", input);
+  return api.post("/provider/generate", input);
 }
 
 async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
   "use server";
-  return api.post("/providers/group", { body: { group_id: groupId } } as GroupProviderIn);
+  return api.post("/provider/group", { body: { group_id: groupId } } as GroupProviderIn);
 }
 
 async function searchProviderGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/providers/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/provider/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
   "use server";
-  return api.post("/providers/problem", input);
+  return api.post("/provider/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/providers/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -128,7 +128,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/providers/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -166,7 +166,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
   // Fetch list data, and group in parallel
   const [listData, groupResult] = await Promise.all([
     getProvidersList(body),
-    api.post("/providers/group", { body: {} } as GroupProviderIn),
+    api.post("/provider/group", { body: {} } as GroupProviderIn),
   ]);
 
   return (

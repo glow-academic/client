@@ -155,7 +155,7 @@ export function UnifiedAccessDenied({
         case "video":
           return "/training/videos";
         case "setting":
-          return "/settings";
+          return "/setting";
         default:
           return "/";
       }

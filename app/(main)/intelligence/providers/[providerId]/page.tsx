@@ -22,14 +22,14 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProviderIn = InputOf<"/providers/get", "post">;
-type GetProviderOut = OutputOf<"/providers/get", "post">;
-type CreateProviderIn = InputOf<"/providers/create", "post">;
-type CreateProviderOut = OutputOf<"/providers/create", "post">;
-type UpdateProviderIn = InputOf<"/providers/update", "post">;
-type UpdateProviderOut = OutputOf<"/providers/update", "post">;
-type PatchProviderDraftIn = InputOf<"/providers/draft", "patch">;
-type PatchProviderDraftOut = OutputOf<"/providers/draft", "patch">;
+type GetProviderIn = InputOf<"/provider/get", "post">;
+type GetProviderOut = OutputOf<"/provider/get", "post">;
+type CreateProviderIn = InputOf<"/provider/create", "post">;
+type CreateProviderOut = OutputOf<"/provider/create", "post">;
+type UpdateProviderIn = InputOf<"/provider/update", "post">;
+type UpdateProviderOut = OutputOf<"/provider/update", "post">;
+type PatchProviderDraftIn = InputOf<"/provider/draft", "patch">;
+type PatchProviderDraftOut = OutputOf<"/provider/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -44,14 +44,14 @@ type CreateDraftValuesIn = InputOf<"/api/v5/resources/values", "post">;
 type CreateDraftValuesOut = OutputOf<"/api/v5/resources/values", "post">;
 type CreateDraftEndpointsIn = InputOf<"/api/v5/resources/endpoints", "post">;
 type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
-type GroupProviderIn = InputOf<"/providers/group", "post">;
-type GroupProviderOut = OutputOf<"/providers/group", "post">;
-type GenerateProviderIn = InputOf<"/providers/generate", "post">;
-type GenerateProviderOut = OutputOf<"/providers/generate", "post">;
-type ProblemProviderIn = InputOf<"/providers/problem", "post">;
-type ProblemProviderOut = OutputOf<"/providers/problem", "post">;
-type ContextIn = InputOf<"/providers/context", "post">;
-type ContextOut = OutputOf<"/providers/context", "post">;
+type GroupProviderIn = InputOf<"/provider/group", "post">;
+type GroupProviderOut = OutputOf<"/provider/group", "post">;
+type GenerateProviderIn = InputOf<"/provider/generate", "post">;
+type GenerateProviderOut = OutputOf<"/provider/generate", "post">;
+type ProblemProviderIn = InputOf<"/provider/problem", "post">;
+type ProblemProviderOut = OutputOf<"/provider/problem", "post">;
+type ContextIn = InputOf<"/provider/context", "post">;
+type ContextOut = OutputOf<"/provider/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -59,7 +59,7 @@ type ContextOut = OutputOf<"/providers/context", "post">;
 const getProvider = async (
   input: GetProviderIn
 ): Promise<GetProviderOut> => {
-  return api.post("/providers/get", input, {
+  return api.post("/provider/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -73,14 +73,14 @@ async function createProvider(
   input: CreateProviderIn
 ): Promise<CreateProviderOut> {
   "use server";
-  return api.post("/providers/create", input);
+  return api.post("/provider/create", input);
 }
 
 async function updateProvider(
   input: UpdateProviderIn
 ): Promise<UpdateProviderOut> {
   "use server";
-  return api.post("/providers/update", input);
+  return api.post("/provider/update", input);
 }
 
 async function patchProviderDraft(
@@ -88,7 +88,7 @@ async function patchProviderDraft(
 ): Promise<PatchProviderDraftOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/providers/draft", input);
+  return api.patch("/provider/draft", input);
 }
 
 async function createNames(
@@ -123,25 +123,25 @@ async function generateProvider(
   input: GenerateProviderIn
 ): Promise<GenerateProviderOut> {
   "use server";
-  return api.post("/providers/generate", input);
+  return api.post("/provider/generate", input);
 }
 
 async function getProviderGroupHistory(groupId: string): Promise<GroupProviderOut> {
   "use server";
-  return api.post("/providers/group", { body: { group_id: groupId } } as GroupProviderIn);
+  return api.post("/provider/group", { body: { group_id: groupId } } as GroupProviderIn);
 }
 
-type GenerationsIn = InputOf<"/providers/generations", "post">;
-type GenerationsOut = OutputOf<"/providers/generations", "post">;
+type GenerationsIn = InputOf<"/provider/generations", "post">;
+type GenerationsOut = OutputOf<"/provider/generations", "post">;
 
 async function searchProviderGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/providers/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/provider/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createProviderProblem(input: ProblemProviderIn): Promise<ProblemProviderOut> {
   "use server";
-  return api.post("/providers/problem", input);
+  return api.post("/provider/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -151,7 +151,7 @@ export async function generateMetadata({
   params: Promise<{ providerId: string }>;
 }): Promise<Metadata> {
   const { providerId } = await params;
-  const context = await api.post("/providers/context", { body: { entity_id: providerId } } as ContextIn) as ContextOut;
+  const context = await api.post("/provider/context", { body: { entity_id: providerId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -181,7 +181,7 @@ export default async function EditProviderPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/providers/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/provider/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -214,9 +214,9 @@ export default async function EditProviderPage({
     };
     const [providerDetail, context, draftsResult, groupResult] = await Promise.all([
       getProvider(input).catch(() => null),
-      api.post("/providers/context", { body: { entity_id: providerId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/providers/drafts", {}),
-      api.post("/providers/group", { body: {} } as GroupProviderIn),
+      api.post("/provider/context", { body: { entity_id: providerId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/provider/drafts", {}),
+      api.post("/provider/group", { body: {} } as GroupProviderIn),
     ]);
 
     if (!providerDetail) {

@@ -35,10 +35,10 @@ import {
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsString, type Parser } from "nuqs";
 
-type CreateDepartmentIn = InputOf<"/departments/create", "post">;
-type CreateDepartmentOut = OutputOf<"/departments/create", "post">;
-type UpdateDepartmentIn = InputOf<"/departments/update", "post">;
-type UpdateDepartmentOut = OutputOf<"/departments/update", "post">;
+type CreateDepartmentIn = InputOf<"/department/create", "post">;
+type CreateDepartmentOut = OutputOf<"/department/create", "post">;
+type UpdateDepartmentIn = InputOf<"/department/update", "post">;
+type UpdateDepartmentOut = OutputOf<"/department/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -50,14 +50,14 @@ type CreateDraftDescriptionsOut = OutputOf<
   "post"
 >;
 type PatchDepartmentDraftIn = InputOf<
-  "/departments/draft",
+  "/department/draft",
   "patch"
 >;
 type PatchDepartmentDraftOut = OutputOf<
-  "/departments/draft",
+  "/department/draft",
   "patch"
 >;
-type DepartmentData = OutputOf<"/departments/get", "post">;
+type DepartmentData = OutputOf<"/department/get", "post">;
 
 type DepartmentFormState = {
   name: string | null;

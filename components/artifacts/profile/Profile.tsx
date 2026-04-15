@@ -54,15 +54,15 @@ import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type PatchProfileDraftIn = InputOf<"/profiles/draft", "patch">;
+type PatchProfileDraftIn = InputOf<"/profile/draft", "patch">;
 type PatchProfileDraftOut = {
   draft_id?: string | null;
 };
 
-type CreateProfileIn = InputOf<"/profiles/create", "post">;
-type CreateProfileOut = OutputOf<"/profiles/create", "post">;
-type UpdateProfileIn = InputOf<"/profiles/update", "post">;
-type UpdateProfileOut = OutputOf<"/profiles/update", "post">;
+type CreateProfileIn = InputOf<"/profile/create", "post">;
+type CreateProfileOut = OutputOf<"/profile/create", "post">;
+type UpdateProfileIn = InputOf<"/profile/update", "post">;
+type UpdateProfileOut = OutputOf<"/profile/update", "post">;
 type CreateDraftNamesIn = Parameters<NonNullable<NamesProps["createNamesAction"]>>[0];
 type CreateDraftNamesOut = Awaited<
   ReturnType<NonNullable<NamesProps["createNamesAction"]>>
@@ -89,7 +89,7 @@ type EmailItem = NonNullable<EmailsProps["emails"]>[number];
 type EmailResource = NonNullable<EmailsProps["email_resources"]>[number];
 type RoleItem = NonNullable<RolesProps["roles"]>[number];
 
-type ProfileDetailData = OutputOf<"/profiles/get", "post"> &
+type ProfileDetailData = OutputOf<"/profile/get", "post"> &
   Record<string, unknown> & {
   group_id?: string | null;
   draft_version?: number | null;

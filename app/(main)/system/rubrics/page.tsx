@@ -20,21 +20,21 @@ import { buildSnapshot } from "@/lib/auth";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricsListOut = OutputOf<"/rubrics/search", "post">;
-type DuplicateRubricIn = InputOf<"/rubrics/duplicate", "post">;
-type DuplicateRubricOut = OutputOf<"/rubrics/duplicate", "post">;
-type DeleteRubricIn = InputOf<"/rubrics/delete", "post">;
-type DeleteRubricOut = OutputOf<"/rubrics/delete", "post">;
-type GroupRubricIn = InputOf<"/rubrics/group", "post">;
-type GroupRubricOut = OutputOf<"/rubrics/group", "post">;
-type GenerateRubricIn = InputOf<"/rubrics/generate", "post">;
-type GenerateRubricOut = OutputOf<"/rubrics/generate", "post">;
-type GenerationsIn = InputOf<"/rubrics/generations", "post">;
-type GenerationsOut = OutputOf<"/rubrics/generations", "post">;
-type ProblemRubricIn = InputOf<"/rubrics/problem", "post">;
-type ProblemRubricOut = OutputOf<"/rubrics/problem", "post">;
-type ContextIn = InputOf<"/rubrics/context", "post">;
-type ContextOut = OutputOf<"/rubrics/context", "post">;
+type RubricsListOut = OutputOf<"/rubric/search", "post">;
+type DuplicateRubricIn = InputOf<"/rubric/duplicate", "post">;
+type DuplicateRubricOut = OutputOf<"/rubric/duplicate", "post">;
+type DeleteRubricIn = InputOf<"/rubric/delete", "post">;
+type DeleteRubricOut = OutputOf<"/rubric/delete", "post">;
+type GroupRubricIn = InputOf<"/rubric/group", "post">;
+type GroupRubricOut = OutputOf<"/rubric/group", "post">;
+type GenerateRubricIn = InputOf<"/rubric/generate", "post">;
+type GenerateRubricOut = OutputOf<"/rubric/generate", "post">;
+type GenerationsIn = InputOf<"/rubric/generations", "post">;
+type GenerationsOut = OutputOf<"/rubric/generations", "post">;
+type ProblemRubricIn = InputOf<"/rubric/problem", "post">;
+type ProblemRubricOut = OutputOf<"/rubric/problem", "post">;
+type ContextIn = InputOf<"/rubric/context", "post">;
+type ContextOut = OutputOf<"/rubric/context", "post">;
 
 /** ---- Body type for rubrics list request ---- */
 type RubricsListBody = {
@@ -51,7 +51,7 @@ type RubricsListBody = {
 const getRubricsList = async (body: RubricsListBody): Promise<RubricsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/rubrics/search",
+    "/rubric/search",
     { body },
     {
       cache: "no-store",
@@ -67,41 +67,41 @@ async function duplicateRubric(
   input: DuplicateRubricIn
 ): Promise<DuplicateRubricOut> {
   "use server";
-  return api.post("/rubrics/duplicate", input);
+  return api.post("/rubric/duplicate", input);
 }
 
 async function deleteRubric(
   input: DeleteRubricIn
 ): Promise<DeleteRubricOut> {
   "use server";
-  return api.post("/rubrics/delete", input);
+  return api.post("/rubric/delete", input);
 }
 
 async function generateRubric(
   input: GenerateRubricIn
 ): Promise<GenerateRubricOut> {
   "use server";
-  return api.post("/rubrics/generate", input);
+  return api.post("/rubric/generate", input);
 }
 
 async function getRubricGroupHistory(groupId: string): Promise<GroupRubricOut> {
   "use server";
-  return api.post("/rubrics/group", { body: { group_id: groupId } } as GroupRubricIn);
+  return api.post("/rubric/group", { body: { group_id: groupId } } as GroupRubricIn);
 }
 
 async function searchRubricGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/rubrics/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/rubric/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubricOut> {
   "use server";
-  return api.post("/rubrics/problem", input);
+  return api.post("/rubric/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/rubrics/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -127,7 +127,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/rubrics/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -164,7 +164,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getRubricsList(body),
-    api.post("/rubrics/group", { body: {} } as GroupRubricIn),
+    api.post("/rubric/group", { body: {} } as GroupRubricIn),
   ]);
 
   return (

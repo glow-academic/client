@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/personas/get": {
+    "/persona/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -17,14 +17,14 @@ export interface paths {
          * Get Persona
          * @description Get persona information using the canonical shared persona operation.
          */
-        post: operations["get_persona_personas_get_post"];
+        post: operations["get_persona_persona_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/search": {
+    "/persona/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -37,14 +37,14 @@ export interface paths {
          * Search Persona
          * @description Search personas — composable infra architecture.
          */
-        post: operations["search_persona_personas_search_post"];
+        post: operations["search_persona_persona_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/create": {
+    "/persona/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -57,14 +57,14 @@ export interface paths {
          * Create Persona
          * @description Create personas using composable infra architecture.
          */
-        post: operations["create_persona_personas_create_post"];
+        post: operations["create_persona_persona_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/csv": {
+    "/persona/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -77,14 +77,14 @@ export interface paths {
          * Parse Persona Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_persona_csv_personas_csv_post"];
+        post: operations["parse_persona_csv_persona_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/update": {
+    "/persona/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -97,14 +97,14 @@ export interface paths {
          * Update Persona
          * @description Update personas using composable infra architecture.
          */
-        post: operations["update_persona_personas_update_post"];
+        post: operations["update_persona_persona_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/duplicate": {
+    "/persona/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -117,14 +117,14 @@ export interface paths {
          * Duplicate Persona
          * @description Duplicate a persona — composable infra architecture.
          */
-        post: operations["duplicate_persona_personas_duplicate_post"];
+        post: operations["duplicate_persona_persona_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/delete": {
+    "/persona/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -137,14 +137,14 @@ export interface paths {
          * Delete Persona
          * @description Bulk delete personas — composable infra architecture.
          */
-        post: operations["delete_persona_personas_delete_post"];
+        post: operations["delete_persona_persona_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/draft": {
+    "/persona/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -157,14 +157,14 @@ export interface paths {
          * Patch Persona Draft
          * @description Patch persona draft — composable infra architecture.
          */
-        post: operations["patch_persona_draft_personas_draft_post"];
+        post: operations["patch_persona_draft_persona_draft_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/drafts": {
+    "/persona/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -177,14 +177,14 @@ export interface paths {
          * Get Persona Drafts
          * @description List persona drafts owned by the current profile.
          */
-        post: operations["get_persona_drafts_personas_drafts_post"];
+        post: operations["get_persona_drafts_persona_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/context": {
+    "/persona/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -200,14 +200,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_persona_context_personas_context_post"];
+        post: operations["get_persona_context_persona_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/docs": {
+    "/persona/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -220,14 +220,14 @@ export interface paths {
          * Get Persona Docs Endpoint
          * @description Get composed documentation for the persona artifact.
          */
-        post: operations["get_persona_docs_endpoint_personas_docs_post"];
+        post: operations["get_persona_docs_endpoint_persona_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/export": {
+    "/persona/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -240,14 +240,14 @@ export interface paths {
          * Export Personas
          * @description Export all personas as a clean, denormalized CSV.
          */
-        post: operations["export_personas_personas_export_post"];
+        post: operations["export_personas_persona_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/generate": {
+    "/persona/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -260,14 +260,14 @@ export interface paths {
          * Generate Persona
          * @description Trigger persona generation. Returns immediately; progress via events.
          */
-        post: operations["generate_persona_personas_generate_post"];
+        post: operations["generate_persona_persona_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/generations": {
+    "/persona/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -280,14 +280,14 @@ export interface paths {
          * Generations Persona
          * @description List persona generation groups — composable infra architecture.
          */
-        post: operations["generations_persona_personas_generations_post"];
+        post: operations["generations_persona_persona_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/group": {
+    "/persona/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -300,14 +300,14 @@ export interface paths {
          * Group Persona
          * @description Resolve or create a persona group with optional naming.
          */
-        post: operations["group_persona_personas_group_post"];
+        post: operations["group_persona_persona_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/problem": {
+    "/persona/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -320,14 +320,14 @@ export interface paths {
          * Problem Persona
          * @description Report a persona problem — composable infra architecture.
          */
-        post: operations["problem_persona_personas_problem_post"];
+        post: operations["problem_persona_persona_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/personas/refresh": {
+    "/persona/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -340,14 +340,14 @@ export interface paths {
          * Persona Refresh
          * @description Refresh persona materialized views and invalidate caches.
          */
-        post: operations["persona_refresh_personas_refresh_post"];
+        post: operations["persona_refresh_persona_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/get": {
+    "/scenario/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -360,14 +360,14 @@ export interface paths {
          * Get Scenario
          * @description Get scenario information using the canonical shared scenario operation.
          */
-        post: operations["get_scenario_scenarios_get_post"];
+        post: operations["get_scenario_scenario_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/search": {
+    "/scenario/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -380,14 +380,14 @@ export interface paths {
          * Search Scenario
          * @description Search scenarios — composable infra architecture.
          */
-        post: operations["search_scenario_scenarios_search_post"];
+        post: operations["search_scenario_scenario_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/create": {
+    "/scenario/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -400,14 +400,14 @@ export interface paths {
          * Create Scenario
          * @description Create scenarios using composable infra architecture.
          */
-        post: operations["create_scenario_scenarios_create_post"];
+        post: operations["create_scenario_scenario_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/csv": {
+    "/scenario/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -420,14 +420,14 @@ export interface paths {
          * Parse Scenario Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_scenario_csv_scenarios_csv_post"];
+        post: operations["parse_scenario_csv_scenario_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/update": {
+    "/scenario/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -440,14 +440,14 @@ export interface paths {
          * Update Scenario
          * @description Update scenarios using composable infra architecture.
          */
-        post: operations["update_scenario_scenarios_update_post"];
+        post: operations["update_scenario_scenario_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/duplicate": {
+    "/scenario/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -460,14 +460,14 @@ export interface paths {
          * Duplicate Scenario
          * @description Duplicate a scenario — composable infra architecture.
          */
-        post: operations["duplicate_scenario_scenarios_duplicate_post"];
+        post: operations["duplicate_scenario_scenario_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/delete": {
+    "/scenario/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -480,14 +480,14 @@ export interface paths {
          * Delete Scenario
          * @description Bulk delete scenarios — composable infra architecture.
          */
-        post: operations["delete_scenario_scenarios_delete_post"];
+        post: operations["delete_scenario_scenario_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/draft": {
+    "/scenario/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -504,10 +504,10 @@ export interface paths {
          * Patch Scenario Draft
          * @description Patch scenario draft — composable infra architecture.
          */
-        patch: operations["patch_scenario_draft_scenarios_draft_patch"];
+        patch: operations["patch_scenario_draft_scenario_draft_patch"];
         trace?: never;
     };
-    "/scenarios/drafts": {
+    "/scenario/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -520,14 +520,14 @@ export interface paths {
          * Get Scenario Drafts
          * @description List scenario drafts owned by the current profile.
          */
-        post: operations["get_scenario_drafts_scenarios_drafts_post"];
+        post: operations["get_scenario_drafts_scenario_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/export": {
+    "/scenario/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -540,14 +540,14 @@ export interface paths {
          * Export Scenarios
          * @description Export all scenarios as a clean, denormalized CSV.
          */
-        post: operations["export_scenarios_scenarios_export_post"];
+        post: operations["export_scenarios_scenario_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/generate": {
+    "/scenario/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -560,14 +560,14 @@ export interface paths {
          * Generate Scenario
          * @description Trigger scenario generation. Returns immediately; progress via events.
          */
-        post: operations["generate_scenario_scenarios_generate_post"];
+        post: operations["generate_scenario_scenario_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/generations": {
+    "/scenario/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -580,14 +580,14 @@ export interface paths {
          * Generations Scenario
          * @description List scenario generation groups — composable infra architecture.
          */
-        post: operations["generations_scenario_scenarios_generations_post"];
+        post: operations["generations_scenario_scenario_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/docs": {
+    "/scenario/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -600,14 +600,14 @@ export interface paths {
          * Get Scenario Docs Endpoint
          * @description Get composed documentation for the scenario artifact.
          */
-        post: operations["get_scenario_docs_endpoint_scenarios_docs_post"];
+        post: operations["get_scenario_docs_endpoint_scenario_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/context": {
+    "/scenario/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -623,14 +623,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_scenario_context_scenarios_context_post"];
+        post: operations["get_scenario_context_scenario_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/group": {
+    "/scenario/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -643,14 +643,14 @@ export interface paths {
          * Group Scenario
          * @description Resolve or create a scenario group with optional naming.
          */
-        post: operations["group_scenario_scenarios_group_post"];
+        post: operations["group_scenario_scenario_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/problem": {
+    "/scenario/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -663,14 +663,14 @@ export interface paths {
          * Problem Scenario
          * @description Report a scenario problem — composable infra architecture.
          */
-        post: operations["problem_scenario_scenarios_problem_post"];
+        post: operations["problem_scenario_scenario_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/refresh": {
+    "/scenario/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -683,14 +683,14 @@ export interface paths {
          * Scenario Refresh
          * @description Refresh scenario materialized views and invalidate caches.
          */
-        post: operations["scenario_refresh_scenarios_refresh_post"];
+        post: operations["scenario_refresh_scenario_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/image/upload": {
+    "/scenario/image/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -703,14 +703,14 @@ export interface paths {
          * Upload Image
          * @description Upload an image for later use in scenarios.
          */
-        post: operations["upload_image_scenarios_image_upload_post"];
+        post: operations["upload_image_scenario_image_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/image/download": {
+    "/scenario/image/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -723,14 +723,14 @@ export interface paths {
          * Download Image
          * @description Download an image file by image resource ID.
          */
-        post: operations["download_image_scenarios_image_download_post"];
+        post: operations["download_image_scenario_image_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/video/upload": {
+    "/scenario/video/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -743,14 +743,14 @@ export interface paths {
          * Upload Video
          * @description Upload a video for later use in scenarios.
          */
-        post: operations["upload_video_scenarios_video_upload_post"];
+        post: operations["upload_video_scenario_video_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/video/download": {
+    "/scenario/video/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -763,14 +763,14 @@ export interface paths {
          * Download Video
          * @description Download a video file by video resource ID with range support.
          */
-        post: operations["download_video_scenarios_video_download_post"];
+        post: operations["download_video_scenario_video_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/text/download": {
+    "/scenario/text/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -783,14 +783,14 @@ export interface paths {
          * Download Text
          * @description Download a text file by text resource ID.
          */
-        post: operations["download_text_scenarios_text_download_post"];
+        post: operations["download_text_scenario_text_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/file/download": {
+    "/scenario/file/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -803,14 +803,14 @@ export interface paths {
          * Download File
          * @description Download a file by file resource ID with range support.
          */
-        post: operations["download_file_scenarios_file_download_post"];
+        post: operations["download_file_scenario_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/scenarios/file/preview": {
+    "/scenario/file/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -823,14 +823,14 @@ export interface paths {
          * Preview File
          * @description Return a PNG preview of the first page of a PDF file resource.
          */
-        post: operations["preview_file_scenarios_file_preview_post"];
+        post: operations["preview_file_scenario_file_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/get": {
+    "/simulation/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -843,14 +843,14 @@ export interface paths {
          * Get Simulation
          * @description Get simulation information using the canonical shared simulation operation.
          */
-        post: operations["get_simulation_simulations_get_post"];
+        post: operations["get_simulation_simulation_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/search": {
+    "/simulation/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -863,14 +863,14 @@ export interface paths {
          * Search Simulation
          * @description Search simulations — composable infra architecture.
          */
-        post: operations["search_simulation_simulations_search_post"];
+        post: operations["search_simulation_simulation_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/create": {
+    "/simulation/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -883,14 +883,14 @@ export interface paths {
          * Create Simulation
          * @description Create simulations using composable infra architecture.
          */
-        post: operations["create_simulation_simulations_create_post"];
+        post: operations["create_simulation_simulation_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/context": {
+    "/simulation/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -906,14 +906,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_simulation_context_simulations_context_post"];
+        post: operations["get_simulation_context_simulation_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/csv": {
+    "/simulation/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -926,14 +926,14 @@ export interface paths {
          * Parse Simulation Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_simulation_csv_simulations_csv_post"];
+        post: operations["parse_simulation_csv_simulation_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/update": {
+    "/simulation/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -946,14 +946,14 @@ export interface paths {
          * Update Simulation
          * @description Update simulations using composable infra architecture.
          */
-        post: operations["update_simulation_simulations_update_post"];
+        post: operations["update_simulation_simulation_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/duplicate": {
+    "/simulation/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -966,14 +966,14 @@ export interface paths {
          * Duplicate Simulation
          * @description Duplicate a simulation — composable infra architecture.
          */
-        post: operations["duplicate_simulation_simulations_duplicate_post"];
+        post: operations["duplicate_simulation_simulation_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/delete": {
+    "/simulation/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -986,14 +986,14 @@ export interface paths {
          * Delete Simulation
          * @description Bulk delete simulations — composable infra architecture.
          */
-        post: operations["delete_simulation_simulations_delete_post"];
+        post: operations["delete_simulation_simulation_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/draft": {
+    "/simulation/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1010,10 +1010,10 @@ export interface paths {
          * Patch Simulation Draft
          * @description Patch simulation draft — composable infra architecture.
          */
-        patch: operations["patch_simulation_draft_simulations_draft_patch"];
+        patch: operations["patch_simulation_draft_simulation_draft_patch"];
         trace?: never;
     };
-    "/simulations/drafts": {
+    "/simulation/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1026,14 +1026,14 @@ export interface paths {
          * Get Simulation Drafts
          * @description List simulation drafts owned by the current profile.
          */
-        post: operations["get_simulation_drafts_simulations_drafts_post"];
+        post: operations["get_simulation_drafts_simulation_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/export": {
+    "/simulation/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1046,14 +1046,14 @@ export interface paths {
          * Export Simulations
          * @description Export all simulations as a clean, denormalized CSV.
          */
-        post: operations["export_simulations_simulations_export_post"];
+        post: operations["export_simulations_simulation_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/docs": {
+    "/simulation/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1066,14 +1066,14 @@ export interface paths {
          * Get Simulation Docs Endpoint
          * @description Get composed documentation for the simulation artifact.
          */
-        post: operations["get_simulation_docs_endpoint_simulations_docs_post"];
+        post: operations["get_simulation_docs_endpoint_simulation_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/generate": {
+    "/simulation/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1086,14 +1086,14 @@ export interface paths {
          * Generate Simulation
          * @description Trigger simulation generation. Returns immediately; progress via events.
          */
-        post: operations["generate_simulation_simulations_generate_post"];
+        post: operations["generate_simulation_simulation_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/generations": {
+    "/simulation/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -1106,14 +1106,14 @@ export interface paths {
          * Generations Simulation
          * @description List simulation generation groups — composable infra architecture.
          */
-        post: operations["generations_simulation_simulations_generations_post"];
+        post: operations["generations_simulation_simulation_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/problem": {
+    "/simulation/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -1126,14 +1126,14 @@ export interface paths {
          * Problem Simulation
          * @description Report a simulation problem — composable infra architecture.
          */
-        post: operations["problem_simulation_simulations_problem_post"];
+        post: operations["problem_simulation_simulation_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/refresh": {
+    "/simulation/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -1146,14 +1146,14 @@ export interface paths {
          * Simulation Refresh
          * @description Refresh simulation materialized views and invalidate caches.
          */
-        post: operations["simulation_refresh_simulations_refresh_post"];
+        post: operations["simulation_refresh_simulation_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/simulations/group": {
+    "/simulation/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -1166,14 +1166,14 @@ export interface paths {
          * Group Simulation
          * @description Resolve or create a simulation group with optional naming.
          */
-        post: operations["group_simulation_simulations_group_post"];
+        post: operations["group_simulation_simulation_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/search": {
+    "/document/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1186,14 +1186,14 @@ export interface paths {
          * Search Document
          * @description Search documents — composable infra architecture.
          */
-        post: operations["search_document_documents_search_post"];
+        post: operations["search_document_document_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/get": {
+    "/document/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1206,14 +1206,14 @@ export interface paths {
          * Get Document
          * @description Get document information using the canonical shared document operation.
          */
-        post: operations["get_document_documents_get_post"];
+        post: operations["get_document_document_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/create": {
+    "/document/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1226,14 +1226,14 @@ export interface paths {
          * Create Document
          * @description Create documents using composable infra architecture.
          */
-        post: operations["create_document_documents_create_post"];
+        post: operations["create_document_document_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/update": {
+    "/document/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1246,14 +1246,14 @@ export interface paths {
          * Update Document
          * @description Update documents using composable infra architecture.
          */
-        post: operations["update_document_documents_update_post"];
+        post: operations["update_document_document_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/duplicate": {
+    "/document/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1266,14 +1266,14 @@ export interface paths {
          * Duplicate Document
          * @description Duplicate a document — composable infra architecture.
          */
-        post: operations["duplicate_document_documents_duplicate_post"];
+        post: operations["duplicate_document_document_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/delete": {
+    "/document/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1286,14 +1286,14 @@ export interface paths {
          * Delete Document
          * @description Bulk delete documents — composable infra architecture.
          */
-        post: operations["delete_document_documents_delete_post"];
+        post: operations["delete_document_document_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/draft": {
+    "/document/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1310,10 +1310,10 @@ export interface paths {
          * Patch Document Draft
          * @description Patch document draft — composable infra architecture.
          */
-        patch: operations["patch_document_draft_documents_draft_patch"];
+        patch: operations["patch_document_draft_document_draft_patch"];
         trace?: never;
     };
-    "/documents/drafts": {
+    "/document/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1326,14 +1326,14 @@ export interface paths {
          * Get Document Drafts
          * @description List document drafts owned by the current profile.
          */
-        post: operations["get_document_drafts_documents_drafts_post"];
+        post: operations["get_document_drafts_document_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/context": {
+    "/document/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -1349,14 +1349,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_document_context_documents_context_post"];
+        post: operations["get_document_context_document_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/docs": {
+    "/document/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1369,14 +1369,14 @@ export interface paths {
          * Get Document Docs Endpoint
          * @description Get composed documentation for the document artifact.
          */
-        post: operations["get_document_docs_endpoint_documents_docs_post"];
+        post: operations["get_document_docs_endpoint_document_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/generate": {
+    "/document/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1389,14 +1389,14 @@ export interface paths {
          * Generate Document
          * @description Trigger document generation. Returns immediately; progress via events.
          */
-        post: operations["generate_document_documents_generate_post"];
+        post: operations["generate_document_document_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/generations": {
+    "/document/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -1409,14 +1409,14 @@ export interface paths {
          * Generations Document
          * @description List document generation groups — composable infra architecture.
          */
-        post: operations["generations_document_documents_generations_post"];
+        post: operations["generations_document_document_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/group": {
+    "/document/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -1429,14 +1429,14 @@ export interface paths {
          * Group Document
          * @description Resolve or create a document group with optional naming.
          */
-        post: operations["group_document_documents_group_post"];
+        post: operations["group_document_document_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/problem": {
+    "/document/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -1449,14 +1449,14 @@ export interface paths {
          * Problem Document
          * @description Report a document problem — composable infra architecture.
          */
-        post: operations["problem_document_documents_problem_post"];
+        post: operations["problem_document_document_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/refresh": {
+    "/document/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -1469,14 +1469,14 @@ export interface paths {
          * Document Refresh
          * @description Refresh document materialized views and invalidate caches.
          */
-        post: operations["document_refresh_documents_refresh_post"];
+        post: operations["document_refresh_document_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/export": {
+    "/document/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1489,14 +1489,14 @@ export interface paths {
          * Export Documents
          * @description Export all documents as a clean, denormalized CSV.
          */
-        post: operations["export_documents_documents_export_post"];
+        post: operations["export_documents_document_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/csv": {
+    "/document/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1509,14 +1509,14 @@ export interface paths {
          * Parse Document Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_document_csv_documents_csv_post"];
+        post: operations["parse_document_csv_document_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/text/upload": {
+    "/document/text/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -1529,14 +1529,14 @@ export interface paths {
          * Upload Text
          * @description Upload a text file for later use in documents.
          */
-        post: operations["upload_text_documents_text_upload_post"];
+        post: operations["upload_text_document_text_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/text/download": {
+    "/document/text/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1549,14 +1549,14 @@ export interface paths {
          * Download Text
          * @description Download a text file by text resource ID.
          */
-        post: operations["download_text_documents_text_download_post"];
+        post: operations["download_text_document_text_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/file/upload": {
+    "/document/file/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -1569,14 +1569,14 @@ export interface paths {
          * Upload File
          * @description Upload a file for later use in documents.
          */
-        post: operations["upload_file_documents_file_upload_post"];
+        post: operations["upload_file_document_file_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/file/download": {
+    "/document/file/download": {
         parameters: {
             query?: never;
             header?: never;
@@ -1589,14 +1589,14 @@ export interface paths {
          * Download File
          * @description Download a file by file resource ID.
          */
-        post: operations["download_file_documents_file_download_post"];
+        post: operations["download_file_document_file_download_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/documents/file/preview": {
+    "/document/file/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -1609,14 +1609,14 @@ export interface paths {
          * Preview File
          * @description Return a PNG preview of the first page of a PDF upload.
          */
-        post: operations["preview_file_documents_file_preview_post"];
+        post: operations["preview_file_document_file_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/get": {
+    "/department/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1629,14 +1629,14 @@ export interface paths {
          * Get Department
          * @description Get department information using the canonical shared department operation.
          */
-        post: operations["get_department_departments_get_post"];
+        post: operations["get_department_department_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/search": {
+    "/department/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1649,14 +1649,14 @@ export interface paths {
          * Search Department
          * @description Search departments — composable infra architecture.
          */
-        post: operations["search_department_departments_search_post"];
+        post: operations["search_department_department_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/create": {
+    "/department/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -1669,14 +1669,14 @@ export interface paths {
          * Create Department
          * @description Create departments using composable infra architecture.
          */
-        post: operations["create_department_departments_create_post"];
+        post: operations["create_department_department_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/update": {
+    "/department/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -1689,14 +1689,14 @@ export interface paths {
          * Update Department
          * @description Update departments using composable infra architecture.
          */
-        post: operations["update_department_departments_update_post"];
+        post: operations["update_department_department_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/duplicate": {
+    "/department/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1709,14 +1709,14 @@ export interface paths {
          * Duplicate Department
          * @description Duplicate a department — composable infra architecture.
          */
-        post: operations["duplicate_department_departments_duplicate_post"];
+        post: operations["duplicate_department_department_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/delete": {
+    "/department/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -1729,14 +1729,14 @@ export interface paths {
          * Delete Department
          * @description Bulk delete departments — composable infra architecture.
          */
-        post: operations["delete_department_departments_delete_post"];
+        post: operations["delete_department_department_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/draft": {
+    "/department/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -1753,10 +1753,10 @@ export interface paths {
          * Patch Department Draft
          * @description Patch department draft — composable infra architecture.
          */
-        patch: operations["patch_department_draft_departments_draft_patch"];
+        patch: operations["patch_department_draft_department_draft_patch"];
         trace?: never;
     };
-    "/departments/drafts": {
+    "/department/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1769,14 +1769,14 @@ export interface paths {
          * Get Department Drafts
          * @description List department drafts owned by the current profile.
          */
-        post: operations["get_department_drafts_departments_drafts_post"];
+        post: operations["get_department_drafts_department_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/context": {
+    "/department/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -1792,14 +1792,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_department_context_departments_context_post"];
+        post: operations["get_department_context_department_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/docs": {
+    "/department/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1812,14 +1812,14 @@ export interface paths {
          * Get Department Docs Endpoint
          * @description Get composed documentation for the department artifact.
          */
-        post: operations["get_department_docs_endpoint_departments_docs_post"];
+        post: operations["get_department_docs_endpoint_department_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/export": {
+    "/department/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -1832,14 +1832,14 @@ export interface paths {
          * Export Departments
          * @description Export all departments as a clean, denormalized CSV.
          */
-        post: operations["export_departments_departments_export_post"];
+        post: operations["export_departments_department_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/csv": {
+    "/department/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -1852,14 +1852,14 @@ export interface paths {
          * Parse Department Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_department_csv_departments_csv_post"];
+        post: operations["parse_department_csv_department_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/generate": {
+    "/department/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -1872,14 +1872,14 @@ export interface paths {
          * Generate Department
          * @description Trigger department generation. Returns immediately; progress via events.
          */
-        post: operations["generate_department_departments_generate_post"];
+        post: operations["generate_department_department_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/generations": {
+    "/department/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -1892,14 +1892,14 @@ export interface paths {
          * Generations Department
          * @description List department generation groups — composable infra architecture.
          */
-        post: operations["generations_department_departments_generations_post"];
+        post: operations["generations_department_department_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/group": {
+    "/department/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -1912,14 +1912,14 @@ export interface paths {
          * Group Department
          * @description Resolve or create a department group with optional naming.
          */
-        post: operations["group_department_departments_group_post"];
+        post: operations["group_department_department_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/problem": {
+    "/department/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -1932,14 +1932,14 @@ export interface paths {
          * Problem Department
          * @description Report a department problem — composable infra architecture.
          */
-        post: operations["problem_department_departments_problem_post"];
+        post: operations["problem_department_department_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/departments/refresh": {
+    "/department/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -1952,14 +1952,14 @@ export interface paths {
          * Department Refresh
          * @description Refresh department materialized views and invalidate caches.
          */
-        post: operations["department_refresh_departments_refresh_post"];
+        post: operations["department_refresh_department_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/search": {
+    "/cohort/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -1972,14 +1972,14 @@ export interface paths {
          * Search Cohort
          * @description Search cohorts — composable infra architecture.
          */
-        post: operations["search_cohort_cohorts_search_post"];
+        post: operations["search_cohort_cohort_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/get": {
+    "/cohort/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -1992,14 +1992,14 @@ export interface paths {
          * Get Cohort
          * @description Get cohort information using the canonical shared cohort operation.
          */
-        post: operations["get_cohort_cohorts_get_post"];
+        post: operations["get_cohort_cohort_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/create": {
+    "/cohort/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2012,14 +2012,14 @@ export interface paths {
          * Create Cohort
          * @description Create cohorts using composable infra architecture.
          */
-        post: operations["create_cohort_cohorts_create_post"];
+        post: operations["create_cohort_cohort_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/update": {
+    "/cohort/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2032,14 +2032,14 @@ export interface paths {
          * Update Cohort
          * @description Update cohorts using composable infra architecture.
          */
-        post: operations["update_cohort_cohorts_update_post"];
+        post: operations["update_cohort_cohort_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/duplicate": {
+    "/cohort/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2052,14 +2052,14 @@ export interface paths {
          * Duplicate Cohort
          * @description Duplicate a cohort — composable infra architecture.
          */
-        post: operations["duplicate_cohort_cohorts_duplicate_post"];
+        post: operations["duplicate_cohort_cohort_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/delete": {
+    "/cohort/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2072,14 +2072,14 @@ export interface paths {
          * Delete Cohort
          * @description Bulk delete cohorts — composable infra architecture.
          */
-        post: operations["delete_cohort_cohorts_delete_post"];
+        post: operations["delete_cohort_cohort_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/draft": {
+    "/cohort/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2096,10 +2096,10 @@ export interface paths {
          * Patch Cohort Draft
          * @description Patch cohort draft — composable infra architecture.
          */
-        patch: operations["patch_cohort_draft_cohorts_draft_patch"];
+        patch: operations["patch_cohort_draft_cohort_draft_patch"];
         trace?: never;
     };
-    "/cohorts/drafts": {
+    "/cohort/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2112,14 +2112,14 @@ export interface paths {
          * Get Cohort Drafts
          * @description List cohort drafts owned by the current profile.
          */
-        post: operations["get_cohort_drafts_cohorts_drafts_post"];
+        post: operations["get_cohort_drafts_cohort_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/export": {
+    "/cohort/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2132,14 +2132,14 @@ export interface paths {
          * Export Cohorts
          * @description Export all cohorts as a clean, denormalized CSV.
          */
-        post: operations["export_cohorts_cohorts_export_post"];
+        post: operations["export_cohorts_cohort_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/csv": {
+    "/cohort/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2152,14 +2152,14 @@ export interface paths {
          * Parse Cohort Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_cohort_csv_cohorts_csv_post"];
+        post: operations["parse_cohort_csv_cohort_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/context": {
+    "/cohort/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -2175,14 +2175,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_cohort_context_cohorts_context_post"];
+        post: operations["get_cohort_context_cohort_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/docs": {
+    "/cohort/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2195,14 +2195,14 @@ export interface paths {
          * Get Cohort Docs Endpoint
          * @description Get composed documentation for the cohort artifact.
          */
-        post: operations["get_cohort_docs_endpoint_cohorts_docs_post"];
+        post: operations["get_cohort_docs_endpoint_cohort_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/generate": {
+    "/cohort/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2215,14 +2215,14 @@ export interface paths {
          * Generate Cohort
          * @description Trigger cohort generation. Returns immediately; progress via events.
          */
-        post: operations["generate_cohort_cohorts_generate_post"];
+        post: operations["generate_cohort_cohort_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/generations": {
+    "/cohort/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -2235,14 +2235,14 @@ export interface paths {
          * Generations Cohort
          * @description List cohort generation groups — composable infra architecture.
          */
-        post: operations["generations_cohort_cohorts_generations_post"];
+        post: operations["generations_cohort_cohort_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/group": {
+    "/cohort/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -2255,14 +2255,14 @@ export interface paths {
          * Group Cohort
          * @description Resolve or create a cohort group with optional naming.
          */
-        post: operations["group_cohort_cohorts_group_post"];
+        post: operations["group_cohort_cohort_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/problem": {
+    "/cohort/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -2275,14 +2275,14 @@ export interface paths {
          * Problem Cohort
          * @description Report a cohort problem — composable infra architecture.
          */
-        post: operations["problem_cohort_cohorts_problem_post"];
+        post: operations["problem_cohort_cohort_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/cohorts/refresh": {
+    "/cohort/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2295,14 +2295,14 @@ export interface paths {
          * Cohort Refresh
          * @description Refresh cohort materialized views and invalidate caches.
          */
-        post: operations["cohort_refresh_cohorts_refresh_post"];
+        post: operations["cohort_refresh_cohort_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/search": {
+    "/eval/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2315,14 +2315,14 @@ export interface paths {
          * Search Eval
          * @description Search evals — composable infra architecture.
          */
-        post: operations["search_eval_evals_search_post"];
+        post: operations["search_eval_eval_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/get": {
+    "/eval/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2335,14 +2335,14 @@ export interface paths {
          * Get Eval
          * @description Get eval information using the canonical shared eval operation.
          */
-        post: operations["get_eval_evals_get_post"];
+        post: operations["get_eval_eval_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/create": {
+    "/eval/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2355,14 +2355,14 @@ export interface paths {
          * Create Eval
          * @description Create evals using composable infra architecture.
          */
-        post: operations["create_eval_evals_create_post"];
+        post: operations["create_eval_eval_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/csv": {
+    "/eval/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2375,14 +2375,14 @@ export interface paths {
          * Parse Eval Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_eval_csv_evals_csv_post"];
+        post: operations["parse_eval_csv_eval_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/update": {
+    "/eval/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2395,14 +2395,14 @@ export interface paths {
          * Update Eval
          * @description Update evals using composable infra architecture.
          */
-        post: operations["update_eval_evals_update_post"];
+        post: operations["update_eval_eval_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/duplicate": {
+    "/eval/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2415,14 +2415,14 @@ export interface paths {
          * Duplicate Eval
          * @description Duplicate an eval — composable infra architecture.
          */
-        post: operations["duplicate_eval_evals_duplicate_post"];
+        post: operations["duplicate_eval_eval_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/delete": {
+    "/eval/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2435,14 +2435,14 @@ export interface paths {
          * Delete Eval
          * @description Bulk delete evals — composable infra architecture.
          */
-        post: operations["delete_eval_evals_delete_post"];
+        post: operations["delete_eval_eval_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/draft": {
+    "/eval/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2459,10 +2459,10 @@ export interface paths {
          * Patch Eval Draft
          * @description Patch eval draft — composable infra architecture.
          */
-        patch: operations["patch_eval_draft_evals_draft_patch"];
+        patch: operations["patch_eval_draft_eval_draft_patch"];
         trace?: never;
     };
-    "/evals/drafts": {
+    "/eval/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2475,14 +2475,14 @@ export interface paths {
          * Get Eval Drafts
          * @description List eval drafts owned by the current profile.
          */
-        post: operations["get_eval_drafts_evals_drafts_post"];
+        post: operations["get_eval_drafts_eval_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/export": {
+    "/eval/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2495,14 +2495,14 @@ export interface paths {
          * Export Evals
          * @description Export all evals as a clean, denormalized CSV.
          */
-        post: operations["export_evals_evals_export_post"];
+        post: operations["export_evals_eval_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/generate": {
+    "/eval/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2515,14 +2515,14 @@ export interface paths {
          * Generate Eval
          * @description Trigger eval generation. Returns immediately; progress via events.
          */
-        post: operations["generate_eval_evals_generate_post"];
+        post: operations["generate_eval_eval_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/generations": {
+    "/eval/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -2535,14 +2535,14 @@ export interface paths {
          * Generations Eval
          * @description List eval generation groups — composable infra architecture.
          */
-        post: operations["generations_eval_evals_generations_post"];
+        post: operations["generations_eval_eval_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/context": {
+    "/eval/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -2558,14 +2558,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_eval_context_evals_context_post"];
+        post: operations["get_eval_context_eval_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/docs": {
+    "/eval/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2578,14 +2578,14 @@ export interface paths {
          * Get Eval Docs Endpoint
          * @description Get composed documentation for the eval artifact.
          */
-        post: operations["get_eval_docs_endpoint_evals_docs_post"];
+        post: operations["get_eval_docs_endpoint_eval_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/group": {
+    "/eval/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -2598,14 +2598,14 @@ export interface paths {
          * Group Eval
          * @description Resolve or create an eval group with optional naming.
          */
-        post: operations["group_eval_evals_group_post"];
+        post: operations["group_eval_eval_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/problem": {
+    "/eval/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -2618,14 +2618,14 @@ export interface paths {
          * Problem Eval
          * @description Report an eval problem — composable infra architecture.
          */
-        post: operations["problem_eval_evals_problem_post"];
+        post: operations["problem_eval_eval_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/evals/refresh": {
+    "/eval/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2638,14 +2638,14 @@ export interface paths {
          * Eval Refresh
          * @description Refresh eval materialized views and invalidate caches.
          */
-        post: operations["eval_refresh_evals_refresh_post"];
+        post: operations["eval_refresh_eval_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/get": {
+    "/rubric/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2658,14 +2658,14 @@ export interface paths {
          * Get Rubric
          * @description Get rubric information using the canonical shared rubric operation.
          */
-        post: operations["get_rubric_rubrics_get_post"];
+        post: operations["get_rubric_rubric_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/search": {
+    "/rubric/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -2678,14 +2678,14 @@ export interface paths {
          * Search Rubric
          * @description Search rubrics — composable infra architecture.
          */
-        post: operations["search_rubric_rubrics_search_post"];
+        post: operations["search_rubric_rubric_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/context": {
+    "/rubric/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -2701,14 +2701,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_rubric_context_rubrics_context_post"];
+        post: operations["get_rubric_context_rubric_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/create": {
+    "/rubric/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -2721,14 +2721,14 @@ export interface paths {
          * Create Rubric
          * @description Create rubrics using composable infra architecture.
          */
-        post: operations["create_rubric_rubrics_create_post"];
+        post: operations["create_rubric_rubric_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/update": {
+    "/rubric/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -2741,14 +2741,14 @@ export interface paths {
          * Update Rubric
          * @description Update rubrics using composable infra architecture.
          */
-        post: operations["update_rubric_rubrics_update_post"];
+        post: operations["update_rubric_rubric_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/duplicate": {
+    "/rubric/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2761,14 +2761,14 @@ export interface paths {
          * Duplicate Rubric
          * @description Duplicate a rubric — composable infra architecture.
          */
-        post: operations["duplicate_rubric_rubrics_duplicate_post"];
+        post: operations["duplicate_rubric_rubric_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/delete": {
+    "/rubric/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -2781,14 +2781,14 @@ export interface paths {
          * Delete Rubric
          * @description Bulk delete rubrics — composable infra architecture.
          */
-        post: operations["delete_rubric_rubrics_delete_post"];
+        post: operations["delete_rubric_rubric_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/draft": {
+    "/rubric/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -2805,10 +2805,10 @@ export interface paths {
          * Patch Rubric Draft
          * @description Patch rubric draft — composable infra architecture.
          */
-        patch: operations["patch_rubric_draft_rubrics_draft_patch"];
+        patch: operations["patch_rubric_draft_rubric_draft_patch"];
         trace?: never;
     };
-    "/rubrics/drafts": {
+    "/rubric/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -2821,14 +2821,14 @@ export interface paths {
          * Get Rubric Drafts
          * @description List rubric drafts owned by the current profile.
          */
-        post: operations["get_rubric_drafts_rubrics_drafts_post"];
+        post: operations["get_rubric_drafts_rubric_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/docs": {
+    "/rubric/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -2841,14 +2841,14 @@ export interface paths {
          * Get Rubric Docs Endpoint
          * @description Get composed documentation for the rubric artifact.
          */
-        post: operations["get_rubric_docs_endpoint_rubrics_docs_post"];
+        post: operations["get_rubric_docs_endpoint_rubric_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/export": {
+    "/rubric/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -2861,14 +2861,14 @@ export interface paths {
          * Export Rubrics
          * @description Export all rubrics as a clean, denormalized CSV.
          */
-        post: operations["export_rubrics_rubrics_export_post"];
+        post: operations["export_rubrics_rubric_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/csv": {
+    "/rubric/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -2881,14 +2881,14 @@ export interface paths {
          * Parse Rubric Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_rubric_csv_rubrics_csv_post"];
+        post: operations["parse_rubric_csv_rubric_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/generate": {
+    "/rubric/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -2901,14 +2901,14 @@ export interface paths {
          * Generate Rubric
          * @description Trigger rubric generation. Returns immediately; progress via events.
          */
-        post: operations["generate_rubric_rubrics_generate_post"];
+        post: operations["generate_rubric_rubric_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/generations": {
+    "/rubric/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -2921,14 +2921,14 @@ export interface paths {
          * Generations Rubric
          * @description List rubric generation groups — composable infra architecture.
          */
-        post: operations["generations_rubric_rubrics_generations_post"];
+        post: operations["generations_rubric_rubric_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/group": {
+    "/rubric/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -2941,14 +2941,14 @@ export interface paths {
          * Group Rubric
          * @description Resolve or create a rubric group with optional naming.
          */
-        post: operations["group_rubric_rubrics_group_post"];
+        post: operations["group_rubric_rubric_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/problem": {
+    "/rubric/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -2961,14 +2961,14 @@ export interface paths {
          * Problem Rubric
          * @description Report a rubric problem — composable infra architecture.
          */
-        post: operations["problem_rubric_rubrics_problem_post"];
+        post: operations["problem_rubric_rubric_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rubrics/refresh": {
+    "/rubric/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -2981,14 +2981,14 @@ export interface paths {
          * Rubric Refresh
          * @description Refresh rubric materialized views and invalidate caches.
          */
-        post: operations["rubric_refresh_rubrics_refresh_post"];
+        post: operations["rubric_refresh_rubric_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/search": {
+    "/setting/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3001,14 +3001,14 @@ export interface paths {
          * Search Setting
          * @description Search settings — composable infra architecture.
          */
-        post: operations["search_setting_settings_search_post"];
+        post: operations["search_setting_setting_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/get": {
+    "/setting/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3021,14 +3021,14 @@ export interface paths {
          * Get Setting
          * @description Get setting information using the canonical shared setting operation.
          */
-        post: operations["get_setting_settings_get_post"];
+        post: operations["get_setting_setting_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/create": {
+    "/setting/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -3041,14 +3041,14 @@ export interface paths {
          * Create Setting
          * @description Create settings using composable infra architecture.
          */
-        post: operations["create_setting_settings_create_post"];
+        post: operations["create_setting_setting_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/update": {
+    "/setting/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -3061,14 +3061,14 @@ export interface paths {
          * Update Setting
          * @description Update settings using composable infra architecture.
          */
-        post: operations["update_setting_settings_update_post"];
+        post: operations["update_setting_setting_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/duplicate": {
+    "/setting/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3081,14 +3081,14 @@ export interface paths {
          * Duplicate Setting
          * @description Duplicate a setting — composable infra architecture.
          */
-        post: operations["duplicate_setting_settings_duplicate_post"];
+        post: operations["duplicate_setting_setting_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/delete": {
+    "/setting/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3101,14 +3101,14 @@ export interface paths {
          * Delete Setting
          * @description Bulk delete settings — composable infra architecture.
          */
-        post: operations["delete_setting_settings_delete_post"];
+        post: operations["delete_setting_setting_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/draft": {
+    "/setting/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3125,10 +3125,10 @@ export interface paths {
          * Patch Setting Draft
          * @description Patch setting draft — composable infra architecture.
          */
-        patch: operations["patch_setting_draft_settings_draft_patch"];
+        patch: operations["patch_setting_draft_setting_draft_patch"];
         trace?: never;
     };
-    "/settings/drafts": {
+    "/setting/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -3141,14 +3141,14 @@ export interface paths {
          * Get Setting Drafts
          * @description List setting drafts owned by the current profile.
          */
-        post: operations["get_setting_drafts_settings_drafts_post"];
+        post: operations["get_setting_drafts_setting_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/export": {
+    "/setting/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3161,14 +3161,14 @@ export interface paths {
          * Export Settings
          * @description Export all settings as a clean, denormalized CSV.
          */
-        post: operations["export_settings_settings_export_post"];
+        post: operations["export_settings_setting_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/context": {
+    "/setting/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -3184,14 +3184,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_setting_context_settings_context_post"];
+        post: operations["get_setting_context_setting_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/csv": {
+    "/setting/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -3204,14 +3204,14 @@ export interface paths {
          * Parse Setting Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_setting_csv_settings_csv_post"];
+        post: operations["parse_setting_csv_setting_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/docs": {
+    "/setting/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3224,14 +3224,14 @@ export interface paths {
          * Get Setting Docs Endpoint
          * @description Get composed documentation for the setting artifact.
          */
-        post: operations["get_setting_docs_endpoint_settings_docs_post"];
+        post: operations["get_setting_docs_endpoint_setting_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/generate": {
+    "/setting/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3244,14 +3244,14 @@ export interface paths {
          * Generate Setting
          * @description Trigger setting generation. Returns immediately; progress via events.
          */
-        post: operations["generate_setting_settings_generate_post"];
+        post: operations["generate_setting_setting_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/generations": {
+    "/setting/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -3264,14 +3264,14 @@ export interface paths {
          * Generations Setting
          * @description List setting generation groups — composable infra architecture.
          */
-        post: operations["generations_setting_settings_generations_post"];
+        post: operations["generations_setting_setting_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/group": {
+    "/setting/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -3284,14 +3284,14 @@ export interface paths {
          * Group Setting
          * @description Resolve or create a setting group with optional naming.
          */
-        post: operations["group_setting_settings_group_post"];
+        post: operations["group_setting_setting_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/problem": {
+    "/setting/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -3304,14 +3304,14 @@ export interface paths {
          * Problem Setting
          * @description Report a setting problem — composable infra architecture.
          */
-        post: operations["problem_setting_settings_problem_post"];
+        post: operations["problem_setting_setting_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/refresh": {
+    "/setting/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3324,14 +3324,14 @@ export interface paths {
          * Setting Refresh
          * @description Refresh setting materialized views and invalidate caches.
          */
-        post: operations["setting_refresh_settings_refresh_post"];
+        post: operations["setting_refresh_setting_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/settings/decrypt": {
+    "/setting/decrypt": {
         parameters: {
             query?: never;
             header?: never;
@@ -3344,14 +3344,14 @@ export interface paths {
          * Decrypt Setting Key
          * @description Decrypt a key scoped to a setting artifact.
          */
-        post: operations["decrypt_setting_key_settings_decrypt_post"];
+        post: operations["decrypt_setting_key_setting_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/context": {
+    "/agent/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -3367,14 +3367,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_agent_context_agents_context_post"];
+        post: operations["get_agent_context_agent_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/get": {
+    "/agent/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3387,14 +3387,14 @@ export interface paths {
          * Get Agent
          * @description Get agent information using the canonical shared agent operation.
          */
-        post: operations["get_agent_agents_get_post"];
+        post: operations["get_agent_agent_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/search": {
+    "/agent/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3407,14 +3407,14 @@ export interface paths {
          * Search Agent
          * @description Search agents — composable infra architecture.
          */
-        post: operations["search_agent_agents_search_post"];
+        post: operations["search_agent_agent_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/create": {
+    "/agent/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -3427,14 +3427,14 @@ export interface paths {
          * Create Agent
          * @description Create agents using composable infra architecture.
          */
-        post: operations["create_agent_agents_create_post"];
+        post: operations["create_agent_agent_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/csv": {
+    "/agent/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -3447,14 +3447,14 @@ export interface paths {
          * Parse Agent Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_agent_csv_agents_csv_post"];
+        post: operations["parse_agent_csv_agent_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/update": {
+    "/agent/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -3467,14 +3467,14 @@ export interface paths {
          * Update Agent
          * @description Update agents using composable infra architecture.
          */
-        post: operations["update_agent_agents_update_post"];
+        post: operations["update_agent_agent_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/duplicate": {
+    "/agent/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3487,14 +3487,14 @@ export interface paths {
          * Duplicate Agent
          * @description Duplicate an agent — composable infra architecture.
          */
-        post: operations["duplicate_agent_agents_duplicate_post"];
+        post: operations["duplicate_agent_agent_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/delete": {
+    "/agent/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3507,14 +3507,14 @@ export interface paths {
          * Delete Agent
          * @description Bulk delete agents — composable infra architecture.
          */
-        post: operations["delete_agent_agents_delete_post"];
+        post: operations["delete_agent_agent_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/draft": {
+    "/agent/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3531,10 +3531,10 @@ export interface paths {
          * Patch Agent Draft
          * @description Patch agent draft — composable infra architecture.
          */
-        patch: operations["patch_agent_draft_agents_draft_patch"];
+        patch: operations["patch_agent_draft_agent_draft_patch"];
         trace?: never;
     };
-    "/agents/drafts": {
+    "/agent/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -3547,14 +3547,14 @@ export interface paths {
          * Get Agent Drafts
          * @description List agent drafts owned by the current profile.
          */
-        post: operations["get_agent_drafts_agents_drafts_post"];
+        post: operations["get_agent_drafts_agent_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/export": {
+    "/agent/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3567,14 +3567,14 @@ export interface paths {
          * Export Agents
          * @description Export all agents as a clean, denormalized CSV.
          */
-        post: operations["export_agents_agents_export_post"];
+        post: operations["export_agents_agent_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/generate": {
+    "/agent/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3587,14 +3587,14 @@ export interface paths {
          * Generate Agent
          * @description Trigger agent generation. Returns immediately; progress via events.
          */
-        post: operations["generate_agent_agents_generate_post"];
+        post: operations["generate_agent_agent_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/generations": {
+    "/agent/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -3607,14 +3607,14 @@ export interface paths {
          * Generations Agent
          * @description List agent generation groups — composable infra architecture.
          */
-        post: operations["generations_agent_agents_generations_post"];
+        post: operations["generations_agent_agent_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/docs": {
+    "/agent/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3627,14 +3627,14 @@ export interface paths {
          * Get Agent Docs Endpoint
          * @description Get composed documentation for the agent artifact.
          */
-        post: operations["get_agent_docs_endpoint_agents_docs_post"];
+        post: operations["get_agent_docs_endpoint_agent_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/group": {
+    "/agent/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -3647,14 +3647,14 @@ export interface paths {
          * Group Agent
          * @description Resolve or create an agent group with optional naming.
          */
-        post: operations["group_agent_agents_group_post"];
+        post: operations["group_agent_agent_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/problem": {
+    "/agent/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -3667,14 +3667,14 @@ export interface paths {
          * Problem Agent
          * @description Report an agent problem — composable infra architecture.
          */
-        post: operations["problem_agent_agents_problem_post"];
+        post: operations["problem_agent_agent_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/agents/refresh": {
+    "/agent/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3687,14 +3687,14 @@ export interface paths {
          * Agent Refresh
          * @description Refresh agent materialized views and invalidate caches.
          */
-        post: operations["agent_refresh_agents_refresh_post"];
+        post: operations["agent_refresh_agent_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/get": {
+    "/model/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3707,14 +3707,14 @@ export interface paths {
          * Get Model
          * @description Get model information using the canonical shared model operation.
          */
-        post: operations["get_model_models_get_post"];
+        post: operations["get_model_model_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/search": {
+    "/model/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -3727,14 +3727,14 @@ export interface paths {
          * Search Model
          * @description Search models — composable infra architecture.
          */
-        post: operations["search_model_models_search_post"];
+        post: operations["search_model_model_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/create": {
+    "/model/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -3747,14 +3747,14 @@ export interface paths {
          * Create Model
          * @description Create models using composable infra architecture.
          */
-        post: operations["create_model_models_create_post"];
+        post: operations["create_model_model_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/update": {
+    "/model/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -3767,14 +3767,14 @@ export interface paths {
          * Update Model
          * @description Update models using composable infra architecture.
          */
-        post: operations["update_model_models_update_post"];
+        post: operations["update_model_model_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/duplicate": {
+    "/model/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3787,14 +3787,14 @@ export interface paths {
          * Duplicate Model
          * @description Duplicate a model — composable infra architecture.
          */
-        post: operations["duplicate_model_models_duplicate_post"];
+        post: operations["duplicate_model_model_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/delete": {
+    "/model/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -3807,14 +3807,14 @@ export interface paths {
          * Delete Model
          * @description Bulk delete models — composable infra architecture.
          */
-        post: operations["delete_model_models_delete_post"];
+        post: operations["delete_model_model_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/draft": {
+    "/model/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3831,10 +3831,10 @@ export interface paths {
          * Patch Model Draft
          * @description Patch model draft — composable infra architecture.
          */
-        patch: operations["patch_model_draft_models_draft_patch"];
+        patch: operations["patch_model_draft_model_draft_patch"];
         trace?: never;
     };
-    "/models/drafts": {
+    "/model/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -3847,14 +3847,14 @@ export interface paths {
          * Get Model Drafts
          * @description List model drafts owned by the current profile.
          */
-        post: operations["get_model_drafts_models_drafts_post"];
+        post: operations["get_model_drafts_model_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/context": {
+    "/model/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -3870,14 +3870,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_model_context_models_context_post"];
+        post: operations["get_model_context_model_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/docs": {
+    "/model/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -3890,14 +3890,14 @@ export interface paths {
          * Get Model Docs Endpoint
          * @description Get composed documentation for the model artifact.
          */
-        post: operations["get_model_docs_endpoint_models_docs_post"];
+        post: operations["get_model_docs_endpoint_model_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/export": {
+    "/model/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -3910,14 +3910,14 @@ export interface paths {
          * Export Models
          * @description Export all models as a clean, denormalized CSV.
          */
-        post: operations["export_models_models_export_post"];
+        post: operations["export_models_model_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/csv": {
+    "/model/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -3930,14 +3930,14 @@ export interface paths {
          * Parse Model Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_model_csv_models_csv_post"];
+        post: operations["parse_model_csv_model_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/generate": {
+    "/model/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -3950,14 +3950,14 @@ export interface paths {
          * Generate Model
          * @description Trigger model generation. Returns immediately; progress via events.
          */
-        post: operations["generate_model_models_generate_post"];
+        post: operations["generate_model_model_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/generations": {
+    "/model/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -3970,14 +3970,14 @@ export interface paths {
          * Generations Model
          * @description List model generation groups — composable infra architecture.
          */
-        post: operations["generations_model_models_generations_post"];
+        post: operations["generations_model_model_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/group": {
+    "/model/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -3990,14 +3990,14 @@ export interface paths {
          * Group Model
          * @description Resolve or create a model group with optional naming.
          */
-        post: operations["group_model_models_group_post"];
+        post: operations["group_model_model_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/problem": {
+    "/model/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -4010,14 +4010,14 @@ export interface paths {
          * Problem Model
          * @description Report a model problem — composable infra architecture.
          */
-        post: operations["problem_model_models_problem_post"];
+        post: operations["problem_model_model_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/models/refresh": {
+    "/model/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4030,14 +4030,14 @@ export interface paths {
          * Model Refresh
          * @description Refresh model materialized views and invalidate caches.
          */
-        post: operations["model_refresh_models_refresh_post"];
+        post: operations["model_refresh_model_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/search": {
+    "/provider/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4050,14 +4050,14 @@ export interface paths {
          * Search Provider
          * @description Search providers — composable infra architecture.
          */
-        post: operations["search_provider_providers_search_post"];
+        post: operations["search_provider_provider_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/get": {
+    "/provider/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4070,14 +4070,14 @@ export interface paths {
          * Get Provider
          * @description Get provider information using the canonical shared provider operation.
          */
-        post: operations["get_provider_providers_get_post"];
+        post: operations["get_provider_provider_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/create": {
+    "/provider/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -4090,14 +4090,14 @@ export interface paths {
          * Create Provider
          * @description Create providers using composable infra architecture.
          */
-        post: operations["create_provider_providers_create_post"];
+        post: operations["create_provider_provider_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/update": {
+    "/provider/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -4110,14 +4110,14 @@ export interface paths {
          * Update Provider
          * @description Update providers using composable infra architecture.
          */
-        post: operations["update_provider_providers_update_post"];
+        post: operations["update_provider_provider_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/duplicate": {
+    "/provider/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4130,14 +4130,14 @@ export interface paths {
          * Duplicate Provider
          * @description Duplicate a provider — composable infra architecture.
          */
-        post: operations["duplicate_provider_providers_duplicate_post"];
+        post: operations["duplicate_provider_provider_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/delete": {
+    "/provider/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4150,14 +4150,14 @@ export interface paths {
          * Delete Provider
          * @description Bulk delete providers — composable infra architecture.
          */
-        post: operations["delete_provider_providers_delete_post"];
+        post: operations["delete_provider_provider_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/draft": {
+    "/provider/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -4174,10 +4174,10 @@ export interface paths {
          * Patch Provider Draft
          * @description Patch provider draft — composable infra architecture.
          */
-        patch: operations["patch_provider_draft_providers_draft_patch"];
+        patch: operations["patch_provider_draft_provider_draft_patch"];
         trace?: never;
     };
-    "/providers/drafts": {
+    "/provider/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -4190,14 +4190,14 @@ export interface paths {
          * Get Provider Drafts
          * @description List provider drafts owned by the current profile.
          */
-        post: operations["get_provider_drafts_providers_drafts_post"];
+        post: operations["get_provider_drafts_provider_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/context": {
+    "/provider/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -4213,14 +4213,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_provider_context_providers_context_post"];
+        post: operations["get_provider_context_provider_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/docs": {
+    "/provider/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4233,14 +4233,14 @@ export interface paths {
          * Get Provider Docs Endpoint
          * @description Get composed documentation for the provider artifact.
          */
-        post: operations["get_provider_docs_endpoint_providers_docs_post"];
+        post: operations["get_provider_docs_endpoint_provider_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/export": {
+    "/provider/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4253,14 +4253,14 @@ export interface paths {
          * Export Providers
          * @description Export all providers as a clean, denormalized CSV.
          */
-        post: operations["export_providers_providers_export_post"];
+        post: operations["export_providers_provider_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/csv": {
+    "/provider/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -4273,14 +4273,14 @@ export interface paths {
          * Parse Provider Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_provider_csv_providers_csv_post"];
+        post: operations["parse_provider_csv_provider_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/refresh": {
+    "/provider/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4293,14 +4293,14 @@ export interface paths {
          * Provider Refresh
          * @description Refresh provider materialized views and invalidate caches.
          */
-        post: operations["provider_refresh_providers_refresh_post"];
+        post: operations["provider_refresh_provider_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/decrypt": {
+    "/provider/decrypt": {
         parameters: {
             query?: never;
             header?: never;
@@ -4313,14 +4313,14 @@ export interface paths {
          * Decrypt Provider Key
          * @description Decrypt a key scoped to a provider artifact.
          */
-        post: operations["decrypt_provider_key_providers_decrypt_post"];
+        post: operations["decrypt_provider_key_provider_decrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/generate": {
+    "/provider/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4333,14 +4333,14 @@ export interface paths {
          * Generate Provider
          * @description Trigger provider generation. Returns immediately; progress via events.
          */
-        post: operations["generate_provider_providers_generate_post"];
+        post: operations["generate_provider_provider_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/generations": {
+    "/provider/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -4353,14 +4353,14 @@ export interface paths {
          * Generations Provider
          * @description List provider generation groups — composable infra architecture.
          */
-        post: operations["generations_provider_providers_generations_post"];
+        post: operations["generations_provider_provider_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/group": {
+    "/provider/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -4373,14 +4373,14 @@ export interface paths {
          * Group Provider
          * @description Resolve or create a provider group with optional naming.
          */
-        post: operations["group_provider_providers_group_post"];
+        post: operations["group_provider_provider_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/providers/problem": {
+    "/provider/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -4393,14 +4393,14 @@ export interface paths {
          * Problem Provider
          * @description Report a provider problem — composable infra architecture.
          */
-        post: operations["problem_provider_providers_problem_post"];
+        post: operations["problem_provider_provider_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/get": {
+    "/parameter/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4413,14 +4413,14 @@ export interface paths {
          * Get Parameter
          * @description Get parameter information using the canonical shared parameter operation.
          */
-        post: operations["get_parameter_parameters_get_post"];
+        post: operations["get_parameter_parameter_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/search": {
+    "/parameter/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4433,14 +4433,14 @@ export interface paths {
          * Search Parameter
          * @description Search parameters — composable infra architecture.
          */
-        post: operations["search_parameter_parameters_search_post"];
+        post: operations["search_parameter_parameter_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/create": {
+    "/parameter/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -4453,14 +4453,14 @@ export interface paths {
          * Create Parameter
          * @description Create parameters using composable infra architecture.
          */
-        post: operations["create_parameter_parameters_create_post"];
+        post: operations["create_parameter_parameter_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/update": {
+    "/parameter/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -4473,14 +4473,14 @@ export interface paths {
          * Update Parameter
          * @description Update parameters using composable infra architecture.
          */
-        post: operations["update_parameter_parameters_update_post"];
+        post: operations["update_parameter_parameter_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/duplicate": {
+    "/parameter/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4493,14 +4493,14 @@ export interface paths {
          * Duplicate Parameter
          * @description Duplicate a parameter — composable infra architecture.
          */
-        post: operations["duplicate_parameter_parameters_duplicate_post"];
+        post: operations["duplicate_parameter_parameter_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/context": {
+    "/parameter/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -4516,14 +4516,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_parameter_context_parameters_context_post"];
+        post: operations["get_parameter_context_parameter_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/delete": {
+    "/parameter/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4536,14 +4536,14 @@ export interface paths {
          * Delete Parameter
          * @description Bulk delete parameters — composable infra architecture.
          */
-        post: operations["delete_parameter_parameters_delete_post"];
+        post: operations["delete_parameter_parameter_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/draft": {
+    "/parameter/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -4560,10 +4560,10 @@ export interface paths {
          * Patch Parameter Draft
          * @description Patch parameter draft — composable infra architecture.
          */
-        patch: operations["patch_parameter_draft_parameters_draft_patch"];
+        patch: operations["patch_parameter_draft_parameter_draft_patch"];
         trace?: never;
     };
-    "/parameters/drafts": {
+    "/parameter/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -4576,14 +4576,14 @@ export interface paths {
          * Get Parameter Drafts
          * @description List parameter drafts owned by the current profile.
          */
-        post: operations["get_parameter_drafts_parameters_drafts_post"];
+        post: operations["get_parameter_drafts_parameter_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/docs": {
+    "/parameter/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4596,14 +4596,14 @@ export interface paths {
          * Get Parameter Docs Endpoint
          * @description Get composed documentation for the parameter artifact.
          */
-        post: operations["get_parameter_docs_endpoint_parameters_docs_post"];
+        post: operations["get_parameter_docs_endpoint_parameter_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/export": {
+    "/parameter/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4616,14 +4616,14 @@ export interface paths {
          * Export Parameters
          * @description Export all parameters as a clean, denormalized CSV.
          */
-        post: operations["export_parameters_parameters_export_post"];
+        post: operations["export_parameters_parameter_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/csv": {
+    "/parameter/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -4636,14 +4636,14 @@ export interface paths {
          * Parse Parameter Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_parameter_csv_parameters_csv_post"];
+        post: operations["parse_parameter_csv_parameter_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/generate": {
+    "/parameter/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4656,14 +4656,14 @@ export interface paths {
          * Generate Parameter
          * @description Trigger parameter generation. Returns immediately; progress via events.
          */
-        post: operations["generate_parameter_parameters_generate_post"];
+        post: operations["generate_parameter_parameter_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/generations": {
+    "/parameter/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -4676,14 +4676,14 @@ export interface paths {
          * Generations Parameter
          * @description List parameter generation groups — composable infra architecture.
          */
-        post: operations["generations_parameter_parameters_generations_post"];
+        post: operations["generations_parameter_parameter_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/group": {
+    "/parameter/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -4696,14 +4696,14 @@ export interface paths {
          * Group Parameter
          * @description Resolve or create a parameter group with optional naming.
          */
-        post: operations["group_parameter_parameters_group_post"];
+        post: operations["group_parameter_parameter_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/problem": {
+    "/parameter/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -4716,14 +4716,14 @@ export interface paths {
          * Problem Parameter
          * @description Report a parameter problem — composable infra architecture.
          */
-        post: operations["problem_parameter_parameters_problem_post"];
+        post: operations["problem_parameter_parameter_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/parameters/refresh": {
+    "/parameter/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -4736,14 +4736,14 @@ export interface paths {
          * Parameter Refresh
          * @description Refresh parameter materialized views and invalidate caches.
          */
-        post: operations["parameter_refresh_parameters_refresh_post"];
+        post: operations["parameter_refresh_parameter_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/get": {
+    "/field/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -4756,14 +4756,14 @@ export interface paths {
          * Get Field
          * @description Get field information using the canonical shared field operation.
          */
-        post: operations["get_field_fields_get_post"];
+        post: operations["get_field_field_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/search": {
+    "/field/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4776,14 +4776,14 @@ export interface paths {
          * Search Field
          * @description Search fields — composable infra architecture.
          */
-        post: operations["search_field_fields_search_post"];
+        post: operations["search_field_field_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/create": {
+    "/field/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -4796,14 +4796,14 @@ export interface paths {
          * Create Field
          * @description Create fields using composable infra architecture.
          */
-        post: operations["create_field_fields_create_post"];
+        post: operations["create_field_field_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/update": {
+    "/field/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -4816,14 +4816,14 @@ export interface paths {
          * Update Field
          * @description Update fields using composable infra architecture.
          */
-        post: operations["update_field_fields_update_post"];
+        post: operations["update_field_field_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/duplicate": {
+    "/field/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4836,14 +4836,14 @@ export interface paths {
          * Duplicate Field
          * @description Duplicate a field — composable infra architecture.
          */
-        post: operations["duplicate_field_fields_duplicate_post"];
+        post: operations["duplicate_field_field_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/delete": {
+    "/field/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -4856,14 +4856,14 @@ export interface paths {
          * Delete Field
          * @description Bulk delete fields — composable infra architecture.
          */
-        post: operations["delete_field_fields_delete_post"];
+        post: operations["delete_field_field_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/draft": {
+    "/field/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -4880,10 +4880,10 @@ export interface paths {
          * Patch Field Draft
          * @description Patch field draft — composable infra architecture.
          */
-        patch: operations["patch_field_draft_fields_draft_patch"];
+        patch: operations["patch_field_draft_field_draft_patch"];
         trace?: never;
     };
-    "/fields/drafts": {
+    "/field/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -4896,14 +4896,14 @@ export interface paths {
          * Get Field Drafts
          * @description List field drafts owned by the current profile.
          */
-        post: operations["get_field_drafts_fields_drafts_post"];
+        post: operations["get_field_drafts_field_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/context": {
+    "/field/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -4919,14 +4919,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_field_context_fields_context_post"];
+        post: operations["get_field_context_field_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/docs": {
+    "/field/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -4939,14 +4939,14 @@ export interface paths {
          * Get Field Docs Endpoint
          * @description Get composed documentation for the field artifact.
          */
-        post: operations["get_field_docs_endpoint_fields_docs_post"];
+        post: operations["get_field_docs_endpoint_field_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/export": {
+    "/field/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -4959,14 +4959,14 @@ export interface paths {
          * Export Fields
          * @description Export all fields as a clean, denormalized CSV.
          */
-        post: operations["export_fields_fields_export_post"];
+        post: operations["export_fields_field_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/csv": {
+    "/field/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -4979,14 +4979,14 @@ export interface paths {
          * Parse Field Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_field_csv_fields_csv_post"];
+        post: operations["parse_field_csv_field_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/generate": {
+    "/field/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4999,14 +4999,14 @@ export interface paths {
          * Generate Field
          * @description Trigger field generation. Returns immediately; progress via events.
          */
-        post: operations["generate_field_fields_generate_post"];
+        post: operations["generate_field_field_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/generations": {
+    "/field/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -5019,14 +5019,14 @@ export interface paths {
          * Generations Field
          * @description List field generation groups — composable infra architecture.
          */
-        post: operations["generations_field_fields_generations_post"];
+        post: operations["generations_field_field_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/group": {
+    "/field/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -5039,14 +5039,14 @@ export interface paths {
          * Group Field
          * @description Resolve or create a field group with optional naming.
          */
-        post: operations["group_field_fields_group_post"];
+        post: operations["group_field_field_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/problem": {
+    "/field/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -5059,14 +5059,14 @@ export interface paths {
          * Problem Field
          * @description Report a field problem — composable infra architecture.
          */
-        post: operations["problem_field_fields_problem_post"];
+        post: operations["problem_field_field_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/fields/refresh": {
+    "/field/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5079,14 +5079,14 @@ export interface paths {
          * Field Refresh
          * @description Refresh field materialized views and invalidate caches.
          */
-        post: operations["field_refresh_fields_refresh_post"];
+        post: operations["field_refresh_field_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/get": {
+    "/profile/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5099,14 +5099,14 @@ export interface paths {
          * Get Profile
          * @description Get profile information using the canonical shared profile operation.
          */
-        post: operations["get_profile_profiles_get_post"];
+        post: operations["get_profile_profile_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/search": {
+    "/profile/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5119,14 +5119,14 @@ export interface paths {
          * Search Profile
          * @description Search profiles — composable infra architecture.
          */
-        post: operations["search_profile_profiles_search_post"];
+        post: operations["search_profile_profile_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/create": {
+    "/profile/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -5139,14 +5139,14 @@ export interface paths {
          * Create Profile
          * @description Create profiles using composable infra architecture.
          */
-        post: operations["create_profile_profiles_create_post"];
+        post: operations["create_profile_profile_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/update": {
+    "/profile/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -5159,14 +5159,14 @@ export interface paths {
          * Update Profile
          * @description Update profiles using composable infra architecture.
          */
-        post: operations["update_profile_profiles_update_post"];
+        post: operations["update_profile_profile_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/duplicate": {
+    "/profile/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5179,14 +5179,14 @@ export interface paths {
          * Duplicate Profile
          * @description Duplicate a profile — composable infra architecture.
          */
-        post: operations["duplicate_profile_profiles_duplicate_post"];
+        post: operations["duplicate_profile_profile_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/draft": {
+    "/profile/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -5203,10 +5203,10 @@ export interface paths {
          * Patch Profile Draft
          * @description Patch profile draft — composable infra architecture.
          */
-        patch: operations["patch_profile_draft_profiles_draft_patch"];
+        patch: operations["patch_profile_draft_profile_draft_patch"];
         trace?: never;
     };
-    "/profiles/drafts": {
+    "/profile/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -5219,14 +5219,14 @@ export interface paths {
          * Get Profile Drafts
          * @description List profile drafts owned by the current profile.
          */
-        post: operations["get_profile_drafts_profiles_drafts_post"];
+        post: operations["get_profile_drafts_profile_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/delete": {
+    "/profile/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5239,14 +5239,14 @@ export interface paths {
          * Delete Profile
          * @description Bulk delete profiles — composable infra architecture.
          */
-        post: operations["delete_profile_profiles_delete_post"];
+        post: operations["delete_profile_profile_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/docs": {
+    "/profile/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5259,14 +5259,14 @@ export interface paths {
          * Get Profile Docs Endpoint
          * @description Get composed documentation for the profile artifact.
          */
-        post: operations["get_profile_docs_endpoint_profiles_docs_post"];
+        post: operations["get_profile_docs_endpoint_profile_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/export": {
+    "/profile/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5279,14 +5279,14 @@ export interface paths {
          * Export Profiles
          * @description Export all profiles as a clean, denormalized CSV.
          */
-        post: operations["export_profiles_profiles_export_post"];
+        post: operations["export_profiles_profile_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/generate": {
+    "/profile/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5299,14 +5299,14 @@ export interface paths {
          * Generate Profile
          * @description Trigger profile generation. Returns immediately; progress via events.
          */
-        post: operations["generate_profile_profiles_generate_post"];
+        post: operations["generate_profile_profile_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/generations": {
+    "/profile/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -5319,14 +5319,14 @@ export interface paths {
          * Generations Profile
          * @description List profile generation groups — composable infra architecture.
          */
-        post: operations["generations_profile_profiles_generations_post"];
+        post: operations["generations_profile_profile_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/group": {
+    "/profile/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -5339,14 +5339,14 @@ export interface paths {
          * Group Profile
          * @description Resolve or create a profile group with optional naming.
          */
-        post: operations["group_profile_profiles_group_post"];
+        post: operations["group_profile_profile_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/problem": {
+    "/profile/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -5359,14 +5359,14 @@ export interface paths {
          * Problem Profile
          * @description Report a profile problem — composable infra architecture.
          */
-        post: operations["problem_profile_profiles_problem_post"];
+        post: operations["problem_profile_profile_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/refresh": {
+    "/profile/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5379,14 +5379,14 @@ export interface paths {
          * Profile Refresh
          * @description Refresh profile materialized views and invalidate caches.
          */
-        post: operations["profile_refresh_profiles_refresh_post"];
+        post: operations["profile_refresh_profile_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/context": {
+    "/profile/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -5402,14 +5402,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_profile_context_profiles_context_post"];
+        post: operations["get_profile_context_profile_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/emulate": {
+    "/profile/emulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5422,14 +5422,14 @@ export interface paths {
          * Emulate Profile
          * @description Create emulation grant. Next request will resolve to target profile.
          */
-        post: operations["emulate_profile_profiles_emulate_post"];
+        post: operations["emulate_profile_profile_emulate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/profiles/unemulate": {
+    "/profile/unemulate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5442,14 +5442,14 @@ export interface paths {
          * Unemulate Profile
          * @description Exit emulation for a specific target profile.
          */
-        post: operations["unemulate_profile_profiles_unemulate_post"];
+        post: operations["unemulate_profile_profile_unemulate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/context": {
+    "/auth/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -5465,14 +5465,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_auth_context_auths_context_post"];
+        post: operations["get_auth_context_auth_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/get": {
+    "/auth/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5485,14 +5485,14 @@ export interface paths {
          * Get Auth
          * @description Get auth information using the canonical shared auth operation.
          */
-        post: operations["get_auth_auths_get_post"];
+        post: operations["get_auth_auth_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/search": {
+    "/auth/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5505,14 +5505,14 @@ export interface paths {
          * Search Auth
          * @description Search auths — composable infra architecture.
          */
-        post: operations["search_auth_auths_search_post"];
+        post: operations["search_auth_auth_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/create": {
+    "/auth/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -5525,14 +5525,14 @@ export interface paths {
          * Create Auth
          * @description Create auths using composable infra architecture.
          */
-        post: operations["create_auth_auths_create_post"];
+        post: operations["create_auth_auth_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/update": {
+    "/auth/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -5545,14 +5545,14 @@ export interface paths {
          * Update Auth
          * @description Update auths using composable infra architecture.
          */
-        post: operations["update_auth_auths_update_post"];
+        post: operations["update_auth_auth_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/duplicate": {
+    "/auth/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5565,14 +5565,14 @@ export interface paths {
          * Duplicate Auth
          * @description Duplicate an auth — composable infra architecture.
          */
-        post: operations["duplicate_auth_auths_duplicate_post"];
+        post: operations["duplicate_auth_auth_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/delete": {
+    "/auth/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5585,14 +5585,14 @@ export interface paths {
          * Delete Auth
          * @description Bulk delete auths — composable infra architecture.
          */
-        post: operations["delete_auth_auths_delete_post"];
+        post: operations["delete_auth_auth_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/draft": {
+    "/auth/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -5609,10 +5609,10 @@ export interface paths {
          * Patch Auth Draft
          * @description Patch auth draft — composable infra architecture.
          */
-        patch: operations["patch_auth_draft_auths_draft_patch"];
+        patch: operations["patch_auth_draft_auth_draft_patch"];
         trace?: never;
     };
-    "/auths/drafts": {
+    "/auth/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -5625,14 +5625,14 @@ export interface paths {
          * Get Auth Drafts
          * @description List auth drafts owned by the current profile.
          */
-        post: operations["get_auth_drafts_auths_drafts_post"];
+        post: operations["get_auth_drafts_auth_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/docs": {
+    "/auth/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -5645,14 +5645,14 @@ export interface paths {
          * Get Auth Docs Endpoint
          * @description Get composed documentation for the auth artifact.
          */
-        post: operations["get_auth_docs_endpoint_auths_docs_post"];
+        post: operations["get_auth_docs_endpoint_auth_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/export": {
+    "/auth/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5665,14 +5665,14 @@ export interface paths {
          * Export Auths
          * @description Export all auths as a clean, denormalized CSV.
          */
-        post: operations["export_auths_auths_export_post"];
+        post: operations["export_auths_auth_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/generate": {
+    "/auth/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5685,14 +5685,14 @@ export interface paths {
          * Generate Auth
          * @description Trigger auth generation. Returns immediately; progress via events.
          */
-        post: operations["generate_auth_auths_generate_post"];
+        post: operations["generate_auth_auth_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/generations": {
+    "/auth/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -5705,14 +5705,14 @@ export interface paths {
          * Generations Auth
          * @description List auth generation groups — composable infra architecture.
          */
-        post: operations["generations_auth_auths_generations_post"];
+        post: operations["generations_auth_auth_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/group": {
+    "/auth/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -5725,14 +5725,14 @@ export interface paths {
          * Group Auth
          * @description Resolve or create an auth group with optional naming.
          */
-        post: operations["group_auth_auths_group_post"];
+        post: operations["group_auth_auth_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/problem": {
+    "/auth/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -5745,14 +5745,14 @@ export interface paths {
          * Problem Auth
          * @description Report an auth problem — composable infra architecture.
          */
-        post: operations["problem_auth_auths_problem_post"];
+        post: operations["problem_auth_auth_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/auths/refresh": {
+    "/auth/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -5765,14 +5765,14 @@ export interface paths {
          * Auth Refresh
          * @description Refresh auth materialized views and invalidate caches.
          */
-        post: operations["auth_refresh_auths_refresh_post"];
+        post: operations["auth_refresh_auth_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/search": {
+    "/tool/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5785,14 +5785,14 @@ export interface paths {
          * Search Tool
          * @description Search tools — composable infra architecture.
          */
-        post: operations["search_tool_tools_search_post"];
+        post: operations["search_tool_tool_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/get": {
+    "/tool/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -5805,14 +5805,14 @@ export interface paths {
          * Get Tool
          * @description Get tool information using the canonical shared tool operation.
          */
-        post: operations["get_tool_tools_get_post"];
+        post: operations["get_tool_tool_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/create": {
+    "/tool/create": {
         parameters: {
             query?: never;
             header?: never;
@@ -5825,14 +5825,14 @@ export interface paths {
          * Create Tool
          * @description Create tools using composable infra architecture.
          */
-        post: operations["create_tool_tools_create_post"];
+        post: operations["create_tool_tool_create_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/update": {
+    "/tool/update": {
         parameters: {
             query?: never;
             header?: never;
@@ -5845,14 +5845,14 @@ export interface paths {
          * Update Tool
          * @description Update tools using composable infra architecture.
          */
-        post: operations["update_tool_tools_update_post"];
+        post: operations["update_tool_tool_update_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/duplicate": {
+    "/tool/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5865,14 +5865,14 @@ export interface paths {
          * Duplicate Tool
          * @description Duplicate a tool — composable infra architecture.
          */
-        post: operations["duplicate_tool_tools_duplicate_post"];
+        post: operations["duplicate_tool_tool_duplicate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/delete": {
+    "/tool/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -5885,14 +5885,14 @@ export interface paths {
          * Delete Tool
          * @description Bulk delete tools — composable infra architecture.
          */
-        post: operations["delete_tool_tools_delete_post"];
+        post: operations["delete_tool_tool_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/draft": {
+    "/tool/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -5909,10 +5909,10 @@ export interface paths {
          * Patch Tool Draft
          * @description Patch tool draft — composable infra architecture.
          */
-        patch: operations["patch_tool_draft_tools_draft_patch"];
+        patch: operations["patch_tool_draft_tool_draft_patch"];
         trace?: never;
     };
-    "/tools/drafts": {
+    "/tool/drafts": {
         parameters: {
             query?: never;
             header?: never;
@@ -5925,14 +5925,14 @@ export interface paths {
          * Get Tool Drafts
          * @description List tool drafts owned by the current profile.
          */
-        post: operations["get_tool_drafts_tools_drafts_post"];
+        post: operations["get_tool_drafts_tool_drafts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/export": {
+    "/tool/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -5945,14 +5945,14 @@ export interface paths {
          * Export Tools
          * @description Export all tools as a clean, denormalized CSV.
          */
-        post: operations["export_tools_tools_export_post"];
+        post: operations["export_tools_tool_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/generate": {
+    "/tool/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -5965,14 +5965,14 @@ export interface paths {
          * Generate Tool
          * @description Trigger tool generation. Returns immediately; progress via events.
          */
-        post: operations["generate_tool_tools_generate_post"];
+        post: operations["generate_tool_tool_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/generations": {
+    "/tool/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -5985,14 +5985,14 @@ export interface paths {
          * Generations Tool
          * @description List tool generation groups — composable infra architecture.
          */
-        post: operations["generations_tool_tools_generations_post"];
+        post: operations["generations_tool_tool_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/csv": {
+    "/tool/csv": {
         parameters: {
             query?: never;
             header?: never;
@@ -6005,14 +6005,14 @@ export interface paths {
          * Parse Tool Csv
          * @description Parse a CSV file and return mapped items for preview.
          */
-        post: operations["parse_tool_csv_tools_csv_post"];
+        post: operations["parse_tool_csv_tool_csv_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/context": {
+    "/tool/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -6028,14 +6028,14 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_tool_context_tools_context_post"];
+        post: operations["get_tool_context_tool_context_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/docs": {
+    "/tool/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -6048,14 +6048,14 @@ export interface paths {
          * Get Tool Docs Endpoint
          * @description Get composed documentation for the tool artifact.
          */
-        post: operations["get_tool_docs_endpoint_tools_docs_post"];
+        post: operations["get_tool_docs_endpoint_tool_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/group": {
+    "/tool/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -6068,14 +6068,14 @@ export interface paths {
          * Group Tool
          * @description Resolve or create a tool group with optional naming.
          */
-        post: operations["group_tool_tools_group_post"];
+        post: operations["group_tool_tool_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/problem": {
+    "/tool/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -6088,14 +6088,14 @@ export interface paths {
          * Problem Tool
          * @description Report a tool problem — composable infra architecture.
          */
-        post: operations["problem_tool_tools_problem_post"];
+        post: operations["problem_tool_tool_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/tools/refresh": {
+    "/tool/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -6108,7 +6108,7 @@ export interface paths {
          * Tool Refresh
          * @description Refresh tool materialized views and invalidate caches.
          */
-        post: operations["tool_refresh_tools_refresh_post"];
+        post: operations["tool_refresh_tool_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8325,7 +8325,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reports/export": {
+    "/report/export": {
         parameters: {
             query?: never;
             header?: never;
@@ -8338,14 +8338,14 @@ export interface paths {
          * Export Reports
          * @description Export all reports data as a clean, denormalized ZIP.
          */
-        post: operations["export_reports_reports_export_post"];
+        post: operations["export_reports_report_export_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/generate": {
+    "/report/generate": {
         parameters: {
             query?: never;
             header?: never;
@@ -8358,14 +8358,14 @@ export interface paths {
          * Generate Reports
          * @description Trigger reports generation. Returns immediately; progress via events.
          */
-        post: operations["generate_reports_reports_generate_post"];
+        post: operations["generate_reports_report_generate_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/generations": {
+    "/report/generations": {
         parameters: {
             query?: never;
             header?: never;
@@ -8378,14 +8378,14 @@ export interface paths {
          * Generations Reports
          * @description List reports generation groups — composable infra architecture.
          */
-        post: operations["generations_reports_reports_generations_post"];
+        post: operations["generations_reports_report_generations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/group": {
+    "/report/group": {
         parameters: {
             query?: never;
             header?: never;
@@ -8398,14 +8398,14 @@ export interface paths {
          * Group Reports
          * @description Resolve or create a reports group with optional naming.
          */
-        post: operations["group_reports_reports_group_post"];
+        post: operations["group_reports_report_group_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/problem": {
+    "/report/problem": {
         parameters: {
             query?: never;
             header?: never;
@@ -8418,14 +8418,14 @@ export interface paths {
          * Problem Reports
          * @description Report a reports problem — composable infra architecture.
          */
-        post: operations["problem_reports_reports_problem_post"];
+        post: operations["problem_reports_report_problem_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/search": {
+    "/report/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -8438,14 +8438,14 @@ export interface paths {
          * Get Reports
          * @description Get reports artifact data via composable context resolver.
          */
-        post: operations["get_reports_reports_search_post"];
+        post: operations["get_reports_report_search_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/refresh": {
+    "/report/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -8458,14 +8458,14 @@ export interface paths {
          * Reports Refresh
          * @description Refresh reports caches.
          */
-        post: operations["reports_refresh_reports_refresh_post"];
+        post: operations["reports_refresh_report_refresh_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/docs": {
+    "/report/docs": {
         parameters: {
             query?: never;
             header?: never;
@@ -8478,14 +8478,14 @@ export interface paths {
          * Get Reports Docs Endpoint
          * @description Get composed documentation for the reports analytics.
          */
-        post: operations["get_reports_docs_endpoint_reports_docs_post"];
+        post: operations["get_reports_docs_endpoint_report_docs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/reports/context": {
+    "/report/context": {
         parameters: {
             query?: never;
             header?: never;
@@ -8501,7 +8501,7 @@ export interface paths {
          *     Returns docs + profile identity + evaluated permissions in a single call.
          *     Superset of /docs — clients can migrate from /docs to /context incrementally.
          */
-        post: operations["get_reports_context_reports_context_post"];
+        post: operations["get_reports_context_report_context_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18962,120 +18962,120 @@ export interface components {
             /** @description Inline analytics facets for SSR */
             analytics?: components["schemas"]["AnalyticsFacets-Output"] | null;
         };
-        /** Body_parse_agent_csv_agents_csv_post */
-        Body_parse_agent_csv_agents_csv_post: {
+        /** Body_parse_agent_csv_agent_csv_post */
+        Body_parse_agent_csv_agent_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_cohort_csv_cohorts_csv_post */
-        Body_parse_cohort_csv_cohorts_csv_post: {
+        /** Body_parse_cohort_csv_cohort_csv_post */
+        Body_parse_cohort_csv_cohort_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_department_csv_departments_csv_post */
-        Body_parse_department_csv_departments_csv_post: {
+        /** Body_parse_department_csv_department_csv_post */
+        Body_parse_department_csv_department_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_document_csv_documents_csv_post */
-        Body_parse_document_csv_documents_csv_post: {
+        /** Body_parse_document_csv_document_csv_post */
+        Body_parse_document_csv_document_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_eval_csv_evals_csv_post */
-        Body_parse_eval_csv_evals_csv_post: {
+        /** Body_parse_eval_csv_eval_csv_post */
+        Body_parse_eval_csv_eval_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_field_csv_fields_csv_post */
-        Body_parse_field_csv_fields_csv_post: {
+        /** Body_parse_field_csv_field_csv_post */
+        Body_parse_field_csv_field_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_model_csv_models_csv_post */
-        Body_parse_model_csv_models_csv_post: {
+        /** Body_parse_model_csv_model_csv_post */
+        Body_parse_model_csv_model_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_parameter_csv_parameters_csv_post */
-        Body_parse_parameter_csv_parameters_csv_post: {
+        /** Body_parse_parameter_csv_parameter_csv_post */
+        Body_parse_parameter_csv_parameter_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_persona_csv_personas_csv_post */
-        Body_parse_persona_csv_personas_csv_post: {
+        /** Body_parse_persona_csv_persona_csv_post */
+        Body_parse_persona_csv_persona_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_provider_csv_providers_csv_post */
-        Body_parse_provider_csv_providers_csv_post: {
+        /** Body_parse_provider_csv_provider_csv_post */
+        Body_parse_provider_csv_provider_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_rubric_csv_rubrics_csv_post */
-        Body_parse_rubric_csv_rubrics_csv_post: {
+        /** Body_parse_rubric_csv_rubric_csv_post */
+        Body_parse_rubric_csv_rubric_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_scenario_csv_scenarios_csv_post */
-        Body_parse_scenario_csv_scenarios_csv_post: {
+        /** Body_parse_scenario_csv_scenario_csv_post */
+        Body_parse_scenario_csv_scenario_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_setting_csv_settings_csv_post */
-        Body_parse_setting_csv_settings_csv_post: {
+        /** Body_parse_setting_csv_setting_csv_post */
+        Body_parse_setting_csv_setting_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_simulation_csv_simulations_csv_post */
-        Body_parse_simulation_csv_simulations_csv_post: {
+        /** Body_parse_simulation_csv_simulation_csv_post */
+        Body_parse_simulation_csv_simulation_csv_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_parse_tool_csv_tools_csv_post */
-        Body_parse_tool_csv_tools_csv_post: {
+        /** Body_parse_tool_csv_tool_csv_post */
+        Body_parse_tool_csv_tool_csv_post: {
             /**
              * File
              * Format: binary
@@ -19090,32 +19090,32 @@ export interface components {
              */
             file: string;
         };
-        /** Body_upload_file_documents_file_upload_post */
-        Body_upload_file_documents_file_upload_post: {
+        /** Body_upload_file_document_file_upload_post */
+        Body_upload_file_document_file_upload_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_upload_image_scenarios_image_upload_post */
-        Body_upload_image_scenarios_image_upload_post: {
+        /** Body_upload_image_scenario_image_upload_post */
+        Body_upload_image_scenario_image_upload_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_upload_text_documents_text_upload_post */
-        Body_upload_text_documents_text_upload_post: {
+        /** Body_upload_text_document_text_upload_post */
+        Body_upload_text_document_text_upload_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
         };
-        /** Body_upload_video_scenarios_video_upload_post */
-        Body_upload_video_scenarios_video_upload_post: {
+        /** Body_upload_video_scenario_video_upload_post */
+        Body_upload_video_scenario_video_upload_post: {
             /**
              * File
              * Format: binary
@@ -20254,31 +20254,21 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
-        };
-        /** CohortDepartmentSection */
-        CohortDepartmentSection: {
-            /**
-             * Current
-             * @description Currently selected departments
-             */
-            current?: components["schemas"]["CohortDepartment"][] | null;
-            /**
-             * Resources
-             * @description Available departments
-             */
-            resources?: components["schemas"]["CohortDepartment"][] | null;
+            pending: boolean;
         };
         /**
          * CohortDescriptionResource
@@ -20303,141 +20293,21 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
-        };
-        /** CohortDescriptionSection */
-        CohortDescriptionSection: {
-            /** @description Currently selected description resource */
-            resource?: components["schemas"]["CohortDescriptionResource"] | null;
-            /**
-             * Resources
-             * @description Available description resources
-             */
-            resources?: components["schemas"]["CohortDescriptionResource"][] | null;
-        };
-        /**
-         * CohortDraftFormState
-         * @description Full form state after draft patch — server is source of truth.
-         *
-         *     Client replaces its local form state with this after every successful patch.
-         */
-        CohortDraftFormState: {
-            /**
-             * Name Id
-             * @description Selected name resource UUID
-             */
-            name_id?: string | null;
-            /**
-             * Name
-             * @description Name value that was saved
-             */
-            name?: string | null;
-            /**
-             * Description Id
-             * @description Selected description resource UUID
-             */
-            description_id?: string | null;
-            /**
-             * Description
-             * @description Description value that was saved
-             */
-            description?: string | null;
-            /**
-             * Flag Id
-             * @description Selected flag option UUID
-             */
-            flag_id?: string | null;
-            /**
-             * Flag
-             * @description Flag value that was saved
-             */
-            flag?: string | null;
-            /**
-             * Active Flag Id
-             * @description Selected active flag option UUID
-             */
-            active_flag_id?: string | null;
-            /**
-             * Active Flag
-             * @description Whether the active flag was enabled
-             */
-            active_flag?: boolean | null;
-            /**
-             * Department Ids
-             * @description Selected department UUIDs
-             */
-            department_ids?: string[];
-            /**
-             * Departments
-             * @description Department values that were saved
-             */
-            departments?: string[];
-            /**
-             * Simulation Ids
-             * @description Selected simulation UUIDs
-             */
-            simulation_ids?: string[];
-            /**
-             * Simulations
-             * @description Simulation values that were saved
-             */
-            simulations?: string[];
-            /**
-             * Simulation Position Ids
-             * @description Selected simulation position UUIDs
-             */
-            simulation_position_ids?: string[];
-            /**
-             * Simulation Positions
-             * @description Simulation position values that were saved
-             */
-            simulation_positions?: components["schemas"]["DraftSimulationPositionValue"][];
-            /**
-             * Simulation Availability Ids
-             * @description Selected simulation availability UUIDs
-             */
-            simulation_availability_ids?: string[];
-            /**
-             * Simulation Availability
-             * @description Simulation availability values that were saved
-             */
-            simulation_availability?: components["schemas"]["DraftSimulationAvailabilityValue"][];
-            /**
-             * Profile Ids
-             * @description Selected profile UUIDs
-             */
-            profile_ids?: string[];
-            /**
-             * Profiles
-             * @description Profile values that were saved
-             */
-            profiles?: string[];
-            /**
-             * Profile Persona Ids
-             * @description Selected profile persona UUIDs
-             */
-            profile_persona_ids?: string[];
-            /**
-             * Profile Personas
-             * @description Profile persona values that were saved
-             */
-            profile_personas?: components["schemas"]["DraftProfilePersonaValue"][];
-            /**
-             * Pending Ids
-             * @description Pending resource IDs retained on the draft
-             */
-            pending_ids?: string[];
+            pending: boolean;
         };
         /**
          * CohortFieldError
@@ -20503,28 +20373,21 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
-        };
-        /** CohortFlagSection */
-        CohortFlagSection: {
-            /** @description Currently selected flag config */
-            resource?: components["schemas"]["CohortFlagConfig"] | null;
-            /**
-             * Resources
-             * @description Available flag configs
-             */
-            resources?: components["schemas"]["CohortFlagConfig"][] | null;
+            pending: boolean;
         };
         /**
          * CohortNameResource
@@ -20549,120 +20412,21 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
-        };
-        /** CohortNameSection */
-        CohortNameSection: {
-            /** @description Currently selected name resource */
-            resource?: components["schemas"]["CohortNameResource"] | null;
-            /**
-             * Resources
-             * @description Available name resources
-             */
-            resources?: components["schemas"]["CohortNameResource"][] | null;
-        };
-        /**
-         * CohortProfile
-         * @description Profile for cohort.
-         */
-        CohortProfile: {
-            /**
-             * Profile Id
-             * @description Profile UUID
-             */
-            profile_id?: string | null;
-            /**
-             * Name
-             * @description Profile name
-             */
-            name?: string | null;
-            /**
-             * Description
-             * @description Profile description
-             */
-            description?: string | null;
-            /**
-             * Generated
-             * @description Whether this was AI-generated
-             */
-            generated?: boolean | null;
-            /**
-             * Mcp
-             * @description Whether created via MCP
-             */
-            mcp?: boolean | null;
-            /**
-             * Suggested
-             * @description Whether this is a suggested option
-             */
-            suggested?: boolean;
-            /**
-             * Selected
-             * @description Whether this is currently selected
-             */
-            selected?: boolean;
-            /**
-             * Pending
-             * @description Whether this selection is pending acceptance
-             */
-            pending?: boolean;
-        };
-        /**
-         * CohortProfilePersona
-         * @description Profile persona for cohort.
-         */
-        CohortProfilePersona: {
-            /**
-             * Id
-             * @description Unique identifier
-             */
-            id?: string | null;
-            /**
-             * Profile Id
-             * @description Associated profile UUID
-             */
-            profile_id?: string | null;
-            /**
-             * Persona Id
-             * @description Associated persona UUID
-             */
-            persona_id?: string | null;
-            /**
-             * Generated
-             * @description Whether this was AI-generated
-             */
-            generated?: boolean | null;
-            /**
-             * Mcp
-             * @description Whether created via MCP
-             */
-            mcp?: boolean | null;
-            /**
-             * Suggested
-             * @description Whether this is a suggested option
-             */
-            suggested?: boolean;
-            /**
-             * Selected
-             * @description Whether this is currently selected
-             */
-            selected?: boolean;
-            /**
-             * Pending
-             * @description Whether this selection is pending acceptance
-             */
-            pending?: boolean;
+            pending: boolean;
         };
         /**
          * CohortPersonaResource
@@ -20732,44 +20496,119 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
+            pending: boolean;
         };
-        /** CohortProfilePersonaSection */
-        CohortProfilePersonaSection: {
+        /**
+         * CohortProfile
+         * @description Profile for cohort.
+         */
+        CohortProfile: {
             /**
-             * Current
-             * @description Currently selected profile personas
+             * Profile Id
+             * @description Profile UUID
              */
-            current?: components["schemas"]["CohortProfilePersona"][] | null;
+            profile_id?: string | null;
             /**
-             * Resources
-             * @description Available profile personas
+             * Name
+             * @description Profile name
              */
-            resources?: components["schemas"]["CohortProfilePersona"][] | null;
+            name?: string | null;
+            /**
+             * Description
+             * @description Profile description
+             */
+            description?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Mcp
+             * @description Whether created via MCP
+             */
+            mcp?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
-        /** CohortProfileSection */
-        CohortProfileSection: {
+        /**
+         * CohortProfilePersona
+         * @description Profile persona for cohort.
+         */
+        CohortProfilePersona: {
             /**
-             * Current
-             * @description Currently selected profiles
+             * Id
+             * @description Unique identifier
              */
-            current?: components["schemas"]["CohortProfile"][] | null;
+            id?: string | null;
             /**
-             * Resources
-             * @description Available profiles
+             * Profile Id
+             * @description Associated profile UUID
              */
-            resources?: components["schemas"]["CohortProfile"][] | null;
+            profile_id?: string | null;
+            /**
+             * Persona Id
+             * @description Associated persona UUID
+             */
+            persona_id?: string | null;
+            /**
+             * Generated
+             * @description Whether this was AI-generated
+             */
+            generated?: boolean | null;
+            /**
+             * Mcp
+             * @description Whether created via MCP
+             */
+            mcp?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * CohortResultItem
@@ -20825,18 +20664,21 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
+            pending: boolean;
         };
         /**
          * CohortSimulationAvailability
@@ -20876,31 +20718,21 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
-        };
-        /** CohortSimulationAvailabilitySection */
-        CohortSimulationAvailabilitySection: {
-            /**
-             * Current
-             * @description Currently selected availability slots
-             */
-            current?: components["schemas"]["CohortSimulationAvailability"][] | null;
-            /**
-             * Resources
-             * @description Available availability slots
-             */
-            resources?: components["schemas"]["CohortSimulationAvailability"][] | null;
+            pending: boolean;
         };
         /**
          * CohortSimulationPosition
@@ -20935,44 +20767,21 @@ export interface components {
             /**
              * Suggested
              * @description Whether this is a suggested option
+             * @default false
              */
-            suggested?: boolean;
+            suggested: boolean;
             /**
              * Selected
              * @description Whether this is currently selected
+             * @default false
              */
-            selected?: boolean;
+            selected: boolean;
             /**
              * Pending
              * @description Whether this selection is pending acceptance
+             * @default false
              */
-            pending?: boolean;
-        };
-        /** CohortSimulationPositionSection */
-        CohortSimulationPositionSection: {
-            /**
-             * Current
-             * @description Currently selected simulation positions
-             */
-            current?: components["schemas"]["CohortSimulationPosition"][] | null;
-            /**
-             * Resources
-             * @description Available simulation positions
-             */
-            resources?: components["schemas"]["CohortSimulationPosition"][] | null;
-        };
-        /** CohortSimulationSection */
-        CohortSimulationSection: {
-            /**
-             * Current
-             * @description Currently selected simulations
-             */
-            current?: components["schemas"]["CohortSimulation"][] | null;
-            /**
-             * Resources
-             * @description Available simulations
-             */
-            resources?: components["schemas"]["CohortSimulation"][] | null;
+            pending: boolean;
         };
         /** ColumnInfo */
         ColumnInfo: {
@@ -21504,6 +21313,17 @@ export interface components {
              * @description List of cohorts to create
              */
             cohorts: components["schemas"]["CreateCohortItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateCohortApiResponse
@@ -21515,6 +21335,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["CohortResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateCohortApiResponse
@@ -21526,6 +21351,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["CohortResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateCohortItem
@@ -22945,6 +22775,17 @@ export interface components {
              * @description List of scenarios to create
              */
             scenarios: components["schemas"]["CreateScenarioItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant create
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * CreateScenarioApiResponse
@@ -22956,6 +22797,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ScenarioResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateScenarioApiResponse
@@ -22967,6 +22813,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ScenarioResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * CreateScenarioItem
@@ -24411,6 +24262,17 @@ export interface components {
              * @description Cohort UUIDs to delete
              */
             cohort_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteCohortApiResponse
@@ -24422,6 +24284,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DeleteCohortResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteCohortResult
@@ -24911,6 +24778,17 @@ export interface components {
              * @description UUIDs of scenarios to delete
              */
             scenario_ids: string[];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — confirms or rejects a dormant delete
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (confirm deletion) or reject (restore). Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DeleteScenarioApiResponse
@@ -24922,6 +24800,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["DeleteScenarioResult"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DeleteScenarioResult
@@ -25774,90 +25657,6 @@ export interface components {
             upload_id: string;
         };
         /**
-         * DraftFormState
-         * @description Full form state after draft patch — server is source of truth.
-         *
-         *     Client replaces its local form state with this after every successful patch.
-         *     Includes both resolved IDs and echoed values for AI model feedback.
-         */
-        DraftFormState: {
-            /**
-             * Name Id
-             * @description Currently selected name resource UUID
-             */
-            name_id?: string | null;
-            /**
-             * Name
-             * @description Name value that was saved
-             */
-            name?: string | null;
-            /**
-             * Description Id
-             * @description Currently selected description resource UUID
-             */
-            description_id?: string | null;
-            /**
-             * Description
-             * @description Description value that was saved
-             */
-            description?: string | null;
-            /**
-             * Instructions Id
-             * @description Currently selected instruction resource UUID
-             */
-            instructions_id?: string | null;
-            /**
-             * Instructions
-             * @description Instructions value that was saved
-             */
-            instructions?: string | null;
-            /**
-             * Color Id
-             * @description Currently selected color resource UUID
-             */
-            color_id?: string | null;
-            /**
-             * Color
-             * @description Color value that was saved (hex code)
-             */
-            color?: string | null;
-            /**
-             * Icon Id
-             * @description Currently selected icon resource UUID
-             */
-            icon_id?: string | null;
-            /**
-             * Icon
-             * @description Icon value that was saved
-             */
-            icon?: string | null;
-            /**
-             * Active Flag Id
-             * @description Currently selected flag option UUID
-             */
-            active_flag_id?: string | null;
-            /**
-             * Department Ids
-             * @description Currently associated department UUIDs
-             */
-            department_ids?: string[];
-            /**
-             * Example Ids
-             * @description Currently associated example resource UUIDs
-             */
-            example_ids?: string[];
-            /**
-             * Parameter Field Ids
-             * @description Currently associated parameter field UUIDs
-             */
-            parameter_field_ids?: string[];
-            /**
-             * Voice Ids
-             * @description Currently associated voice resource UUIDs
-             */
-            voice_ids?: string[];
-        };
-        /**
          * DraftProfilePersonaValue
          * @description Value for creating a profile_persona resource via draft.
          */
@@ -26084,6 +25883,17 @@ export interface components {
              * @description Cohort UUID to duplicate
              */
             cohort_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateCohortApiResponse
@@ -26106,6 +25916,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /** DuplicateDepartmentApiRequest */
         DuplicateDepartmentApiRequest: {
@@ -26438,6 +26253,17 @@ export interface components {
              * @description UUID of the scenario to duplicate
              */
             scenario_id: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant duplicate
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * DuplicateScenarioApiResponse
@@ -26460,6 +26286,11 @@ export interface components {
              * @description Human-readable result message
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * DuplicateSettingApiRequest
@@ -32636,7 +32467,7 @@ export interface components {
         };
         /**
          * GetCohortApiRequest
-         * @description Request for getting a single cohort.
+         * @description Request model for get cohort endpoint.
          */
         GetCohortApiRequest: {
             /**
@@ -32659,56 +32490,26 @@ export interface components {
              * @description Cache snapshot key for consistent reads across related requests
              */
             snapshot_key?: string | null;
-            /**
-             * Names
-             * @description Filter options for names section
-             */
-            names?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Descriptions
-             * @description Filter options for descriptions section
-             */
-            descriptions?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Flags
-             * @description Filter options for flags section
-             */
-            flags?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Departments
-             * @description Filter options for departments section
-             */
-            departments?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Simulations
-             * @description Filter options for simulations section
-             */
-            simulations?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Simulation Positions
-             * @description Filter options for simulation positions section
-             */
-            simulation_positions?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Simulation Availability
-             * @description Filter options for simulation availability section
-             */
-            simulation_availability?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Profiles
-             * @description Filter options for profiles section
-             */
-            profiles?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Profile Personas
-             * @description Filter options for profile personas section
-             */
-            profile_personas?: components["schemas"]["SectionFilter"] | null;
-            /**
-             * Personas
-             * @description Filter options for personas section
-             */
-            personas?: components["schemas"]["SectionFilter"] | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for simulations section */
+            simulations?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for simulation positions section */
+            simulation_positions?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for simulation availability section */
+            simulation_availability?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for profiles section */
+            profiles?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for profile personas section */
+            profile_personas?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
+            /** @description Filter options for personas section */
+            personas?: components["schemas"]["app__infra__cohort__types__SectionFilter"] | null;
             /**
              * Descriptions Search
              * @description Legacy search query for descriptions
@@ -32739,7 +32540,7 @@ export interface components {
          * GetCohortApiResponse
          * @description Response for getting a single cohort.
          */
-        "GetCohortApiResponse-Input": {
+        GetCohortApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current user
@@ -32770,21 +32571,6 @@ export interface components {
              * @description Whether AI generation is available
              */
             show_ai_generate?: boolean | null;
-            /**
-             * Basic Show Ai Generate
-             * @description Legacy AI-generate flag for the basic step
-             */
-            basic_show_ai_generate?: boolean | null;
-            /**
-             * Simulations Step Show Ai Generate
-             * @description Legacy AI-generate flag for the simulations step
-             */
-            simulations_step_show_ai_generate?: boolean | null;
-            /**
-             * Profiles Step Show Ai Generate
-             * @description Legacy AI-generate flag for the profiles step
-             */
-            profiles_step_show_ai_generate?: boolean | null;
             /**
              * Names
              * @description Name resources with selected/suggested flags
@@ -32840,42 +32626,6 @@ export interface components {
              * @description Pending resource IDs from the draft, when available
              */
             pending_ids?: string[] | null;
-        };
-        /**
-         * GetCohortApiResponse
-         * @description Response for getting a single cohort.
-         */
-        "GetCohortApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current user
-             */
-            actor_name?: string | null;
-            /**
-             * Cohort Exists
-             * @description Whether the cohort exists
-             */
-            cohort_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason editing is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description Associated group UUID
-             */
-            group_id?: string | null;
-            /**
-             * Show Ai Generate
-             * @description Whether AI generation is available
-             */
-            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
              * @description Legacy AI-generate flag for the basic step
@@ -32891,61 +32641,6 @@ export interface components {
              * @description Legacy AI-generate flag for the profiles step
              */
             profiles_step_show_ai_generate?: boolean | null;
-            /**
-             * Names
-             * @description Name resources with selected/suggested flags
-             */
-            names?: components["schemas"]["CohortNameResource"][] | null;
-            /**
-             * Descriptions
-             * @description Description resources with selected/suggested flags
-             */
-            descriptions?: components["schemas"]["CohortDescriptionResource"][] | null;
-            /**
-             * Flags
-             * @description Flag resources with selected/suggested flags
-             */
-            flags?: components["schemas"]["CohortFlagConfig"][] | null;
-            /**
-             * Departments
-             * @description Department resources with selected/suggested flags
-             */
-            departments?: components["schemas"]["CohortDepartment"][] | null;
-            /**
-             * Simulations
-             * @description Simulation resources with selected/suggested flags
-             */
-            simulations?: components["schemas"]["CohortSimulation"][] | null;
-            /**
-             * Simulation Positions
-             * @description Simulation position resources with selected/suggested flags
-             */
-            simulation_positions?: components["schemas"]["CohortSimulationPosition"][] | null;
-            /**
-             * Simulation Availability
-             * @description Simulation availability resources with selected/suggested flags
-             */
-            simulation_availability?: components["schemas"]["CohortSimulationAvailability"][] | null;
-            /**
-             * Profiles
-             * @description Profile resources with selected/suggested flags
-             */
-            profiles?: components["schemas"]["CohortProfile"][] | null;
-            /**
-             * Profile Personas
-             * @description Profile persona resources with selected/suggested flags
-             */
-            profile_personas?: components["schemas"]["CohortProfilePersona"][] | null;
-            /**
-             * Personas
-             * @description Persona resources with selected/suggested flags
-             */
-            personas?: components["schemas"]["CohortPersonaResource"][] | null;
-            /**
-             * Pending Ids
-             * @description Pending resource IDs from the draft, when available
-             */
-            pending_ids?: string[] | null;
         };
         /** GetCohortDraftResponse */
         GetCohortDraftResponse: {
@@ -34803,23 +34498,23 @@ export interface components {
              */
             snapshot_key?: string | null;
             /** @description Filter options for names section */
-            names?: components["schemas"]["SectionFilter"] | null;
+            names?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for descriptions section */
-            descriptions?: components["schemas"]["SectionFilter"] | null;
+            descriptions?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for colors section */
-            colors?: components["schemas"]["SectionFilter"] | null;
+            colors?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for icons section */
-            icons?: components["schemas"]["SectionFilter"] | null;
+            icons?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for instructions section */
-            instructions?: components["schemas"]["SectionFilter"] | null;
+            instructions?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for departments section */
-            departments?: components["schemas"]["SectionFilter"] | null;
+            departments?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for examples section */
-            examples?: components["schemas"]["SectionFilter"] | null;
+            examples?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for parameter fields section */
-            parameter_fields?: components["schemas"]["SectionFilter"] | null;
+            parameter_fields?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
             /** @description Filter options for voices section */
-            voices?: components["schemas"]["SectionFilter"] | null;
+            voices?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
         };
         /**
          * GetPersonaApiResponse
@@ -35073,41 +34768,6 @@ export interface components {
              * @description List of persona drafts
              */
             entries?: components["schemas"]["GetPersonaDraftResponse"][] | null;
-        };
-        /** GetPersonaResponse */
-        GetPersonaResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Icon */
-            icon: string;
-            /** Color */
-            color: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Instructions */
-            instructions: string;
-            /** Examples */
-            examples: string[];
-            /** Parameter Field Ids */
-            parameter_field_ids: string[];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Active */
-            active: boolean;
-            /** Generated */
-            generated: boolean;
-            /** Mcp */
-            mcp: boolean;
         };
         /**
          * GetPracticeRequest
@@ -35877,20 +35537,20 @@ export interface components {
              * @description UUID of the draft
              */
             draft_id?: string | null;
-            names?: components["schemas"]["SectionFilter"] | null;
-            descriptions?: components["schemas"]["SectionFilter"] | null;
-            problem_statements?: components["schemas"]["SectionFilter"] | null;
-            flags?: components["schemas"]["SectionFilter"] | null;
-            departments?: components["schemas"]["SectionFilter"] | null;
-            personas?: components["schemas"]["SectionFilter"] | null;
-            documents?: components["schemas"]["SectionFilter"] | null;
-            parameters?: components["schemas"]["SectionFilter"] | null;
-            parameter_fields?: components["schemas"]["SectionFilter"] | null;
-            objectives?: components["schemas"]["SectionFilter"] | null;
-            images?: components["schemas"]["SectionFilter"] | null;
-            videos?: components["schemas"]["SectionFilter"] | null;
-            questions?: components["schemas"]["SectionFilter"] | null;
-            options?: components["schemas"]["SectionFilter"] | null;
+            names?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            descriptions?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            problem_statements?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            flags?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            departments?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            personas?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            documents?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            parameters?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            parameter_fields?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            objectives?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            images?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            videos?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            questions?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
+            options?: components["schemas"]["app__infra__persona__types__SectionFilter"] | null;
         };
         /**
          * GetScenarioApiResponse
@@ -36541,35 +36201,68 @@ export interface components {
         };
         /**
          * GetSimulationApiRequest
-         * @description Request for getting a single simulation.
+         * @description Request model for get simulation endpoint.
          */
         GetSimulationApiRequest: {
             /**
-             * Simulation Id
+             * Id
              * @description UUID of the simulation to retrieve
+             */
+            id?: string | null;
+            /**
+             * Simulation Id
+             * @description Legacy alias for the simulation UUID
              */
             simulation_id?: string | null;
             /**
              * Draft Id
-             * @description UUID of the draft to retrieve
+             * @description UUID of the draft to load instead of published state
              */
             draft_id?: string | null;
             /**
+             * Snapshot Key
+             * @description Cache snapshot key for consistent reads across related requests
+             */
+            snapshot_key?: string | null;
+            /** @description Filter options for names section */
+            names?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for descriptions section */
+            descriptions?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for flags section */
+            flags?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for departments section */
+            departments?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for scenarios section */
+            scenarios?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for scenario flags section */
+            scenario_flags?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for scenario positions section */
+            scenario_positions?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for scenario rubrics section */
+            scenario_rubrics?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /** @description Filter options for scenario time limits section */
+            scenario_time_limits?: components["schemas"]["app__infra__simulation__types__SectionFilter"] | null;
+            /**
+             * Filter Scenario Ids
+             * @description Legacy scenario ID filter for nested scenario resources
+             */
+            filter_scenario_ids?: string[] | null;
+            /**
              * Scenario Search
-             * @description Search text to filter scenarios
+             * @description Legacy search text for scenarios
              */
             scenario_search?: string | null;
             /**
-             * Filter Scenario Ids
-             * @description Filter by scenario UUIDs
+             * Scenario Show Selected
+             * @description Legacy selected-only filter for scenarios
              */
-            filter_scenario_ids?: string[] | null;
+            scenario_show_selected?: boolean | null;
         };
         /**
          * GetSimulationApiResponse
-         * @description Section-first response for simulation editor.
+         * @description Response model for get simulation endpoint.
          */
-        "GetSimulationApiResponse-Input": {
+        GetSimulationApiResponse: {
             /**
              * Actor Name
              * @description Display name of the current actor
@@ -36596,87 +36289,60 @@ export interface components {
              */
             group_id?: string | null;
             /**
-             * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * Show Ai Generate
+             * @description Whether AI generation is available
              */
-            basic_show_ai_generate?: boolean | null;
-            /** @description Name section data */
-            names?: components["schemas"]["SimulationNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["SimulationDescriptionSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["SimulationFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["SimulationDepartmentSection"] | null;
-            /** @description Scenario section data */
-            scenarios?: components["schemas"]["SimulationScenarioSection"] | null;
-            /** @description Scenario flag section data */
-            scenario_flags?: components["schemas"]["SimulationScenarioFlagSection"] | null;
-            /** @description Scenario position section data */
-            scenario_positions?: components["schemas"]["SimulationScenarioPositionSection"] | null;
-            /** @description Scenario rubric section data */
-            scenario_rubrics?: components["schemas"]["SimulationScenarioRubricSection"] | null;
-            /** @description Scenario time limit section data */
-            scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimitSection"] | null;
-            /**
-             * Rubrics
-             * @description Available rubric catalog items
-             */
-            rubrics?: components["schemas"]["SimulationRubric"][] | null;
-        };
-        /**
-         * GetSimulationApiResponse
-         * @description Section-first response for simulation editor.
-         */
-        "GetSimulationApiResponse-Output": {
-            /**
-             * Actor Name
-             * @description Display name of the current actor
-             */
-            actor_name?: string | null;
-            /**
-             * Simulation Exists
-             * @description Whether the simulation exists
-             */
-            simulation_exists?: boolean | null;
-            /**
-             * Can Edit
-             * @description Whether the current user can edit
-             */
-            can_edit?: boolean | null;
-            /**
-             * Disabled Reason
-             * @description Reason the simulation is disabled
-             */
-            disabled_reason?: string | null;
-            /**
-             * Group Id
-             * @description UUID of the owning group
-             */
-            group_id?: string | null;
+            show_ai_generate?: boolean | null;
             /**
              * Basic Show Ai Generate
-             * @description Show AI generate for basic step
+             * @description Legacy basic-step AI generate flag
              */
             basic_show_ai_generate?: boolean | null;
-            /** @description Name section data */
-            names?: components["schemas"]["SimulationNameSection"] | null;
-            /** @description Description section data */
-            descriptions?: components["schemas"]["SimulationDescriptionSection"] | null;
-            /** @description Flag section data */
-            flags?: components["schemas"]["SimulationFlagSection"] | null;
-            /** @description Department section data */
-            departments?: components["schemas"]["SimulationDepartmentSection"] | null;
-            /** @description Scenario section data */
-            scenarios?: components["schemas"]["SimulationScenarioSection"] | null;
-            /** @description Scenario flag section data */
-            scenario_flags?: components["schemas"]["SimulationScenarioFlagSection"] | null;
-            /** @description Scenario position section data */
-            scenario_positions?: components["schemas"]["SimulationScenarioPositionSection"] | null;
-            /** @description Scenario rubric section data */
-            scenario_rubrics?: components["schemas"]["SimulationScenarioRubricSection"] | null;
-            /** @description Scenario time limit section data */
-            scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimitSection"] | null;
+            /**
+             * Names
+             * @description Name resources with selected/suggested flags
+             */
+            names?: components["schemas"]["SimulationNameResource"][] | null;
+            /**
+             * Descriptions
+             * @description Description resources with selected/suggested flags
+             */
+            descriptions?: components["schemas"]["SimulationDescriptionResource"][] | null;
+            /**
+             * Flags
+             * @description Flag configs with selected/suggested flags
+             */
+            flags?: components["schemas"]["SimulationFlagConfig"][] | null;
+            /**
+             * Departments
+             * @description Department resources with selected/suggested flags
+             */
+            departments?: components["schemas"]["SimulationDepartment"][] | null;
+            /**
+             * Scenarios
+             * @description Scenario resources with selected/suggested flags
+             */
+            scenarios?: components["schemas"]["SimulationScenario"][] | null;
+            /**
+             * Scenario Flags
+             * @description Scenario flag resources with selected/suggested flags
+             */
+            scenario_flags?: components["schemas"]["SimulationScenarioFlag"][] | null;
+            /**
+             * Scenario Positions
+             * @description Scenario position resources with selected/suggested flags
+             */
+            scenario_positions?: components["schemas"]["SimulationScenarioPosition"][] | null;
+            /**
+             * Scenario Rubrics
+             * @description Scenario rubric resources with selected/suggested flags
+             */
+            scenario_rubrics?: components["schemas"]["SimulationScenarioRubric"][] | null;
+            /**
+             * Scenario Time Limits
+             * @description Scenario time limit resources with selected/suggested flags
+             */
+            scenario_time_limits?: components["schemas"]["SimulationScenarioTimeLimit"][] | null;
             /**
              * Rubrics
              * @description Available rubric catalog items
@@ -37957,6 +37623,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupCohortApiResponse
@@ -37979,6 +37656,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupDashboardApiRequest
@@ -39076,6 +38758,17 @@ export interface components {
              * @description Optional name for the group
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant group
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * GroupScenarioApiResponse
@@ -39098,6 +38791,11 @@ export interface components {
              * @description The name that was set (if provided)
              */
             name?: string | null;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * GroupSessionApiRequest
@@ -44418,16 +44116,7 @@ export interface components {
         };
         /**
          * PatchCohortDraftApiRequest
-         * @description Request model for new-style cohort draft endpoint.
-         *
-         *     Dual-mode for creatable resources:
-         *       - Single-select: name/name_id, description/description_id
-         *       - Multi-select compound: simulation_positions, simulation_availability,
-         *         profile_personas (values create resources, created IDs merged with existing IDs)
-         *     ID-only for non-creatable resources:
-         *       - flag_id, department_ids, simulation_ids, profile_ids
-         *
-         *     Client always sends full state (append-only — each write is a new snapshot).
+         * @description Request model for cohort draft endpoint.
          */
         PatchCohortDraftApiRequest: {
             /**
@@ -44553,14 +44242,15 @@ export interface components {
             /**
              * Accept
              * @description Accept or reject dormant draft state
+             * @default true
              */
-            accept?: boolean;
+            accept: boolean;
         };
         /**
          * PatchCohortDraftApiResponse
          * @description Response model for new-style cohort draft endpoint.
          */
-        PatchCohortDraftApiResponse: {
+        "PatchCohortDraftApiResponse-Input": {
             /**
              * Success
              * @description Whether the operation succeeded
@@ -44584,7 +44274,37 @@ export interface components {
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["CohortDraftFormState"] | null;
+            form_state?: components["schemas"]["app__infra__cohort__types__DraftFormState"] | null;
+        };
+        /**
+         * PatchCohortDraftApiResponse
+         * @description Response model for new-style cohort draft endpoint.
+         */
+        "PatchCohortDraftApiResponse-Output": {
+            /**
+             * Success
+             * @description Whether the operation succeeded
+             */
+            success: boolean;
+            /**
+             * Draft Id
+             * Format: uuid
+             * @description Draft UUID
+             */
+            draft_id: string;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key: string;
+            /**
+             * Message
+             * @description Human-readable result message
+             */
+            message: string;
+            /** @description Server-authoritative form state */
+            form_state?: components["schemas"]["app__infra__cohort__types__DraftFormState"] | null;
         };
         /**
          * PatchDepartmentDraftApiRequest
@@ -45274,7 +44994,7 @@ export interface components {
              */
             message: string;
             /** @description Complete form state after patch — client should replace local state */
-            form_state: components["schemas"]["DraftFormState"];
+            form_state: components["schemas"]["app__infra__persona__types__DraftFormState"];
         };
         /**
          * PatchProfileDraftApiRequest
@@ -45669,6 +45389,17 @@ export interface components {
              * @description Resource IDs to keep as pending (active=false on connection)
              */
             pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant draft
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchScenarioDraftApiResponse
@@ -45686,6 +45417,12 @@ export interface components {
              * @description UUID of the saved draft
              */
             draft_id: string;
+            /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation (same as draft entry ID)
+             */
+            idempotency_key: string;
             /**
              * Message
              * @description Human-readable result message
@@ -45813,8 +45550,13 @@ export interface components {
          */
         PatchSimulationDraftApiRequest: {
             /**
+             * Draft Id
+             * @description Existing draft UUID to patch
+             */
+            draft_id?: string | null;
+            /**
              * Input Draft Id
-             * @description UUID of the input draft
+             * @description Legacy alias for the input draft UUID
              */
             input_draft_id?: string | null;
             /**
@@ -45892,6 +45634,22 @@ export interface components {
              * @description Scenario time limit values to create
              */
             scenario_time_limits?: components["schemas"]["DraftScenarioTimeLimitValue"][] | null;
+            /**
+             * Pending Ids
+             * @description Resource IDs to keep as pending (not supported by current simulation draft black boxes)
+             */
+            pending_ids?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant draft
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * PatchSimulationDraftApiResponse
@@ -45910,12 +45668,18 @@ export interface components {
              */
             draft_id: string;
             /**
+             * Idempotency Key
+             * Format: uuid
+             * @description Idempotency key for this draft operation
+             */
+            idempotency_key: string;
+            /**
              * Message
              * @description Human-readable result message
              */
             message: string;
             /** @description Server-authoritative form state */
-            form_state?: components["schemas"]["SimulationDraftFormState"] | null;
+            form_state: components["schemas"]["app__infra__simulation__types__DraftFormState"];
         };
         /**
          * PatchToolDraftApiRequest
@@ -47151,6 +46915,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemCohortApiResponse
@@ -47175,6 +46950,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemDashboardApiRequest
@@ -47983,6 +47763,17 @@ export interface components {
              * @description Problem description (max 1000 chars)
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant problem
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ProblemScenarioApiResponse
@@ -48007,6 +47798,11 @@ export interface components {
              * @default Problem created successfully
              */
             message: string;
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * ProblemSessionApiRequest
@@ -49194,6 +48990,28 @@ export interface components {
             history_profile_search?: string | null;
         };
         /**
+         * RefreshCohortApiRequest
+         * @description Request model for cohort refresh endpoint.
+         */
+        RefreshCohortApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: cohort_drafts_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
+        };
+        /**
          * RefreshResponse
          * @description Standard response for composable refresh endpoints.
          *
@@ -49211,6 +49029,28 @@ export interface components {
              * @description Idempotency key echoed back for client correlation
              */
             idempotency_key?: string | null;
+        };
+        /**
+         * RefreshScenarioApiRequest
+         * @description Request model for scenario refresh endpoint.
+         */
+        RefreshScenarioApiRequest: {
+            /**
+             * Targets
+             * @description MV targets to refresh (omit for all). Options: scenario_drafts_mv, runs_mv, messages_mv, calls_mv, groups_mv, group_names_mv
+             */
+            targets?: string[] | null;
+            /**
+             * Idempotency Key
+             * @description Operation key for ack
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept or reject. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * ReplacementEntry
@@ -52681,42 +52521,6 @@ export interface components {
             status: string;
         };
         /**
-         * SectionFilter
-         * @description Per-section filter options for GET requests.
-         */
-        SectionFilter: {
-            /**
-             * Search
-             * @description Filter options by search text
-             */
-            search?: string | null;
-            /**
-             * Limit
-             * @description Max options to return
-             */
-            limit?: number | null;
-            /**
-             * Selected
-             * @description Only return selected items
-             */
-            selected?: boolean | null;
-            /**
-             * Suggested
-             * @description Only return suggested items
-             */
-            suggested?: boolean | null;
-            /**
-             * Include
-             * @description Include this section in response (default true)
-             */
-            include?: boolean | null;
-            /**
-             * Parameter Ids
-             * @description Parameter group IDs to filter by (parameter_fields section only)
-             */
-            parameter_ids?: string[] | null;
-        };
-        /**
          * SessionListItem
          * @description Single session in the list response with hydrated metadata.
          */
@@ -53206,19 +53010,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** SimulationDepartmentSection */
-        SimulationDepartmentSection: {
             /**
-             * Current
-             * @description Currently selected departments
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["SimulationDepartment"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available departments
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["SimulationDepartment"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SimulationDescriptionResource
@@ -53240,76 +53049,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** SimulationDescriptionSection */
-        SimulationDescriptionSection: {
-            /** @description Currently selected description resource */
-            resource?: components["schemas"]["SimulationDescriptionResource"] | null;
             /**
-             * Resources
-             * @description Available description resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["SimulationDescriptionResource"][] | null;
-        };
-        /**
-         * SimulationDraftFormState
-         * @description Full form state after draft patch — server is source of truth.
-         *
-         *     Client replaces its local form state with this after every successful patch.
-         */
-        SimulationDraftFormState: {
+            suggested: boolean;
             /**
-             * Name Id
-             * @description UUID of the selected name resource
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            name_id?: string | null;
+            selected: boolean;
             /**
-             * Description Id
-             * @description UUID of the selected description resource
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            description_id?: string | null;
-            /**
-             * Flag Ids
-             * @description Selected flag UUIDs
-             * @default []
-             */
-            flag_ids: string[];
-            /**
-             * Department Ids
-             * @description Selected department UUIDs
-             * @default []
-             */
-            department_ids: string[];
-            /**
-             * Scenario Ids
-             * @description Selected scenario UUIDs
-             * @default []
-             */
-            scenario_ids: string[];
-            /**
-             * Scenario Flag Ids
-             * @description Selected scenario flag UUIDs
-             * @default []
-             */
-            scenario_flag_ids: string[];
-            /**
-             * Scenario Position Ids
-             * @description Selected scenario position UUIDs
-             * @default []
-             */
-            scenario_position_ids: string[];
-            /**
-             * Scenario Rubric Ids
-             * @description Selected scenario rubric UUIDs
-             * @default []
-             */
-            scenario_rubric_ids: string[];
-            /**
-             * Scenario Time Limit Ids
-             * @description Selected scenario time limit UUIDs
-             * @default []
-             */
-            scenario_time_limit_ids: string[];
+            pending: boolean;
         };
         /**
          * SimulationFieldError
@@ -53374,19 +53131,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** SimulationFlagSection */
-        SimulationFlagSection: {
             /**
-             * Current
-             * @description Currently selected flags
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["SimulationFlagConfig"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available flag configs
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["SimulationFlagConfig"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SimulationNameResource
@@ -53408,16 +53170,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** SimulationNameSection */
-        SimulationNameSection: {
-            /** @description Currently selected name resource */
-            resource?: components["schemas"]["SimulationNameResource"] | null;
             /**
-             * Resources
-             * @description Available name resources
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            resources?: components["schemas"]["SimulationNameResource"][] | null;
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SimulationResultItem
@@ -53536,6 +53306,24 @@ export interface components {
              * @description Whether to show questions
              */
             show_questions?: boolean | null;
+            /**
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
+             */
+            suggested: boolean;
+            /**
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
+             */
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SimulationScenarioFlag
@@ -53577,19 +53365,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** SimulationScenarioFlagSection */
-        SimulationScenarioFlagSection: {
             /**
-             * Current
-             * @description Currently selected scenario flags
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["SimulationScenarioFlag"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available scenario flags
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["SimulationScenarioFlag"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SimulationScenarioPosition
@@ -53616,19 +53409,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** SimulationScenarioPositionSection */
-        SimulationScenarioPositionSection: {
             /**
-             * Current
-             * @description Currently selected scenario positions
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["SimulationScenarioPosition"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available scenario positions
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["SimulationScenarioPosition"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SimulationScenarioRubric
@@ -53655,32 +53453,24 @@ export interface components {
              * @description Whether this was AI-generated
              */
             generated?: boolean | null;
-        };
-        /** SimulationScenarioRubricSection */
-        SimulationScenarioRubricSection: {
             /**
-             * Current
-             * @description Currently selected scenario rubrics
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["SimulationScenarioRubric"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available scenario rubrics
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["SimulationScenarioRubric"][] | null;
-        };
-        /** SimulationScenarioSection */
-        SimulationScenarioSection: {
+            selected: boolean;
             /**
-             * Current
-             * @description Currently selected scenarios
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
              */
-            current?: components["schemas"]["SimulationScenario"][] | null;
-            /**
-             * Resources
-             * @description Available scenarios
-             */
-            resources?: components["schemas"]["SimulationScenario"][] | null;
+            pending: boolean;
         };
         /**
          * SimulationScenarioTimeLimit
@@ -53712,19 +53502,24 @@ export interface components {
              * @description Whether the time limit is negative
              */
             negative?: boolean | null;
-        };
-        /** SimulationScenarioTimeLimitSection */
-        SimulationScenarioTimeLimitSection: {
             /**
-             * Current
-             * @description Currently selected scenario time limits
+             * Suggested
+             * @description Whether this is a suggested option
+             * @default false
              */
-            current?: components["schemas"]["SimulationScenarioTimeLimit"][] | null;
+            suggested: boolean;
             /**
-             * Resources
-             * @description Available scenario time limits
+             * Selected
+             * @description Whether this is currently selected
+             * @default false
              */
-            resources?: components["schemas"]["SimulationScenarioTimeLimit"][] | null;
+            selected: boolean;
+            /**
+             * Pending
+             * @description Whether this selection is pending acceptance
+             * @default false
+             */
+            pending: boolean;
         };
         /**
          * SkillFeedback
@@ -55701,6 +55496,17 @@ export interface components {
              * @description List of cohorts to update
              */
             cohorts: components["schemas"]["UpdateCohortItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateCohortApiResponse
@@ -55712,6 +55518,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["CohortResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateCohortApiResponse
@@ -55723,6 +55534,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["CohortResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateCohortItem
@@ -56942,6 +56758,17 @@ export interface components {
              * @description List of scenarios to update
              */
             scenarios: components["schemas"]["UpdateScenarioItem"][];
+            /**
+             * Idempotency Key
+             * @description Operation key for ack — promotes or rejects a dormant update
+             */
+            idempotency_key?: string | null;
+            /**
+             * Accept
+             * @description Accept (promote) or reject dormant state. Only meaningful with idempotency_key
+             * @default true
+             */
+            accept: boolean;
         };
         /**
          * UpdateScenarioApiResponse
@@ -56953,6 +56780,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ScenarioResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateScenarioApiResponse
@@ -56964,6 +56796,11 @@ export interface components {
              * @description List of operation results
              */
             results: components["schemas"]["ScenarioResultItem"][];
+            /**
+             * Idempotency Key
+             * @description Idempotency key echoed back for client correlation
+             */
+            idempotency_key?: string | null;
         };
         /**
          * UpdateScenarioItem
@@ -57757,6 +57594,119 @@ export interface components {
             upload_id?: string | null;
         };
         /**
+         * DraftFormState
+         * @description Full form state after draft patch — server is source of truth.
+         *
+         *     Client replaces its local form state with this after every successful patch.
+         */
+        app__infra__cohort__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Selected name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value that was saved
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Selected description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value that was saved
+             */
+            description?: string | null;
+            /**
+             * Flag Id
+             * @description Selected flag option UUID
+             */
+            flag_id?: string | null;
+            /**
+             * Flag
+             * @description Flag value that was saved
+             */
+            flag?: string | null;
+            /**
+             * Active Flag Id
+             * @description Selected active flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Active Flag
+             * @description Whether the active flag was enabled
+             */
+            active_flag?: boolean | null;
+            /**
+             * Department Ids
+             * @description Selected department UUIDs
+             */
+            department_ids?: string[];
+            /**
+             * Departments
+             * @description Department values that were saved
+             */
+            departments?: string[];
+            /**
+             * Simulation Ids
+             * @description Selected simulation UUIDs
+             */
+            simulation_ids?: string[];
+            /**
+             * Simulations
+             * @description Simulation values that were saved
+             */
+            simulations?: string[];
+            /**
+             * Simulation Position Ids
+             * @description Selected simulation position UUIDs
+             */
+            simulation_position_ids?: string[];
+            /**
+             * Simulation Positions
+             * @description Simulation position values that were saved
+             */
+            simulation_positions?: components["schemas"]["DraftSimulationPositionValue"][];
+            /**
+             * Simulation Availability Ids
+             * @description Selected simulation availability UUIDs
+             */
+            simulation_availability_ids?: string[];
+            /**
+             * Simulation Availability
+             * @description Simulation availability values that were saved
+             */
+            simulation_availability?: components["schemas"]["DraftSimulationAvailabilityValue"][];
+            /**
+             * Profile Ids
+             * @description Selected profile UUIDs
+             */
+            profile_ids?: string[];
+            /**
+             * Profiles
+             * @description Profile values that were saved
+             */
+            profiles?: string[];
+            /**
+             * Profile Persona Ids
+             * @description Selected profile persona UUIDs
+             */
+            profile_persona_ids?: string[];
+            /**
+             * Profile Personas
+             * @description Profile persona values that were saved
+             */
+            profile_personas?: components["schemas"]["DraftProfilePersonaValue"][];
+            /**
+             * Pending Ids
+             * @description Pending resource IDs retained on the draft
+             */
+            pending_ids?: string[];
+        };
+        /**
          * ExportCohortApiRequest
          * @description Request model for export cohort endpoint.
          */
@@ -57781,6 +57731,162 @@ export interface components {
              * @description Department IDs to filter by
              */
             filter_department_ids?: string[] | null;
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__cohort__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Reserved for parity with persona pattern
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
+         * DraftFormState
+         * @description Full form state after draft patch — server is source of truth.
+         *
+         *     Client replaces its local form state with this after every successful patch.
+         *     Includes both resolved IDs and echoed values for AI model feedback.
+         */
+        app__infra__persona__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description Currently selected name resource UUID
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Name value that was saved
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description Currently selected description resource UUID
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Description value that was saved
+             */
+            description?: string | null;
+            /**
+             * Instructions Id
+             * @description Currently selected instruction resource UUID
+             */
+            instructions_id?: string | null;
+            /**
+             * Instructions
+             * @description Instructions value that was saved
+             */
+            instructions?: string | null;
+            /**
+             * Color Id
+             * @description Currently selected color resource UUID
+             */
+            color_id?: string | null;
+            /**
+             * Color
+             * @description Color value that was saved (hex code)
+             */
+            color?: string | null;
+            /**
+             * Icon Id
+             * @description Currently selected icon resource UUID
+             */
+            icon_id?: string | null;
+            /**
+             * Icon
+             * @description Icon value that was saved
+             */
+            icon?: string | null;
+            /**
+             * Active Flag Id
+             * @description Currently selected flag option UUID
+             */
+            active_flag_id?: string | null;
+            /**
+             * Department Ids
+             * @description Currently associated department UUIDs
+             */
+            department_ids?: string[];
+            /**
+             * Example Ids
+             * @description Currently associated example resource UUIDs
+             */
+            example_ids?: string[];
+            /**
+             * Parameter Field Ids
+             * @description Currently associated parameter field UUIDs
+             */
+            parameter_field_ids?: string[];
+            /**
+             * Voice Ids
+             * @description Currently associated voice resource UUIDs
+             */
+            voice_ids?: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__persona__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Parameter group IDs to filter by (parameter_fields section only)
+             */
+            parameter_ids?: string[] | null;
         };
         /**
          * DraftImageValue
@@ -57870,6 +57976,118 @@ export interface components {
             length_seconds: number;
         };
         /**
+         * DraftFormState
+         * @description Full form state after draft patch — server is source of truth.
+         *
+         *     Client replaces its local form state with this after every successful patch.
+         */
+        app__infra__simulation__types__DraftFormState: {
+            /**
+             * Name Id
+             * @description UUID of the selected name resource
+             */
+            name_id?: string | null;
+            /**
+             * Name
+             * @description Saved name value
+             */
+            name?: string | null;
+            /**
+             * Description Id
+             * @description UUID of the selected description resource
+             */
+            description_id?: string | null;
+            /**
+             * Description
+             * @description Saved description value
+             */
+            description?: string | null;
+            /**
+             * Flag Ids
+             * @description Selected flag UUIDs
+             * @default []
+             */
+            flag_ids: string[];
+            /**
+             * Department Ids
+             * @description Selected department UUIDs
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Scenario Ids
+             * @description Selected scenario UUIDs
+             * @default []
+             */
+            scenario_ids: string[];
+            /**
+             * Scenario Flag Ids
+             * @description Selected scenario flag UUIDs
+             * @default []
+             */
+            scenario_flag_ids: string[];
+            /**
+             * Scenario Position Ids
+             * @description Selected scenario position UUIDs
+             * @default []
+             */
+            scenario_position_ids: string[];
+            /**
+             * Scenario Rubric Ids
+             * @description Selected scenario rubric UUIDs
+             * @default []
+             */
+            scenario_rubric_ids: string[];
+            /**
+             * Scenario Time Limit Ids
+             * @description Selected scenario time limit UUIDs
+             * @default []
+             */
+            scenario_time_limit_ids: string[];
+            /**
+             * Pending Ids
+             * @description Pending resource UUIDs (empty until tool-layer support exists)
+             * @default []
+             */
+            pending_ids: string[];
+        };
+        /**
+         * SectionFilter
+         * @description Per-section filter options for GET requests.
+         */
+        app__infra__simulation__types__SectionFilter: {
+            /**
+             * Search
+             * @description Filter options by search text
+             */
+            search?: string | null;
+            /**
+             * Limit
+             * @description Max options to return
+             */
+            limit?: number | null;
+            /**
+             * Selected
+             * @description Only return selected items
+             */
+            selected?: boolean | null;
+            /**
+             * Suggested
+             * @description Only return suggested items
+             */
+            suggested?: boolean | null;
+            /**
+             * Include
+             * @description Include this section in response (default true)
+             */
+            include?: boolean | null;
+            /**
+             * Parameter Ids
+             * @description Reserved for parity with persona pattern
+             */
+            parameter_ids?: string[] | null;
+        };
+        /**
          * ContentEntry
          * @description Agent-provided content entry for a message.
          */
@@ -57906,7 +58124,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    get_persona_personas_get_post: {
+    get_persona_persona_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57939,7 +58157,7 @@ export interface operations {
             };
         };
     };
-    search_persona_personas_search_post: {
+    search_persona_persona_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -57972,7 +58190,7 @@ export interface operations {
             };
         };
     };
-    create_persona_personas_create_post: {
+    create_persona_persona_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58005,7 +58223,7 @@ export interface operations {
             };
         };
     };
-    parse_persona_csv_personas_csv_post: {
+    parse_persona_csv_persona_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58014,7 +58232,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_persona_csv_personas_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_persona_csv_persona_csv_post"];
             };
         };
         responses: {
@@ -58038,7 +58256,7 @@ export interface operations {
             };
         };
     };
-    update_persona_personas_update_post: {
+    update_persona_persona_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58071,7 +58289,7 @@ export interface operations {
             };
         };
     };
-    duplicate_persona_personas_duplicate_post: {
+    duplicate_persona_persona_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58104,7 +58322,7 @@ export interface operations {
             };
         };
     };
-    delete_persona_personas_delete_post: {
+    delete_persona_persona_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58137,7 +58355,7 @@ export interface operations {
             };
         };
     };
-    patch_persona_draft_personas_draft_post: {
+    patch_persona_draft_persona_draft_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58170,7 +58388,7 @@ export interface operations {
             };
         };
     };
-    get_persona_drafts_personas_drafts_post: {
+    get_persona_drafts_persona_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58190,7 +58408,7 @@ export interface operations {
             };
         };
     };
-    get_persona_context_personas_context_post: {
+    get_persona_context_persona_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58223,7 +58441,7 @@ export interface operations {
             };
         };
     };
-    get_persona_docs_endpoint_personas_docs_post: {
+    get_persona_docs_endpoint_persona_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58256,7 +58474,7 @@ export interface operations {
             };
         };
     };
-    export_personas_personas_export_post: {
+    export_personas_persona_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58289,7 +58507,7 @@ export interface operations {
             };
         };
     };
-    generate_persona_personas_generate_post: {
+    generate_persona_persona_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58322,7 +58540,7 @@ export interface operations {
             };
         };
     };
-    generations_persona_personas_generations_post: {
+    generations_persona_persona_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58355,7 +58573,7 @@ export interface operations {
             };
         };
     };
-    group_persona_personas_group_post: {
+    group_persona_persona_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58388,7 +58606,7 @@ export interface operations {
             };
         };
     };
-    problem_persona_personas_problem_post: {
+    problem_persona_persona_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58421,7 +58639,7 @@ export interface operations {
             };
         };
     };
-    persona_refresh_personas_refresh_post: {
+    persona_refresh_persona_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58441,7 +58659,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_scenarios_get_post: {
+    get_scenario_scenario_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58474,7 +58692,7 @@ export interface operations {
             };
         };
     };
-    search_scenario_scenarios_search_post: {
+    search_scenario_scenario_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58507,7 +58725,7 @@ export interface operations {
             };
         };
     };
-    create_scenario_scenarios_create_post: {
+    create_scenario_scenario_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58540,7 +58758,7 @@ export interface operations {
             };
         };
     };
-    parse_scenario_csv_scenarios_csv_post: {
+    parse_scenario_csv_scenario_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58549,7 +58767,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_scenario_csv_scenarios_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_scenario_csv_scenario_csv_post"];
             };
         };
         responses: {
@@ -58573,7 +58791,7 @@ export interface operations {
             };
         };
     };
-    update_scenario_scenarios_update_post: {
+    update_scenario_scenario_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58606,7 +58824,7 @@ export interface operations {
             };
         };
     };
-    duplicate_scenario_scenarios_duplicate_post: {
+    duplicate_scenario_scenario_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58639,7 +58857,7 @@ export interface operations {
             };
         };
     };
-    delete_scenario_scenarios_delete_post: {
+    delete_scenario_scenario_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58672,7 +58890,7 @@ export interface operations {
             };
         };
     };
-    patch_scenario_draft_scenarios_draft_patch: {
+    patch_scenario_draft_scenario_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -58705,7 +58923,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_drafts_scenarios_drafts_post: {
+    get_scenario_drafts_scenario_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58725,7 +58943,7 @@ export interface operations {
             };
         };
     };
-    export_scenarios_scenarios_export_post: {
+    export_scenarios_scenario_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58758,7 +58976,7 @@ export interface operations {
             };
         };
     };
-    generate_scenario_scenarios_generate_post: {
+    generate_scenario_scenario_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58791,7 +59009,7 @@ export interface operations {
             };
         };
     };
-    generations_scenario_scenarios_generations_post: {
+    generations_scenario_scenario_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58824,7 +59042,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_docs_endpoint_scenarios_docs_post: {
+    get_scenario_docs_endpoint_scenario_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58857,7 +59075,7 @@ export interface operations {
             };
         };
     };
-    get_scenario_context_scenarios_context_post: {
+    get_scenario_context_scenario_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58890,7 +59108,7 @@ export interface operations {
             };
         };
     };
-    group_scenario_scenarios_group_post: {
+    group_scenario_scenario_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58923,7 +59141,7 @@ export interface operations {
             };
         };
     };
-    problem_scenario_scenarios_problem_post: {
+    problem_scenario_scenario_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -58956,14 +59174,18 @@ export interface operations {
             };
         };
     };
-    scenario_refresh_scenarios_refresh_post: {
+    scenario_refresh_scenario_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshScenarioApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -58974,9 +59196,18 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    upload_image_scenarios_image_upload_post: {
+    upload_image_scenario_image_upload_post: {
         parameters: {
             query?: {
                 name?: string | null;
@@ -58988,7 +59219,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_image_scenarios_image_upload_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_image_scenario_image_upload_post"];
             };
         };
         responses: {
@@ -59012,7 +59243,7 @@ export interface operations {
             };
         };
     };
-    download_image_scenarios_image_download_post: {
+    download_image_scenario_image_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59045,7 +59276,7 @@ export interface operations {
             };
         };
     };
-    upload_video_scenarios_video_upload_post: {
+    upload_video_scenario_video_upload_post: {
         parameters: {
             query?: {
                 name?: string | null;
@@ -59057,7 +59288,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_video_scenarios_video_upload_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_video_scenario_video_upload_post"];
             };
         };
         responses: {
@@ -59081,7 +59312,7 @@ export interface operations {
             };
         };
     };
-    download_video_scenarios_video_download_post: {
+    download_video_scenario_video_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59114,7 +59345,7 @@ export interface operations {
             };
         };
     };
-    download_text_scenarios_text_download_post: {
+    download_text_scenario_text_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59147,7 +59378,7 @@ export interface operations {
             };
         };
     };
-    download_file_scenarios_file_download_post: {
+    download_file_scenario_file_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59180,7 +59411,7 @@ export interface operations {
             };
         };
     };
-    preview_file_scenarios_file_preview_post: {
+    preview_file_scenario_file_preview_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59213,7 +59444,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_simulations_get_post: {
+    get_simulation_simulation_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59232,7 +59463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetSimulationApiResponse-Output"];
+                    "application/json": components["schemas"]["GetSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59246,7 +59477,7 @@ export interface operations {
             };
         };
     };
-    search_simulation_simulations_search_post: {
+    search_simulation_simulation_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59279,7 +59510,7 @@ export interface operations {
             };
         };
     };
-    create_simulation_simulations_create_post: {
+    create_simulation_simulation_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59312,7 +59543,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_context_simulations_context_post: {
+    get_simulation_context_simulation_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59345,7 +59576,7 @@ export interface operations {
             };
         };
     };
-    parse_simulation_csv_simulations_csv_post: {
+    parse_simulation_csv_simulation_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59354,7 +59585,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_simulation_csv_simulations_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_simulation_csv_simulation_csv_post"];
             };
         };
         responses: {
@@ -59378,7 +59609,7 @@ export interface operations {
             };
         };
     };
-    update_simulation_simulations_update_post: {
+    update_simulation_simulation_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59411,7 +59642,7 @@ export interface operations {
             };
         };
     };
-    duplicate_simulation_simulations_duplicate_post: {
+    duplicate_simulation_simulation_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59444,7 +59675,7 @@ export interface operations {
             };
         };
     };
-    delete_simulation_simulations_delete_post: {
+    delete_simulation_simulation_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59477,7 +59708,7 @@ export interface operations {
             };
         };
     };
-    patch_simulation_draft_simulations_draft_patch: {
+    patch_simulation_draft_simulation_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -59510,7 +59741,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_drafts_simulations_drafts_post: {
+    get_simulation_drafts_simulation_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59530,7 +59761,7 @@ export interface operations {
             };
         };
     };
-    export_simulations_simulations_export_post: {
+    export_simulations_simulation_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59563,7 +59794,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_docs_endpoint_simulations_docs_post: {
+    get_simulation_docs_endpoint_simulation_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59596,7 +59827,7 @@ export interface operations {
             };
         };
     };
-    generate_simulation_simulations_generate_post: {
+    generate_simulation_simulation_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59629,7 +59860,7 @@ export interface operations {
             };
         };
     };
-    generations_simulation_simulations_generations_post: {
+    generations_simulation_simulation_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59662,7 +59893,7 @@ export interface operations {
             };
         };
     };
-    problem_simulation_simulations_problem_post: {
+    problem_simulation_simulation_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59695,7 +59926,7 @@ export interface operations {
             };
         };
     };
-    simulation_refresh_simulations_refresh_post: {
+    simulation_refresh_simulation_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59715,7 +59946,7 @@ export interface operations {
             };
         };
     };
-    group_simulation_simulations_group_post: {
+    group_simulation_simulation_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59748,7 +59979,7 @@ export interface operations {
             };
         };
     };
-    search_document_documents_search_post: {
+    search_document_document_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59781,7 +60012,7 @@ export interface operations {
             };
         };
     };
-    get_document_documents_get_post: {
+    get_document_document_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59814,7 +60045,7 @@ export interface operations {
             };
         };
     };
-    create_document_documents_create_post: {
+    create_document_document_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59847,7 +60078,7 @@ export interface operations {
             };
         };
     };
-    update_document_documents_update_post: {
+    update_document_document_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59880,7 +60111,7 @@ export interface operations {
             };
         };
     };
-    duplicate_document_documents_duplicate_post: {
+    duplicate_document_document_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59913,7 +60144,7 @@ export interface operations {
             };
         };
     };
-    delete_document_documents_delete_post: {
+    delete_document_document_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59946,7 +60177,7 @@ export interface operations {
             };
         };
     };
-    patch_document_draft_documents_draft_patch: {
+    patch_document_draft_document_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -59979,7 +60210,7 @@ export interface operations {
             };
         };
     };
-    get_document_drafts_documents_drafts_post: {
+    get_document_drafts_document_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -59999,7 +60230,7 @@ export interface operations {
             };
         };
     };
-    get_document_context_documents_context_post: {
+    get_document_context_document_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60032,7 +60263,7 @@ export interface operations {
             };
         };
     };
-    get_document_docs_endpoint_documents_docs_post: {
+    get_document_docs_endpoint_document_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60065,7 +60296,7 @@ export interface operations {
             };
         };
     };
-    generate_document_documents_generate_post: {
+    generate_document_document_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60098,7 +60329,7 @@ export interface operations {
             };
         };
     };
-    generations_document_documents_generations_post: {
+    generations_document_document_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60131,7 +60362,7 @@ export interface operations {
             };
         };
     };
-    group_document_documents_group_post: {
+    group_document_document_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60164,7 +60395,7 @@ export interface operations {
             };
         };
     };
-    problem_document_documents_problem_post: {
+    problem_document_document_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60197,7 +60428,7 @@ export interface operations {
             };
         };
     };
-    document_refresh_documents_refresh_post: {
+    document_refresh_document_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60217,7 +60448,7 @@ export interface operations {
             };
         };
     };
-    export_documents_documents_export_post: {
+    export_documents_document_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60250,7 +60481,7 @@ export interface operations {
             };
         };
     };
-    parse_document_csv_documents_csv_post: {
+    parse_document_csv_document_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60259,7 +60490,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_document_csv_documents_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_document_csv_document_csv_post"];
             };
         };
         responses: {
@@ -60283,7 +60514,7 @@ export interface operations {
             };
         };
     };
-    upload_text_documents_text_upload_post: {
+    upload_text_document_text_upload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60292,7 +60523,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_text_documents_text_upload_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_text_document_text_upload_post"];
             };
         };
         responses: {
@@ -60316,7 +60547,7 @@ export interface operations {
             };
         };
     };
-    download_text_documents_text_download_post: {
+    download_text_document_text_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60349,7 +60580,7 @@ export interface operations {
             };
         };
     };
-    upload_file_documents_file_upload_post: {
+    upload_file_document_file_upload_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60358,7 +60589,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_upload_file_documents_file_upload_post"];
+                "multipart/form-data": components["schemas"]["Body_upload_file_document_file_upload_post"];
             };
         };
         responses: {
@@ -60382,7 +60613,7 @@ export interface operations {
             };
         };
     };
-    download_file_documents_file_download_post: {
+    download_file_document_file_download_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60415,7 +60646,7 @@ export interface operations {
             };
         };
     };
-    preview_file_documents_file_preview_post: {
+    preview_file_document_file_preview_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60448,7 +60679,7 @@ export interface operations {
             };
         };
     };
-    get_department_departments_get_post: {
+    get_department_department_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60481,7 +60712,7 @@ export interface operations {
             };
         };
     };
-    search_department_departments_search_post: {
+    search_department_department_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60514,7 +60745,7 @@ export interface operations {
             };
         };
     };
-    create_department_departments_create_post: {
+    create_department_department_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60547,7 +60778,7 @@ export interface operations {
             };
         };
     };
-    update_department_departments_update_post: {
+    update_department_department_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60580,7 +60811,7 @@ export interface operations {
             };
         };
     };
-    duplicate_department_departments_duplicate_post: {
+    duplicate_department_department_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60613,7 +60844,7 @@ export interface operations {
             };
         };
     };
-    delete_department_departments_delete_post: {
+    delete_department_department_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60646,7 +60877,7 @@ export interface operations {
             };
         };
     };
-    patch_department_draft_departments_draft_patch: {
+    patch_department_draft_department_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -60679,7 +60910,7 @@ export interface operations {
             };
         };
     };
-    get_department_drafts_departments_drafts_post: {
+    get_department_drafts_department_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60699,7 +60930,7 @@ export interface operations {
             };
         };
     };
-    get_department_context_departments_context_post: {
+    get_department_context_department_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60732,7 +60963,7 @@ export interface operations {
             };
         };
     };
-    get_department_docs_endpoint_departments_docs_post: {
+    get_department_docs_endpoint_department_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60765,7 +60996,7 @@ export interface operations {
             };
         };
     };
-    export_departments_departments_export_post: {
+    export_departments_department_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60798,7 +61029,7 @@ export interface operations {
             };
         };
     };
-    parse_department_csv_departments_csv_post: {
+    parse_department_csv_department_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60807,7 +61038,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_department_csv_departments_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_department_csv_department_csv_post"];
             };
         };
         responses: {
@@ -60831,7 +61062,7 @@ export interface operations {
             };
         };
     };
-    generate_department_departments_generate_post: {
+    generate_department_department_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60864,7 +61095,7 @@ export interface operations {
             };
         };
     };
-    generations_department_departments_generations_post: {
+    generations_department_department_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60897,7 +61128,7 @@ export interface operations {
             };
         };
     };
-    group_department_departments_group_post: {
+    group_department_department_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60930,7 +61161,7 @@ export interface operations {
             };
         };
     };
-    problem_department_departments_problem_post: {
+    problem_department_department_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60963,7 +61194,7 @@ export interface operations {
             };
         };
     };
-    department_refresh_departments_refresh_post: {
+    department_refresh_department_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -60983,7 +61214,7 @@ export interface operations {
             };
         };
     };
-    search_cohort_cohorts_search_post: {
+    search_cohort_cohort_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61016,7 +61247,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_cohorts_get_post: {
+    get_cohort_cohort_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61035,7 +61266,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetCohortApiResponse-Output"];
+                    "application/json": components["schemas"]["GetCohortApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61049,7 +61280,7 @@ export interface operations {
             };
         };
     };
-    create_cohort_cohorts_create_post: {
+    create_cohort_cohort_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61082,7 +61313,7 @@ export interface operations {
             };
         };
     };
-    update_cohort_cohorts_update_post: {
+    update_cohort_cohort_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61115,7 +61346,7 @@ export interface operations {
             };
         };
     };
-    duplicate_cohort_cohorts_duplicate_post: {
+    duplicate_cohort_cohort_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61148,7 +61379,7 @@ export interface operations {
             };
         };
     };
-    delete_cohort_cohorts_delete_post: {
+    delete_cohort_cohort_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61181,7 +61412,7 @@ export interface operations {
             };
         };
     };
-    patch_cohort_draft_cohorts_draft_patch: {
+    patch_cohort_draft_cohort_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -61200,7 +61431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchCohortDraftApiResponse"];
+                    "application/json": components["schemas"]["PatchCohortDraftApiResponse-Output"];
                 };
             };
             /** @description Validation Error */
@@ -61214,7 +61445,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_drafts_cohorts_drafts_post: {
+    get_cohort_drafts_cohort_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61234,7 +61465,7 @@ export interface operations {
             };
         };
     };
-    export_cohorts_cohorts_export_post: {
+    export_cohorts_cohort_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61267,7 +61498,7 @@ export interface operations {
             };
         };
     };
-    parse_cohort_csv_cohorts_csv_post: {
+    parse_cohort_csv_cohort_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61276,7 +61507,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_cohort_csv_cohorts_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_cohort_csv_cohort_csv_post"];
             };
         };
         responses: {
@@ -61300,7 +61531,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_context_cohorts_context_post: {
+    get_cohort_context_cohort_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61333,7 +61564,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_docs_endpoint_cohorts_docs_post: {
+    get_cohort_docs_endpoint_cohort_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61366,7 +61597,7 @@ export interface operations {
             };
         };
     };
-    generate_cohort_cohorts_generate_post: {
+    generate_cohort_cohort_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61399,7 +61630,7 @@ export interface operations {
             };
         };
     };
-    generations_cohort_cohorts_generations_post: {
+    generations_cohort_cohort_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61432,7 +61663,7 @@ export interface operations {
             };
         };
     };
-    group_cohort_cohorts_group_post: {
+    group_cohort_cohort_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61465,7 +61696,7 @@ export interface operations {
             };
         };
     };
-    problem_cohort_cohorts_problem_post: {
+    problem_cohort_cohort_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61498,14 +61729,18 @@ export interface operations {
             };
         };
     };
-    cohort_refresh_cohorts_refresh_post: {
+    cohort_refresh_cohort_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshCohortApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -61516,9 +61751,18 @@ export interface operations {
                     "application/json": components["schemas"]["RefreshResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
-    search_eval_evals_search_post: {
+    search_eval_eval_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61551,7 +61795,7 @@ export interface operations {
             };
         };
     };
-    get_eval_evals_get_post: {
+    get_eval_eval_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61584,7 +61828,7 @@ export interface operations {
             };
         };
     };
-    create_eval_evals_create_post: {
+    create_eval_eval_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61617,7 +61861,7 @@ export interface operations {
             };
         };
     };
-    parse_eval_csv_evals_csv_post: {
+    parse_eval_csv_eval_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61626,7 +61870,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_eval_csv_evals_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_eval_csv_eval_csv_post"];
             };
         };
         responses: {
@@ -61650,7 +61894,7 @@ export interface operations {
             };
         };
     };
-    update_eval_evals_update_post: {
+    update_eval_eval_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61683,7 +61927,7 @@ export interface operations {
             };
         };
     };
-    duplicate_eval_evals_duplicate_post: {
+    duplicate_eval_eval_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61716,7 +61960,7 @@ export interface operations {
             };
         };
     };
-    delete_eval_evals_delete_post: {
+    delete_eval_eval_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61749,7 +61993,7 @@ export interface operations {
             };
         };
     };
-    patch_eval_draft_evals_draft_patch: {
+    patch_eval_draft_eval_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -61782,7 +62026,7 @@ export interface operations {
             };
         };
     };
-    get_eval_drafts_evals_drafts_post: {
+    get_eval_drafts_eval_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61802,7 +62046,7 @@ export interface operations {
             };
         };
     };
-    export_evals_evals_export_post: {
+    export_evals_eval_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61835,7 +62079,7 @@ export interface operations {
             };
         };
     };
-    generate_eval_evals_generate_post: {
+    generate_eval_eval_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61868,7 +62112,7 @@ export interface operations {
             };
         };
     };
-    generations_eval_evals_generations_post: {
+    generations_eval_eval_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61901,7 +62145,7 @@ export interface operations {
             };
         };
     };
-    get_eval_context_evals_context_post: {
+    get_eval_context_eval_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61934,7 +62178,7 @@ export interface operations {
             };
         };
     };
-    get_eval_docs_endpoint_evals_docs_post: {
+    get_eval_docs_endpoint_eval_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -61967,7 +62211,7 @@ export interface operations {
             };
         };
     };
-    group_eval_evals_group_post: {
+    group_eval_eval_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62000,7 +62244,7 @@ export interface operations {
             };
         };
     };
-    problem_eval_evals_problem_post: {
+    problem_eval_eval_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62033,7 +62277,7 @@ export interface operations {
             };
         };
     };
-    eval_refresh_evals_refresh_post: {
+    eval_refresh_eval_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62053,7 +62297,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_rubrics_get_post: {
+    get_rubric_rubric_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62086,7 +62330,7 @@ export interface operations {
             };
         };
     };
-    search_rubric_rubrics_search_post: {
+    search_rubric_rubric_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62119,7 +62363,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_context_rubrics_context_post: {
+    get_rubric_context_rubric_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62152,7 +62396,7 @@ export interface operations {
             };
         };
     };
-    create_rubric_rubrics_create_post: {
+    create_rubric_rubric_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62185,7 +62429,7 @@ export interface operations {
             };
         };
     };
-    update_rubric_rubrics_update_post: {
+    update_rubric_rubric_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62218,7 +62462,7 @@ export interface operations {
             };
         };
     };
-    duplicate_rubric_rubrics_duplicate_post: {
+    duplicate_rubric_rubric_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62251,7 +62495,7 @@ export interface operations {
             };
         };
     };
-    delete_rubric_rubrics_delete_post: {
+    delete_rubric_rubric_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62284,7 +62528,7 @@ export interface operations {
             };
         };
     };
-    patch_rubric_draft_rubrics_draft_patch: {
+    patch_rubric_draft_rubric_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -62317,7 +62561,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_drafts_rubrics_drafts_post: {
+    get_rubric_drafts_rubric_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62337,7 +62581,7 @@ export interface operations {
             };
         };
     };
-    get_rubric_docs_endpoint_rubrics_docs_post: {
+    get_rubric_docs_endpoint_rubric_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62370,7 +62614,7 @@ export interface operations {
             };
         };
     };
-    export_rubrics_rubrics_export_post: {
+    export_rubrics_rubric_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62403,7 +62647,7 @@ export interface operations {
             };
         };
     };
-    parse_rubric_csv_rubrics_csv_post: {
+    parse_rubric_csv_rubric_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62412,7 +62656,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_rubric_csv_rubrics_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_rubric_csv_rubric_csv_post"];
             };
         };
         responses: {
@@ -62436,7 +62680,7 @@ export interface operations {
             };
         };
     };
-    generate_rubric_rubrics_generate_post: {
+    generate_rubric_rubric_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62469,7 +62713,7 @@ export interface operations {
             };
         };
     };
-    generations_rubric_rubrics_generations_post: {
+    generations_rubric_rubric_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62502,7 +62746,7 @@ export interface operations {
             };
         };
     };
-    group_rubric_rubrics_group_post: {
+    group_rubric_rubric_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62535,7 +62779,7 @@ export interface operations {
             };
         };
     };
-    problem_rubric_rubrics_problem_post: {
+    problem_rubric_rubric_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62568,7 +62812,7 @@ export interface operations {
             };
         };
     };
-    rubric_refresh_rubrics_refresh_post: {
+    rubric_refresh_rubric_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62588,7 +62832,7 @@ export interface operations {
             };
         };
     };
-    search_setting_settings_search_post: {
+    search_setting_setting_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62621,7 +62865,7 @@ export interface operations {
             };
         };
     };
-    get_setting_settings_get_post: {
+    get_setting_setting_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62654,7 +62898,7 @@ export interface operations {
             };
         };
     };
-    create_setting_settings_create_post: {
+    create_setting_setting_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62687,7 +62931,7 @@ export interface operations {
             };
         };
     };
-    update_setting_settings_update_post: {
+    update_setting_setting_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62720,7 +62964,7 @@ export interface operations {
             };
         };
     };
-    duplicate_setting_settings_duplicate_post: {
+    duplicate_setting_setting_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62753,7 +62997,7 @@ export interface operations {
             };
         };
     };
-    delete_setting_settings_delete_post: {
+    delete_setting_setting_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62786,7 +63030,7 @@ export interface operations {
             };
         };
     };
-    patch_setting_draft_settings_draft_patch: {
+    patch_setting_draft_setting_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -62819,7 +63063,7 @@ export interface operations {
             };
         };
     };
-    get_setting_drafts_settings_drafts_post: {
+    get_setting_drafts_setting_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62839,7 +63083,7 @@ export interface operations {
             };
         };
     };
-    export_settings_settings_export_post: {
+    export_settings_setting_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62872,7 +63116,7 @@ export interface operations {
             };
         };
     };
-    get_setting_context_settings_context_post: {
+    get_setting_context_setting_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62905,7 +63149,7 @@ export interface operations {
             };
         };
     };
-    parse_setting_csv_settings_csv_post: {
+    parse_setting_csv_setting_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62914,7 +63158,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_setting_csv_settings_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_setting_csv_setting_csv_post"];
             };
         };
         responses: {
@@ -62938,7 +63182,7 @@ export interface operations {
             };
         };
     };
-    get_setting_docs_endpoint_settings_docs_post: {
+    get_setting_docs_endpoint_setting_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -62971,7 +63215,7 @@ export interface operations {
             };
         };
     };
-    generate_setting_settings_generate_post: {
+    generate_setting_setting_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63004,7 +63248,7 @@ export interface operations {
             };
         };
     };
-    generations_setting_settings_generations_post: {
+    generations_setting_setting_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63037,7 +63281,7 @@ export interface operations {
             };
         };
     };
-    group_setting_settings_group_post: {
+    group_setting_setting_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63070,7 +63314,7 @@ export interface operations {
             };
         };
     };
-    problem_setting_settings_problem_post: {
+    problem_setting_setting_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63103,7 +63347,7 @@ export interface operations {
             };
         };
     };
-    setting_refresh_settings_refresh_post: {
+    setting_refresh_setting_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63123,7 +63367,7 @@ export interface operations {
             };
         };
     };
-    decrypt_setting_key_settings_decrypt_post: {
+    decrypt_setting_key_setting_decrypt_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63156,7 +63400,7 @@ export interface operations {
             };
         };
     };
-    get_agent_context_agents_context_post: {
+    get_agent_context_agent_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63189,7 +63433,7 @@ export interface operations {
             };
         };
     };
-    get_agent_agents_get_post: {
+    get_agent_agent_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63222,7 +63466,7 @@ export interface operations {
             };
         };
     };
-    search_agent_agents_search_post: {
+    search_agent_agent_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63255,7 +63499,7 @@ export interface operations {
             };
         };
     };
-    create_agent_agents_create_post: {
+    create_agent_agent_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63288,7 +63532,7 @@ export interface operations {
             };
         };
     };
-    parse_agent_csv_agents_csv_post: {
+    parse_agent_csv_agent_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63297,7 +63541,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_agent_csv_agents_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_agent_csv_agent_csv_post"];
             };
         };
         responses: {
@@ -63321,7 +63565,7 @@ export interface operations {
             };
         };
     };
-    update_agent_agents_update_post: {
+    update_agent_agent_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63354,7 +63598,7 @@ export interface operations {
             };
         };
     };
-    duplicate_agent_agents_duplicate_post: {
+    duplicate_agent_agent_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63387,7 +63631,7 @@ export interface operations {
             };
         };
     };
-    delete_agent_agents_delete_post: {
+    delete_agent_agent_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63420,7 +63664,7 @@ export interface operations {
             };
         };
     };
-    patch_agent_draft_agents_draft_patch: {
+    patch_agent_draft_agent_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -63453,7 +63697,7 @@ export interface operations {
             };
         };
     };
-    get_agent_drafts_agents_drafts_post: {
+    get_agent_drafts_agent_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63473,7 +63717,7 @@ export interface operations {
             };
         };
     };
-    export_agents_agents_export_post: {
+    export_agents_agent_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63506,7 +63750,7 @@ export interface operations {
             };
         };
     };
-    generate_agent_agents_generate_post: {
+    generate_agent_agent_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63539,7 +63783,7 @@ export interface operations {
             };
         };
     };
-    generations_agent_agents_generations_post: {
+    generations_agent_agent_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63572,7 +63816,7 @@ export interface operations {
             };
         };
     };
-    get_agent_docs_endpoint_agents_docs_post: {
+    get_agent_docs_endpoint_agent_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63605,7 +63849,7 @@ export interface operations {
             };
         };
     };
-    group_agent_agents_group_post: {
+    group_agent_agent_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63638,7 +63882,7 @@ export interface operations {
             };
         };
     };
-    problem_agent_agents_problem_post: {
+    problem_agent_agent_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63671,7 +63915,7 @@ export interface operations {
             };
         };
     };
-    agent_refresh_agents_refresh_post: {
+    agent_refresh_agent_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63691,7 +63935,7 @@ export interface operations {
             };
         };
     };
-    get_model_models_get_post: {
+    get_model_model_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63724,7 +63968,7 @@ export interface operations {
             };
         };
     };
-    search_model_models_search_post: {
+    search_model_model_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63757,7 +64001,7 @@ export interface operations {
             };
         };
     };
-    create_model_models_create_post: {
+    create_model_model_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63790,7 +64034,7 @@ export interface operations {
             };
         };
     };
-    update_model_models_update_post: {
+    update_model_model_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63823,7 +64067,7 @@ export interface operations {
             };
         };
     };
-    duplicate_model_models_duplicate_post: {
+    duplicate_model_model_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63856,7 +64100,7 @@ export interface operations {
             };
         };
     };
-    delete_model_models_delete_post: {
+    delete_model_model_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63889,7 +64133,7 @@ export interface operations {
             };
         };
     };
-    patch_model_draft_models_draft_patch: {
+    patch_model_draft_model_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -63922,7 +64166,7 @@ export interface operations {
             };
         };
     };
-    get_model_drafts_models_drafts_post: {
+    get_model_drafts_model_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63942,7 +64186,7 @@ export interface operations {
             };
         };
     };
-    get_model_context_models_context_post: {
+    get_model_context_model_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -63975,7 +64219,7 @@ export interface operations {
             };
         };
     };
-    get_model_docs_endpoint_models_docs_post: {
+    get_model_docs_endpoint_model_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64008,7 +64252,7 @@ export interface operations {
             };
         };
     };
-    export_models_models_export_post: {
+    export_models_model_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64041,7 +64285,7 @@ export interface operations {
             };
         };
     };
-    parse_model_csv_models_csv_post: {
+    parse_model_csv_model_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64050,7 +64294,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_model_csv_models_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_model_csv_model_csv_post"];
             };
         };
         responses: {
@@ -64074,7 +64318,7 @@ export interface operations {
             };
         };
     };
-    generate_model_models_generate_post: {
+    generate_model_model_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64107,7 +64351,7 @@ export interface operations {
             };
         };
     };
-    generations_model_models_generations_post: {
+    generations_model_model_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64140,7 +64384,7 @@ export interface operations {
             };
         };
     };
-    group_model_models_group_post: {
+    group_model_model_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64173,7 +64417,7 @@ export interface operations {
             };
         };
     };
-    problem_model_models_problem_post: {
+    problem_model_model_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64206,7 +64450,7 @@ export interface operations {
             };
         };
     };
-    model_refresh_models_refresh_post: {
+    model_refresh_model_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64226,7 +64470,7 @@ export interface operations {
             };
         };
     };
-    search_provider_providers_search_post: {
+    search_provider_provider_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64259,7 +64503,7 @@ export interface operations {
             };
         };
     };
-    get_provider_providers_get_post: {
+    get_provider_provider_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64292,7 +64536,7 @@ export interface operations {
             };
         };
     };
-    create_provider_providers_create_post: {
+    create_provider_provider_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64325,7 +64569,7 @@ export interface operations {
             };
         };
     };
-    update_provider_providers_update_post: {
+    update_provider_provider_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64358,7 +64602,7 @@ export interface operations {
             };
         };
     };
-    duplicate_provider_providers_duplicate_post: {
+    duplicate_provider_provider_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64391,7 +64635,7 @@ export interface operations {
             };
         };
     };
-    delete_provider_providers_delete_post: {
+    delete_provider_provider_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64424,7 +64668,7 @@ export interface operations {
             };
         };
     };
-    patch_provider_draft_providers_draft_patch: {
+    patch_provider_draft_provider_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -64457,7 +64701,7 @@ export interface operations {
             };
         };
     };
-    get_provider_drafts_providers_drafts_post: {
+    get_provider_drafts_provider_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64477,7 +64721,7 @@ export interface operations {
             };
         };
     };
-    get_provider_context_providers_context_post: {
+    get_provider_context_provider_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64510,7 +64754,7 @@ export interface operations {
             };
         };
     };
-    get_provider_docs_endpoint_providers_docs_post: {
+    get_provider_docs_endpoint_provider_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64543,7 +64787,7 @@ export interface operations {
             };
         };
     };
-    export_providers_providers_export_post: {
+    export_providers_provider_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64576,7 +64820,7 @@ export interface operations {
             };
         };
     };
-    parse_provider_csv_providers_csv_post: {
+    parse_provider_csv_provider_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64585,7 +64829,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_provider_csv_providers_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_provider_csv_provider_csv_post"];
             };
         };
         responses: {
@@ -64609,7 +64853,7 @@ export interface operations {
             };
         };
     };
-    provider_refresh_providers_refresh_post: {
+    provider_refresh_provider_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64629,7 +64873,7 @@ export interface operations {
             };
         };
     };
-    decrypt_provider_key_providers_decrypt_post: {
+    decrypt_provider_key_provider_decrypt_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64662,7 +64906,7 @@ export interface operations {
             };
         };
     };
-    generate_provider_providers_generate_post: {
+    generate_provider_provider_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64695,7 +64939,7 @@ export interface operations {
             };
         };
     };
-    generations_provider_providers_generations_post: {
+    generations_provider_provider_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64728,7 +64972,7 @@ export interface operations {
             };
         };
     };
-    group_provider_providers_group_post: {
+    group_provider_provider_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64761,7 +65005,7 @@ export interface operations {
             };
         };
     };
-    problem_provider_providers_problem_post: {
+    problem_provider_provider_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64794,7 +65038,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_parameters_get_post: {
+    get_parameter_parameter_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64827,7 +65071,7 @@ export interface operations {
             };
         };
     };
-    search_parameter_parameters_search_post: {
+    search_parameter_parameter_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64860,7 +65104,7 @@ export interface operations {
             };
         };
     };
-    create_parameter_parameters_create_post: {
+    create_parameter_parameter_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64893,7 +65137,7 @@ export interface operations {
             };
         };
     };
-    update_parameter_parameters_update_post: {
+    update_parameter_parameter_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64926,7 +65170,7 @@ export interface operations {
             };
         };
     };
-    duplicate_parameter_parameters_duplicate_post: {
+    duplicate_parameter_parameter_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64959,7 +65203,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_context_parameters_context_post: {
+    get_parameter_context_parameter_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -64992,7 +65236,7 @@ export interface operations {
             };
         };
     };
-    delete_parameter_parameters_delete_post: {
+    delete_parameter_parameter_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65025,7 +65269,7 @@ export interface operations {
             };
         };
     };
-    patch_parameter_draft_parameters_draft_patch: {
+    patch_parameter_draft_parameter_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -65058,7 +65302,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_drafts_parameters_drafts_post: {
+    get_parameter_drafts_parameter_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65078,7 +65322,7 @@ export interface operations {
             };
         };
     };
-    get_parameter_docs_endpoint_parameters_docs_post: {
+    get_parameter_docs_endpoint_parameter_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65111,7 +65355,7 @@ export interface operations {
             };
         };
     };
-    export_parameters_parameters_export_post: {
+    export_parameters_parameter_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65144,7 +65388,7 @@ export interface operations {
             };
         };
     };
-    parse_parameter_csv_parameters_csv_post: {
+    parse_parameter_csv_parameter_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65153,7 +65397,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_parameter_csv_parameters_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_parameter_csv_parameter_csv_post"];
             };
         };
         responses: {
@@ -65177,7 +65421,7 @@ export interface operations {
             };
         };
     };
-    generate_parameter_parameters_generate_post: {
+    generate_parameter_parameter_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65210,7 +65454,7 @@ export interface operations {
             };
         };
     };
-    generations_parameter_parameters_generations_post: {
+    generations_parameter_parameter_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65243,7 +65487,7 @@ export interface operations {
             };
         };
     };
-    group_parameter_parameters_group_post: {
+    group_parameter_parameter_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65276,7 +65520,7 @@ export interface operations {
             };
         };
     };
-    problem_parameter_parameters_problem_post: {
+    problem_parameter_parameter_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65309,7 +65553,7 @@ export interface operations {
             };
         };
     };
-    parameter_refresh_parameters_refresh_post: {
+    parameter_refresh_parameter_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65329,7 +65573,7 @@ export interface operations {
             };
         };
     };
-    get_field_fields_get_post: {
+    get_field_field_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65362,7 +65606,7 @@ export interface operations {
             };
         };
     };
-    search_field_fields_search_post: {
+    search_field_field_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65395,7 +65639,7 @@ export interface operations {
             };
         };
     };
-    create_field_fields_create_post: {
+    create_field_field_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65428,7 +65672,7 @@ export interface operations {
             };
         };
     };
-    update_field_fields_update_post: {
+    update_field_field_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65461,7 +65705,7 @@ export interface operations {
             };
         };
     };
-    duplicate_field_fields_duplicate_post: {
+    duplicate_field_field_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65494,7 +65738,7 @@ export interface operations {
             };
         };
     };
-    delete_field_fields_delete_post: {
+    delete_field_field_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65527,7 +65771,7 @@ export interface operations {
             };
         };
     };
-    patch_field_draft_fields_draft_patch: {
+    patch_field_draft_field_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -65560,7 +65804,7 @@ export interface operations {
             };
         };
     };
-    get_field_drafts_fields_drafts_post: {
+    get_field_drafts_field_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65580,7 +65824,7 @@ export interface operations {
             };
         };
     };
-    get_field_context_fields_context_post: {
+    get_field_context_field_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65613,7 +65857,7 @@ export interface operations {
             };
         };
     };
-    get_field_docs_endpoint_fields_docs_post: {
+    get_field_docs_endpoint_field_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65646,7 +65890,7 @@ export interface operations {
             };
         };
     };
-    export_fields_fields_export_post: {
+    export_fields_field_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65679,7 +65923,7 @@ export interface operations {
             };
         };
     };
-    parse_field_csv_fields_csv_post: {
+    parse_field_csv_field_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65688,7 +65932,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_field_csv_fields_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_field_csv_field_csv_post"];
             };
         };
         responses: {
@@ -65712,7 +65956,7 @@ export interface operations {
             };
         };
     };
-    generate_field_fields_generate_post: {
+    generate_field_field_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65745,7 +65989,7 @@ export interface operations {
             };
         };
     };
-    generations_field_fields_generations_post: {
+    generations_field_field_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65778,7 +66022,7 @@ export interface operations {
             };
         };
     };
-    group_field_fields_group_post: {
+    group_field_field_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65811,7 +66055,7 @@ export interface operations {
             };
         };
     };
-    problem_field_fields_problem_post: {
+    problem_field_field_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65844,7 +66088,7 @@ export interface operations {
             };
         };
     };
-    field_refresh_fields_refresh_post: {
+    field_refresh_field_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65864,7 +66108,7 @@ export interface operations {
             };
         };
     };
-    get_profile_profiles_get_post: {
+    get_profile_profile_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65897,7 +66141,7 @@ export interface operations {
             };
         };
     };
-    search_profile_profiles_search_post: {
+    search_profile_profile_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65930,7 +66174,7 @@ export interface operations {
             };
         };
     };
-    create_profile_profiles_create_post: {
+    create_profile_profile_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65963,7 +66207,7 @@ export interface operations {
             };
         };
     };
-    update_profile_profiles_update_post: {
+    update_profile_profile_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -65996,7 +66240,7 @@ export interface operations {
             };
         };
     };
-    duplicate_profile_profiles_duplicate_post: {
+    duplicate_profile_profile_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66029,7 +66273,7 @@ export interface operations {
             };
         };
     };
-    patch_profile_draft_profiles_draft_patch: {
+    patch_profile_draft_profile_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -66062,7 +66306,7 @@ export interface operations {
             };
         };
     };
-    get_profile_drafts_profiles_drafts_post: {
+    get_profile_drafts_profile_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66082,7 +66326,7 @@ export interface operations {
             };
         };
     };
-    delete_profile_profiles_delete_post: {
+    delete_profile_profile_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66115,7 +66359,7 @@ export interface operations {
             };
         };
     };
-    get_profile_docs_endpoint_profiles_docs_post: {
+    get_profile_docs_endpoint_profile_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66148,7 +66392,7 @@ export interface operations {
             };
         };
     };
-    export_profiles_profiles_export_post: {
+    export_profiles_profile_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66181,7 +66425,7 @@ export interface operations {
             };
         };
     };
-    generate_profile_profiles_generate_post: {
+    generate_profile_profile_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66214,7 +66458,7 @@ export interface operations {
             };
         };
     };
-    generations_profile_profiles_generations_post: {
+    generations_profile_profile_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66247,7 +66491,7 @@ export interface operations {
             };
         };
     };
-    group_profile_profiles_group_post: {
+    group_profile_profile_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66280,7 +66524,7 @@ export interface operations {
             };
         };
     };
-    problem_profile_profiles_problem_post: {
+    problem_profile_profile_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66313,7 +66557,7 @@ export interface operations {
             };
         };
     };
-    profile_refresh_profiles_refresh_post: {
+    profile_refresh_profile_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66333,7 +66577,7 @@ export interface operations {
             };
         };
     };
-    get_profile_context_profiles_context_post: {
+    get_profile_context_profile_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66366,7 +66610,7 @@ export interface operations {
             };
         };
     };
-    emulate_profile_profiles_emulate_post: {
+    emulate_profile_profile_emulate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66399,7 +66643,7 @@ export interface operations {
             };
         };
     };
-    unemulate_profile_profiles_unemulate_post: {
+    unemulate_profile_profile_unemulate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66432,7 +66676,7 @@ export interface operations {
             };
         };
     };
-    get_auth_context_auths_context_post: {
+    get_auth_context_auth_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66465,7 +66709,7 @@ export interface operations {
             };
         };
     };
-    get_auth_auths_get_post: {
+    get_auth_auth_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66498,7 +66742,7 @@ export interface operations {
             };
         };
     };
-    search_auth_auths_search_post: {
+    search_auth_auth_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66531,7 +66775,7 @@ export interface operations {
             };
         };
     };
-    create_auth_auths_create_post: {
+    create_auth_auth_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66564,7 +66808,7 @@ export interface operations {
             };
         };
     };
-    update_auth_auths_update_post: {
+    update_auth_auth_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66597,7 +66841,7 @@ export interface operations {
             };
         };
     };
-    duplicate_auth_auths_duplicate_post: {
+    duplicate_auth_auth_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66630,7 +66874,7 @@ export interface operations {
             };
         };
     };
-    delete_auth_auths_delete_post: {
+    delete_auth_auth_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66663,7 +66907,7 @@ export interface operations {
             };
         };
     };
-    patch_auth_draft_auths_draft_patch: {
+    patch_auth_draft_auth_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -66696,7 +66940,7 @@ export interface operations {
             };
         };
     };
-    get_auth_drafts_auths_drafts_post: {
+    get_auth_drafts_auth_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66716,7 +66960,7 @@ export interface operations {
             };
         };
     };
-    get_auth_docs_endpoint_auths_docs_post: {
+    get_auth_docs_endpoint_auth_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66749,7 +66993,7 @@ export interface operations {
             };
         };
     };
-    export_auths_auths_export_post: {
+    export_auths_auth_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66782,7 +67026,7 @@ export interface operations {
             };
         };
     };
-    generate_auth_auths_generate_post: {
+    generate_auth_auth_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66815,7 +67059,7 @@ export interface operations {
             };
         };
     };
-    generations_auth_auths_generations_post: {
+    generations_auth_auth_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66848,7 +67092,7 @@ export interface operations {
             };
         };
     };
-    group_auth_auths_group_post: {
+    group_auth_auth_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66881,7 +67125,7 @@ export interface operations {
             };
         };
     };
-    problem_auth_auths_problem_post: {
+    problem_auth_auth_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66914,7 +67158,7 @@ export interface operations {
             };
         };
     };
-    auth_refresh_auths_refresh_post: {
+    auth_refresh_auth_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66934,7 +67178,7 @@ export interface operations {
             };
         };
     };
-    search_tool_tools_search_post: {
+    search_tool_tool_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -66967,7 +67211,7 @@ export interface operations {
             };
         };
     };
-    get_tool_tools_get_post: {
+    get_tool_tool_get_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67000,7 +67244,7 @@ export interface operations {
             };
         };
     };
-    create_tool_tools_create_post: {
+    create_tool_tool_create_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67033,7 +67277,7 @@ export interface operations {
             };
         };
     };
-    update_tool_tools_update_post: {
+    update_tool_tool_update_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67066,7 +67310,7 @@ export interface operations {
             };
         };
     };
-    duplicate_tool_tools_duplicate_post: {
+    duplicate_tool_tool_duplicate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67099,7 +67343,7 @@ export interface operations {
             };
         };
     };
-    delete_tool_tools_delete_post: {
+    delete_tool_tool_delete_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67132,7 +67376,7 @@ export interface operations {
             };
         };
     };
-    patch_tool_draft_tools_draft_patch: {
+    patch_tool_draft_tool_draft_patch: {
         parameters: {
             query?: never;
             header?: never;
@@ -67165,7 +67409,7 @@ export interface operations {
             };
         };
     };
-    get_tool_drafts_tools_drafts_post: {
+    get_tool_drafts_tool_drafts_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67185,7 +67429,7 @@ export interface operations {
             };
         };
     };
-    export_tools_tools_export_post: {
+    export_tools_tool_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67218,7 +67462,7 @@ export interface operations {
             };
         };
     };
-    generate_tool_tools_generate_post: {
+    generate_tool_tool_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67251,7 +67495,7 @@ export interface operations {
             };
         };
     };
-    generations_tool_tools_generations_post: {
+    generations_tool_tool_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67284,7 +67528,7 @@ export interface operations {
             };
         };
     };
-    parse_tool_csv_tools_csv_post: {
+    parse_tool_csv_tool_csv_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67293,7 +67537,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_parse_tool_csv_tools_csv_post"];
+                "multipart/form-data": components["schemas"]["Body_parse_tool_csv_tool_csv_post"];
             };
         };
         responses: {
@@ -67317,7 +67561,7 @@ export interface operations {
             };
         };
     };
-    get_tool_context_tools_context_post: {
+    get_tool_context_tool_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67350,7 +67594,7 @@ export interface operations {
             };
         };
     };
-    get_tool_docs_endpoint_tools_docs_post: {
+    get_tool_docs_endpoint_tool_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67383,7 +67627,7 @@ export interface operations {
             };
         };
     };
-    group_tool_tools_group_post: {
+    group_tool_tool_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67416,7 +67660,7 @@ export interface operations {
             };
         };
     };
-    problem_tool_tools_problem_post: {
+    problem_tool_tool_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -67449,7 +67693,7 @@ export interface operations {
             };
         };
     };
-    tool_refresh_tools_refresh_post: {
+    tool_refresh_tool_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70899,7 +71143,7 @@ export interface operations {
             };
         };
     };
-    export_reports_reports_export_post: {
+    export_reports_report_export_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70919,7 +71163,7 @@ export interface operations {
             };
         };
     };
-    generate_reports_reports_generate_post: {
+    generate_reports_report_generate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70952,7 +71196,7 @@ export interface operations {
             };
         };
     };
-    generations_reports_reports_generations_post: {
+    generations_reports_report_generations_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -70985,7 +71229,7 @@ export interface operations {
             };
         };
     };
-    group_reports_reports_group_post: {
+    group_reports_report_group_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71018,7 +71262,7 @@ export interface operations {
             };
         };
     };
-    problem_reports_reports_problem_post: {
+    problem_reports_report_problem_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71051,7 +71295,7 @@ export interface operations {
             };
         };
     };
-    get_reports_reports_search_post: {
+    get_reports_report_search_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71084,7 +71328,7 @@ export interface operations {
             };
         };
     };
-    reports_refresh_reports_refresh_post: {
+    reports_refresh_report_refresh_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71104,7 +71348,7 @@ export interface operations {
             };
         };
     };
-    get_reports_docs_endpoint_reports_docs_post: {
+    get_reports_docs_endpoint_report_docs_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -71137,7 +71381,7 @@ export interface operations {
             };
         };
     };
-    get_reports_context_reports_context_post: {
+    get_reports_context_report_context_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -80366,7 +80610,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetCohortApiResponse-Input"];
+                "application/json": components["schemas"]["GetCohortApiResponse"];
             };
         };
         responses: {
@@ -82011,7 +82255,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetSimulationApiResponse-Input"];
+                "application/json": components["schemas"]["GetSimulationApiResponse"];
             };
         };
         responses: {
@@ -82676,7 +82920,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchCohortDraftApiResponse"];
+                "application/json": components["schemas"]["PatchCohortDraftApiResponse-Input"];
             };
         };
         responses: {

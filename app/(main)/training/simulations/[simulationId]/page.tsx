@@ -11,6 +11,9 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { FullPageLayout } from "@/components/common/layout/FullPageLayout";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
+import type { ScenarioPositionsProps } from "@/components/resources/ScenarioPositions";
+import type { ScenarioRubricsProps } from "@/components/resources/ScenarioRubrics";
+import type { ScenarioTimeLimitsProps } from "@/components/resources/ScenarioTimeLimits";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
 
@@ -18,62 +21,37 @@ import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSimulationIn = InputOf<"/simulations/get", "post">;
-type GetSimulationOut = OutputOf<"/simulations/get", "post">;
-type UpdateSimulationIn = InputOf<"/simulations/update", "post">;
-type UpdateSimulationOut = OutputOf<"/simulations/update", "post">;
-type PatchSimulationDraftIn = InputOf<"/simulations/draft", "patch">;
-type PatchSimulationDraftOut = OutputOf<"/simulations/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
+type GetSimulationIn = InputOf<"/simulation/get", "post">;
+type GetSimulationOut = OutputOf<"/simulation/get", "post">;
+type UpdateSimulationIn = InputOf<"/simulation/update", "post">;
+type UpdateSimulationOut = OutputOf<"/simulation/update", "post">;
+type PatchSimulationDraftIn = InputOf<"/simulation/draft", "patch">;
+type PatchSimulationDraftOut = OutputOf<"/simulation/draft", "patch">;
 type CreateDraftScenarioFlagsAction = NonNullable<
   ScenarioFlagsProps["createScenarioFlagsAction"]
 >;
-type CreateDraftScenarioPositionsIn = InputOf<
-  "/api/v5/resources/scenario_positions",
-  "post"
+type CreateDraftScenarioPositionsAction = NonNullable<
+  ScenarioPositionsProps["createScenarioPositionsAction"]
 >;
-type CreateDraftScenarioPositionsOut = OutputOf<
-  "/api/v5/resources/scenario_positions",
-  "post"
+type CreateDraftScenarioRubricsAction = NonNullable<
+  ScenarioRubricsProps["createScenarioRubricsAction"]
 >;
-type CreateDraftScenarioRubricsIn = InputOf<
-  "/api/v5/resources/scenario_rubrics",
-  "post"
+type CreateDraftScenarioTimeLimitsAction = NonNullable<
+  ScenarioTimeLimitsProps["createScenarioTimeLimitsAction"]
 >;
-type CreateDraftScenarioRubricsOut = OutputOf<
-  "/api/v5/resources/scenario_rubrics",
-  "post"
->;
-type CreateDraftScenarioTimeLimitsIn = InputOf<
-  "/api/v5/resources/scenario_time_limits",
-  "post"
->;
-type CreateDraftScenarioTimeLimitsOut = OutputOf<
-  "/api/v5/resources/scenario_time_limits",
-  "post"
->;
-type GroupSimulationIn = InputOf<"/simulations/group", "post">;
-type GroupSimulationOut = OutputOf<"/simulations/group", "post">;
-type GenerateSimulationIn = InputOf<"/simulations/generate", "post">;
-type GenerateSimulationOut = OutputOf<"/simulations/generate", "post">;
-type ProblemSimulationIn = InputOf<"/simulations/problem", "post">;
-type ProblemSimulationOut = OutputOf<"/simulations/problem", "post">;
-type ContextIn = InputOf<"/simulations/context", "post">;
-type ContextOut = OutputOf<"/simulations/context", "post">;
+type GroupSimulationIn = InputOf<"/simulation/group", "post">;
+type GroupSimulationOut = OutputOf<"/simulation/group", "post">;
+type GenerateSimulationIn = InputOf<"/simulation/generate", "post">;
+type GenerateSimulationOut = OutputOf<"/simulation/generate", "post">;
+type ProblemSimulationIn = InputOf<"/simulation/problem", "post">;
+type ProblemSimulationOut = OutputOf<"/simulation/problem", "post">;
+type ContextIn = InputOf<"/simulation/context", "post">;
+type ContextOut = OutputOf<"/simulation/context", "post">;
 
 // Export types for client component (type-only imports)
 export type {
@@ -92,7 +70,7 @@ const getSimulation = async (
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const result = await api.post("/simulations/get", input, {
+    const result = await api.post("/simulation/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -115,28 +93,14 @@ async function updateSimulation(
   input: UpdateSimulationIn
 ): Promise<UpdateSimulationOut> {
   "use server";
-  return api.post("/simulations/update", input);
+  return api.post("/simulation/update", input);
 }
 
 async function patchSimulationDraft(
   input: PatchSimulationDraftIn
 ): Promise<PatchSimulationDraftOut> {
   "use server";
-  return api.patch("/simulations/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  return api.post("/resources/descriptions", input);
+  return api.patch("/simulation/draft", input);
 }
 
 const createDraftScenarioFlags: CreateDraftScenarioFlagsAction = async (
@@ -152,50 +116,68 @@ const createDraftScenarioFlags: CreateDraftScenarioFlagsAction = async (
   );
 };
 
-async function createDraftScenarioPositions(
-  input: CreateDraftScenarioPositionsIn
-): Promise<CreateDraftScenarioPositionsOut> {
+const createDraftScenarioPositions: CreateDraftScenarioPositionsAction = async (
+  input,
+) => {
   "use server";
-  return api.post("/resources/scenario_positions", input);
-}
+  return (api.post as unknown as (
+    path: string,
+    payload: Parameters<CreateDraftScenarioPositionsAction>[0],
+  ) => ReturnType<CreateDraftScenarioPositionsAction>)(
+    "/resources/scenario_positions",
+    input,
+  );
+};
 
-async function createDraftScenarioRubrics(
-  input: CreateDraftScenarioRubricsIn
-): Promise<CreateDraftScenarioRubricsOut> {
+const createDraftScenarioRubrics: CreateDraftScenarioRubricsAction = async (
+  input,
+) => {
   "use server";
-  return api.post("/resources/scenario_rubrics", input);
-}
+  return (api.post as unknown as (
+    path: string,
+    payload: Parameters<CreateDraftScenarioRubricsAction>[0],
+  ) => ReturnType<CreateDraftScenarioRubricsAction>)(
+    "/resources/scenario_rubrics",
+    input,
+  );
+};
 
-async function createDraftScenarioTimeLimits(
-  input: CreateDraftScenarioTimeLimitsIn
-): Promise<CreateDraftScenarioTimeLimitsOut> {
+const createDraftScenarioTimeLimits: CreateDraftScenarioTimeLimitsAction = async (
+  input,
+) => {
   "use server";
-  return api.post("/resources/scenario_time_limits", input);
-}
+  return (api.post as unknown as (
+    path: string,
+    payload: Parameters<CreateDraftScenarioTimeLimitsAction>[0],
+  ) => ReturnType<CreateDraftScenarioTimeLimitsAction>)(
+    "/resources/scenario_time_limits",
+    input,
+  );
+};
 
 async function generateSimulation(
   input: GenerateSimulationIn
 ): Promise<GenerateSimulationOut> {
   "use server";
-  return api.post("/simulations/generate", input);
+  return api.post("/simulation/generate", input);
 }
 
 async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
   "use server";
-  return api.post("/simulations/group", { body: { group_id: groupId } } as GroupSimulationIn);
+  return api.post("/simulation/group", { body: { group_id: groupId } } as GroupSimulationIn);
 }
 
-type GenerationsIn = InputOf<"/simulations/generations", "post">;
-type GenerationsOut = OutputOf<"/simulations/generations", "post">;
+type GenerationsIn = InputOf<"/simulation/generations", "post">;
+type GenerationsOut = OutputOf<"/simulation/generations", "post">;
 
 async function searchSimulationGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/simulations/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/simulation/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
   "use server";
-  return api.post("/simulations/problem", input);
+  return api.post("/simulation/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -205,7 +187,7 @@ export async function generateMetadata({
   params: Promise<{ simulationId: string }>;
 }): Promise<Metadata> {
   const { simulationId } = await params;
-  const context = await api.post("/simulations/context", { body: { entity_id: simulationId } } as ContextIn) as ContextOut;
+  const context = await api.post("/simulation/context", { body: { entity_id: simulationId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -235,7 +217,7 @@ export default async function EditSimulationPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/simulations/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -254,44 +236,50 @@ export default async function EditSimulationPage({
   const simulationSearchParams = {
     draftId: parseAsString,
     scenarioSearch: parseAsString,
+    scenarioShowSelected: parseAsBoolean,
   };
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
 
   try {
-    const input: GetSimulationIn = {
+    const input = {
       body: {
-        simulation_id: simulationId,
+        id: simulationId,
         draft_id: q.draftId ?? null,
-        scenario_search: q.scenarioSearch ?? null,
-        filter_scenario_ids: null,
+        scenarios:
+          q.scenarioSearch || q.scenarioShowSelected
+            ? {
+                search: q.scenarioSearch ?? undefined,
+                selected: q.scenarioShowSelected ?? undefined,
+              }
+            : undefined,
       } as GetSimulationIn["body"],
-    };
+    } as GetSimulationIn;
 
     const [simulationData, context, draftsResult, groupResult] = await Promise.all([
       getSimulation(input),
-      api.post("/simulations/context", { body: { entity_id: simulationId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/simulations/drafts", {}),
-      api.post("/simulations/group", { body: {} } as GroupSimulationIn),
+      api.post("/simulation/context", { body: { entity_id: simulationId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/simulation/drafts", {} as never),
+      api.post("/simulation/group", { body: {} } as GroupSimulationIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.entries ?? []}>
+      <DraftProviderClient drafts={(draftsResult.entries ?? []) as never}>
         <FullPageLayout
           profileData={context.profile}
           sessionSnapshot={snapshot}
-          initialSidebarOpen={initialSidebarOpen}
+          {...(initialSidebarOpen !== undefined ? { initialSidebarOpen } : {})}
           initialPanelOpen={initialPanelOpen}
           sidebarProps={{
             activeSection: "simulation",
             createFeedback: createSimulationProblem,
-          }}
+          } as never}
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
             { title: "Simulations", section: "simulations", url: "/training/simulations" },
-            { title: entityName },
+            { title: entityName ?? "Simulation" },
           ]}
           toolbar={<SaveToolbar />}
           panelProps={{
@@ -306,7 +294,7 @@ export default async function EditSimulationPage({
             ],
             getGroupHistory: getSimulationGroupHistory,
             searchGroups: searchSimulationGroups,
-          }}
+          } as never}
         >
           <div
             className="space-y-6 px-4"
@@ -318,8 +306,6 @@ export default async function EditSimulationPage({
               simulationData={simulationData}
               updateSimulationAction={updateSimulation}
               patchSimulationDraftAction={patchSimulationDraft}
-              createNamesAction={createDraftNames}
-              createDescriptionsAction={createDraftDescriptions}
               createScenarioFlagsAction={createDraftScenarioFlags}
               createScenarioPositionsAction={createDraftScenarioPositions}
               createScenarioRubricsAction={createDraftScenarioRubrics}

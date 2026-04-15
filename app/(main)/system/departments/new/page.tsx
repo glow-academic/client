@@ -21,12 +21,12 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDepartmentIn = InputOf<"/departments/get", "post">;
-type GetDepartmentOut = OutputOf<"/departments/get", "post">;
-type CreateDepartmentIn = InputOf<"/departments/create", "post">;
-type CreateDepartmentOut = OutputOf<"/departments/create", "post">;
-type PatchDepartmentDraftIn = InputOf<"/departments/draft", "patch">;
-type PatchDepartmentDraftOut = OutputOf<"/departments/draft", "patch">;
+type GetDepartmentIn = InputOf<"/department/get", "post">;
+type GetDepartmentOut = OutputOf<"/department/get", "post">;
+type CreateDepartmentIn = InputOf<"/department/create", "post">;
+type CreateDepartmentOut = OutputOf<"/department/create", "post">;
+type PatchDepartmentDraftIn = InputOf<"/department/draft", "patch">;
+type PatchDepartmentDraftOut = OutputOf<"/department/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -37,20 +37,20 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v5/resources/descriptions",
   "post"
 >;
-type GroupDepartmentIn = InputOf<"/departments/group", "post">;
-type GroupDepartmentOut = OutputOf<"/departments/group", "post">;
-type GenerateDepartmentIn = InputOf<"/departments/generate", "post">;
-type GenerateDepartmentOut = OutputOf<"/departments/generate", "post">;
-type ProblemDepartmentIn = InputOf<"/departments/problem", "post">;
-type ProblemDepartmentOut = OutputOf<"/departments/problem", "post">;
-type ContextIn = InputOf<"/departments/context", "post">;
-type ContextOut = OutputOf<"/departments/context", "post">;
+type GroupDepartmentIn = InputOf<"/department/group", "post">;
+type GroupDepartmentOut = OutputOf<"/department/group", "post">;
+type GenerateDepartmentIn = InputOf<"/department/generate", "post">;
+type GenerateDepartmentOut = OutputOf<"/department/generate", "post">;
+type ProblemDepartmentIn = InputOf<"/department/problem", "post">;
+type ProblemDepartmentOut = OutputOf<"/department/problem", "post">;
+type ContextIn = InputOf<"/department/context", "post">;
+type ContextOut = OutputOf<"/department/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getDepartmentDefault = async (
   input: GetDepartmentIn
 ): Promise<GetDepartmentOut> => {
-  return api.post("/departments/get", input, {
+  return api.post("/department/get", input, {
     cache: "no-store",
     headers: { "X-Bypass-Cache": "1" },
   });
@@ -61,7 +61,7 @@ async function createDepartment(
   input: CreateDepartmentIn
 ): Promise<CreateDepartmentOut> {
   "use server";
-  return api.post("/departments/create", input);
+  return api.post("/department/create", input);
 }
 
 async function createDraftNames(
@@ -82,37 +82,37 @@ async function patchDepartmentDraft(
   input: PatchDepartmentDraftIn
 ): Promise<PatchDepartmentDraftOut> {
   "use server";
-  return api.patch("/departments/draft", input);
+  return api.patch("/department/draft", input);
 }
 
 async function generateDepartment(
   input: GenerateDepartmentIn
 ): Promise<GenerateDepartmentOut> {
   "use server";
-  return api.post("/departments/generate", input);
+  return api.post("/department/generate", input);
 }
 
 async function getDepartmentGroupHistory(groupId: string): Promise<GroupDepartmentOut> {
   "use server";
-  return api.post("/departments/group", { body: { group_id: groupId } } as GroupDepartmentIn);
+  return api.post("/department/group", { body: { group_id: groupId } } as GroupDepartmentIn);
 }
 
-type GenerationsIn = InputOf<"/departments/generations", "post">;
-type GenerationsOut = OutputOf<"/departments/generations", "post">;
+type GenerationsIn = InputOf<"/department/generations", "post">;
+type GenerationsOut = OutputOf<"/department/generations", "post">;
 
 async function searchDepartmentGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/departments/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/department/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
   "use server";
-  return api.post("/departments/problem", input);
+  return api.post("/department/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/departments/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -139,7 +139,7 @@ export default async function NewDepartmentPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/departments/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -171,8 +171,8 @@ export default async function NewDepartmentPage({
   };
   const [departmentDetailDefault, draftsResult, groupResult] = await Promise.all([
     getDepartmentDefault(input),
-    api.post("/departments/drafts", {}),
-    api.post("/departments/group", { body: {} } as GroupDepartmentIn),
+    api.post("/department/drafts", {}),
+    api.post("/department/group", { body: {} } as GroupDepartmentIn),
   ]);
 
   return (

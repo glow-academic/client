@@ -58,7 +58,7 @@ export interface UploadsProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  /** Artifact-scoped base path for upload/download URLs (e.g., "/documents") */
+  /** Artifact-scoped base path for upload/download URLs (e.g., "/document") */
   uploadBasePath?: string;
   /** Server action to upload a file — receives FormData, returns upload_id */
   uploadFileAction?: (formData: FormData) => Promise<{

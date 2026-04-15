@@ -22,21 +22,21 @@ import { loadPersonasSearchParams } from "@/lib/search-params/personas";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonasListOut = OutputOf<"/personas/search", "post">;
-type DuplicatePersonaIn = InputOf<"/personas/duplicate", "post">;
-type DuplicatePersonaOut = OutputOf<"/personas/duplicate", "post">;
-type DeletePersonaIn = InputOf<"/personas/delete", "post">;
-type DeletePersonaOut = OutputOf<"/personas/delete", "post">;
-type CreatePersonaIn = InputOf<"/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/personas/create", "post">;
-type UpdatePersonaIn = InputOf<"/personas/update", "post">;
-type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
-type GroupPersonaIn = InputOf<"/personas/group", "post">;
-type GroupPersonaOut = OutputOf<"/personas/group", "post">;
-type ProblemPersonaIn = InputOf<"/personas/problem", "post">;
-type ProblemPersonaOut = OutputOf<"/personas/problem", "post">;
-type ContextIn = InputOf<"/personas/context", "post">;
-type ContextOut = OutputOf<"/personas/context", "post">;
+type PersonasListOut = OutputOf<"/persona/search", "post">;
+type DuplicatePersonaIn = InputOf<"/persona/duplicate", "post">;
+type DuplicatePersonaOut = OutputOf<"/persona/duplicate", "post">;
+type DeletePersonaIn = InputOf<"/persona/delete", "post">;
+type DeletePersonaOut = OutputOf<"/persona/delete", "post">;
+type CreatePersonaIn = InputOf<"/persona/create", "post">;
+type CreatePersonaOut = OutputOf<"/persona/create", "post">;
+type UpdatePersonaIn = InputOf<"/persona/update", "post">;
+type UpdatePersonaOut = OutputOf<"/persona/update", "post">;
+type GroupPersonaIn = InputOf<"/persona/group", "post">;
+type GroupPersonaOut = OutputOf<"/persona/group", "post">;
+type ProblemPersonaIn = InputOf<"/persona/problem", "post">;
+type ProblemPersonaOut = OutputOf<"/persona/problem", "post">;
+type ContextIn = InputOf<"/persona/context", "post">;
+type ContextOut = OutputOf<"/persona/context", "post">;
 
 /** ---- Body type for personas list request ---- */
 type PersonasListBody = {
@@ -58,7 +58,7 @@ type PersonasListBody = {
 const getPersonasList = async (body: PersonasListBody): Promise<PersonasListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/personas/search",
+    "/persona/search",
     { body },
     {
       cache: "no-store",
@@ -74,39 +74,39 @@ async function duplicatePersona(
   input: DuplicatePersonaIn
 ): Promise<DuplicatePersonaOut> {
   "use server";
-  return api.post("/personas/duplicate", input);
+  return api.post("/persona/duplicate", input);
 }
 
 async function deletePersona(
   input: DeletePersonaIn
 ): Promise<DeletePersonaOut> {
   "use server";
-  return api.post("/personas/delete", input);
+  return api.post("/persona/delete", input);
 }
 
 async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> {
   "use server";
-  return api.post("/personas/create", input);
+  return api.post("/persona/create", input);
 }
 
 async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
   "use server";
-  return api.post("/personas/update", input);
+  return api.post("/persona/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/personas/csv", { formData });
+  return api.post("/persona/csv", { formData });
 }
 
 async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
   "use server";
-  return api.post("/personas/problem", input);
+  return api.post("/persona/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/personas/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -132,7 +132,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/personas/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -175,7 +175,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
   const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getPersonasList(body),
     readViewCookie("personas"),
-    api.post("/personas/group", { body: {} } as GroupPersonaIn),
+    api.post("/persona/group", { body: {} } as GroupPersonaIn),
   ]);
 
   return (

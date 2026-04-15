@@ -39,6 +39,7 @@ interface SidebarProps {
 }
 
 interface PanelProps {
+  /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
   artifactType: string;
   groupId: string | null;
   permissions: Array<{ artifact: string; operation: string }>;

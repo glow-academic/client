@@ -22,10 +22,10 @@ import { cache } from "react";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetProfileIn = InputOf<"/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/profiles/get", "post">;
-type CreateProfileIn = InputOf<"/profiles/create", "post">;
-type CreateProfileOut = OutputOf<"/profiles/create", "post">;
+type GetProfileIn = InputOf<"/profile/get", "post">;
+type GetProfileOut = OutputOf<"/profile/get", "post">;
+type CreateProfileIn = InputOf<"/profile/create", "post">;
+type CreateProfileOut = OutputOf<"/profile/create", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
@@ -38,21 +38,21 @@ type CreateDraftRequestLimitsOut = OutputOf<
   "/api/v5/resources/request_limits",
   "post"
 >;
-type PatchProfileDraftIn = InputOf<"/profiles/draft", "patch">;
-type PatchProfileDraftOut = OutputOf<"/profiles/draft", "patch">;
-type GroupProfileIn = InputOf<"/profiles/group", "post">;
-type GroupProfileOut = OutputOf<"/profiles/group", "post">;
-type GenerateProfileIn = InputOf<"/profiles/generate", "post">;
-type GenerateProfileOut = OutputOf<"/profiles/generate", "post">;
-type ProblemProfileIn = InputOf<"/profiles/problem", "post">;
-type ProblemProfileOut = OutputOf<"/profiles/problem", "post">;
-type ContextIn = InputOf<"/profiles/context", "post">;
-type ContextOut = OutputOf<"/profiles/context", "post">;
+type PatchProfileDraftIn = InputOf<"/profile/draft", "patch">;
+type PatchProfileDraftOut = OutputOf<"/profile/draft", "patch">;
+type GroupProfileIn = InputOf<"/profile/group", "post">;
+type GroupProfileOut = OutputOf<"/profile/group", "post">;
+type GenerateProfileIn = InputOf<"/profile/generate", "post">;
+type GenerateProfileOut = OutputOf<"/profile/generate", "post">;
+type ProblemProfileIn = InputOf<"/profile/problem", "post">;
+type ProblemProfileOut = OutputOf<"/profile/problem", "post">;
+type ContextIn = InputOf<"/profile/context", "post">;
+type ContextOut = OutputOf<"/profile/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getProfileDefault = cache(
   async (input: GetProfileIn): Promise<GetProfileOut> => {
-    return api.post("/profiles/get", input, {
+    return api.post("/profile/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -64,7 +64,7 @@ const getProfileDefault = cache(
 /** ---- Strongly-typed server actions ---- */
 async function createProfile(input: CreateProfileIn): Promise<CreateProfileOut> {
   "use server";
-  return api.post("/profiles/create", input);
+  return api.post("/profile/create", input);
 }
 
 async function createDraftNames(
@@ -92,37 +92,37 @@ async function patchProfileDraft(
   input: PatchProfileDraftIn
 ): Promise<PatchProfileDraftOut> {
   "use server";
-  return api.patch("/profiles/draft", input);
+  return api.patch("/profile/draft", input);
 }
 
 async function generateProfile(
   input: GenerateProfileIn
 ): Promise<GenerateProfileOut> {
   "use server";
-  return api.post("/profiles/generate", input);
+  return api.post("/profile/generate", input);
 }
 
 async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
   "use server";
-  return api.post("/profiles/group", { body: { group_id: groupId } } as GroupProfileIn);
+  return api.post("/profile/group", { body: { group_id: groupId } } as GroupProfileIn);
 }
 
-type GenerationsIn = InputOf<"/profiles/generations", "post">;
-type GenerationsOut = OutputOf<"/profiles/generations", "post">;
+type GenerationsIn = InputOf<"/profile/generations", "post">;
+type GenerationsOut = OutputOf<"/profile/generations", "post">;
 
 async function searchProfileGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/profiles/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/profile/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemProfileOut> {
   "use server";
-  return api.post("/profiles/problem", input);
+  return api.post("/profile/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/profiles/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -148,7 +148,7 @@ export default async function NewProfilePage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/profiles/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -180,8 +180,8 @@ export default async function NewProfilePage({
 
   const [profileDetailDefault, draftsResult, groupResult] = await Promise.all([
     getProfileDefault(input),
-    api.post("/profiles/drafts", {}),
-    api.post("/profiles/group", { body: {} } as GroupProfileIn),
+    api.post("/profile/drafts", {}),
+    api.post("/profile/group", { body: {} } as GroupProfileIn),
   ]);
 
   return (

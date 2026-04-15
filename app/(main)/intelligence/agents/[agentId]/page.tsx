@@ -22,32 +22,32 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAgentIn = InputOf<"/agents/get", "post">;
-type GetAgentOut = OutputOf<"/agents/get", "post">;
-type CreateAgentIn = InputOf<"/agents/create", "post">;
-type CreateAgentOut = OutputOf<"/agents/create", "post">;
-type UpdateAgentIn = InputOf<"/agents/update", "post">;
-type UpdateAgentOut = OutputOf<"/agents/update", "post">;
-type PatchAgentDraftIn = InputOf<"/agents/draft", "patch">;
-type PatchAgentDraftOut = OutputOf<"/agents/draft", "patch">;
+type GetAgentIn = InputOf<"/agent/get", "post">;
+type GetAgentOut = OutputOf<"/agent/get", "post">;
+type CreateAgentIn = InputOf<"/agent/create", "post">;
+type CreateAgentOut = OutputOf<"/agent/create", "post">;
+type UpdateAgentIn = InputOf<"/agent/update", "post">;
+type UpdateAgentOut = OutputOf<"/agent/update", "post">;
+type PatchAgentDraftIn = InputOf<"/agent/draft", "patch">;
+type PatchAgentDraftOut = OutputOf<"/agent/draft", "patch">;
 type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 type CreateDraftPromptsIn = InputOf<"/api/v5/resources/prompts", "post">;
 type CreateDraftPromptsOut = OutputOf<"/api/v5/resources/prompts", "post">;
-type GroupAgentIn = InputOf<"/agents/group", "post">;
-type GroupAgentOut = OutputOf<"/agents/group", "post">;
-type GenerateAgentIn = InputOf<"/agents/generate", "post">;
-type GenerateAgentOut = OutputOf<"/agents/generate", "post">;
-type GenerationsIn = InputOf<"/agents/generations", "post">;
-type GenerationsOut = OutputOf<"/agents/generations", "post">;
-type ProblemAgentIn = InputOf<"/agents/problem", "post">;
-type ProblemAgentOut = OutputOf<"/agents/problem", "post">;
-type ContextIn = InputOf<"/agents/context", "post">;
-type ContextOut = OutputOf<"/agents/context", "post">;
+type GroupAgentIn = InputOf<"/agent/group", "post">;
+type GroupAgentOut = OutputOf<"/agent/group", "post">;
+type GenerateAgentIn = InputOf<"/agent/generate", "post">;
+type GenerateAgentOut = OutputOf<"/agent/generate", "post">;
+type GenerationsIn = InputOf<"/agent/generations", "post">;
+type GenerationsOut = OutputOf<"/agent/generations", "post">;
+type ProblemAgentIn = InputOf<"/agent/problem", "post">;
+type ProblemAgentOut = OutputOf<"/agent/problem", "post">;
+type ContextIn = InputOf<"/agent/context", "post">;
+type ContextOut = OutputOf<"/agent/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
-  return api.post("/agents/get", input, {
+  return api.post("/agent/get", input, {
     cache: "no-store",
     headers: { "X-Bypass-Cache": "1" },
   });
@@ -56,19 +56,19 @@ const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
-  return api.post("/agents/create", input);
+  return api.post("/agent/create", input);
 }
 
 async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
   "use server";
-  return api.post("/agents/update", input);
+  return api.post("/agent/update", input);
 }
 
 async function patchAgentDraft(
   input: PatchAgentDraftIn
 ): Promise<PatchAgentDraftOut> {
   "use server";
-  return api.patch("/agents/draft", input);
+  return api.patch("/agent/draft", input);
 }
 
 async function createDraftVoices(
@@ -89,22 +89,22 @@ async function generateAgent(
   input: GenerateAgentIn
 ): Promise<GenerateAgentOut> {
   "use server";
-  return api.post("/agents/generate", input);
+  return api.post("/agent/generate", input);
 }
 
 async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
   "use server";
-  return api.post("/agents/group", { body: { group_id: groupId } } as GroupAgentIn);
+  return api.post("/agent/group", { body: { group_id: groupId } } as GroupAgentIn);
 }
 
 async function searchAgentGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/agents/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/agent/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
   "use server";
-  return api.post("/agents/problem", input);
+  return api.post("/agent/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -114,7 +114,7 @@ export async function generateMetadata({
   params: Promise<{ agentId: string }>;
 }): Promise<Metadata> {
   const { agentId } = await params;
-  const context = await api.post("/agents/context", { body: { entity_id: agentId } } as ContextIn) as ContextOut;
+  const context = await api.post("/agent/context", { body: { entity_id: agentId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -143,7 +143,7 @@ export default async function AgentEditPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/agents/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/agent/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -176,9 +176,9 @@ export default async function AgentEditPage({
 
     const [agentDetail, context, draftsResult, groupResult] = await Promise.all([
       getAgent(input),
-      api.post("/agents/context", { body: { entity_id: agentId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/agents/drafts", {}),
-      api.post("/agents/group", { body: {} } as GroupAgentIn),
+      api.post("/agent/context", { body: { entity_id: agentId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/agent/drafts", {}),
+      api.post("/agent/group", { body: {} } as GroupAgentIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;

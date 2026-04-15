@@ -22,25 +22,25 @@ import { loadScenariosListSearchParams } from "@/lib/search-params/scenarios-lis
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenariosListOut = OutputOf<"/scenarios/search", "post">;
-type DuplicateScenarioIn = InputOf<"/scenarios/duplicate", "post">;
-type DuplicateScenarioOut = OutputOf<"/scenarios/duplicate", "post">;
-type DeleteScenarioIn = InputOf<"/scenarios/delete", "post">;
-type DeleteScenarioOut = OutputOf<"/scenarios/delete", "post">;
-type CreateScenarioIn = InputOf<"/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/scenarios/create", "post">;
-type UpdateScenarioIn = InputOf<"/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/scenarios/update", "post">;
-type GroupScenarioIn = InputOf<"/scenarios/group", "post">;
-type GroupScenarioOut = OutputOf<"/scenarios/group", "post">;
-type GenerateScenarioIn = InputOf<"/scenarios/generate", "post">;
-type GenerateScenarioOut = OutputOf<"/scenarios/generate", "post">;
-type GenerationsIn = InputOf<"/scenarios/generations", "post">;
-type GenerationsOut = OutputOf<"/scenarios/generations", "post">;
-type ProblemScenarioIn = InputOf<"/scenarios/problem", "post">;
-type ProblemScenarioOut = OutputOf<"/scenarios/problem", "post">;
-type ContextIn = InputOf<"/scenarios/context", "post">;
-type ContextOut = OutputOf<"/scenarios/context", "post">;
+type ScenariosListOut = OutputOf<"/scenario/search", "post">;
+type DuplicateScenarioIn = InputOf<"/scenario/duplicate", "post">;
+type DuplicateScenarioOut = OutputOf<"/scenario/duplicate", "post">;
+type DeleteScenarioIn = InputOf<"/scenario/delete", "post">;
+type DeleteScenarioOut = OutputOf<"/scenario/delete", "post">;
+type CreateScenarioIn = InputOf<"/scenario/create", "post">;
+type CreateScenarioOut = OutputOf<"/scenario/create", "post">;
+type UpdateScenarioIn = InputOf<"/scenario/update", "post">;
+type UpdateScenarioOut = OutputOf<"/scenario/update", "post">;
+type GroupScenarioIn = InputOf<"/scenario/group", "post">;
+type GroupScenarioOut = OutputOf<"/scenario/group", "post">;
+type GenerateScenarioIn = InputOf<"/scenario/generate", "post">;
+type GenerateScenarioOut = OutputOf<"/scenario/generate", "post">;
+type GenerationsIn = InputOf<"/scenario/generations", "post">;
+type GenerationsOut = OutputOf<"/scenario/generations", "post">;
+type ProblemScenarioIn = InputOf<"/scenario/problem", "post">;
+type ProblemScenarioOut = OutputOf<"/scenario/problem", "post">;
+type ContextIn = InputOf<"/scenario/context", "post">;
+type ContextOut = OutputOf<"/scenario/context", "post">;
 
 /** ---- Body type for scenarios list request ---- */
 type ScenariosListBody = {
@@ -63,7 +63,7 @@ type ScenariosListBody = {
 const getScenariosList = async (body: ScenariosListBody): Promise<ScenariosListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/scenarios/search",
+    "/scenario/search",
     { body },
     {
       cache: "no-store",
@@ -81,56 +81,56 @@ async function duplicateScenario(
   input: DuplicateScenarioIn,
 ): Promise<DuplicateScenarioOut> {
   "use server";
-  return api.post("/scenarios/duplicate", input);
+  return api.post("/scenario/duplicate", input);
 }
 
 async function deleteScenario(
   input: DeleteScenarioIn,
 ): Promise<DeleteScenarioOut> {
   "use server";
-  return api.post("/scenarios/delete", input);
+  return api.post("/scenario/delete", input);
 }
 
 async function createScenario(input: CreateScenarioIn): Promise<CreateScenarioOut> {
   "use server";
-  return api.post("/scenarios/create", input);
+  return api.post("/scenario/create", input);
 }
 
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
-  return api.post("/scenarios/update", input);
+  return api.post("/scenario/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/scenarios/csv", { formData });
+  return api.post("/scenario/csv", { formData });
 }
 
 async function generateScenario(
   input: GenerateScenarioIn
 ): Promise<GenerateScenarioOut> {
   "use server";
-  return api.post("/scenarios/generate", input);
+  return api.post("/scenario/generate", input);
 }
 
 async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
   "use server";
-  return api.post("/scenarios/group", { body: { group_id: groupId } } as GroupScenarioIn);
+  return api.post("/scenario/group", { body: { group_id: groupId } } as GroupScenarioIn);
 }
 
 async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/scenarios/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/scenario/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
   "use server";
-  return api.post("/scenarios/problem", input);
+  return api.post("/scenario/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/scenarios/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -156,7 +156,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/scenarios/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -197,7 +197,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
   const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getScenariosList(body),
     readViewCookie("scenarios"),
-    api.post("/scenarios/group", { body: {} } as GroupScenarioIn),
+    api.post("/scenario/group", { body: {} } as GroupScenarioIn),
   ]);
 
   return (

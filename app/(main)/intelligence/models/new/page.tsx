@@ -21,12 +21,12 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetModelIn = InputOf<"/models/get", "post">;
-type GetModelOut = OutputOf<"/models/get", "post">;
-type CreateModelIn = InputOf<"/models/create", "post">;
-type CreateModelOut = OutputOf<"/models/create", "post">;
-type PatchModelDraftIn = InputOf<"/models/draft", "patch">;
-type PatchModelDraftOut = OutputOf<"/models/draft", "patch">;
+type GetModelIn = InputOf<"/model/get", "post">;
+type GetModelOut = OutputOf<"/model/get", "post">;
+type CreateModelIn = InputOf<"/model/create", "post">;
+type CreateModelOut = OutputOf<"/model/create", "post">;
+type PatchModelDraftIn = InputOf<"/model/draft", "patch">;
+type PatchModelDraftOut = OutputOf<"/model/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -43,20 +43,20 @@ type CreateDraftPricingIn = InputOf<"/api/v5/resources/pricing", "post">;
 type CreateDraftPricingOut = OutputOf<"/api/v5/resources/pricing", "post">;
 type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
 type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
-type GroupModelIn = InputOf<"/models/group", "post">;
-type GroupModelOut = OutputOf<"/models/group", "post">;
-type GenerateModelIn = InputOf<"/models/generate", "post">;
-type GenerateModelOut = OutputOf<"/models/generate", "post">;
-type ProblemModelIn = InputOf<"/models/problem", "post">;
-type ProblemModelOut = OutputOf<"/models/problem", "post">;
-type ContextIn = InputOf<"/models/context", "post">;
-type ContextOut = OutputOf<"/models/context", "post">;
+type GroupModelIn = InputOf<"/model/group", "post">;
+type GroupModelOut = OutputOf<"/model/group", "post">;
+type GenerateModelIn = InputOf<"/model/generate", "post">;
+type GenerateModelOut = OutputOf<"/model/generate", "post">;
+type ProblemModelIn = InputOf<"/model/problem", "post">;
+type ProblemModelOut = OutputOf<"/model/problem", "post">;
+type ContextIn = InputOf<"/model/context", "post">;
+type ContextOut = OutputOf<"/model/context", "post">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
   input: GetModelIn
 ): Promise<GetModelOut> => {
-  return api.post("/models/get", input, {
+  return api.post("/model/get", input, {
     cache: "no-store",
     headers: { "X-Bypass-Cache": "1" },
   });
@@ -65,14 +65,14 @@ const getModelDetailDefault = async (
 /** ---- Strongly-typed server actions ---- */
 async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
   "use server";
-  return api.post("/models/create", input);
+  return api.post("/model/create", input);
 }
 
 async function patchModelDraft(
   input: PatchModelDraftIn
 ): Promise<PatchModelDraftOut> {
   "use server";
-  return api.patch("/models/draft", input);
+  return api.patch("/model/draft", input);
 }
 
 async function createDraftNames(
@@ -114,30 +114,30 @@ async function generateModel(
   input: GenerateModelIn
 ): Promise<GenerateModelOut> {
   "use server";
-  return api.post("/models/generate", input);
+  return api.post("/model/generate", input);
 }
 
 async function getModelGroupHistory(groupId: string): Promise<GroupModelOut> {
   "use server";
-  return api.post("/models/group", { body: { group_id: groupId } } as GroupModelIn);
+  return api.post("/model/group", { body: { group_id: groupId } } as GroupModelIn);
 }
 
-type GenerationsIn = InputOf<"/models/generations", "post">;
-type GenerationsOut = OutputOf<"/models/generations", "post">;
+type GenerationsIn = InputOf<"/model/generations", "post">;
+type GenerationsOut = OutputOf<"/model/generations", "post">;
 
 async function searchModelGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/models/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/model/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {
   "use server";
-  return api.post("/models/problem", input);
+  return api.post("/model/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/models/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -164,7 +164,7 @@ export default async function NewModelPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/models/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -196,8 +196,8 @@ export default async function NewModelPage({
   };
   const [modelDetailDefault, draftsResult, groupResult] = await Promise.all([
     getModelDetailDefault(input),
-    api.post("/models/drafts", {}),
-    api.post("/models/group", { body: {} } as GroupModelIn),
+    api.post("/model/drafts", {}),
+    api.post("/model/group", { body: {} } as GroupModelIn),
   ]);
 
   return (

@@ -20,21 +20,21 @@ import { buildSnapshot } from "@/lib/auth";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelsListOut = OutputOf<"/models/search", "post">;
-type DuplicateModelIn = InputOf<"/models/duplicate", "post">;
-type DuplicateModelOut = OutputOf<"/models/duplicate", "post">;
-type DeleteModelIn = InputOf<"/models/delete", "post">;
-type DeleteModelOut = OutputOf<"/models/delete", "post">;
-type GroupModelIn = InputOf<"/models/group", "post">;
-type GroupModelOut = OutputOf<"/models/group", "post">;
-type GenerateModelIn = InputOf<"/models/generate", "post">;
-type GenerateModelOut = OutputOf<"/models/generate", "post">;
-type GenerationsIn = InputOf<"/models/generations", "post">;
-type GenerationsOut = OutputOf<"/models/generations", "post">;
-type ProblemModelIn = InputOf<"/models/problem", "post">;
-type ProblemModelOut = OutputOf<"/models/problem", "post">;
-type ContextIn = InputOf<"/models/context", "post">;
-type ContextOut = OutputOf<"/models/context", "post">;
+type ModelsListOut = OutputOf<"/model/search", "post">;
+type DuplicateModelIn = InputOf<"/model/duplicate", "post">;
+type DuplicateModelOut = OutputOf<"/model/duplicate", "post">;
+type DeleteModelIn = InputOf<"/model/delete", "post">;
+type DeleteModelOut = OutputOf<"/model/delete", "post">;
+type GroupModelIn = InputOf<"/model/group", "post">;
+type GroupModelOut = OutputOf<"/model/group", "post">;
+type GenerateModelIn = InputOf<"/model/generate", "post">;
+type GenerateModelOut = OutputOf<"/model/generate", "post">;
+type GenerationsIn = InputOf<"/model/generations", "post">;
+type GenerationsOut = OutputOf<"/model/generations", "post">;
+type ProblemModelIn = InputOf<"/model/problem", "post">;
+type ProblemModelOut = OutputOf<"/model/problem", "post">;
+type ContextIn = InputOf<"/model/context", "post">;
+type ContextOut = OutputOf<"/model/context", "post">;
 
 /** ---- Body type for models list request ---- */
 type ModelsListBody = {
@@ -53,7 +53,7 @@ type ModelsListBody = {
 const getModelsList = async (body: ModelsListBody): Promise<ModelsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/models/search",
+    "/model/search",
     { body },
     {
       cache: "no-store",
@@ -69,39 +69,39 @@ async function duplicateModel(
   input: DuplicateModelIn,
 ): Promise<DuplicateModelOut> {
   "use server";
-  return api.post("/models/duplicate", input);
+  return api.post("/model/duplicate", input);
 }
 
 async function deleteModel(input: DeleteModelIn): Promise<DeleteModelOut> {
   "use server";
-  return api.post("/models/delete", input);
+  return api.post("/model/delete", input);
 }
 
 async function generateModel(
   input: GenerateModelIn
 ): Promise<GenerateModelOut> {
   "use server";
-  return api.post("/models/generate", input);
+  return api.post("/model/generate", input);
 }
 
 async function getModelGroupHistory(groupId: string): Promise<GroupModelOut> {
   "use server";
-  return api.post("/models/group", { body: { group_id: groupId } } as GroupModelIn);
+  return api.post("/model/group", { body: { group_id: groupId } } as GroupModelIn);
 }
 
 async function searchModelGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/models/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/model/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createModelProblem(input: ProblemModelIn): Promise<ProblemModelOut> {
   "use server";
-  return api.post("/models/problem", input);
+  return api.post("/model/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/models/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -127,7 +127,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/models/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/model/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -166,7 +166,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getModelsList(body),
-    api.post("/models/group", { body: {} } as GroupModelIn),
+    api.post("/model/group", { body: {} } as GroupModelIn),
   ]);
 
   return (

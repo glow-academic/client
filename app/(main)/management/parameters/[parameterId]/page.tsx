@@ -22,24 +22,24 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParameterGetIn = InputOf<"/parameters/get", "post">;
-type ParameterGetOut = OutputOf<"/parameters/get", "post">;
-type UpdateParameterIn = InputOf<"/parameters/update", "post">;
-type UpdateParameterOut = OutputOf<"/parameters/update", "post">;
-type PatchParameterDraftIn = InputOf<"/parameters/draft", "patch">;
-type PatchParameterDraftOut = OutputOf<"/parameters/draft", "patch">;
+type ParameterGetIn = InputOf<"/parameter/get", "post">;
+type ParameterGetOut = OutputOf<"/parameter/get", "post">;
+type UpdateParameterIn = InputOf<"/parameter/update", "post">;
+type UpdateParameterOut = OutputOf<"/parameter/update", "post">;
+type PatchParameterDraftIn = InputOf<"/parameter/draft", "patch">;
+type PatchParameterDraftOut = OutputOf<"/parameter/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<"/api/v5/resources/descriptions", "post">;
 type CreateDraftDescriptionsOut = OutputOf<"/api/v5/resources/descriptions", "post">;
-type GroupParameterIn = InputOf<"/parameters/group", "post">;
-type GroupParameterOut = OutputOf<"/parameters/group", "post">;
-type GenerateParameterIn = InputOf<"/parameters/generate", "post">;
-type GenerateParameterOut = OutputOf<"/parameters/generate", "post">;
-type ProblemParameterIn = InputOf<"/parameters/problem", "post">;
-type ProblemParameterOut = OutputOf<"/parameters/problem", "post">;
-type ContextIn = InputOf<"/parameters/context", "post">;
-type ContextOut = OutputOf<"/parameters/context", "post">;
+type GroupParameterIn = InputOf<"/parameter/group", "post">;
+type GroupParameterOut = OutputOf<"/parameter/group", "post">;
+type GenerateParameterIn = InputOf<"/parameter/generate", "post">;
+type GenerateParameterOut = OutputOf<"/parameter/generate", "post">;
+type ProblemParameterIn = InputOf<"/parameter/problem", "post">;
+type ProblemParameterOut = OutputOf<"/parameter/problem", "post">;
+type ContextIn = InputOf<"/parameter/context", "post">;
+type ContextOut = OutputOf<"/parameter/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -47,7 +47,7 @@ type ContextOut = OutputOf<"/parameters/context", "post">;
 const getParameter = async (
   input: ParameterGetIn
 ): Promise<ParameterGetOut> => {
-  return api.post("/parameters/get", input, {
+  return api.post("/parameter/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -60,12 +60,12 @@ async function updateParameter(
   input: UpdateParameterIn
 ): Promise<UpdateParameterOut> {
   "use server";
-  return api.post("/parameters/update", input);
+  return api.post("/parameter/update", input);
 }
 
 async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
   "use server";
-  return api.patch("/parameters/draft", input);
+  return api.patch("/parameter/draft", input);
 }
 
 async function createNames(input: CreateDraftNamesIn): Promise<CreateDraftNamesOut> {
@@ -84,25 +84,25 @@ async function generateParameter(
   input: GenerateParameterIn
 ): Promise<GenerateParameterOut> {
   "use server";
-  return api.post("/parameters/generate", input);
+  return api.post("/parameter/generate", input);
 }
 
 async function getParameterGroupHistory(groupId: string): Promise<GroupParameterOut> {
   "use server";
-  return api.post("/parameters/group", { body: { group_id: groupId } } as GroupParameterIn);
+  return api.post("/parameter/group", { body: { group_id: groupId } } as GroupParameterIn);
 }
 
-type GenerationsIn = InputOf<"/parameters/generations", "post">;
-type GenerationsOut = OutputOf<"/parameters/generations", "post">;
+type GenerationsIn = InputOf<"/parameter/generations", "post">;
+type GenerationsOut = OutputOf<"/parameter/generations", "post">;
 
 async function searchParameterGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/parameters/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/parameter/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createParameterProblem(input: ProblemParameterIn): Promise<ProblemParameterOut> {
   "use server";
-  return api.post("/parameters/problem", input);
+  return api.post("/parameter/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -112,7 +112,7 @@ export async function generateMetadata({
   params: Promise<{ parameterId: string }>;
 }): Promise<Metadata> {
   const { parameterId } = await params;
-  const context = await api.post("/parameters/context", { body: { entity_id: parameterId } } as ContextIn) as ContextOut;
+  const context = await api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -142,7 +142,7 @@ export default async function ParameterEditPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/parameters/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -177,9 +177,9 @@ export default async function ParameterEditPage({
     };
     const [parameterDetail, context, draftsResult, groupResult] = await Promise.all([
       getParameter(input),
-      api.post("/parameters/context", { body: { entity_id: parameterId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/parameters/drafts", {}),
-      api.post("/parameters/group", { body: {} } as GroupParameterIn),
+      api.post("/parameter/context", { body: { entity_id: parameterId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/parameter/drafts", {}),
+      api.post("/parameter/group", { body: {} } as GroupParameterIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;

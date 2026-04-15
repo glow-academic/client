@@ -21,12 +21,12 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetDocumentIn = InputOf<"/documents/get", "post">;
-type GetDocumentOut = OutputOf<"/documents/get", "post">;
-type CreateDocumentIn = InputOf<"/documents/create", "post">;
-type CreateDocumentOut = OutputOf<"/documents/create", "post">;
-type PatchDocumentDraftIn = InputOf<"/documents/draft", "patch">;
-type PatchDocumentDraftOut = OutputOf<"/documents/draft", "patch">;
+type GetDocumentIn = InputOf<"/document/get", "post">;
+type GetDocumentOut = OutputOf<"/document/get", "post">;
+type CreateDocumentIn = InputOf<"/document/create", "post">;
+type CreateDocumentOut = OutputOf<"/document/create", "post">;
+type PatchDocumentDraftIn = InputOf<"/document/draft", "patch">;
+type PatchDocumentDraftOut = OutputOf<"/document/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -43,14 +43,14 @@ type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
 type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
 type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
-type GroupDocumentIn = InputOf<"/documents/group", "post">;
-type GroupDocumentOut = OutputOf<"/documents/group", "post">;
-type GenerateDocumentIn = InputOf<"/documents/generate", "post">;
-type GenerateDocumentOut = OutputOf<"/documents/generate", "post">;
-type ProblemDocumentIn = InputOf<"/documents/problem", "post">;
-type ProblemDocumentOut = OutputOf<"/documents/problem", "post">;
-type ContextIn = InputOf<"/documents/context", "post">;
-type ContextOut = OutputOf<"/documents/context", "post">;
+type GroupDocumentIn = InputOf<"/document/group", "post">;
+type GroupDocumentOut = OutputOf<"/document/group", "post">;
+type GenerateDocumentIn = InputOf<"/document/generate", "post">;
+type GenerateDocumentOut = OutputOf<"/document/generate", "post">;
+type ProblemDocumentIn = InputOf<"/document/problem", "post">;
+type ProblemDocumentOut = OutputOf<"/document/problem", "post">;
+type ContextIn = InputOf<"/document/context", "post">;
+type ContextOut = OutputOf<"/document/context", "post">;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
@@ -59,7 +59,7 @@ type UploadResult = { success: boolean; upload_id?: string; message?: string };
 const getDocumentDefault = async (
   input: GetDocumentIn
 ): Promise<GetDocumentOut> => {
-  return api.post("/documents/get", input, {
+  return api.post("/document/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -70,14 +70,14 @@ const getDocumentDefault = async (
 /** ---- Strongly-typed server actions ---- */
 async function createDocument(input: CreateDocumentIn): Promise<CreateDocumentOut> {
   "use server";
-  return api.post("/documents/create", input);
+  return api.post("/document/create", input);
 }
 
 async function patchDocumentDraft(
   input: PatchDocumentDraftIn
 ): Promise<PatchDocumentDraftOut> {
   "use server";
-  return api.patch("/documents/draft", input);
+  return api.patch("/document/draft", input);
 }
 
 async function createDraftNames(
@@ -152,30 +152,30 @@ async function generateDocument(
   input: GenerateDocumentIn
 ): Promise<GenerateDocumentOut> {
   "use server";
-  return api.post("/documents/generate", input);
+  return api.post("/document/generate", input);
 }
 
 async function getDocumentGroupHistory(groupId: string): Promise<GroupDocumentOut> {
   "use server";
-  return api.post("/documents/group", { body: { group_id: groupId } } as GroupDocumentIn);
+  return api.post("/document/group", { body: { group_id: groupId } } as GroupDocumentIn);
 }
 
-type GenerationsIn = InputOf<"/documents/generations", "post">;
-type GenerationsOut = OutputOf<"/documents/generations", "post">;
+type GenerationsIn = InputOf<"/document/generations", "post">;
+type GenerationsOut = OutputOf<"/document/generations", "post">;
 
 async function searchDocumentGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/documents/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/document/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemDocumentOut> {
   "use server";
-  return api.post("/documents/problem", input);
+  return api.post("/document/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/documents/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -201,7 +201,7 @@ export default async function NewDocumentPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/documents/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -235,8 +235,8 @@ export default async function NewDocumentPage({
 
   const [documentDetailDefault, draftsResult, groupResult] = await Promise.all([
     getDocumentDefault(input),
-    api.post("/documents/drafts", {}),
-    api.post("/documents/group", { body: {} } as GroupDocumentIn),
+    api.post("/document/drafts", {}),
+    api.post("/document/group", { body: {} } as GroupDocumentIn),
   ]);
 
   return (
@@ -286,7 +286,7 @@ export default async function NewDocumentPage({
             createUploadsAction={createDraftUploads}
             createImagesAction={createDraftImages}
             createTextsAction={createDraftTexts}
-            uploadBasePath="/documents"
+            uploadBasePath="/document"
             uploadFileAction={uploadFile}
           />
         </div>

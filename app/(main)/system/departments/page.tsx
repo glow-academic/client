@@ -19,21 +19,21 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentsListOut = OutputOf<"/departments/search", "post">;
-type DuplicateDepartmentIn = InputOf<"/departments/duplicate", "post">;
-type DuplicateDepartmentOut = OutputOf<"/departments/duplicate", "post">;
-type DeleteDepartmentIn = InputOf<"/departments/delete", "post">;
-type DeleteDepartmentOut = OutputOf<"/departments/delete", "post">;
-type GroupDepartmentIn = InputOf<"/departments/group", "post">;
-type GroupDepartmentOut = OutputOf<"/departments/group", "post">;
-type GenerateDepartmentIn = InputOf<"/departments/generate", "post">;
-type GenerateDepartmentOut = OutputOf<"/departments/generate", "post">;
-type GenerationsIn = InputOf<"/departments/generations", "post">;
-type GenerationsOut = OutputOf<"/departments/generations", "post">;
-type ProblemDepartmentIn = InputOf<"/departments/problem", "post">;
-type ProblemDepartmentOut = OutputOf<"/departments/problem", "post">;
-type ContextIn = InputOf<"/departments/context", "post">;
-type ContextOut = OutputOf<"/departments/context", "post">;
+type DepartmentsListOut = OutputOf<"/department/search", "post">;
+type DuplicateDepartmentIn = InputOf<"/department/duplicate", "post">;
+type DuplicateDepartmentOut = OutputOf<"/department/duplicate", "post">;
+type DeleteDepartmentIn = InputOf<"/department/delete", "post">;
+type DeleteDepartmentOut = OutputOf<"/department/delete", "post">;
+type GroupDepartmentIn = InputOf<"/department/group", "post">;
+type GroupDepartmentOut = OutputOf<"/department/group", "post">;
+type GenerateDepartmentIn = InputOf<"/department/generate", "post">;
+type GenerateDepartmentOut = OutputOf<"/department/generate", "post">;
+type GenerationsIn = InputOf<"/department/generations", "post">;
+type GenerationsOut = OutputOf<"/department/generations", "post">;
+type ProblemDepartmentIn = InputOf<"/department/problem", "post">;
+type ProblemDepartmentOut = OutputOf<"/department/problem", "post">;
+type ContextIn = InputOf<"/department/context", "post">;
+type ContextOut = OutputOf<"/department/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -42,7 +42,7 @@ type ContextOut = OutputOf<"/departments/context", "post">;
 const getDepartmentsList = async (): Promise<DepartmentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/departments/search",
+    "/department/search",
     { body: {} },
     {
       cache: "no-store",
@@ -61,7 +61,7 @@ async function duplicateDepartment(
 ): Promise<DuplicateDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/departments/duplicate", input);
+  return api.post("/department/duplicate", input);
 }
 
 async function deleteDepartment(
@@ -69,34 +69,34 @@ async function deleteDepartment(
 ): Promise<DeleteDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/departments/delete", input);
+  return api.post("/department/delete", input);
 }
 
 async function generateDepartment(
   input: GenerateDepartmentIn
 ): Promise<GenerateDepartmentOut> {
   "use server";
-  return api.post("/departments/generate", input);
+  return api.post("/department/generate", input);
 }
 
 async function getDepartmentGroupHistory(groupId: string): Promise<GroupDepartmentOut> {
   "use server";
-  return api.post("/departments/group", { body: { group_id: groupId } } as GroupDepartmentIn);
+  return api.post("/department/group", { body: { group_id: groupId } } as GroupDepartmentIn);
 }
 
 async function searchDepartmentGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/departments/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/department/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createDepartmentProblem(input: ProblemDepartmentIn): Promise<ProblemDepartmentOut> {
   "use server";
-  return api.post("/departments/problem", input);
+  return api.post("/department/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/departments/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -118,13 +118,13 @@ export default async function DepartmentsPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/departments/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/department/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getDepartmentsList(),
-    api.post("/departments/group", { body: {} } as GroupDepartmentIn),
+    api.post("/department/group", { body: {} } as GroupDepartmentIn),
   ]);
 
   return (

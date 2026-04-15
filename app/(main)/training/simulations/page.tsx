@@ -22,25 +22,25 @@ import { loadSimulationsListSearchParams } from "@/lib/search-params/simulations
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationsListOut = OutputOf<"/simulations/search", "post">;
-type DuplicateSimulationIn = InputOf<"/simulations/duplicate", "post">;
-type DuplicateSimulationOut = OutputOf<"/simulations/duplicate", "post">;
-type DeleteSimulationIn = InputOf<"/simulations/delete", "post">;
-type DeleteSimulationOut = OutputOf<"/simulations/delete", "post">;
-type CreateSimulationIn = InputOf<"/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/simulations/create", "post">;
-type UpdateSimulationIn = InputOf<"/simulations/update", "post">;
-type UpdateSimulationOut = OutputOf<"/simulations/update", "post">;
-type GroupSimulationIn = InputOf<"/simulations/group", "post">;
-type GroupSimulationOut = OutputOf<"/simulations/group", "post">;
-type GenerateSimulationIn = InputOf<"/simulations/generate", "post">;
-type GenerateSimulationOut = OutputOf<"/simulations/generate", "post">;
-type GenerationsIn = InputOf<"/simulations/generations", "post">;
-type GenerationsOut = OutputOf<"/simulations/generations", "post">;
-type ProblemSimulationIn = InputOf<"/simulations/problem", "post">;
-type ProblemSimulationOut = OutputOf<"/simulations/problem", "post">;
-type ContextIn = InputOf<"/simulations/context", "post">;
-type ContextOut = OutputOf<"/simulations/context", "post">;
+type SimulationsListOut = OutputOf<"/simulation/search", "post">;
+type DuplicateSimulationIn = InputOf<"/simulation/duplicate", "post">;
+type DuplicateSimulationOut = OutputOf<"/simulation/duplicate", "post">;
+type DeleteSimulationIn = InputOf<"/simulation/delete", "post">;
+type DeleteSimulationOut = OutputOf<"/simulation/delete", "post">;
+type CreateSimulationIn = InputOf<"/simulation/create", "post">;
+type CreateSimulationOut = OutputOf<"/simulation/create", "post">;
+type UpdateSimulationIn = InputOf<"/simulation/update", "post">;
+type UpdateSimulationOut = OutputOf<"/simulation/update", "post">;
+type GroupSimulationIn = InputOf<"/simulation/group", "post">;
+type GroupSimulationOut = OutputOf<"/simulation/group", "post">;
+type GenerateSimulationIn = InputOf<"/simulation/generate", "post">;
+type GenerateSimulationOut = OutputOf<"/simulation/generate", "post">;
+type GenerationsIn = InputOf<"/simulation/generations", "post">;
+type GenerationsOut = OutputOf<"/simulation/generations", "post">;
+type ProblemSimulationIn = InputOf<"/simulation/problem", "post">;
+type ProblemSimulationOut = OutputOf<"/simulation/problem", "post">;
+type ContextIn = InputOf<"/simulation/context", "post">;
+type ContextOut = OutputOf<"/simulation/context", "post">;
 
 /** ---- Body type for simulations list request ---- */
 type SimulationsListBody = {
@@ -63,7 +63,7 @@ type SimulationsListBody = {
 const getSimulationsList = async (body: SimulationsListBody): Promise<SimulationsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/simulations/search",
+    "/simulation/search",
     { body },
     {
       cache: "no-store",
@@ -81,56 +81,56 @@ async function duplicateSimulation(
   input: DuplicateSimulationIn,
 ): Promise<DuplicateSimulationOut> {
   "use server";
-  return api.post("/simulations/duplicate", input);
+  return api.post("/simulation/duplicate", input);
 }
 
 async function deleteSimulation(
   input: DeleteSimulationIn,
 ): Promise<DeleteSimulationOut> {
   "use server";
-  return api.post("/simulations/delete", input);
+  return api.post("/simulation/delete", input);
 }
 
 async function createSimulation(input: CreateSimulationIn): Promise<CreateSimulationOut> {
   "use server";
-  return api.post("/simulations/create", input);
+  return api.post("/simulation/create", input);
 }
 
 async function updateSimulation(input: UpdateSimulationIn): Promise<UpdateSimulationOut> {
   "use server";
-  return api.post("/simulations/update", input);
+  return api.post("/simulation/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/simulations/csv", { formData });
+  return api.post("/simulation/csv", { formData });
 }
 
 async function generateSimulation(
   input: GenerateSimulationIn
 ): Promise<GenerateSimulationOut> {
   "use server";
-  return api.post("/simulations/generate", input);
+  return api.post("/simulation/generate", input);
 }
 
 async function getSimulationGroupHistory(groupId: string): Promise<GroupSimulationOut> {
   "use server";
-  return api.post("/simulations/group", { body: { group_id: groupId } } as GroupSimulationIn);
+  return api.post("/simulation/group", { body: { group_id: groupId } } as GroupSimulationIn);
 }
 
 async function searchSimulationGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/simulations/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/simulation/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createSimulationProblem(input: ProblemSimulationIn): Promise<ProblemSimulationOut> {
   "use server";
-  return api.post("/simulations/problem", input);
+  return api.post("/simulation/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/simulations/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -156,7 +156,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/simulations/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/simulation/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -197,7 +197,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
   const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getSimulationsList(body),
     readViewCookie("simulations"),
-    api.post("/simulations/group", { body: {} } as GroupSimulationIn),
+    api.post("/simulation/group", { body: {} } as GroupSimulationIn),
   ]);
 
   return (

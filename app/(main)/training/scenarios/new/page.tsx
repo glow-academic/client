@@ -25,39 +25,39 @@ import {
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetScenarioIn = InputOf<"/scenarios/get", "post">;
-type GetScenarioOut = OutputOf<"/scenarios/get", "post">;
-type CreateScenarioIn = InputOf<"/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/scenarios/create", "post">;
-type PatchScenarioDraftIn = InputOf<"/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/scenarios/draft", "patch">;
-type GroupScenarioIn = InputOf<"/scenarios/group", "post">;
-type GroupScenarioOut = OutputOf<"/scenarios/group", "post">;
-type GenerateScenarioIn = InputOf<"/scenarios/generate", "post">;
-type GenerateScenarioOut = OutputOf<"/scenarios/generate", "post">;
-type ProblemScenarioIn = InputOf<"/scenarios/problem", "post">;
-type ProblemScenarioOut = OutputOf<"/scenarios/problem", "post">;
-type ContextIn = InputOf<"/scenarios/context", "post">;
-type ContextOut = OutputOf<"/scenarios/context", "post">;
+type GetScenarioIn = InputOf<"/scenario/get", "post">;
+type GetScenarioOut = OutputOf<"/scenario/get", "post">;
+type CreateScenarioIn = InputOf<"/scenario/create", "post">;
+type CreateScenarioOut = OutputOf<"/scenario/create", "post">;
+type PatchScenarioDraftIn = InputOf<"/scenario/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/scenario/draft", "patch">;
+type GroupScenarioIn = InputOf<"/scenario/group", "post">;
+type GroupScenarioOut = OutputOf<"/scenario/group", "post">;
+type GenerateScenarioIn = InputOf<"/scenario/generate", "post">;
+type GenerateScenarioOut = OutputOf<"/scenario/generate", "post">;
+type ProblemScenarioIn = InputOf<"/scenario/problem", "post">;
+type ProblemScenarioOut = OutputOf<"/scenario/problem", "post">;
+type ContextIn = InputOf<"/scenario/context", "post">;
+type ContextOut = OutputOf<"/scenario/context", "post">;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
 
 async function getScenario(input: GetScenarioIn): Promise<GetScenarioOut> {
   "use server";
-  return api.post("/scenarios/get", input);
+  return api.post("/scenario/get", input);
 }
 
 async function createScenario(input: CreateScenarioIn): Promise<CreateScenarioOut> {
   "use server";
-  return api.post("/scenarios/create", input);
+  return api.post("/scenario/create", input);
 }
 
 async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  return api.patch("/scenarios/draft", input);
+  return api.patch("/scenario/draft", input);
 }
 
 async function uploadFile(formData: FormData): Promise<UploadResult> {
@@ -97,30 +97,30 @@ async function generateScenario(
   input: GenerateScenarioIn
 ): Promise<GenerateScenarioOut> {
   "use server";
-  return api.post("/scenarios/generate", input);
+  return api.post("/scenario/generate", input);
 }
 
 async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
   "use server";
-  return api.post("/scenarios/group", { body: { group_id: groupId } } as GroupScenarioIn);
+  return api.post("/scenario/group", { body: { group_id: groupId } } as GroupScenarioIn);
 }
 
-type GenerationsIn = InputOf<"/scenarios/generations", "post">;
-type GenerationsOut = OutputOf<"/scenarios/generations", "post">;
+type GenerationsIn = InputOf<"/scenario/generations", "post">;
+type GenerationsOut = OutputOf<"/scenario/generations", "post">;
 
 async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/scenarios/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/scenario/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
   "use server";
-  return api.post("/scenarios/problem", input);
+  return api.post("/scenario/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/scenarios/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -146,7 +146,7 @@ export default async function NewScenarioPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers (until /scenarios/context returns full profile)
-  const context = await api.post("/scenarios/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -217,8 +217,8 @@ export default async function NewScenarioPage({
       } : undefined,
     } as GetScenarioIn["body"],
   }),
-    api.post("/scenarios/drafts", {}),
-    api.post("/scenarios/group", { body: {} } as GroupScenarioIn),
+    api.post("/scenario/drafts", {}),
+    api.post("/scenario/group", { body: {} } as GroupScenarioIn),
   ]);
 
   return (
@@ -261,7 +261,7 @@ export default async function NewScenarioPage({
             scenarioDetailDefault={scenarioDetailDefault}
             createScenarioAction={createScenario}
             patchScenarioDraftAction={patchScenarioDraft}
-            uploadBasePath="/scenarios"
+            uploadBasePath="/scenario"
             uploadFileAction={uploadFile}
           />
         </div>

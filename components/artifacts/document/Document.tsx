@@ -94,10 +94,10 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
 ];
 
 // Types defined inline using InputOf/OutputOf
-type CreateDocumentIn = InputOf<"/documents/create", "post">;
-type CreateDocumentOut = OutputOf<"/documents/create", "post">;
-type UpdateDocumentIn = InputOf<"/documents/update", "post">;
-type UpdateDocumentOut = OutputOf<"/documents/update", "post">;
+type CreateDocumentIn = InputOf<"/document/create", "post">;
+type CreateDocumentOut = OutputOf<"/document/create", "post">;
+type UpdateDocumentIn = InputOf<"/document/update", "post">;
+type UpdateDocumentOut = OutputOf<"/document/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -115,15 +115,15 @@ type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
 type CreateDraftTextsIn = InputOf<"/api/v5/resources/texts", "post">;
 type CreateDraftTextsOut = OutputOf<"/api/v5/resources/texts", "post">;
 type PatchDocumentDraftIn = InputOf<
-  "/documents/draft",
+  "/document/draft",
   "patch"
 >;
 type PatchDocumentDraftOut = OutputOf<
-  "/documents/draft",
+  "/document/draft",
   "patch"
 >;
 
-type DocumentData = OutputOf<"/documents/get", "post">;
+type DocumentData = OutputOf<"/document/get", "post">;
 
 export interface DocumentProps {
   documentId?: string;

@@ -36,10 +36,10 @@ import { Check } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type CreateToolIn = InputOf<"/tools/create", "post">;
-type CreateToolOut = OutputOf<"/tools/create", "post">;
-type UpdateToolIn = InputOf<"/tools/update", "post">;
-type UpdateToolOut = OutputOf<"/tools/update", "post">;
+type CreateToolIn = InputOf<"/tool/create", "post">;
+type CreateToolOut = OutputOf<"/tool/create", "post">;
+type UpdateToolIn = InputOf<"/tool/update", "post">;
+type UpdateToolOut = OutputOf<"/tool/update", "post">;
 type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -63,10 +63,10 @@ type CreateDraftArgPositionsIn = {
 type CreateDraftArgPositionsOut = {
   id?: string | null;
 };
-type PatchToolDraftIn = InputOf<"/tools/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/tools/draft", "patch">;
+type PatchToolDraftIn = InputOf<"/tool/draft", "patch">;
+type PatchToolDraftOut = OutputOf<"/tool/draft", "patch">;
 
-type ToolData = OutputOf<"/tools/get", "post">;
+type ToolData = OutputOf<"/tool/get", "post">;
 type ToolDataWithArgPositions = ToolData & {
   arg_positions?: {
     current?: Array<{

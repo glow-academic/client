@@ -22,14 +22,14 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetToolIn = InputOf<"/tools/get", "post">;
-type GetToolOut = OutputOf<"/tools/get", "post">;
-type CreateToolIn = InputOf<"/tools/create", "post">;
-type CreateToolOut = OutputOf<"/tools/create", "post">;
-type UpdateToolIn = InputOf<"/tools/update", "post">;
-type UpdateToolOut = OutputOf<"/tools/update", "post">;
-type PatchToolDraftIn = InputOf<"/tools/draft", "patch">;
-type PatchToolDraftOut = OutputOf<"/tools/draft", "patch">;
+type GetToolIn = InputOf<"/tool/get", "post">;
+type GetToolOut = OutputOf<"/tool/get", "post">;
+type CreateToolIn = InputOf<"/tool/create", "post">;
+type CreateToolOut = OutputOf<"/tool/create", "post">;
+type UpdateToolIn = InputOf<"/tool/update", "post">;
+type UpdateToolOut = OutputOf<"/tool/update", "post">;
+type PatchToolDraftIn = InputOf<"/tool/draft", "patch">;
+type PatchToolDraftOut = OutputOf<"/tool/draft", "patch">;
 type CreateDraftArgsIn = InputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOut = OutputOf<"/api/v5/resources/args", "post">;
 type CreateDraftArgsOutputsIn = InputOf<
@@ -48,20 +48,20 @@ type CreateDraftArgPositionsOut = OutputOf<
   "/api/v5/resources/arg_positions",
   "post"
 >;
-type GroupToolIn = InputOf<"/tools/group", "post">;
-type GroupToolOut = OutputOf<"/tools/group", "post">;
-type GenerateToolIn = InputOf<"/tools/generate", "post">;
-type GenerateToolOut = OutputOf<"/tools/generate", "post">;
-type ProblemToolIn = InputOf<"/tools/problem", "post">;
-type ProblemToolOut = OutputOf<"/tools/problem", "post">;
-type ContextIn = InputOf<"/tools/context", "post">;
-type ContextOut = OutputOf<"/tools/context", "post">;
+type GroupToolIn = InputOf<"/tool/group", "post">;
+type GroupToolOut = OutputOf<"/tool/group", "post">;
+type GenerateToolIn = InputOf<"/tool/generate", "post">;
+type GenerateToolOut = OutputOf<"/tool/generate", "post">;
+type ProblemToolIn = InputOf<"/tool/problem", "post">;
+type ProblemToolOut = OutputOf<"/tool/problem", "post">;
+type ContextIn = InputOf<"/tool/context", "post">;
+type ContextOut = OutputOf<"/tool/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getTool = async (input: GetToolIn): Promise<GetToolOut> => {
-  return api.post("/tools/get", input, {
+  return api.post("/tool/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -72,19 +72,19 @@ const getTool = async (input: GetToolIn): Promise<GetToolOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function createTool(input: CreateToolIn): Promise<CreateToolOut> {
   "use server";
-  return api.post("/tools/create", input);
+  return api.post("/tool/create", input);
 }
 
 async function updateTool(input: UpdateToolIn): Promise<UpdateToolOut> {
   "use server";
-  return api.post("/tools/update", input);
+  return api.post("/tool/update", input);
 }
 
 async function patchToolDraft(
   input: PatchToolDraftIn
 ): Promise<PatchToolDraftOut> {
   "use server";
-  return api.patch("/tools/draft", input);
+  return api.patch("/tool/draft", input);
 }
 
 async function createDraftArgs(
@@ -112,25 +112,25 @@ async function generateTool(
   input: GenerateToolIn
 ): Promise<GenerateToolOut> {
   "use server";
-  return api.post("/tools/generate", input);
+  return api.post("/tool/generate", input);
 }
 
 async function getToolGroupHistory(groupId: string): Promise<GroupToolOut> {
   "use server";
-  return api.post("/tools/group", { body: { group_id: groupId } } as GroupToolIn);
+  return api.post("/tool/group", { body: { group_id: groupId } } as GroupToolIn);
 }
 
-type GenerationsIn = InputOf<"/tools/generations", "post">;
-type GenerationsOut = OutputOf<"/tools/generations", "post">;
+type GenerationsIn = InputOf<"/tool/generations", "post">;
+type GenerationsOut = OutputOf<"/tool/generations", "post">;
 
 async function searchToolGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/tools/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/tool/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> {
   "use server";
-  return api.post("/tools/problem", input);
+  return api.post("/tool/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -140,7 +140,7 @@ export async function generateMetadata({
   params: Promise<{ toolId: string }>;
 }): Promise<Metadata> {
   const { toolId } = await params;
-  const context = await api.post("/tools/context", { body: { entity_id: toolId } } as ContextIn) as ContextOut;
+  const context = await api.post("/tool/context", { body: { entity_id: toolId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -170,7 +170,7 @@ export default async function ToolDetailPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/tools/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -203,9 +203,9 @@ export default async function ToolDetailPage({
     };
     const [toolDetail, context, draftsResult, groupResult] = await Promise.all([
       getTool(input),
-      api.post("/tools/context", { body: { entity_id: toolId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/tools/drafts", {}),
-      api.post("/tools/group", { body: {} } as GroupToolIn),
+      api.post("/tool/context", { body: { entity_id: toolId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/tool/drafts", {}),
+      api.post("/tool/group", { body: {} } as GroupToolIn),
     ]);
 
     // Check access

@@ -19,27 +19,27 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldsListOut = OutputOf<"/fields/search", "post">;
-type DuplicateFieldIn = InputOf<"/fields/duplicate", "post">;
-type DuplicateFieldOut = OutputOf<"/fields/duplicate", "post">;
-type DeleteFieldIn = InputOf<"/fields/delete", "post">;
-type DeleteFieldOut = OutputOf<"/fields/delete", "post">;
-type GroupFieldIn = InputOf<"/fields/group", "post">;
-type GroupFieldOut = OutputOf<"/fields/group", "post">;
-type GenerateFieldIn = InputOf<"/fields/generate", "post">;
-type GenerateFieldOut = OutputOf<"/fields/generate", "post">;
-type GenerationsIn = InputOf<"/fields/generations", "post">;
-type GenerationsOut = OutputOf<"/fields/generations", "post">;
-type ProblemFieldIn = InputOf<"/fields/problem", "post">;
-type ProblemFieldOut = OutputOf<"/fields/problem", "post">;
-type ContextIn = InputOf<"/fields/context", "post">;
-type ContextOut = OutputOf<"/fields/context", "post">;
+type FieldsListOut = OutputOf<"/field/search", "post">;
+type DuplicateFieldIn = InputOf<"/field/duplicate", "post">;
+type DuplicateFieldOut = OutputOf<"/field/duplicate", "post">;
+type DeleteFieldIn = InputOf<"/field/delete", "post">;
+type DeleteFieldOut = OutputOf<"/field/delete", "post">;
+type GroupFieldIn = InputOf<"/field/group", "post">;
+type GroupFieldOut = OutputOf<"/field/group", "post">;
+type GenerateFieldIn = InputOf<"/field/generate", "post">;
+type GenerateFieldOut = OutputOf<"/field/generate", "post">;
+type GenerationsIn = InputOf<"/field/generations", "post">;
+type GenerationsOut = OutputOf<"/field/generations", "post">;
+type ProblemFieldIn = InputOf<"/field/problem", "post">;
+type ProblemFieldOut = OutputOf<"/field/problem", "post">;
+type ContextIn = InputOf<"/field/context", "post">;
+type ContextOut = OutputOf<"/field/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getFieldsList = async (): Promise<FieldsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/fields/search",
+    "/field/search",
     { body: {} },
     {
       cache: "no-store",
@@ -57,39 +57,39 @@ async function duplicateField(
   input: DuplicateFieldIn,
 ): Promise<DuplicateFieldOut> {
   "use server";
-  return api.post("/fields/duplicate", input);
+  return api.post("/field/duplicate", input);
 }
 
 async function deleteField(input: DeleteFieldIn): Promise<DeleteFieldOut> {
   "use server";
-  return api.post("/fields/delete", input);
+  return api.post("/field/delete", input);
 }
 
 async function generateField(
   input: GenerateFieldIn
 ): Promise<GenerateFieldOut> {
   "use server";
-  return api.post("/fields/generate", input);
+  return api.post("/field/generate", input);
 }
 
 async function getFieldGroupHistory(groupId: string): Promise<GroupFieldOut> {
   "use server";
-  return api.post("/fields/group", { body: { group_id: groupId } } as GroupFieldIn);
+  return api.post("/field/group", { body: { group_id: groupId } } as GroupFieldIn);
 }
 
 async function searchFieldGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/fields/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/field/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOut> {
   "use server";
-  return api.post("/fields/problem", input);
+  return api.post("/field/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/fields/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -111,13 +111,13 @@ export default async function FieldsPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/fields/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getFieldsList(),
-    api.post("/fields/group", { body: {} } as GroupFieldIn),
+    api.post("/field/group", { body: {} } as GroupFieldIn),
   ]);
 
   return (

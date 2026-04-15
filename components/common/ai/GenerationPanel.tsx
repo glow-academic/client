@@ -54,6 +54,7 @@ interface HistoricalMessage {
 interface GenerationPanelProps {
   panelOpen: boolean;
   onToggle: () => void;
+  /** Artifact type — used for both event namespacing and route prefix (e.g. "persona" → /persona/*) */
   artifactType: string;
   groupId: string | null;
   permissions: Array<{ artifact: string; operation: string }>;
@@ -175,7 +176,7 @@ export function GenerationPanel({
     let cancelled = false;
     setIsLoadingHistory(true);
 
-    const fetchHistory = transport.send(`/${artifactType}s/group`, { group_id: groupToFetch });
+    const fetchHistory = transport.send(`/${artifactType}/group`, { group_id: groupToFetch });
 
     fetchHistory
       .then(async (res) => {
@@ -225,7 +226,7 @@ export function GenerationPanel({
     async (query: string) => {
       setIsSearching(true);
       try {
-        const res = await transport.send(`/${artifactType}s/generations`, { search: query.trim() || null });
+        const res = await transport.send(`/${artifactType}/generations`, { search: query.trim() || null });
         const mapped = (res.items ?? []).map((item: Record<string, unknown>) => ({
           id: String(item.group_id),
           name: (item.group_name as string) || "Untitled",
@@ -301,7 +302,7 @@ export function GenerationPanel({
     const socketId = (socket as unknown as { id?: string })?.id;
 
     listener.setGenerating(true);
-    await transport.send(`/${artifactType}s/generate`, {
+    await transport.send(`/${artifactType}/generate`, {
       group_id: activeGroupId,
       permissions,
       resource_types: [],

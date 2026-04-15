@@ -19,21 +19,21 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParametersListOut = OutputOf<"/parameters/search", "post">;
-type DuplicateParameterIn = InputOf<"/parameters/duplicate", "post">;
-type DuplicateParameterOut = OutputOf<"/parameters/duplicate", "post">;
-type DeleteParameterIn = InputOf<"/parameters/delete", "post">;
-type DeleteParameterOut = OutputOf<"/parameters/delete", "post">;
-type GroupParameterIn = InputOf<"/parameters/group", "post">;
-type GroupParameterOut = OutputOf<"/parameters/group", "post">;
-type GenerateParameterIn = InputOf<"/parameters/generate", "post">;
-type GenerateParameterOut = OutputOf<"/parameters/generate", "post">;
-type GenerationsIn = InputOf<"/parameters/generations", "post">;
-type GenerationsOut = OutputOf<"/parameters/generations", "post">;
-type ProblemParameterIn = InputOf<"/parameters/problem", "post">;
-type ProblemParameterOut = OutputOf<"/parameters/problem", "post">;
-type ContextIn = InputOf<"/parameters/context", "post">;
-type ContextOut = OutputOf<"/parameters/context", "post">;
+type ParametersListOut = OutputOf<"/parameter/search", "post">;
+type DuplicateParameterIn = InputOf<"/parameter/duplicate", "post">;
+type DuplicateParameterOut = OutputOf<"/parameter/duplicate", "post">;
+type DeleteParameterIn = InputOf<"/parameter/delete", "post">;
+type DeleteParameterOut = OutputOf<"/parameter/delete", "post">;
+type GroupParameterIn = InputOf<"/parameter/group", "post">;
+type GroupParameterOut = OutputOf<"/parameter/group", "post">;
+type GenerateParameterIn = InputOf<"/parameter/generate", "post">;
+type GenerateParameterOut = OutputOf<"/parameter/generate", "post">;
+type GenerationsIn = InputOf<"/parameter/generations", "post">;
+type GenerationsOut = OutputOf<"/parameter/generations", "post">;
+type ProblemParameterIn = InputOf<"/parameter/problem", "post">;
+type ProblemParameterOut = OutputOf<"/parameter/problem", "post">;
+type ContextIn = InputOf<"/parameter/context", "post">;
+type ContextOut = OutputOf<"/parameter/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -42,7 +42,7 @@ type ContextOut = OutputOf<"/parameters/context", "post">;
 const getParametersList = async (): Promise<ParametersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/parameters/search",
+    "/parameter/search",
     { body: {} },
     {
       cache: "no-store",
@@ -60,41 +60,41 @@ async function duplicateParameter(
   input: DuplicateParameterIn,
 ): Promise<DuplicateParameterOut> {
   "use server";
-  return api.post("/parameters/duplicate", input);
+  return api.post("/parameter/duplicate", input);
 }
 
 async function deleteParameter(
   input: DeleteParameterIn,
 ): Promise<DeleteParameterOut> {
   "use server";
-  return api.post("/parameters/delete", input);
+  return api.post("/parameter/delete", input);
 }
 
 async function generateParameter(
   input: GenerateParameterIn
 ): Promise<GenerateParameterOut> {
   "use server";
-  return api.post("/parameters/generate", input);
+  return api.post("/parameter/generate", input);
 }
 
 async function getParameterGroupHistory(groupId: string): Promise<GroupParameterOut> {
   "use server";
-  return api.post("/parameters/group", { body: { group_id: groupId } } as GroupParameterIn);
+  return api.post("/parameter/group", { body: { group_id: groupId } } as GroupParameterIn);
 }
 
 async function searchParameterGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/parameters/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/parameter/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createParameterProblem(input: ProblemParameterIn): Promise<ProblemParameterOut> {
   "use server";
-  return api.post("/parameters/problem", input);
+  return api.post("/parameter/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/parameters/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -116,13 +116,13 @@ export default async function ContextPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/parameters/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/parameter/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getParametersList(),
-    api.post("/parameters/group", { body: {} } as GroupParameterIn),
+    api.post("/parameter/group", { body: {} } as GroupParameterIn),
   ]);
 
   return (

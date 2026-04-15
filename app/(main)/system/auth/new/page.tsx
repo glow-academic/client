@@ -21,12 +21,12 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetAuthIn = InputOf<"/auths/get", "post">;
-type GetAuthOut = OutputOf<"/auths/get", "post">;
-type CreateAuthIn = InputOf<"/auths/create", "post">;
-type CreateAuthOut = OutputOf<"/auths/create", "post">;
-type PatchAuthDraftIn = InputOf<"/auths/draft", "patch">;
-type PatchAuthDraftOut = OutputOf<"/auths/draft", "patch">;
+type GetAuthIn = InputOf<"/auth/get", "post">;
+type GetAuthOut = OutputOf<"/auth/get", "post">;
+type CreateAuthIn = InputOf<"/auth/create", "post">;
+type CreateAuthOut = OutputOf<"/auth/create", "post">;
+type PatchAuthDraftIn = InputOf<"/auth/draft", "patch">;
+type PatchAuthDraftOut = OutputOf<"/auth/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -41,20 +41,20 @@ type CreateDraftProtocolsIn = InputOf<"/api/v5/resources/protocols", "post">;
 type CreateDraftProtocolsOut = OutputOf<"/api/v5/resources/protocols", "post">;
 type CreateDraftSlugsIn = InputOf<"/api/v5/resources/slugs", "post">;
 type CreateDraftSlugsOut = OutputOf<"/api/v5/resources/slugs", "post">;
-type GroupAuthIn = InputOf<"/auths/group", "post">;
-type GroupAuthOut = OutputOf<"/auths/group", "post">;
-type GenerateAuthIn = InputOf<"/auths/generate", "post">;
-type GenerateAuthOut = OutputOf<"/auths/generate", "post">;
-type GenerationsIn = InputOf<"/auths/generations", "post">;
-type GenerationsOut = OutputOf<"/auths/generations", "post">;
-type ProblemAuthIn = InputOf<"/auths/problem", "post">;
-type ProblemAuthOut = OutputOf<"/auths/problem", "post">;
-type ContextIn = InputOf<"/auths/context", "post">;
-type ContextOut = OutputOf<"/auths/context", "post">;
+type GroupAuthIn = InputOf<"/auth/group", "post">;
+type GroupAuthOut = OutputOf<"/auth/group", "post">;
+type GenerateAuthIn = InputOf<"/auth/generate", "post">;
+type GenerateAuthOut = OutputOf<"/auth/generate", "post">;
+type GenerationsIn = InputOf<"/auth/generations", "post">;
+type GenerationsOut = OutputOf<"/auth/generations", "post">;
+type ProblemAuthIn = InputOf<"/auth/problem", "post">;
+type ProblemAuthOut = OutputOf<"/auth/problem", "post">;
+type ContextIn = InputOf<"/auth/context", "post">;
+type ContextOut = OutputOf<"/auth/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getAuthDefault = async (input: GetAuthIn): Promise<GetAuthOut> => {
-  return api.post("/auths/get", input, {
+  return api.post("/auth/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -65,14 +65,14 @@ const getAuthDefault = async (input: GetAuthIn): Promise<GetAuthOut> => {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
   "use server";
-  return api.post("/auths/create", input);
+  return api.post("/auth/create", input);
 }
 
 async function patchAuthDraft(
   input: PatchAuthDraftIn
 ): Promise<PatchAuthDraftOut> {
   "use server";
-  return api.patch("/auths/draft", input);
+  return api.patch("/auth/draft", input);
 }
 
 async function createDraftNames(
@@ -107,27 +107,27 @@ async function generateAuth(
   input: GenerateAuthIn
 ): Promise<GenerateAuthOut> {
   "use server";
-  return api.post("/auths/generate", input);
+  return api.post("/auth/generate", input);
 }
 
 async function getAuthGroupHistory(groupId: string): Promise<GroupAuthOut> {
   "use server";
-  return api.post("/auths/group", { body: { group_id: groupId } } as GroupAuthIn);
+  return api.post("/auth/group", { body: { group_id: groupId } } as GroupAuthIn);
 }
 
 async function searchAuthGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/auths/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/auth/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> {
   "use server";
-  return api.post("/auths/problem", input);
+  return api.post("/auth/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/auths/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -154,7 +154,7 @@ export default async function AuthCreatePage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/auths/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -186,8 +186,8 @@ export default async function AuthCreatePage({
   };
   const [authData, draftsResult, groupResult] = await Promise.all([
     getAuthDefault(input),
-    api.post("/auths/drafts", {}),
-    api.post("/auths/group", { body: {} } as GroupAuthIn),
+    api.post("/auth/drafts", {}),
+    api.post("/auth/group", { body: {} } as GroupAuthIn),
   ]);
 
   return (

@@ -21,24 +21,24 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetCohortIn = InputOf<"/cohorts/get", "post">;
-type GetCohortOut = OutputOf<"/cohorts/get", "post">;
-type CreateCohortIn = InputOf<"/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/cohorts/create", "post">;
-type PatchCohortDraftIn = InputOf<"/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/cohorts/draft", "patch">;
-type GroupCohortIn = InputOf<"/cohorts/group", "post">;
-type GroupCohortOut = OutputOf<"/cohorts/group", "post">;
-type GenerateCohortIn = InputOf<"/cohorts/generate", "post">;
-type GenerateCohortOut = OutputOf<"/cohorts/generate", "post">;
-type ProblemCohortIn = InputOf<"/cohorts/problem", "post">;
-type ProblemCohortOut = OutputOf<"/cohorts/problem", "post">;
-type ContextIn = InputOf<"/cohorts/context", "post">;
-type ContextOut = OutputOf<"/cohorts/context", "post">;
+type GetCohortIn = InputOf<"/cohort/get", "post">;
+type GetCohortOut = OutputOf<"/cohort/get", "post">;
+type CreateCohortIn = InputOf<"/cohort/create", "post">;
+type CreateCohortOut = OutputOf<"/cohort/create", "post">;
+type PatchCohortDraftIn = InputOf<"/cohort/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/cohort/draft", "patch">;
+type GroupCohortIn = InputOf<"/cohort/group", "post">;
+type GroupCohortOut = OutputOf<"/cohort/group", "post">;
+type GenerateCohortIn = InputOf<"/cohort/generate", "post">;
+type GenerateCohortOut = OutputOf<"/cohort/generate", "post">;
+type ProblemCohortIn = InputOf<"/cohort/problem", "post">;
+type ProblemCohortOut = OutputOf<"/cohort/problem", "post">;
+type ContextIn = InputOf<"/cohort/context", "post">;
+type ContextOut = OutputOf<"/cohort/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getCohortDefault = async (input: GetCohortIn): Promise<GetCohortOut> => {
-  return api.post("/cohorts/get", input, {
+  return api.post("/cohort/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -49,44 +49,44 @@ const getCohortDefault = async (input: GetCohortIn): Promise<GetCohortOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
   "use server";
-  return api.post("/cohorts/create", input);
+  return api.post("/cohort/create", input);
 }
 
 async function patchCohortDraft(
   input: PatchCohortDraftIn
 ): Promise<PatchCohortDraftOut> {
   "use server";
-  return api.patch("/cohorts/draft", input);
+  return api.patch("/cohort/draft", input);
 }
 
 async function generateCohort(
   input: GenerateCohortIn
 ): Promise<GenerateCohortOut> {
   "use server";
-  return api.post("/cohorts/generate", input);
+  return api.post("/cohort/generate", input);
 }
 
 async function getCohortGroupHistory(groupId: string): Promise<GroupCohortOut> {
   "use server";
-  return api.post("/cohorts/group", { body: { group_id: groupId } } as GroupCohortIn);
+  return api.post("/cohort/group", { body: { group_id: groupId } } as GroupCohortIn);
 }
 
-type GenerationsIn = InputOf<"/cohorts/generations", "post">;
-type GenerationsOut = OutputOf<"/cohorts/generations", "post">;
+type GenerationsIn = InputOf<"/cohort/generations", "post">;
+type GenerationsOut = OutputOf<"/cohort/generations", "post">;
 
 async function searchCohortGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/cohorts/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/cohort/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohortOut> {
   "use server";
-  return api.post("/cohorts/problem", input);
+  return api.post("/cohort/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -112,7 +112,7 @@ export default async function NewCohortPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers (until /cohorts/context returns full profile)
-  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -181,10 +181,10 @@ export default async function NewCohortPage({
   const [cohortData, draftsResult, groupResult] = await Promise.all([
     getCohortDefault(input),
     api.post(
-      "/cohorts/drafts",
-      { path: undefined } as InputOf<"/cohorts/drafts", "post">,
+      "/cohort/drafts",
+      { path: undefined } as InputOf<"/cohort/drafts", "post">,
     ),
-    api.post("/cohorts/group", { body: {} } as GroupCohortIn),
+    api.post("/cohort/group", { body: {} } as GroupCohortIn),
   ]);
 
   return (

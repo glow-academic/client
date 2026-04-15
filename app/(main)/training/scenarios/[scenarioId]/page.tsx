@@ -26,20 +26,20 @@ import {
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetScenarioIn = InputOf<"/scenarios/get", "post">;
-type GetScenarioOut = OutputOf<"/scenarios/get", "post">;
-type UpdateScenarioIn = InputOf<"/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/scenarios/update", "post">;
-type PatchScenarioDraftIn = InputOf<"/scenarios/draft", "patch">;
-type PatchScenarioDraftOut = OutputOf<"/scenarios/draft", "patch">;
-type GroupScenarioIn = InputOf<"/scenarios/group", "post">;
-type GroupScenarioOut = OutputOf<"/scenarios/group", "post">;
-type GenerateScenarioIn = InputOf<"/scenarios/generate", "post">;
-type GenerateScenarioOut = OutputOf<"/scenarios/generate", "post">;
-type ProblemScenarioIn = InputOf<"/scenarios/problem", "post">;
-type ProblemScenarioOut = OutputOf<"/scenarios/problem", "post">;
-type ContextIn = InputOf<"/scenarios/context", "post">;
-type ContextOut = OutputOf<"/scenarios/context", "post">;
+type GetScenarioIn = InputOf<"/scenario/get", "post">;
+type GetScenarioOut = OutputOf<"/scenario/get", "post">;
+type UpdateScenarioIn = InputOf<"/scenario/update", "post">;
+type UpdateScenarioOut = OutputOf<"/scenario/update", "post">;
+type PatchScenarioDraftIn = InputOf<"/scenario/draft", "patch">;
+type PatchScenarioDraftOut = OutputOf<"/scenario/draft", "patch">;
+type GroupScenarioIn = InputOf<"/scenario/group", "post">;
+type GroupScenarioOut = OutputOf<"/scenario/group", "post">;
+type GenerateScenarioIn = InputOf<"/scenario/generate", "post">;
+type GenerateScenarioOut = OutputOf<"/scenario/generate", "post">;
+type ProblemScenarioIn = InputOf<"/scenario/problem", "post">;
+type ProblemScenarioOut = OutputOf<"/scenario/problem", "post">;
+type ContextIn = InputOf<"/scenario/context", "post">;
+type ContextOut = OutputOf<"/scenario/context", "post">;
 
 /** Upload action result — matches the interface expected by resource components */
 type UploadResult = { success: boolean; upload_id?: string; message?: string };
@@ -49,7 +49,7 @@ type UploadResult = { success: boolean; upload_id?: string; message?: string };
  * Uses unified get endpoint.
  */
 const getScenario = async (input: GetScenarioIn): Promise<GetScenarioOut> => {
-  return api.post("/scenarios/get", input, {
+  return api.post("/scenario/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -93,39 +93,39 @@ async function uploadFile(formData: FormData): Promise<UploadResult> {
 
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
-  return api.post("/scenarios/update", input);
+  return api.post("/scenario/update", input);
 }
 
 async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  return api.patch("/scenarios/draft", input);
+  return api.patch("/scenario/draft", input);
 }
 
 async function generateScenario(
   input: GenerateScenarioIn
 ): Promise<GenerateScenarioOut> {
   "use server";
-  return api.post("/scenarios/generate", input);
+  return api.post("/scenario/generate", input);
 }
 
 async function getScenarioGroupHistory(groupId: string): Promise<GroupScenarioOut> {
   "use server";
-  return api.post("/scenarios/group", { body: { group_id: groupId } } as GroupScenarioIn);
+  return api.post("/scenario/group", { body: { group_id: groupId } } as GroupScenarioIn);
 }
 
-type GenerationsIn = InputOf<"/scenarios/generations", "post">;
-type GenerationsOut = OutputOf<"/scenarios/generations", "post">;
+type GenerationsIn = InputOf<"/scenario/generations", "post">;
+type GenerationsOut = OutputOf<"/scenario/generations", "post">;
 
 async function searchScenarioGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/scenarios/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/scenario/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createScenarioProblem(input: ProblemScenarioIn): Promise<ProblemScenarioOut> {
   "use server";
-  return api.post("/scenarios/problem", input);
+  return api.post("/scenario/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -135,7 +135,7 @@ export async function generateMetadata({
   params: Promise<{ scenarioId: string }>;
 }): Promise<Metadata> {
   const { scenarioId } = await params;
-  const context = await api.post("/scenarios/context", { body: { entity_id: scenarioId } } as ContextIn) as ContextOut;
+  const context = await api.post("/scenario/context", { body: { entity_id: scenarioId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -165,7 +165,7 @@ export default async function EditScenarioPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/scenarios/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/scenario/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -239,9 +239,9 @@ export default async function EditScenarioPage({
 
     const [scenarioDetail, context, draftsResult, groupResult] = await Promise.all([
       getScenario(input),
-      api.post("/scenarios/context", { body: { entity_id: scenarioId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/scenarios/drafts", {}),
-      api.post("/scenarios/group", { body: {} } as GroupScenarioIn),
+      api.post("/scenario/context", { body: { entity_id: scenarioId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/scenario/drafts", {}),
+      api.post("/scenario/group", { body: {} } as GroupScenarioIn),
     ]);
 
     // Entity name from context (already resolved server-side)
@@ -288,7 +288,7 @@ export default async function EditScenarioPage({
               scenarioDetail={scenarioDetail}
               updateScenarioAction={updateScenario}
               patchScenarioDraftAction={patchScenarioDraft}
-              uploadBasePath="/scenarios"
+              uploadBasePath="/scenario"
               uploadFileAction={uploadFile}
             />
           </div>

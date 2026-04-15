@@ -50,14 +50,14 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type CreateCohortIn = InputOf<"/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/cohorts/create", "post">;
-type UpdateCohortIn = InputOf<"/cohorts/update", "post">;
-type UpdateCohortOut = OutputOf<"/cohorts/update", "post">;
-type PatchCohortDraftIn = InputOf<"/cohorts/draft", "patch">;
-type PatchCohortDraftOut = OutputOf<"/cohorts/draft", "patch">;
+type CreateCohortIn = InputOf<"/cohort/create", "post">;
+type CreateCohortOut = OutputOf<"/cohort/create", "post">;
+type UpdateCohortIn = InputOf<"/cohort/update", "post">;
+type UpdateCohortOut = OutputOf<"/cohort/update", "post">;
+type PatchCohortDraftIn = InputOf<"/cohort/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/cohort/draft", "patch">;
 
-type CohortData = OutputOf<"/cohorts/get", "post">;
+type CohortData = OutputOf<"/cohort/get", "post">;
 
 // Type for flush results - each resource returns its created ID(s)
 type FlushResult = {

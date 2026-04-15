@@ -80,7 +80,7 @@ export interface ImagesProps {
   registerFlush?: (
     flush: () => Promise<{ image_ids: string[] } | void>
   ) => void;
-  /** Artifact-scoped base path for upload/download URLs (e.g., "/documents") */
+  /** Artifact-scoped base path for upload/download URLs (e.g., "/document") */
   uploadBasePath?: string;
   /** Server action to upload a file — receives FormData, returns upload_id */
   uploadFileAction?: (formData: FormData) => Promise<{

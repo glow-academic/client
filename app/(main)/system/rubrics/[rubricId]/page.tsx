@@ -22,14 +22,14 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetRubricIn = InputOf<"/rubrics/get", "post">;
-type GetRubricOut = OutputOf<"/rubrics/get", "post">;
-type CreateRubricIn = InputOf<"/rubrics/create", "post">;
-type CreateRubricOut = OutputOf<"/rubrics/create", "post">;
-type UpdateRubricIn = InputOf<"/rubrics/update", "post">;
-type UpdateRubricOut = OutputOf<"/rubrics/update", "post">;
-type PatchRubricDraftIn = InputOf<"/rubrics/draft", "patch">;
-type PatchRubricDraftOut = OutputOf<"/rubrics/draft", "patch">;
+type GetRubricIn = InputOf<"/rubric/get", "post">;
+type GetRubricOut = OutputOf<"/rubric/get", "post">;
+type CreateRubricIn = InputOf<"/rubric/create", "post">;
+type CreateRubricOut = OutputOf<"/rubric/create", "post">;
+type UpdateRubricIn = InputOf<"/rubric/update", "post">;
+type UpdateRubricOut = OutputOf<"/rubric/update", "post">;
+type PatchRubricDraftIn = InputOf<"/rubric/draft", "patch">;
+type PatchRubricDraftOut = OutputOf<"/rubric/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -50,16 +50,16 @@ type CreateDraftStandardGroupsOut = OutputOf<
   "/api/v5/resources/standard_groups",
   "post"
 >;
-type GroupRubricIn = InputOf<"/rubrics/group", "post">;
-type GroupRubricOut = OutputOf<"/rubrics/group", "post">;
-type GenerateRubricIn = InputOf<"/rubrics/generate", "post">;
-type GenerateRubricOut = OutputOf<"/rubrics/generate", "post">;
-type GenerationsIn = InputOf<"/rubrics/generations", "post">;
-type GenerationsOut = OutputOf<"/rubrics/generations", "post">;
-type ProblemRubricIn = InputOf<"/rubrics/problem", "post">;
-type ProblemRubricOut = OutputOf<"/rubrics/problem", "post">;
-type ContextIn = InputOf<"/rubrics/context", "post">;
-type ContextOut = OutputOf<"/rubrics/context", "post">;
+type GroupRubricIn = InputOf<"/rubric/group", "post">;
+type GroupRubricOut = OutputOf<"/rubric/group", "post">;
+type GenerateRubricIn = InputOf<"/rubric/generate", "post">;
+type GenerateRubricOut = OutputOf<"/rubric/generate", "post">;
+type GenerationsIn = InputOf<"/rubric/generations", "post">;
+type GenerationsOut = OutputOf<"/rubric/generations", "post">;
+type ProblemRubricIn = InputOf<"/rubric/problem", "post">;
+type ProblemRubricOut = OutputOf<"/rubric/problem", "post">;
+type ContextIn = InputOf<"/rubric/context", "post">;
+type ContextOut = OutputOf<"/rubric/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getRubric = async (
@@ -69,7 +69,7 @@ const getRubric = async (
   standardGroupSearch: string | null,
 ): Promise<GetRubricOut> => {
   return api.post(
-    "/rubrics/get",
+    "/rubric/get",
     ({
       body: {
         rubric_id: rubricId,
@@ -90,19 +90,19 @@ const getRubric = async (
 /** ---- Strongly-typed server actions ---- */
 async function createRubric(input: CreateRubricIn): Promise<CreateRubricOut> {
   "use server";
-  return api.post("/rubrics/create", input);
+  return api.post("/rubric/create", input);
 }
 
 async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
   "use server";
-  return api.post("/rubrics/update", input);
+  return api.post("/rubric/update", input);
 }
 
 async function patchRubricDraft(
   input: PatchRubricDraftIn
 ): Promise<PatchRubricDraftOut> {
   "use server";
-  return api.patch("/rubrics/draft", input);
+  return api.patch("/rubric/draft", input);
 }
 
 async function createDraftNames(
@@ -137,22 +137,22 @@ async function generateRubric(
   input: GenerateRubricIn
 ): Promise<GenerateRubricOut> {
   "use server";
-  return api.post("/rubrics/generate", input);
+  return api.post("/rubric/generate", input);
 }
 
 async function getRubricGroupHistory(groupId: string): Promise<GroupRubricOut> {
   "use server";
-  return api.post("/rubrics/group", { body: { group_id: groupId } } as GroupRubricIn);
+  return api.post("/rubric/group", { body: { group_id: groupId } } as GroupRubricIn);
 }
 
 async function searchRubricGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/rubrics/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/rubric/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createRubricProblem(input: ProblemRubricIn): Promise<ProblemRubricOut> {
   "use server";
-  return api.post("/rubrics/problem", input);
+  return api.post("/rubric/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -162,7 +162,7 @@ export async function generateMetadata({
   params: Promise<{ rubricId: string }>;
 }): Promise<Metadata> {
   const { rubricId } = await params;
-  const context = await api.post("/rubrics/context", { body: { entity_id: rubricId } } as ContextIn) as ContextOut;
+  const context = await api.post("/rubric/context", { body: { entity_id: rubricId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -191,7 +191,7 @@ export default async function EditRubricPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/rubrics/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/rubric/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -224,9 +224,9 @@ export default async function EditRubricPage({
         q.descriptionSearch ?? null,
         q.standardGroupSearch ?? null,
       ),
-      api.post("/rubrics/context", { body: { entity_id: rubricId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/rubrics/drafts", {}),
-      api.post("/rubrics/group", { body: {} } as GroupRubricIn),
+      api.post("/rubric/context", { body: { entity_id: rubricId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/rubric/drafts", {}),
+      api.post("/rubric/group", { body: {} } as GroupRubricIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;

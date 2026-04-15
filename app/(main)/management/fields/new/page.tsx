@@ -21,12 +21,12 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetFieldIn = InputOf<"/fields/get", "post">;
-type GetFieldOut = OutputOf<"/fields/get", "post">;
-type CreateFieldIn = InputOf<"/fields/create", "post">;
-type CreateFieldOut = OutputOf<"/fields/create", "post">;
-type PatchFieldDraftIn = InputOf<"/fields/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/fields/draft", "patch">;
+type GetFieldIn = InputOf<"/field/get", "post">;
+type GetFieldOut = OutputOf<"/field/get", "post">;
+type CreateFieldIn = InputOf<"/field/create", "post">;
+type CreateFieldOut = OutputOf<"/field/create", "post">;
+type PatchFieldDraftIn = InputOf<"/field/draft", "patch">;
+type PatchFieldDraftOut = OutputOf<"/field/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -37,14 +37,14 @@ type CreateDraftDescriptionsOut = OutputOf<
   "/api/v5/resources/descriptions",
   "post"
 >;
-type GroupFieldIn = InputOf<"/fields/group", "post">;
-type GroupFieldOut = OutputOf<"/fields/group", "post">;
-type GenerateFieldIn = InputOf<"/fields/generate", "post">;
-type GenerateFieldOut = OutputOf<"/fields/generate", "post">;
-type ProblemFieldIn = InputOf<"/fields/problem", "post">;
-type ProblemFieldOut = OutputOf<"/fields/problem", "post">;
-type ContextIn = InputOf<"/fields/context", "post">;
-type ContextOut = OutputOf<"/fields/context", "post">;
+type GroupFieldIn = InputOf<"/field/group", "post">;
+type GroupFieldOut = OutputOf<"/field/group", "post">;
+type GenerateFieldIn = InputOf<"/field/generate", "post">;
+type GenerateFieldOut = OutputOf<"/field/generate", "post">;
+type ProblemFieldIn = InputOf<"/field/problem", "post">;
+type ProblemFieldOut = OutputOf<"/field/problem", "post">;
+type ContextIn = InputOf<"/field/context", "post">;
+type ContextOut = OutputOf<"/field/context", "post">;
 
 /** ---- Direct fetch for default field data with timeout ---- */
 const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
@@ -52,7 +52,7 @@ const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const result = await api.post("/fields/get", input, {
+    const result = await api.post("/field/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
@@ -73,14 +73,14 @@ const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function createField(input: CreateFieldIn): Promise<CreateFieldOut> {
   "use server";
-  return api.post("/fields/create", input);
+  return api.post("/field/create", input);
 }
 
 async function patchFieldDraft(
   input: PatchFieldDraftIn
 ): Promise<PatchFieldDraftOut> {
   "use server";
-  return api.patch("/fields/draft", input);
+  return api.patch("/field/draft", input);
 }
 
 async function createNames(
@@ -101,30 +101,30 @@ async function generateField(
   input: GenerateFieldIn
 ): Promise<GenerateFieldOut> {
   "use server";
-  return api.post("/fields/generate", input);
+  return api.post("/field/generate", input);
 }
 
 async function getFieldGroupHistory(groupId: string): Promise<GroupFieldOut> {
   "use server";
-  return api.post("/fields/group", { body: { group_id: groupId } } as GroupFieldIn);
+  return api.post("/field/group", { body: { group_id: groupId } } as GroupFieldIn);
 }
 
-type GenerationsIn = InputOf<"/fields/generations", "post">;
-type GenerationsOut = OutputOf<"/fields/generations", "post">;
+type GenerationsIn = InputOf<"/field/generations", "post">;
+type GenerationsOut = OutputOf<"/field/generations", "post">;
 
 async function searchFieldGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/fields/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/field/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createFieldProblem(input: ProblemFieldIn): Promise<ProblemFieldOut> {
   "use server";
-  return api.post("/fields/problem", input);
+  return api.post("/field/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/fields/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -151,7 +151,7 @@ export default async function NewFieldPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/fields/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/field/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -190,8 +190,8 @@ export default async function NewFieldPage({
   };
   const [fieldData, draftsResult, groupResult] = await Promise.all([
     getFieldDefault(input),
-    api.post("/fields/drafts", {}),
-    api.post("/fields/group", { body: {} } as GroupFieldIn),
+    api.post("/field/drafts", {}),
+    api.post("/field/group", { body: {} } as GroupFieldIn),
   ]);
 
   return (

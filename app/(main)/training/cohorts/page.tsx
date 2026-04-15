@@ -22,25 +22,25 @@ import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 import type { ParseCsvResult } from "@/components/common/BulkImport";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortsListOut = OutputOf<"/cohorts/search", "post">;
-type DuplicateCohortIn = InputOf<"/cohorts/duplicate", "post">;
-type DuplicateCohortOut = OutputOf<"/cohorts/duplicate", "post">;
-type DeleteCohortIn = InputOf<"/cohorts/delete", "post">;
-type DeleteCohortOut = OutputOf<"/cohorts/delete", "post">;
-type CreateCohortIn = InputOf<"/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/cohorts/create", "post">;
-type UpdateCohortIn = InputOf<"/cohorts/update", "post">;
-type UpdateCohortOut = OutputOf<"/cohorts/update", "post">;
-type GroupCohortIn = InputOf<"/cohorts/group", "post">;
-type GroupCohortOut = OutputOf<"/cohorts/group", "post">;
-type GenerateCohortIn = InputOf<"/cohorts/generate", "post">;
-type GenerateCohortOut = OutputOf<"/cohorts/generate", "post">;
-type GenerationsIn = InputOf<"/cohorts/generations", "post">;
-type GenerationsOut = OutputOf<"/cohorts/generations", "post">;
-type ProblemCohortIn = InputOf<"/cohorts/problem", "post">;
-type ProblemCohortOut = OutputOf<"/cohorts/problem", "post">;
-type ContextIn = InputOf<"/cohorts/context", "post">;
-type ContextOut = OutputOf<"/cohorts/context", "post">;
+type CohortsListOut = OutputOf<"/cohort/search", "post">;
+type DuplicateCohortIn = InputOf<"/cohort/duplicate", "post">;
+type DuplicateCohortOut = OutputOf<"/cohort/duplicate", "post">;
+type DeleteCohortIn = InputOf<"/cohort/delete", "post">;
+type DeleteCohortOut = OutputOf<"/cohort/delete", "post">;
+type CreateCohortIn = InputOf<"/cohort/create", "post">;
+type CreateCohortOut = OutputOf<"/cohort/create", "post">;
+type UpdateCohortIn = InputOf<"/cohort/update", "post">;
+type UpdateCohortOut = OutputOf<"/cohort/update", "post">;
+type GroupCohortIn = InputOf<"/cohort/group", "post">;
+type GroupCohortOut = OutputOf<"/cohort/group", "post">;
+type GenerateCohortIn = InputOf<"/cohort/generate", "post">;
+type GenerateCohortOut = OutputOf<"/cohort/generate", "post">;
+type GenerationsIn = InputOf<"/cohort/generations", "post">;
+type GenerationsOut = OutputOf<"/cohort/generations", "post">;
+type ProblemCohortIn = InputOf<"/cohort/problem", "post">;
+type ProblemCohortOut = OutputOf<"/cohort/problem", "post">;
+type ContextIn = InputOf<"/cohort/context", "post">;
+type ContextOut = OutputOf<"/cohort/context", "post">;
 
 /** ---- Body type for cohorts list request ---- */
 type CohortsListBody = {
@@ -63,7 +63,7 @@ type CohortsListBody = {
 const getCohortsList = async (body: CohortsListBody): Promise<CohortsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/cohorts/search",
+    "/cohort/search",
     { body },
     {
       cache: "no-store",
@@ -81,54 +81,54 @@ async function duplicateCohort(
   input: DuplicateCohortIn,
 ): Promise<DuplicateCohortOut> {
   "use server";
-  return api.post("/cohorts/duplicate", input);
+  return api.post("/cohort/duplicate", input);
 }
 
 async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   "use server";
-  return api.post("/cohorts/delete", input);
+  return api.post("/cohort/delete", input);
 }
 
 async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
   "use server";
-  return api.post("/cohorts/create", input);
+  return api.post("/cohort/create", input);
 }
 
 async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   "use server";
-  return api.post("/cohorts/update", input);
+  return api.post("/cohort/update", input);
 }
 
 async function parseCsv(formData: FormData): Promise<ParseCsvResult> {
   "use server";
-  return api.post("/cohorts/csv", { formData });
+  return api.post("/cohort/csv", { formData });
 }
 
 async function generateCohort(
   input: GenerateCohortIn
 ): Promise<GenerateCohortOut> {
   "use server";
-  return api.post("/cohorts/generate", input);
+  return api.post("/cohort/generate", input);
 }
 
 async function getCohortGroupHistory(groupId: string): Promise<GroupCohortOut> {
   "use server";
-  return api.post("/cohorts/group", { body: { group_id: groupId } } as GroupCohortIn);
+  return api.post("/cohort/group", { body: { group_id: groupId } } as GroupCohortIn);
 }
 
 async function searchCohortGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/cohorts/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/cohort/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createCohortProblem(input: ProblemCohortIn): Promise<ProblemCohortOut> {
   "use server";
-  return api.post("/cohorts/problem", input);
+  return api.post("/cohort/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -154,7 +154,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/cohorts/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/cohort/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -195,7 +195,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
   const [listData, initialColumnVisibility, groupResult] = await Promise.all([
     getCohortsList(body),
     readViewCookie("cohorts"),
-    api.post("/cohorts/group", { body: {} } as GroupCohortIn),
+    api.post("/cohort/group", { body: {} } as GroupCohortIn),
   ]);
 
   return (

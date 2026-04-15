@@ -20,22 +20,22 @@ import { buildSnapshot } from "@/lib/auth";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
 
 /** ---- Strong types from OpenAPI ---- */
-type ToolsListIn = InputOf<"/tools/search", "post">;
-type ToolsListOut = OutputOf<"/tools/search", "post">;
-type DeleteToolIn = InputOf<"/tools/delete", "post">;
-type DeleteToolOut = OutputOf<"/tools/delete", "post">;
-type DuplicateToolIn = InputOf<"/tools/duplicate", "post">;
-type DuplicateToolOut = OutputOf<"/tools/duplicate", "post">;
-type GroupToolIn = InputOf<"/tools/group", "post">;
-type GroupToolOut = OutputOf<"/tools/group", "post">;
-type GenerateToolIn = InputOf<"/tools/generate", "post">;
-type GenerateToolOut = OutputOf<"/tools/generate", "post">;
-type GenerationsIn = InputOf<"/tools/generations", "post">;
-type GenerationsOut = OutputOf<"/tools/generations", "post">;
-type ProblemToolIn = InputOf<"/tools/problem", "post">;
-type ProblemToolOut = OutputOf<"/tools/problem", "post">;
-type ContextIn = InputOf<"/tools/context", "post">;
-type ContextOut = OutputOf<"/tools/context", "post">;
+type ToolsListIn = InputOf<"/tool/search", "post">;
+type ToolsListOut = OutputOf<"/tool/search", "post">;
+type DeleteToolIn = InputOf<"/tool/delete", "post">;
+type DeleteToolOut = OutputOf<"/tool/delete", "post">;
+type DuplicateToolIn = InputOf<"/tool/duplicate", "post">;
+type DuplicateToolOut = OutputOf<"/tool/duplicate", "post">;
+type GroupToolIn = InputOf<"/tool/group", "post">;
+type GroupToolOut = OutputOf<"/tool/group", "post">;
+type GenerateToolIn = InputOf<"/tool/generate", "post">;
+type GenerateToolOut = OutputOf<"/tool/generate", "post">;
+type GenerationsIn = InputOf<"/tool/generations", "post">;
+type GenerationsOut = OutputOf<"/tool/generations", "post">;
+type ProblemToolIn = InputOf<"/tool/problem", "post">;
+type ProblemToolOut = OutputOf<"/tool/problem", "post">;
+type ContextIn = InputOf<"/tool/context", "post">;
+type ContextOut = OutputOf<"/tool/context", "post">;
 
 /** ---- Body type for tools list request ---- */
 type ToolsListBody = {
@@ -56,7 +56,7 @@ type ToolsListBody = {
 const getToolsList = async (body: ToolsListBody): Promise<ToolsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/tools/search",
+    "/tool/search",
     { body } as ToolsListIn,
     {
       cache: "no-store",
@@ -72,41 +72,41 @@ const getToolsList = async (body: ToolsListBody): Promise<ToolsListOut> => {
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function deleteTool(input: DeleteToolIn): Promise<DeleteToolOut> {
   "use server";
-  return api.post("/tools/delete", input);
+  return api.post("/tool/delete", input);
 }
 
 async function duplicateTool(
   input: DuplicateToolIn
 ): Promise<DuplicateToolOut> {
   "use server";
-  return api.post("/tools/duplicate", input);
+  return api.post("/tool/duplicate", input);
 }
 
 async function generateTool(
   input: GenerateToolIn
 ): Promise<GenerateToolOut> {
   "use server";
-  return api.post("/tools/generate", input);
+  return api.post("/tool/generate", input);
 }
 
 async function getToolGroupHistory(groupId: string): Promise<GroupToolOut> {
   "use server";
-  return api.post("/tools/group", { body: { group_id: groupId } } as GroupToolIn);
+  return api.post("/tool/group", { body: { group_id: groupId } } as GroupToolIn);
 }
 
 async function searchToolGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/tools/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/tool/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createToolProblem(input: ProblemToolIn): Promise<ProblemToolOut> {
   "use server";
-  return api.post("/tools/problem", input);
+  return api.post("/tool/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/tools/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -132,7 +132,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/tools/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/tool/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -170,7 +170,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
   // Fetch list data, and group in parallel
   const [listData, groupResult] = await Promise.all([
     getToolsList(body),
-    api.post("/tools/group", { body: {} } as GroupToolIn),
+    api.post("/tool/group", { body: {} } as GroupToolIn),
   ]);
 
   return (

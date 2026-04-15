@@ -19,29 +19,29 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/documents/search", "post">;
-type DocumentsListOut = OutputOf<"/documents/search", "post">;
-type DeleteDocumentIn = InputOf<"/documents/delete", "post">;
-type DeleteDocumentOut = OutputOf<"/documents/delete", "post">;
+type DocumentsListIn = InputOf<"/document/search", "post">;
+type DocumentsListOut = OutputOf<"/document/search", "post">;
+type DeleteDocumentIn = InputOf<"/document/delete", "post">;
+type DeleteDocumentOut = OutputOf<"/document/delete", "post">;
 // GenerateTemplate types removed - now using WebSocket
 type GenerateTemplateIn = never;
 type GenerateTemplateOut = never;
-type GroupDocumentIn = InputOf<"/documents/group", "post">;
-type GroupDocumentOut = OutputOf<"/documents/group", "post">;
-type GenerateDocumentIn = InputOf<"/documents/generate", "post">;
-type GenerateDocumentOut = OutputOf<"/documents/generate", "post">;
-type GenerationsIn = InputOf<"/documents/generations", "post">;
-type GenerationsOut = OutputOf<"/documents/generations", "post">;
-type ProblemDocumentIn = InputOf<"/documents/problem", "post">;
-type ProblemDocumentOut = OutputOf<"/documents/problem", "post">;
-type ContextIn = InputOf<"/documents/context", "post">;
-type ContextOut = OutputOf<"/documents/context", "post">;
+type GroupDocumentIn = InputOf<"/document/group", "post">;
+type GroupDocumentOut = OutputOf<"/document/group", "post">;
+type GenerateDocumentIn = InputOf<"/document/generate", "post">;
+type GenerateDocumentOut = OutputOf<"/document/generate", "post">;
+type GenerationsIn = InputOf<"/document/generations", "post">;
+type GenerationsOut = OutputOf<"/document/generations", "post">;
+type ProblemDocumentIn = InputOf<"/document/problem", "post">;
+type ProblemDocumentOut = OutputOf<"/document/problem", "post">;
+type ContextIn = InputOf<"/document/context", "post">;
+type ContextOut = OutputOf<"/document/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getDocumentsList = async (): Promise<DocumentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/documents/search",
+    "/document/search",
     { body: {} },
     {
       cache: "no-store",
@@ -59,34 +59,34 @@ async function deleteDocument(
   input: DeleteDocumentIn,
 ): Promise<DeleteDocumentOut> {
   "use server";
-  return api.post("/documents/delete", input);
+  return api.post("/document/delete", input);
 }
 
 async function generateDocument(
   input: GenerateDocumentIn
 ): Promise<GenerateDocumentOut> {
   "use server";
-  return api.post("/documents/generate", input);
+  return api.post("/document/generate", input);
 }
 
 async function getDocumentGroupHistory(groupId: string): Promise<GroupDocumentOut> {
   "use server";
-  return api.post("/documents/group", { body: { group_id: groupId } } as GroupDocumentIn);
+  return api.post("/document/group", { body: { group_id: groupId } } as GroupDocumentIn);
 }
 
 async function searchDocumentGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/documents/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/document/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createDocumentProblem(input: ProblemDocumentIn): Promise<ProblemDocumentOut> {
   "use server";
-  return api.post("/documents/problem", input);
+  return api.post("/document/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/documents/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -108,13 +108,13 @@ export default async function DocumentsPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/documents/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/document/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getDocumentsList(),
-    api.post("/documents/group", { body: {} } as GroupDocumentIn),
+    api.post("/document/group", { body: {} } as GroupDocumentIn),
   ]);
 
   return (

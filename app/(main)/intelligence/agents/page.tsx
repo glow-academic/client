@@ -20,21 +20,21 @@ import { buildSnapshot } from "@/lib/auth";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentsListOut = OutputOf<"/agents/search", "post">;
-type DuplicateAgentIn = InputOf<"/agents/duplicate", "post">;
-type DuplicateAgentOut = OutputOf<"/agents/duplicate", "post">;
-type DeleteAgentIn = InputOf<"/agents/delete", "post">;
-type DeleteAgentOut = OutputOf<"/agents/delete", "post">;
-type GroupAgentIn = InputOf<"/agents/group", "post">;
-type GroupAgentOut = OutputOf<"/agents/group", "post">;
-type GenerateAgentIn = InputOf<"/agents/generate", "post">;
-type GenerateAgentOut = OutputOf<"/agents/generate", "post">;
-type GenerationsIn = InputOf<"/agents/generations", "post">;
-type GenerationsOut = OutputOf<"/agents/generations", "post">;
-type ProblemAgentIn = InputOf<"/agents/problem", "post">;
-type ProblemAgentOut = OutputOf<"/agents/problem", "post">;
-type ContextIn = InputOf<"/agents/context", "post">;
-type ContextOut = OutputOf<"/agents/context", "post">;
+type AgentsListOut = OutputOf<"/agent/search", "post">;
+type DuplicateAgentIn = InputOf<"/agent/duplicate", "post">;
+type DuplicateAgentOut = OutputOf<"/agent/duplicate", "post">;
+type DeleteAgentIn = InputOf<"/agent/delete", "post">;
+type DeleteAgentOut = OutputOf<"/agent/delete", "post">;
+type GroupAgentIn = InputOf<"/agent/group", "post">;
+type GroupAgentOut = OutputOf<"/agent/group", "post">;
+type GenerateAgentIn = InputOf<"/agent/generate", "post">;
+type GenerateAgentOut = OutputOf<"/agent/generate", "post">;
+type GenerationsIn = InputOf<"/agent/generations", "post">;
+type GenerationsOut = OutputOf<"/agent/generations", "post">;
+type ProblemAgentIn = InputOf<"/agent/problem", "post">;
+type ProblemAgentOut = OutputOf<"/agent/problem", "post">;
+type ContextIn = InputOf<"/agent/context", "post">;
+type ContextOut = OutputOf<"/agent/context", "post">;
 
 /** ---- Body type for agents list request ---- */
 type AgentsListBody = {
@@ -53,7 +53,7 @@ type AgentsListBody = {
 const getAgentsList = async (body: AgentsListBody): Promise<AgentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/agents/search",
+    "/agent/search",
     { body },
     {
       cache: "no-store",
@@ -69,39 +69,39 @@ async function duplicateAgent(
   input: DuplicateAgentIn,
 ): Promise<DuplicateAgentOut> {
   "use server";
-  return api.post("/agents/duplicate", input);
+  return api.post("/agent/duplicate", input);
 }
 
 async function deleteAgent(input: DeleteAgentIn): Promise<DeleteAgentOut> {
   "use server";
-  return api.post("/agents/delete", input);
+  return api.post("/agent/delete", input);
 }
 
 async function generateAgent(
   input: GenerateAgentIn
 ): Promise<GenerateAgentOut> {
   "use server";
-  return api.post("/agents/generate", input);
+  return api.post("/agent/generate", input);
 }
 
 async function getAgentGroupHistory(groupId: string): Promise<GroupAgentOut> {
   "use server";
-  return api.post("/agents/group", { body: { group_id: groupId } } as GroupAgentIn);
+  return api.post("/agent/group", { body: { group_id: groupId } } as GroupAgentIn);
 }
 
 async function searchAgentGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/agents/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/agent/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createAgentProblem(input: ProblemAgentIn): Promise<ProblemAgentOut> {
   "use server";
-  return api.post("/agents/problem", input);
+  return api.post("/agent/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/agents/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/agent/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -127,7 +127,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/agents/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/agent/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -166,7 +166,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getAgentsList(body),
-    api.post("/agents/group", { body: {} } as GroupAgentIn),
+    api.post("/agent/group", { body: {} } as GroupAgentIn),
   ]);
 
   return (

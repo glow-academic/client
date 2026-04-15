@@ -48,7 +48,7 @@ const getDashboard = async (input: DashboardIn): Promise<DashboardOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function refreshReports(): Promise<void> {
   "use server";
-  await api.post("/reports/refresh" as Parameters<typeof api.post>[0], { body: {} });
+  await api.post("/report/refresh" as Parameters<typeof api.post>[0], { body: {} });
 }
 
 async function generateRecord(

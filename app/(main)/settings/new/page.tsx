@@ -21,12 +21,12 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetSettingIn = InputOf<"/settings/get", "post">;
-type GetSettingOut = OutputOf<"/settings/get", "post">;
-type CreateSettingIn = InputOf<"/settings/create", "post">;
-type CreateSettingOut = OutputOf<"/settings/create", "post">;
-type PatchSettingDraftIn = InputOf<"/settings/draft", "patch">;
-type PatchSettingDraftOut = OutputOf<"/settings/draft", "patch">;
+type GetSettingIn = InputOf<"/setting/get", "post">;
+type GetSettingOut = OutputOf<"/setting/get", "post">;
+type CreateSettingIn = InputOf<"/setting/create", "post">;
+type CreateSettingOut = OutputOf<"/setting/create", "post">;
+type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
+type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -52,16 +52,16 @@ type CreateAuthItemKeysOut = OutputOf<
   "/api/v5/resources/auth_item_keys",
   "post"
 >;
-type GroupSettingIn = InputOf<"/settings/group", "post">;
-type GroupSettingOut = OutputOf<"/settings/group", "post">;
-type GenerateSettingIn = InputOf<"/settings/generate", "post">;
-type GenerateSettingOut = OutputOf<"/settings/generate", "post">;
-type GenerationsIn = InputOf<"/settings/generations", "post">;
-type GenerationsOut = OutputOf<"/settings/generations", "post">;
-type ProblemSettingIn = InputOf<"/settings/problem", "post">;
-type ProblemSettingOut = OutputOf<"/settings/problem", "post">;
-type ContextIn = InputOf<"/settings/context", "post">;
-type ContextOut = OutputOf<"/settings/context", "post">;
+type GroupSettingIn = InputOf<"/setting/group", "post">;
+type GroupSettingOut = OutputOf<"/setting/group", "post">;
+type GenerateSettingIn = InputOf<"/setting/generate", "post">;
+type GenerateSettingOut = OutputOf<"/setting/generate", "post">;
+type GenerationsIn = InputOf<"/setting/generations", "post">;
+type GenerationsOut = OutputOf<"/setting/generations", "post">;
+type ProblemSettingIn = InputOf<"/setting/problem", "post">;
+type ProblemSettingOut = OutputOf<"/setting/problem", "post">;
+type ContextIn = InputOf<"/setting/context", "post">;
+type ContextOut = OutputOf<"/setting/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -69,7 +69,7 @@ type ContextOut = OutputOf<"/settings/context", "post">;
 const getSettingDefault = async (
   input: GetSettingIn
 ): Promise<GetSettingOut> => {
-  return api.post("/settings/get", input, {
+  return api.post("/setting/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -80,14 +80,14 @@ const getSettingDefault = async (
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function createSetting(input: CreateSettingIn): Promise<CreateSettingOut> {
   "use server";
-  return api.post("/settings/create", input);
+  return api.post("/setting/create", input);
 }
 
 async function patchSettingDraft(
   input: PatchSettingDraftIn
 ): Promise<PatchSettingDraftOut> {
   "use server";
-  return api.patch("/settings/draft", input);
+  return api.patch("/setting/draft", input);
 }
 
 async function createDraftNames(
@@ -129,27 +129,27 @@ async function generateSetting(
   input: GenerateSettingIn
 ): Promise<GenerateSettingOut> {
   "use server";
-  return api.post("/settings/generate", input);
+  return api.post("/setting/generate", input);
 }
 
 async function getSettingGroupHistory(groupId: string): Promise<GroupSettingOut> {
   "use server";
-  return api.post("/settings/group", { body: { group_id: groupId } } as GroupSettingIn);
+  return api.post("/setting/group", { body: { group_id: groupId } } as GroupSettingIn);
 }
 
 async function searchSettingGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/settings/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/setting/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createSettingProblem(input: ProblemSettingIn): Promise<ProblemSettingOut> {
   "use server";
-  return api.post("/settings/problem", input);
+  return api.post("/setting/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/settings/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.new.title,
     description: context.page_metadata?.new.description,
@@ -175,7 +175,7 @@ export default async function NewSettingPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/settings/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -210,8 +210,8 @@ export default async function NewSettingPage({
   };
   const [settingDetailDefault, draftsResult, groupResult] = await Promise.all([
     getSettingDefault(input),
-    api.post("/settings/drafts", {}),
-    api.post("/settings/group", { body: {} } as GroupSettingIn),
+    api.post("/setting/drafts", {}),
+    api.post("/setting/group", { body: {} } as GroupSettingIn),
   ]);
 
   return (
@@ -226,7 +226,7 @@ export default async function NewSettingPage({
           createFeedback: createSettingProblem,
         }}
         breadcrumbs={[
-          { title: "Settings", section: "settings", url: "/settings" },
+          { title: "Settings", section: "settings", url: "/setting" },
           { title: "New Setting" },
         ]}
         toolbar={<SaveToolbar />}

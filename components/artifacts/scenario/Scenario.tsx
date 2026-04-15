@@ -50,17 +50,17 @@ import {
 import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type GetScenarioOut = OutputOf<"/scenarios/get", "post">;
-type CreateScenarioIn = InputOf<"/scenarios/create", "post">;
-type CreateScenarioOut = OutputOf<"/scenarios/create", "post">;
-type UpdateScenarioIn = InputOf<"/scenarios/update", "post">;
-type UpdateScenarioOut = OutputOf<"/scenarios/update", "post">;
+type GetScenarioOut = OutputOf<"/scenario/get", "post">;
+type CreateScenarioIn = InputOf<"/scenario/create", "post">;
+type CreateScenarioOut = OutputOf<"/scenario/create", "post">;
+type UpdateScenarioIn = InputOf<"/scenario/update", "post">;
+type UpdateScenarioOut = OutputOf<"/scenario/update", "post">;
 type PatchScenarioDraftIn = InputOf<
-  "/scenarios/draft",
+  "/scenario/draft",
   "patch"
 >;
 type PatchScenarioDraftOut = OutputOf<
-  "/scenarios/draft",
+  "/scenario/draft",
   "patch"
 >;
 

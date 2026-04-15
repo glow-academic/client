@@ -128,7 +128,7 @@ export const SIDEBAR_SECTIONS: SidebarSectionConfig[] = [
     title: "Settings",
     artifact: "setting",
     icon: "Settings",
-    url: "/settings",
+    url: "/setting",
     order: 10,
   },
 ];

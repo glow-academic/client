@@ -42,10 +42,10 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type CreateSettingIn = InputOf<"/settings/create", "post">;
-type CreateSettingOut = OutputOf<"/settings/create", "post">;
-type UpdateSettingIn = InputOf<"/settings/update", "post">;
-type UpdateSettingOut = OutputOf<"/settings/update", "post">;
+type CreateSettingIn = InputOf<"/setting/create", "post">;
+type CreateSettingOut = OutputOf<"/setting/create", "post">;
+type UpdateSettingIn = InputOf<"/setting/update", "post">;
+type UpdateSettingOut = OutputOf<"/setting/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -58,10 +58,10 @@ type CreateDraftDescriptionsOut = OutputOf<
 >;
 type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
-type PatchSettingDraftIn = InputOf<"/settings/draft", "patch">;
-type PatchSettingDraftOut = OutputOf<"/settings/draft", "patch">;
+type PatchSettingDraftIn = InputOf<"/setting/draft", "patch">;
+type PatchSettingDraftOut = OutputOf<"/setting/draft", "patch">;
 
-type SettingData = OutputOf<"/settings/get", "post">;
+type SettingData = OutputOf<"/setting/get", "post">;
 
 export interface SettingProps {
   settingId?: string;
@@ -738,7 +738,7 @@ function SettingComponent({
         toast.success(
           `Setting ${isEditMode ? "updated" : "created"} successfully!`
         );
-        router.push("/settings");
+        router.push("/setting");
       } catch (error) {
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} setting: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -926,7 +926,7 @@ function SettingComponent({
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
-      backUrl: "/settings",
+      backUrl: "/setting",
       backLabel: "Back",
       createLabel: "Create Setting",
       updateLabel: "Update Setting",

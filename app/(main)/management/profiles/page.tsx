@@ -19,31 +19,31 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfilesListIn = InputOf<"/profiles/search", "post">;
-type ProfilesListOut = OutputOf<"/profiles/search", "post">;
-type DeleteProfileIn = InputOf<"/profiles/delete", "post">;
-type DeleteProfileOut = OutputOf<"/profiles/delete", "post">;
-type BulkDeleteProfileIn = InputOf<"/profiles/bulk/delete", "post">;
-type BulkDeleteProfileOut = OutputOf<"/profiles/bulk/delete", "post">;
-type SearchProfileIn = InputOf<"/profiles/bulk/search", "post">;
-type SearchProfileOut = OutputOf<"/profiles/bulk/search", "post">;
-type GetProfileIn = InputOf<"/profiles/get", "post">;
-type GetProfileOut = OutputOf<"/profiles/get", "post">;
-type ProcessCSVIn = InputOf<"/profiles/bulk/process", "post">;
-type ProcessCSVOut = OutputOf<"/profiles/bulk/process", "post">;
-type EmulateProfileIn = InputOf<"/profiles/emulate", "post">;
-type EmulateProfileOut = OutputOf<"/profiles/emulate", "post">;
-type UnemulateProfileOut = OutputOf<"/profiles/unemulate", "post">;
-type GroupProfileIn = InputOf<"/profiles/group", "post">;
-type GroupProfileOut = OutputOf<"/profiles/group", "post">;
-type GenerateProfileIn = InputOf<"/profiles/generate", "post">;
-type GenerateProfileOut = OutputOf<"/profiles/generate", "post">;
-type GenerationsIn = InputOf<"/profiles/generations", "post">;
-type GenerationsOut = OutputOf<"/profiles/generations", "post">;
-type ProblemProfileIn = InputOf<"/profiles/problem", "post">;
-type ProblemProfileOut = OutputOf<"/profiles/problem", "post">;
-type ContextIn = InputOf<"/profiles/context", "post">;
-type ContextOut = OutputOf<"/profiles/context", "post">;
+type ProfilesListIn = InputOf<"/profile/search", "post">;
+type ProfilesListOut = OutputOf<"/profile/search", "post">;
+type DeleteProfileIn = InputOf<"/profile/delete", "post">;
+type DeleteProfileOut = OutputOf<"/profile/delete", "post">;
+type BulkDeleteProfileIn = InputOf<"/profile/bulk/delete", "post">;
+type BulkDeleteProfileOut = OutputOf<"/profile/bulk/delete", "post">;
+type SearchProfileIn = InputOf<"/profile/bulk/search", "post">;
+type SearchProfileOut = OutputOf<"/profile/bulk/search", "post">;
+type GetProfileIn = InputOf<"/profile/get", "post">;
+type GetProfileOut = OutputOf<"/profile/get", "post">;
+type ProcessCSVIn = InputOf<"/profile/bulk/process", "post">;
+type ProcessCSVOut = OutputOf<"/profile/bulk/process", "post">;
+type EmulateProfileIn = InputOf<"/profile/emulate", "post">;
+type EmulateProfileOut = OutputOf<"/profile/emulate", "post">;
+type UnemulateProfileOut = OutputOf<"/profile/unemulate", "post">;
+type GroupProfileIn = InputOf<"/profile/group", "post">;
+type GroupProfileOut = OutputOf<"/profile/group", "post">;
+type GenerateProfileIn = InputOf<"/profile/generate", "post">;
+type GenerateProfileOut = OutputOf<"/profile/generate", "post">;
+type GenerationsIn = InputOf<"/profile/generations", "post">;
+type GenerationsOut = OutputOf<"/profile/generations", "post">;
+type ProblemProfileIn = InputOf<"/profile/problem", "post">;
+type ProblemProfileOut = OutputOf<"/profile/problem", "post">;
+type ContextIn = InputOf<"/profile/context", "post">;
+type ContextOut = OutputOf<"/profile/context", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<ProfilesListOut["profiles"]>[number];
 type SearchProfileItem = NonNullable<SearchProfileOut["profiles"]>[number];
@@ -53,7 +53,7 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getProfilesList = async (input: ProfilesListIn): Promise<ProfilesListOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/profiles/search", input, {
+  return api.post("/profile/search", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {
@@ -66,21 +66,21 @@ const getProfilesList = async (input: ProfilesListIn): Promise<ProfilesListOut> 
 /** ---- Strongly-typed server actions ---- */
 async function deleteProfile(input: DeleteProfileIn): Promise<DeleteProfileOut> {
   "use server";
-  return api.post("/profiles/delete", input);
+  return api.post("/profile/delete", input);
 }
 
 async function bulkDeleteProfile(
   input: BulkDeleteProfileIn
 ): Promise<BulkDeleteProfileOut> {
   "use server";
-  return api.post("/profiles/bulk/delete", input);
+  return api.post("/profile/bulk/delete", input);
 }
 
 async function getCreateProfileData(
   _input: GetProfileIn
 ): Promise<GetProfileOut> {
   "use server";
-  return api.post("/profiles/get", {
+  return api.post("/profile/get", {
     body: {
       target_profile_id: null,
       draft_id: null,
@@ -90,7 +90,7 @@ async function getCreateProfileData(
 
 async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   "use server";
-  return api.post("/profiles/bulk/process", input);
+  return api.post("/profile/bulk/process", input);
 }
 
 /** ---- Emulation server actions ---- */
@@ -102,7 +102,7 @@ async function emulateProfile(
 ): Promise<EmulateProfileActionOut> {
   "use server";
   try {
-    const res: EmulateProfileOut = await api.post("/profiles/emulate", {
+    const res: EmulateProfileOut = await api.post("/profile/emulate", {
       body: { target_profile_id: input.targetProfileId },
     } as EmulateProfileIn);
     if (!res.allowed) {
@@ -120,7 +120,7 @@ async function unemulateProfile(
 ): Promise<EmulateProfileActionOut> {
   "use server";
   try {
-    const res: UnemulateProfileOut = await api.post("/profiles/unemulate", {
+    const res: UnemulateProfileOut = await api.post("/profile/unemulate", {
       body: { target_profile_id: input.targetProfileId },
     } as never);
     if (!res.ok) {
@@ -137,27 +137,27 @@ async function generateProfile(
   input: GenerateProfileIn
 ): Promise<GenerateProfileOut> {
   "use server";
-  return api.post("/profiles/generate", input);
+  return api.post("/profile/generate", input);
 }
 
 async function getProfileGroupHistory(groupId: string): Promise<GroupProfileOut> {
   "use server";
-  return api.post("/profiles/group", { body: { group_id: groupId } } as GroupProfileIn);
+  return api.post("/profile/group", { body: { group_id: groupId } } as GroupProfileIn);
 }
 
 async function searchProfileGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/profiles/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/profile/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createProfileProblem(input: ProblemProfileIn): Promise<ProblemProfileOut> {
   "use server";
-  return api.post("/profiles/problem", input);
+  return api.post("/profile/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/profiles/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -179,14 +179,14 @@ export default async function ProfilesPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/profiles/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/profile/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data, create profile data, and group in parallel
   const [listData, initialCreateProfileData, groupResult] = await Promise.all([
     getProfilesList({ body: {} }),
     getCreateProfileData({ body: { department_ids: [] } }),
-    api.post("/profiles/group", { body: {} } as GroupProfileIn),
+    api.post("/profile/group", { body: {} } as GroupProfileIn),
   ]);
 
   return (

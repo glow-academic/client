@@ -68,7 +68,7 @@ export interface VideosProps {
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ video_ids: string[] } | void>) => void;
-  /** Artifact-scoped base path for upload/download URLs (e.g., "/scenarios") */
+  /** Artifact-scoped base path for upload/download URLs (e.g., "/scenario") */
   uploadBasePath?: string;
   /** Server action to upload a file — receives FormData, returns upload_id */
   uploadFileAction?: (formData: FormData) => Promise<{

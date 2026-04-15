@@ -19,19 +19,19 @@ import { buildSnapshot } from "@/lib/auth";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalsListOut = OutputOf<"/evals/search", "post">;
-type DeleteEvalIn = InputOf<"/evals/delete", "post">;
-type DeleteEvalOut = OutputOf<"/evals/delete", "post">;
-type GroupEvalIn = InputOf<"/evals/group", "post">;
-type GroupEvalOut = OutputOf<"/evals/group", "post">;
-type GenerateEvalIn = InputOf<"/evals/generate", "post">;
-type GenerateEvalOut = OutputOf<"/evals/generate", "post">;
-type GenerationsIn = InputOf<"/evals/generations", "post">;
-type GenerationsOut = OutputOf<"/evals/generations", "post">;
-type ProblemEvalIn = InputOf<"/evals/problem", "post">;
-type ProblemEvalOut = OutputOf<"/evals/problem", "post">;
-type ContextIn = InputOf<"/evals/context", "post">;
-type ContextOut = OutputOf<"/evals/context", "post">;
+type EvalsListOut = OutputOf<"/eval/search", "post">;
+type DeleteEvalIn = InputOf<"/eval/delete", "post">;
+type DeleteEvalOut = OutputOf<"/eval/delete", "post">;
+type GroupEvalIn = InputOf<"/eval/group", "post">;
+type GroupEvalOut = OutputOf<"/eval/group", "post">;
+type GenerateEvalIn = InputOf<"/eval/generate", "post">;
+type GenerateEvalOut = OutputOf<"/eval/generate", "post">;
+type GenerationsIn = InputOf<"/eval/generations", "post">;
+type GenerationsOut = OutputOf<"/eval/generations", "post">;
+type ProblemEvalIn = InputOf<"/eval/problem", "post">;
+type ProblemEvalOut = OutputOf<"/eval/problem", "post">;
+type ContextIn = InputOf<"/eval/context", "post">;
+type ContextOut = OutputOf<"/eval/context", "post">;
 
 /** ---- Body type for evals list request ---- */
 type EvalsListBody = {
@@ -46,7 +46,7 @@ type EvalsListBody = {
 const getEvalsList = async (body: EvalsListBody): Promise<EvalsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/evals/search",
+    "/eval/search",
     { body },
     {
       cache: "no-store",
@@ -62,34 +62,34 @@ const getEvalsList = async (body: EvalsListBody): Promise<EvalsListOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function deleteEval(input: DeleteEvalIn): Promise<DeleteEvalOut> {
   "use server";
-  return api.post("/evals/delete", input);
+  return api.post("/eval/delete", input);
 }
 
 async function generateEval(
   input: GenerateEvalIn
 ): Promise<GenerateEvalOut> {
   "use server";
-  return api.post("/evals/generate", input);
+  return api.post("/eval/generate", input);
 }
 
 async function getEvalGroupHistory(groupId: string): Promise<GroupEvalOut> {
   "use server";
-  return api.post("/evals/group", { body: { group_id: groupId } } as GroupEvalIn);
+  return api.post("/eval/group", { body: { group_id: groupId } } as GroupEvalIn);
 }
 
 async function searchEvalGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/evals/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/eval/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> {
   "use server";
-  return api.post("/evals/problem", input);
+  return api.post("/eval/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/evals/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -115,7 +115,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/evals/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -150,7 +150,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getEvalsList(body),
-    api.post("/evals/group", { body: {} } as GroupEvalIn),
+    api.post("/eval/group", { body: {} } as GroupEvalIn),
   ]);
 
   return (

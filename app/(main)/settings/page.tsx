@@ -19,17 +19,17 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type SettingsListOut = OutputOf<"/settings/search", "post">;
-type GroupSettingIn = InputOf<"/settings/group", "post">;
-type GroupSettingOut = OutputOf<"/settings/group", "post">;
-type GenerateSettingIn = InputOf<"/settings/generate", "post">;
-type GenerateSettingOut = OutputOf<"/settings/generate", "post">;
-type GenerationsIn = InputOf<"/settings/generations", "post">;
-type GenerationsOut = OutputOf<"/settings/generations", "post">;
-type ProblemSettingIn = InputOf<"/settings/problem", "post">;
-type ProblemSettingOut = OutputOf<"/settings/problem", "post">;
-type ContextIn = InputOf<"/settings/context", "post">;
-type ContextOut = OutputOf<"/settings/context", "post">;
+type SettingsListOut = OutputOf<"/setting/search", "post">;
+type GroupSettingIn = InputOf<"/setting/group", "post">;
+type GroupSettingOut = OutputOf<"/setting/group", "post">;
+type GenerateSettingIn = InputOf<"/setting/generate", "post">;
+type GenerateSettingOut = OutputOf<"/setting/generate", "post">;
+type GenerationsIn = InputOf<"/setting/generations", "post">;
+type GenerationsOut = OutputOf<"/setting/generations", "post">;
+type ProblemSettingIn = InputOf<"/setting/problem", "post">;
+type ProblemSettingOut = OutputOf<"/setting/problem", "post">;
+type ContextIn = InputOf<"/setting/context", "post">;
+type ContextOut = OutputOf<"/setting/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -38,7 +38,7 @@ type ContextOut = OutputOf<"/settings/context", "post">;
 const getSettingsList = async (): Promise<SettingsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/settings/search",
+    "/setting/search",
     { body: {} },
     {
       cache: "no-store",
@@ -56,27 +56,27 @@ async function generateSetting(
   input: GenerateSettingIn
 ): Promise<GenerateSettingOut> {
   "use server";
-  return api.post("/settings/generate", input);
+  return api.post("/setting/generate", input);
 }
 
 async function getSettingGroupHistory(groupId: string): Promise<GroupSettingOut> {
   "use server";
-  return api.post("/settings/group", { body: { group_id: groupId } } as GroupSettingIn);
+  return api.post("/setting/group", { body: { group_id: groupId } } as GroupSettingIn);
 }
 
 async function searchSettingGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/settings/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/setting/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createSettingProblem(input: ProblemSettingIn): Promise<ProblemSettingOut> {
   "use server";
-  return api.post("/settings/problem", input);
+  return api.post("/setting/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/settings/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -98,13 +98,13 @@ export default async function SettingsPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/settings/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/setting/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getSettingsList(),
-    api.post("/settings/group", { body: {} } as GroupSettingIn),
+    api.post("/setting/group", { body: {} } as GroupSettingIn),
   ]);
 
   return (
@@ -120,7 +120,7 @@ export default async function SettingsPage() {
       breadcrumbs={[
         { title: "Settings" },
       ]}
-      toolbar={<NewArtifactButton label="New Setting" href="/settings/new" />}
+      toolbar={<NewArtifactButton label="New Setting" href="/setting/new" />}
       panelProps={{
         artifactType: "setting",
         groupId: (groupResult as GroupSettingOut & { group_id?: string })?.group_id ?? null,

@@ -19,27 +19,27 @@ import { cookies } from "next/headers";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthListOut = OutputOf<"/auths/search", "post">;
-type DuplicateAuthIn = InputOf<"/auths/duplicate", "post">;
-type DuplicateAuthOut = OutputOf<"/auths/duplicate", "post">;
-type DeleteAuthIn = InputOf<"/auths/delete", "post">;
-type DeleteAuthOut = OutputOf<"/auths/delete", "post">;
-type GroupAuthIn = InputOf<"/auths/group", "post">;
-type GroupAuthOut = OutputOf<"/auths/group", "post">;
-type GenerateAuthIn = InputOf<"/auths/generate", "post">;
-type GenerateAuthOut = OutputOf<"/auths/generate", "post">;
-type GenerationsIn = InputOf<"/auths/generations", "post">;
-type GenerationsOut = OutputOf<"/auths/generations", "post">;
-type ProblemAuthIn = InputOf<"/auths/problem", "post">;
-type ProblemAuthOut = OutputOf<"/auths/problem", "post">;
-type ContextIn = InputOf<"/auths/context", "post">;
-type ContextOut = OutputOf<"/auths/context", "post">;
+type AuthListOut = OutputOf<"/auth/search", "post">;
+type DuplicateAuthIn = InputOf<"/auth/duplicate", "post">;
+type DuplicateAuthOut = OutputOf<"/auth/duplicate", "post">;
+type DeleteAuthIn = InputOf<"/auth/delete", "post">;
+type DeleteAuthOut = OutputOf<"/auth/delete", "post">;
+type GroupAuthIn = InputOf<"/auth/group", "post">;
+type GroupAuthOut = OutputOf<"/auth/group", "post">;
+type GenerateAuthIn = InputOf<"/auth/generate", "post">;
+type GenerateAuthOut = OutputOf<"/auth/generate", "post">;
+type GenerationsIn = InputOf<"/auth/generations", "post">;
+type GenerationsOut = OutputOf<"/auth/generations", "post">;
+type ProblemAuthIn = InputOf<"/auth/problem", "post">;
+type ProblemAuthOut = OutputOf<"/auth/problem", "post">;
+type ContextIn = InputOf<"/auth/context", "post">;
+type ContextOut = OutputOf<"/auth/context", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ---- */
 const getAuthList = async (): Promise<AuthListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/auths/search",
+    "/auth/search",
     { body: {} },
     {
       cache: "no-store",
@@ -57,39 +57,39 @@ async function duplicateAuth(
   input: DuplicateAuthIn
 ): Promise<DuplicateAuthOut> {
   "use server";
-  return api.post("/auths/duplicate", input);
+  return api.post("/auth/duplicate", input);
 }
 
 async function deleteAuth(input: DeleteAuthIn): Promise<DeleteAuthOut> {
   "use server";
-  return api.post("/auths/delete", input);
+  return api.post("/auth/delete", input);
 }
 
 async function generateAuth(
   input: GenerateAuthIn
 ): Promise<GenerateAuthOut> {
   "use server";
-  return api.post("/auths/generate", input);
+  return api.post("/auth/generate", input);
 }
 
 async function getAuthGroupHistory(groupId: string): Promise<GroupAuthOut> {
   "use server";
-  return api.post("/auths/group", { body: { group_id: groupId } } as GroupAuthIn);
+  return api.post("/auth/group", { body: { group_id: groupId } } as GroupAuthIn);
 }
 
 async function searchAuthGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/auths/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/auth/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createAuthProblem(input: ProblemAuthIn): Promise<ProblemAuthOut> {
   "use server";
-  return api.post("/auths/problem", input);
+  return api.post("/auth/problem", input);
 }
 
 /** ---- Page metadata ---- */
 export async function generateMetadata(): Promise<Metadata> {
-  const context = await api.post("/auths/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.list.title,
     description: context.page_metadata?.list.description,
@@ -111,13 +111,13 @@ export default async function AuthPage() {
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/auths/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/auth/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Fetch list data and group in parallel
   const [listData, groupResult] = await Promise.all([
     getAuthList(),
-    api.post("/auths/group", { body: {} } as GroupAuthIn),
+    api.post("/auth/group", { body: {} } as GroupAuthIn),
   ]);
 
   return (

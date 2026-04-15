@@ -35,12 +35,12 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type CreateFieldIn = InputOf<"/fields/create", "post">;
-type CreateFieldOut = OutputOf<"/fields/create", "post">;
-type UpdateFieldIn = InputOf<"/fields/update", "post">;
-type UpdateFieldOut = OutputOf<"/fields/update", "post">;
-type PatchFieldDraftIn = InputOf<"/fields/draft", "patch">;
-type PatchFieldDraftOut = OutputOf<"/fields/draft", "patch">;
+type CreateFieldIn = InputOf<"/field/create", "post">;
+type CreateFieldOut = OutputOf<"/field/create", "post">;
+type UpdateFieldIn = InputOf<"/field/update", "post">;
+type UpdateFieldOut = OutputOf<"/field/update", "post">;
+type PatchFieldDraftIn = InputOf<"/field/draft", "patch">;
+type PatchFieldDraftOut = OutputOf<"/field/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -52,7 +52,7 @@ type CreateDraftDescriptionsOut = OutputOf<
   "post"
 >;
 
-type FieldData = OutputOf<"/fields/get", "post">;
+type FieldData = OutputOf<"/field/get", "post">;
 
 type FieldResourceType =
   | "names"

@@ -53,17 +53,17 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type CreatePersonaIn = InputOf<"/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/personas/create", "post">;
-type UpdatePersonaIn = InputOf<"/personas/update", "post">;
-type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
-type PatchPersonaDraftIn = InputOf<"/personas/draft", "patch">;
+type CreatePersonaIn = InputOf<"/persona/create", "post">;
+type CreatePersonaOut = OutputOf<"/persona/create", "post">;
+type UpdatePersonaIn = InputOf<"/persona/update", "post">;
+type UpdatePersonaOut = OutputOf<"/persona/update", "post">;
+type PatchPersonaDraftIn = InputOf<"/persona/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<
-  "/personas/draft",
+  "/persona/draft",
   "patch"
 >;
 
-type PersonaData = OutputOf<"/personas/get", "post">;
+type PersonaData = OutputOf<"/persona/get", "post">;
 
 type PersonaFormState = {
   // ID fields

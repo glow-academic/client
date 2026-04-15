@@ -73,14 +73,14 @@ const findCurrentFlagId = (
 ): string | null => flags?.find((f) => f.key === key)?.flag_option_id ?? null;
 
 // Types defined inline using InputOf/OutputOf
-type CreateModelIn = InputOf<"/models/create", "post">;
-type CreateModelOut = OutputOf<"/models/create", "post">;
-type UpdateModelIn = InputOf<"/models/update", "post">;
-type UpdateModelOut = OutputOf<"/models/update", "post">;
-type PatchModelDraftIn = InputOf<"/models/draft", "patch">;
-type PatchModelDraftOut = OutputOf<"/models/draft", "patch">;
+type CreateModelIn = InputOf<"/model/create", "post">;
+type CreateModelOut = OutputOf<"/model/create", "post">;
+type UpdateModelIn = InputOf<"/model/update", "post">;
+type UpdateModelOut = OutputOf<"/model/update", "post">;
+type PatchModelDraftIn = InputOf<"/model/draft", "patch">;
+type PatchModelDraftOut = OutputOf<"/model/draft", "patch">;
 
-type ModelData = OutputOf<"/models/get", "post">;
+type ModelData = OutputOf<"/model/get", "post">;
 
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;

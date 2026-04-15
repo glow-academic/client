@@ -27,22 +27,22 @@ import {
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetPersonaIn = InputOf<"/personas/get", "post">;
-type GetPersonaOut = OutputOf<"/personas/get", "post">;
-type UpdatePersonaIn = InputOf<"/personas/update", "post">;
-type UpdatePersonaOut = OutputOf<"/personas/update", "post">;
-type PatchPersonaDraftIn = InputOf<"/personas/draft", "patch">;
-type PatchPersonaDraftOut = OutputOf<"/personas/draft", "patch">;
-type GroupPersonaIn = InputOf<"/personas/group", "post">;
-type GroupPersonaOut = OutputOf<"/personas/group", "post">;
-type ProblemPersonaIn = InputOf<"/personas/problem", "post">;
-type ProblemPersonaOut = OutputOf<"/personas/problem", "post">;
-type ContextIn = InputOf<"/personas/context", "post">;
-type ContextOut = OutputOf<"/personas/context", "post">;
+type GetPersonaIn = InputOf<"/persona/get", "post">;
+type GetPersonaOut = OutputOf<"/persona/get", "post">;
+type UpdatePersonaIn = InputOf<"/persona/update", "post">;
+type UpdatePersonaOut = OutputOf<"/persona/update", "post">;
+type PatchPersonaDraftIn = InputOf<"/persona/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/persona/draft", "patch">;
+type GroupPersonaIn = InputOf<"/persona/group", "post">;
+type GroupPersonaOut = OutputOf<"/persona/group", "post">;
+type ProblemPersonaIn = InputOf<"/persona/problem", "post">;
+type ProblemPersonaOut = OutputOf<"/persona/problem", "post">;
+type ContextIn = InputOf<"/persona/context", "post">;
+type ContextOut = OutputOf<"/persona/context", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
 const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
-  return api.post("/personas/get", input, {
+  return api.post("/persona/get", input, {
     cache: "no-store",
     headers: { "X-Bypass-Cache": "1" },
   });
@@ -51,19 +51,19 @@ const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
   "use server";
-  return api.post("/personas/update", input);
+  return api.post("/persona/update", input);
 }
 
 async function patchPersonaDraft(
   input: PatchPersonaDraftIn
 ): Promise<PatchPersonaDraftOut> {
   "use server";
-  return api.post("/personas/draft", input);
+  return api.post("/persona/draft", input);
 }
 
 async function createPersonaProblem(input: ProblemPersonaIn): Promise<ProblemPersonaOut> {
   "use server";
-  return api.post("/personas/problem", input);
+  return api.post("/persona/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -73,7 +73,7 @@ export async function generateMetadata({
   params: Promise<{ personaId: string }>;
 }): Promise<Metadata> {
   const { personaId } = await params;
-  const context = await api.post("/personas/context", { body: { entity_id: personaId } } as ContextIn) as ContextOut;
+  const context = await api.post("/persona/context", { body: { entity_id: personaId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -102,7 +102,7 @@ export default async function PersonaEditPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/personas/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/persona/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -164,9 +164,9 @@ export default async function PersonaEditPage({
 
     const [personaDetail, context, draftsResult, groupResult] = await Promise.all([
       getPersona(input),
-      api.post("/personas/context", { body: { entity_id: personaId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/personas/drafts", {}),
-      api.post("/personas/group", { body: {} } as GroupPersonaIn),
+      api.post("/persona/context", { body: { entity_id: personaId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/persona/drafts", {}),
+      api.post("/persona/group", { body: {} } as GroupPersonaIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;

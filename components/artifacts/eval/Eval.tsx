@@ -40,13 +40,13 @@ import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 // Eval endpoints
-type CreateEvalIn = InputOf<"/evals/create", "post">;
-type CreateEvalOut = OutputOf<"/evals/create", "post">;
-type UpdateEvalIn = InputOf<"/evals/update", "post">;
-type UpdateEvalOut = OutputOf<"/evals/update", "post">;
-type PatchEvalDraftIn = InputOf<"/evals/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/evals/draft", "patch">;
-type EvalData = OutputOf<"/evals/get", "post">;
+type CreateEvalIn = InputOf<"/eval/create", "post">;
+type CreateEvalOut = OutputOf<"/eval/create", "post">;
+type UpdateEvalIn = InputOf<"/eval/update", "post">;
+type UpdateEvalOut = OutputOf<"/eval/update", "post">;
+type PatchEvalDraftIn = InputOf<"/eval/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/eval/draft", "patch">;
+type EvalData = OutputOf<"/eval/get", "post">;
 
 // Resource creation endpoints
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;

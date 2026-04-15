@@ -21,29 +21,29 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 import { buildSnapshot } from "@/lib/auth";
 
 /** ---- Strong types from OpenAPI ---- */
-type GetEvalIn = InputOf<"/evals/get", "post">;
-type GetEvalOut = OutputOf<"/evals/get", "post">;
-type CreateEvalIn = InputOf<"/evals/create", "post">;
-type CreateEvalOut = OutputOf<"/evals/create", "post">;
-type UpdateEvalIn = InputOf<"/evals/update", "post">;
-type UpdateEvalOut = OutputOf<"/evals/update", "post">;
-type PatchEvalDraftIn = InputOf<"/evals/draft", "patch">;
-type PatchEvalDraftOut = OutputOf<"/evals/draft", "patch">;
-type GroupEvalIn = InputOf<"/evals/group", "post">;
-type GroupEvalOut = OutputOf<"/evals/group", "post">;
-type GenerateEvalIn = InputOf<"/evals/generate", "post">;
-type GenerateEvalOut = OutputOf<"/evals/generate", "post">;
-type GenerationsIn = InputOf<"/evals/generations", "post">;
-type GenerationsOut = OutputOf<"/evals/generations", "post">;
-type ProblemEvalIn = InputOf<"/evals/problem", "post">;
-type ProblemEvalOut = OutputOf<"/evals/problem", "post">;
-type ContextIn = InputOf<"/evals/context", "post">;
-type ContextOut = OutputOf<"/evals/context", "post">;
+type GetEvalIn = InputOf<"/eval/get", "post">;
+type GetEvalOut = OutputOf<"/eval/get", "post">;
+type CreateEvalIn = InputOf<"/eval/create", "post">;
+type CreateEvalOut = OutputOf<"/eval/create", "post">;
+type UpdateEvalIn = InputOf<"/eval/update", "post">;
+type UpdateEvalOut = OutputOf<"/eval/update", "post">;
+type PatchEvalDraftIn = InputOf<"/eval/draft", "patch">;
+type PatchEvalDraftOut = OutputOf<"/eval/draft", "patch">;
+type GroupEvalIn = InputOf<"/eval/group", "post">;
+type GroupEvalOut = OutputOf<"/eval/group", "post">;
+type GenerateEvalIn = InputOf<"/eval/generate", "post">;
+type GenerateEvalOut = OutputOf<"/eval/generate", "post">;
+type GenerationsIn = InputOf<"/eval/generations", "post">;
+type GenerationsOut = OutputOf<"/eval/generations", "post">;
+type ProblemEvalIn = InputOf<"/eval/problem", "post">;
+type ProblemEvalOut = OutputOf<"/eval/problem", "post">;
+type ContextIn = InputOf<"/eval/context", "post">;
+type ContextOut = OutputOf<"/eval/context", "post">;
 // Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
 
 /** ---- Direct fetch for eval detail ---- */
 const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
-  return api.post("/evals/get", input, {
+  return api.post("/eval/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -54,41 +54,41 @@ const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
 /** ---- Strongly-typed server actions ---- */
 async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
-  return api.post("/evals/create", input);
+  return api.post("/eval/create", input);
 }
 
 async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
   "use server";
-  return api.post("/evals/update", input);
+  return api.post("/eval/update", input);
 }
 
 async function patchEvalDraft(
   input: PatchEvalDraftIn
 ): Promise<PatchEvalDraftOut> {
   "use server";
-  return api.patch("/evals/draft", input);
+  return api.patch("/eval/draft", input);
 }
 
 async function generateEval(
   input: GenerateEvalIn
 ): Promise<GenerateEvalOut> {
   "use server";
-  return api.post("/evals/generate", input);
+  return api.post("/eval/generate", input);
 }
 
 async function getEvalGroupHistory(groupId: string): Promise<GroupEvalOut> {
   "use server";
-  return api.post("/evals/group", { body: { group_id: groupId } } as GroupEvalIn);
+  return api.post("/eval/group", { body: { group_id: groupId } } as GroupEvalIn);
 }
 
 async function searchEvalGroups(query: string): Promise<GenerationsOut> {
   "use server";
-  return api.post("/evals/generations", { body: { search: query || null } } as GenerationsIn);
+  return api.post("/eval/generations", { body: { search: query || null } } as GenerationsIn);
 }
 
 async function createEvalProblem(input: ProblemEvalIn): Promise<ProblemEvalOut> {
   "use server";
-  return api.post("/evals/problem", input);
+  return api.post("/eval/problem", input);
 }
 
 /** ---- Page metadata ---- */
@@ -98,7 +98,7 @@ export async function generateMetadata({
   params: Promise<{ evalId: string }>;
 }): Promise<Metadata> {
   const { evalId } = await params;
-  const context = await api.post("/evals/context", { body: { entity_id: evalId } } as ContextIn) as ContextOut;
+  const context = await api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as ContextOut;
   return {
     title: context.page_metadata?.detail.title,
     description: context.page_metadata?.detail.description,
@@ -128,7 +128,7 @@ export default async function EvalDetailPage({
   const initialPanelOpen = panelCookie ? panelCookie.value === "true" : false;
 
   // Profile data for providers
-  const context = await api.post("/evals/context", { body: {} } as ContextIn) as ContextOut;
+  const context = await api.post("/eval/context", { body: {} } as ContextIn) as ContextOut;
   const snapshot = buildSnapshot(session, context.profile);
 
   // Parse search params using nuqs
@@ -171,9 +171,9 @@ export default async function EvalDetailPage({
     };
     const [evalDetail, context, draftsResult, groupResult] = await Promise.all([
       getEvalDetail(input),
-      api.post("/evals/context", { body: { entity_id: evalId } } as ContextIn) as Promise<ContextOut>,
-      api.post("/evals/drafts", {}),
-      api.post("/evals/group", { body: {} } as GroupEvalIn),
+      api.post("/eval/context", { body: { entity_id: evalId } } as ContextIn) as Promise<ContextOut>,
+      api.post("/eval/drafts", {}),
+      api.post("/eval/group", { body: {} } as GroupEvalIn),
     ]);
 
     const entityName = context.page_metadata?.detail.title;
